@@ -20,6 +20,7 @@ public readonly struct PhaseOneOptions {
         IndentSize = Math.Max(1, options.GetInt(Ids.IndentSize));
         TabWidth = Math.Max(1, options.GetInt(Ids.TabWidth));
         UseTabs = options.GetRaw(Ids.IndentStyle) == (int)IndentStyle.Tab;
+        TabFill = (TabFillStyle)options.GetRaw(Ids.AlignmentTabFillStyle);
         // ⚠ `wrap_lines = false` is exactly an unbounded margin, and that is measured rather than
         // reasoned. Asked with `wrap_lines = false` and asked with
         // `max_line_length = 2147483647`, `jb cleanupcode` returns byte-identical output — on source
@@ -419,6 +420,17 @@ public readonly struct PhaseOneOptions {
     public int IndentSize { get; }
     public int TabWidth { get; }
     public bool UseTabs { get; }
+
+    /// <summary>
+    ///     <c>alignment_tab_fill_style</c>: how the whitespace reaching an aligned column is spelled.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Three distinct layouts of the same column, and <see cref="LayoutWriter.WriteIndentTo" />
+    ///     carries the measured table. Reachable only under <see cref="UseTabs" />; with spaces all three
+    ///     spell the identical column, which is why this key sat on the "never read by the C# formatter"
+    ///     list until a probe was finally run under <c>indent_style = tab</c> (SK-DIV-0032).
+    /// </remarks>
+    public TabFillStyle TabFill { get; }
 
     /// <summary>
     ///     The column limit, or <see cref="Document.Unbounded" /> when <see cref="WrapLines" /> is off.
@@ -1152,6 +1164,17 @@ public static class Ids {
     public static readonly OptionId IndentSize = Of("resharper_csharp_indent_size");
     public static readonly OptionId TabWidth = OfInert("resharper_csharp_tab_width");
     public static readonly OptionId IndentStyle = Of("resharper_csharp_indent_style");
+    // ⚠ Inert for the same reason `TabWidth` above is, and the reason is the *corpus* rather than the
+    // key: every committed fixture is indented with spaces, and with spaces all three values spell the
+    // identical column. `LayoutWriter.WriteIndentTo` now writes three distinct layouts under tabs, each
+    // one measured against the oracle and pinned by `TabFillStyleTests` — so this is "read, honoured,
+    // and unobservable on the only corpus there is", not "read and unwired".
+    //
+    // ⚠ It becomes `Of` and Tier A the moment the corpus can carry a per-directory `.editorconfig`,
+    // and not before: the key-flip sweep only reaches an option that has an `oracle` glob, a glob may
+    // only point at a committed fixture, and no committed fixture can be tab-indented. That is the
+    // whole of what is left of SK-DIV-0032 — the layouts themselves are fixed.
+    public static readonly OptionId AlignmentTabFillStyle = OfInert("resharper_csharp_alignment_tab_fill_style");
     // ⚠ No longer inert. Milestone 1 read it and could not act on it — nothing wrapped — and it was
     // Tier D for that reason (docs/plan/05 § "Phase 1"). Milestone 3 is the phase where the column
     // limit is the whole point, and constructs/wrapping/initializers.cs pins it.
@@ -1665,17 +1688,23 @@ public static class Ids {
     //     SK-DIV-0008 and SK-DIV-0012 had blamed this key for a residue that was the missing `for`-
     //     header `;` break point. The blame was wrong and the masking verdict was right: with only
     //     this key flipped the oracle returns constructs/wrapping/for-header.cs byte-identical.
-    //   alignment_tab_fill_style — masked by `indent_style = space`, and it took a probe under tabs
-    //     to see it. All three values are distinct layouts of the *same* alignment column, and they
-    //     differ only in how the whitespace reaching it is spelled. On `if (a\n && b` at column 12
-    //     inside a block at 8, with a 4-column tab:
-    //         use_spaces     `\t\t` + 4 spaces   — tabs to the enclosing block, spaces for the rest
-    //         use_tabs_only  `\t\t\t`           — the column rounded *down* to a tab stop
-    //         optimal_fill   `\t\t\t`           — floor(column / tab) tabs, then the remainder
-    //     `optimal_fill` and `use_tabs_only` separate where the column is not a multiple of the tab
-    //     width: a chain aligned at column 21 is 5 tabs under `use_tabs_only` (column 20, short of
-    //     the anchor) and 5 tabs and a space under `optimal_fill`. ⚠ LayoutWriter.WriteIndentTo
-    //     implements `optimal_fill` and its remarks name it `use_spaces`; SK-DIV-0032.
+    //   alignment_tab_fill_style — ⚠ **implemented; this entry is kept for the masking, which is
+    //     still true.** Masked by `indent_style = space`, and it took a probe under tabs to see it.
+    //     All three values are distinct layouts of the *same* alignment column, differing only in how
+    //     the whitespace reaching it is spelled. `LayoutWriter.WriteIndentTo` carries the measured
+    //     table and writes all three; `TabFillStyleTests` pins them against the oracle's own bytes.
+    //     ⚠ Two clauses of the model recorded here were **wrong**, and both were corrected by a probe
+    //     run under `indent_style = tab` on 2026-08-30:
+    //       — `use_spaces` tabs to the line's *level* column, not to the enclosing block's. A plain
+    //         continuation at column 12 inside a block at 8 is three whole tabs; an *aligned* line at
+    //         that same column 12 is two tabs and four spaces. A level stays tabs and only what
+    //         alignment adds becomes spaces, which the "enclosing block" reading gets wrong on every
+    //         continuation line in the file.
+    //       — `use_tabs_only` rounds to the *nearest* tab stop and not down. Column 14 goes down to
+    //         12 and column 19 goes up to 20; ties break downwards. The "rounded down" claim was read
+    //         off a single column-21 datum that happens to round down either way.
+    //     SK-DIV-0032, whose remaining half is the fixture: the corpus has no per-directory
+    //     `.editorconfig`, so the key stays `OfInert` and out of the key-flip sweep's reach.
     //
     // Observable and not implemented, with the shape recorded so the next attempt starts from it:
     //   align_first_arg_by_paren — puts the arguments on the `(`'s column plus one and the closing

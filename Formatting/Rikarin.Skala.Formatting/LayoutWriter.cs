@@ -1,4 +1,5 @@
 using System.Text;
+using Rikarin.Skala.Options;
 
 // CA1711: a [Flags] enum named *Flags is what every reader expects it to be called.
 #pragma warning disable CA1711
@@ -98,6 +99,10 @@ public sealed class LayoutWriter {
     readonly int _indentWidth;
     readonly int _width;
 
+    /// <summary><c>alignment_tab_fill_style</c>: how the whitespace reaching a column is spelled.</summary>
+    /// <remarks>⚠ Read by <see cref="WriteIndentTo" /> and only there. SK-DIV-0032.</remarks>
+    readonly TabFillStyle _tabFill;
+
     /// <summary>
     ///     The input, and non-null exactly when <c>disable_indenter</c> is on.
     /// </summary>
@@ -115,7 +120,8 @@ public sealed class LayoutWriter {
         string indentUnit,
         string defaultNewLine,
         int continuousMultiplier,
-        string? suppressedIndentSource
+        string? suppressedIndentSource,
+        TabFillStyle tabFill
     ) {
         _document = document;
         _width = width;
@@ -125,6 +131,7 @@ public sealed class LayoutWriter {
         _defaultNewLine = defaultNewLine;
         _continuousMultiplier = Math.Max(1, continuousMultiplier);
         _source = suppressedIndentSource;
+        _tabFill = tabFill;
     }
 
     /// <param name="width"><c>max_line_length</c>: the budget every Auto group is tested against.</param>
@@ -135,13 +142,19 @@ public sealed class LayoutWriter {
     ///     <c>disable_indenter</c>: the input text, passed only when the key is on. See
     ///     <see cref="WriteSuppressedIndent" />.
     /// </param>
+    /// <param name="tabFill">
+    ///     <c>alignment_tab_fill_style</c>: how the whitespace reaching an aligned column is spelled when
+    ///     the indent unit is a tab. Defaults to the registry's own default, which is also the export's
+    ///     value; it has no effect at all on a space-indented file. See <see cref="WriteIndentTo" />.
+    /// </param>
     public static Layout Write(
         Document document,
         int width,
         string indentUnit,
         string defaultNewLine,
         int continuousMultiplier = 1,
-        string? suppressedIndentSource = null
+        string? suppressedIndentSource = null,
+        TabFillStyle tabFill = TabFillStyle.UseSpaces
     ) {
         var writer = new LayoutWriter(
             document,
@@ -149,7 +162,8 @@ public sealed class LayoutWriter {
             indentUnit,
             defaultNewLine,
             continuousMultiplier,
-            suppressedIndentSource
+            suppressedIndentSource,
+            tabFill
         );
         writer.Walk();
         return new Layout(
@@ -282,7 +296,11 @@ public sealed class LayoutWriter {
                 // respect, because "absolute, and nothing below it applies" is exactly what a block
                 // already means; the only thing alignment adds is that the number is not a multiple
                 // of the indent width.
-                IndentKind.Align => new Scope(true, CurrentColumn(), _line, outer, unconditional),
+                // ⚠ `IsAlignment` is the one thing that separates this from a block, and it is read by
+                // `LevelColumn` alone: `alignment_tab_fill_style = use_spaces` spells the level part of
+                // an indent in tabs and the alignment part in spaces, so it has to know which part of
+                // this scope's column is which. `CloserLevel` — `outer` — is the level part.
+                IndentKind.Align => new Scope(true, CurrentColumn(), _line, outer, unconditional, IsAlignment: true),
 
                 // ⚠ Columns, not a level, and it carries them in a field of its own rather than in
                 // `Level` so that the collapse in `Level(bool)` never sees them. `Level` is 0 here:
@@ -348,6 +366,23 @@ public sealed class LayoutWriter {
     int Effective() => Level(nested: false);
 
     /// <summary>
+    ///     The same as <see cref="Effective" />, but counting an alignment scope at the level it replaced
+    ///     rather than at the column it chose.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Read by <see cref="WriteIndentTo" /> and by nothing else.
+    ///     <c>
+    /// alignment_tab_fill_style =
+    ///     use_spaces
+    ///     </c> — the export's own value — writes the level part of a line's indentation in tabs
+    ///     and the alignment part in spaces, which needs the two numbers separately; every other value,
+    ///     and every space-indented file, needs only <see cref="Effective" />. An
+    ///     <see cref="IndentKind.Align" /> scope's <c>CloserLevel</c> is the level it was opened at, which
+    ///     is exactly the level the alignment column replaced.
+    /// </remarks>
+    int LevelColumn() => Level(nested: false, levelsOnly: true);
+
+    /// <summary>
     ///     Walks the scope stack and adds up the levels that apply.
     /// </summary>
     /// <param name="nested">
@@ -375,7 +410,13 @@ public sealed class LayoutWriter {
     ///     ⚠ The single <c>blocked</c> variable is enough because scopes are visited innermost-first and
     ///     an outer scope never opened on a later line than an inner one.
     /// </remarks>
-    int Level(bool nested) {
+    /// <param name="levelsOnly">
+    ///     ⚠ <see cref="LevelColumn" />: count an alignment scope at <c>CloserLevel</c>, the level it was
+    ///     opened at, rather than at the absolute column it chose. False everywhere the answer is "where
+    ///     does this line start"; true only where <c>alignment_tab_fill_style</c> needs to know how much
+    ///     of that column is levels.
+    /// </param>
+    int Level(bool nested, bool levelsOnly = false) {
         var level = 0;
         var blocked = -1;
         for (var i = _scopes.Count - 1; i >= 0; i--) {
@@ -396,7 +437,7 @@ public sealed class LayoutWriter {
             }
 
             if (scope.IsBlock) {
-                return Math.Max(0, level + scope.Level);
+                return Math.Max(0, level + (levelsOnly && scope.IsAlignment ? scope.CloserLevel : scope.Level));
             }
 
             if (scope.Unconditional) {
@@ -449,13 +490,18 @@ public sealed class LayoutWriter {
     ///     shift must not, or an outdent scope opened mid-line would suppress the continuation level of
     ///     whatever opened earlier on the same line.
     /// </param>
+    /// <param name="IsAlignment">
+    ///     ⚠ <see cref="IndentKind.Align" />, whose <paramref name="Level" /> is an absolute column rather
+    ///     than a level. Only <see cref="LevelColumn" /> reads it, for <c>alignment_tab_fill_style</c>.
+    /// </param>
     readonly record struct Scope(
         bool IsBlock,
         int Level,
         int OpenLine,
         int CloserLevel,
         bool Unconditional = false,
-        int ColumnOutdent = 0);
+        int ColumnOutdent = 0,
+        bool IsAlignment = false);
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     int CurrentLineIndent() {
@@ -473,18 +519,84 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>Writes the indentation that reaches <paramref name="column" />.</summary>
+    /// <param name="column">The column the first character of the line is to land on.</param>
+    /// <param name="levelColumn">
+    ///     The same line's indentation expressed in whole <em>levels</em> — the column it would take if
+    ///     no alignment scope were open. Equal to <paramref name="column" /> on every ordinary line, and
+    ///     smaller exactly where an <see cref="IndentKind.Align" /> scope put the line on a column of its
+    ///     own. See <see cref="LevelColumn" />.
+    /// </param>
     /// <remarks>
-    ///     ⚠ Whole indent units first and spaces for the remainder, which is what
-    ///     `alignment_tab_fill_style = use_spaces` asks for and is also the only thing that can be right
-    ///     when the unit is a tab: a column of 25 is six tabs and a space, never twenty-five tabs.
+    ///     ⚠ <b><c>alignment_tab_fill_style</c>, and the three layouts are measured rather than derived.</b>
+    ///     This method used to write whole indent units and then spaces for the remainder unconditionally,
+    ///     with remarks claiming that is "what <c>alignment_tab_fill_style = use_spaces</c> asks for". It is
+    ///     not — it is <c>optimal_fill</c>, and the export asks for <c>use_spaces</c>, so Skala wrote the
+    ///     wrong one of the three layouts on every aligned continuation line of every tab-indented file
+    ///     (SK-DIV-0032).
+    ///     <para>
+    ///         Re-measured against <c>jb cleanupcode</c> 2025.2.6 under <c>indent_style = tab</c>,
+    ///         <c>tab_width = 4</c>, on statement conditions aligned at four different columns inside blocks
+    ///         at three different depths. The tab portion is written <c>»</c> and the space portion <c>·</c>:
+    ///         <code>
+    /// column │ block │ use_spaces    │ use_tabs_only │ optimal_fill
+    ///     12 │     8 │ »»····        │ »»»           │ »»»
+    ///     14 │     8 │ »»······      │ »»»           │ »»»··
+    ///     15 │     8 │ »»·······     │ »»»»          │ »»»···
+    ///     18 │    12 │ »»»······     │ »»»»          │ »»»»··
+    ///     23 │    16 │ »»»»·······   │ »»»»»»        │ »»»»»···
+    ///         </code>
+    ///     </para>
+    ///     <list type="bullet">
+    ///         <item>
+    ///             <c>use_spaces</c> — <b>the export's own value</b> — tabs as far as the line's own
+    ///             <em>level</em> column and spells the alignment remainder in spaces, which is what makes it
+    ///             "look aligned on any tab size". ⚠ It is the level column and not the enclosing block's:
+    ///             measured on the same probe, a plain continuation line at column 12 inside a block at 8 is
+    ///             written as three whole tabs, while an <em>aligned</em> line at that same column 12 is
+    ///             written as two tabs and four spaces. A continuation level is a level and stays tabs; only
+    ///             what alignment adds becomes spaces. The two are indistinguishable on any line whose
+    ///             alignment column happens to be a multiple of the tab width, which is why nothing caught
+    ///             this.
+    ///         </item>
+    ///         <item>
+    ///             <c>use_tabs_only</c> rounds to the <em>nearest</em> tab stop and writes no spaces at all,
+    ///             so the column reached is not the column asked for — which is what the option's own summary
+    ///             means by "(inaccurate)". ⚠ The recorded model said "rounded <em>down</em>" and that is
+    ///             refuted by the table above: 15 goes up to 16 and 23 up to 24, while 14 and 18 go down.
+    ///             Ties break downwards (14 and 18 are both exactly half a tab past a stop).
+    ///         </item>
+    ///         <item><c>optimal_fill</c> divides the whole column by the tab width — the old unconditional body.</item>
+    ///     </list>
+    ///     <para>
+    ///         ⚠ The key applies only when the indent unit is a tab, and that is not a shortcut. With spaces
+    ///         the unit <em>is</em> a space, so all three spell the identical column; measured, all three
+    ///         values return an 18-file probe byte-identical under <c>indent_style = space</c>. Letting
+    ///         <c>use_tabs_only</c>'s rounding run on a space-indented file would move every aligned line to
+    ///         a column no configuration asked for.
+    ///     </para>
     /// </remarks>
-    void WriteIndentTo(int column) {
-        var units = column / _indentWidth;
+    void WriteIndentTo(int column, int levelColumn) {
+        var tabs = _indentUnit == "\t";
+        var units = _tabFill switch {
+            TabFillStyle.UseSpaces when tabs => Math.Min(levelColumn, column) / _indentWidth,
+
+            // Round to the nearest stop, ties downwards: 15 ⇒ 4 units, 14 ⇒ 3, 23 ⇒ 6, 18 ⇒ 4.
+            TabFillStyle.UseTabsOnly when tabs => (2 * column + _indentWidth - 1) / (2 * _indentWidth),
+            _ => column / _indentWidth
+        };
+
         for (var i = 0; i < units; i++) {
             _output.Append(_indentUnit);
         }
 
         _column = units * _indentWidth;
+
+        // ⚠ `use_tabs_only` stops here. It reaches a tab stop and not the alignment column, and the
+        // remainder is deliberately not spelled — filling it with spaces would be `optimal_fill`.
+        if (tabs && _tabFill == TabFillStyle.UseTabsOnly) {
+            return;
+        }
+
         for (var i = _column; i < column; i++) {
             _output.Append(' ');
             _column++;
@@ -874,7 +986,11 @@ public sealed class LayoutWriter {
         if (_atLineStart) {
             if ((flags & VerbatimFlags.AtColumnZero) == 0 && (flags & VerbatimFlags.SelfIndented) == 0) {
                 if (_source is null) {
-                    WriteIndentTo(_pendingCloserLevel ?? Effective());
+                    // ⚠ A closing delimiter's column is its scope's `CloserLevel`, which is a level and
+                    // never an alignment column — so the level column and the target coincide and the
+                    // whole indent is written in whole units. Only the `Effective` branch can differ.
+                    var closer = _pendingCloserLevel;
+                    WriteIndentTo(closer ?? Effective(), closer ?? LevelColumn());
                 } else {
                     WriteSuppressedIndent(source);
                 }

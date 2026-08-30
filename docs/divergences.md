@@ -2546,10 +2546,14 @@ waiting on it.
 - ⚠ status: **deliberate** — argued above; the difference is kept and the fixture keeps pinning the
   half where the two engines agree
 
-## SK-DIV-0032 — `alignment_tab_fill_style` has three layouts and Skala writes one of them, under the wrong name
+## SK-DIV-0032 — `alignment_tab_fill_style` has three layouts and Skala wrote one of them, under the wrong name
 
-`LayoutWriter.WriteIndentTo` writes whole indent units and then spaces for the remainder, and its
-remarks say that is "what `alignment_tab_fill_style = use_spaces` asks for". It is not. Asked under
+⚠ **Fixed 2026-08-30; what is left is the fixture. See the section at the end of this entry**, which
+also refutes two clauses of the model recorded below. The text down to it is kept as written, because
+the refutation is only legible beside the claim it corrects.
+
+`LayoutWriter.WriteIndentTo` wrote whole indent units and then spaces for the remainder, and its
+remarks said that is "what `alignment_tab_fill_style = use_spaces` asks for". It is not. Asked under
 `indent_style = tab`, the oracle gives three distinct layouts of the same alignment column, and the
 one Skala writes is `optimal_fill`:
 
@@ -2587,18 +2591,54 @@ remainder, with no reference to the key anywhere in the formatter. So Skala writ
 under every configuration, and under the export's `use_spaces` it is wrong on every aligned
 continuation line of every tab-indented file.
 
+### ⚠ Fixed 2026-08-30 — and the model above was wrong in two places
+
+`LayoutWriter.WriteIndentTo` now takes the line's **level column** beside its target column and writes
+all three layouts; `PhaseOneOptions.TabFill` reads the key and `CSharpFormatter` passes it. Measured
+against `jb cleanupcode` 2025.2.6 under `OracleProfile.FormatOnly` with this repository's
+`.editorconfig` plus `indent_style = tab`, `tab_width = 4`, one value per invocation, on a probe
+carrying a plain continuation and three statement conditions aligned at columns 12, 14 and 19. Tab
+portion `»`, space portion `·`:
+
+| column | block | `use_spaces` (the export) | `use_tabs_only` | `optimal_fill` |
+|---|---|---|---|---|
+| 12 (a *continuation*, not an alignment) | 8 | `»»»` | `»»»` | `»»»` |
+| 12 (an alignment) | 8 | `»»····` | `»»»` | `»»»` |
+| 14 | 8 | `»»······` | `»»»` | `»»»··` |
+| 19 | 12 | `»»»·······` | `»»»»»` | `»»»»···` |
+
+Skala reproduced the oracle byte for byte at all three values after the change, and at none of them
+before it. Two clauses of the model this entry carried are **refuted by that run**:
+
+- **`use_spaces` tabs to the line's own *level* column, not to the enclosing block's.** Rows 1 and 2
+  are the refutation and they were never separated before: both land on column 12 inside a block at 8,
+  and the oracle writes the plain continuation as three whole tabs while writing the aligned line as
+  two tabs and four spaces. A continuation level is a level and stays tabs; only what *alignment* adds
+  becomes spaces. Every probe in this entry's history used alignment alone, where the two readings
+  coincide, so the "enclosing block" phrasing survived unchallenged — and it is wrong on every
+  continuation line of every tab-indented file, which is far more lines than the aligned ones.
+- **`use_tabs_only` rounds to the *nearest* tab stop, ties downwards — not down.** Column 14 goes down
+  to 12 and column 19 goes *up* to 20. The "rounded down" claim rested on the single column-21 datum in
+  the first table above, which rounds to 20 under either rule and so could not tell them apart.
+
 - options: `resharper_csharp_alignment_tab_fill_style`, `indent_style`
-- ⚠ status: **open**, measured, unfixed. The fix is a value on `LayoutWriter` and three cases in
-  `WriteIndentTo`; it needs a fixture under a tab configuration, and the corpus has no mechanism for
-  a per-directory `.editorconfig`, so it wants that first.
-- ⚠ **triage 2026-08-30: `debt`, size S.** Nothing was decided here — Skala writes one of three
+- ⚠ status: **narrowed**. The three layouts are implemented and pinned by
+  `Formatting/Rikarin.Skala.Formatting.CSharp.Tests/TabFillStyleTests.cs`, which carries the oracle's
+  own bytes at each value plus an idempotence round-trip and a space-indented control. What remains is
+  **the fixture, and only the fixture**: the corpus has no per-directory `.editorconfig`, so no
+  committed fixture can be tab-indented, so the key can carry no `oracle` glob, so the key-flip sweep
+  cannot reach it — `verify resharper_csharp_alignment_tab_fill_style` answers "not swept: no `oracle`
+  fixture in the registry" after this change exactly as it did before. The key is therefore registered
+  `OfInert` in `PhaseOneOptions`, beside `tab_width`, which is inert for the identical reason: read,
+  honoured, and unobservable because every fixture there is is indented with spaces. It becomes `Of`
+  and Tier A when that mechanism lands, and the promotion needs no further measurement — the table
+  above is the specification.
+- ⚠ **triage 2026-08-30: `debt`, size S.** Nothing was decided here — Skala wrote one of three
   layouts because `WriteIndentTo` was written before the question was asked, and the layout it
-  writes is not the one the export requests. There is no version of this to defend to a user: "you
-  asked for tabs to the block level and spaces for the remainder, and you got neither" is a defect.
-  Paying it is three cases in one method plus the value on `LayoutWriter`; the *fixture* is the
-  larger half, because the corpus cannot yet carry a per-directory `.editorconfig` and every probe
-  that asked this key was indented with spaces, which is why it sat on the "never read" list for so
-  long. ⚠ Needs the oracle only for the fixture — the three layouts are specified in the table above.
+  wrote was not the one the export requests. There is no version of that to defend to a user: "you
+  asked for tabs to the level and spaces for the remainder, and you got neither" is a defect. Paying
+  it was three cases in one method plus the value on `LayoutWriter`; the *fixture* was and remains the
+  larger half.
 
 ## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala leaves the comment as written
 
