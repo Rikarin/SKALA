@@ -1681,7 +1681,9 @@ public static class PreferenceSweep {
                 .Append(" cells are the oracle declining *both* of the two, and ")
                 .Append(whole.Unnamed.ToString(CultureInfo.InvariantCulture))
                 .AppendLine(" are unnamed or came");
-            builder.AppendLine("back flat. Neither is in the denominator: a model of \"which of these two gives\" can only");
+            builder.AppendLine(
+                "back flat. Neither is in the denominator: a model of \"which of these two gives\" can only"
+            );
             builder.AppendLine("be graded on cells where one of them did.");
         }
 
@@ -2047,15 +2049,21 @@ public static class PreferenceSweep {
             "1. **It pads the variable name, which is on the wrong side of the break under test.** Widening"
         );
         builder.AppendLine("   the right-hand side there also widens the `=` break's *own* continuation line, so its");
-        builder.AppendLine("   boundary confounds \"the inner break is now enough\" with \"the outer break has stopped");
-        builder.AppendLine("   being enough\" — and it is the second one it tracks. At a flat width of 121 its flip sits");
+        builder.AppendLine(
+            "   boundary confounds \"the inner break is now enough\" with \"the outer break has stopped"
+        );
+        builder.AppendLine(
+            "   being enough\" — and it is the second one it tracks. At a flat width of 121 its flip sits"
+        );
         builder.AppendLine("   at a continuation line of exactly 112 columns at block depths 2, 3, 4, 5 and 6 alike");
         builder.AppendLine("   (its `base64-literal` row), while the head line this law asks about is 45, 49, 53, 57");
         builder.AppendLine("   and 61 columns at those same five flips — nowhere near the margin, and never twice the");
         builder.AppendLine("   same. The law's boundary is not in that data at any depth.");
         builder.AppendLine("2. **It records one number per row, not one per cell.** The cell is \"the longest");
         builder.AppendLine("   continuation line still written rather than wrapping\" — a threshold, and a maximum at");
-        builder.AppendLine("   that. A floor is fitted per cell and scored per cell; neither is recoverable from a row's");
+        builder.AppendLine(
+            "   that. A floor is fitted per cell and scored per cell; neither is recoverable from a row's"
+        );
         builder.AppendLine("   maximum.");
         builder.AppendLine("3. **Its third bucket is `anything else`.** Breaking the inner construct, taking a third");
         builder.AppendLine("   break, and doing something the probe cannot name are one bucket there. Two of the");
@@ -2073,8 +2081,12 @@ public static class PreferenceSweep {
                 + " — have a right-hand side that *is* the inner"
             );
             builder.AppendLine("construct, so no inert filler exists on the same side of the `=` as the thing being");
-            builder.AppendLine("swept. They are measured with the filler on the left, the way the margin sweep measures");
-            builder.AppendLine("everything, and marked `left` in the table below. Their `F` is not comparable with the");
+            builder.AppendLine(
+                "swept. They are measured with the filler on the left, the way the margin sweep measures"
+            );
+            builder.AppendLine(
+                "everything, and marked `left` in the table below. Their `F` is not comparable with the"
+            );
             builder.AppendLine("rest and is reported anyway, because a labelled number is worth more than a gap.");
             builder.AppendLine();
         }
@@ -2091,8 +2103,12 @@ public static class PreferenceSweep {
     static void Summary(StringBuilder builder, Artefact artefact) {
         builder.AppendLine("## `F` per shape");
         builder.AppendLine();
-        builder.AppendLine("The fitted floor, and how much of each shape the two-term model reproduces. **cells** counts");
-        builder.AppendLine("only where the oracle took one of the two constructs under test; **third** counts where it");
+        builder.AppendLine(
+            "The fitted floor, and how much of each shape the two-term model reproduces. **cells** counts"
+        );
+        builder.AppendLine(
+            "only where the oracle took one of the two constructs under test; **third** counts where it"
+        );
         builder.AppendLine("declined both, and those are not in the score. `F` is fitted over every filler profile at");
         builder.AppendLine("once — the per-profile fits are in each shape's own section, and where they disagree the");
         builder.AppendLine("disagreement is the finding.");
@@ -2124,7 +2140,9 @@ public static class PreferenceSweep {
         builder.AppendLine();
 
         var fits = artefact.Constructs
-            .Select(construct => (construct, Fit: Fit.Of([.. artefact.Grid.Where(row => row.Construct == construct.Id)])))
+            .Select(construct => (construct,
+                    Fit: Fit.Of([.. artefact.Grid.Where(row => row.Construct == construct.Id)]))
+            )
             .ToList();
 
         var scored = fits.Where(static entry => entry.Fit.Chose > 0).ToList();
@@ -2139,6 +2157,36 @@ public static class PreferenceSweep {
         builder.AppendLine("the law and one constant.** The rest are where the preference actually lives, and their");
         builder.AppendLine("residue is in the grid at the end of this file and nowhere else.");
 
+        // ⚠ The floor is fitted by sweeping candidates up to 120, so it can land *past* the widest
+        // inner construct the grid holds — and when it does, "the law with a floor" is not the law
+        // with a floor. It is the law switched off, and the score beside it is the share of cells the
+        // oracle answered with the outer break. Flagged here because the number otherwise reads as a
+        // model that works.
+        var widest = artefact.Grid.Count == 0
+            ? 0
+            : artefact.Grid.Max(static row => row.InnerFrom + row.Codes.Length - 1);
+
+        var degenerate = fits.Where(entry => entry.Fit.Chose > 0 && entry.Fit.Floor > widest).ToList();
+        if (degenerate.Count > 0) {
+            builder.AppendLine();
+            builder.Append("⚠ **A fitted `F` above ")
+                .Append(widest.ToString(CultureInfo.InvariantCulture))
+                .Append(" is not a floor — it is the law switched off.** ")
+                .Append(string.Join(", ", degenerate.Select(static entry => "`" + entry.construct.Id + "`")))
+                .AppendLine(" fits a");
+            builder.AppendLine("floor wider than any inner construct swept, which means the best available model of");
+            builder.AppendLine(
+                "that shape is \"always take the outer break\" and the percentage beside it is just how"
+            );
+            builder.AppendLine("often the oracle did. Every such shape is one of the `⚠ left` rows, and that is the");
+            builder.AppendLine("confound in the margin sweep's design showing up as a number: with the filler on the");
+            builder.AppendLine("wrong side of the break, the law's own term stops carrying anything and a fitted");
+            builder.AppendLine(
+                "constant absorbs the whole grid. It is the clearest evidence in this file that a floor"
+            );
+            builder.AppendLine("read off a sweep built that way would be an artefact of the sweep.");
+        }
+
         if (mute.Count > 0) {
             builder.AppendLine();
             builder.Append("⚠ ")
@@ -2146,7 +2194,9 @@ public static class PreferenceSweep {
                 .Append(mute.Count == 1 ? " shape — " : " shapes — ")
                 .Append(string.Join(", ", mute.Select(static entry => "`" + entry.construct.Id + "`")))
                 .AppendLine(" — never took either of the two");
-            builder.AppendLine("constructs under test in any cell swept. For those, \"which of these two gives\" has no");
+            builder.AppendLine(
+                "constructs under test in any cell swept. For those, \"which of these two gives\" has no"
+            );
             builder.AppendLine("answer to record: the oracle reaches past both every time, and a floor fitted to them");
             builder.AppendLine("would be fitted to nothing.");
         }

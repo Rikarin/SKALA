@@ -425,6 +425,45 @@ profile's list stops being a single argument, so the residue is "a list of one h
 and not a second rule. The same law is exact at SK-DIV-0024 and holds at
 `var value = new <name>[] { … }` above a floor of 29.
 
+⚠ **Re-swept at fourteen shapes, and `F` turns out to be a fact about the inner construct's
+*contents* rather than about the statement it sits in.** The sweep's version 2 adds every shape
+[sk-div-0005-margin-sweep.md](sk-div-0005-margin-sweep.md) named. Four of them are this entry's
+`=` against an argument list with something different in front of it — a qualifier, a cast, a type
+argument list — and all four return the *same* floor at the same content shape:
+
+| shape | `single-literal` | `uniform-5` | `varied-long` | `varied-short` |
+|---|---:|---:|---:|---:|
+| `eq` — `var value = <name>(<args>);` | 29 | 0 | 17 | 0 |
+| `call-member` — `Utility.<name>(<args>)` | 29 | 0 | 17 | 0 |
+| `cast-call` — `(I<name>)service.Resolve(<args>)` | 29 | 0 | 17 | 0 |
+| `generic-call` — `Deserialize<<name>>(<args>)` | 29 | 0 | 17 | 0 |
+| `eq-array` — `new <name>[] { <elements> }` | 29 | 29 | 29 | 29 |
+| `object-initializer` — `new <name> { <members> }` | 29 | 29 | 29 | 29 |
+
+So there are **two** numbers here, not six: a parenthesised argument list floors at 0 when it holds
+several arguments, 17 when the profile's identifiers make it one, and 29 when it is a lone string
+literal; a braced initialiser floors at 29 whatever is in it. Nothing to the left of the inner
+construct moves either. `binary-chain` and `ternary` need no floor at all — the margin law alone is
+**100.00 %** of both grids, 15 552 cells each.
+
+⚠ **And two of version 1's numbers were wrong. Both are corrected in place, and what they were is
+recorded here because the wrong ones were quoted.**
+
+1. `BracedLiteral` built `{ "…" }` subtracting eight columns of delimiter where the text has six,
+   so every `eq-array` × `single-literal` cell was filed two columns narrower than it was. Version 1
+   reported that profile's floor as **31**; it is **29**. The three word-length profiles were never
+   affected, so this entry's "above a floor of 29" was right for the reason it was quoted — but
+   version 1's own table showed the four content profiles *disagreeing*, 31 against 29, and that
+   disagreement was the bug and nothing else. They agree now. `PreferenceSweep.Build` gained an
+   arithmetic check that throws when a generated line is not exactly the width it is filed under,
+   which is the only reason this was found; a probe that is two columns out is otherwise silent and
+   moves every boundary it reports.
+2. The model was scored over every generated cell, so cells where the oracle declined **both**
+   constructs counted as agreements whenever the model happened to say "outer". They are now held
+   out of the denominator. It does not move this entry — its shapes have no third break — but it
+   moves SK-DIV-0024 and SK-DIV-0050, and the percentages in version 2 are **not comparable** with
+   version 1's anywhere a construct has one.
+
 ⚠ **So the margin is not modelling an unknowable preference; it is standing in for a question
 `Fitter` cannot ask.** `11 + column/indent` is a fitted constant because the ordering rule is asked
 "is the outer break worth it" and answers from the node's own width. The law above is asked "would
@@ -1749,10 +1788,19 @@ ordering inside `CSharpDocumentBuilder`'s alignment scope, not a new break point
 [sk-div-preference-sweep.md](sk-div-preference-sweep.md) sweeps
 `public abstract void <name><T…>(int a, int b);` over totals 124–180 against the type parameter
 list's width 10–100. There is **no threshold in the list's own width anywhere in the grid**: the
-answer turns with the *total* and not within a row, and it is reproduced exactly — 4 977 of 4 977
-cells, all three filler profiles — by *break the parameter list exactly when breaking it brings the
-head line within the margin, and reach further out when it does not*. The declaration chops its
-parameter list up to the total at which that stops being enough, and never after.
+answer turns with the *total* and not within a row, and it is reproduced exactly by *break the
+parameter list exactly when breaking it brings the head line within the margin, and reach further
+out when it does not*. The declaration chops its parameter list up to the total at which that stops
+being enough, and never after.
+
+⚠ **The exactness survives a corrected denominator; the count that was published with it does not.**
+Version 1 of the sweep read "4 977 of 4 977 cells, all three filler profiles", and those 4 977 per
+profile included the 2 522 cells of the grid where the oracle takes neither list — it breaks between
+the return type and the method name — which were being scored as agreements because the model
+happened to say "not the parameter list" there. Version 2 holds them out: the law is **100.00 % of
+the 12 409 cells where the oracle took one of the two lists** (4 154, 4 075 and 4 180 under
+`uniform-5`, `varied-long` and `varied-short`), and the 2 522 third-break cells are reported beside
+that number rather than inside it. The finding is unchanged and now says what it measured.
 
 ⚠ Two things the earlier reading got wrong, and both were the probe's. The recorded flip "at a total
 of 124, list widths 20 through 27 chop the parameter list, 28 through 40 wrap the type parameter
@@ -1918,12 +1966,29 @@ recorded here once so the other members can point at them instead of restating t
    the shared shape of a *floor* as a shared law.
 
    What survives is narrower and much cheaper to keep: each construct has a minimum width `F` below
-   which the oracle will not break the inner construct at all, and `F` is genuinely per shape and
-   genuinely unmeasurable later — 0 for a type parameter list, 0 for a multi-argument call after
-   `=`, 17 for a single-argument one, 29 for an array initialiser, 58 for a call under a lambda
-   arrow. **This entry's own member is the one the principle does not carry**, at 70.69 % without
-   `F` against 97.82 % with it, so `=>` is where the remaining irreducible measurement lives. Five
+   which the oracle will not break the inner construct at all, and `F` is genuinely unmeasurable
+   later — 0 for a type parameter list, 0 for a multi-argument call after `=`, 17 for a
+   single-argument one, 29 for an array initialiser, 58 for a call under a lambda arrow.
+   **This entry's own member is the one the principle does not carry**, at 70.69 % without `F`
+   against 97.82 % with it, so `=>` is where the remaining irreducible measurement lives. Five
    numbers and a grid, rather than a subsystem's worth of unknowable surface.
+
+   ⚠ **Version 2 of the sweep keeps all five numbers and withdraws the words "per shape".** Ten more
+   shapes were measured, and `F` does not vary with the shape at all: it varies with what the inner
+   construct is *made of*. A parenthesised argument list floors at 0, 17 or 29 according to whether
+   the profile fits several arguments, one, or a lone string literal, and it does so identically
+   behind a bare callee, a qualifier, a cast and a type argument list. A braced initialiser floors
+   at 29 under every profile. A binary chain and a conditional need no floor: the margin law alone
+   is 100.00 % of both. So the irreducible content is smaller than five numbers — two for argument
+   lists, one for initialisers, none for operator chains — plus this entry's arrow, which is the
+   only place a shape's own identity moves `F`.
+
+   ⚠ **Two version-1 numbers were wrong and are corrected in the artefact.** `{ "…" }` was built two
+   columns narrow, so `eq-array` × `single-literal`'s floor read 31 where it is 29 — which is the
+   whole reason that construct's four content profiles appeared to disagree; they agree now. And
+   cells where the oracle declined *both* constructs were counted as agreements, which inflated
+   every construct that has a third break. Percentages in version 2 are **not comparable** with
+   version 1's for `type-parameters`, `lambda-argument` or `member-chain`.
 
 ⚠ **SK-DIV-0011 has been folded into this entry as `moot`** — it is the same fact measured on a
 sole-argument lambda instead of an assigned one, and its corpus count is carried below.
@@ -1955,6 +2020,15 @@ keeps the arrow to 64, fifty-five columns past sufficiency, and the gap closes o
 approaches 180. **So `F = 58` is this family's irreducible measurement — one constant, not a
 surface** — and the 55…65 band the flip actually wanders through as the total moves is in the
 committed grid and nowhere else.
+
+⚠ **"One constant" is one constant per *content shape*, and this entry's two disagree by 24
+columns.** 58 is the floor under the three profiles that differ only in identifier length; under
+`single-literal` — a body whose argument list is one string, the shape that has no comma to break
+at — it is **82**, and the law alone falls to 42.58 % against 70.69 %. Fitted over all four at once
+it is 60 at 91.43 %. The sentence above is true of a multi-argument body and was graded on the
+three profiles that share one; the fourth is in the same table and says something else. That spread
+is the reason the sweep carries four content profiles and grades on the worst, and it is why this
+entry, alone among the family, still needs its grid rather than its constant.
 
 - options: `resharper_csharp_wrap_before_arrow_with_expressions`, `resharper_keep_user_linebreaks`, `resharper_csharp_keep_existing_linebreaks`, `resharper_place_single_method_argument_lambda_on_same_line`, `resharper_csharp_wrap_parameters_style`
 - ⚠ status: **open**, measured; the break point is missing. The rule that would arm it is now known
