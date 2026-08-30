@@ -77,40 +77,82 @@ public static class PreferenceSweep {
         /// <summary>The oracle broke the inner construct instead — the argument or parameter list.</summary>
         Inner,
 
+        /// <summary>
+        ///     The oracle took a third break point the construct names, and neither of the two the
+        ///     divergence is about.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ This exists because the first run of this sweep found it. 17 % of the type parameter
+        ///     grid came back as "somewhere this probe does not name", and what the oracle was actually
+        ///     doing was breaking between the return type and the method name — declining *both* lists.
+        ///     A binary probe would have recorded that as noise; it is instead the most important thing
+        ///     the type parameter construct has to say, because "which of these two gives" is the wrong
+        ///     question wherever a third answer wins.
+        /// </remarks>
+        Third,
+
         /// <summary>The oracle broke somewhere this probe does not name. Recorded, never averaged away.</summary>
         Other
     }
 
+    /// <summary>
+    ///     The columns of the flat line at which a continuation may resume for one break point.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A span rather than a column, because the first run of this sweep classified the type
+    ///     parameter list by the column just after its <c>&lt;</c> and could not name a single cell where
+    ///     the oracle wrapped it. SK-DIV-0024 already says why: at
+    ///     <c>wrap_before_type_parameter_langle = false</c> the oracle wraps that list <em>as a fill</em>,
+    ///     so the break lands at whichever comma runs out of room, not at the opening bracket. A break
+    ///     point that can be taken at more than one column has to be asked about as more than one column.
+    /// </remarks>
+    readonly record struct Span(int From, int To) {
+        public static Span Point(int column) => new(column, column + 1);
+
+        public bool Contains(int column) => column >= From && column < To;
+    }
+
     /// <summary>One generated line, and everything needed to classify what came back.</summary>
     /// <param name="Flat">The statement as one line, without its indentation.</param>
-    /// <param name="OuterResume">
-    ///     The column in <paramref name="Flat" /> a continuation starts at when the outer break is taken.
-    /// </param>
-    /// <param name="InnerResume">
-    ///     The column in <paramref name="Flat" /> a continuation starts at when the inner list is broken.
-    /// </param>
+    /// <param name="Outer">Where a continuation may resume when the outer break is taken.</param>
+    /// <param name="Inner">Where a continuation may resume when the inner construct is broken.</param>
+    /// <param name="Third">The construct's third named break, when it has one.</param>
     sealed record Probe(
         string Construct,
         string Filler,
         int Total,
         int Inner,
         string Flat,
-        int OuterResume,
-        int InnerResume);
+        Span Outer,
+        Span InnerSpan,
+        Span? Third);
 
     /// <summary>A construct, as a way of turning (filler text, inner text) into a line and its landmarks.</summary>
     /// <param name="Wrap">
     ///     Builds the flat line from a filler name and the inner construct's own text, and reports where a
-    ///     continuation line begins for each of the two competing breaks.
+    ///     continuation line begins for each competing break: the outer one, the inner one, and a third
+    ///     the construct names but the divergence is not about — <c>-1</c> when there is none.
     /// </param>
+    /// <param name="ThirdName">What the third break is, in words, or nothing when the construct has none.</param>
+    /// <param name="Depth">
+    ///     How many indents the generated line sits at inside its wrapper.
+    /// </param>
+    /// <remarks>
+    ///     ⚠ <paramref name="Depth" /> exists because getting it wrong is silent and fatal. A statement
+    ///     inside a method body sits two indents in, not one, and a sweep that treats its <c>total</c> as
+    ///     the flat line's width is then reporting every column four short — which is exactly enough to
+    ///     hide a boundary that sits at the margin, and to make a rule look like a fitted constant.
+    /// </remarks>
     sealed record Construct(
         string Id,
         string Divergence,
         string Outer,
         string InnerName,
         string Template,
-        Func<string, string, (string Flat, int OuterResume, int InnerResume)> Wrap,
-        Func<IReadOnlyList<string>, string> File);
+        Func<string, string, (string Flat, Span Outer, Span Inner, Span? Third)> Wrap,
+        Func<IReadOnlyList<string>, string> File,
+        int Depth,
+        string? ThirdName = null);
 
     /// <summary>A way of filling an inner construct to an exact width.</summary>
     /// <param name="TokenLengths">
@@ -121,13 +163,25 @@ public static class PreferenceSweep {
     sealed record Filler(string Id, int[] TokenLengths, string Description);
 
     /// <summary>One row of the grid: every inner width at one total, under one filler.</summary>
+    /// <param name="Sufficient">
+    ///     The narrowest inner width in this row at which breaking the inner construct brings the head
+    ///     line within the margin on its own — the prediction of the only closed form worth testing.
+    /// </param>
+    /// <remarks>
+    ///     ⚠ <paramref name="Sufficient" /> is a *hypothesis*, recorded beside the measurement so the two
+    ///     can be compared without re-running anything: "the oracle breaks the inner construct exactly
+    ///     when doing so is enough by itself, and reaches further out when it is not." Where it matches
+    ///     the measured threshold the divergence has a rule and needs no oracle; where it does not, what
+    ///     is left is preference, and preference is the thing that cannot be re-derived later.
+    /// </remarks>
     public sealed record Row(
         string Construct,
         string Divergence,
         string Filler,
         int Total,
         int InnerFrom,
-        string Codes);
+        string Codes,
+        int? Sufficient = null);
 
     /// <summary>A place where the oracle's answer changes, to the column.</summary>
     /// <param name="Before">The last inner width on the low side of the flip.</param>
@@ -158,14 +212,34 @@ public static class PreferenceSweep {
         IReadOnlyList<ConstructNote> Constructs,
         IReadOnlyList<FillerNote> Fillers,
         IReadOnlyList<Row> Grid,
-        IReadOnlyList<Flip> Flips);
+        IReadOnlyList<Flip> Flips,
+        IReadOnlyList<Unnamed> Unnamed);
+
+    /// <summary>
+    ///     A cell the probe could not name, kept verbatim.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ An outcome a probe cannot name is the most dangerous kind of cell in a grid, because it
+    ///     looks like noise and is usually a break point the experiment did not know about. The first run
+    ///     of this sweep binned 17 % of one construct that way, and what was in the bin was the oracle
+    ///     declining both of the constructs the divergence is about. So the unnamed cells are carried
+    ///     into the artefact rather than counted in it: one exemplar per distinct rendering shape.
+    /// </remarks>
+    public sealed record Unnamed(
+        string Construct,
+        string Filler,
+        int Total,
+        int Inner,
+        int Count,
+        string Text);
 
     public sealed record ConstructNote(
         string Id,
         string Divergence,
         string Template,
         string OuterBreak,
-        string InnerConstruct);
+        string InnerConstruct,
+        string? ThirdBreak = null);
 
     public sealed record FillerNote(string Id, IReadOnlyList<int> TokenLengths, string Description);
 
@@ -216,10 +290,13 @@ public static class PreferenceSweep {
             "the right-hand side's argument list",
             "var value = <name>(<args>);",
             static (name, inner) => {
-                var flat = "var value = " + name + inner + ";";
-                return (flat, "var value = ".Length, "var value = ".Length + name.Length + 1);
+                const string head = "var value = ";
+                var flat = head + name + inner + ";";
+                var open = head.Length + name.Length;
+                return (flat, Span.Point(head.Length), new Span(open + 1, open + inner.Length), null);
             },
-            static bodies => Body(bodies)
+            static bodies => Body(bodies),
+            2
         ),
         new(
             "arrow",
@@ -230,9 +307,20 @@ public static class PreferenceSweep {
             static (name, inner) => {
                 const string head = "Action value = () => ";
                 var flat = head + name + inner + ";";
-                return (flat, head.Length, head.Length + name.Length + 1);
+                var open = head.Length + name.Length;
+                // ⚠ The third landmark is the `=`. SK-DIV-0050 records Skala taking it where the oracle
+                // takes the arrow, so the sweep names it rather than binning it: a grid in which the
+                // oracle never once prefers it is evidence, and an unnamed outcome is not.
+                return (
+                    flat,
+                    Span.Point(head.Length),
+                    new Span(open + 1, open + inner.Length),
+                    Span.Point("Action value = ".Length)
+                );
             },
-            static bodies => Body(bodies)
+            static bodies => Body(bodies),
+            2,
+            "the `=` above the lambda"
         ),
         new(
             "type-parameters",
@@ -244,9 +332,22 @@ public static class PreferenceSweep {
                 const string head = "public abstract void ";
                 const string tail = "(int a, int b);";
                 var flat = head + name + inner + tail;
-                return (flat, head.Length + name.Length + 1, head.Length + name.Length + inner.Length + 1);
+                var langle = head.Length + name.Length;
+                var lparen = langle + inner.Length;
+                // ⚠ The third landmark is the gap between the return type and the method name, and it
+                // is the one the first run of this sweep discovered by leaving 17 % of the grid
+                // unnamed. The oracle reaches for it constantly, and where it does, "which of the two
+                // lists gives" has no answer because neither of them does.
+                return (
+                    flat,
+                    new Span(langle + 1, langle + inner.Length),
+                    new Span(lparen + 1, lparen + tail.Length - 1),
+                    Span.Point(head.Length)
+                );
             },
-            static bodies => Declarations(bodies)
+            static bodies => Declarations(bodies),
+            1,
+            "the gap after the return type, before the method name"
         )
     ];
 
@@ -338,6 +439,7 @@ public static class PreferenceSweep {
 
             var grid = new List<Row>();
             var flips = new List<Flip>();
+            var unnamed = new Dictionary<string, Unnamed>(StringComparer.Ordinal);
 
             foreach (var file in files) {
                 var (construct, probes) = plans[file.Path];
@@ -359,6 +461,19 @@ public static class PreferenceSweep {
 
                 grid.Add(Compress(construct, probes[0], outcomes, innerFrom, innerTo));
                 flips.AddRange(Flips(construct, outcomes));
+
+                foreach (var (probe, outcome, text) in outcomes) {
+                    if (outcome != Outcome.Other) {
+                        continue;
+                    }
+
+                    // Keyed by where the continuation resumes, so one exemplar is kept per *shape* of
+                    // answer rather than per cell — and the count says how much of the grid it covers.
+                    var key = construct.Id + ":" + Shape(probe, text);
+                    unnamed[key] = unnamed.TryGetValue(key, out var seen)
+                        ? seen with { Count = seen.Count + 1 }
+                        : new Unnamed(construct.Id, probe.Filler, probe.Total, probe.Inner, 1, text);
+                }
             }
 
             return new Artefact(
@@ -375,6 +490,7 @@ public static class PreferenceSweep {
                     "F  flat: one line",
                     "O  the oracle took the outer break",
                     "I  the oracle broke the inner construct instead",
+                    "T  the oracle took the construct's third break and declined both of the two",
                     "?  the oracle broke somewhere this probe does not name"
                 ],
                 [
@@ -383,7 +499,8 @@ public static class PreferenceSweep {
                             construct.Divergence,
                             construct.Template,
                             construct.Outer,
-                            construct.InnerName
+                            construct.InnerName,
+                            construct.ThirdName
                         )
                     )
                 ],
@@ -404,6 +521,11 @@ public static class PreferenceSweep {
                         .ThenBy(static flip => flip.Filler, StringComparer.Ordinal)
                         .ThenBy(static flip => flip.Total)
                         .ThenBy(static flip => flip.Before)
+                ],
+                [
+                    .. unnamed.Values
+                        .OrderByDescending(static entry => entry.Count)
+                        .ThenBy(static entry => entry.Construct, StringComparer.Ordinal)
                 ]
             );
         } finally {
@@ -458,14 +580,14 @@ public static class PreferenceSweep {
 
         // The filler name absorbs whatever the inner construct does not, so the flat line comes to
         // exactly `total`. Measured with a one-character name first, then padded by the shortfall.
-        var (probeFlat, _, _) = construct.Wrap("x", text);
-        var fillerLength = total - Indent - (probeFlat.Length - 1);
+        var (probeFlat, _, _, _) = construct.Wrap("x", text);
+        var fillerLength = total - (construct.Depth * Indent) - (probeFlat.Length - 1);
         if (fillerLength < MinimumFiller) {
             return null;
         }
 
-        var (flat, outerResume, innerResume) = construct.Wrap(Name(fillerLength), text);
-        return new Probe(construct.Id, filler.Id, total, inner, flat, outerResume, innerResume);
+        var (flat, outer, innerSpan, third) = construct.Wrap(Name(fillerLength), text);
+        return new Probe(construct.Id, filler.Id, total, inner, flat, outer, innerSpan, third);
     }
 
     /// <summary>
@@ -669,11 +791,13 @@ public static class PreferenceSweep {
             resume++;
         }
 
-        return resume == probe.OuterResume
+        return probe.Outer.Contains(resume)
             ? Outcome.Outer
-            : resume == probe.InnerResume
+            : probe.InnerSpan.Contains(resume)
                 ? Outcome.Inner
-                : Outcome.Other;
+                : probe.Third?.Contains(resume) == true
+                    ? Outcome.Third
+                    : Outcome.Other;
     }
 
     static char Code(Outcome outcome) =>
@@ -681,6 +805,7 @@ public static class PreferenceSweep {
             Outcome.Flat => 'F',
             Outcome.Outer => 'O',
             Outcome.Inner => 'I',
+            Outcome.Third => 'T',
             Outcome.Other => '?',
             _ => '.'
         };
@@ -698,7 +823,23 @@ public static class PreferenceSweep {
             codes.Append(byInner.TryGetValue(inner, out var outcome) ? Code(outcome) : '.');
         }
 
-        return new Row(construct.Id, construct.Divergence, first.Filler, first.Total, innerFrom, codes.ToString());
+        // Breaking the inner construct puts everything before it on the head line, so that head is as
+        // wide as the column its first continuation resumes at. The narrowest inner width where that
+        // lands inside the margin is where "break the thing that overflowed" starts being enough.
+        var sufficient = outcomes
+            .Where(entry => (construct.Depth * Indent) + entry.Probe.InnerSpan.From <= Margin)
+            .Select(static entry => (int?)entry.Probe.Inner)
+            .FirstOrDefault();
+
+        return new Row(
+            construct.Id,
+            construct.Divergence,
+            first.Filler,
+            first.Total,
+            innerFrom,
+            codes.ToString(),
+            sufficient
+        );
     }
 
     /// <summary>Every place in a row where the answer changes, with the two lines either side of it.</summary>
@@ -738,15 +879,22 @@ public static class PreferenceSweep {
         int? Threshold,
         int Crossings,
         bool AnyOuter,
-        bool AnyInner) {
+        bool AnyInner,
+        int Third,
+        int? Sufficient) {
         public static Reading Of(Row row) {
             int? threshold = null;
             var crossings = 0;
             var anyOuter = false;
             var anyInner = false;
+            var third = 0;
             char? previous = null;
             for (var i = 0; i < row.Codes.Length; i++) {
                 var code = row.Codes[i];
+                if (code == 'T') {
+                    third++;
+                }
+
                 if (code is not ('O' or 'I')) {
                     continue;
                 }
@@ -763,7 +911,17 @@ public static class PreferenceSweep {
                 previous = code;
             }
 
-            return new Reading(row.Construct, row.Filler, row.Total, threshold, crossings, anyOuter, anyInner);
+            return new Reading(
+                row.Construct,
+                row.Filler,
+                row.Total,
+                threshold,
+                crossings,
+                anyOuter,
+                anyInner,
+                third,
+                row.Sufficient
+            );
         }
 
         /// <summary>The threshold as it appears in the table, carrying its own caveat.</summary>
@@ -772,8 +930,11 @@ public static class PreferenceSweep {
                 ? value.ToString(CultureInfo.InvariantCulture)
                 : AnyInner
                     ? "all"
-                    : "—")
-            + (Crossings > 1 ? " ⚠" : string.Empty);
+                    : AnyOuter
+                        ? "—"
+                        : "third")
+            + (Crossings > 1 ? " ⚠" : string.Empty)
+            + (Third > 0 && (AnyOuter || AnyInner) ? " ·" : string.Empty);
     }
 
     /// <summary>What the rows of one construct say, computed rather than asserted.</summary>
@@ -795,6 +956,31 @@ public static class PreferenceSweep {
             .Append(jagged.Count.ToString(CultureInfo.InvariantCulture))
             .AppendLine(".");
 
+        if (construct.ThirdBreak is { } third) {
+            var withThird = readings.Count(static reading => reading.Third > 0);
+            var onlyThird = readings.Count(static reading =>
+                reading.Third > 0 && !reading.AnyOuter && !reading.AnyInner
+            );
+
+            builder.AppendLine();
+            builder.Append("The third break — ")
+                .Append(third)
+                .Append(" — appears in ")
+                .Append(withThird.ToString(CultureInfo.InvariantCulture))
+                .Append(" rows and is the *only* thing the oracle does in ")
+                .Append(onlyThird.ToString(CultureInfo.InvariantCulture))
+                .AppendLine(" of them.");
+            if (onlyThird > 0) {
+                builder.AppendLine(
+                    "⚠ In those rows \"which of the two constructs gives\" has no answer, because neither"
+                );
+                builder.AppendLine(
+                    "does. Any model fitted only to the rows where one of them wins is fitted to a"
+                );
+                builder.AppendLine("selected slice of the oracle's behaviour.");
+            }
+        }
+
         if (crossing.Count == 0) {
             builder.AppendLine();
             builder.AppendLine(
@@ -809,13 +995,24 @@ public static class PreferenceSweep {
                      StringComparer.Ordinal
                  )) {
             var ordered = group.OrderBy(static reading => reading.Total).ToList();
+
+            // ⚠ Against the *last non-zero* direction, not against the previous step. The recorded
+            // curve falls to a plateau and then rises off it, so every turn in it is separated from
+            // the fall by a run of equal values — comparing adjacent steps counts zero turns and
+            // reports a monotone boundary that is not there.
             var turns = 0;
-            for (var i = 2; i < ordered.Count; i++) {
-                var first = Math.Sign(ordered[i - 1].Threshold!.Value - ordered[i - 2].Threshold!.Value);
-                var second = Math.Sign(ordered[i].Threshold!.Value - ordered[i - 1].Threshold!.Value);
-                if (first != 0 && second != 0 && first != second) {
+            var direction = 0;
+            for (var i = 1; i < ordered.Count; i++) {
+                var step = Math.Sign(ordered[i].Threshold!.Value - ordered[i - 1].Threshold!.Value);
+                if (step == 0) {
+                    continue;
+                }
+
+                if (direction != 0 && step != direction) {
                     turns++;
                 }
+
+                direction = step;
             }
 
             var thresholds = ordered.Select(static reading => reading.Threshold!.Value).ToList();
@@ -875,8 +1072,77 @@ public static class PreferenceSweep {
                 .AppendLine(" rows cross more than once and are marked in the table above.");
         }
 
-        _ = construct;
+        // ⚠ The one closed form worth testing, tested rather than argued: "break the inner construct
+        // exactly when breaking it is enough on its own, and reach further out when it is not." It is
+        // a sentence a person can hold, so where it holds the divergence needs no oracle at all.
+        var comparable = crossing.Where(static reading => reading.Sufficient is not null).ToList();
+        var matches = comparable.Count(static reading => reading.Sufficient == reading.Threshold);
+        builder.AppendLine();
+        builder.AppendLine(
+            "Against the closed form *\"break the inner construct exactly when breaking it brings the"
+        );
+        builder.AppendLine("head line within the margin, and reach further out when it does not\"*:");
+        builder.AppendLine();
+        builder.Append("- it predicts the measured threshold in **")
+            .Append(matches.ToString(CultureInfo.InvariantCulture))
+            .Append(" of ")
+            .Append(comparable.Count.ToString(CultureInfo.InvariantCulture))
+            .AppendLine("** rows that have both a threshold and a prediction.");
+        if (comparable.Count > 0 && matches == comparable.Count) {
+            builder.AppendLine(
+                "- **This construct has a rule.** It is statable in one sentence, predictable without"
+            );
+            builder.AppendLine(
+                "  running anything, and needs no ReSharper to defend — the oracle's answer here can be"
+            );
+            builder.AppendLine("  reconstructed from the sentence rather than from the grid.");
+        } else if (matches * 2 >= comparable.Count) {
+            builder.AppendLine(
+                "- It holds over most of the grid but not all of it, so the construct is a rule plus a"
+            );
+            builder.AppendLine(
+                "  residue. The residue is what the grid is for, and the rows where the two disagree are"
+            );
+            builder.AppendLine("  the ones to read.");
+        } else {
+            builder.AppendLine(
+                "- ⚠ **It does not describe this construct.** The oracle declines the inner break far"
+            );
+            builder.AppendLine(
+                "  past the width at which taking it would have been enough, so what decides the answer"
+            );
+            builder.AppendLine(
+                "  is not sufficiency. This is preference in the strict sense, and it is the half that"
+            );
+            builder.AppendLine("  cannot be re-derived once the instrument is gone.");
+        }
+
         return builder.ToString();
+    }
+
+    /// <summary>
+    ///     Names the shape of an answer the probe could not classify: how many lines it has, and where in
+    ///     the flat text the second one resumes relative to the landmarks the construct does know.
+    /// </summary>
+    static string Shape(Probe probe, string text) {
+        var lines = text.Split(" ⏎ ", StringSplitOptions.None);
+        if (lines.Length < 2) {
+            return "single/" + lines.Length.ToString(CultureInfo.InvariantCulture);
+        }
+
+        var head = lines[0].Trim();
+        if (!probe.Flat.StartsWith(head, StringComparison.Ordinal)) {
+            return "unmatched";
+        }
+
+        var resume = head.Length;
+        if (resume < probe.Flat.Length && probe.Flat[resume] == ' ') {
+            resume++;
+        }
+
+        return (resume - probe.Outer.From).ToString(CultureInfo.InvariantCulture)
+            + "/"
+            + (resume - probe.InnerSpan.From).ToString(CultureInfo.InvariantCulture);
     }
 
     /// <summary>Turns a joined group of lines back into a code block's worth of text.</summary>
@@ -926,8 +1192,8 @@ public static class PreferenceSweep {
 
         builder.AppendLine("## The three constructs");
         builder.AppendLine();
-        builder.AppendLine("| id | divergence | template | outer break | inner construct |");
-        builder.AppendLine("|---|---|---|---|---|");
+        builder.AppendLine("| id | divergence | template | outer break | inner construct | third break |");
+        builder.AppendLine("|---|---|---|---|---|---|");
         foreach (var construct in artefact.Constructs) {
             builder.Append("| `")
                 .Append(construct.Id)
@@ -939,6 +1205,8 @@ public static class PreferenceSweep {
                 .Append(construct.OuterBreak)
                 .Append("` | ")
                 .Append(construct.InnerConstruct)
+                .Append(" | ")
+                .Append(construct.ThirdBreak ?? "—")
                 .AppendLine(" |");
         }
 
@@ -1116,6 +1384,43 @@ public static class PreferenceSweep {
         }
 
         builder.AppendLine();
+        builder.AppendLine("## Cells the probe could not name");
+        builder.AppendLine();
+        if (artefact.Unnamed.Count == 0) {
+            builder.AppendLine(
+                "None. Every cell in the grid is one of the break points the constructs name, so nothing"
+            );
+            builder.AppendLine("here is being averaged away.");
+        } else {
+            builder.AppendLine(
+                "⚠ An outcome a probe cannot name looks like noise and is usually a break point the"
+            );
+            builder.AppendLine(
+                "experiment did not know about. One exemplar per distinct rendering, with how many cells"
+            );
+            builder.AppendLine("it covers:");
+            builder.AppendLine();
+            foreach (var entry in artefact.Unnamed) {
+                builder.Append('`')
+                    .Append(entry.Construct)
+                    .Append("` × `")
+                    .Append(entry.Filler)
+                    .Append("`, ")
+                    .Append(entry.Count.ToString(CultureInfo.InvariantCulture))
+                    .Append(entry.Count == 1 ? " cell" : " cells; shown at total ")
+                    .Append(entry.Count == 1 ? string.Empty : entry.Total.ToString(CultureInfo.InvariantCulture))
+                    .Append(entry.Count == 1 ? string.Empty : ", inner ")
+                    .Append(entry.Count == 1 ? string.Empty : entry.Inner.ToString(CultureInfo.InvariantCulture))
+                    .AppendLine(":");
+                builder.AppendLine();
+                builder.AppendLine("```csharp");
+                builder.AppendLine(Unfold(entry.Text));
+                builder.AppendLine("```");
+                builder.AppendLine();
+            }
+        }
+
+        builder.AppendLine();
         builder.AppendLine("## The grid");
         builder.AppendLine();
         builder.AppendLine(
@@ -1131,13 +1436,15 @@ public static class PreferenceSweep {
                 .Append(group.Key.Filler)
                 .AppendLine("`");
             builder.AppendLine();
-            builder.AppendLine("| total | inner from | outcome by inner width |");
-            builder.AppendLine("|---:|---:|---|");
+            builder.AppendLine("| total | inner from | enough alone | outcome by inner width |");
+            builder.AppendLine("|---:|---:|---:|---|");
             foreach (var row in group) {
                 builder.Append("| ")
                     .Append(row.Total.ToString(CultureInfo.InvariantCulture))
                     .Append(" | ")
                     .Append(row.InnerFrom.ToString(CultureInfo.InvariantCulture))
+                    .Append(" | ")
+                    .Append(row.Sufficient?.ToString(CultureInfo.InvariantCulture) ?? "—")
                     .Append(" | `")
                     .Append(row.Codes)
                     .AppendLine("` |");
