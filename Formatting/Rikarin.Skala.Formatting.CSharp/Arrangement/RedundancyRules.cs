@@ -516,14 +516,6 @@ public static class ParenthesesRedundancy {
     ///     The operations <c>resharper_parentheses_non_obvious_operations</c> names: an operand of one
     ///     of these keeps its parentheses whatever the operand is.
     /// </summary>
-    /// <summary>
-    ///     A <c>??</c> that is the operand of another <c>??</c>, which keeps its parentheses at both
-    ///     values of <c>parentheses_redundancy_style</c>.
-    /// </summary>
-    static bool IsCoalesceNesting(SyntaxKind kind, SyntaxNode? parent) =>
-        kind == SyntaxKind.CoalesceExpression
-        && parent is BinaryExpressionSyntax { RawKind: (int)SyntaxKind.CoalesceExpression };
-
     static bool IsNonObvious(SyntaxKind kind) =>
         kind is SyntaxKind.LeftShiftExpression
             or SyntaxKind.RightShiftExpression
@@ -531,6 +523,14 @@ public static class ParenthesesRedundancy {
             or SyntaxKind.BitwiseAndExpression
             or SyntaxKind.BitwiseOrExpression
             or SyntaxKind.ExclusiveOrExpression;
+
+    /// <summary>
+    ///     A <c>??</c> that is the operand of another <c>??</c>, which keeps its parentheses at both
+    ///     values of <c>parentheses_redundancy_style</c>.
+    /// </summary>
+    static bool IsCoalesceNesting(SyntaxKind kind, SyntaxNode? parent) =>
+        kind == SyntaxKind.CoalesceExpression
+        && parent is BinaryExpressionSyntax { RawKind: (int)SyntaxKind.CoalesceExpression };
 
     /// <summary>
     ///     The binary families whose parentheses the configuration keeps in this position.
