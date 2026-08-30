@@ -75,6 +75,14 @@
             "description": "Required on, and only on, a `string` entry: why this option has no closed domain. A `string` with no reason is how 27 options that are really enums came to accept anything at all — the reason is what makes the next reader able to challenge it.",
             "type": ["string", "null"]
           },
+          "inert": {
+            "description": "Why no input can distinguish this option's values — another rule wins by the documented ordering, the writer cannot produce the shape it governs, or the export's own value of a named key masks it. A claim about the world, so it must be established with a probe and it must name the probe. Tier D only: OptionRegistryTests forbids the pair with any other tier, because an inert option that claimed Tier A would mean a fixture pinning behaviour no input can produce.",
+            "type": ["string", "null"]
+          },
+          "unsweptBecause": {
+            "description": "Why this entry names no `oracle` fixture, when `inert` is not the answer — the two are different claims and merging them is how a real gap gets filed as a vacuous one. `inert` says nothing can distinguish the values; this says the SWEEP cannot ask. Usually that is a fact about Skala rather than about the option: the oracle separates the values and Skala is flat at every one, so a glob would file an INERT row the registry never declared, on a fixture Skala cannot reproduce. It is also where a Tier C refusal's measurement goes, since `inert` is Tier D by construction. Forbidden together with `inert`, and forbidden on an entry that has an `oracle`.",
+            "type": ["string", "null"]
+          },
           "default": {
             "description": "ReSharper's default for this option, in its .editorconfig spelling. Read together with defaultSource: it is only trustworthy when defaultSource is resharper-docs.",
             "type": ["string", "null"]

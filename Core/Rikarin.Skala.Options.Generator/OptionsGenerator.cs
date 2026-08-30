@@ -509,7 +509,11 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine(
             "    /// <summary>Why a <c>String</c> option has no closed domain, and null for every other kind. ⚠ A string kind is a claim that every string is legal, and 27 options that are really enums carried it without one. The reason is what a reviewer can disagree with.</summary>"
         );
-        builder.AppendLine("    string? FreeFormBecause);");
+        builder.AppendLine("    string? FreeFormBecause,");
+        builder.AppendLine(
+            "    /// <summary>Why this entry names no <c>Oracle</c> fixture, when <see cref=\"Inert\"/> is not the answer. ⚠ The two are different claims and must not be merged: <c>Inert</c> says no input distinguishes the option's values, which is a fact about the world; this says the SWEEP cannot ask, which is usually a fact about Skala — the oracle separates the values and Skala is flat at every one of them, so a glob would file an <c>INERT</c> row the registry never declared, on a fixture Skala cannot reproduce. It also carries the measurement behind a Tier C refusal, where <c>Inert</c> is forbidden by construction.</summary>"
+        );
+        builder.AppendLine("    string? UnsweptBecause);");
         builder.AppendLine();
         builder.AppendLine("public static class OptionRegistry {");
         builder.AppendLine(
@@ -564,7 +568,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 + $"{OptionRegistryReader.Literal(option.Inert)}, {expands}, "
                 + $"{OptionRegistryReader.IntLiteral(option.Min)}, {OptionRegistryReader.IntLiteral(option.Max)}, "
                 + $"{(option.TabMeans is null ? "null" : "OptionId." + Naming.Pascal(option.TabMeans))}, "
-                + $"{OptionRegistryReader.Literal(option.FreeFormBecause)}),"
+                + $"{OptionRegistryReader.Literal(option.FreeFormBecause)}, "
+                + $"{OptionRegistryReader.Literal(option.UnsweptBecause)}),"
             );
         }
 

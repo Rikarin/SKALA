@@ -782,10 +782,17 @@ and that is corrected.
   renderer that can wrap a header, and until then the reason is Skala's shape and says nothing about
   the keys.
 - `pi_attribute_style`, `pi_attributes_indent`, `space_after_last_pi_attribute`,
-  `spaces_around_eq_in_pi_attribute` — pending on the same prerequisite one construct over: a
-  processing instruction is emitted verbatim, so its header has no attributes to space out. The
-  export leaves `pi_attribute_style` at `do_not_touch`, which is what the oracle was measured doing
-  to `<?pi first = "1" second="2" ?>` — it left it alone.
+  `spaces_around_eq_in_pi_attribute` — ~~pending on the same prerequisite one construct over: a
+  processing instruction is emitted verbatim, so its header has no attributes to space out.~~
+  ⚠ **Corrected 2026-08-31: not pending on anything, because the oracle does not parse a processing
+  instruction's header either.** The sentence above described *Skala* and was read as a property of
+  the four keys. Measured under `OracleProfile.DocComments` on
+  `<?skala-probe first = "1" second="2"   third='3'?>`, a 160-column instruction, one the author had
+  already broken across two lines, and one written tight — **one output across every value of all
+  four keys**, singly and all four at once: the spaces around `=` survive, the double space survives,
+  the quote characters survive, and nothing is wrapped. `blank_line_after_pi = false` removes the
+  blank `///` line after the same instruction in the same run, so the doc-comment task does see it.
+  All four are inert in the oracle, and Skala's verbatim path is not a gap against it.
 - `wrap_around_elements` — ⚠ **refused, and now for a measured reason.** With the doc-comment task
   enabled, at both values, over prose containing inline `<see/>`, `<c>` and `<b>` elements both long
   enough to wrap and short enough not to, the oracle's output is **byte-identical**. Either it is
@@ -795,7 +802,10 @@ and that is corrected.
 - `tab_width` — it only changes how wide a tab is when measuring, and the only tab a re-wrap can
   meet is inside a `<code>` block, which is verbatim and never measured.
 - `insert_final_newline` — a `///` comment has no file end to put a newline at, and JetBrains' key
-  index does not list XMLDOC among the languages that accept the key at all.
+  index does not list XMLDOC among the languages that accept the key at all. ⚠ Measured 2026-08-31
+  rather than argued: one oracle output at both values on a file carrying a type-level `<summary>`, a
+  member `<remarks>`/`<returns>` pair and a trailing comment that ends the type, with
+  `wrap_text = false` moving the same file in the same run.
 
 ⚠ **One deliberate narrowing against the oracle, recorded rather than hidden.** The threshold key
 applies to `<c>` in the oracle's output; Skala exempts verbatim elements from it, because breaking
@@ -3511,6 +3521,59 @@ cannot reach it, exactly as `resharper_csharp_alignment_tab_fill_style` cannot b
 
 **`resharper_xmldoc_alignment_tab_fill_style` is untouched here**, for the same pairwise reason: it
 fills a continuation line's alignment and needs `indent_style = tab` beside it.
+
+### ⚠ 2026-08-31 — both of those open shapes are closed, and one of them the other way
+
+The two paragraphs above name two things this entry could not settle. Both were asked, with the
+prerequisites they specified actually supplied, and one of them turns out to have been a fact about
+the probe rather than about the key.
+
+**The `on_single_line` open question is closed, and the hypothesis it recorded was right.** The shape
+the entry predicted would distinguish it does: an already-wrapped *short* header, inside a
+`<remarks>` under `OracleProfile.DocComments`.
+
+```csharp
+///     <see cref="System.String"
+///         href="https://short.invalid/" />
+```
+
+| `resharper_xmldoc_attribute_style` | that header |
+|---|---|
+| `do_not_touch` (the export) | kept wrapped |
+| `on_single_line` | ⚠ **joined onto one line** |
+
+So all **four** values separate, not three, and the missing distinction was never the key's.
+
+**`resharper_xmldoc_allow_far_alignment` is measured, and "still unmeasured" was the probe's fault
+rather than the key's.** The paragraph above names two prerequisites — `attribute_indent` flipped
+beside it *and* a tag name long enough to push the alignment out. The earlier run supplied only the
+first, which is why it reported one output; the option that decides whether a far alignment is
+allowed had no far alignment to decide about. Supplied both — a 90-character element whose first
+attribute begins at column 105, tag opening at column 12:
+
+| `resharper_xmldoc_allow_far_alignment` | the oracle |
+|---|---|
+| `false` — **the export's own value** | falls back to a **double indent**, column 16 |
+| `true` | aligns at column 100; the continuation line runs to 129, past the 120 margin |
+
+A shorter element in the same comment, aligning at column 39, aligns at **both** values — so the key
+is a threshold between 39 and 105 rather than a switch, and the export's `false` is doing real work
+on wide tag names. ⚠ It stays out of the sweep: two flips, so no one-key row can reach it, and it is
+marked `inert` in the registry with that as the reason.
+
+**`resharper_xmldoc_alignment_tab_fill_style` is measured too, and it is genuinely flat.** Given the
+full prerequisite — `indent_style = tab`, `resharper_xmldoc_indent_style = tab`, `tab_width = 4`,
+`attribute_indent = align_by_first_attribute` and `allow_far_alignment = true`, so a continuation line
+carries 96 columns of alignment fill — `use_spaces`, `use_tabs_only` and `optimal_fill` are
+byte-identical and the fill is **spaces** at all three. The control is in the same output: the file's
+own *code* lines did take tabs. The inside of a `///` comment is always spaces, which is the finding
+`resharper_xmldoc_indent_style` already carries, and this key inherits it.
+
+⚠ **So the count in this entry's triage note is now three, not five.** Of the five keys named there as
+doing nothing, `alignment_tab_fill_style` is inert in the oracle and `allow_far_alignment` is
+masked by the export's own `attribute_indent = single_indent`; neither is waiting on the header
+renderer. What the renderer would actually unlock is `attribute_indent`, `attribute_style` and
+`wrap_tags_and_pi` — and `allow_far_alignment` only for someone who also changes `attribute_indent`.
 
 - options: `resharper_xmldoc_wrap_tags_and_pi`
 - ⚠ status: **open, and better specified**. Not a wrapping bug and not merely a missing half of the

@@ -43,7 +43,8 @@ internal sealed record OptionEntry(
     int? Max,
     string? BoundsBecause,
     string? TabMeans,
-    string? FreeFormBecause) {
+    string? FreeFormBecause,
+    string? UnsweptBecause) {
     /// <summary>The <c>OptionId</c> member name and the group path from docs/plan/02 § "Naming".</summary>
     public string MemberName => Naming.Pascal(Key);
 
@@ -170,7 +171,8 @@ internal static class OptionRegistryReader {
                     item["max"].IsNull ? null : item["max"].AsInt(),
                     item["boundsBecause"].IsNull ? null : item["boundsBecause"].AsString(),
                     item["tabMeans"].IsNull ? null : item["tabMeans"].AsString(),
-                    item["freeFormBecause"].IsNull ? null : item["freeFormBecause"].AsString()
+                    item["freeFormBecause"].IsNull ? null : item["freeFormBecause"].AsString(),
+                    item["unsweptBecause"].IsNull ? null : item["unsweptBecause"].AsString()
                 )
             );
         }

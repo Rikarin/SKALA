@@ -99,8 +99,8 @@ a `<list>` header of four attributes past the margin, and `/// <?pi first = "1" 
 | key | export value | measured | would-be verdict |
 |---|---|---|---|
 | `resharper_xmldoc_attribute_indent` | `single_indent` | ⚠ **confirmed, and it is a real gap.** The oracle produces **three distinct** continuation indents for a wrapped tag header — `single_indent`, `double_indent`, `align_by_first_attribute` — and Skala never breaks inside a header at all | `INERT` |
-| `resharper_xmldoc_attribute_style` | `do_not_touch` | ⚠ **confirmed, same gap**: three distinct headers from the oracle, one from Skala | `INERT` |
-| `resharper_xmldoc_allow_far_alignment` | `false` | ⚠ **“same group, same prerequisite” is refuted.** Asked on the same wrapped header the two rows above move, the oracle returns **one** output at both values — and again with `attribute_indent = align_by_first_attribute` held, which is the only value that produces an alignment column to be “too far”. Two flips, still no subject | `UNEXERCISED` |
+| `resharper_xmldoc_attribute_style` | `do_not_touch` | ⚠ **confirmed, same gap**: ~~three~~ **four** distinct headers from the oracle, one from Skala — see the correction below | `INERT` |
+| `resharper_xmldoc_allow_far_alignment` | `false` | ~~⚠ **“same group, same prerequisite” is refuted.**~~ ⚠ **This row is itself refuted — see the correction below.** It said the oracle returns one output at both values even with `attribute_indent = align_by_first_attribute` held. It does not; that probe’s tag name was too short for the alignment to be far | ~~`UNEXERCISED`~~ `INERT` |
 | `resharper_xmldoc_pi_attribute_style` | `do_not_touch` | ⚠ **“pending on a PI renderer” is refuted as a Skala gap.** One oracle output across all four values, and **Skala agrees at every one** — the oracle does not parse a processing instruction’s header either | `UNEXERCISED` |
 | `resharper_xmldoc_pi_attributes_indent` | `align_by_first_attribute` | same, 3 values, oracle flat, agrees 3/3 | `UNEXERCISED` |
 | `resharper_xmldoc_space_after_last_pi_attribute` | `true` | same, oracle flat, agrees 2/2 | `UNEXERCISED` |
@@ -129,12 +129,94 @@ in no `OptionId` at all, so nothing had ever checked them. They are checked now.
 | `resharper_indent_aligned_ternary` | flat | not re-asked | `INERT` or `UNEXERCISED` |
 | `resharper_indent_comment` | flat | not re-asked | `INERT` or `UNEXERCISED` |
 | `resharper_indent_wrapped_function_names` | flat | not re-asked | `INERT` or `UNEXERCISED` |
-| `resharper_parentheses_non_obvious_operations` | flat | not re-asked; the arranger’s, under `OracleProfile.Cleanup` | `INERT` or `UNEXERCISED` |
-| `resharper_parentheses_same_type_operations` | flat | not re-asked | `INERT` or `UNEXERCISED` |
+| `resharper_parentheses_non_obvious_operations` | flat | ⚠ **asked now, under `OracleProfile.Cleanup`: three distinct outputs, one flip over the export.** At `none` the oracle strips `a << (b + c)`, `a \| (b & c)` and `a ^ (b & c)`, which the export’s `none, shift, bitwise_*` keeps; naming every group additionally keeps `a + (b * c)`. It steers which redundant parentheses `parentheses_redundancy_style = remove_if_not_clarifies_precedence` counts as clarifying | `INERT` |
+| `resharper_parentheses_same_type_operations` | flat | ⚠ **asked now: the oracle is flat too.** 25 same-type redundant parenthesisations across eight operator groups in both nestings collapse identically at both values, and again pairwise with `non_obvious_operations` at every group and with `prefer_roslyn_rules_for_parentheses_clarity = true`. The two keys above move the same file in the same runs | `UNEXERCISED` |
 
-⚠ **The last six rows are recorded honestly as un-re-asked.** Skala’s half already settles the
+⚠ **The last four rows are recorded honestly as un-re-asked.** Skala’s half already settles the
 deliverable — no glob may be set — and which of the two forbidden verdicts they would produce changes
-nothing about that. Naming the verdict would need an oracle run this pass did not make.
+nothing about that. Naming the verdict would need an oracle run this pass did not make. ⚠ The two
+`parentheses_*` rows were among them until 2026-08-31; the section below is that run.
+
+## ⚠ Measured, 2026-08-31 — the last fifteen entries the registry said nothing about
+
+Fifteen entries carried **no `oracle` glob, no `inert` reason, and no row in any classification table
+above** — the last options in the registry about which the repository was silent. Every one is
+measured here against `jb cleanupcode` 2025.2.6, one key at a time over this repository's own
+`.editorconfig`, each variant in its own directory with its own configuration, and **every run
+carries a positive control in the same invocation** so that a flat result is a fact about the key
+rather than about a configuration that was never read.
+
+⚠ **No glob is set for any of the fifteen.** Skala is flat at every value of every one of them, so a
+glob could only file an `INERT` or `UNEXERCISED` row that the registry does not declare — the
+arrangement three globs were added and withdrawn for in the same week. The reasons are written onto
+the registry entries instead: `inert` where no input distinguishes the values, and a new
+`unsweptBecause` where the oracle *does* separate them and the reason the sweep cannot ask is
+Skala's.
+
+### The ten now marked `inert` — no input distinguishes their values
+
+| key | profile | what was measured | positive control in the same run |
+|---|---|---|---|
+| `file_header_template` | `FormatOnly` | text, a `{fileName}` form, `unset` and empty all give one file. Turn `CSUpdateFileHeader` **on** in the profile and the same values separate — a `//` header above the namespace, and `{fileName}` expands. So the key is real and ReSharper-honoured; the *profile* is what masks it, deliberately, so the oracle never stamps a header onto a fixture | `indent_size = 2` |
+| `resharper_parentheses_same_type_operations` | `Cleanup` | 25 same-type redundant parenthesisations, eight operator groups, both nestings — one output at both values, and again pairwise with `non_obvious_operations` at every group and `prefer_roslyn_rules_for_parentheses_clarity = true`. ⚠ The tool ships `CodeCleanupTask_AddMissingParentheses`, which no committed profile enables, and that is the likeliest home of a key about *adding* clarity parentheses | `non_obvious_operations`, `parentheses_redundancy_style` |
+| `resharper_xmldoc_alignment_tab_fill_style` | `DocComments` | all three values byte-identical with the **whole** pairwise prerequisite held — `indent_style = tab`, `xmldoc_indent_style = tab`, `tab_width = 4`, `attribute_indent = align_by_first_attribute`, `allow_far_alignment = true`, so the continuation carries 96 columns of fill. The fill is spaces at all three | the file's own code lines took tabs in the same output |
+| `resharper_xmldoc_allow_far_alignment` | `DocComments` | ⚠ **masked, not flat — see the correction below.** Two flips, so the one-key sweep can never reach it | `attribute_indent` |
+| `resharper_xmldoc_insert_final_newline` | `DocComments` | one output at both values on a file with a type-level `<summary>`, a member `<remarks>`/`<returns>` pair, and a trailing comment that ends the type | `xmldoc_wrap_text = false` |
+| `resharper_xmldoc_pi_attribute_style` | `DocComments` | ⚠ see the PI correction below | `xmldoc_blank_line_after_pi = false` |
+| `resharper_xmldoc_pi_attributes_indent` | `DocComments` | same | same |
+| `resharper_xmldoc_space_after_last_pi_attribute` | `DocComments` | same | same |
+| `resharper_xmldoc_spaces_around_eq_in_pi_attribute` | `DocComments` | same, asked on the shape the key would have to normalise — `first = "1"` | same |
+| `resharper_xmldoc_wrap_around_elements` | `DocComments` | confirmed, and re-asked with the confound removed: `linebreak_before_elements` emptied so no element was getting its own line for another key's reason. Still one output | `xmldoc_wrap_text = false` |
+
+### ⚠ `allow_far_alignment` — the “still unmeasured” verdict above is refuted, and it was the probe
+
+The earlier pass held `attribute_indent = align_by_first_attribute` beside it and reported one output.
+It held the right key and the wrong subject: its tag was short, so the alignment column was never
+*far*, and the option that decides whether a far alignment is allowed had nothing to decide. On a
+90-character element whose first attribute begins at column 105, with the tag opening at column 12:
+
+| `resharper_xmldoc_allow_far_alignment` | the oracle |
+|---|---|
+| `false` — **the export's own value** | falls back to a **double indent**, column 16 |
+| `true` | aligns at column 100; the continuation line runs to 129, past the 120 margin |
+
+A shorter element in the same comment, whose alignment sits at column 39, aligns at **both** values —
+so the threshold lies between 39 and 105 and this is not an all-or-nothing switch.
+
+### ⚠ The four PI keys — “pending on a PI renderer” described Skala, and is true of the oracle too
+
+`jb cleanupcode` 2025.2.6 does not parse a processing instruction's header either.
+`<?skala-probe first = "1" second="2"   third='3'?>` comes back **byte-identical** at every value of
+all four keys — the spaces around `=`, the double space, the quote characters — a 160-column
+instruction is not wrapped, and an author's break inside one is preserved. Asked singly and all four
+at once. So Skala's verbatim path is not a gap against the oracle, and none of the four is pending on
+anything.
+
+### The three whose values the oracle *does* separate — `unsweptBecause`, not `inert`
+
+⚠ **Marking these inert would report a measured gap as a vacuous one**, which is the defect the inert
+mark exists to prevent in the other direction. The oracle separates them at one flip over the export;
+Skala is flat because it does not read the key at all.
+
+| key | profile | the oracle's values | why Skala is flat |
+|---|---|---|---|
+| `resharper_parentheses_non_obvious_operations` | `Cleanup` | three distinct outputs — the table row above | `ParenthesesRedundancy.IsNonObvious` hardcodes the export's set and the key is never read |
+| `resharper_xmldoc_attribute_indent` | `DocComments` | three distinct continuation indents, tag at column 12: `single_indent` 16, `double_indent` 20, `align_by_first_attribute` 17 | `XmlDocModel` refuses a comment whose input carries a multi-line tag header (SK-DIV-0079) |
+| `resharper_xmldoc_attribute_style` | `DocComments` | ⚠ **four**, not three. `on_different_lines` and `first_attribute_on_single_line` restructure a header that fits; and `on_single_line` **is** distinguished from `do_not_touch` — on the already-wrapped short header SK-DIV-0079 named as the open question, which `do_not_touch` keeps wrapped and `on_single_line` joins | the same |
+
+### The two Tier C keys — the refusal stands, and the measurement goes beside it
+
+⚠ **Tier C is a deliberate refusal, and this pass does not convert either of them into an inertness
+claim.** `inert` is Tier D by construction, so the measurement is recorded in `unsweptBecause`.
+
+| key | measured under `FormatOnly` |
+|---|---|
+| `resharper_autodetect_indent_settings` | one output at both values on a tab-indented file and on a two-space one, and again with `apply_auto_detected_rules = true` and `use_indent_from_vs = true` held beside it. `indent_style = tab` and `indent_size = 2` each rewrite the same file in the same runs, so `jb cleanupcode` does not autodetect either — this is an IDE toggle and the refusal costs nothing on the command line |
+| `resharper_use_old_engine` | one output at both values — while **`resharper_csharp_old_engine = true` rewrites the whole probe in the same run**, outdenting a file-scoped namespace's members, spacing `namespace Probe ; ` and choosing different wrap points. The C# formatter reads the prefixed spelling and ignores this one |
+
+⚠ **That sibling is the whole reason Tier C is not an inertness claim.** `resharper_csharp_old_engine`
+is Tier C and the oracle demonstrably honours it: C means Skala declines to implement ReSharper's
+legacy engine, not that nothing would happen if it did.
 
 ## Headline
 

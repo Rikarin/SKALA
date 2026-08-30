@@ -455,15 +455,15 @@ public static class XmlDocIds {
         ),
         new(
             "resharper_xmldoc_attribute_style",
-            "Pending, not refused. ⚠ The reason recorded here — 'it arranges the attributes of a header Skala does not yet wrap' — is MEASURED FALSE: it does not wait for a wrap. `on_different_lines` puts the tag name alone and every attribute on its own line, and `first_attribute_on_single_line` keeps the first on the tag's line and breaks the rest, and BOTH do so to a header that fits on one line comfortably. What survives is the second half: the export leaves it at `do_not_touch`, so the default costs nothing today. ⚠ `on_single_line` and `do_not_touch` are not distinguished by that probe — the shape that would is an already-wrapped short header, which `do_not_touch` demonstrably keeps wrapped — and that is unmeasured. SK-DIV-0079."
+            "Pending, not refused. ⚠ The reason recorded here — 'it arranges the attributes of a header Skala does not yet wrap' — is MEASURED FALSE: it does not wait for a wrap. `on_different_lines` puts the tag name alone and every attribute on its own line, and `first_attribute_on_single_line` keeps the first on the tag's line and breaks the rest, and BOTH do so to a header that fits on one line comfortably. What survives is the second half: the export leaves it at `do_not_touch`, so the default costs nothing today. ⚠ The open question this entry recorded is now CLOSED and the hypothesis it named was right: `on_single_line` IS distinguished from `do_not_touch`, on exactly the shape it predicted — an already-wrapped short header, `<see cref=\"System.String\"` / `href=\"https://short.invalid/\" />`, which `do_not_touch` keeps wrapped and `on_single_line` joins onto one line. All FOUR values separate. SK-DIV-0079."
         ),
         new(
             "resharper_xmldoc_alignment_tab_fill_style",
-            "Pending on the same prerequisite: it fills the alignment of a wrapped header's continuation line, and nothing is wrapped yet. ⚠ It is also a *pairwise* question and no one-key probe can reach it — like `resharper_csharp_alignment_tab_fill_style` it needs `indent_style = tab` flipped beside it (SK-DIV-0032)."
+            "⚠ Not pending — MEASURED INERT, and the pairwise prerequisite this entry named was supplied in full. Under OracleProfile.DocComments with `indent_style = tab`, `resharper_xmldoc_indent_style = tab`, `tab_width = 4`, `resharper_xmldoc_attribute_indent = align_by_first_attribute` and `resharper_xmldoc_allow_far_alignment = true` — so the continuation line carries 96 columns of alignment fill — `use_spaces`, `use_tabs_only` and `optimal_fill` produce byte-identical output, and the fill is spaces at all three. The control is in the same output: the file's own CODE lines took tabs, so a tab regime was live and the alignment still refused it. The inside of a `///` comment is always spaces, which is the same finding `resharper_xmldoc_indent_style` carries one line down. Skala spends spaces for the same reason."
         ),
         new(
             "resharper_xmldoc_allow_far_alignment",
-            "Pending on the same prerequisite: no header is aligned yet, so 'too large' still has no subject. ⚠ Asked anyway, on a header the oracle wraps of its own accord, it returns the probe byte-identical — which says nothing about the key: it governs when an `align_by_first_attribute` alignment is too far, so it needs THAT key flipped beside it and a tag name long enough to push the alignment out. Pairwise, and still unmeasured. SK-DIV-0079."
+            "Pending on the same prerequisite, and NOW MEASURED — with both halves of the shape this entry asked for. It needs `resharper_xmldoc_attribute_indent = align_by_first_attribute` flipped beside it AND a tag name long enough to push the alignment out; earlier probes supplied only the first and reported the key flat, which was a fact about the probe. On a 90-character element whose first attribute begins at column 105: at `false` — the export's own value — the continuation falls back to a DOUBLE indent at column 16, and at `true` it aligns at column 100 and the line runs to 129, past the margin. A shorter element whose alignment sits at column 39 aligns at both values, so the threshold lies between 39 and 105. ⚠ Two flips, so the one-key sweep can never reach it. SK-DIV-0079."
         ),
         // ⚠ The fifth of that family, and it used to be in `Honoured` under a reading of its name.
         new(
@@ -488,7 +488,7 @@ public static class XmlDocIds {
         // ── Measured, and genuinely not distinguishable ──────────────────────────────────────
         new(
             "resharper_xmldoc_wrap_around_elements",
-            "Measured with the doc-comment task enabled and at both values over prose containing inline elements, long and short: the oracle's output is byte-identical. Either it is subsumed by resharper_xmldoc_wrap_tags_and_pi in this build or its subject is a construct no C# doc comment produces. Refused, and now for a measured reason rather than a supposed one."
+            "Measured with the doc-comment task enabled and at both values over prose containing inline elements, long and short: the oracle's output is byte-identical. Either it is subsumed by resharper_xmldoc_wrap_tags_and_pi in this build or its subject is a construct no C# doc comment produces. Refused, and now for a measured reason rather than a supposed one. ⚠ Re-asked with the obvious confound removed — `resharper_xmldoc_linebreak_before_elements` emptied, so no element was being given its own line for another key's reason — and it is still one output, with `resharper_xmldoc_wrap_text = false` rewrapping the same prose in the same run."
         ),
 
         // ── Properties of the key, unchanged ─────────────────────────────────────────────────
@@ -498,29 +498,34 @@ public static class XmlDocIds {
         ),
         new(
             "resharper_xmldoc_insert_final_newline",
-            "A '///' comment has no file end to put a newline at."
+            "A '///' comment has no file end to put a newline at — and that is now a diff rather than an argument. Measured under OracleProfile.DocComments at both values on a file carrying a type-level <summary>, a member <remarks>/<returns> pair and a trailing member comment that ends the type: one output. resharper_xmldoc_wrap_text = false moves the same file in the same run."
         ),
 
         // ── The processing-instruction header family ─────────────────────────────────────────
-        // ⚠ Same prerequisite as the tag-header four, one construct over: Skala emits a
-        // processing instruction verbatim, so its header has no attributes to space out. The
-        // export leaves pi_attribute_style at do_not_touch, which is what the oracle was
-        // observed to do to `<?pi first = "1" second="2" ?>` — it left it alone.
+        // ⚠ These four were recorded as "pending on a PI renderer", which described SKALA and was
+        // read as a property of the keys. It is neither: `jb cleanupcode` 2025.2.6 does not parse a
+        // processing instruction's header either, so all four are inert in the ORACLE and there is
+        // no gap here to pend on. Measured under OracleProfile.DocComments on
+        // `<?skala-probe first = "1" second="2"   third='3'?>`, a 160-column instruction, one the
+        // author already broke across two lines, and one written tight — one output across every
+        // value of all four keys, singly and all four at once. The positive control is in the same
+        // run: `resharper_xmldoc_blank_line_after_pi = false` removes the blank `///` line after
+        // the same instruction, so the doc-comment task does see it.
         new(
             "resharper_xmldoc_pi_attribute_style",
-            "Pending. A processing instruction is emitted verbatim, so there is no arrangement to choose. The export's do_not_touch is what the oracle was measured doing."
+            "⚠ Not pending — MEASURED INERT IN THE ORACLE, which is a different claim from the one recorded here before. `<?skala-probe first = \"1\" second=\"2\"   third='3'?>` comes back byte-identical at all four values, the spaces around '=' and the double space included, and a 160-column instruction is not wrapped at any of them. So 'a processing instruction is emitted verbatim' is true of jb cleanupcode 2025.2.6 as well, and Skala's verbatim path is not a gap against it. Control in the same run: resharper_xmldoc_blank_line_after_pi = false."
         ),
         new(
             "resharper_xmldoc_pi_attributes_indent",
-            "Pending on the same prerequisite: a verbatim processing instruction is never wrapped, so its attributes are never indented."
+            "⚠ Not pending — measured inert in the oracle. All three values give one output, including on a 160-column instruction the oracle declines to wrap and on one the author already broke. A header that is never wrapped has no continuation line to indent, and that is the oracle's shape as much as Skala's. Control in the same run: resharper_xmldoc_blank_line_after_pi = false."
         ),
         new(
             "resharper_xmldoc_space_after_last_pi_attribute",
-            "Pending on the same prerequisite: the '?>' is copied from the source with whatever precedes it."
+            "⚠ Not pending — measured inert in the oracle, at both values, on an instruction written tight ('third=\"3\"?>') and one written with the space ('epsilon=\"epsilonvalue\" ?>'). The oracle copies the instruction's bytes, '?>' and whatever precedes it included. Control in the same run: resharper_xmldoc_blank_line_after_pi = false."
         ),
         new(
             "resharper_xmldoc_spaces_around_eq_in_pi_attribute",
-            "Pending on the same prerequisite: the instruction's bytes are copied, '=' included."
+            "⚠ Not pending — measured inert in the oracle, asked on the shape the key would have to normalise: a '=' written with a space on each side, `<?skala-probe first = \"1\" …?>`, beside one written tight. The spaces survive at `false` and none is added at `true`. Control in the same run: resharper_xmldoc_blank_line_after_pi = false."
         )
     ];
 }

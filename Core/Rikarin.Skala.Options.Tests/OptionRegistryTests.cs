@@ -216,4 +216,52 @@ public sealed class OptionRegistryTests {
             );
         }
     }
+
+    /// <summary>
+    ///     ⚠ <c>UnsweptBecause</c> is the other half of "why is there no fixture", and it must not be
+    ///     allowed to become a second spelling of <c>Inert</c>.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The two answer different questions and the difference is the whole point. <c>Inert</c> says
+    ///         <b>no input distinguishes the values</b> — a claim about the world, so setting the option
+    ///         costs nothing and it is honoured vacuously. <c>UnsweptBecause</c> says
+    ///         <b>the sweep cannot ask</b>, and that is usually a fact about Skala rather than about
+    ///         the option: the oracle separates the values and Skala is
+    ///         flat at every one of them, so a glob would file an <c>INERT</c> row the registry never
+    ///         declared, against a fixture Skala cannot reproduce. Merging them would report a real,
+    ///         measured gap as a vacuous one, which is the exact defect the inert mark exists to prevent
+    ///         in the other direction.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ It is also where a Tier C refusal's measurement goes. <c>Inert</c> is Tier D by
+    ///         construction — the assertion above — so a Tier C key that was <em>also</em> measured
+    ///         unobservable had nowhere to record it, and
+    ///         <c>resharper_use_old_engine</c> sat with an empty entry for that reason. Recording it here
+    ///         keeps the refusal and the measurement distinct: Tier C still means Skala declines, and
+    ///         <c>resharper_csharp_old_engine</c> — the sibling the oracle demonstrably honours — is why
+    ///         that is not the same claim.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void UnsweptBecause_IsNotASecondSpellingOfInert() {
+        foreach (var info in OptionRegistry.All.Where(static i => i.UnsweptBecause is not null)) {
+            Assert.True(
+                info.UnsweptBecause is { Length: > 20 },
+                $"{info.Key} carries `unsweptBecause` with no usable reason."
+            );
+
+            Assert.True(
+                info.Inert is null,
+                $"{info.Key} carries both `inert` and `unsweptBecause`. They are two answers to one question: `inert` claims no input can distinguish the values, `unsweptBecause` says the sweep cannot ask. Pick the one the probe actually established."
+            );
+
+            Assert.True(
+                info.Oracle is null,
+                $"{info.Key} names an oracle fixture and also says why it has none."
+            );
+
+            Assert.NotEqual(OptionTier.A, info.Tier);
+        }
+    }
 }
