@@ -112,6 +112,20 @@ public static class PreferenceSweep {
         public bool Contains(int column) => column >= From && column < To;
     }
 
+    /// <summary>A construct's flat line, with every column of it the classifier needs.</summary>
+    /// <param name="Head">
+    ///     How wide the line is that remains when the inner construct is broken, indent excluded.
+    /// </param>
+    /// <remarks>
+    ///     ⚠ <paramref name="Head" /> is stated rather than derived from <paramref name="Inner" />, and
+    ///     the difference is a column. A break after <c>(</c> leaves the head ending at the bracket; a
+    ///     break after <c>{</c> leaves it ending at the brace, but the flat text has a space after that
+    ///     brace which the break eats. Inferring one from the other is right for argument lists and
+    ///     wrong for initialisers by exactly the amount that decides whether a boundary sits at the
+    ///     margin.
+    /// </remarks>
+    sealed record Layout(string Flat, Span Outer, Span Inner, Span? Third, int Head);
+
     /// <summary>One generated line, and everything needed to classify what came back.</summary>
     /// <param name="Flat">The statement as one line, without its indentation.</param>
     /// <param name="Outer">Where a continuation may resume when the outer break is taken.</param>
@@ -125,7 +139,8 @@ public static class PreferenceSweep {
         string Flat,
         Span Outer,
         Span InnerSpan,
-        Span? Third);
+        Span? Third,
+        int Head);
 
     /// <summary>A construct, as a way of turning (filler text, inner text) into a line and its landmarks.</summary>
     /// <param name="Wrap">
@@ -149,7 +164,7 @@ public static class PreferenceSweep {
         string Outer,
         string InnerName,
         string Template,
-        Func<string, string, (string Flat, Span Outer, Span Inner, Span? Third)> Wrap,
+        Func<string, string, Layout> Wrap,
         Func<IReadOnlyList<string>, string> File,
         int Depth,
         string? ThirdName = null);
@@ -293,7 +308,40 @@ public static class PreferenceSweep {
                 const string head = "var value = ";
                 var flat = head + name + inner + ";";
                 var open = head.Length + name.Length;
-                return (flat, Span.Point(head.Length), new Span(open + 1, open + inner.Length), null);
+                return new Layout(
+                    flat,
+                    Span.Point(head.Length),
+                    new Span(open + 1, open + inner.Length),
+                    null,
+                    open + 1
+                );
+            },
+            static bodies => Body(bodies),
+            2
+        ),
+        new(
+            "eq-array",
+            "SK-DIV-0005",
+            "=",
+            "the right-hand side's array initialiser",
+            "var value = new <name>[] { <elements> };",
+            // ⚠ The filler is the element type, so it sits on the right of the `=` exactly as the
+            // callee's name does in `eq`. Padding the *variable* name instead would move the filler to
+            // the other side of the break under test and change how much the `=` buys — two things at
+            // once, and then a difference between the two constructs would say nothing about shape.
+            static (name, inner) => {
+                const string head = "var value = new ";
+                var flat = head + name + "[] " + inner + ";";
+                var open = head.Length + name.Length + 3;
+                // ⚠ `{ a` — the head ends at the brace and the break eats the space after it, so the
+                // head is one column narrower than where the continuation resumes.
+                return new Layout(
+                    flat,
+                    Span.Point("var value = ".Length),
+                    new Span(open + 2, open + inner.Length - 1),
+                    null,
+                    open + 1
+                );
             },
             static bodies => Body(bodies),
             2
@@ -311,11 +359,12 @@ public static class PreferenceSweep {
                 // ⚠ The third landmark is the `=`. SK-DIV-0050 records Skala taking it where the oracle
                 // takes the arrow, so the sweep names it rather than binning it: a grid in which the
                 // oracle never once prefers it is evidence, and an unnamed outcome is not.
-                return (
+                return new Layout(
                     flat,
                     Span.Point(head.Length),
                     new Span(open + 1, open + inner.Length),
-                    Span.Point("Action value = ".Length)
+                    Span.Point("Action value = ".Length),
+                    open + 1
                 );
             },
             static bodies => Body(bodies),
@@ -338,11 +387,12 @@ public static class PreferenceSweep {
                 // is the one the first run of this sweep discovered by leaving 17 % of the grid
                 // unnamed. The oracle reaches for it constantly, and where it does, "which of the two
                 // lists gives" has no answer because neither of them does.
-                return (
+                return new Layout(
                     flat,
                     new Span(langle + 1, langle + inner.Length),
                     new Span(lparen + 1, lparen + tail.Length - 1),
-                    Span.Point(head.Length)
+                    Span.Point(head.Length),
+                    lparen + 1
                 );
             },
             static bodies => Declarations(bodies),
@@ -568,11 +618,13 @@ public static class PreferenceSweep {
 
     /// <summary>Builds one probe, or nothing when the total cannot hold this inner width.</summary>
     static Probe? Build(Construct construct, Filler filler, int total, int inner) {
-        var text = filler.TokenLengths.Length == 0
-            ? Literal(inner)
-            : construct.Id == "type-parameters"
-                ? TypeParameters(inner, filler.TokenLengths)
-                : Arguments(inner, filler.TokenLengths);
+        var text = (construct.Id, filler.TokenLengths.Length) switch {
+            ("eq-array", 0) => BracedLiteral(inner),
+            ("eq-array", _) => Braced(inner, filler.TokenLengths),
+            ("type-parameters", _) => TypeParameters(inner, filler.TokenLengths),
+            (_, 0) => Literal(inner),
+            _ => Arguments(inner, filler.TokenLengths)
+        };
 
         if (text is null) {
             return null;
@@ -580,14 +632,24 @@ public static class PreferenceSweep {
 
         // The filler name absorbs whatever the inner construct does not, so the flat line comes to
         // exactly `total`. Measured with a one-character name first, then padded by the shortfall.
-        var (probeFlat, _, _, _) = construct.Wrap("x", text);
-        var fillerLength = total - (construct.Depth * Indent) - (probeFlat.Length - 1);
+        var probe = construct.Wrap("x", text);
+        var fillerLength = total - (construct.Depth * Indent) - (probe.Flat.Length - 1);
         if (fillerLength < MinimumFiller) {
             return null;
         }
 
-        var (flat, outer, innerSpan, third) = construct.Wrap(Name(fillerLength), text);
-        return new Probe(construct.Id, filler.Id, total, inner, flat, outer, innerSpan, third);
+        var layout = construct.Wrap(Name(fillerLength), text);
+        return new Probe(
+            construct.Id,
+            filler.Id,
+            total,
+            inner,
+            layout.Flat,
+            layout.Outer,
+            layout.Inner,
+            layout.Third,
+            layout.Head
+        );
     }
 
     /// <summary>
@@ -623,6 +685,17 @@ public static class PreferenceSweep {
         var inside = Tokens(width - 2, lengths, uppercase: true);
         return inside is null ? null : "<" + inside + ">";
     }
+
+    /// <summary>A braced initialiser list of exactly <paramref name="width" /> columns.</summary>
+    /// <remarks>⚠ <c>{ a, b }</c> — four columns of delimiter and padding, not two.</remarks>
+    static string? Braced(int width, int[] lengths) {
+        var inside = Tokens(width - 4, lengths, uppercase: false);
+        return inside is null ? null : "{ " + inside + " }";
+    }
+
+    /// <summary>A braced initialiser holding one string literal.</summary>
+    static string? BracedLiteral(int width) =>
+        width < 10 ? null : "{ \"" + new string('Z', width - 8) + "\" }";
 
     /// <summary>A single string-literal argument filling the list on its own.</summary>
     static string? Literal(int width) =>
@@ -827,7 +900,7 @@ public static class PreferenceSweep {
         // wide as the column its first continuation resumes at. The narrowest inner width where that
         // lands inside the margin is where "break the thing that overflowed" starts being enough.
         var sufficient = outcomes
-            .Where(entry => (construct.Depth * Indent) + entry.Probe.InnerSpan.From <= Margin)
+            .Where(entry => (construct.Depth * Indent) + entry.Probe.Head <= Margin)
             .Select(static entry => (int?)entry.Probe.Inner)
             .FirstOrDefault();
 
@@ -943,7 +1016,7 @@ public static class PreferenceSweep {
     ///     stale the first time the table is regenerated and nobody notices; prose computed from it
     ///     cannot.
     /// </remarks>
-    static string Findings(ConstructNote construct, List<Reading> readings) {
+    static string Findings(ConstructNote construct, List<Reading> readings, List<Row> rows) {
         var builder = new StringBuilder();
         var crossing = readings.Where(static reading => reading.Threshold is not null).ToList();
         var jagged = readings.Where(static reading => reading.Crossings > 1).ToList();
@@ -1075,20 +1148,41 @@ public static class PreferenceSweep {
         // ⚠ The one closed form worth testing, tested rather than argued: "break the inner construct
         // exactly when breaking it is enough on its own, and reach further out when it is not." It is
         // a sentence a person can hold, so where it holds the divergence needs no oracle at all.
-        var comparable = crossing.Where(static reading => reading.Sufficient is not null).ToList();
-        var matches = comparable.Count(static reading => reading.Sufficient == reading.Threshold);
+        //
+        // ⚠ Scored per *cell*, not per threshold. A construct can obey the rule perfectly and have no
+        // threshold anywhere in its grid — that is what happens when the rule's answer changes with
+        // the total rather than within a row — and a score that only counts crossings reports 0 of 0
+        // for the one construct the rule fits exactly.
+        var decided = 0;
+        var agreed = 0;
+        foreach (var row in rows) {
+            for (var i = 0; i < row.Codes.Length; i++) {
+                if (row.Codes[i] == '.') {
+                    continue;
+                }
+
+                decided++;
+                var predictsInner = row.Sufficient is { } enough && row.InnerFrom + i >= enough;
+                if (predictsInner == (row.Codes[i] == 'I')) {
+                    agreed++;
+                }
+            }
+        }
+
         builder.AppendLine();
         builder.AppendLine(
             "Against the closed form *\"break the inner construct exactly when breaking it brings the"
         );
         builder.AppendLine("head line within the margin, and reach further out when it does not\"*:");
         builder.AppendLine();
-        builder.Append("- it predicts the measured threshold in **")
-            .Append(matches.ToString(CultureInfo.InvariantCulture))
+        builder.Append("- it predicts **")
+            .Append(agreed.ToString(CultureInfo.InvariantCulture))
             .Append(" of ")
-            .Append(comparable.Count.ToString(CultureInfo.InvariantCulture))
-            .AppendLine("** rows that have both a threshold and a prediction.");
-        if (comparable.Count > 0 && matches == comparable.Count) {
+            .Append(decided.ToString(CultureInfo.InvariantCulture))
+            .Append("** decided cells — ")
+            .Append((100.0 * agreed / Math.Max(1, decided)).ToString("0.00", CultureInfo.InvariantCulture))
+            .AppendLine(" %.");
+        if (decided > 0 && agreed == decided) {
             builder.AppendLine(
                 "- **This construct has a rule.** It is statable in one sentence, predictable without"
             );
@@ -1096,7 +1190,7 @@ public static class PreferenceSweep {
                 "  running anything, and needs no ReSharper to defend — the oracle's answer here can be"
             );
             builder.AppendLine("  reconstructed from the sentence rather than from the grid.");
-        } else if (matches * 2 >= comparable.Count) {
+        } else if (agreed >= decided * 9 / 10) {
             builder.AppendLine(
                 "- It holds over most of the grid but not all of it, so the construct is a rule plus a"
             );
@@ -1310,7 +1404,9 @@ public static class PreferenceSweep {
             }
 
             builder.AppendLine();
-            builder.AppendLine(Findings(construct, mine));
+            builder.AppendLine(
+                Findings(construct, mine, [.. artefact.Grid.Where(row => row.Construct == construct.Id)])
+            );
             builder.AppendLine();
 
             var exemplar = artefact.Flips.FirstOrDefault(flip =>
