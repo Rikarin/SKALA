@@ -2464,12 +2464,49 @@ public sealed class BreakPlan {
         // A single group whose points all break together turns that into six lines and a staircase.
         var pins = _options.KeepsUserBreaksBetweenItems;
 
+        // ⚠ Asked once, and used twice: it picks the layout of a member the author left flat, and it
+        // picks the continuation level that member sits on. The two readings have to be the same
+        // reading or the formatter is not idempotent — see the branch below and `ownLevel`.
+        var steps = BreaksAtTernaryQuestion(node);
+
         if (_options.WrapBeforeTernaryOpsigns) {
             var atQuestion = BreaksBefore(node.QuestionToken);
             var atColon = BreaksBefore(node.ColonToken);
             if (pins && (atQuestion || atColon)) {
                 Pin(node.QuestionToken, atQuestion);
                 Pin(node.ColonToken, atColon);
+            } else if (IsTernaryChainMember(node) && !steps) {
+                // ⚠ A chain member the author left flat breaks at its `:` and never at its `?`. The
+                // author broke *some* sign of this chain — that is what routed the chain here rather
+                // than to `PlanTernaryChain` — but no `?`, so the chain does not step, and a member
+                // that has to break joins the colon-only shape the rest of the chain is already in.
+                // Measured on `jb cleanupcode` 2025.2.6 at a 120-column margin, on the two ways a
+                // member gets here without a break of its own:
+                //
+                //     a ? "x" : b ? "y" : c ? "z"      ← too wide, and
+                //     : "d";                             a ? "x" : b ? "y" : c ? "z"\n: "d" that fits
+                //
+                //   both come back
+                //
+                //     a ? "x"
+                //     : b ? "y"
+                //     : c ? "z"
+                //     : "d";
+                //
+                // and a member still over the margin after that break stays over it — the oracle
+                // does not then break its `?` either.
+                //
+                // ⚠ This is the idempotence of the staircase and not a nicety. Breaking at both
+                // signs writes a `?` at the start of a line; `BreaksAtTernaryQuestion` reads the
+                // source for exactly that; so the second pass found a `?` the first pass had written
+                // and stepped a chain the first pass had laid flat, one level per depth, bounded at
+                // pass 3. Six lines, default options — the seed
+                // 11815347482968357774 / constructs/alignment/int-align-ternary.cs finding. The
+                // first pass was the wrong one of the two: the oracle's answer for that input is the
+                // colon-only shape above, and the second pass's staircase is what the oracle gives
+                // for the shape the first pass had produced.
+                Flat(node.QuestionToken);
+                Point(node.ColonToken, group);
             } else {
                 Point(node.QuestionToken, group);
                 Point(node.ColonToken, group);
@@ -2516,9 +2553,18 @@ public sealed class BreakPlan {
             // costs file fidelity on both corpora — `constructs` 94.37 % → 94.06 %, `corpus/real/`
             // 85.78 % → 85.53 % — because the colon-only chain is the commoner of the two in real
             // code.
-            ownLevel: IsTernaryChainTail(node) && BreaksAtTernaryQuestion(node)
+            ownLevel: IsTernaryChainTail(node) && steps
         );
     }
+
+    /// <summary>Whether this conditional is one member of a nested chain rather than a lone one.</summary>
+    /// <remarks>
+    ///     ⚠ A conditional nested in a <c>WhenTrue</c> is <em>not</em> a member: the chain is the
+    ///     <c>WhenFalse</c> spine and nothing else, which is the same spine
+    ///     <see cref="IsTernaryChainTail" /> and <c>TernaryChain</c> walk.
+    /// </remarks>
+    static bool IsTernaryChainMember(ConditionalExpressionSyntax node) =>
+        IsTernaryChainTail(node) || node.WhenFalse is ConditionalExpressionSyntax;
 
     /// <summary>Whether the author put a break before any <c>?</c> of the chain this member is in.</summary>
     /// <remarks>
