@@ -55,6 +55,19 @@ using Rikarin.Skala.Testing;
 //                     it.
 //   margin [out]      SK-DIV-0005's constant, swept: eleven right-hand-side shapes at five block
 //                     depths under both values of `wrap_before_eq`, one character at a time.
+//   preference [flags]
+//                     the preference fact, captured as data while the oracle can still be asked:
+//                     total width against the inner construct's own width, one column at a time, at
+//                     the four constructs SK-DIV-0005, SK-DIV-0024 and SK-DIV-0050 are about. It is
+//                     the one open divergence whose target cannot be restated from first principles
+//                     after ReSharper is uninstalled, so the grid is committed beside the prose.
+//                     ⚠ Varies *width*, never option values — the export's configuration throughout.
+//                       --totals=A..B     flat line widths to sweep, inclusive. Default 124..180.
+//                       --inner=A..B      inner construct widths, delimiters included. Default 10..100.
+//                       --out=PATH        path without extension. Default docs/sk-div-preference-sweep.
+//                       --render=JSON     ⚠ rewrite the prose from a committed grid, without the
+//                                         oracle. Every sentence in the markdown is computed from the
+//                                         JSON, so this is the mode that still works afterwards.
 //   fuzz [flags]      docs/plan/12 § "4. Fuzzing", as a program. Seeded mutation of the corpus and
 //                     a weighted generative grammar, both asserted against the seven properties
 //                     under both symbol sets, with a delta-debugging minimiser behind any failure.
@@ -218,6 +231,53 @@ switch (args[0]) {
         }
 
         return 0;
+    case "preference": {
+        // ⚠ The preference fact, captured as data rather than fitted: SK-DIV-0005's `=`,
+        // SK-DIV-0050's `=>` and SK-DIV-0024's `<…>`, swept over total width × the inner
+        // construct's own width at one-column resolution. It is the one open divergence whose
+        // target cannot be restated from first principles after the oracle is uninstalled, so the
+        // grid is committed. Minutes, not seconds; never a test.
+        //   preference [--totals=A..B] [--inner=A..B] [--out=<path-without-extension>]
+        //   preference --render=<json>
+
+        // ⚠ `--render` rewrites the prose from a grid already committed, and is checked *before* the
+        // oracle is looked for: it is the mode that still works after ReSharper is uninstalled, and
+        // it is why the markdown states nothing the JSON does not carry.
+        if (args.FirstOrDefault(static argument => argument.StartsWith("--render=", StringComparison.Ordinal))
+                ?["--render=".Length..] is { } render) {
+            var existing = PreferenceSweep.Read(render);
+            PreferenceSweep.Write(existing, render, Path.ChangeExtension(render, ".md"));
+            Console.WriteLine($"re-rendered {existing.Grid.Count} rows from {render}");
+            return 0;
+        }
+
+        if (OracleRunner.FindExecutableOrNull() is null) {
+            Console.Error.WriteLine("jb is not installed.");
+            return 2;
+        }
+
+        var totalRange = Range(args, "--totals=", 122, 176);
+        var innerRange = Range(args, "--inner=", 10, 100);
+        var output = args.FirstOrDefault(static argument => argument.StartsWith("--out=", StringComparison.Ordinal))
+            ?["--out=".Length..]
+            ?? Path.Combine(Corpus.RepositoryRoot, "docs", "sk-div-preference-sweep");
+
+        var artefact = PreferenceSweep.Run(
+            new OracleRunner(),
+            Corpus.BaseEditorConfigPath,
+            [.. Enumerable.Range(totalRange.From, totalRange.To - totalRange.From + 1)],
+            innerRange.From,
+            innerRange.To,
+            Console.Error
+        );
+
+        PreferenceSweep.Write(artefact, output + ".json", output + ".md");
+        Console.WriteLine(
+            $"{artefact.Grid.Count} rows, {artefact.Flips.Count} flips — written to {output}.{{json,md}}"
+        );
+
+        return 0;
+    }
     case "tree":
         // ⚠ The differential over an arbitrary tree rather than over the corpus. `tree <dir>`.
         // The corpus samples 200 files of Vixen; this measures all 4 711, which is the number the
@@ -324,6 +384,19 @@ switch (args[0]) {
 // happens to `new[] { a, b, c }` at 121 columns; asking cleanupcode does. It is also what derives
 // the default table (docs/plan/03 § "Deriving ReSharper's defaults"), where the override is
 // `root = true` and nothing else.
+/// <summary>Reads an inclusive <c>--flag=A..B</c> range, falling back to the defaults given.</summary>
+static (int From, int To) Range(string[] arguments, string flag, int from, int to) {
+    var value = arguments.FirstOrDefault(argument => argument.StartsWith(flag, StringComparison.Ordinal));
+    if (value is null) {
+        return (from, to);
+    }
+
+    var parts = value[flag.Length..].Split("..");
+    return parts.Length == 2
+        ? (int.Parse(parts[0], CultureInfo.InvariantCulture), int.Parse(parts[1], CultureInfo.InvariantCulture))
+        : (from, to);
+}
+
 static int Ask(string directory, string[] overrides) {
     if (OracleRunner.FindExecutableOrNull() is null) {
         Console.Error.WriteLine("jb is not installed.");
