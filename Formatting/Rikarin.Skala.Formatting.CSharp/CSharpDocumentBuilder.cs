@@ -2394,6 +2394,21 @@ public sealed partial class CSharpDocumentBuilder {
             return true;
         }
 
+        // ⚠ A property-pattern subpattern's value lands on the subpattern's OWN column when the break
+        // after its `:` is taken — no continuation level, unlike every other undelimited continuation
+        // here. SK-DIV-0081, and it was left open until a second measurement agreed with the first:
+        // three now do, aligned at the export's margin, un-aligned at a 60-column margin and nested
+        // inside another property pattern. See BreakPlan.PlanSubpattern.
+        //
+        // ⚠ The loop stops as soon as the token is no longer the node's first token, so it is bounded
+        // by the depth of the value expression rather than by the file's — the same shape the walk
+        // below uses.
+        for (var node = token.Parent; node is not null && node.GetFirstToken() == token; node = node.Parent) {
+            if (node.Parent is SubpatternSyntax subpattern && subpattern.Pattern == node) {
+                return true;
+            }
+        }
+
         // ⚠ A `do` statement's trailing `while` starts its own line at the `do`'s level, exactly as
         // `else`, `catch` and `finally` do below — but those three have a clause node whose first
         // token they are, and this one is a keyword sitting directly in `DoStatementSyntax`. So the

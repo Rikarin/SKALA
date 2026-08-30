@@ -2124,8 +2124,14 @@ public static class Ids {
 
     public static readonly OptionId BlankLinesAroundProperty = Of("resharper_csharp_blank_lines_around_property");
 
+    // ⚠ SK-DIV-0087, `OfInert` in the established sense. It governs an ACCESSOR-LIST property that is
+    // on one line — `public int X { get => 1; }` — and the export's
+    // `keep_existing_declaration_block_arrangement = false` expands exactly that shape onto three
+    // lines, so nothing this configuration can produce is a single-line property. Measured, and it
+    // refuted the claim the key's own fixture carried: an expression-bodied `X => 1;` is governed by
+    // neither this key nor `blank_lines_around_property`.
     public static readonly OptionId BlankLinesAroundSingleLineProperty =
-        Of("resharper_csharp_blank_lines_around_single_line_property");
+        OfInert("resharper_csharp_blank_lines_around_single_line_property");
 
     public static readonly OptionId BlankLinesAroundAutoProperty =
         Of("resharper_csharp_blank_lines_around_auto_property");

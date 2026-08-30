@@ -488,6 +488,10 @@ public sealed class BreakPlan {
                 );
                 return;
 
+            case SubpatternSyntax subpattern:
+                PlanSubpattern(subpattern);
+                return;
+
             case BaseListSyntax baseList:
                 PlanBaseList(baseList);
                 return;
@@ -2152,6 +2156,54 @@ public sealed class BreakPlan {
                 Owner: ChainOwnerOf(node)
             ),
             spendsIndent: true
+        );
+    }
+
+    /// <summary>
+    ///     A property-pattern subpattern's own break point: after its <c>:</c>, landing on the
+    ///     subpattern's own column.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ SK-DIV-0081, and the entry was left open on one question: every other undelimited
+    ///     continuation in this formatter spends a level and this one spends none, which was
+    ///     "measured once and nowhere else". It is measured three times now, in configurations that do
+    ///     not share a cause — aligned at the export's margin, un-aligned at a 60-column margin, and
+    ///     nested inside another property pattern — and the value lands on the subpattern's own column
+    ///     in all three:
+    ///     <code>
+    /// var matched = candidate is {          var matched = candidate is {
+    ///                                OnlySubpatternPropertyName:      OnlySubpatternPropertyName:
+    ///                                "a string long enough …"         "a string long enough …"
+    ///                            };         };
+    /// align = true, margin 120              align = false, margin 60
+    ///     </code>
+    ///     ⚠ That also refutes the entry's "reachable only under alignment": it is reachable un-aligned
+    ///     at any margin the subpattern overflows, and the export's 120 was simply wider than the
+    ///     fixture's line.
+    ///     <para>
+    ///         ⚠ <c>spendsIndent</c> is left at its default of <see langword="false" />, which is the whole
+    ///         of the finding. A positional subpattern has no <c>:</c> and gets no point.
+    ///     </para>
+    /// </remarks>
+    void PlanSubpattern(SubpatternSyntax subpattern) {
+        var colon = subpattern.ExpressionColon?.ColonToken ?? default;
+        if (colon.IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        var group = NewGroup();
+        Flat(colon);
+        var value = FirstToken(subpattern.Pattern);
+        Point(value, group);
+
+        Describe(
+            subpattern,
+            group,
+            GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && BreaksBefore(value),
+                BreaksIfTooLong: true
+            )
         );
     }
 

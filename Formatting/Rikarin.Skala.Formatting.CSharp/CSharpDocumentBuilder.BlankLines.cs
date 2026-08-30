@@ -748,7 +748,18 @@ public sealed partial class CSharpDocumentBuilder {
                 single ? _options.BlankLinesAroundSingleLineLocalMethod : _options.BlankLinesAroundLocalMethod,
             PropertyDeclarationSyntax property => IsAutoProperty(property)
                 ? single ? _options.BlankLinesAroundSingleLineAutoProperty : _options.BlankLinesAroundAutoProperty
-                : single ? _options.BlankLinesAroundSingleLineProperty : _options.BlankLinesAroundProperty,
+                : single
+                    // ⚠ "A single-line property" is an ACCESSOR-LIST property on one line —
+                    // `public int X { get => 1; }` — and not an expression-bodied one. Measured
+                    // 2026-08-30: at `blank_lines_around_single_line_property = 2` the oracle puts two
+                    // blank lines around the first and none around `public int X => 1;`, and
+                    // `blank_lines_around_property = 2` does not reach it either, so an
+                    // expression-bodied property is governed by neither key and states no requirement.
+                    // ⚠ This refutes the claim the key's own fixture carried, which is corrected with
+                    // it. Skala applied the key to `=> 1;` and so moved where the oracle could not,
+                    // which was the whole of that row. SK-DIV-0087.
+                    ? property.AccessorList is null ? 0 : _options.BlankLinesAroundSingleLineProperty
+                    : _options.BlankLinesAroundProperty,
             IndexerDeclarationSyntax or EventDeclarationSyntax =>
                 single ? _options.BlankLinesAroundSingleLineProperty : _options.BlankLinesAroundProperty,
             FieldDeclarationSyntax or EventFieldDeclarationSyntax =>

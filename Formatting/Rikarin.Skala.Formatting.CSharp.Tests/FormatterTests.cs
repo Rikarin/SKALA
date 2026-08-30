@@ -1204,6 +1204,85 @@ public sealed class BracePlacementTests {
 }
 
 /// <summary>
+///     A property-pattern subpattern's break point, and the column its value lands on.
+/// </summary>
+/// <remarks>
+///     ⚠ SK-DIV-0081, closed. The entry sat open on one question — every other undelimited continuation
+///     in this formatter spends a level and this one spends none, "measured once and nowhere else" —
+///     and these are the second and third measurements, in configurations that do not share a cause.
+///     Both are quoted from <c>jb cleanupcode</c> 2025.2.6.
+///     <para>
+///         ⚠ The un-aligned case also refutes the entry's "reachable only under alignment", which had
+///         reasoned from the export's 120-column margin alone.
+///     </para>
+/// </remarks>
+public sealed class SubpatternBreakTests {
+    static string FormatWith(string source, params (string Key, string Value)[] overrides) {
+        var options = new PhaseOneOptions(
+            Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
+                .Options
+        );
+
+        return CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
+    }
+
+    const string Source = """
+                          public class P {
+                              void One(object candidate) {
+                                  var matched = candidate is { OnlySubpatternPropertyName: "a string long enough that the pattern cannot stay on its line" };
+                              }
+                          }
+                          """;
+
+    /// <summary>
+    ///     The subpattern's value lands on the subpattern's own column: the same leading whitespace,
+    ///     not a level more.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Asserted as a relationship between the two lines rather than as an absolute column, because
+    ///     the absolute column is what the two configurations differ in and the relationship is what the
+    ///     measurement found. Aligned it is 39 and un-aligned it is 12; both are the name's own.
+    /// </remarks>
+    [Theory]
+    [InlineData("true", "120")]
+    [InlineData("false", "60")]
+    public void TheValueLandsOnTheSubpatternsOwnColumn(string aligned, string margin) {
+        var lines = FormatWith(
+                Source,
+                ("resharper_csharp_align_multiline_property_pattern", aligned),
+                ("resharper_csharp_max_line_length", margin)
+            )
+            .Split('\n');
+
+        var name = Array.FindIndex(lines, static l => l.TrimEnd().EndsWith("OnlySubpatternPropertyName:", StringComparison.Ordinal));
+        Assert.True(name >= 0, "the subpattern's `:` did not end a line, so nothing broke after it");
+        Assert.StartsWith("\"a string long enough", lines[name + 1].TrimStart(), StringComparison.Ordinal);
+        Assert.Equal(Indent(lines[name]), Indent(lines[name + 1]));
+    }
+
+    static string Indent(string line) => line[..(line.Length - line.TrimStart().Length)];
+
+    /// <summary>
+    ///     ⚠ A positional subpattern has no <c>:</c> and gets no break point of its own — asserted as
+    ///     "nothing broke" rather than on the text, because the point of the arm is the early return.
+    /// </summary>
+    [Fact]
+    public void APositionalSubpattern_IsNotGivenABreakPoint() {
+        var formatted = FormatWith(
+            "public class P {\n    void M(object c) {\n        var matched = c is P(1, 2);\n    }\n}\n",
+            ("resharper_csharp_max_line_length", "40")
+        );
+
+        var statement = Array.Find(formatted.Split('\n'), static l => l.Contains(" is ", StringComparison.Ordinal));
+        Assert.NotNull(statement);
+        Assert.EndsWith(";", statement.TrimEnd(), StringComparison.Ordinal);
+    }
+}
+
+/// <summary>
 ///     The two <c>use_continuous_indent_inside_*</c> keys, at the multiplier that unmasks them.
 /// </summary>
 /// <remarks>

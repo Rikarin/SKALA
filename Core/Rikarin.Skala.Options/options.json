@@ -2897,14 +2897,15 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "BlankLinesInDeclarations",
-      "summary": "Blank lines in declarations — Around single line property/event",
+      "summary": "Blank lines around a single-line property. ⚠ Measured 2026-08-30 against `jb cleanupcode` 2025.2.6, and it refutes the claim the key's own fixture carried: “a single-line property” is an ACCESSOR-LIST property on one line, `public int X { get => 1; }`, where the key is decisive at 2. An expression-bodied `public int X => 1;` is governed by NEITHER this key (0, 1, 2, 3, both spellings, on tight and pre-spaced input, in both directions) NOR `blank_lines_around_property`; `{ get; set; }` is `blank_lines_around_single_line_auto_property`'s, confirmed on the same run. Skala applied it to the expression-bodied form and so moved where the oracle could not, which was the whole of its SPURIOUS row. SK-DIV-0087.",
       "since": "0.1",
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_property.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_property",
       "templateLine": 632,
       "expands": [],
       "min": 0,
-      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative.",
+      "inert": "Masked by `resharper_keep_existing_declaration_block_arrangement = false` in the export, which expands the one shape the key governs — an accessor-list property on one line — onto three lines, and a property that is not on one line is not this key's. Decisive with that key at `true`: at 2 the oracle puts two blank lines around `public int X { get => 1; }` and none without it. Two flips, so the one-key sweep cannot reach it. ⚠ Not unimplemented: `RequirementFor` reads it for exactly that shape. SK-DIV-0087."
     },
     {
       "key": "resharper_csharp_blank_lines_around_single_line_type",

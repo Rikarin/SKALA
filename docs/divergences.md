@@ -2533,21 +2533,41 @@ subpattern's colon and lands the value on the *same* column — no continuation 
 no break point on a `SubpatternSyntax` at all: `BreakPlan` plans the property-pattern *clause* and its
 commas, and a subpattern's own colon is not a gap anybody planned. The line comes back at 130.
 
-⚠ **Reachable only under alignment**, which is why it has survived: at the export's
-`align_multiline_property_pattern = false` the same subpattern sits at column 12 and is 101 columns
-wide, so nothing has to break and both engines return it whole. No margin the fixture can choose
-exposes it while the key is off.
-
 ⚠ The break itself is not the hard part — a point at `FirstToken(subpattern.Pattern)` is one line. What
-is not established is the level it lands on. Every other undelimited continuation in this formatter
-spends a level; this one spends none, and it is the only measurement available. A group whose
-`spendsIndent` is false everywhere would be a rule fitted to one line of one fixture at one value of
-one Tier D key, which is the kind of fact this register exists to refuse until a second measurement
-agrees with it.
+was not established is the level it lands on. Every other undelimited continuation in this formatter
+spends a level; this one spends none, and that was the only measurement available. A group whose
+`spendsIndent` is false everywhere would have been a rule fitted to one line of one fixture at one
+value of one Tier D key, which is the kind of fact this register exists to refuse until a second
+measurement agrees with it.
+
+### ⚠ Closed 2026-08-30. The second measurement arrived, and it brought a third
+
+Two claims above are corrected by it.
+
+**The level.** The value lands on the subpattern's own column in three configurations that do not
+share a cause — aligned at the export's 120-column margin (the original), un-aligned at a 60-column
+margin, and nested inside an outer property pattern:
+
+```
+var matched = candidate is {          var matched = candidate is {
+                               OnlySubpatternPropertyName:      OnlySubpatternPropertyName:
+                               "a string long enough …"         "a string long enough …"
+                           };         };
+align = true, margin 120              align = false, margin 60
+```
+
+**"Reachable only under alignment" is false.** The paragraph that said so reasoned from the export's
+margin alone: at 120 the un-aligned subpattern is 101 columns and nothing has to break. Narrow the
+margin and it breaks, un-aligned, onto the same column — which is how the third and cleanest
+measurement was obtained, and it is why the rule is not an artefact of the alignment column.
+
+`BreakPlan.PlanSubpattern` adds the point and `StartsAUnit` gives it its column;
+`resharper_csharp_align_multiline_property_pattern` now reads `Conformant` at both values.
+`corpus/real` did not move — 99.55 / 86.05 bare and 99.64 / 86.58 with symbols, before and after.
 
 - options: `resharper_csharp_align_multiline_property_pattern`
-- ⚠ status: **open**, cause established and narrow: a missing break point on `SubpatternSyntax`, whose
-  indentation is measured once and nowhere else.
+- ⚠ status: **closed — fixed**. `constructs/wrapping/alignment.cs` pins the columns at both values and
+  the sweep row is `Conformant`.
 
 ## SK-DIV-0082 — `max_line_length = 1` explodes a file at break points Skala does not have, and cannot reasonably acquire
 
@@ -2921,3 +2941,50 @@ non-negotiable 9 is exactly this case: the reference tool is a test subject, not
 - ⚠ `INERT` in the sweep's own table means "the oracle moved and Skala did not — the key is ignored",
   and for this row that reading is wrong in both halves. Whoever runs the next sweep should read this
   entry before acting on the count.
+
+## SK-DIV-0087 — `blank_lines_around_single_line_property` governs a shape this export never produces, and the fixture said otherwise
+
+`SPURIOUS` in the key-flip sweep, and the defect was real: Skala applied the key to a shape ReSharper
+does not, so Skala moved where the oracle could not. **That is fixed.** What is left is a mask.
+
+### What "a single-line property" is, and the claim it refutes
+
+Measured 2026-08-30, one key at a time, at `0`, `1`, `2` and `3`, on input written both tight and with
+blank runs already in it so that both directions were asked:
+
+| shape | the key that governs it |
+|---|---|
+| `public int X { get => 1; }` — an **accessor-list** property on one line | **this key**, decisive at 2 |
+| `public int X { get; set; }` | `blank_lines_around_single_line_auto_property`, confirmed on the same run |
+| `public int X => 1;` — expression-bodied | **neither**: not this key in either spelling, and not `blank_lines_around_property` |
+
+⚠ **The key's own corpus fixture asserted the opposite**, in a comment that reads as a measurement:
+"`public int X => 1;` is the single-line property this key governs — at 2 the oracle puts two blank
+lines around each of these two". The oracle puts none, at every value and in both directions. The
+comment is corrected in place rather than deleted, because the file had already been changed *once*
+for this key — away from the accessor-list form, which was the right shape — and a note saying only
+"this is the shape" would invite the same move a third time.
+
+`RequirementFor` now reads the key for an accessor-list property alone; an expression-bodied one
+states no blank-line requirement, which is what the oracle does. ⚠ Only the *single-line* arm is
+narrowed. A multi-line expression-bodied property still takes `blank_lines_around_property`, because
+that is not a shape this pass measured and the register does not extend a measurement past what was
+asked.
+
+### Why the row cannot reach `Conformant`
+
+`resharper_keep_existing_declaration_block_arrangement = false` in the export expands
+`public int X { get => 1; }` onto three lines, and a property that is not on one line is not this
+key's. So the one shape the key governs cannot exist under this configuration, and no fixture makes it
+observable from a single flip — SK-DIV-0083's shape exactly. With the mask lifted
+(`keep_existing_declaration_block_arrangement = true`) the key is decisive at 2 in both engines.
+
+The fixture keeps the expression-bodied shape rather than moving back to the accessor-list one,
+because the accessor-list form would be expanded and the row would be `UNEXERCISED` either way — and
+this way the file carries the measurement that was wrong twice.
+
+- options: `resharper_csharp_blank_lines_around_single_line_property`
+- ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Registered
+  `OfInert` with the mask named; the `oracle` glob is kept so the next sweep re-measures it. One more
+  pair for `pairwise`: `(blank_lines_around_single_line_property,
+  keep_existing_declaration_block_arrangement)`.
