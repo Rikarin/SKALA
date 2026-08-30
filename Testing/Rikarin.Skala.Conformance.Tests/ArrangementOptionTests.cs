@@ -321,4 +321,188 @@ public sealed class ArrangementOptionTests {
         Assert.DoesNotContain("using StringBuilder =", output, StringComparison.Ordinal);
         Assert.Equal(survives, output.Contains("using Numbers =", StringComparison.Ordinal));
     }
+
+    const string Discards = """
+                            namespace P;
+
+                            public class C {
+                                public void Deconstruct(out int first, out int second) {
+                                    first = 1;
+                                    second = 2;
+                                }
+
+                                public void Bare() {
+                                    Deconstruct(out var kept, out _);
+                                    System.Console.WriteLine(kept);
+                                }
+
+                                public void Explicit() {
+                                    Deconstruct(out var kept, out var _);
+                                    System.Console.WriteLine(kept);
+                                }
+                            }
+                            """;
+
+    const string TypeInference = """
+                                 namespace P;
+                                 public class Held { }
+                                 public class C {
+                                     Held _field = new Held();
+                                     public Held Property { get; } = new Held();
+                                     public Held Slot { get; set; } = new Held();
+                                     public Held Make() { Slot.ToString(); return new Held(); }
+                                     public Held Arrow() => new Held();
+                                     public void Assign() { Slot = new Held(); }
+                                 }
+                                 """;
+
+    /// <summary>
+    ///     ⚠ "Evident" is "the type is written in the syntax that gives this creation its target", and
+    ///     an <em>assignment</em> is the position that takes a target and is not evident.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on <c>type-inference/new-wins-when-lhs-names-the-type.cs</c> one key at a time
+    ///     under the cleanup profile: at <c>when_type_evident = explicitly_typed</c> the oracle writes
+    ///     <c>Make() =&gt; new List&lt;int&gt;()</c> and leaves <c>local = new()</c>; at
+    ///     <c>when_type_not_evident = explicitly_typed</c> it does exactly the reverse. Skala had the two
+    ///     the other way round, and at the export both keys are <c>target_typed</c>, so the committed
+    ///     fixture agreed with either.
+    /// </remarks>
+    [Theory]
+    [InlineData("resharper_csharp_object_creation_when_type_evident", "new Held()", "new()")]
+    [InlineData("resharper_csharp_object_creation_when_type_not_evident", "new()", "new Held()")]
+    public void ObjectCreation_AnAssignmentIsNotEvidentAndAReturnIs(string key, string evident, string notEvident) {
+        var output = Arrange(TypeInference, (key, "explicitly_typed"));
+
+        Assert.True(output.Contains("return " + evident + ";", StringComparison.Ordinal), output);
+        Assert.True(output.Contains("Arrow() => " + evident + ";", StringComparison.Ordinal), output);
+        Assert.True(output.Contains("Slot = " + notEvident + ";", StringComparison.Ordinal), output);
+    }
+
+    /// <summary>⚠ A declarator and a property initializer are evident under either key.</summary>
+    [Fact]
+    public void ObjectCreation_ADeclaratorAndAPropertyInitialiserAreEvident() {
+        var output = Arrange(
+            TypeInference,
+            ("resharper_csharp_object_creation_when_type_evident", "explicitly_typed")
+        );
+
+        Assert.Contains("Held _field = new Held();", output, StringComparison.Ordinal);
+        Assert.Contains("public Held Property { get; } = new Held();", output, StringComparison.Ordinal);
+    }
+
+    const string Defaults = """
+                            namespace P;
+                            public class C {
+                                int _field = default(int);
+                                public int Slot { get; set; }
+                                public void Assign() { Slot = default(int); }
+                                public void Parameters(int count = default(int)) { Slot = count; }
+                            }
+                            """;
+
+    /// <summary>
+    ///     ⚠ The same split for <c>default</c>, and the same correction: a parameter's own default is
+    ///     evident — the type is on the parameter beside it — and an assignment is not.
+    /// </summary>
+    [Theory]
+    [InlineData("resharper_csharp_default_value_when_type_evident", "count = default(int)", "Slot = default;")]
+    [InlineData("resharper_csharp_default_value_when_type_not_evident", "Slot = default(int);", "count = default)")]
+    public void DefaultValue_AParameterDefaultIsEvidentAndAnAssignmentIsNot(
+        string key,
+        string expanded,
+        string contracted
+    ) {
+        var output = Arrange(Defaults, (key, "default_expression"));
+
+        Assert.Contains(expanded, output, StringComparison.Ordinal);
+        Assert.Contains(contracted, output, StringComparison.Ordinal);
+    }
+
+    const string VarCategories = """
+                                 namespace P;
+                                 using System.Collections.Generic;
+                                 public class C {
+                                     public void M() {
+                                         int[] builtInArray = new int[4];
+                                         int?[] nullableArray = new int?[4];
+                                         int[,] rank2 = new int[4, 4];
+                                         List<int>[] referenceArray = new List<int>[4];
+                                     }
+                                 }
+                                 """;
+
+    /// <summary>
+    ///     ⚠ An array of a built-in element type is a <c>for_built_in_types</c> declaration, and an array
+    ///     of a reference type is an apparent one. Measured on a nine-case probe with all three
+    ///     <c>csharp_style_var_*</c> keys restated.
+    /// </summary>
+    [Fact]
+    public void Var_AnArrayTakesItsCategoryFromItsElementType() {
+        var builtIn = Arrange(VarCategories, ("csharp_style_var_for_built_in_types", "false:suggestion"));
+        Assert.Contains("int[] builtInArray", builtIn, StringComparison.Ordinal);
+        Assert.Contains("int?[] nullableArray", builtIn, StringComparison.Ordinal);
+        Assert.Contains("int[,] rank2", builtIn, StringComparison.Ordinal);
+        Assert.Contains("var referenceArray", builtIn, StringComparison.Ordinal);
+
+        var apparent = Arrange(VarCategories, ("csharp_style_var_when_type_is_apparent", "false:suggestion"));
+        Assert.Contains("var builtInArray", apparent, StringComparison.Ordinal);
+        Assert.Contains("List<int>[] referenceArray", apparent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ <c>parentheses_redundancy_style = remove</c> is ReSharper's "Always" and outranks the three
+    ///     <c>dotnet_style_parentheses_in_*</c> keys and <c>parentheses_non_obvious_operations</c> both.
+    ///     The proof layer is what still stands: a removal that changes the parse is refused at either
+    ///     value.
+    /// </summary>
+    [Fact]
+    public void Parentheses_Remove_OutranksEveryPolicyAndKeepsTheProof() {
+        var output = Arrange(
+            Parentheses + "\n",
+            ("resharper_csharp_parentheses_redundancy_style", "remove")
+        );
+
+        Assert.Contains("=> a + b * c;", output, StringComparison.Ordinal);
+        Assert.Contains("=> a > b == c > d;", output, StringComparison.Ordinal);
+
+        // ⚠ `a || (b && c)` is `other_binary_operators = always_for_clarity` at the export and goes
+        // here anyway, which is the whole of what `remove` means.
+        Assert.Contains("=> a || b && c;", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The space between <c>var</c> and <c>_</c> is the whole of this test.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A <c>DeclarationExpression</c> built from two nodes that carry no trivia prints
+    ///     <c>var_</c>, which is one identifier and not a declaration. The re-bind reported
+    ///     <c>CS0103: The name 'var_' does not exist in the current context</c>, safety layer 3 reverted
+    ///     the document whole, and the arranger's answer at this key's <c>true</c> was therefore the
+    ///     input byte for byte — every other rule's work on the file lost with it. The key-flip sweep
+    ///     read that as <c>DIVERGENT</c> and could not say why, because a reverted file looks exactly
+    ///     like a rule that declined. The <c>Arrange</c> helper above already asserts
+    ///     <c>NotEqual(Reverted)</c>; nothing asked it at this value until now, which is the gap rather
+    ///     than the assertion.
+    /// </remarks>
+    [Fact]
+    public void Discard_ExplicitDeclaration_WritesTheSpaceAfterVar() {
+        var output = Arrange(Discards, ("resharper_csharp_prefer_explicit_discard_declaration", "true"));
+
+        Assert.Contains("out var _", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("var_", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The export's <c>false</c>, which *removes* an existing <c>var _</c> rather than merely
+    ///     declining to write one — the second row of the table in <c>DiscardDeclarationRule</c>'s own
+    ///     remarks, and the row that answers the key.
+    /// </summary>
+    [Fact]
+    public void Discard_AtTheExportsValue_StripsAnExistingVar() {
+        var output = Arrange(Discards);
+
+        Assert.Contains("out _", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("out var _", output, StringComparison.Ordinal);
+    }
 }

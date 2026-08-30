@@ -31,8 +31,12 @@ public class DefaultLiteral {
 
     public List<int> Held { get; set; }
 
-    // ⚠ A parameter's own default is the one position `default_value_when_type_NOT_evident` governs:
-    // the reader cannot see the type from the initialiser, only from the parameter beside it.
+    // ⚠ A parameter's own default is EVIDENT — the type is written on the parameter beside it — so
+    // `default_value_when_type_evident` governs this line and not its sibling. The comment here said
+    // the opposite until the key-flip sweep measured it: flipped one at a time, the two keys' rows
+    // came back exact mirror images, with `_evident = default_expression` expanding these parameter
+    // defaults and leaving `Held = default` alone, and `_not_evident = default_expression` doing the
+    // reverse. `Held` is the not-evident position: it is an assignment to a name declared elsewhere.
     public void WithDefaults(int count = default(int), string label = default(string)) {
         Console.WriteLine(count + label);
     }

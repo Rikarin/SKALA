@@ -272,10 +272,19 @@ public sealed class DiscardDeclarationRule : ArrangementRule {
             }
 
             if (explicitly) {
+                // ⚠ The space between `var` and `_` is written here and it is load-bearing, not
+                // cosmetic. A `DeclarationExpression` built from two nodes that carry no trivia prints
+                // as `var_`, which is one identifier and not a declaration: the re-bind reported
+                // `CS0103: The name 'var_' does not exist in the current context`, safety layer 3
+                // reverted the file whole, and the arranger's answer at this key's `true` was the
+                // input byte for byte. That is what the key-flip sweep saw — the whole file's
+                // arrangement lost to one missing space, on the value the export does not use. One
+                // space and nothing else, per docs/plan/06 § "Interaction with the formatter": the
+                // formatter lays the rest out.
                 return node.Expression is IdentifierNameSyntax { Identifier.ValueText: "_" }
                     ? visited.WithExpression(
                         SyntaxFactory.DeclarationExpression(
-                            SyntaxFactory.IdentifierName("var"),
+                            SyntaxFactory.IdentifierName("var").WithTrailingTrivia(SyntaxFactory.Space),
                             SyntaxFactory.DiscardDesignation()
                         )
                             .WithTriviaFrom(visited.Expression)

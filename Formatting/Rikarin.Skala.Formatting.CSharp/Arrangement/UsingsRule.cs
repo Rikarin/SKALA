@@ -384,11 +384,48 @@ public sealed class UsingsRule : ArrangementRule {
     /// </summary>
     static List<UsingDirectiveSyntax> Sort(List<UsingDirectiveSyntax> directives, in ArrangementOptions options) {
         var systemFirst = options.SystemDirectivesFirst;
+
+        // ⚠ `OrderBy`/`ThenBy` over objects is a stable sort, which is what carries the aliases'
+        // written order through — see SortKey.
         return [
             .. directives.OrderBy(directive => Rank(directive, systemFirst))
-                .ThenBy(static directive => directive.Name?.ToString() ?? string.Empty, StringComparer.Ordinal)
+                .ThenBy(SortKey, StringComparer.Ordinal)
         ];
     }
+
+    /// <summary>
+    ///     What a directive sorts by within its group — and for an alias, nothing.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The oracle does not order aliases among themselves; it leaves them as written.</b>
+    ///     Measured on two probes under the cleanup profile, and it took two because either one alone
+    ///     is degenerate:
+    ///     <code>
+    /// written                                     oracle, sort_usings = true
+    /// Builder = System.Text.StringBuilder         Builder, Numbers
+    /// Numbers = System.Collections.Generic.List&lt;int&gt;
+    ///
+    /// Zebra = System.Globalization.CultureInfo    Zebra, Alpha
+    /// Alpha = System.Text.StringBuilder
+    ///     </code>
+    ///     The first refutes "by target" (<c>List</c> would sort before <c>StringBuilder</c>) and the
+    ///     second refutes "by alias name" (<c>Alpha</c> would sort before <c>Zebra</c>). Written order
+    ///     is what is left, and it fits both.
+    ///     <para>
+    ///         ⚠ Sorting an alias by <c>Name</c> — its <em>target</em> — is what this did before, and it is
+    ///         what made both <c>resharper_csharp_keep_nontrivial_alias</c> and
+    ///         <c>resharper_remove_only_unused_aliases</c> read <c>DIVERGENT</c> in the key-flip sweep: at
+    ///         the value of either key where the second alias survives, the two engines emitted the same
+    ///         two directives in opposite orders. At the export's pair only one alias survives, so the
+    ///         committed fixture could not see it.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <c>using static</c> keeps its by-name ordering. Nothing here has measured two of them
+    ///         against each other, and an unmeasured change is not an improvement.
+    ///     </para>
+    /// </remarks>
+    static string SortKey(UsingDirectiveSyntax directive) =>
+        directive.Alias is not null ? string.Empty : directive.Name?.ToString() ?? string.Empty;
 
     static int Rank(UsingDirectiveSyntax directive, bool systemFirst) {
         // ⚠ A `global using` must precede every non-global one — CS8915, and it is a hard language
