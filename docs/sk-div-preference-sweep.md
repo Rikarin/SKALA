@@ -236,8 +236,10 @@ line within the margin, and reach further out when it does not* — predicts **2
 the oracle answered with one of the two, 98.10 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -350,8 +352,10 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 93.77 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -466,8 +470,10 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 63.66 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -581,8 +587,10 @@ back flat. Neither is in the denominator: a model of "which of these two gives" 
 be graded on cells where one of them did.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -711,8 +719,10 @@ back flat. Neither is in the denominator: a model of "which of these two gives" 
 be graded on cells where one of them did.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -835,8 +845,10 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 98.02 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -952,8 +964,10 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 98.06 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1066,8 +1080,10 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 93.92 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1184,8 +1200,10 @@ back flat. Neither is in the denominator: a model of "which of these two gives" 
 be graded on cells where one of them did.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1390,8 +1408,10 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 100.00 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1502,8 +1522,10 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 100.00 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1623,8 +1645,10 @@ back flat. Neither is in the denominator: a model of "which of these two gives" 
 be graded on cells where one of them did.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1751,8 +1775,10 @@ back flat. Neither is in the denominator: a model of "which of these two gives" 
 be graded on cells where one of them did.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,
+not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a
+lone string literal. The per-filler rows below are the finding, not a breakdown of one number.
+It is the only thing here a later reader cannot derive without measuring:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|

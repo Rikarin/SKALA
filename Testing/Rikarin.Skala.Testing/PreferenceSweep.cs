@@ -1692,9 +1692,15 @@ public static class PreferenceSweep {
             "**The margin law with a floor** — the same, and additionally the inner construct must be at"
         );
         builder.AppendLine(
-            "least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it"
+            "least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,"
         );
-        builder.AppendLine("is the only thing here a later reader cannot derive without measuring:");
+        builder.AppendLine(
+            "not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a"
+        );
+        builder.AppendLine(
+            "lone string literal. The per-filler rows below are the finding, not a breakdown of one number."
+        );
+        builder.AppendLine("It is the only thing here a later reader cannot derive without measuring:");
         builder.AppendLine();
         builder.AppendLine("| filler | cells | `F` | law alone | law with floor |");
         builder.AppendLine("|---|---:|---:|---:|---:|");
