@@ -1691,9 +1691,7 @@ public static class PreferenceSweep {
         builder.AppendLine(
             "**The margin law with a floor** — the same, and additionally the inner construct must be at"
         );
-        builder.AppendLine(
-            "least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,"
-        );
+        builder.AppendLine("least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,");
         builder.AppendLine(
             "not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a"
         );
