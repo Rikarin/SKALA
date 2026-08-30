@@ -106,10 +106,25 @@ public static class SarifWriter {
     static readonly IContractResolver ExplicitLevels = new AlwaysSerializeLevel();
 
     sealed class AlwaysSerializeLevel : DefaultContractResolver {
+        /// <summary>
+        ///     The three members the SDK elides at their default and Skala states anyway.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ <c>ReportingDescriptor.DefaultConfiguration</c> is in the set because the SDK drops the
+        ///     whole object, not just the level, when it equals SARIF's default — so forcing
+        ///     <c>ReportingConfiguration.Level</c> on its own does nothing, and the 13 rules Skala
+        ///     defaults to <c>warning</c> had no <c>defaultConfiguration</c> at all. That is correct
+        ///     SARIF, and it is still a rules table you cannot read the mapping off.
+        /// </remarks>
+        static readonly HashSet<(Type, string)> Forced = [
+            (typeof(Result), nameof(Result.Level)),
+            (typeof(ReportingConfiguration), nameof(ReportingConfiguration.Level)),
+            (typeof(ReportingDescriptor), nameof(ReportingDescriptor.DefaultConfiguration))
+        ];
+
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization serialization) {
             var property = base.CreateProperty(member, serialization);
-            if (member.Name != nameof(Result.Level)
-                || (member.DeclaringType != typeof(Result) && member.DeclaringType != typeof(ReportingConfiguration))) {
+            if (member.DeclaringType is not { } declaring || !Forced.Contains((declaring, member.Name))) {
                 return property;
             }
 
@@ -323,9 +338,7 @@ public static class SarifWriter {
         }
 
         if (finding.Bucket == BaselineBucket.Existing) {
-            suppressions.Add(
-                Suppress(SarifSuppressionKind.External, BaselineJustification, BaselineSuppressionSource)
-            );
+            suppressions.Add(Suppress(SarifSuppressionKind.External, BaselineJustification, BaselineSuppressionSource));
         }
 
         return suppressions;
@@ -363,7 +376,9 @@ public static class SarifWriter {
     ///     not which one, and the answer is a reviewed, committed artefact they can open.
     /// </remarks>
     public const string BaselineJustification =
-        "Accepted in " + Baseline.DefaultRelativePath + ", the repository's committed baseline. "
+        "Accepted in "
+        + Baseline.DefaultRelativePath
+        + ", the repository's committed baseline. "
         + "The `ci` gate counts only findings outside it.";
 
     static Invocation BuildInvocation(RunReport report) {
