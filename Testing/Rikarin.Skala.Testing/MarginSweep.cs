@@ -84,6 +84,24 @@ public static class MarginSweep {
         builder.AppendLine("`120 - (8 + column / 4)`.");
         builder.AppendLine();
 
+        // ⚠ Written into the artefact rather than left to the reader. Ten of the shapes below are also
+        // in the preference sweep, whose numbers answer a different question, and "read the floor off
+        // this table" is the obvious economy and the wrong one — for reasons that file states.
+        builder.AppendLine("⚠ **This file does not carry the wrapping *preference*, and its numbers cannot be read");
+        builder.AppendLine("as one.** Each threshold here is where the `=` break's own continuation line stops being");
+        builder.AppendLine("taken, measured by padding the *variable* name — so a wider right-hand side widens that");
+        builder.AppendLine("continuation line at the same time, and the boundary confounds \"the inner break is now");
+        builder.AppendLine(
+            "enough\" with \"the outer break has stopped being enough\". Every shape below is swept again"
+        );
+        builder.AppendLine(
+            "in [`sk-div-preference-sweep.md`](sk-div-preference-sweep.md) with the filler moved to the"
+        );
+        builder.AppendLine("other side of the `=`, and that file is where the floor `F` and the law's score per shape");
+        builder.AppendLine("live. This one stays for what it does say: the threshold is depth-independent, it moves");
+        builder.AppendLine("with the flat width, and it moves with the shape.");
+        builder.AppendLine();
+
         foreach (var wrapBeforeEq in new[] { false, true }) {
             var cells = Measure(runner, editorConfig, wrapBeforeEq, log);
             builder.Append("## `wrap_before_eq = ")

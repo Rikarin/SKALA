@@ -7,6 +7,16 @@ line comes to exactly `total` — which sweeps the continuation width independen
 of how far over the margin the line was. `predicted` is milestone 3's
 `120 - (8 + column / 4)`.
 
+⚠ **This file does not carry the wrapping *preference*, and its numbers cannot be read
+as one.** Each threshold here is where the `=` break's own continuation line stops being
+taken, measured by padding the *variable* name — so a wider right-hand side widens that
+continuation line at the same time, and the boundary confounds "the inner break is now
+enough" with "the outer break has stopped being enough". Every shape below is swept again
+in [`sk-div-preference-sweep.md`](sk-div-preference-sweep.md) with the filler moved to the
+other side of the `=`, and that file is where the floor `F` and the law's score per shape
+live. This one stays for what it does say: the threshold is depth-independent, it moves
+with the flat width, and it moves with the shape.
+
 ## `wrap_before_eq = false` — the export's value
 
 | shape | depth | column | total | longest `=`-break line | predicted | delta |

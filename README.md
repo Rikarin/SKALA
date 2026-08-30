@@ -128,7 +128,11 @@ Beyond the Nuke targets, `Testing/Rikarin.Skala.Testing` is a harness of develop
 and none of them is a test: `ask <dir>` runs the oracle over a scratch directory so that "what does
 `wrap_if_long` do to a six-element array at 121 columns" gets an answer instead of a guess;
 `defaults` derives ReSharper's default table from it; `margin` sweeps the constant in
-[SK-DIV-0005](docs/sk-div-0005-margin-sweep.md); `locate <set> <kind>` prints the divergent lines
+[SK-DIV-0005](docs/sk-div-0005-margin-sweep.md) and `preference` sweeps the *choice* that constant
+stands in for, at fourteen shapes and one-column resolution, into
+[the artefact that outlives the oracle](docs/sk-div-preference-sweep.md); `preference
+--render=<json>` rewrites that artefact's prose from the committed grid and needs no ReSharper at
+all; `locate <set> <kind>` prints the divergent lines
 attributed to one construct; `tree <dir> [n]` runs both tools over an arbitrary repository; and
 `sample <tree> <n> <dest>` redraws a corpus sample reproducibly, by a hash of each file's path.
 
