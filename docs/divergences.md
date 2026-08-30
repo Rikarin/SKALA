@@ -2988,3 +2988,42 @@ this way the file carries the measurement that was wrong twice.
   `OfInert` with the mask named; the `oracle` glob is kept so the next sweep re-measures it. One more
   pair for `pairwise`: `(blank_lines_around_single_line_property,
   keep_existing_declaration_block_arrangement)`.
+
+## SK-DIV-0088 — `keep_existing_lambda_and_anonymous_function_parens_arrangement` is a key the C# formatter does not read
+
+`SPURIOUS` in the key-flip sweep, and the finding is the one this batch's brief warned is the more
+valuable verdict: not a mask, not a weak fixture — **a documented editorconfig property the C#
+formatter is not wired to.** Skala answered to it, so Skala moved where the oracle could not.
+
+Measured on `constructs/preservation/lambda-parens.cs`, whose lambda has the author's break inside its
+parentheses, one configuration per `cleanupcode` run:
+
+| configuration | the single-parameter lambda |
+|---|---|
+| the export | `Use((\n int first\n ) => first\n);` — the break is kept |
+| `keep_existing_lambda_… = false` | **unchanged** |
+| `keep_existing_lambda_… = true` | unchanged |
+| `keep_existing_declaration_parens_arrangement = false` | **`Use((int first) => first);` — rejoined** |
+| both `false` | rejoined, and no further |
+| `declaration = false`, `lambda = true` | rejoined |
+
+The last row is the control that settles it: with the declaration key doing the work, setting the
+lambda key *back* to `true` does not restore the break. It is inert in both directions, under both
+values of its neighbour, and in both spellings.
+
+`resharper_keep_existing_declaration_parens_arrangement` governs a lambda's and an anonymous method's
+parameter list along with every other one. `BreakPlan.DeclarationKeeps` had a special case routing the
+first two to the lambda key; it is gone, and one key now governs every parameter list.
+
+⚠ The two-parameter lambda in the same file stays broken under every configuration above and rejoins
+only at `keep_user_linebreaks = false`. That is a different key doing a different job — the break it
+keeps is between *items*, not at the parenthesis — and it is named here because it is the obvious
+wrong conclusion to draw from the table.
+
+- options: `resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement`
+- ⚠ status: **accepted**. The row goes `SPURIOUS` → `UNEXERCISED`, which is the honest verdict for a
+  key nothing reads: both engines are flat at both values because there is nothing to be flat about.
+  Registered `OfInert` with "unread" rather than "masked" spelled out, since the two are recorded the
+  same way and mean different things. Still resolved and reported by `skala config explain` — a key
+  the registry knows and the tool silently drops is worse than one it reports as having no effect.
+- ⚠ Its `oracle` glob is kept. If a future ReSharper wires the key up, this is the row that notices.

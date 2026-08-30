@@ -8785,12 +8785,13 @@
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "Lambda",
-      "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
+      "summary": "Keep the existing arrangement of a lambda's or an anonymous method's parentheses. ⚠ Measured 2026-08-30 against `jb cleanupcode` 2025.2.6 on `constructs/preservation/lambda-parens.cs`, with the author's break inside the lambda's parentheses: THE C# FORMATTER DOES NOT ANSWER TO THIS KEY. It is flat at `true` and at `false`, in both spellings; what rejoins the parentheses is `resharper_keep_existing_declaration_parens_arrangement = false`, and with that key at `false` this one still changes nothing in either direction. The same shape as `remove_this_qualifier`: a documented editorconfig property the C# formatter is not wired to. Skala answered to it — `BreakPlan.DeclarationKeeps` routed a lambda's parameter list here — which is why the sweep read SPURIOUS. One key now governs every parameter list. SK-DIV-0088.",
       "since": "0.1",
       "oracle": "constructs/preservation/lambda-parens.cs",
       "docs": null,
       "templateLine": 824,
-      "expands": []
+      "expands": [],
+      "inert": "⚠ Not masked — UNREAD. The C# formatter does not answer to this key at either value or in either spelling; `resharper_keep_existing_declaration_parens_arrangement` governs a lambda's and an anonymous method's parentheses along with every other parameter list, measured with the negative control (that key at `false` rejoins them, this one at `false` does not). Still resolved and reported by `skala config explain`, because a key the registry knows and the tool silently drops is worse than one it reports as having no effect. SK-DIV-0088."
     },
     {
       "key": "resharper_keep_user_linebreaks",

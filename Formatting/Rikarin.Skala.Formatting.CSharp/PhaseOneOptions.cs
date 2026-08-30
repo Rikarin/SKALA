@@ -2245,8 +2245,13 @@ public static class Ids {
     public static readonly OptionId KeepExistingDeclarationParensArrangement =
         Of("resharper_csharp_keep_existing_declaration_parens_arrangement");
 
+    // ⚠ SK-DIV-0088, and this one is NOT a mask: the C# formatter does not answer to this key at all.
+    // Measured — `keep_existing_declaration_parens_arrangement = false` rejoins a lambda's broken
+    // parentheses and this key changes nothing at either value, in either spelling. It is still read
+    // and surfaced by `skala config explain`, because a key the registry knows and the tool silently
+    // drops is worse than one it reports as having no effect; nothing acts on it.
     public static readonly OptionId KeepExistingLambdaParensArrangement =
-        Of("resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement");
+        OfInert("resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement");
 
     public static readonly OptionId KeepExistingPrimaryConstructorParensArrangement =
         Of("resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement");

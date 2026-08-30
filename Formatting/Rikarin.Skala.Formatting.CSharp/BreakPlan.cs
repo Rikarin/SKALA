@@ -3234,12 +3234,31 @@ public sealed class BreakPlan {
             _ => _options.KeepExistingInvocationParensArrangement
         };
 
-    bool DeclarationKeeps(ParameterListSyntax parameters) =>
-        parameters.Parent switch {
-            ParenthesizedLambdaExpressionSyntax or AnonymousMethodExpressionSyntax =>
-                _options.KeepExistingLambdaParensArrangement,
-            _ => _options.KeepExistingDeclarationParensArrangement
-        };
+    /// <summary>
+    ///     ⚠ One key for every parameter list, a lambda's and an anonymous method's included.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This used to route a lambda's and an anonymous method's parameter list to
+    ///     <c>resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement</c>, and the C#
+    ///     formatter does not answer to that key at all. Measured 2026-08-30 against
+    ///     <c>jb cleanupcode</c> 2025.2.6 on <c>constructs/preservation/lambda-parens.cs</c>, with the
+    ///     author's break inside the lambda's parentheses:
+    ///     <code>
+    /// keep_existing_lambda_… = false                    unchanged — the break is kept
+    /// keep_existing_lambda_… = true                     unchanged
+    /// keep_existing_declaration_parens_arrangement = false   REJOINED
+    /// both = false                                      rejoined, and no further
+    /// declaration = false, lambda = true                rejoined
+    ///     </code>
+    ///     So the declaration key decides and the lambda key is inert in both directions and in either
+    ///     spelling — the same shape as <c>remove_this_qualifier</c>: a documented editorconfig property
+    ///     the C# formatter is not wired to. Skala answered to it, which is why the sweep read
+    ///     <c>SPURIOUS</c>. SK-DIV-0088.
+    /// </remarks>
+    bool DeclarationKeeps(ParameterListSyntax parameters) {
+        _ = parameters;
+        return _options.KeepExistingDeclarationParensArrangement;
+    }
 
     static StatementSyntax? EmbeddedStatementOf(SyntaxNode node) =>
         node switch {
