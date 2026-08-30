@@ -1487,7 +1487,8 @@
       "docs": "https://spec.editorconfig.org/",
       "templateLine": 530,
       "expands": [],
-      "freeFormBecause": "IDE0073's value is the header text itself, optionally carrying a {fileName} placeholder. There is nothing to enumerate."
+      "freeFormBecause": "IDE0073's value is the header text itself, optionally carrying a {fileName} placeholder. There is nothing to enumerate.",
+      "inert": "Masked by the cleanup *task* rather than by another key, and the key itself is real. Under both committed profiles — `OracleProfile.FormatOnly` and `OracleProfile.Cleanup` set `CSUpdateFileHeader = False` — a header text, a `{fileName}` form, `unset` and the empty string all return one file, while `indent_size = 2` rewrites the same file in the same probe run. Turn `CSUpdateFileHeader` on in the profile and the same values separate: `Copyright (c) Rikarin. All rights reserved.` becomes a `//` line above the namespace and `{fileName}` expands to the file's own name. So it is honoured by `jb cleanupcode`, and what makes it unreachable is the profile choice — header stamping is off so the oracle never writes a header onto a fixture. ⚠ Not a formatting option either way: it inserts a comment, it does not move whitespace."
     },
     {
       "key": "indent_size",
@@ -1766,7 +1767,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 594,
-      "expands": []
+      "expands": [],
+      "unsweptBecause": "⚠ Tier C is a deliberate refusal and stays one: Skala has no autodetection to switch off, and docs/plan/16 § Q1 records the decision — the configured indentation is the only indentation. Measured as well, so the refusal is not resting on the name: under `OracleProfile.FormatOnly`, on a tab-indented file and on a two-space-indented one, `true` and `false` produce one output, and so do the pairs with `resharper_apply_auto_detected_rules = true` and `resharper_use_indent_from_vs = true` held beside it. `indent_style = tab` and `indent_size = 2` each rewrite the same file in the same runs. So `jb cleanupcode` does not autodetect either — this is an IDE toggle, and the refusal costs nothing on the command line. ⚠ Recorded as a measurement beside the refusal, not as a replacement for it."
     },
     {
       "key": "resharper_blank_lines_around_global_attribute",
@@ -8984,7 +8986,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 885,
-      "expands": []
+      "expands": [],
+      "unsweptBecause": "⚠ Not inert — the oracle separates it, and no fixture may carry it. Under `OracleProfile.Cleanup`, one flip over the export, three distinct outputs: at `none` the oracle strips `a << (b + c)`, `a | (b & c)` and `a ^ (b & c)`, which the export's `none, shift, bitwise_*` keeps; at every group it additionally keeps `a + (b * c)`. So it steers which redundant parentheses `resharper_parentheses_redundancy_style = remove_if_not_clarifies_precedence` counts as clarifying. Skala hardcodes the export's set in `ParenthesesRedundancy.IsNonObvious` and never reads the key, so it is flat at every value on every `constructs/` fixture: a glob would file an `INERT` row that the registry does not declare. Real, reachable, unimplemented — the reason is Skala's, not the key's."
     },
     {
       "key": "resharper_parentheses_same_type_operations",
@@ -9000,7 +9003,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 887,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns the file unchanged at both values, and the probe is not weak: 25 redundant same-type parenthesisations across additive, multiplicative, shift, bitwise-and/or/xor, conditional-and/or and null-coalescing, in both nestings — `a + (b + c)` and `(a + b) + c` — collapse identically at `true` and at `false`. Asked again pairwise with `resharper_parentheses_non_obvious_operations` at every group and with `resharper_prefer_roslyn_rules_for_parentheses_clarity = true`: still one output. In the same runs `resharper_parentheses_non_obvious_operations` and `resharper_parentheses_redundancy_style` each move the same file, so the section is read and the parenthesis pass is live. ⚠ Measured under `OracleProfile.Cleanup`, whose only parenthesis task is `RemoveRedundantParentheses`; the tool also ships `CodeCleanupTask_AddMissingParentheses`, which no committed profile enables, and that is the likeliest home of a key about *adding* clarity parentheses."
     },
     {
       "key": "resharper_place_attribute_on_same_line",
@@ -9831,7 +9835,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 1115,
-      "expands": []
+      "expands": [],
+      "unsweptBecause": "⚠ Tier C is a deliberate refusal and stays one, and this spelling is additionally inert. Measured under `OracleProfile.FormatOnly`: `true` and `false` return one output, while `resharper_csharp_old_engine = true` — its language-prefixed sibling, Tier C for the same reason — rewrites the whole probe in the same run, outdenting the file-scoped namespace's members, spacing `namespace Probe ; ` and choosing different wrap points. So the C# formatter reads the prefixed name and ignores this one. ⚠ That sibling is why Tier C is not an inertness claim: C means Skala declines to implement ReSharper's legacy engine, and the oracle demonstrably has one. Recorded as a measurement beside the refusal, not as a replacement for it."
     },
     {
       "key": "resharper_wrap_after_binary_opsign",
@@ -10104,7 +10109,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_alignment_tab_fill_style",
       "templateLine": 560,
-      "expands": []
+      "expands": [],
+      "inert": "A wrapped tag header's alignment is filled with spaces whatever this says, because the inside of a `///` comment is always spaces. Measured under `OracleProfile.DocComments` at all three values with the whole pairwise prerequisite SK-DIV-0079 named held beside it — `indent_style = tab`, `resharper_xmldoc_indent_style = tab`, `tab_width = 4`, `resharper_xmldoc_attribute_indent = align_by_first_attribute` and `resharper_xmldoc_allow_far_alignment = true`, so the continuation line carries 96 columns of fill: `use_spaces`, `use_tabs_only` and `optimal_fill` are byte-identical, and the fill is spaces at all three. The control is in the same output — the file's *code* lines did take tabs, so a tab regime was live and the alignment still refused it."
     },
     {
       "key": "resharper_xmldoc_allow_far_alignment",
@@ -10122,7 +10128,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_allow_far_alignment",
       "templateLine": 1183,
-      "expands": []
+      "expands": [],
+      "inert": "Masked by the export's own `resharper_xmldoc_attribute_indent = single_indent`: at a fixed indent there is no alignment column that could be 'too far', which is why one flip of this key returns the file byte-identical. Decisive with that key at `align_by_first_attribute` and a tag name long enough to push the alignment out — a 90-character element whose first attribute starts at column 105. At `false` (the export) the continuation falls back to a double indent, column 16; at `true` it aligns at column 100 and the line runs to 129, past the margin, which is what 'align even if the resulting indentation is too large' means. A shorter element whose alignment sits at column 39 aligns at both values, so the threshold is between the two. ⚠ Two flips, so the one-key sweep cannot reach it. ⚠ This refutes the row in docs/tier-d-split.md that called it flat with `align_by_first_attribute` held: that probe's tag name was short and the alignment was never far. SK-DIV-0079."
     },
     {
       "key": "resharper_xmldoc_attribute_indent",
@@ -10142,7 +10149,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_attribute_indent",
       "templateLine": 1184,
-      "expands": []
+      "expands": [],
+      "unsweptBecause": "⚠ Not inert — the oracle separates all three values, and no fixture may carry it. Under `OracleProfile.DocComments`, with the tag opening at column 12 on a `<see cref=… href=… lang=…/>` past the margin: `single_indent` (the export) puts the continuation at column 16, `double_indent` at 20, `align_by_first_attribute` at 17 — under the first attribute. Skala never breaks inside a tag header and `XmlDocModel` refuses a comment whose input carries one, so it has no subject here and is flat at every value; a glob would file an `INERT` row the registry does not declare, and pin a fixture Skala cannot reproduce. SK-DIV-0079."
     },
     {
       "key": "resharper_xmldoc_attribute_style",
@@ -10162,7 +10170,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_attribute_style",
       "templateLine": 593,
-      "expands": []
+      "expands": [],
+      "unsweptBecause": "⚠ Not inert — all four values separate, and no fixture may carry it. Under `OracleProfile.DocComments`: `on_different_lines` puts the tag name alone and every attribute on its own line, `first_attribute_on_single_line` keeps the first on the tag's line and breaks the rest, and both do so to a header that fits comfortably — the recorded reason 'it arranges the attributes of a header Skala does not yet wrap' is measured false. ⚠ And SK-DIV-0079's own open question is now closed: `on_single_line` IS distinguished from `do_not_touch`, on the shape that entry named — an already-wrapped short header, `<see cref=\"System.String\"` / `href=\"https://short.invalid/\" />`, which `do_not_touch` keeps wrapped and `on_single_line` joins onto one line. Skala cannot re-read a wrapped header, so it is flat at every value and no glob may be set. SK-DIV-0079."
     },
     {
       "key": "resharper_xmldoc_blank_line_after_pi",
@@ -10278,7 +10287,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 1185,
-      "expands": []
+      "expands": [],
+      "inert": "Measured rather than reasoned from the key index. Under `OracleProfile.DocComments`, on a file carrying a type-level `<summary>`, a member `<remarks>`/`<returns>` pair and a trailing member comment that ends the type, `true` and `false` produce one output. `resharper_xmldoc_wrap_text = false` moves the same file in the same run. A `///` comment has no file end to put a newline at, and now that is a diff rather than an argument."
     },
     {
       "key": "resharper_xmldoc_keep_user_linebreaks",
@@ -10481,7 +10491,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_pi_attribute_style",
       "templateLine": 1189,
-      "expands": []
+      "expands": [],
+      "inert": "⚠ The recorded reason — 'a processing instruction is emitted verbatim, so there is no arrangement to choose' — described Skala and was measured to be true of the ORACLE as well. Under `OracleProfile.DocComments`, `<?skala-probe first = \"1\" second=\"2\"   third='3'?>` comes back byte-identical at all four values, spaces around `=` and the double space included; a 160-column processing instruction is not wrapped; and an author's break inside one is kept. `resharper_xmldoc_blank_line_after_pi = false` removes the blank `///` line after the same instruction in the same run, so the doc-comment task does see it. `jb cleanupcode` 2025.2.6 does not parse a processing instruction's header either, so this is not a Skala gap."
     },
     {
       "key": "resharper_xmldoc_pi_attributes_indent",
@@ -10501,7 +10512,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_pi_attributes_indent",
       "templateLine": 888,
-      "expands": []
+      "expands": [],
+      "inert": "Same probe and same finding as `resharper_xmldoc_pi_attribute_style`: all three values return one output, including on a 160-column processing instruction the oracle declines to wrap and on one the author already broke. A header that is never wrapped has no continuation line to indent. The positive control in the same run is `resharper_xmldoc_blank_line_after_pi = false`."
     },
     {
       "key": "resharper_xmldoc_space_after_last_attribute",
@@ -10541,7 +10553,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_space_after_last_pi_attribute",
       "templateLine": 1190,
-      "expands": []
+      "expands": [],
+      "inert": "Same probe: one output at both values, on `<?skala-probe … third='3'?>` written tight and on `<?anextremelylong… epsilon=\"epsilonvalue\" ?>` written with the space. The oracle copies a processing instruction's bytes, `?>` and whatever precedes it included. Positive control in the same run: `resharper_xmldoc_blank_line_after_pi = false`."
     },
     {
       "key": "resharper_xmldoc_space_before_self_closing",
@@ -10601,7 +10614,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_spaces_around_eq_in_pi_attribute",
       "templateLine": 955,
-      "expands": []
+      "expands": [],
+      "inert": "Same probe, asked on the shape the key would have to normalise — a `=` written with a space on both sides, `<?skala-probe first = \"1\" …?>` — and on one written tight. One output at both values: the spaces are preserved at `false` and none is added at `true`. Positive control in the same run: `resharper_xmldoc_blank_line_after_pi = false`."
     },
     {
       "key": "resharper_xmldoc_spaces_inside_tags",
@@ -10662,7 +10676,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_wrap_around_elements",
       "templateLine": 1144,
-      "expands": []
+      "expands": [],
+      "inert": "Confirmed under `OracleProfile.DocComments` on prose carrying inline `<see/>`, `<c>` and `<b>` elements, both long enough to force a wrap next to the element and short enough not to, plus a block `<para>`: one output at both values. Asked again with `resharper_xmldoc_linebreak_before_elements` emptied, so no element was being given its own line for another key's reason — still one output. `resharper_xmldoc_wrap_text = false` rewraps the same prose in the same run. Either it is subsumed by `resharper_xmldoc_wrap_tags_and_pi` on this build or its subject is a construct no C# doc comment produces."
     },
     {
       "key": "resharper_xmldoc_wrap_lines",
