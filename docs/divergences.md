@@ -2656,3 +2656,112 @@ placement key, and only with the mask lifted does the key decide anything.
   `OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt` is right to refuse a glob
   stripped out from under it: the next sweep has to be able to re-measure the claim made here. The
   rows will read `UNEXERCISED`, and this entry is what that verdict points at.
+
+## SK-DIV-0084 — `predefined_type_for_locals_parameters_members = false` asks for the framework name, and Skala's rule only contracts
+
+`PredefinedTypeRule` rewrites `Int32` ⇒ `int` and reads
+`dotnet_style_predefined_type_for_locals_parameters_members` to decide whether to. It has no rewrite
+in the other direction, and that key's `false` is a request for one. Asked one key at a time under
+the cleanup profile on `constructs/arrangement/redundancy/qualifiers-and-parentheses.cs`, where this
+key's `oracle` glob used to point:
+
+```csharp
+int _count;                            →  Int32 _count;
+static int _shared;                    →  static Int32 _shared;
+void Shadowed(int _count)              →  void Shadowed(Int32 _count)
+void Parentheses(int a, int b, int c)  →  void Parentheses(Int32 a, Int32 b, Int32 c)
+```
+
+Skala leaves all four as written, so the key read `DIVERGENT` at `false` and agreed at the export's
+`true`. ⚠ None of those four lines is what that fixture is about — it is the this-qualifier and
+parenthesis file — so the row was measuring a construct the key does not name, which is the same
+shape SK-DIV-0013's redundant brace had on the same file and for which the brace case was moved out.
+
+⚠ **Implementing the expansion is a capability, not a relaxed precondition.** `int` ⇒ `Int32` is
+legal only where `Int32` binds — `System` in scope, or the name written out — and being wrong about
+it costs the whole document rather than the one rewrite: safety layer 3 re-binds, finds `CS0246`, and
+reverts the file. Nothing in this repository's configuration asks for the direction; the export
+writes `true`. The sibling key `dotnet_style_predefined_type_for_member_access` has the same
+one-directional rule and reads `CONFORMANT`, because `redundancy/predefined-member-access.cs` writes
+every governed position under its framework name and therefore only ever asks for the contraction.
+
+`constructs/arrangement/redundancy/predefined-type-declarations.cs` is this key's fixture now and is
+written the same way, which is what lets the row attribute. The expansion itself has **no fixture**,
+and cannot have one: at the export's `true` there is nothing to expand and the two engines agree, so
+the divergence exists only at the value the export does not use.
+
+- options: `dotnet_style_predefined_type_for_locals_parameters_members`, `dotnet_style_predefined_type_for_member_access`
+- ⚠ status: **open**; a missing capability rather than a decision, and it needs its own task.
+
+## SK-DIV-0085 — `sort_usings = false` still reorders, and the oracle's unsorted order is not the written one
+
+Skala reads `resharper_sort_usings = false` as "leave the block in the order it was written" and
+sorts nothing. The oracle reorders it anyway. Measured on two probes under the cleanup profile, with
+the removals the same on both sides:
+
+```
+written                          oracle, sort_usings = false
+System.Text                      Alias = System.Collections.Generic.List<int>
+Alpha.Things                     static System.Math
+System.Globalization             System.Text
+Alias = …List<int>               System.Globalization
+static System.Math               Alpha.Things
+
+System.Text                      Zebra = System.Globalization.CultureInfo
+System.Collections.Concurrent    Alpha = System.Text.StringBuilder
+Zebra = …CultureInfo             static System.Math
+Alpha = …StringBuilder           System.Text
+static System.Math               System.Collections.Concurrent
+```
+
+Two things are legible and one is not. The **groups invert**: sorted, the block is
+plain → alias → `static`; unsorted, it is alias → `static` → plain. Within the alias group the
+written order holds, which is the same fact `UsingsRule.SortKey` records for the sorted case. Within
+the plain group two hypotheses fit both probes and neither is refuted by them — "`System` first, then
+the rest, written order within each" and "descending ordinal" — so what the oracle is doing there is
+**not established**, and reproducing a guess would be worse than reproducing nothing.
+
+⚠ The key is not inert on Skala's side and this is not the `UNEXERCISED` case: at `true` Skala sorts
+and agrees with the oracle byte for byte, and at `false` it emits a different order from the oracle's
+rather than the same one. The disagreement is confined to the value the export does not use.
+
+- options: `resharper_sort_usings`
+- ⚠ status: **open**, and deliberately not guessed at. Closing it needs a probe that separates the two
+  hypotheses above — half a dozen plain directives whose `System`-ness and ordinal order disagree —
+  and that probe is a nightly-cost measurement rather than a reading of this table.
+
+## SK-DIV-0086 — with the body-style heuristic off, a body carrying a comment still stays a block
+
+At `resharper_csharp_use_heuristics_for_body_style = false` the oracle converts *every*
+single-statement body, and a body carrying a comment is converted with the comment on its own line
+between the `=>` and the expression:
+
+```csharp
+public void Commented() =>
+    // the author said something here
+    Console.WriteLine("x");
+```
+
+Skala leaves it a block. The other two halves of that key's heuristic do lift: `throw` in statement
+position already did, and `async void` now does — `async void AsyncVoid() => await Task.Delay(1);`
+is what both engines write at `false`. The `#if` case is not a heuristic at all and holds at both
+values, because a `#if DEBUG` around the only statement means the body has no active statement to
+lift.
+
+⚠ Carrying the comment through *arrangement* is three lines, and it was written and then thrown
+away rather than shipped. The comment survives the rewrite; the **formatter** then leaves it at
+column 0:
+
+```csharp
+public void Commented() =>
+// the author said something here
+    Console.WriteLine("x");
+```
+
+which is worse than not converting. Skala's formatter has no indentation rule for a comment between
+an arrow and its expression, and acquiring one is a formatter change with its own fixtures — not
+something to bolt onto an arrangement rule. At the export's `true` the heuristic holds and
+`constructs/arrangement/body-style/heuristics.cs` agrees with the oracle byte for byte.
+
+- options: `resharper_csharp_use_heuristics_for_body_style`
+- ⚠ status: **open**; the blocker is the formatter's comment placement and not the body-style rule.

@@ -1329,7 +1329,7 @@
       "construct": "TypeReference",
       "summary": "Use the language keyword for a predefined type in declarations.",
       "since": "0.1",
-      "oracle": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
+      "oracle": "constructs/arrangement/redundancy/predefined-type-declarations.cs",
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
       "templateLine": 522,
       "severitySuffix": true,
