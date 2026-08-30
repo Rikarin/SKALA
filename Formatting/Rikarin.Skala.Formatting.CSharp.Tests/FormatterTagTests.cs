@@ -236,4 +236,183 @@ public sealed class FormatterTagTests {
         var formatted = Format.Text($"class C {{\n    {comment}\n    void  M( )   {{ }}\n}}\n");
         Assert.Contains("void  M( )   { }", formatted, StringComparison.Ordinal);
     }
+
+    // ── The four keys ────────────────────────────────────────────────────────────────────────
+    //
+    // ⚠ These four are what the key-flip sweep cannot ask about, and the reason is written up as
+    // SK-DIV-0084: no value the sweep's probe can generate makes any of them observable, because the
+    // probe offers the key's default and the default with an `x` on the end, and the built-in tag is
+    // a prefix of both. So the model measured against `jb cleanupcode` 2025.2.6 by hand is pinned
+    // here instead, one test per measurement, and the oracle's answer is quoted beside each.
+
+    static string FormatWith(string source, params (string Key, string Value)[] overrides) {
+        var options = new PhaseOneOptions(
+            Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
+                .Options
+        );
+
+        return CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
+    }
+
+    const string Custom = """
+                          class C {
+                              // @fmt:off
+                              void   M( )   {
+                              }
+                              // @fmt:on
+                              void   N( )   {
+                              }
+                          }
+                          """;
+
+    const string Builtin = """
+                           class C {
+                               // @formatter:off
+                               void   M( )   {
+                               }
+                               // @formatter:on
+                               void   N( )   {
+                               }
+                           }
+                           """;
+
+    /// <summary>
+    ///     ⚠ The negative control the rest of this section rests on: an unrecognised tag protects
+    ///     nothing, so every "preserved" below is a statement about the key rather than about the
+    ///     formatter declining to move.
+    /// </summary>
+    [Fact]
+    public void AnUnrecognisedTag_ProtectsNothing() {
+        var formatted = FormatWith(Custom);
+        Assert.Contains("void M() { }", formatted, StringComparison.Ordinal);
+        Assert.DoesNotContain("void   M( )", formatted, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     <c>resharper_formatter_off_tag</c> / <c>_on_tag</c>: a configured tag is recognised, and it is
+    ///     recognised <em>in addition to</em> the built-in pair rather than instead of it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured. With <c>resharper_formatter_off_tag = @zzz:off</c> and
+    ///     <c>resharper_formatter_on_tag = @zzz:on</c>, <c>jb cleanupcode</c> returns a region written
+    ///     with the <em>built-in</em> <c>@formatter:off</c> untouched — so the configured pair is
+    ///     additive. Skala used to replace, which is strictly less protective than the oracle on a
+    ///     feature whose whole job is "nothing touches this".
+    /// </remarks>
+    [Fact]
+    public void AConfiguredTag_IsRecognisedBesideTheBuiltInRatherThanInsteadOfIt() {
+        var custom = FormatWith(
+            Custom,
+            ("resharper_formatter_off_tag", "@fmt:off"),
+            ("resharper_formatter_on_tag", "@fmt:on")
+        );
+        Assert.Contains("void   M( )   {", custom, StringComparison.Ordinal);
+        Assert.Contains("void N() { }", custom, StringComparison.Ordinal);
+
+        // The built-in pair, with the configured pair pointed somewhere else entirely.
+        var builtin = FormatWith(
+            Builtin,
+            ("resharper_formatter_off_tag", "@zzz:off"),
+            ("resharper_formatter_on_tag", "@zzz:on")
+        );
+        Assert.Contains("void   M( )   {", builtin, StringComparison.Ordinal);
+        Assert.Contains("void N() { }", builtin, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     <c>resharper_formatter_tags_enabled = false</c> switches off the <em>configured</em> pair and
+    ///     leaves the built-in one alone.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured, and it is the half Skala had backwards: the key used to open the guard outright,
+    ///     so a single line of configuration disabled the escape hatch for every file. The oracle keeps
+    ///     honouring <c>@formatter:off</c> under it and stops honouring <c>@fmt:off</c>.
+    /// </remarks>
+    [Fact]
+    public void TagsDisabled_StopsTheConfiguredPairAndNotTheBuiltInOne() {
+        var custom = FormatWith(
+            Custom,
+            ("resharper_formatter_tags_enabled", "false"),
+            ("resharper_formatter_off_tag", "@fmt:off"),
+            ("resharper_formatter_on_tag", "@fmt:on")
+        );
+        Assert.Contains("void M() { }", custom, StringComparison.Ordinal);
+
+        var builtin = FormatWith(Builtin, ("resharper_formatter_tags_enabled", "false"));
+        Assert.Contains("void   M( )   {", builtin, StringComparison.Ordinal);
+        Assert.Contains("void N() { }", builtin, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     <c>resharper_formatter_tags_accept_regexp = true</c> makes the configured pair patterns.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured: <c>@f.*:off</c> under <c>accept_regexp = true</c> protects a <c>// @fmt:off</c>
+    ///     region and under <c>false</c> does not. Skala used to answer this key by opening the guard —
+    ///     "not implemented, in any pass" — which meant the one key a person would set to make their
+    ///     tags *more* expressive silently turned the hatch off.
+    /// </remarks>
+    [Fact]
+    public void AcceptRegexp_MakesTheConfiguredTagAPattern() {
+        var on = FormatWith(
+            Custom,
+            ("resharper_formatter_tags_accept_regexp", "true"),
+            ("resharper_formatter_off_tag", "@f.*:off"),
+            ("resharper_formatter_on_tag", "@f.*:on")
+        );
+        Assert.Contains("void   M( )   {", on, StringComparison.Ordinal);
+        Assert.Contains("void N() { }", on, StringComparison.Ordinal);
+
+        var off = FormatWith(
+            Custom,
+            ("resharper_formatter_tags_accept_regexp", "false"),
+            ("resharper_formatter_off_tag", "@f.*:off"),
+            ("resharper_formatter_on_tag", "@f.*:on")
+        );
+        Assert.Contains("void M() { }", off, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ A pattern the runtime will not compile matches nothing, and the built-in pair still works.
+    /// </summary>
+    /// <remarks>
+    ///     Not measured against the oracle — an unparsable pattern is not a configuration anyone means —
+    ///     but it must not throw out of the formatter, and it must not fall back to a literal comparison,
+    ///     which would turn a typo into a silently different rule.
+    /// </remarks>
+    [Fact]
+    public void AnUnparsablePattern_MatchesNothing_AndTheBuiltInPairSurvivesIt() {
+        var custom = FormatWith(
+            Custom,
+            ("resharper_formatter_tags_accept_regexp", "true"),
+            ("resharper_formatter_off_tag", "@fmt:off("),
+            ("resharper_formatter_on_tag", "@fmt:on(")
+        );
+        Assert.Contains("void M() { }", custom, StringComparison.Ordinal);
+
+        var builtin = FormatWith(
+            Builtin,
+            ("resharper_formatter_tags_accept_regexp", "true"),
+            ("resharper_formatter_off_tag", "@fmt:off("),
+            ("resharper_formatter_on_tag", "@fmt:on(")
+        );
+        Assert.Contains("void   M( )   {", builtin, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ SK-DIV-0017's narrowing survives the regexp reading: a pattern is anchored at the start of
+    ///     the comment's body, so a comment that mentions a matching tag is still prose.
+    /// </summary>
+    [Fact]
+    public void UnderAcceptRegexp_ACommentThatMentionsAMatchingTag_IsStillProse() {
+        var formatted = FormatWith(
+            "class C {\n    // we support @fmt:off here\n    void  M( )   { }\n}\n",
+            ("resharper_formatter_tags_accept_regexp", "true"),
+            ("resharper_formatter_off_tag", "@f.*:off")
+        );
+        Assert.Contains("void M() { }", formatted, StringComparison.Ordinal);
+    }
 }

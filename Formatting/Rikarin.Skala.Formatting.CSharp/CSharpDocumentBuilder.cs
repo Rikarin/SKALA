@@ -1775,7 +1775,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        if (_options.FormatterTagsEnabled && piece.IsComment && ContainsTag(piece.Text, _options.FormatterOffTag)) {
+        if (piece.IsComment && FormatterTagGuard.IsOffTag(piece.Text, _options.Tags)) {
             EmitFormatterOffSpan(index);
             return;
         }
@@ -2015,7 +2015,7 @@ public sealed partial class CSharpDocumentBuilder {
         var start = piece.StartsLine ? LineStart(piece.Span.Start) : piece.Span.Start;
         var end = _source.Length;
         for (var i = index + 1; i < _pieces.Length; i++) {
-            if (_pieces[i].IsComment && ContainsTag(_pieces[i].Text, _options.FormatterOnTag)) {
+            if (_pieces[i].IsComment && FormatterTagGuard.IsOnTag(_pieces[i].Text, _options.Tags)) {
                 end = _pieces[i].Span.End;
                 break;
             }
@@ -2049,41 +2049,10 @@ public sealed partial class CSharpDocumentBuilder {
         return start > 0 && _source[start - 1] is not ('\n' or '\r') ? position : start;
     }
 
-    /// <summary>
-    ///     Whether a comment <em>is</em> the tag, rather than mentioning it.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ SK-DIV-0017, and the one place Skala reads the escape hatch more narrowly than the oracle
-    ///     does. `resharper_formatter_tags_accept_regexp = false` makes the match literal, and the
-    ///     oracle takes "literal" to mean a plain substring test over the comment's whole text: measured,
-    ///     `// we support @formatter:off here` turns formatting off to the end of the file in
-    ///     <c>jb cleanupcode</c> 2025.2.6 exactly as a bare tag does, and so did Skala.
-    ///     <para>
-    ///         That is a footgun rather than a feature, and it fired inside this repository: four of Skala's
-    ///         own source files have a comment discussing the directive, and the half of each file below that
-    ///         comment was silently not being formatted. Nothing reported it. The fuzzer found it the same
-    ///         way — <c>./build.sh Lint</c> refused to format its source — and a file that documents a
-    ///         directive should not be governed by it.
-    ///     </para>
-    ///     <para>
-    ///         So the rule is: <b>the tag must be the first thing in the comment</b>, after the marker and
-    ///         any whitespace. <c>// @formatter:off</c> and
-    ///         <c>
-    /// // @formatter:off — the table below is
-    /// hand-aligned
-    ///         </c> are the tag; <c>// we support @formatter:off here</c> and
-    ///         <c>// ⚠ `@formatter:off`. The finding still stands</c> are prose. Deliberately not an
-    ///         equality test: a reason written after the tag is the commonest way anyone writes one, and
-    ///         refusing it would trade this footgun for a worse one.
-    ///     </para>
-    /// </remarks>
-    bool ContainsTag(string text, string tag) {
-        if (_options.FormatterTagsAcceptRegexp) {
-            return false;
-        }
-
-        return FormatterTagGuard.IsTag(text, tag);
-    }
+    // ⚠ "Which comment is a tag" used to be answered here too, by a private `ContainsTag`. It is
+    // `FormatterTagGuard.IsOffTag` / `IsOnTag` now and nowhere else: the four keys turned out to
+    // compose in a way — the built-in tags surviving `tags_enabled = false`, the configured pair
+    // being additive — that two spellings of the answer would have got wrong in two ways.
 
     // ── Gaps ─────────────────────────────────────────────────────────────────────────────────
 

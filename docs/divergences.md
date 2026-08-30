@@ -2656,3 +2656,102 @@ placement key, and only with the mask lifted does the key decide anything.
   `OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt` is right to refuse a glob
   stripped out from under it: the next sweep has to be able to re-measure the claim made here. The
   rows will read `UNEXERCISED`, and this entry is what that verdict points at.
+
+## SK-DIV-0084 — the four formatter-tag keys, and why no one-key flip can ask about any of them
+
+All four were `SPURIOUS` in the key-flip sweep and all four now read `UNEXERCISED`. **Three real
+defects were found on the way and are fixed**; what is left is a statement about the probe, and it is
+provable rather than suspected.
+
+### `cleanupcode` honours formatter tags, and it reads all four keys
+
+The first question was whether the CLI oracle honours `@formatter:off` at all, because if it did not
+then Skala honouring it would be a deliberate divergence and the row would be evidence rather than a
+defect. It does. Measured on `constructs/trivia/resharper_formatter_tags_enabled.cs`, one appended
+`[*.cs]` section, `SkalaFormatOnly`:
+
+```
+// the export's own configuration
+class C {
+    // @formatter:off
+    void   M( )   {          ← preserved
+    }
+    // @formatter:on
+    void N() { }             ← formatted
+}
+
+// the negative control: the same file with the tags rewritten to `@fmt`
+    // @fmt:off
+    void M() { }             ← formatted; the tag is not recognised, so the mechanism is live
+```
+
+And it reads the keys: with `resharper_formatter_off_tag = @fmt:off` and
+`resharper_formatter_on_tag = @fmt:on`, that same `@fmt` file comes back preserved.
+
+### What the four keys actually mean — three findings, all fixed
+
+The built-in `@formatter:off` / `@formatter:on` are recognised **whatever the four keys say**, and the
+configured pair is **additional to** them rather than a replacement. `tags_enabled` and
+`accept_regexp` govern only the configured pair. Every line below is a separate `cleanupcode` run:
+
+| configuration | source's tag | oracle | Skala, before | after |
+|---|---|---|---|---|
+| `off_tag = @zzz:off`, `on_tag = @zzz:on` | `@formatter:off` | preserved | formatted | preserved |
+| `off_tag = @fmt:off`, `on_tag = @fmt:on` | `@fmt:off` | preserved | preserved | preserved |
+| `tags_enabled = false` | `@formatter:off` | preserved | formatted | preserved |
+| `tags_enabled = false`, `off_tag = @fmt:off` | `@fmt:off` | formatted | formatted | formatted |
+| `accept_regexp = true`, `off_tag = @f.*:off` | `@fmt:off` | preserved | formatted | preserved |
+| `accept_regexp = false`, `off_tag = @f.*:off` | `@fmt:off` | formatted | formatted | formatted |
+
+So Skala was wrong in three ways, and every one of them was **less protective than the oracle** on the
+one feature whose entire contract is "nothing touches this":
+
+1. a configured `off_tag` *replaced* the built-in, so `resharper_formatter_off_tag = @fmt:off` silently
+   stopped honouring every `// @formatter:off` already written in the tree;
+2. `resharper_formatter_tags_enabled = false` opened the guard outright, so one line of configuration
+   disabled the escape hatch for every file — where the oracle keeps honouring the built-in pair;
+3. `resharper_formatter_tags_accept_regexp = true` also opened the guard, under a comment saying the
+   regexp reading was "not implemented, in any pass". The one key a person sets to make their tags
+   *more* expressive turned the hatch off.
+
+All three are fixed in `FormatterTagGuard`: `FormatterTags.BuiltinOff` / `BuiltinOn` are matched
+unconditionally, the configured pair is matched beside them under `Enabled`, and `AcceptRegexp`
+compiles the configured tag as a pattern anchored at the start of the comment's body — anchored so
+that SK-DIV-0017's narrowing survives the regexp reading and a pattern cannot re-open the
+match-anywhere footgun the literal reading was narrowed to close. An unparsable pattern matches
+nothing rather than falling back to a literal, because a typo that silently becomes a different rule
+is the failure mode this feature cannot have.
+
+### Why the sweep still cannot ask, and why that is the probe
+
+Every row now agrees at every value the sweep offers, which is `UNEXERCISED` and not a pass. The
+reason is not a weak fixture and it is not a masking key — it is arithmetic on the probe's own value
+generator, and it holds for **every** fixture:
+
+- `OptionDomain.Probes` offers a free-form string exactly two values: the key's default, and the
+  default with `x` appended.
+- The tag test is "the comment's body starts with the tag" — in both engines; the oracle's is even
+  wider, a plain substring.
+- So if a comment matches `@formatter:offx` it also matches `@formatter:off`, and `@formatter:off` is
+  the built-in, which fires whatever the key says. Both probe values therefore produce the same
+  output on any input whatsoever. The key is unobservable **by construction of the probe**, not by
+  choice of fixture.
+
+`tags_enabled` and `accept_regexp` are masked one step further out, and that half *is* SK-DIV-0083's
+shape: both govern the configured pair only, and the export leaves the configured pair sitting on the
+built-in values, where neither key can change anything. They are reachable, but only in pairs —
+`(tags_enabled, off_tag)` and `(accept_regexp, off_tag)` — which is what `pairwise` exists for.
+
+- options: `resharper_formatter_off_tag`, `resharper_formatter_on_tag`,
+  `resharper_formatter_tags_enabled`, `resharper_formatter_tags_accept_regexp`
+- ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Skala agrees
+  with the oracle at every value the sweep can offer *and* at every configuration measured by hand
+  above.
+- ⚠ Deliberately **not** registered `OfInert`. SK-DIV-0083 established "inert" to mean "no input
+  distinguishes its values under this configuration", and that is true here — but these four are read,
+  honoured and now correct on every path, and the mark that keeps a key out of the Tier A claim is the
+  wrong mark for a key whose behaviour is pinned by six tests. Their `oracle` globs are kept, so the
+  next sweep re-measures the claim and `UNEXERCISED` points here.
+- ⚠ The model above is pinned by `FormatterTagTests` — one test per row of the table, each with the
+  unrecognised-tag negative control beside it — because the sweep cannot pin it and a measurement that
+  only lives in a document is one nobody will notice going stale.
