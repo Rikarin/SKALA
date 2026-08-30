@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -17,8 +19,56 @@ namespace Rikarin.Skala.Formatting.CSharp;
 ///     escape hatch.
 /// </remarks>
 public readonly record struct FormatterTags(bool Enabled, string Off, string On, bool AcceptRegexp) {
-    /// <summary>Tags off. <see cref="FormatterTagGuard.For" /> returns an open guard for this.</summary>
+    /// <summary>
+    ///     No formatter-tag configuration at all. <see cref="FormatterTagGuard.For" /> returns an open
+    ///     guard for this.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not the same thing as <see cref="Enabled" /> being <c>false</c>, and the difference is the
+    ///     whole of SK-DIV-0089's finding. <c>None</c> is "this caller holds no configuration" — the
+    ///     test-only path into <c>XmlDocFormatter.Rewrite</c>. <c>Enabled = false</c> is a configuration
+    ///     that says the *configurable* tags are off, and the oracle keeps honouring
+    ///     <see cref="BuiltinOff" /> under it.
+    /// </remarks>
     public static FormatterTags None { get; }
+
+    /// <summary>
+    ///     The two tags <c>jb cleanupcode</c> honours whatever the four keys say.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured, 2025.2.6, and it is the finding behind this type's shape. The configured
+    ///     <see cref="Off" /> and <see cref="On" /> are *additional to* these rather than a replacement
+    ///     for them, and <see cref="Enabled" /> and <see cref="AcceptRegexp" /> govern only the
+    ///     configured pair:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             <c>resharper_formatter_off_tag = @zzz:off</c> with a source that says
+    ///             <c>// @formatter:off</c> — the region is still preserved.
+    ///         </item>
+    ///         <item>
+    ///             <c>resharper_formatter_tags_enabled = false</c> with <c>// @formatter:off</c> — still
+    ///             preserved; with a *custom* tag, not preserved.
+    ///         </item>
+    ///         <item>
+    ///             the negative control: <c>// @fmt:off</c> under the export's own configuration is
+    ///             formatted straight through, so the mechanism is live and the tag really was
+    ///             unrecognised.
+    ///         </item>
+    ///     </list>
+    ///     Skala honoured neither half before: it *replaced* the built-in with whatever the key said,
+    ///     and it switched the escape hatch off entirely on <c>Enabled = false</c> or
+    ///     <c>AcceptRegexp = true</c>. Both are strictly less protective than the oracle, which is the
+    ///     wrong direction for a hatch whose whole job is "nothing touches this".
+    /// </remarks>
+    public const string BuiltinOff = "@formatter:off";
+
+    /// <inheritdoc cref="BuiltinOff" />
+    public const string BuiltinOn = "@formatter:on";
+
+    /// <summary>
+    ///     Whether this is a configuration at all, as opposed to <see cref="None" />.
+    /// </summary>
+    internal bool Configured => !string.IsNullOrEmpty(Off) || !string.IsNullOrEmpty(On);
 }
 
 /// <summary>
@@ -73,20 +123,11 @@ public sealed class FormatterTagGuard {
     ///     file pays one descendant-trivia enumeration and allocates nothing.
     /// </remarks>
     public static FormatterTagGuard For(SyntaxNode root, in FormatterTags tags) {
-        if (!tags.Enabled) {
-            return Open;
-        }
-
-        // ⚠ `resharper_formatter_tags_accept_regexp = true` is not implemented, in any pass. The
-        // document builder makes the same call (`ContainsTag`), and a guard that silently treated a
-        // regexp tag as a literal would protect nothing while looking like it protected something.
-        if (tags.AcceptRegexp) {
-            return Open;
-        }
-
-        var off = tags.Off;
-        var on = tags.On;
-        if (string.IsNullOrEmpty(off) || string.IsNullOrEmpty(on)) {
+        // ⚠ The only bail-out. It used to also return `Open` on `Enabled = false` and on
+        // `AcceptRegexp = true`, and both were measured wrong against the oracle — see
+        // `FormatterTags.BuiltinOff`. `None` still opens the guard, because a caller holding no
+        // configuration is not the same as a configuration that switches the configurable tags off.
+        if (!tags.Configured) {
             return Open;
         }
 
@@ -101,14 +142,14 @@ public sealed class FormatterTagGuard {
 
             var text = trivia.ToString();
             if (start < 0) {
-                if (IsTag(text, off)) {
+                if (IsOffTag(text, tags)) {
                     start = trivia.SpanStart;
                 }
 
                 continue;
             }
 
-            if (IsTag(text, on)) {
+            if (IsOnTag(text, tags)) {
                 regions.Add(TextSpan.FromBounds(start, trivia.Span.End));
                 start = -1;
             }
@@ -130,19 +171,65 @@ public sealed class FormatterTagGuard {
     /// <remarks>
     ///     ⚠ SK-DIV-0017 and SK-FUZZ-0005. The oracle's own test is a plain substring over the whole
     ///     comment — measured, not assumed — so <c>// we support @formatter:off here</c> turns
-    ///     formatting off to end of file in <c>jb cleanupcode</c> 2025.2.6. Skala reads it more narrowly
-    ///     on purpose; the argument is in <c>CSharpDocumentBuilder.ContainsTag</c> and the measurement is
-    ///     in <c>docs/divergences.md</c>.
+    ///     formatting off to end of file in <c>jb cleanupcode</c> 2025.2.6, and so did Skala. That is a
+    ///     footgun rather than a feature, and it fired inside this repository: four of Skala's own source
+    ///     files have a comment discussing the directive, and the half of each file below that comment
+    ///     was silently not being formatted. Nothing reported it. The fuzzer found it the same way —
+    ///     <c>./build.sh Lint</c> refused to format its source — and a file that documents a directive
+    ///     should not be governed by it. The measurement is in <c>docs/divergences.md</c>.
+    ///     <para>
+    ///         So the rule is: <b>the tag must be the first thing in the comment</b>, after the marker and
+    ///         any whitespace. <c>// @formatter:off</c> and <c>// @formatter:off — the table below is
+    ///         hand-aligned</c> are the tag; <c>// we support @formatter:off here</c> is prose.
+    ///         Deliberately not an equality test: a reason written after the tag is the commonest way
+    ///         anyone writes one, and refusing it would trade this footgun for a worse one.
+    ///     </para>
     ///     <para>
     ///         One definition, called from both halves of the pipeline, because "which comment is a tag" is
     ///         the single question the escape hatch rests on and two answers to it is one too many.
     ///     </para>
     /// </remarks>
-    public static bool IsTag(string comment, string tag) {
-        if (tag.Length == 0) {
+    public static bool IsTag(string comment, string tag) =>
+        tag.Length != 0 && Body(comment).StartsWith(tag, StringComparison.Ordinal);
+
+    /// <summary>Whether a comment opens a protected region under <paramref name="tags" />.</summary>
+    /// <remarks>
+    ///     ⚠ The one place the additive rule lives. <see cref="FormatterTags.BuiltinOff" /> is matched
+    ///     unconditionally and literally; the configured tag is matched *as well*, and only when
+    ///     <see cref="FormatterTags.Enabled" />. See <see cref="FormatterTags.BuiltinOff" /> for the
+    ///     measurement.
+    /// </remarks>
+    public static bool IsOffTag(string comment, in FormatterTags tags) =>
+        Matches(comment, tags, FormatterTags.BuiltinOff, tags.Off);
+
+    /// <inheritdoc cref="IsOffTag" />
+    public static bool IsOnTag(string comment, in FormatterTags tags) =>
+        Matches(comment, tags, FormatterTags.BuiltinOn, tags.On);
+
+    static bool Matches(string comment, in FormatterTags tags, string builtin, string? configured) {
+        if (!tags.Configured) {
             return false;
         }
 
+        var body = Body(comment);
+        if (body.StartsWith(builtin, StringComparison.Ordinal)) {
+            return true;
+        }
+
+        if (!tags.Enabled || string.IsNullOrEmpty(configured)) {
+            return false;
+        }
+
+        return tags.AcceptRegexp
+            ? MatchesPattern(body, configured)
+            : body.StartsWith(configured, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     The comment's text with its marker and the whitespace after it removed — "the first thing in
+    ///     the comment", which is what every tag test here is anchored at.
+    /// </summary>
+    static ReadOnlySpan<char> Body(string comment) {
         var body = comment.AsSpan();
         foreach (var marker in Markers) {
             if (body.StartsWith(marker, StringComparison.Ordinal)) {
@@ -151,8 +238,51 @@ public sealed class FormatterTagGuard {
             }
         }
 
-        return body.TrimStart().StartsWith(tag, StringComparison.Ordinal);
+        return body.TrimStart();
     }
+
+    /// <summary>
+    ///     <c>resharper_formatter_tags_accept_regexp = true</c>: the configured tag is a pattern.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Anchored at the start of the comment's body rather than searched for anywhere in it, so
+    ///     that the regexp reading keeps SK-DIV-0017's narrowing — <c>// we support @formatter:off
+    ///     here</c> is prose under both readings, and a pattern that could match mid-comment would
+    ///     quietly re-open the footgun the literal reading was narrowed to close.
+    ///     <para>
+    ///         A pattern the runtime will not compile matches nothing. The alternative — falling back to a
+    ///         literal comparison — turns a typo into a silently different rule, and the tags are the one
+    ///         place in the formatter where "silently different" is unacceptable.
+    ///     </para>
+    /// </remarks>
+    static bool MatchesPattern(ReadOnlySpan<char> body, string pattern) {
+        var regex = Patterns.GetOrAdd(
+            pattern,
+            static p => {
+                try {
+                    return new Regex(
+                        "^(?:" + p + ")",
+                        RegexOptions.CultureInvariant,
+                        TimeSpan.FromMilliseconds(100)
+                    );
+                } catch (ArgumentException) {
+                    return null;
+                }
+            }
+        );
+
+        if (regex is null) {
+            return false;
+        }
+
+        try {
+            return regex.IsMatch(body.ToString());
+        } catch (RegexMatchTimeoutException) {
+            return false;
+        }
+    }
+
+    static readonly ConcurrentDictionary<string, Regex?> Patterns = new(StringComparer.Ordinal);
 
     /// <summary>
     ///     ⚠ Longest first. <c>//</c> is a prefix of <c>///</c>, and stripping the shorter one leaves a

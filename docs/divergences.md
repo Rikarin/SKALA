@@ -2533,21 +2533,41 @@ subpattern's colon and lands the value on the *same* column — no continuation 
 no break point on a `SubpatternSyntax` at all: `BreakPlan` plans the property-pattern *clause* and its
 commas, and a subpattern's own colon is not a gap anybody planned. The line comes back at 130.
 
-⚠ **Reachable only under alignment**, which is why it has survived: at the export's
-`align_multiline_property_pattern = false` the same subpattern sits at column 12 and is 101 columns
-wide, so nothing has to break and both engines return it whole. No margin the fixture can choose
-exposes it while the key is off.
-
 ⚠ The break itself is not the hard part — a point at `FirstToken(subpattern.Pattern)` is one line. What
-is not established is the level it lands on. Every other undelimited continuation in this formatter
-spends a level; this one spends none, and it is the only measurement available. A group whose
-`spendsIndent` is false everywhere would be a rule fitted to one line of one fixture at one value of
-one Tier D key, which is the kind of fact this register exists to refuse until a second measurement
-agrees with it.
+was not established is the level it lands on. Every other undelimited continuation in this formatter
+spends a level; this one spends none, and that was the only measurement available. A group whose
+`spendsIndent` is false everywhere would have been a rule fitted to one line of one fixture at one
+value of one Tier D key, which is the kind of fact this register exists to refuse until a second
+measurement agrees with it.
+
+### ⚠ Closed 2026-08-30. The second measurement arrived, and it brought a third
+
+Two claims above are corrected by it.
+
+**The level.** The value lands on the subpattern's own column in three configurations that do not
+share a cause — aligned at the export's 120-column margin (the original), un-aligned at a 60-column
+margin, and nested inside an outer property pattern:
+
+```
+var matched = candidate is {          var matched = candidate is {
+                               OnlySubpatternPropertyName:      OnlySubpatternPropertyName:
+                               "a string long enough …"         "a string long enough …"
+                           };         };
+align = true, margin 120              align = false, margin 60
+```
+
+**"Reachable only under alignment" is false.** The paragraph that said so reasoned from the export's
+margin alone: at 120 the un-aligned subpattern is 101 columns and nothing has to break. Narrow the
+margin and it breaks, un-aligned, onto the same column — which is how the third and cleanest
+measurement was obtained, and it is why the rule is not an artefact of the alignment column.
+
+`BreakPlan.PlanSubpattern` adds the point and `StartsAUnit` gives it its column;
+`resharper_csharp_align_multiline_property_pattern` now reads `Conformant` at both values.
+`corpus/real` did not move — 99.55 / 86.05 bare and 99.64 / 86.58 with symbols, before and after.
 
 - options: `resharper_csharp_align_multiline_property_pattern`
-- ⚠ status: **open**, cause established and narrow: a missing break point on `SubpatternSyntax`, whose
-  indentation is measured once and nowhere else.
+- ⚠ status: **closed — fixed**. `constructs/wrapping/alignment.cs` pins the columns at both values and
+  the sweep row is `Conformant`.
 
 ## SK-DIV-0082 — `max_line_length = 1` explodes a file at break points Skala does not have, and cannot reasonably acquire
 
@@ -2765,3 +2785,354 @@ something to bolt onto an arrangement rule. At the export's `true` the heuristic
 
 - options: `resharper_csharp_use_heuristics_for_body_style`
 - ⚠ status: **open**; the blocker is the formatter's comment placement and not the body-style rule.
+
+## SK-DIV-0089 — the four formatter-tag keys, and why no one-key flip can ask about any of them
+
+All four were `SPURIOUS` in the key-flip sweep and all four now read `UNEXERCISED`. **Three real
+defects were found on the way and are fixed**; what is left is a statement about the probe, and it is
+provable rather than suspected.
+
+### `cleanupcode` honours formatter tags, and it reads all four keys
+
+The first question was whether the CLI oracle honours `@formatter:off` at all, because if it did not
+then Skala honouring it would be a deliberate divergence and the row would be evidence rather than a
+defect. It does. Measured on `constructs/trivia/resharper_formatter_tags_enabled.cs`, one appended
+`[*.cs]` section, `SkalaFormatOnly`:
+
+```
+// the export's own configuration
+class C {
+    // @formatter:off
+    void   M( )   {          ← preserved
+    }
+    // @formatter:on
+    void N() { }             ← formatted
+}
+
+// the negative control: the same file with the tags rewritten to `@fmt`
+    // @fmt:off
+    void M() { }             ← formatted; the tag is not recognised, so the mechanism is live
+```
+
+And it reads the keys: with `resharper_formatter_off_tag = @fmt:off` and
+`resharper_formatter_on_tag = @fmt:on`, that same `@fmt` file comes back preserved.
+
+### What the four keys actually mean — three findings, all fixed
+
+The built-in `@formatter:off` / `@formatter:on` are recognised **whatever the four keys say**, and the
+configured pair is **additional to** them rather than a replacement. `tags_enabled` and
+`accept_regexp` govern only the configured pair. Every line below is a separate `cleanupcode` run:
+
+| configuration | source's tag | oracle | Skala, before | after |
+|---|---|---|---|---|
+| `off_tag = @zzz:off`, `on_tag = @zzz:on` | `@formatter:off` | preserved | formatted | preserved |
+| `off_tag = @fmt:off`, `on_tag = @fmt:on` | `@fmt:off` | preserved | preserved | preserved |
+| `tags_enabled = false` | `@formatter:off` | preserved | formatted | preserved |
+| `tags_enabled = false`, `off_tag = @fmt:off` | `@fmt:off` | formatted | formatted | formatted |
+| `accept_regexp = true`, `off_tag = @f.*:off` | `@fmt:off` | preserved | formatted | preserved |
+| `accept_regexp = false`, `off_tag = @f.*:off` | `@fmt:off` | formatted | formatted | formatted |
+
+So Skala was wrong in three ways, and every one of them was **less protective than the oracle** on the
+one feature whose entire contract is "nothing touches this":
+
+1. a configured `off_tag` *replaced* the built-in, so `resharper_formatter_off_tag = @fmt:off` silently
+   stopped honouring every `// @formatter:off` already written in the tree;
+2. `resharper_formatter_tags_enabled = false` opened the guard outright, so one line of configuration
+   disabled the escape hatch for every file — where the oracle keeps honouring the built-in pair;
+3. `resharper_formatter_tags_accept_regexp = true` also opened the guard, under a comment saying the
+   regexp reading was "not implemented, in any pass". The one key a person sets to make their tags
+   *more* expressive turned the hatch off.
+
+All three are fixed in `FormatterTagGuard`: `FormatterTags.BuiltinOff` / `BuiltinOn` are matched
+unconditionally, the configured pair is matched beside them under `Enabled`, and `AcceptRegexp`
+compiles the configured tag as a pattern anchored at the start of the comment's body — anchored so
+that SK-DIV-0017's narrowing survives the regexp reading and a pattern cannot re-open the
+match-anywhere footgun the literal reading was narrowed to close. An unparsable pattern matches
+nothing rather than falling back to a literal, because a typo that silently becomes a different rule
+is the failure mode this feature cannot have.
+
+### Why the sweep still cannot ask, and why that is the probe
+
+Every row now agrees at every value the sweep offers, which is `UNEXERCISED` and not a pass. The
+reason is not a weak fixture and it is not a masking key — it is arithmetic on the probe's own value
+generator, and it holds for **every** fixture:
+
+- `OptionDomain.Probes` offers a free-form string exactly two values: the key's default, and the
+  default with `x` appended.
+- The tag test is "the comment's body starts with the tag" — in both engines; the oracle's is even
+  wider, a plain substring.
+- So if a comment matches `@formatter:offx` it also matches `@formatter:off`, and `@formatter:off` is
+  the built-in, which fires whatever the key says. Both probe values therefore produce the same
+  output on any input whatsoever. The key is unobservable **by construction of the probe**, not by
+  choice of fixture.
+
+`tags_enabled` and `accept_regexp` are masked one step further out, and that half *is* SK-DIV-0083's
+shape: both govern the configured pair only, and the export leaves the configured pair sitting on the
+built-in values, where neither key can change anything. They are reachable, but only in pairs —
+`(tags_enabled, off_tag)` and `(accept_regexp, off_tag)` — which is what `pairwise` exists for.
+
+- options: `resharper_formatter_off_tag`, `resharper_formatter_on_tag`,
+  `resharper_formatter_tags_enabled`, `resharper_formatter_tags_accept_regexp`
+- ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Skala agrees
+  with the oracle at every value the sweep can offer *and* at every configuration measured by hand
+  above.
+- All four are registered `OfInert`, in the sense `align_multiline_argument` established and
+  SK-DIV-0083 restated: "no input distinguishes its values *under this configuration*", not "the
+  formatter ignores them". ⚠ **This entry first said the opposite** — that the mark was wrong for keys
+  whose behaviour is pinned by six tests — and the harness refuted it in the same run:
+  `OptionCoverageTests.EveryImplementedOption_ChangesTheOutputOfItsCorpusFile` and
+  `OptionObservabilityTests.EveryValue_IsDistinguishableOnTheKeysOwnFixture` both failed on all four,
+  and both were right to. An implemented key that no input can distinguish is exactly what the mark is
+  for; the tests were the argument and the prose was the opinion.
+- ⚠ Their `oracle` globs are kept, the way SK-DIV-0083's are, so the next sweep re-measures the claim
+  and `UNEXERCISED` points here.
+- ⚠ The model above is pinned by `FormatterTagTests` — one test per row of the table, each with the
+  unrecognised-tag negative control beside it — because the sweep cannot pin it and a measurement that
+  only lives in a document is one nobody will notice going stale.
+
+## SK-DIV-0090 — `use_continuous_indent_inside_parens` / `_initializer_braces`, masked by `continuous_indent_multiplier = 1`
+
+Both were `SPURIOUS` in the key-flip sweep and both now read `UNEXERCISED`. **A real defect was found
+and is fixed**: `false` does not mean "no indent", it means "one indent width", and the two readings
+are the same number under the export's own multiplier — which is why the oracle could not move and
+Skala could.
+
+⚠ **This settles the note the registry and `docs/tier-d-split.md` disagreed about.** The registry said
+these keys are "implemented and observable"; a pass measured `SPURIOUS` and could not reconcile the
+two. Both were right. The key *is* implemented and observable in `jb cleanupcode` — the mask is
+`resharper_continuous_indent_multiplier`, which the export sets to `1`.
+
+### The measurement
+
+`resharper_continuous_indent_multiplier = 2` is the only configuration that can ask, and at it the
+oracle is decisive at both values and in both spellings, prefixed and unprefixed:
+
+```
+// use_continuous_indent_inside_parens            // …_inside_initializer_braces
+M(                    M(                          new List<int> {      new List<int> {
+        a,                a,                              1,               1,
+        b                 b                               2                2
+);                    );                          };                   };
+true                  false                       true                 false
+8 + 2×4               8 + 1×4                     12 + 2×4             12 + 1×4
+```
+
+So `false` is **one indent width of continuation**, not the absence of one. Skala suppressed the
+scope outright, putting the contents on the owning construct's own column — a level short of the
+oracle at every multiplier, and visible in the sweep only because at multiplier 1 the oracle's two
+answers coincide and Skala's do not.
+
+`IndentKind.OneLevel` is what the IR was missing: `Continuous` with the multiplier forced to 1. It is
+deliberately not `Block` — a block is absolute and replaces whatever continuation is open, and the
+contents of a parenthesis do not reset the continuation context.
+
+⚠ **One half of the `true` arm is still short, and it is a different key's row.** A braced
+initializer's contents come from an `IndentKind.Block` scope, which is one indent width whatever the
+multiplier says, so at any multiplier above 1 Skala's `true` is a level short of the oracle. That is
+`continuous_indent_multiplier`'s defect on braced initializers, not this key's; it is recorded at the
+key in `options.json` and is not fixed here, because turning an absolute scope into a relative one
+under every initializer in `corpus/real` is not a change to make on the strength of a row that does
+not ask about it.
+
+- options: `resharper_csharp_use_continuous_indent_inside_parens`,
+  `resharper_csharp_use_continuous_indent_inside_initializer_braces`
+- ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Skala now
+  agrees with the oracle at both values under the export's multiplier *and* at the multiplier that
+  unmasks them. Two more pairs for `pairwise`: `(use_continuous_indent_inside_parens,
+  continuous_indent_multiplier)` and `(use_continuous_indent_inside_initializer_braces,
+  continuous_indent_multiplier)`.
+- ⚠ Both `oracle` globs are kept, the way SK-DIV-0083's are, so the next sweep re-measures the claim
+  and `UNEXERCISED` points here.
+
+## SK-DIV-0091 — `csharp_indent_braces`, and the brace-split direction the placement family does not have
+
+Four brace rows were resolved together and three of them are **fixed**; this entry is the residue, and
+it is two separate things that share a mechanism.
+
+### What was fixed, because it is the larger half
+
+`csharp_new_line_before_open_brace` is a **flags** option with twelve members and Skala read it as a
+two-valued switch — `NewLineBeforeOpenBrace is "none"`, so every other value behaved as `all`. **2 of
+its 15 values agreed with the oracle; 15 of 15 do now.** The seven groups the C# formatter actually
+has were measured one value per run, on a probe whose every body holds two statements and every
+initializer six elements — the first attempt had one-statement bodies and read `accessors`,
+`lambdas` and `object_collection_array_initializers` as inert when all three are live, because the
+export had already joined the constructs they govern:
+
+| value | what moves |
+|---|---|
+| `types` | class, struct, interface, enum, record — **and a block namespace** |
+| `methods` | method, constructor and operator bodies — **and local functions** |
+| `properties` | the accessor **list** of a property, an indexer or an event alike |
+| `accessors` | the accessor **body**: `get`, `set`, `add`, `remove` |
+| `control_blocks` | `if`, `while`, `for`, `foreach`, `do`, `lock`, `using`, `try`/`catch`/`finally`, `switch` |
+| `lambdas` | a lambda body — **and an anonymous method's `delegate(…) { }`** |
+| `object_collection_array_initializers` | initializer and anonymous-type braces — **and a switch *expression*'s and a property pattern's** |
+| `anonymous_methods`, `anonymous_types`, `events`, `indexers`, `local_functions` | **nothing** — each is covered by a neighbour |
+
+Three of those groupings are the ones reading the names would get wrong, and each was checked against
+the neighbour that would have explained it away: `local_functions` moves nothing while `methods` moves
+the local function; `events` and `indexers` move nothing while `properties` moves all three accessor
+lists; `anonymous_methods` moves nothing while `lambdas` moves the `delegate`.
+
+`empty_block_style`'s `together_same_line` (read as `multiline`, so the pair was split),
+`new_line_before_while`'s indentation and `special_else_if_treatment`'s split direction were fixed in
+the same pass and all three now read `Conformant`.
+
+### The first thing that is not fixed: the split direction
+
+Brace placement in this formatter is a **join** decision. `ShouldJoin` is "the one place phase 1
+removes a line break the author wrote", and nothing inserts one before a brace. So a K&R input under
+`csharp_new_line_before_open_brace = all` comes back K&R, where the oracle splits every brace onto its
+own line; and `empty_block_style = together_same_line`'s second half — pulling `{ }` back onto the
+declaration's line *against* the placement key — cannot be honoured either.
+
+⚠ **This is invisible to all four rows, and not by luck.** Every one of their fixtures is written with
+the break already there, so all fifteen values of the placement key only ever ask the join question.
+`FormatterTests.BraceSplitIsNotImplemented` asserts the gap so that it is a recorded absence rather
+than a discovery. Closing it means a break point before a brace in every construct in the language,
+which is not a change to make from a row that is already `Conformant`.
+
+`special_else_if_treatment` is the one member of the family that *did* get its split direction, in
+`MustBreak`, because its row needed it and its shape is a keyword rather than a brace.
+
+### The second: `csharp_indent_braces`, and the probe that moved the question
+
+The key governs a brace **on a line of its own**. Measured with both Roslyn brace keys supplied
+together, the oracle is flat at both values under the export's `csharp_new_line_before_open_brace =
+none`, and decisive with the braces split — where the answer is Whitesmiths, the brace taking one
+level and the body taking the *same* level:
+
+```
+class C                     class C
+    {                       {
+    void M()                    void M()
+        {                       {
+        if (true)                   if (true)
+            {                       {
+            M();                        M();
+            }                       }
+        }                       }
+    }                       }
+indent_braces = true        indent_braces = false
+```
+
+Skala applied the key whatever the brace placement, so under `none` the joined opening brace could not
+move and the closing one did — a shape no configuration of either key writes. That is fixed; the key
+is now inert under the export, exactly as the oracle is.
+
+⚠ **And that is why its sweep row reads `INERT` — the first in the table — rather than `UNEXERCISED`.
+The verdict is about the probe.** The sweep appends the key in an `[*.cs]` section of its own, and
+ReSharper re-derives the Roslyn brace pair from *that section*, defaulting the absent
+`csharp_new_line_before_open_brace` to Roslyn's `all`. So the oracle switches to Allman at **both**
+values and answers a question about brace *placement* that was never asked:
+
+```
+base only                          → K&R          (both engines; BaselineAgrees)
++ [*.cs] csharp_indent_braces=false → ALLMAN      ← the coupling
++ [*.cs] with both keys, either order → K&R       ← ask properly and it is flat
+```
+
+The export itself sets both keys, `csharp_indent_braces` first, and is unaffected; it is only the
+appended single-key section that trips it.
+
+Skala cannot follow, and deliberately does not try. Reproducing it means teaching the option resolver
+that assigning one key in a section silently re-derives another from that section's *absent* members —
+a rule whose only justification is that ReSharper does it, on a configuration nobody writes. Doc 00's
+non-negotiable 9 is exactly this case: the reference tool is a test subject, not a specification.
+
+- options: `csharp_indent_braces`, and the split-direction gap in `csharp_new_line_before_open_brace`
+  and `resharper_csharp_empty_block_style`
+- ⚠ status: **accepted**. `csharp_indent_braces` agrees with the oracle at both values whenever the
+  question is put to both engines the same way; the row's disagreement exists only under a
+  single-key section that changes what the oracle was asked. Registered `OfInert` with the mask named,
+  and its `oracle` glob is kept so the next sweep re-measures it.
+- ⚠ `INERT` in the sweep's own table means "the oracle moved and Skala did not — the key is ignored",
+  and for this row that reading is wrong in both halves. Whoever runs the next sweep should read this
+  entry before acting on the count.
+
+## SK-DIV-0092 — `blank_lines_around_single_line_property` governs a shape this export never produces, and the fixture said otherwise
+
+`SPURIOUS` in the key-flip sweep, and the defect was real: Skala applied the key to a shape ReSharper
+does not, so Skala moved where the oracle could not. **That is fixed.** What is left is a mask.
+
+### What "a single-line property" is, and the claim it refutes
+
+Measured 2026-08-30, one key at a time, at `0`, `1`, `2` and `3`, on input written both tight and with
+blank runs already in it so that both directions were asked:
+
+| shape | the key that governs it |
+|---|---|
+| `public int X { get => 1; }` — an **accessor-list** property on one line | **this key**, decisive at 2 |
+| `public int X { get; set; }` | `blank_lines_around_single_line_auto_property`, confirmed on the same run |
+| `public int X => 1;` — expression-bodied | **neither**: not this key in either spelling, and not `blank_lines_around_property` |
+
+⚠ **The key's own corpus fixture asserted the opposite**, in a comment that reads as a measurement:
+"`public int X => 1;` is the single-line property this key governs — at 2 the oracle puts two blank
+lines around each of these two". The oracle puts none, at every value and in both directions. The
+comment is corrected in place rather than deleted, because the file had already been changed *once*
+for this key — away from the accessor-list form, which was the right shape — and a note saying only
+"this is the shape" would invite the same move a third time.
+
+`RequirementFor` now reads the key for an accessor-list property alone; an expression-bodied one
+states no blank-line requirement, which is what the oracle does. ⚠ Only the *single-line* arm is
+narrowed. A multi-line expression-bodied property still takes `blank_lines_around_property`, because
+that is not a shape this pass measured and the register does not extend a measurement past what was
+asked.
+
+### Why the row cannot reach `Conformant`
+
+`resharper_keep_existing_declaration_block_arrangement = false` in the export expands
+`public int X { get => 1; }` onto three lines, and a property that is not on one line is not this
+key's. So the one shape the key governs cannot exist under this configuration, and no fixture makes it
+observable from a single flip — SK-DIV-0083's shape exactly. With the mask lifted
+(`keep_existing_declaration_block_arrangement = true`) the key is decisive at 2 in both engines.
+
+The fixture keeps the expression-bodied shape rather than moving back to the accessor-list one,
+because the accessor-list form would be expanded and the row would be `UNEXERCISED` either way — and
+this way the file carries the measurement that was wrong twice.
+
+- options: `resharper_csharp_blank_lines_around_single_line_property`
+- ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Registered
+  `OfInert` with the mask named; the `oracle` glob is kept so the next sweep re-measures it. One more
+  pair for `pairwise`: `(blank_lines_around_single_line_property,
+  keep_existing_declaration_block_arrangement)`.
+
+## SK-DIV-0093 — `keep_existing_lambda_and_anonymous_function_parens_arrangement` is a key the C# formatter does not read
+
+`SPURIOUS` in the key-flip sweep, and the finding is the one this batch's brief warned is the more
+valuable verdict: not a mask, not a weak fixture — **a documented editorconfig property the C#
+formatter is not wired to.** Skala answered to it, so Skala moved where the oracle could not.
+
+Measured on `constructs/preservation/lambda-parens.cs`, whose lambda has the author's break inside its
+parentheses, one configuration per `cleanupcode` run:
+
+| configuration | the single-parameter lambda |
+|---|---|
+| the export | `Use((\n int first\n ) => first\n);` — the break is kept |
+| `keep_existing_lambda_… = false` | **unchanged** |
+| `keep_existing_lambda_… = true` | unchanged |
+| `keep_existing_declaration_parens_arrangement = false` | **`Use((int first) => first);` — rejoined** |
+| both `false` | rejoined, and no further |
+| `declaration = false`, `lambda = true` | rejoined |
+
+The last row is the control that settles it: with the declaration key doing the work, setting the
+lambda key *back* to `true` does not restore the break. It is inert in both directions, under both
+values of its neighbour, and in both spellings.
+
+`resharper_keep_existing_declaration_parens_arrangement` governs a lambda's and an anonymous method's
+parameter list along with every other one. `BreakPlan.DeclarationKeeps` had a special case routing the
+first two to the lambda key; it is gone, and one key now governs every parameter list.
+
+⚠ The two-parameter lambda in the same file stays broken under every configuration above and rejoins
+only at `keep_user_linebreaks = false`. That is a different key doing a different job — the break it
+keeps is between *items*, not at the parenthesis — and it is named here because it is the obvious
+wrong conclusion to draw from the table.
+
+- options: `resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement`
+- ⚠ status: **accepted**. The row goes `SPURIOUS` → `UNEXERCISED`, which is the honest verdict for a
+  key nothing reads: both engines are flat at both values because there is nothing to be flat about.
+  Registered `OfInert` with "unread" rather than "masked" spelled out, since the two are recorded the
+  same way and mean different things. Still resolved and reported by `skala config explain` — a key
+  the registry knows and the tool silently drops is worse than one it reports as having no effect.
+- ⚠ Its `oracle` glob is kept. If a future ReSharper wires the key up, this is the row that notices.

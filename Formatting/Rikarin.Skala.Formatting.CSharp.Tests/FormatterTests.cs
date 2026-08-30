@@ -968,3 +968,413 @@ public sealed class XmlDocTests {
         Assert.Contains(new string('x', 200), result.Formatted, StringComparison.Ordinal);
     }
 }
+
+/// <summary>
+///     <c>csharp_new_line_before_open_brace</c>'s seven groups, and <c>csharp_indent_braces</c> beside it.
+/// </summary>
+/// <remarks>
+///     ⚠ The key is a flags option with twelve members and was read as a two-valued switch — every value
+///     but <c>none</c> behaved as <c>all</c>, and two of its fifteen values agreed with the oracle. The
+///     groups are measured; see <see cref="BraceOwners" /> for the probe and for the five members that
+///     move nothing on their own.
+/// </remarks>
+public sealed class BracePlacementTests {
+    static string FormatWith(string source, params (string Key, string Value)[] overrides) {
+        var options = new PhaseOneOptions(
+            Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
+                .Options
+        );
+
+        return CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
+    }
+
+    // ⚠ Written Allman, the way `constructs/braces/csharp_new_line_before_open_brace.cs` is, because
+    // brace placement in this formatter is a *join* decision and not a split one — see
+    // `BraceSplitIsNotImplemented` at the bottom of this class.
+    const string Source = """
+                          class C
+                          {
+                              int P
+                              {
+                                  get
+                                  {
+                                      _f = 1;
+                                      return _f;
+                                  }
+                              }
+
+                              int _f;
+
+                              void M()
+                              {
+                                  if (_f == 0)
+                                  {
+                                      _f = 1;
+                                      _f = 2;
+                                  }
+                              }
+                          }
+                          """;
+
+    /// <summary>
+    ///     ⚠ Each group moves its own constructs and no others. Every row is the oracle's answer on the
+    ///     same shapes, one value per <c>cleanupcode</c> run.
+    /// </summary>
+    [Theory]
+    [InlineData("types", "class C\n{")]
+    [InlineData("methods", "void M()\n    {")]
+    [InlineData("properties", "int P\n    {")]
+    [InlineData("accessors", "get\n        {")]
+    [InlineData("control_blocks", "if (_f == 0)\n        {")]
+    public void EachGroup_MovesItsOwnConstructs(string value, string expected) =>
+        Assert.Contains(
+            expected,
+            FormatWith(Source, ("csharp_new_line_before_open_brace", value)),
+            StringComparison.Ordinal
+        );
+
+    /// <summary>
+    ///     ⚠ The five members the C# formatter does not answer to, asserted as inert rather than left
+    ///     unmentioned — each is covered by a neighbour, and reading the names would put them elsewhere.
+    /// </summary>
+    [Theory]
+    [InlineData("events")]
+    [InlineData("indexers")]
+    [InlineData("local_functions")]
+    [InlineData("anonymous_methods")]
+    [InlineData("anonymous_types")]
+    public void TheFiveCoveredMembers_MoveNothing(string value) =>
+        Assert.Equal(
+            FormatWith(Source, ("csharp_new_line_before_open_brace", "none")),
+            FormatWith(Source, ("csharp_new_line_before_open_brace", value))
+        );
+
+    /// <summary>⚠ And a combination is the union of its members, not the last one written.</summary>
+    [Fact]
+    public void ACombination_IsTheUnionOfItsMembers() {
+        var formatted = FormatWith(Source, ("csharp_new_line_before_open_brace", "properties, types"));
+        Assert.Contains("class C\n{", formatted, StringComparison.Ordinal);
+        Assert.Contains("int P\n    {", formatted, StringComparison.Ordinal);
+        Assert.Contains("void M() {", formatted, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     <c>csharp_indent_braces</c> does nothing to a brace that is welded to the previous line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured: under the export's `new_line_before_open_brace = none` the oracle is flat at both
+    ///     values. Skala applied it anyway, which moved the closing brace and could not move the joined
+    ///     opening one — a shape no configuration of either key produces. SK-DIV-0091.
+    /// </remarks>
+    [Fact]
+    public void IndentBraces_IsInertWhileTheBraceIsJoined() =>
+        Assert.Equal(
+            FormatWith(Source, ("csharp_indent_braces", "false")),
+            FormatWith(Source, ("csharp_indent_braces", "true"))
+        );
+
+    /// <summary>
+    ///     ⚠ …and with the braces on their own line it is Whitesmiths: the brace takes one level and the
+    ///     body takes the <em>same</em> level, rather than the brace staying out and the body going in.
+    ///     Quoted from the oracle's own output at `all` + `true`.
+    /// </summary>
+    [Fact]
+    public void IndentBraces_WithBracesOnTheirOwnLine_IsWhitesmiths() {
+        var formatted = FormatWith(
+            "class C\n{\n    void M()\n    {\n        if (true)\n        {\n            M();\n        }\n    }\n}\n",
+            ("csharp_new_line_before_open_brace", "all"),
+            ("csharp_indent_braces", "true")
+        );
+
+        Assert.Contains(
+            "class C\n    {\n    void M()\n        {\n        if (true)\n            {\n            M();\n"
+            + "            }\n        }\n    }",
+            formatted,
+            StringComparison.Ordinal
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ The half of this key Skala does not implement, asserted rather than left to be discovered.
+    /// </summary>
+    /// <remarks>
+    ///     Brace placement here is a <em>join</em> decision: <c>ShouldJoin</c> is "the one place phase 1
+    ///     removes a line break the author wrote", and nothing inserts one. So a K&amp;R input under
+    ///     <c>csharp_new_line_before_open_brace = all</c> comes back K&amp;R, where the oracle splits every
+    ///     brace onto its own line.
+    ///     <para>
+    ///         ⚠ This is invisible to the key's sweep row, and not by luck: the row's fixture is written
+    ///         Allman, so every one of the fifteen values only ever asks the join question. It is recorded
+    ///         at the key in <c>options.json</c> and in SK-DIV-0091 rather than fixed here — inserting a
+    ///         break before a brace is a new break point in every construct in the language, and it is not
+    ///         reachable from a row that is Conformant.
+    ///     </para>
+    /// </remarks>
+    /// <summary>
+    ///     <c>resharper_csharp_new_line_before_while</c>: the <c>while</c> sits flush with its <c>do</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Skala kept the break and indented the <c>while</c> four columns. A <c>do</c>'s trailing
+    ///     <c>while</c> has no clause node of its own — <c>else</c>, <c>catch</c> and <c>finally</c> are
+    ///     each the first token of a clause and are units — so the continuation walk read it as a
+    ///     continuation of the <c>do</c>. Quoted from the oracle at both values.
+    /// </remarks>
+    [Theory]
+    [InlineData("true", "        }\n        while (b);")]
+    [InlineData("false", "        } while (b);")]
+    public void NewLineBeforeWhile_PutsItFlushWithTheDo(string value, string expected) =>
+        Assert.Contains(
+            expected,
+            FormatWith(
+                "class C {\n    void M(bool b) {\n        do {\n            M(b);\n        }\n        while (b);\n    }\n}\n",
+                ("resharper_csharp_new_line_before_while", value)
+            ),
+            StringComparison.Ordinal
+        );
+
+    /// <summary>
+    ///     <c>resharper_csharp_special_else_if_treatment = false</c> splits a joined <c>else if</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two-directional, and Skala had the join arm only. At <c>false</c> the <c>if</c> becomes what
+    ///     it structurally is — the <c>else</c>'s embedded statement, one level in. Quoted from the
+    ///     oracle.
+    /// </remarks>
+    [Fact]
+    public void SpecialElseIfTreatment_SplitsAndJoinsInBothDirections() {
+        const string joined = """
+                              class C {
+                                  void M(int a) {
+                                      if (a == 1) {
+                                          M(a);
+                                      } else if (a == 2) {
+                                          M(a);
+                                      }
+                                  }
+                              }
+                              """;
+
+        Assert.Contains(
+            "} else\n            if (a == 2) {\n                M(a);\n            }",
+            FormatWith(joined, ("resharper_csharp_special_else_if_treatment", "false")),
+            StringComparison.Ordinal
+        );
+
+        Assert.Contains(
+            "} else if (a == 2) {",
+            FormatWith(joined, ("resharper_csharp_special_else_if_treatment", "true")),
+            StringComparison.Ordinal
+        );
+    }
+
+    /// <summary>
+    ///     <c>resharper_csharp_empty_block_style</c>: <c>together_same_line</c> joins the pair too.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Skala read it as <c>multiline</c> and split the braces. The two <c>together</c>s differ only
+    ///     once the brace would be on its own line, which needs the split direction Skala does not have;
+    ///     under the export's <c>none</c> they are the same bytes, and that is what is asserted.
+    /// </remarks>
+    [Theory]
+    [InlineData("multiline", "void M() {\n    }")]
+    [InlineData("together", "void M() { }")]
+    [InlineData("together_same_line", "void M() { }")]
+    public void EmptyBlockStyle_HasThreeValuesAndTwoOfThemJoin(string value, string expected) =>
+        Assert.Contains(
+            expected,
+            FormatWith(
+                "class C {\n    void M() {\n    }\n}\n",
+                ("resharper_csharp_empty_block_style", value)
+            ),
+            StringComparison.Ordinal
+        );
+
+    [Fact]
+    public void BraceSplitIsNotImplemented() {
+        var formatted = FormatWith(
+            "class C {\n    void M() {\n        M();\n    }\n}\n",
+            ("csharp_new_line_before_open_brace", "all")
+        );
+
+        Assert.Contains("class C {", formatted, StringComparison.Ordinal);
+    }
+}
+
+/// <summary>
+///     A property-pattern subpattern's break point, and the column its value lands on.
+/// </summary>
+/// <remarks>
+///     ⚠ SK-DIV-0081, closed. The entry sat open on one question — every other undelimited continuation
+///     in this formatter spends a level and this one spends none, "measured once and nowhere else" —
+///     and these are the second and third measurements, in configurations that do not share a cause.
+///     Both are quoted from <c>jb cleanupcode</c> 2025.2.6.
+///     <para>
+///         ⚠ The un-aligned case also refutes the entry's "reachable only under alignment", which had
+///         reasoned from the export's 120-column margin alone.
+///     </para>
+/// </remarks>
+public sealed class SubpatternBreakTests {
+    static string FormatWith(string source, params (string Key, string Value)[] overrides) {
+        var options = new PhaseOneOptions(
+            Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
+                .Options
+        );
+
+        return CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
+    }
+
+    const string Source = """
+                          public class P {
+                              void One(object candidate) {
+                                  var matched = candidate is { OnlySubpatternPropertyName: "a string long enough that the pattern cannot stay on its line" };
+                              }
+                          }
+                          """;
+
+    /// <summary>
+    ///     The subpattern's value lands on the subpattern's own column: the same leading whitespace,
+    ///     not a level more.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Asserted as a relationship between the two lines rather than as an absolute column, because
+    ///     the absolute column is what the two configurations differ in and the relationship is what the
+    ///     measurement found. Aligned it is 39 and un-aligned it is 12; both are the name's own.
+    /// </remarks>
+    [Theory]
+    [InlineData("true", "120")]
+    [InlineData("false", "60")]
+    public void TheValueLandsOnTheSubpatternsOwnColumn(string aligned, string margin) {
+        var lines = FormatWith(
+                Source,
+                ("resharper_csharp_align_multiline_property_pattern", aligned),
+                ("resharper_csharp_max_line_length", margin)
+            )
+            .Split('\n');
+
+        var name = Array.FindIndex(lines, static l => l.TrimEnd().EndsWith("OnlySubpatternPropertyName:", StringComparison.Ordinal));
+        Assert.True(name >= 0, "the subpattern's `:` did not end a line, so nothing broke after it");
+        Assert.StartsWith("\"a string long enough", lines[name + 1].TrimStart(), StringComparison.Ordinal);
+        Assert.Equal(Indent(lines[name]), Indent(lines[name + 1]));
+    }
+
+    static string Indent(string line) => line[..(line.Length - line.TrimStart().Length)];
+
+    /// <summary>
+    ///     ⚠ A positional subpattern has no <c>:</c> and gets no break point of its own — asserted as
+    ///     "nothing broke" rather than on the text, because the point of the arm is the early return.
+    /// </summary>
+    [Fact]
+    public void APositionalSubpattern_IsNotGivenABreakPoint() {
+        var formatted = FormatWith(
+            "public class P {\n    void M(object c) {\n        var matched = c is P(1, 2);\n    }\n}\n",
+            ("resharper_csharp_max_line_length", "40")
+        );
+
+        var statement = Array.Find(formatted.Split('\n'), static l => l.Contains(" is ", StringComparison.Ordinal));
+        Assert.NotNull(statement);
+        Assert.EndsWith(";", statement.TrimEnd(), StringComparison.Ordinal);
+    }
+}
+
+/// <summary>
+///     The two <c>use_continuous_indent_inside_*</c> keys, at the multiplier that unmasks them.
+/// </summary>
+/// <remarks>
+///     ⚠ SK-DIV-0090. The key-flip sweep cannot ask about either key, because the export sets
+///     <c>resharper_continuous_indent_multiplier = 1</c> and at that multiplier a continuation level and
+///     an indent width are the same number — so the oracle is flat at both values and any Skala answer
+///     that is not also flat reads <c>SPURIOUS</c>. The oracle's real answer, measured at multiplier 2,
+///     is pinned here instead, one assertion per column the oracle produced.
+///     <para>
+///         ⚠ <c>false</c> means <em>one indent width</em>, not the absence of an indent. Skala suppressed
+///         the scope outright, which is a level short at every multiplier and invisible at 1.
+///     </para>
+/// </remarks>
+public sealed class ContinuousIndentInsideTests {
+    static string FormatWith(string source, params (string Key, string Value)[] overrides) {
+        var options = new PhaseOneOptions(
+            Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
+                .Options
+        );
+
+        return CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
+    }
+
+    const string Call = """
+                        class C {
+                            void M(int a, int b) {
+                                M(
+                                    a,
+                                    b);
+                            }
+                        }
+                        """;
+
+    /// <summary>
+    ///     ⚠ The negative control the rest of this class rests on: at the export's own multiplier the
+    ///     key decides nothing, in Skala exactly as in the oracle.
+    /// </summary>
+    [Theory]
+    [InlineData("true")]
+    [InlineData("false")]
+    public void AtTheExportsMultiplierOfOne_TheParenKeyDecidesNothing(string value) {
+        var formatted = FormatWith(Call, ("resharper_csharp_use_continuous_indent_inside_parens", value));
+        Assert.Contains("\n            a,\n", formatted, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ Measured: at multiplier 2 the arguments land on <c>8 + 2×4</c> at <c>true</c> and
+    ///     <c>8 + 1×4</c> at <c>false</c>. The <c>false</c> column is the finding — it is an indent,
+    ///     not the lack of one.
+    /// </summary>
+    [Theory]
+    [InlineData("true", "\n                a,\n")]
+    [InlineData("false", "\n            a,\n")]
+    public void AtMultiplierTwo_InsideParens_IsOneLevelOrOneWidth(string value, string expected) {
+        var formatted = FormatWith(
+            Call,
+            ("resharper_continuous_indent_multiplier", "2"),
+            ("resharper_csharp_use_continuous_indent_inside_parens", value)
+        );
+        Assert.Contains(expected, formatted, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The initializer half, and only its <c>false</c> arm is asserted. The <c>true</c> arm comes
+    ///     from an <c>IndentKind.Block</c> scope, which is one indent width whatever the multiplier says
+    ///     — a <c>continuous_indent_multiplier</c> defect on braced initializers that SK-DIV-0090 records
+    ///     and deliberately does not fix. Asserting it here would pin the defect.
+    /// </summary>
+    [Fact]
+    public void AtMultiplierTwo_InsideInitializerBraces_False_IsOneWidthRatherThanNone() {
+        // ⚠ Five elements is over `max_initializer_elements_on_line = 4`, so this one is chopped
+        // whatever its width — which is what makes the indent inside the braces observable at all.
+        // The same construct `constructs/indentation/…_initializer_braces.cs` uses, for the same reason.
+        const string source = """
+                              class C {
+                                  System.Collections.Generic.List<int> N() =>
+                                      new System.Collections.Generic.List<int> { 1, 2, 3, 4, 5 };
+                              }
+                              """;
+
+        var formatted = FormatWith(
+            source,
+            ("resharper_continuous_indent_multiplier", "2"),
+            ("resharper_csharp_use_continuous_indent_inside_initializer_braces", "false")
+        );
+
+        // The `new` lands on one continuation level of 2×4 from the member at 4; the elements take one
+        // indent width from it rather than landing on it, which is the whole of the finding.
+        Assert.Contains("\n            new System.Collections.Generic.List<int> {\n", formatted, StringComparison.Ordinal);
+        Assert.Contains("\n                1,\n", formatted, StringComparison.Ordinal);
+    }
+}

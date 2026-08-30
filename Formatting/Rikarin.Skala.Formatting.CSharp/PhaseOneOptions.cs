@@ -171,6 +171,7 @@ public readonly struct PhaseOneOptions {
 
         // ── Braces ───────────────────────────────────────────────────────────────────────────
         NewLineBeforeOpenBrace = options.GetString(Ids.NewLineBeforeOpenBrace) ?? "none";
+        NewLineBeforeOpenBraceOwners = BraceOwnerSet.Parse(NewLineBeforeOpenBrace);
         NewLineBeforeElse = options.GetBool(Ids.NewLineBeforeElse);
         NewLineBeforeCatch = options.GetBool(Ids.NewLineBeforeCatch);
         NewLineBeforeFinally = options.GetBool(Ids.NewLineBeforeFinally);
@@ -628,6 +629,17 @@ public readonly struct PhaseOneOptions {
     public bool PlaceCommentsAtFirstColumn { get; }
 
     public string NewLineBeforeOpenBrace { get; }
+
+    /// <summary>
+    ///     <c>csharp_new_line_before_open_brace</c>, resolved into the constructs it actually names.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It is a *flags* option with twelve members plus <c>all</c> and <c>none</c>, and it used to be
+    ///     read as a two-valued switch — <c>NewLineBeforeOpenBrace is "none"</c>, so every other value
+    ///     behaved as <c>all</c>. Two of fifteen values agreed with the oracle.
+    /// </remarks>
+    public BraceOwners NewLineBeforeOpenBraceOwners { get; }
+
     public bool NewLineBeforeElse { get; }
     public bool NewLineBeforeCatch { get; }
     public bool NewLineBeforeFinally { get; }
@@ -1478,7 +1490,12 @@ public static class Ids {
     public static readonly OptionId EmptyBlockStyle = Of("resharper_csharp_empty_block_style");
     public static readonly OptionId AllowCommentAfterLbrace = Of("resharper_csharp_allow_comment_after_lbrace");
 
-    public static readonly OptionId IndentBraces = Of("csharp_indent_braces");
+    // ⚠ SK-DIV-0091, and `OfInert` in the established sense: masked at the export's own values, not
+    // ignored. It indents a brace that is on a line of its own, and the export's
+    // `csharp_new_line_before_open_brace = none` never puts one there — the oracle is flat at both
+    // values under that configuration too. `BracePlacementTests` pins the unmasked answer, which is
+    // Whitesmiths: the brace takes one level and the body takes the same one.
+    public static readonly OptionId IndentBraces = OfInert("csharp_indent_braces");
 
     public static readonly OptionId AlignMultilineStatementConditions =
         Of("resharper_csharp_align_multiline_statement_conditions");
@@ -1947,11 +1964,17 @@ public static class Ids {
     public static readonly OptionId IndentNestedLockStmt = Of("resharper_csharp_indent_nested_lock_stmt");
     public static readonly OptionId IndentNestedFixedStmt = Of("resharper_csharp_indent_nested_fixed_stmt");
 
+    // ⚠ SK-DIV-0090, and `OfInert` here means what it means for `align_multiline_argument`: no input
+    // distinguishes the values *under this configuration*, not that the formatter ignores them. The
+    // mask is `resharper_continuous_indent_multiplier = 1` in the export, which makes a continuation
+    // level and an indent width the same number — and `false` is one indent width, measured, not the
+    // absence of an indent. At multiplier 2 both keys are decisive in both engines, which is what
+    // `ContinuousIndentInsideTests` pins and what the sweep's one-key flip cannot reach.
     public static readonly OptionId UseContinuousIndentInsideParens =
-        Of("resharper_csharp_use_continuous_indent_inside_parens");
+        OfInert("resharper_csharp_use_continuous_indent_inside_parens");
 
     public static readonly OptionId UseContinuousIndentInsideInitializerBraces =
-        Of("resharper_csharp_use_continuous_indent_inside_initializer_braces");
+        OfInert("resharper_csharp_use_continuous_indent_inside_initializer_braces");
 
     public static readonly OptionId ContinuousIndentMultiplier = Of("resharper_csharp_continuous_indent_multiplier");
     public static readonly OptionId IndentPreprocessorIf = Of("resharper_csharp_indent_preprocessor_if");
@@ -2101,8 +2124,14 @@ public static class Ids {
 
     public static readonly OptionId BlankLinesAroundProperty = Of("resharper_csharp_blank_lines_around_property");
 
+    // ⚠ SK-DIV-0092, `OfInert` in the established sense. It governs an ACCESSOR-LIST property that is
+    // on one line — `public int X { get => 1; }` — and the export's
+    // `keep_existing_declaration_block_arrangement = false` expands exactly that shape onto three
+    // lines, so nothing this configuration can produce is a single-line property. Measured, and it
+    // refuted the claim the key's own fixture carried: an expression-bodied `X => 1;` is governed by
+    // neither this key nor `blank_lines_around_property`.
     public static readonly OptionId BlankLinesAroundSingleLineProperty =
-        Of("resharper_csharp_blank_lines_around_single_line_property");
+        OfInert("resharper_csharp_blank_lines_around_single_line_property");
 
     public static readonly OptionId BlankLinesAroundAutoProperty =
         Of("resharper_csharp_blank_lines_around_auto_property");
@@ -2216,8 +2245,13 @@ public static class Ids {
     public static readonly OptionId KeepExistingDeclarationParensArrangement =
         Of("resharper_csharp_keep_existing_declaration_parens_arrangement");
 
+    // ⚠ SK-DIV-0093, and this one is NOT a mask: the C# formatter does not answer to this key at all.
+    // Measured — `keep_existing_declaration_parens_arrangement = false` rejoins a lambda's broken
+    // parentheses and this key changes nothing at either value, in either spelling. It is still read
+    // and surfaced by `skala config explain`, because a key the registry knows and the tool silently
+    // drops is worse than one it reports as having no effect; nothing acts on it.
     public static readonly OptionId KeepExistingLambdaParensArrangement =
-        Of("resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement");
+        OfInert("resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement");
 
     public static readonly OptionId KeepExistingPrimaryConstructorParensArrangement =
         Of("resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement");
@@ -2654,10 +2688,19 @@ public static class Ids {
     public static readonly OptionId PreferWrapAroundEq = OfInert("resharper_prefer_wrap_around_eq");
 
     public static readonly OptionId IndentRawLiteralString = Of("resharper_csharp_indent_raw_literal_string");
-    public static readonly OptionId FormatterTagsEnabled = Of("resharper_formatter_tags_enabled");
-    public static readonly OptionId FormatterOffTag = Of("resharper_formatter_off_tag");
-    public static readonly OptionId FormatterOnTag = Of("resharper_formatter_on_tag");
-    public static readonly OptionId FormatterTagsAcceptRegexp = Of("resharper_formatter_tags_accept_regexp");
+
+    // ⚠ SK-DIV-0089, and `OfInert` here is the same sense `align_multiline_argument` established: no
+    // input distinguishes their values *under this configuration*, not that the formatter ignores
+    // them. All four are read and honoured, and `FormatterTagTests` pins six measured behaviours
+    // between them. What masks them is that `@formatter:off` / `@formatter:on` are recognised whatever
+    // the four keys say — measured against the oracle, which does the same — so with the export's
+    // configured pair sitting on the built-in values there is nothing for `tags_enabled` or
+    // `accept_regexp` to change; and `off_tag`'s probe values are the default and the default with an
+    // `x` appended, of which the second is matched by the first's own prefix on every possible input.
+    public static readonly OptionId FormatterTagsEnabled = OfInert("resharper_formatter_tags_enabled");
+    public static readonly OptionId FormatterOffTag = OfInert("resharper_formatter_off_tag");
+    public static readonly OptionId FormatterOnTag = OfInert("resharper_formatter_on_tag");
+    public static readonly OptionId FormatterTagsAcceptRegexp = OfInert("resharper_formatter_tags_accept_regexp");
 
     // ── The xmldoc sub-formatter's subset ────────────────────────────────────────────────────
     // ⚠ This block used to be 22 keys registered `OfUnoracled` under one shared reason: "no

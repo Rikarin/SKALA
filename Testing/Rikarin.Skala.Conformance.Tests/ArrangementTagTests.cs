@@ -26,7 +26,7 @@ namespace Rikarin.Skala.Conformance.Tests;
 ///     </para>
 /// </remarks>
 public sealed class ArrangementTagTests {
-    static string Arrange(string source, bool tagsEnabled = true) {
+    static string Arrange(string source, bool tagsEnabled = true, string? offTag = null, string? onTag = null) {
         const string path = "/arrangement/Tagged.cs";
         var text = SourceText.From(source);
         var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, path);
@@ -41,9 +41,22 @@ public sealed class ArrangementTagTests {
             )
         );
 
+        var overrides = new List<KeyValuePair<string, string>>();
+        if (!tagsEnabled) {
+            overrides.Add(new KeyValuePair<string, string>("resharper_formatter_tags_enabled", "false"));
+        }
+
+        if (offTag is not null) {
+            overrides.Add(new KeyValuePair<string, string>("resharper_formatter_off_tag", offTag));
+        }
+
+        if (onTag is not null) {
+            overrides.Add(new KeyValuePair<string, string>("resharper_formatter_on_tag", onTag));
+        }
+
         var options = OptionResolver.Resolve(
             Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
-            tagsEnabled ? null : [new KeyValuePair<string, string>("resharper_formatter_tags_enabled", "false")]
+            overrides.Count == 0 ? null : overrides
         )
                 .Options;
 
@@ -201,20 +214,43 @@ public sealed class ArrangementTagTests {
     }
 
     /// <summary>
-    ///     ⚠ Turning the tags off turns the guard off, which is what makes every assertion above a
-    ///     statement about the tag rather than about arrangement declining to fire.
+    ///     ⚠ Turning the tags off turns the guard off *for the configured pair only*, which is what makes
+    ///     every assertion above a statement about the tag rather than about arrangement declining to fire.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ This control used to be written on <c>@formatter:off</c> itself, and it was measured wrong:
+    ///     <c>jb cleanupcode</c> keeps honouring the built-in tags under
+    ///     <c>resharper_formatter_tags_enabled = false</c>, and Skala now does too — see
+    ///     <see cref="FormatterTags.BuiltinOff" />. So the control moved to a *custom* tag, where the key
+    ///     really does decide, and the built-in's immunity to it is asserted beside it.
+    /// </remarks>
     [Fact]
-    public void WithTheTagsDisabled_TheSameRegionIsArranged() {
-        const string source = """
+    public void WithTheTagsDisabled_ACustomTaggedRegionIsArranged_AndTheBuiltInIsStillHonoured() {
+        const string custom = """
                               public class C {
-                                  // @formatter:off
+                                  // @fmt:off
                                   public int Old() { return 1; }
-                                  // @formatter:on
+                                  // @fmt:on
                               }
                               """;
 
-        Assert.Contains("=> 1;", Arrange(source, tagsEnabled: false), StringComparison.Ordinal);
-        Assert.DoesNotContain("=> 1;", Arrange(source), StringComparison.Ordinal);
+        const string builtin = """
+                               public class C {
+                                   // @formatter:off
+                                   public int Old() { return 1; }
+                                   // @formatter:on
+                               }
+                               """;
+
+        Assert.DoesNotContain("=> 1;", Arrange(custom, offTag: "@fmt:off", onTag: "@fmt:on"), StringComparison.Ordinal);
+        Assert.Contains(
+            "=> 1;",
+            Arrange(custom, tagsEnabled: false, offTag: "@fmt:off", onTag: "@fmt:on"),
+            StringComparison.Ordinal
+        );
+
+        // ⚠ The built-in pair, under the same disabling key, is untouched.
+        Assert.DoesNotContain("=> 1;", Arrange(builtin, tagsEnabled: false), StringComparison.Ordinal);
+        Assert.DoesNotContain("=> 1;", Arrange(builtin), StringComparison.Ordinal);
     }
 }

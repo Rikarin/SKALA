@@ -163,6 +163,29 @@ public enum IndentKind {
     /// <summary>Continuation lines of one expression. <c>continuous_line_indent = single</c>.</summary>
     Continuous,
 
+    /// <summary>
+    ///     One indent width of continuation, whatever <c>continuous_indent_multiplier</c> says.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="Continuous" /> with the multiplier forced to 1, and it exists because that is
+    ///     what <c>use_continuous_indent_inside_parens = false</c> means. Measured against
+    ///     <c>jb cleanupcode</c> 2025.2.6 with <c>continuous_indent_multiplier = 2</c>, which is the only
+    ///     configuration that can tell the two apart — under the export's own multiplier of 1 they are
+    ///     the same number, and that is why the key read <c>SPURIOUS</c> in the sweep:
+    ///     <code>
+    /// M(              M(              ← multiplier = 2
+    ///         a,          a,
+    ///         b           b
+    /// );              );
+    /// true            false
+    /// 8 + 2×4         8 + 1×4
+    ///     </code>
+    ///     ⚠ Not <see cref="Block" />: a block is absolute and <em>replaces</em> whatever continuation is
+    ///     open, and the contents of a parenthesis do not reset the continuation context. This is
+    ///     relative, and composes exactly as <see cref="Continuous" /> does.
+    /// </remarks>
+    OneLevel,
+
     /// <summary>No change; a scope marker only.</summary>
     None,
 
