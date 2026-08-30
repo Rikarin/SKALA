@@ -32,13 +32,13 @@
 </section>
 <section class="option" id="resharper_csharp_empty_block_style">
 <h2><code>resharper_csharp_empty_block_style</code> <a class="self" href="#resharper_csharp_empty_block_style">#</a></h2>
-<p>Braces layout — Empty braces formatting</p>
+<p>How an empty block's braces are laid out. ⚠ Measured 2026-08-30: the three values are genuinely distinct, and the two <code>together</code>s differ only once the brace would be on its own line — under <code>csharp_new_line_before_open_brace = all</code>, <code>together</code> gives <code>void M()</code> / <code>{ }</code> and <code>together_same_line</code> gives <code>void M() { }</code>, pulling the pair back onto the declaration's line against the placement key. Under the export's <code>none</code> they are the same bytes. Skala read <code>together_same_line</code> as <code>multiline</code> and split the pair. ⚠ <code>together_same_line</code>'s second half — overriding the placement key — is not implemented, because it needs the brace-split direction Skala does not have. SK-DIV-0091.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>multiline</code>, <code>together</code>, <code>together_same_line</code></td></tr>
 <tr><th>Default</th><td><code>multiline</code></td></tr>
 <tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_empty_block_style</code>, <code>empty_block_style</code>, <code>resharper_empty_block_style</code></td></tr>
@@ -66,7 +66,7 @@
 </section>
 <section class="option" id="resharper_csharp_use_continuous_indent_inside_initializer_braces">
 <h2><code>resharper_csharp_use_continuous_indent_inside_initializer_braces</code> <a class="self" href="#resharper_csharp_use_continuous_indent_inside_initializer_braces">#</a></h2>
-<p>Braces layout — Use continuous line indent inside expression braces</p>
+<p>Whether an initializer's contents take a continuation level. ⚠ Measured 2026-08-30 at <code>resharper_continuous_indent_multiplier = 2</code>: a <code>new List&lt;int&gt; {</code> at column 12 puts its elements on 20 at <code>true</code> and on 16 at <code>false</code>, so <code>false</code> is one indent width rather than none. Under the export's multiplier of 1 the two coincide. ⚠ SEPARATE AND NOT FIXED: Skala's <code>true</code> arm is an <code>IndentKind.Block</code> scope, which is one indent width whatever the multiplier says, so at any multiplier above 1 it is a level short of the oracle. That is a <code>continuous_indent_multiplier</code> defect on braced initializers rather than this key's, and repairing it means turning an absolute scope into a relative one under every initializer in <code>corpus/real</code>. SK-DIV-0090.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

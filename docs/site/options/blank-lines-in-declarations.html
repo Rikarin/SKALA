@@ -236,7 +236,7 @@
 </section>
 <section class="option" id="resharper_csharp_blank_lines_around_single_line_property">
 <h2><code>resharper_csharp_blank_lines_around_single_line_property</code> <a class="self" href="#resharper_csharp_blank_lines_around_single_line_property">#</a></h2>
-<p>Blank lines in declarations — Around single line property/event</p>
+<p>Blank lines around a single-line property. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6, and it refutes the claim the key's own fixture carried: “a single-line property” is an ACCESSOR-LIST property on one line, <code>public int X { get =&gt; 1; }</code>, where the key is decisive at 2. An expression-bodied <code>public int X =&gt; 1;</code> is governed by NEITHER this key (0, 1, 2, 3, both spellings, on tight and pre-spaced input, in both directions) NOR <code>blank_lines_around_property</code>; <code>{ get; set; }</code> is <code>blank_lines_around_single_line_auto_property</code>'s, confirmed on the same run. Skala applied it to the expression-bodied form and so moved where the oracle could not, which was the whole of its SPURIOUS row. SK-DIV-0092.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>

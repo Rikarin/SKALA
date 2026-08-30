@@ -15,13 +15,13 @@
 <p class="lede">6 keys.</p>
 <section class="option" id="resharper_csharp_new_line_before_while">
 <h2><code>resharper_csharp_new_line_before_while</code> <a class="self" href="#resharper_csharp_new_line_before_while">#</a></h2>
-<p>Arrangement of statements — Place 'while' on a new line</p>
+<p>A new line before a <code>do</code> statement's <code>while</code>. ⚠ Measured 2026-08-30 and fully symmetric: at <code>true</code> the oracle puts <code>while (b);</code> on its own line FLUSH WITH THE <code>do</code>, inserting the break if the author did not write one; at <code>false</code> it joins. Skala kept the break and indented the <code>while</code> four columns, because a <code>do</code>'s trailing <code>while</code> has no clause node of its own — <code>else</code>, <code>catch</code> and <code>finally</code> are each the first token of a clause and are units, and this keyword sits directly in <code>DoStatementSyntax</code>, so the continuation walk read it as a continuation of the <code>do</code>. Fixed in <code>StartsAUnit</code>.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_new_line_before_while</code>, <code>new_line_before_while</code>, <code>resharper_new_line_before_while</code></td></tr>

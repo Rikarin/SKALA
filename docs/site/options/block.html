@@ -15,7 +15,7 @@
 <p class="lede">3 keys.</p>
 <section class="option" id="csharp_indent_braces">
 <h2><code>csharp_indent_braces</code> <a class="self" href="#csharp_indent_braces">#</a></h2>
-<p>Indent the braces of a block themselves.</p>
+<p>Indent the braces of a block themselves. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6: it governs a brace that is on a LINE OF ITS OWN, and the oracle is flat at both values under the export's <code>csharp_new_line_before_open_brace = none</code>. With the braces split (<code>= all</code>) the answer is Whitesmiths — the brace takes one level and the body takes the SAME level: <code>class C</code> / <code>    {</code> / <code>    void M()</code> / <code>        {</code> / <code>        if (true)</code>. Skala applied it whatever the brace placement, so under <code>none</code> the joined opening brace could not move and the closing one did, producing a shape no configuration of either key writes. SK-DIV-0091.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

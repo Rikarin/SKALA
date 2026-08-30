@@ -169,13 +169,13 @@
 </section>
 <section class="option" id="resharper_csharp_special_else_if_treatment">
 <h2><code>resharper_csharp_special_else_if_treatment</code> <a class="self" href="#resharper_csharp_special_else_if_treatment">#</a></h2>
-<p>General — Special 'else if' treatment</p>
+<p>Whether <code>else if</code> is written on one line. ⚠ Measured 2026-08-30 and two-directional: at <code>false</code> the oracle SPLITS a joined <code>else if</code> and lets the <code>if</code> become what it structurally is, the <code>else</code>'s embedded statement one level in; at <code>true</code> it joins a split one. Skala had the join arm only — <code>ShouldJoin</code> is the one place phase 1 removes a break — so <code>false</code> left the pair joined. <code>MustBreak</code> now carries the other direction.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>true</code></td></tr>
 <tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_special_else_if_treatment</code>, <code>resharper_special_else_if_treatment</code>, <code>special_else_if_treatment</code></td></tr>

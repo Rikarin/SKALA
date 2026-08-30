@@ -133,7 +133,7 @@
 </section>
 <section class="option" id="resharper_formatter_off_tag">
 <h2><code>resharper_formatter_off_tag</code> <a class="self" href="#resharper_formatter_off_tag">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>The comment that switches the formatter off. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6: the CLI oracle does honour formatter tags, it does read this key, and the configured tag is <strong>additive to</strong> the built-in <code>@formatter:off</code> rather than a replacement for it — with <code>resharper_formatter_off_tag = @zzz:off</code> a region written <code>// @formatter:off</code> is still preserved, while the negative control <code>// @fmt:off</code> under the export's own configuration is formatted straight through. Skala replaced rather than added, which silently stopped honouring every tag already written in a tree the moment the key was set; fixed at <code>FormatterTags.BuiltinOff</code>. ⚠ The sweep row reads UNEXERCISED and cannot do otherwise: the free-form-string probe offers the default and the default with <code>x</code> appended, and any comment matching <code>@formatter:offx</code> also matches the built-in <code>@formatter:off</code>, so both probe values give the same output on every possible input. SK-DIV-0089.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>string</td></tr>
@@ -148,7 +148,7 @@
 </section>
 <section class="option" id="resharper_formatter_on_tag">
 <h2><code>resharper_formatter_on_tag</code> <a class="self" href="#resharper_formatter_on_tag">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>The comment that switches the formatter back on. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6, same shape as <code>resharper_formatter_off_tag</code>: read by the oracle, and additive to the built-in <code>@formatter:on</code> rather than a replacement — a region closed by <code>// @formatter:on</code> still closes with <code>resharper_formatter_on_tag = @zzz:on</code> set. ⚠ UNEXERCISED for the same reason as its <code>off</code> twin: <code>@formatter:onx</code> is matched by the built-in prefix, so the probe's two values cannot differ on any input. SK-DIV-0089.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>string</td></tr>
@@ -163,7 +163,7 @@
 </section>
 <section class="option" id="resharper_formatter_tags_accept_regexp">
 <h2><code>resharper_formatter_tags_accept_regexp</code> <a class="self" href="#resharper_formatter_tags_accept_regexp">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Whether the configured off/on tags are regular expressions. ⚠ Measured 2026-08-30: real and decisive against the oracle — <code>resharper_formatter_off_tag = @f.*:off</code> protects a <code>// @fmt:off</code> region at <code>true</code> and does not at <code>false</code>. Skala answered this key by opening the guard outright (&quot;not implemented, in any pass&quot;), so the one key a person sets to make their tags more expressive turned the escape hatch off; now implemented, anchored at the start of the comment's body so SK-DIV-0017's narrowing survives the regexp reading. ⚠ Masked at the export's own values — it governs only the <em>configured</em> pair, and the export leaves that pair sitting on the built-in tags, which are honoured whatever this key says. Reachable only as the pair (<code>accept_regexp</code>, <code>off_tag</code>). SK-DIV-0089.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -178,7 +178,7 @@
 </section>
 <section class="option" id="resharper_formatter_tags_enabled">
 <h2><code>resharper_formatter_tags_enabled</code> <a class="self" href="#resharper_formatter_tags_enabled">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Whether the <em>configured</em> off/on tags are honoured. ⚠ Measured 2026-08-30: it does not switch the escape hatch off. The oracle keeps honouring the built-in <code>@formatter:off</code> at <code>false</code> and stops honouring a custom <code>@fmt:off</code>, so the key governs the configured pair alone. Skala opened the guard outright at <code>false</code>, so one line of configuration disabled the hatch for every file; fixed. ⚠ Masked at the export's own values for the same reason as <code>accept_regexp</code>: the export's configured pair <em>is</em> the built-in pair, so no input distinguishes <code>true</code> from <code>false</code>. Reachable only as the pair (<code>tags_enabled</code>, <code>off_tag</code>). SK-DIV-0089.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
