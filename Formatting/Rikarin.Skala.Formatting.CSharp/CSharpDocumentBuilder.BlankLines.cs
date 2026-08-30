@@ -757,7 +757,7 @@ public sealed partial class CSharpDocumentBuilder {
                     // expression-bodied property is governed by neither key and states no requirement.
                     // ⚠ This refutes the claim the key's own fixture carried, which is corrected with
                     // it. Skala applied the key to `=> 1;` and so moved where the oracle could not,
-                    // which was the whole of that row. SK-DIV-0087.
+                    // which was the whole of that row. SK-DIV-0092.
                     ? property.AccessorList is null ? 0 : _options.BlankLinesAroundSingleLineProperty
                     : _options.BlankLinesAroundProperty,
             IndexerDeclarationSyntax or EventDeclarationSyntax =>

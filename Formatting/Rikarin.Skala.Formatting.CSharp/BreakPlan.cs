@@ -3253,7 +3253,7 @@ public sealed class BreakPlan {
     ///     So the declaration key decides and the lambda key is inert in both directions and in either
     ///     spelling — the same shape as <c>remove_this_qualifier</c>: a documented editorconfig property
     ///     the C# formatter is not wired to. Skala answered to it, which is why the sweep read
-    ///     <c>SPURIOUS</c>. SK-DIV-0088.
+    ///     <c>SPURIOUS</c>. SK-DIV-0093.
     /// </remarks>
     bool DeclarationKeeps(ParameterListSyntax parameters) {
         _ = parameters;

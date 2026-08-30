@@ -1067,7 +1067,7 @@ public sealed class BracePlacementTests {
     /// <remarks>
     ///     ⚠ Measured: under the export's `new_line_before_open_brace = none` the oracle is flat at both
     ///     values. Skala applied it anyway, which moved the closing brace and could not move the joined
-    ///     opening one — a shape no configuration of either key produces. SK-DIV-0086.
+    ///     opening one — a shape no configuration of either key produces. SK-DIV-0091.
     /// </remarks>
     [Fact]
     public void IndentBraces_IsInertWhileTheBraceIsJoined() =>
@@ -1108,7 +1108,7 @@ public sealed class BracePlacementTests {
     ///     <para>
     ///         ⚠ This is invisible to the key's sweep row, and not by luck: the row's fixture is written
     ///         Allman, so every one of the fifteen values only ever asks the join question. It is recorded
-    ///         at the key in <c>options.json</c> and in SK-DIV-0086 rather than fixed here — inserting a
+    ///         at the key in <c>options.json</c> and in SK-DIV-0091 rather than fixed here — inserting a
     ///         break before a brace is a new break point in every construct in the language, and it is not
     ///         reachable from a row that is Conformant.
     ///     </para>
@@ -1286,7 +1286,7 @@ public sealed class SubpatternBreakTests {
 ///     The two <c>use_continuous_indent_inside_*</c> keys, at the multiplier that unmasks them.
 /// </summary>
 /// <remarks>
-///     ⚠ SK-DIV-0085. The key-flip sweep cannot ask about either key, because the export sets
+///     ⚠ SK-DIV-0090. The key-flip sweep cannot ask about either key, because the export sets
 ///     <c>resharper_continuous_indent_multiplier = 1</c> and at that multiplier a continuation level and
 ///     an indent width are the same number — so the oracle is flat at both values and any Skala answer
 ///     that is not also flat reads <c>SPURIOUS</c>. The oracle's real answer, measured at multiplier 2,
@@ -1351,7 +1351,7 @@ public sealed class ContinuousIndentInsideTests {
     /// <summary>
     ///     ⚠ The initializer half, and only its <c>false</c> arm is asserted. The <c>true</c> arm comes
     ///     from an <c>IndentKind.Block</c> scope, which is one indent width whatever the multiplier says
-    ///     — a <c>continuous_indent_multiplier</c> defect on braced initializers that SK-DIV-0085 records
+    ///     — a <c>continuous_indent_multiplier</c> defect on braced initializers that SK-DIV-0090 records
     ///     and deliberately does not fix. Asserting it here would pin the defect.
     /// </summary>
     [Fact]

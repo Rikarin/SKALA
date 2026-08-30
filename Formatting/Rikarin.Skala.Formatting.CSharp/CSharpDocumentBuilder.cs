@@ -2633,7 +2633,7 @@ public sealed partial class CSharpDocumentBuilder {
             // (under `csharp_new_line_before_open_brace = all`; under the export's `none` the second
             // and third are the same bytes.) ⚠ `together_same_line`'s second half — pulling the pair
             // back onto the declaration's line against `new_line_before_open_brace` — is NOT
-            // implemented: it needs the brace-split direction Skala does not have. SK-DIV-0086.
+            // implemented: it needs the brace-split direction Skala does not have. SK-DIV-0091.
             return _options.EmptyBlockStyle is EmptyBlockStyle.Together or EmptyBlockStyle.TogetherSameLine
                 && OpensAJoinableBody(previousToken);
         }
@@ -2678,7 +2678,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///         ⚠ The placement family's split direction is otherwise not implemented — a brace is never
     ///         moved onto a line of its own, so <c>new_line_before_open_brace</c>,
     ///         <c>new_line_before_else</c> and their siblings only ever decide whether to *keep* the
-    ///         break the author wrote. That gap is recorded in SK-DIV-0086 and is invisible to their
+    ///         break the author wrote. That gap is recorded in SK-DIV-0091 and is invisible to their
     ///         sweep rows, whose fixtures are all written with the break already there. The one arm
     ///         added here is the one whose row needs it and whose shape is a keyword rather than a
     ///         brace.

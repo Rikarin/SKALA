@@ -1490,7 +1490,7 @@ public static class Ids {
     public static readonly OptionId EmptyBlockStyle = Of("resharper_csharp_empty_block_style");
     public static readonly OptionId AllowCommentAfterLbrace = Of("resharper_csharp_allow_comment_after_lbrace");
 
-    // ⚠ SK-DIV-0086, and `OfInert` in the established sense: masked at the export's own values, not
+    // ⚠ SK-DIV-0091, and `OfInert` in the established sense: masked at the export's own values, not
     // ignored. It indents a brace that is on a line of its own, and the export's
     // `csharp_new_line_before_open_brace = none` never puts one there — the oracle is flat at both
     // values under that configuration too. `BracePlacementTests` pins the unmasked answer, which is
@@ -1964,7 +1964,7 @@ public static class Ids {
     public static readonly OptionId IndentNestedLockStmt = Of("resharper_csharp_indent_nested_lock_stmt");
     public static readonly OptionId IndentNestedFixedStmt = Of("resharper_csharp_indent_nested_fixed_stmt");
 
-    // ⚠ SK-DIV-0085, and `OfInert` here means what it means for `align_multiline_argument`: no input
+    // ⚠ SK-DIV-0090, and `OfInert` here means what it means for `align_multiline_argument`: no input
     // distinguishes the values *under this configuration*, not that the formatter ignores them. The
     // mask is `resharper_continuous_indent_multiplier = 1` in the export, which makes a continuation
     // level and an indent width the same number — and `false` is one indent width, measured, not the
@@ -2124,7 +2124,7 @@ public static class Ids {
 
     public static readonly OptionId BlankLinesAroundProperty = Of("resharper_csharp_blank_lines_around_property");
 
-    // ⚠ SK-DIV-0087, `OfInert` in the established sense. It governs an ACCESSOR-LIST property that is
+    // ⚠ SK-DIV-0092, `OfInert` in the established sense. It governs an ACCESSOR-LIST property that is
     // on one line — `public int X { get => 1; }` — and the export's
     // `keep_existing_declaration_block_arrangement = false` expands exactly that shape onto three
     // lines, so nothing this configuration can produce is a single-line property. Measured, and it
@@ -2245,7 +2245,7 @@ public static class Ids {
     public static readonly OptionId KeepExistingDeclarationParensArrangement =
         Of("resharper_csharp_keep_existing_declaration_parens_arrangement");
 
-    // ⚠ SK-DIV-0088, and this one is NOT a mask: the C# formatter does not answer to this key at all.
+    // ⚠ SK-DIV-0093, and this one is NOT a mask: the C# formatter does not answer to this key at all.
     // Measured — `keep_existing_declaration_parens_arrangement = false` rejoins a lambda's broken
     // parentheses and this key changes nothing at either value, in either spelling. It is still read
     // and surfaced by `skala config explain`, because a key the registry knows and the tool silently
@@ -2689,7 +2689,7 @@ public static class Ids {
 
     public static readonly OptionId IndentRawLiteralString = Of("resharper_csharp_indent_raw_literal_string");
 
-    // ⚠ SK-DIV-0084, and `OfInert` here is the same sense `align_multiline_argument` established: no
+    // ⚠ SK-DIV-0089, and `OfInert` here is the same sense `align_multiline_argument` established: no
     // input distinguishes their values *under this configuration*, not that the formatter ignores
     // them. All four are read and honoured, and `FormatterTagTests` pins six measured behaviours
     // between them. What masks them is that `@formatter:off` / `@formatter:on` are recognised whatever

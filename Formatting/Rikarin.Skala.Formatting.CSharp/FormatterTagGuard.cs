@@ -25,7 +25,7 @@ public readonly record struct FormatterTags(bool Enabled, string Off, string On,
     /// </summary>
     /// <remarks>
     ///     ⚠ Not the same thing as <see cref="Enabled" /> being <c>false</c>, and the difference is the
-    ///     whole of SK-DIV-0084's finding. <c>None</c> is "this caller holds no configuration" — the
+    ///     whole of SK-DIV-0089's finding. <c>None</c> is "this caller holds no configuration" — the
     ///     test-only path into <c>XmlDocFormatter.Rewrite</c>. <c>Enabled = false</c> is a configuration
     ///     that says the *configurable* tags are off, and the oracle keeps honouring
     ///     <see cref="BuiltinOff" /> under it.

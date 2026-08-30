@@ -14,7 +14,7 @@
 // ⚠ And the accessor-list form cannot be the fixture either, for the reason the old note got right:
 // under this export `keep_existing_declaration_block_arrangement = false` expands it onto three
 // lines, and a property that is not on one line is not this key's. The key is masked at the export's
-// own values and the row reads UNEXERCISED — SK-DIV-0087. The shape stays as it is so that the
+// own values and the row reads UNEXERCISED — SK-DIV-0092. The shape stays as it is so that the
 // measurement above is the thing the next sweep re-asks.
 class C {
     public int X => 1;

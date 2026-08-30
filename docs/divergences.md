@@ -2677,7 +2677,7 @@ placement key, and only with the mask lifted does the key decide anything.
   stripped out from under it: the next sweep has to be able to re-measure the claim made here. The
   rows will read `UNEXERCISED`, and this entry is what that verdict points at.
 
-## SK-DIV-0084 — the four formatter-tag keys, and why no one-key flip can ask about any of them
+## SK-DIV-0089 — the four formatter-tag keys, and why no one-key flip can ask about any of them
 
 All four were `SPURIOUS` in the key-flip sweep and all four now read `UNEXERCISED`. **Three real
 defects were found on the way and are fixed**; what is left is a statement about the probe, and it is
@@ -2781,7 +2781,7 @@ built-in values, where neither key can change anything. They are reachable, but 
   unrecognised-tag negative control beside it — because the sweep cannot pin it and a measurement that
   only lives in a document is one nobody will notice going stale.
 
-## SK-DIV-0085 — `use_continuous_indent_inside_parens` / `_initializer_braces`, masked by `continuous_indent_multiplier = 1`
+## SK-DIV-0090 — `use_continuous_indent_inside_parens` / `_initializer_braces`, masked by `continuous_indent_multiplier = 1`
 
 Both were `SPURIOUS` in the key-flip sweep and both now read `UNEXERCISED`. **A real defect was found
 and is fixed**: `false` does not mean "no indent", it means "one indent width", and the two readings
@@ -2835,7 +2835,7 @@ not ask about it.
 - ⚠ Both `oracle` globs are kept, the way SK-DIV-0083's are, so the next sweep re-measures the claim
   and `UNEXERCISED` points here.
 
-## SK-DIV-0086 — `csharp_indent_braces`, and the brace-split direction the placement family does not have
+## SK-DIV-0091 — `csharp_indent_braces`, and the brace-split direction the placement family does not have
 
 Four brace rows were resolved together and three of them are **fixed**; this entry is the residue, and
 it is two separate things that share a mechanism.
@@ -2942,7 +2942,7 @@ non-negotiable 9 is exactly this case: the reference tool is a test subject, not
   and for this row that reading is wrong in both halves. Whoever runs the next sweep should read this
   entry before acting on the count.
 
-## SK-DIV-0087 — `blank_lines_around_single_line_property` governs a shape this export never produces, and the fixture said otherwise
+## SK-DIV-0092 — `blank_lines_around_single_line_property` governs a shape this export never produces, and the fixture said otherwise
 
 `SPURIOUS` in the key-flip sweep, and the defect was real: Skala applied the key to a shape ReSharper
 does not, so Skala moved where the oracle could not. **That is fixed.** What is left is a mask.
@@ -2989,7 +2989,7 @@ this way the file carries the measurement that was wrong twice.
   pair for `pairwise`: `(blank_lines_around_single_line_property,
   keep_existing_declaration_block_arrangement)`.
 
-## SK-DIV-0088 — `keep_existing_lambda_and_anonymous_function_parens_arrangement` is a key the C# formatter does not read
+## SK-DIV-0093 — `keep_existing_lambda_and_anonymous_function_parens_arrangement` is a key the C# formatter does not read
 
 `SPURIOUS` in the key-flip sweep, and the finding is the one this batch's brief warned is the more
 valuable verdict: not a mask, not a weak fixture — **a documented editorconfig property the C#

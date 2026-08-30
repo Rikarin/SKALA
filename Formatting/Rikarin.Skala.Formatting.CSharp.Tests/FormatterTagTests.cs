@@ -240,7 +240,7 @@ public sealed class FormatterTagTests {
     // ── The four keys ────────────────────────────────────────────────────────────────────────
     //
     // ⚠ These four are what the key-flip sweep cannot ask about, and the reason is written up as
-    // SK-DIV-0084: no value the sweep's probe can generate makes any of them observable, because the
+    // SK-DIV-0089: no value the sweep's probe can generate makes any of them observable, because the
     // probe offers the key's default and the default with an `x` on the end, and the built-in tag is
     // a prefix of both. So the model measured against `jb cleanupcode` 2025.2.6 by hand is pinned
     // here instead, one test per measurement, and the oracle's answer is quoted beside each.
