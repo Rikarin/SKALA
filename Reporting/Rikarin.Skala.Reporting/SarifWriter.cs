@@ -1,8 +1,10 @@
 using System.Globalization;
 using System.IO.Hashing;
+using System.Reflection;
 using System.Text;
 using Microsoft.CodeAnalysis.Sarif;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using SarifSuppressionKind = Microsoft.CodeAnalysis.Sarif.SuppressionKind;
@@ -66,13 +68,55 @@ public static class SarifWriter {
             new JsonSerializerSettings {
                 Formatting = Formatting.Indented,
                 NullValueHandling = NullValueHandling.Ignore,
-                DateFormatHandling = DateFormatHandling.IsoDateFormat
+                DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                ContractResolver = ExplicitLevels
             }
         );
 
         using var writer = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
         serializer.Serialize(writer, log);
         return writer.ToString();
+    }
+
+    /// <summary>
+    ///     ⚠ Makes <c>level</c> appear on every result, including the ones Skala means as warnings.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The SARIF SDK declares <c>Result.Level</c> with <c>[DefaultValue(FailureLevel.Warning)]</c>
+    ///         and a <c>ShouldSerializeLevel</c>, so a result Skala deliberately set to
+    ///         <see cref="FailureLevel.Warning" /> serialises with <b>no <c>level</c> at all</b>. 52 of the
+    ///         446 results in Skala's own report were in that state. Nothing downstream was wrong about
+    ///         them — SARIF § 3.27.10 and GitHub both default an absent level to <c>warning</c> — but a
+    ///         report where the severity Skala chose is present for three of its four values and absent for
+    ///         the fourth cannot be read, diffed or grepped, and the absence is indistinguishable from a
+    ///         writer that forgot.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ A contract resolver rather than post-processing the JSON. The type-level ⚠ on this class
+    ///         says the shape is built with the SDK's object model and never by hand; editing the
+    ///         serialiser's contract keeps that true, where a regex over the output would not.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Static, and it must stay static. A <see cref="DefaultContractResolver" /> caches the
+    ///         contract it builds per type, and a fresh instance per call throws that cache away — the
+    ///         documented way to make Newtonsoft slow.
+    ///     </para>
+    /// </remarks>
+    static readonly IContractResolver ExplicitLevels = new AlwaysSerializeLevel();
+
+    sealed class AlwaysSerializeLevel : DefaultContractResolver {
+        protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization serialization) {
+            var property = base.CreateProperty(member, serialization);
+            if (member.Name != nameof(Result.Level)
+                || (member.DeclaringType != typeof(Result) && member.DeclaringType != typeof(ReportingConfiguration))) {
+                return property;
+            }
+
+            property.DefaultValueHandling = DefaultValueHandling.Include;
+            property.ShouldSerialize = static _ => true;
+            return property;
+        }
     }
 
     static List<ToolComponent>? Extensions(RunReport report) {
@@ -113,9 +157,15 @@ public static class SarifWriter {
                 FullDescription = new MultiformatMessageString { Text = rule.Rationale },
                 Help = new MultiformatMessageString { Text = rule.Summary },
                 HelpUri = new Uri("https://github.com/Rikarin/Skala/blob/main/docs/rules/" + rule.Id + ".md"),
-                DefaultConfiguration = new ReportingConfiguration { Level = Level(rule.DefaultSeverity) }
+
+                // ⚠ Level *and* enablement. `RuleSeverity.None` means the rule never runs, which is
+                // `enabled: false` in SARIF and not a level at all — see `SarifSeverity`.
+                DefaultConfiguration = SarifSeverity.Configuration(rule.DefaultSeverity)
             };
 
+            // ⚠ Skala's own word beside SARIF's level, for the same reason the results carry it: SARIF
+            // has no level that distinguishes `hint` from `suggestion` and the catalogue does.
+            descriptor.SetProperty("defaultSeverity", rule.DefaultSeverity.ToString().ToLowerInvariant());
             descriptor.SetProperty("category", rule.Category);
             descriptor.SetProperty("scope", rule.Scope.ToString());
             descriptor.SetProperty("requiresSemantics", rule.RequiresSemantics);
@@ -145,7 +195,7 @@ public static class SarifWriter {
         var uri = Relative(report.RepositoryRoot, finding.Path);
         var result = new Result {
             RuleId = finding.RuleId,
-            Level = Level(finding.Severity),
+            Level = SarifSeverity.Level(finding.Severity),
             Message = new Message { Text = finding.Message },
             Locations = [
                 new Location {
@@ -164,6 +214,10 @@ public static class SarifWriter {
             ],
             PartialFingerprints = Fingerprints.For(finding)
         };
+
+        // ⚠ The exact Skala severity beside the SARIF level, because the mapping is lossy: `hint` and
+        // `suggestion` are both `note`. See `SarifSeverity`.
+        result.SetProperty(SarifSeverity.Property, SarifSeverity.Word(finding.Severity));
 
         if (!finding.TargetFrameworks.IsEmpty) {
             result.SetProperty("tfms", finding.TargetFrameworks.ToArray());
@@ -218,19 +272,99 @@ public static class SarifWriter {
             result.SetProperty("fixIsSafe", finding.FixIsSafe);
         }
 
-        if (finding.Suppression != SuppressionKind.None) {
-            result.Suppressions = [
-                new Suppression {
-                    Kind = finding.Suppression == SuppressionKind.Superseded
-                        ? SarifSuppressionKind.External
-                        : SarifSuppressionKind.InSource,
-                    Justification = finding.Suppression.ToString()
-                }
-            ];
+        if (Suppressions(finding) is { Count: > 0 } suppressions) {
+            result.Suppressions = suppressions;
         }
 
         return result;
     }
+
+    /// <summary>
+    ///     The <c>suppressions</c> entries a finding carries — <b>including the baseline's</b>.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠ <b>This is what makes the uploaded report say what the gate decided.</b> Until M9 the
+    ///         baseline governed the verdict and was invisible in the SARIF: every accepted finding went
+    ///         up to code scanning with no suppression on it, so a page that is supposed to answer "what
+    ///         is wrong with master" listed 428 long-accepted findings as open alerts. SARIF § 3.35 has
+    ///         the vocabulary for exactly this, and code scanning honours it by showing a suppressed
+    ///         result as dismissed rather than open.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Suppressed, never dropped.</b> Filtering the accepted findings out of the file is a
+    ///         different and false claim — "this run did not find them" rather than "this repository has
+    ///         accepted them" — and it would take them away from <c>skala report</c>, the PR comment and
+    ///         the stored-verdict path, all three of which read this same file (ADR-009).
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Two suppressions on one result is a real state, not a defect: a finding can be both
+    ///         <c>#pragma</c>-suppressed in the source and accepted by the baseline, and
+    ///         <c>Baseline.Write</c> says why it writes suppressed findings into the baseline in the first
+    ///         place. Each entry names its own mechanism in <see cref="SuppressionSourceProperty" /> so
+    ///         <see cref="SarifReader" /> can tell them apart on the way back — without that, reading the
+    ///         report back turned every baseline entry into a <c>#pragma</c> and dropped it out of
+    ///         <see cref="RunReport.Reportable" />, which is the gate's own input.
+    ///     </para>
+    /// </remarks>
+    static List<Suppression> Suppressions(Finding finding) {
+        var suppressions = new List<Suppression>();
+
+        if (finding.Suppression != SuppressionKind.None) {
+            suppressions.Add(
+                Suppress(
+                    finding.Suppression == SuppressionKind.Superseded
+                        ? SarifSuppressionKind.External
+                        : SarifSuppressionKind.InSource,
+                    finding.Suppression.ToString(),
+                    finding.Suppression.ToString().ToLowerInvariant()
+                )
+            );
+        }
+
+        if (finding.Bucket == BaselineBucket.Existing) {
+            suppressions.Add(
+                Suppress(SarifSuppressionKind.External, BaselineJustification, BaselineSuppressionSource)
+            );
+        }
+
+        return suppressions;
+    }
+
+    static Suppression Suppress(SarifSuppressionKind kind, string justification, string source) {
+        var suppression = new Suppression {
+            Kind = kind,
+
+            // ⚠ Explicit rather than left to the default. SARIF § 3.35.4 does default an absent
+            // `status` to `accepted`, but the whole point of this object is to be acted on by a
+            // consumer that was not written against Skala, and "the spec says the absence means yes"
+            // is a worse thing to rely on than one more field.
+            Status = SuppressionStatus.Accepted,
+            Justification = justification
+        };
+
+        suppression.SetProperty(SuppressionSourceProperty, source);
+        return suppression;
+    }
+
+    /// <summary>Which mechanism produced a <c>suppressions</c> entry, on the entry itself.</summary>
+    /// <remarks>⚠ Read by <see cref="SarifReader" />. Renaming it silently changes what a report means.</remarks>
+    public const string SuppressionSourceProperty = "skalaSuppressionSource";
+
+    /// <summary>The <see cref="SuppressionSourceProperty" /> value the baseline writes.</summary>
+    public const string BaselineSuppressionSource = "baseline";
+
+    /// <summary>
+    ///     The justification on a baseline suppression.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It names the file, because the justification is the whole explanation a reader of the
+    ///     code-scanning page gets — "external" on its own says a tool outside SARIF dismissed this and
+    ///     not which one, and the answer is a reviewed, committed artefact they can open.
+    /// </remarks>
+    public const string BaselineJustification =
+        "Accepted in " + Baseline.DefaultRelativePath + ", the repository's committed baseline. "
+        + "The `ci` gate counts only findings outside it.";
 
     static Invocation BuildInvocation(RunReport report) {
         var end = DateTime.UtcNow;
@@ -259,7 +393,7 @@ public static class SarifWriter {
             invocation.ToolExecutionNotifications = [
                 .. report.Diagnostics.Select(static diagnostic =>
                     new Notification {
-                        Level = Level(diagnostic.Severity),
+                        Level = SarifSeverity.Level(diagnostic.Severity),
                         Message = new Message { Text = diagnostic.Message },
                         Descriptor = new ReportingDescriptorReference { Id = diagnostic.Id }
                     }
@@ -282,22 +416,6 @@ public static class SarifWriter {
     ///     enclosing symbol and the ordinal still reads.
     /// </remarks>
     public static string Fingerprint(Finding finding) => Fingerprints.V1(finding);
-
-    static FailureLevel Level(SkalaSeverity severity) =>
-        severity switch {
-            SkalaSeverity.Error => FailureLevel.Error,
-            SkalaSeverity.Warning => FailureLevel.Warning,
-            SkalaSeverity.Info => FailureLevel.Note,
-            _ => FailureLevel.None
-        };
-
-    static FailureLevel Level(RuleSeverity severity) =>
-        severity switch {
-            RuleSeverity.Error => FailureLevel.Error,
-            RuleSeverity.Warning => FailureLevel.Warning,
-            RuleSeverity.Suggestion => FailureLevel.Note,
-            _ => FailureLevel.None
-        };
 
     static string Pascal(string concept) {
         var builder = new StringBuilder(concept.Length);

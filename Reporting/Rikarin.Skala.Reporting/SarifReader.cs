@@ -71,7 +71,7 @@ public static class SarifReader {
 
         return new Finding {
             RuleId = result.RuleId ?? string.Empty,
-            Severity = Severity(result.Level),
+            Severity = SarifSeverity.Read(Property<string>(result, SarifSeverity.Property), result.Level),
             Message = result.Message?.Text ?? string.Empty,
             Path = relative.Length == 0 ? repositoryRoot : Path.Combine(repositoryRoot, relative),
             Line = region?.StartLine ?? 0,
@@ -93,8 +93,49 @@ public static class SarifReader {
             // half-reconstructed fix in a report is a fix somebody will try to use.
             Fix = [],
             FixIsSafe = Property<bool?>(result, "fixIsSafe") ?? false,
-            Suppression = result.Suppressions is { Count: > 0 } ? SuppressionKind.Pragma : SuppressionKind.None
+            Suppression = Suppression(result)
         };
+    }
+
+    /// <summary>
+    ///     The in-source suppression a result carries, if any.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠ <b>A baseline suppression is not one of these, and reading it as one loses the run.</b>
+    ///         Since M9 the writer puts a <c>suppressions</c> entry on every finding the baseline accepts,
+    ///         so that code scanning shows it dismissed rather than open. This method used to answer
+    ///         "there is at least one suppression" with <see cref="SuppressionKind.Pragma" />, which after
+    ///         that change turned every accepted finding into a pragma on the way back — and
+    ///         <see cref="RunReport.Reportable" /> drops suppressed findings, so <c>skala report</c> over a
+    ///         stored SARIF would have rendered a repository with 428 accepted findings as one with 18
+    ///         findings and no baseline. The verdict is stored, so it would not have moved; the numbers
+    ///         beside it would have, which is the worse failure.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The fallback is what it always was. A suppression from a foreign SARIF names no
+    ///         mechanism Skala knows, and calling it a pragma is both the old behaviour and the safe
+    ///         reading: something outside the source made this finding go away.
+    ///     </para>
+    /// </remarks>
+    static SuppressionKind Suppression(Result result) {
+        foreach (var suppression in result.Suppressions ?? []) {
+            switch (Property<string>(suppression, SarifWriter.SuppressionSourceProperty)) {
+                case SarifWriter.BaselineSuppressionSource:
+                    continue;
+
+                case "attribute":
+                    return SuppressionKind.Attribute;
+
+                case "superseded":
+                    return SuppressionKind.Superseded;
+
+                default:
+                    return SuppressionKind.Pragma;
+            }
+        }
+
+        return SuppressionKind.None;
     }
 
     static LoadMode ParseMode(string? value) =>
@@ -102,14 +143,6 @@ public static class SarifReader {
             "binlog" => LoadMode.Binlog,
             "workspace" => LoadMode.Workspace,
             _ => LoadMode.Loose
-        };
-
-    static SkalaSeverity Severity(FailureLevel level) =>
-        level switch {
-            FailureLevel.Error => SkalaSeverity.Error,
-            FailureLevel.Warning => SkalaSeverity.Warning,
-            FailureLevel.Note => SkalaSeverity.Info,
-            _ => SkalaSeverity.Hidden
         };
 
     static T? Property<T>(PropertyBagHolder? holder, string name) {
