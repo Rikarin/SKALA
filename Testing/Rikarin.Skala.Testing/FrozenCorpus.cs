@@ -141,10 +141,8 @@ public static class FrozenCorpus {
     /// <summary>⚠ Skala is known <em>not</em> to produce it, and an argued entry says why.</summary>
     public const string Divergent = "divergent";
 
-    static readonly JsonSerializerOptions Options = new() {
-        WriteIndented = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.Never
-    };
+    static readonly JsonSerializerOptions Options =
+        new() { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.Never };
 
     /// <summary><c>Testing/corpus/sweep/</c>.</summary>
     public static string Root => Path.Combine(Corpus.Root, Set);

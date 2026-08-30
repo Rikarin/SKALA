@@ -256,7 +256,9 @@ public sealed class FrozenSweepTests {
             var body = FrozenCorpus.ReadBody(path);
             var digest = SkalaSide.Digest(body);
             if (!string.Equals(digest, output.OracleHash, StringComparison.Ordinal)) {
-                corrupt.Add(output.Path + ": the sweep recorded " + output.OracleHash + ", the file hashes to " + digest);
+                corrupt.Add(
+                    output.Path + ": the sweep recorded " + output.OracleHash + ", the file hashes to " + digest
+                );
             }
         }
 
