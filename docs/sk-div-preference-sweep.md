@@ -10,9 +10,17 @@ away. This file is the measurement, taken while it was still there.
 Each construct below is scored against a two-term model: *break the inner construct when
 breaking it brings the head line within the margin, and when the inner construct is at
 least `F` columns wide on its own; otherwise take the outer break.* The first term is a
-sentence anyone can state without ReSharper installed. The second is one constant per
-shape, and it is the entire irreducible content of the "preference fact" — read the
-fitted `F` and the accuracy beside it in each construct's section.
+sentence anyone can state without ReSharper installed. The second is the entire
+irreducible content of the "preference fact" — read the fitted `F` and the accuracy
+beside it in the table below, and in each construct's own section.
+
+⚠ **`F` is not one constant per shape, which is what version 1 of this file called it.**
+Fourteen shapes later it is one constant per *content*: a parenthesised argument list
+floors at the same width behind a bare callee, a qualifier, a cast and a type argument
+list, and what moves it is whether the list holds several arguments, one, or a lone
+string literal. Nothing to the left of the inner construct moves it at all. Two shapes
+need no floor whatever, and one — the lambda arrow — has a floor that moves with both
+its shape and its contents, which is why it is the shape still needing its grid.
 
 Oracle: `jb cleanupcode 2025.2.6`, profile `SkalaFormatOnly`, the repository `.editorconfig` unmodified — margin 120, indent 4.
 
@@ -236,8 +244,9 @@ line within the margin, and reach further out when it does not* — predicts **2
 the oracle answered with one of the two, 98.10 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -350,8 +359,9 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 93.77 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -466,8 +476,9 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 63.66 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -581,8 +592,9 @@ back flat. Neither is in the denominator: a model of "which of these two gives" 
 be graded on cells where one of them did.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -711,8 +723,9 @@ back flat. Neither is in the denominator: a model of "which of these two gives" 
 be graded on cells where one of them did.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -835,8 +848,9 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 98.02 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -952,8 +966,9 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 98.06 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1066,8 +1081,9 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 93.92 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1184,8 +1200,9 @@ back flat. Neither is in the denominator: a model of "which of these two gives" 
 be graded on cells where one of them did.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1390,8 +1407,9 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 100.00 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1502,8 +1520,9 @@ line within the margin, and reach further out when it does not* — predicts **1
 the oracle answered with one of the two, 100.00 %. It carries no fitted number and needs no oracle to state.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1623,8 +1642,9 @@ back flat. Neither is in the denominator: a model of "which of these two gives" 
 be graded on cells where one of them did.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
@@ -1751,8 +1771,9 @@ back flat. Neither is in the denominator: a model of "which of these two gives" 
 be graded on cells where one of them did.
 
 **The margin law with a floor** — the same, and additionally the inner construct must be at
-least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it
-is the only thing here a later reader cannot derive without measuring:
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
 
 | filler | cells | `F` | law alone | law with floor |
 |---|---:|---:|---:|---:|
