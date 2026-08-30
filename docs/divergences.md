@@ -3589,6 +3589,10 @@ placement key, and only with the mask lifted does the key decide anything.
 
 ## SK-DIV-0084 — `predefined_type_for_locals_parameters_members = false` asks for the framework name, and Skala's rule only contracts
 
+⚠ **Still open, and NOT a defect at the export's value — see the section at the end**, which refutes a
+framing this entry has now been handed twice and widens the specification from five positions to
+roughly fifteen.
+
 `PredefinedTypeRule` rewrites `Int32` ⇒ `int` and reads
 `dotnet_style_predefined_type_for_locals_parameters_members` to decide whether to. It has no rewrite
 in the other direction, and that key's `false` is a request for one. Asked one key at a time under
@@ -3636,8 +3640,59 @@ byte for byte on the same file. The fifth row is new — the expansion reaches a
 well as a field, a parameter and a local, so "locals, parameters, members" is to be read at its
 widest.
 
+### ⚠ 2026-08-30 — still open, and the "five rows" are nearer fifteen
+
+⚠ **First, the framing this entry has to keep refusing.** A triage brief put this batch's five entries
+under the heading "wrong at the configuration the repository actually ships — the export's own value".
+That is true of the other four and **false of this one**, and the measurement says so plainly:
+`.editorconfig` line 169 is `dotnet_style_predefined_type_for_locals_parameters_members = true`, at
+`true` the two engines agree byte for byte on this key's own fixture, and
+`verify dotnet_style_predefined_type_for_locals_parameters_members` reports **Conformant** both before
+and after this batch's work. The divergence lives only at `false`, which this repository does not set.
+Nothing here is wrong for a user running the shipped configuration. That is what the triage already
+concluded — "the lowest-priority of this batch's debts because the export's own value agrees" — and
+the brief inverted it.
+
+⚠ **Second, the specification was too narrow.** Re-measured under `OracleProfile.Cleanup` at `false`
+on a purpose-built probe, the expansion reaches far more positions than the five rows above, and it is
+the whole predefined set rather than `int` and `string`:
+
+| position | at `false` |
+|---|---|
+| field, static field | `int _count` ⇒ `Int32 _count` |
+| ⚠ **property type** | `public bool Enabled` ⇒ `Boolean`, `public long Total` ⇒ `Int64` |
+| return type | `string Name()` ⇒ `String`, `double Ratio(…)` ⇒ `Double` |
+| parameter | `Double numerator, Double denominator`, `Int32 a, Int32 b, Int32 c` |
+| ⚠ **type argument** | `List<int>` ⇒ `List<Int32>`, `Dictionary<string, int>` ⇒ `Dictionary<String, Int32>` |
+| ⚠ **in an object creation** | `new List<int>()` ⇒ `new List<Int32>()` |
+| ⚠ **cast expression** | `(int)value` ⇒ `(Int32)value` |
+| ⚠ **`object`** | `Object value` — so it is every predefined keyword, not the numeric ones |
+
+And what it leaves alone, each for its own reason:
+
+- `int.MaxValue` — a **member access receiver**, which is the sibling key
+  `dotnet_style_predefined_type_for_member_access`'s and stays `int` while that key is `true`. The two
+  keys partition the positions and this probe shows the seam.
+- `nameof(Int32)` — the spelling is the value.
+- `IntPtr Native` — `builtin_type_apply_to_native_integer = false`, as recorded.
+- ⚠ **a local variable, and it is masked rather than exempt.** `int local = count;` comes back
+  `var local = count;` at *both* values, because the cleanup profile's `ArrangeVarStyle` claims it
+  first. So the "locals" in the key's own name cannot be observed on any probe that lets `var` run, and
+  whether the expansion reaches a local whose type `var` declines is **not measured**.
+
 - options: `dotnet_style_predefined_type_for_locals_parameters_members`, `dotnet_style_predefined_type_for_member_access`
 - ⚠ status: **open**; a missing capability rather than a decision, and it needs its own task.
+  `PredefinedTypeRule.Rewriter` visits `IdentifierNameSyntax` and `QualifiedNameSyntax` only — the
+  framework-named spellings — so there is no visitor for `PredefinedTypeSyntax` and the reverse
+  direction does not exist even in outline. ⚠ **And the fixture is reachable after all**, which this
+  entry had wrong: `constructs/arrangement/redundancy/predefined-type-declarations.cs` is written
+  framework-named *so that* it measures only the contraction, which is the same deliberate dodge
+  `usings/import-groups.cs` used for SK-DIV-0074 and which was removed there. Written the other way
+  round — every governed position in its predefined spelling — the file measures the **expansion** on
+  the existing corpus with no per-directory `.editorconfig` at all: at `true` both engines leave a
+  file that is already contracted alone, and at `false` both should expand it. Rewriting it is what
+  makes the fix provable; it must not be rewritten before the fix, or the key goes DIVERGENT on a
+  capability nobody has built yet.
 - ⚠ **triage 2026-08-30: `debt`, size M.** A user who writes
   `dotnet_style_predefined_type_for_locals_parameters_members = false` and gets no framework names is
   not looking at a considered refusal, and this repository never made one — `PredefinedTypeRule` was
@@ -3650,6 +3705,11 @@ widest.
   cannot be pinned without the per-directory `.editorconfig` mechanism SK-DIV-0032 also wants. ⚠ The
   five rows above are the specification; recording them is what lets this be paid after the oracle
   is gone, and it is the lowest-priority of this batch's debts because the export's own value agrees.
+  ⚠ **The "five rows" are superseded by the table in the section above** — the expansion reaches
+  property types, type arguments, object creations and cast expressions as well, and covers every
+  predefined keyword rather than `int` and `string`. The triage's *ordering* stands and was re-confirmed
+  by the same run: the export sets `true`, the two engines agree at `true`, and `verify` reports
+  Conformant.
 
 ## SK-DIV-0085 — `sort_usings = false` still reorders, and the oracle's unsorted order is not the written one
 
