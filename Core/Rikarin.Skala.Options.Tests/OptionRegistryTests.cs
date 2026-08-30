@@ -225,8 +225,9 @@ public sealed class OptionRegistryTests {
     ///     <para>
     ///         The two answer different questions and the difference is the whole point. <c>Inert</c> says
     ///         <b>no input distinguishes the values</b> — a claim about the world, so setting the option
-    ///         costs nothing and it is honoured vacuously. <c>UnsweptBecause</c> says <b>the sweep cannot
-    ///         ask</b>, which is usually a fact about Skala: the oracle separates the values and Skala is
+    ///         costs nothing and it is honoured vacuously. <c>UnsweptBecause</c> says
+    ///         <b>the sweep cannot ask</b>, and that is usually a fact about Skala rather than about
+    ///         the option: the oracle separates the values and Skala is
     ///         flat at every one of them, so a glob would file an <c>INERT</c> row the registry never
     ///         declared, against a fixture Skala cannot reproduce. Merging them would report a real,
     ///         measured gap as a vacuous one, which is the exact defect the inert mark exists to prevent
