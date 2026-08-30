@@ -318,8 +318,22 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
 
     public override bool IsAggressive => !ParenthesesRedundancy.RemovalIsDefault;
 
+    /// <summary>
+    ///     ⚠ Both values of <c>resharper_csharp_parentheses_redundancy_style</c> remove; they differ in
+    ///     how much.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This read <c>== RemoveIfNotClarifiesPrecedence</c> and so did <em>nothing at all</em> at
+    ///     <c>remove</c>, which is the stronger of the two values — ReSharper spells it "Always". The
+    ///     export writes <c>remove_if_not_clarifies_precedence</c>, so the committed fixture could not
+    ///     see it and the key's sweep row disagreed on sixteen lines of
+    ///     <c>redundancy/parentheses.cs</c> with the sign of the whole rule inverted: the oracle removed
+    ///     every parenthesis whose removal preserves the parse and Skala removed none.
+    /// </remarks>
     public override bool IsEnabled(in ArrangementOptions options) =>
-        options.ParenthesesRedundancy == ParenthesesRedundancyStyle.RemoveIfNotClarifiesPrecedence
+        options.ParenthesesRedundancy
+            is ParenthesesRedundancyStyle.Remove
+            or ParenthesesRedundancyStyle.RemoveIfNotClarifiesPrecedence
         && (ParenthesesRedundancy.RemovalIsDefault || options.Aggressive);
 
     public override SyntaxNode Apply(ArrangementContext context) =>
@@ -395,6 +409,17 @@ public static class ParenthesesRedundancy {
             return false;
         }
 
+        // ⚠ `remove` is ReSharper's "Always", and it outranks every policy below: the three
+        // `dotnet_style_parentheses_in_*` keys *and* `resharper_parentheses_non_obvious_operations`.
+        // Measured on `redundancy/parentheses.cs` under the cleanup profile — at `remove` the oracle
+        // strips `a || (b && c)`, `a | (b & c)`, `a & (b + 1)`, `a << (b + 1)` and
+        // `(value >> offset) & ((1 << take) - 1)`, all of which it keeps at the export's
+        // `remove_if_not_clarifies_precedence`, and it strips nothing whose removal changes the parse:
+        // `a - (b - c)`, `a / (b / c)`, `(a << b) + c`, `(x = a) + 1` and `(a ? b : c) + 1` all hold at
+        // both values. So `remove` is exactly this rule with the policy layer off and the proof left
+        // standing.
+        var always = options.ParenthesesRedundancy == ParenthesesRedundancyStyle.Remove;
+
         // ⚠ The *enclosing* operation matters too, and this was measured after being got wrong.
         // `resharper_parentheses_non_obvious_operations = shift, bitwise_*` does not say "keep the
         // parentheses that wrap a shift"; it says "clarify the precedence *of* these operations",
@@ -403,13 +428,25 @@ public static class ParenthesesRedundancy {
         // first version of this rule keyed on the inner expression alone, agreed with the oracle on
         // every case in the fixture, and stripped these two anyway — found by reading what it did to
         // Vixen's `BitReader`, not by a test.
-        if (node.Parent is BinaryExpressionSyntax { RawKind: var parentKind } && IsNonObvious((SyntaxKind)parentKind)) {
+        if (!always
+            && node.Parent is BinaryExpressionSyntax { RawKind: var parentKind }
+            && IsNonObvious((SyntaxKind)parentKind)) {
             return false;
         }
 
         return node.Expression switch {
             // The always_for_clarity families, and the non-obvious operations.
-            BinaryExpressionSyntax binary => !IsKept(binary.Kind(), node.Parent, options),
+            //
+            // ⚠ `a ?? (b ?? c)` is the one shape `remove` does *not* reach, and it is measured rather
+            // than reasoned: asked at both values on a probe carrying `a ?? (b ?? c)`,
+            // `a || (b || c)`, `a && (b && c)`, `a + (b + c)` and `a ? b : (c ? d : e)`, the oracle
+            // removes all of the others at both values and keeps this one at both. Right-associativity
+            // is not the reason — the conditional operator is right-associative too and loses its
+            // parentheses. At the export's value `IsKept` already keeps it, so this changes nothing
+            // there; it is the `remove` bypass that would otherwise take it.
+            BinaryExpressionSyntax binary =>
+                !IsCoalesceNesting(binary.Kind(), node.Parent)
+                && (always || !IsKept(binary.Kind(), node.Parent, options)),
 
             // `(x = 1)` inside a larger expression is doing work that the reader is being shown.
             AssignmentExpressionSyntax or ConditionalExpressionSyntax => false,
@@ -486,6 +523,14 @@ public static class ParenthesesRedundancy {
             or SyntaxKind.BitwiseAndExpression
             or SyntaxKind.BitwiseOrExpression
             or SyntaxKind.ExclusiveOrExpression;
+
+    /// <summary>
+    ///     A <c>??</c> that is the operand of another <c>??</c>, which keeps its parentheses at both
+    ///     values of <c>parentheses_redundancy_style</c>.
+    /// </summary>
+    static bool IsCoalesceNesting(SyntaxKind kind, SyntaxNode? parent) =>
+        kind == SyntaxKind.CoalesceExpression
+        && parent is BinaryExpressionSyntax { RawKind: (int)SyntaxKind.CoalesceExpression };
 
     /// <summary>
     ///     The binary families whose parentheses the configuration keeps in this position.

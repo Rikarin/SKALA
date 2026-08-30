@@ -48,7 +48,12 @@ public sealed class BodyStyleRule : ArrangementRule {
     sealed class Rewriter(FormatterTagGuard guard, ArrangementOptions options) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitMethodDeclaration(MethodDeclarationSyntax node) {
             var visited = (MethodDeclarationSyntax)base.VisitMethodDeclaration(node)!;
-            if (IsAsyncVoid(visited)) {
+
+            // ⚠ Gated on the heuristic, because "never for `async void`" *is* one of the heuristics.
+            // Measured on `body-style/heuristics.cs` at `use_heuristics_for_body_style = false`: the
+            // oracle writes `public async void AsyncVoid() => await Task.Delay(1);`. Skala refused
+            // unconditionally, which is right at the export's `true` and wrong at `false`.
+            if (options.UseHeuristicsForBodyStyle && IsAsyncVoid(visited)) {
                 return visited;
             }
 
@@ -100,7 +105,11 @@ public sealed class BodyStyleRule : ArrangementRule {
 
         public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) {
             var visited = (LocalFunctionStatementSyntax)base.VisitLocalFunctionStatement(node)!;
-            if (visited.Modifiers.Any(SyntaxKind.AsyncKeyword) && IsVoid(visited.ReturnType)) {
+
+            // ⚠ The same heuristic and the same gate as VisitMethodDeclaration's.
+            if (options.UseHeuristicsForBodyStyle
+                && visited.Modifiers.Any(SyntaxKind.AsyncKeyword)
+                && IsVoid(visited.ReturnType)) {
                 return visited;
             }
 
@@ -311,6 +320,14 @@ public sealed class BodyStyleRule : ArrangementRule {
         ///     for either to go: an expression body has no statement list to hold a line comment, and a
         ///     <c>#if</c> that straddles the only statement is not a single statement at all.
         /// </summary>
+        /// <remarks>
+        ///     ⚠ A comment blocks the conversion at <em>both</em> values of
+        ///     <c>use_heuristics_for_body_style</c>, and at <c>false</c> that is a divergence rather than
+        ///     the rule — SK-DIV-0086. The oracle converts there and writes the comment on its own line
+        ///     between the <c>=&gt;</c> and the expression; carrying it through arrangement is easy and
+        ///     the *formatter* then leaves it at column 0, which is worse than not converting. It is the
+        ///     formatter's comment placement that has to move first.
+        /// </remarks>
         static bool HasTriviaThatBlocksConversion(SyntaxNode node) {
             foreach (var trivia in node.DescendantTrivia(descendIntoTrivia: true)) {
                 if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)

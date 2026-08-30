@@ -151,7 +151,7 @@ public sealed class VarRule : ArrangementRule {
 
         /// <summary>Which of the three <c>csharp_style_var_*</c> keys governs this declaration.</summary>
         bool Applies(TypeSyntax declared, ExpressionSyntax value, ITypeSymbol type) {
-            if (declared is PredefinedTypeSyntax || type.SpecialType != SpecialType.None) {
+            if (IsBuiltIn(declared) || IsBuiltIn(type)) {
                 return options.VarForBuiltInTypes;
             }
 
@@ -159,6 +159,44 @@ public sealed class VarRule : ArrangementRule {
             // a cast, an `as`, or a `T.Parse`-shaped call on the same type.
             return IsApparent(value) ? options.VarWhenTypeIsApparent : options.VarElsewhere;
         }
+
+        /// <summary>
+        ///     Whether <c>csharp_style_var_for_built_in_types</c> is the key that governs this declared
+        ///     type — which is a question about the element type, not about the array wrapping it.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ Measured, one key at a time with all three restated, on a nine-case probe under the
+        ///     cleanup profile. <c>int[]</c>, <c>string[]</c>, <c>int?[]</c>, <c>int[][]</c> and
+        ///     <c>int[,]</c> are all declined at <c>for_built_in_types = false</c> and converted at the
+        ///     other two keys' <c>false</c>; <c>List&lt;int&gt;[]</c> is the opposite — converted at
+        ///     <c>for_built_in_types = false</c> and declined at <c>when_type_is_apparent = false</c>. So
+        ///     the array ranks and the nullable wrapper are transparent to the question and the element
+        ///     type answers it.
+        ///     <para>
+        ///         ⚠ Before this, <c>int[] a = new int[4];</c> reached the apparent branch — an
+        ///         <c>ArrayTypeSyntax</c> is not a <c>PredefinedTypeSyntax</c> and an array symbol's
+        ///         <c>SpecialType</c> is <c>None</c> — and the two keys' sweep rows were mirror images of
+        ///         each other on that one line. It is invisible at the export, where all three keys are
+        ///         <c>true</c> and every branch returns the same answer.
+        ///     </para>
+        /// </remarks>
+        static bool IsBuiltIn(TypeSyntax declared) =>
+            declared switch {
+                PredefinedTypeSyntax => true,
+                ArrayTypeSyntax array => IsBuiltIn(array.ElementType),
+                NullableTypeSyntax nullable => IsBuiltIn(nullable.ElementType),
+                _ => false
+            };
+
+        /// <summary>
+        ///     ⚠ The same question of the symbol, which is what catches a built-in type written under its
+        ///     framework name — <c>Int32 a = 1;</c> is a <c>for_built_in_types</c> declaration however it
+        ///     is spelled.
+        /// </summary>
+        static bool IsBuiltIn(ITypeSymbol type) =>
+            type is IArrayTypeSymbol array
+                ? IsBuiltIn(array.ElementType)
+                : type.SpecialType != SpecialType.None;
 
         static bool IsApparent(ExpressionSyntax value) =>
             value is ObjectCreationExpressionSyntax
@@ -353,10 +391,29 @@ public sealed class ObjectCreationRule : ArrangementRule {
 
         /// <summary>
         ///     "Evident" is ReSharper's word for "the reader can see the type without looking anywhere
-        ///     else" — which, for a creation, means the left-hand side spells it out.
+        ///     else" — which means the type is written in the syntax that gives this creation its target.
         /// </summary>
+        /// <remarks>
+        ///     ⚠ An assignment is <b>not</b> evident and a <c>return</c> or arrow body <b>is</b>, which is
+        ///     the opposite of what this method said until it was measured. Asked one key at a time on
+        ///     <c>type-inference/new-wins-when-lhs-names-the-type.cs</c> under the cleanup profile, the two
+        ///     keys' rows were exact mirror images:
+        ///     <code>
+        /// when_type_evident = explicitly_typed      Make() =&gt; new List&lt;int&gt;()   local = new()
+        /// when_type_not_evident = explicitly_typed  Make() =&gt; new()               local = new List&lt;int&gt;()
+        ///     </code>
+        ///     A declarator and a field or property initializer write the type beside the creation, and a
+        ///     <c>return</c> or arrow body has it in the member's own header, so all of those are evident;
+        ///     <c>local = new()</c> is an assignment to a name declared somewhere else, so it is not. Two
+        ///     mirrored rows are what a swapped classification produces, and nothing else on the file
+        ///     moved.
+        ///     <para>
+        ///         ⚠ Invisible at the export, where both keys are <c>target_typed</c> and the branch does not
+        ///         matter. That is why it survived: the committed fixture pins one configuration.
+        ///     </para>
+        /// </remarks>
         static bool Evident(ObjectCreationExpressionSyntax node) =>
-            node.Parent is EqualsValueClauseSyntax or AssignmentExpressionSyntax;
+            node.Parent is EqualsValueClauseSyntax or ArrowExpressionClauseSyntax or ReturnStatementSyntax;
     }
 }
 
@@ -404,9 +461,19 @@ public sealed class DefaultValueRule : ArrangementRule {
                 return false;
             }
 
-            // Evident where the left-hand side spells the type out, which for `default` is every
-            // position this method accepts a target from except a parameter's own default value.
-            return node.Parent is EqualsValueClauseSyntax { Parent: ParameterSyntax }
+            // ⚠ Evident where the type is written in the syntax that gives the literal its target, and
+            // an assignment is the one position this method accepts a target from where it is not.
+            // Measured one key at a time on `type-inference/default-literal.cs` under the cleanup
+            // profile, and the two keys' rows came back exact mirror images:
+            //
+            //   when_type_evident = default_expression      Held = default          count = default(int)
+            //   when_type_not_evident = default_expression   Held = default(List<int>)  count = default
+            //
+            // So a *parameter's own default* is evident — the type is on the parameter beside it — and
+            // `Held = default` is not, because `Held` is declared elsewhere. This method said the
+            // opposite and so did `default-literal.cs`'s header comment; both are corrected. Invisible
+            // at the export, where both keys are `default_literal`.
+            return node.Parent is AssignmentExpressionSyntax
                 ? options.DefaultValueWhenTypeNotEvident == DefaultValueStyle.DefaultLiteral
                 : options.DefaultValueWhenTypeEvident == DefaultValueStyle.DefaultLiteral;
         }
