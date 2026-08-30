@@ -1026,7 +1026,7 @@ public sealed partial class CSharpDocumentBuilder {
         // it here would mean turning an absolute scope into a relative one under every initializer in
         // `corpus/real` on the strength of a row that does not ask about it.
         var singleInsideInitializer = node is InitializerExpressionSyntax
-                or AnonymousObjectCreationExpressionSyntax
+            or AnonymousObjectCreationExpressionSyntax
             && !_options.UseContinuousIndentInsideInitializerBraces;
 
         // ⚠ A generic type's `where` clauses come before its `{`, so the run belongs to this walk as

@@ -248,9 +248,9 @@ public sealed class FormatterTagTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
-                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                    [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-                )
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+            )
                 .Options
         );
 

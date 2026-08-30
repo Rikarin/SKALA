@@ -332,7 +332,7 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
     /// </remarks>
     public override bool IsEnabled(in ArrangementOptions options) =>
         options.ParenthesesRedundancy
-            is ParenthesesRedundancyStyle.Remove
+        is ParenthesesRedundancyStyle.Remove
             or ParenthesesRedundancyStyle.RemoveIfNotClarifiesPrecedence
         && (ParenthesesRedundancy.RemovalIsDefault || options.Aggressive);
 

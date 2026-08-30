@@ -348,7 +348,8 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 // two files on Vixen respectively, and both were found by the re-bind rather than by
                 // reasoning about the case.
                 case InitializerExpressionSyntax {
-                    RawKind: (int)SyntaxKind.CollectionInitializerExpression
+                    RawKind:
+                    (int)SyntaxKind.CollectionInitializerExpression
                         or (int)SyntaxKind.ArrayInitializerExpression,
                     Parent: ObjectCreationExpressionSyntax or ArrayCreationExpressionSyntax
                 }:

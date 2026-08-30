@@ -682,7 +682,8 @@ public static class SpaceRules {
             AccessorListSyntax or BlockSyntax { Parent: AccessorDeclarationSyntax } =>
                 o.SpaceInSinglelineAccessorholder,
             BlockSyntax {
-                Parent: AnonymousMethodExpressionSyntax
+                Parent:
+                AnonymousMethodExpressionSyntax
                     or SimpleLambdaExpressionSyntax
                     or ParenthesizedLambdaExpressionSyntax
             } =>

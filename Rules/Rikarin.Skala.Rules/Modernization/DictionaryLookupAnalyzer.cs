@@ -70,7 +70,8 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
 
         var (negated, condition) = Unwrap(statement.Condition);
         if (condition is not InvocationExpressionSyntax {
-                Expression: MemberAccessExpressionSyntax {
+                Expression:
+                MemberAccessExpressionSyntax {
                     RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
                     Name: IdentifierNameSyntax { Identifier.ValueText: "ContainsKey" }
                 } access,
@@ -263,7 +264,8 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
                 return assignment.Right;
 
             case InvocationExpressionSyntax {
-                Expression: MemberAccessExpressionSyntax {
+                Expression:
+                MemberAccessExpressionSyntax {
                     RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
                     Name: IdentifierNameSyntax { Identifier.ValueText: "Add" }
                 } add,

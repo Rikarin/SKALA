@@ -982,9 +982,9 @@ public sealed class BracePlacementTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
-                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                    [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-                )
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+            )
                 .Options
         );
 
@@ -1220,9 +1220,9 @@ public sealed class SubpatternBreakTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
-                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                    [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-                )
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+            )
                 .Options
         );
 
@@ -1251,13 +1251,16 @@ public sealed class SubpatternBreakTests {
     [InlineData("false", "60")]
     public void TheValueLandsOnTheSubpatternsOwnColumn(string aligned, string margin) {
         var lines = FormatWith(
-                Source,
-                ("resharper_csharp_align_multiline_property_pattern", aligned),
-                ("resharper_csharp_max_line_length", margin)
-            )
-            .Split('\n');
+            Source,
+            ("resharper_csharp_align_multiline_property_pattern", aligned),
+            ("resharper_csharp_max_line_length", margin)
+        )
+                .Split('\n');
 
-        var name = Array.FindIndex(lines, static l => l.TrimEnd().EndsWith("OnlySubpatternPropertyName:", StringComparison.Ordinal));
+        var name = Array.FindIndex(
+            lines,
+            static l => l.TrimEnd().EndsWith("OnlySubpatternPropertyName:", StringComparison.Ordinal)
+        );
         Assert.True(name >= 0, "the subpattern's `:` did not end a line, so nothing broke after it");
         Assert.StartsWith("\"a string long enough", lines[name + 1].TrimStart(), StringComparison.Ordinal);
         Assert.Equal(Indent(lines[name]), Indent(lines[name + 1]));
@@ -1300,9 +1303,9 @@ public sealed class ContinuousIndentInsideTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
             Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
-                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                    [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
-                )
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+            )
                 .Options
         );
 
@@ -1374,7 +1377,11 @@ public sealed class ContinuousIndentInsideTests {
 
         // The `new` lands on one continuation level of 2×4 from the member at 4; the elements take one
         // indent width from it rather than landing on it, which is the whole of the finding.
-        Assert.Contains("\n            new System.Collections.Generic.List<int> {\n", formatted, StringComparison.Ordinal);
+        Assert.Contains(
+            "\n            new System.Collections.Generic.List<int> {\n",
+            formatted,
+            StringComparison.Ordinal
+        );
         Assert.Contains("\n                1,\n", formatted, StringComparison.Ordinal);
     }
 }

@@ -67,9 +67,8 @@ public sealed class NullConditionalAssignmentAnalyzer : DiagnosticAnalyzer {
         };
 
         if (body is not ExpressionStatementSyntax {
-                Expression: AssignmentExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression
-                } assignment
+                Expression:
+                AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment
             }) {
             return;
         }
@@ -136,7 +135,8 @@ public sealed class NullConditionalAssignmentAnalyzer : DiagnosticAnalyzer {
         switch (condition) {
             // `x is not null`
             case IsPatternExpressionSyntax {
-                Pattern: UnaryPatternSyntax {
+                Pattern:
+                UnaryPatternSyntax {
                     RawKind: (int)SyntaxKind.NotPattern,
                     Pattern: ConstantPatternSyntax { Expression.RawKind: (int)SyntaxKind.NullLiteralExpression }
                 }

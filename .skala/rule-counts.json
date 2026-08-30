@@ -1,13 +1,13 @@
 {
   "corpus": "corpus/real",
   "mode": "loose",
-  "commit": "1df8358feab5fc7b80bf7148294aa686dc2e06a9",
-  "recorded": "2026-08-28T12:56:20Z",
+  "commit": "fe7c58f2e4bba4b456554f713d93838374f819c2",
+  "recorded": "2026-08-30T11:31:31Z",
   "files": 324,
-  "total": 518,
+  "total": 619,
   "counts": {
-    "SK0001": 318,
-    "SK0002": 105,
+    "SK0001": 317,
+    "SK0002": 207,
     "SK0003": 2,
     "SK1001": 0,
     "SK1005": 27,
