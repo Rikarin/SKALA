@@ -1,18 +1,21 @@
 using Zeta.Support;
+
 using System.Text;
 
 // dotnet_separate_import_directive_groups = false, so no blank line separates the two groups.
 //
-// ⚠ Both directions are the oracle's, measured under the cleanup profile: at `true` it writes
-// exactly one blank line between directives whose *first* namespace segment differs, and at the
-// export's `false` it takes every blank line inside the block back out. The grouping is by first
-// segment and nothing finer, so `System` and `System.Text` would be one group and `System.Text` and
-// `Zeta.Support` are two.
+// ⚠ Both directions are the oracle's: at `true` it writes exactly one blank line between directives
+// in different groups, and at the export's `false` it takes every blank line between two adjacent
+// directives back out. The grouping is (kind, first segment) — `System` and `System.Text` would be
+// one group, `System.Text` and `Zeta.Support` are two, and a plain directive, a `using static` and an
+// alias are three kinds that never share a group whatever their segments.
 //
-// ⚠ The removal direction is not written into this file, and the reason is a *formatter* gap rather
-// than an arrangement one: the oracle strips a blank line inside the using block under
-// CSReformatCode alone, and Skala's formatter does not read this key at all. A source blank line
-// here would measure that gap instead of this option. SK-DIV-0074, pinned by ArrangementRuleTests.
+// ⚠ The source carries a blank line inside the using block, and it is load-bearing. It used to be
+// written deliberately *without* one, because the oracle strips such a line under CSReformatCode
+// alone while Skala's formatter did not read the key at all — so a blank line here would have
+// measured that gap rather than this option, and the fixture dodged it. That gap is closed
+// (SK-DIV-0074): the formatter owns the key now, so this file measures both directions on both
+// profiles and the dodge is what would hide a regression.
 //
 // ⚠ Two namespaces in the file, deliberately: it keeps csharp_style_namespace_declarations and
 // csharp_using_directive_placement out of this fixture, so the only thing that moves here is the

@@ -2841,7 +2841,11 @@ design question of its own and not a detail of the implementation.
   that binds to a *different* symbol of the same name, so that check has to be explicit. ⚠ Needs the
   oracle — the alias preference is exactly the kind of behaviour no specification states.
 
-## SK-DIV-0074 — `dotnet_separate_import_directive_groups` is a formatting key in the oracle and an arrangement key in Skala
+## SK-DIV-0074 — `dotnet_separate_import_directive_groups` was a formatting key in the oracle and an arrangement key in Skala
+
+⚠ **Fixed 2026-08-30. See the section at the end**, which also corrects this entry's grouping model
+and its claim that only one of the key's two directions belongs to the format-only profile. The text
+down to it is kept as written, because the correction is only legible beside the claim.
 
 At `true` the oracle writes one blank line between using directives whose first namespace segment
 differs, and at the export's `false` it takes every blank line inside the using block back out. Both
@@ -2865,20 +2869,63 @@ task in it at all — the oracle removes both; `skala format` returns the file u
 arrange` removes them. So the divergence is precisely the seam this entry names, and it is visible
 on the profile milestones 1–3.1 used as their whole oracle.
 
+### ⚠ Fixed 2026-08-30 — and *both* directions turn out to be the format-only profile's
+
+The key is `PhaseOneOptions.SeparateImportDirectiveGroups` now, resolved in
+`CSharpDocumentBuilder.ImportGroupSeparation`; `UsingsRule.Separate` and the arranger's copy of the
+option are deleted rather than moved, so exactly one component reads it. The arranger still decides
+the *order* and the formatter separates whatever order it is handed, which is why the cleanup
+profile's answer (sort, then separate the sorted order) and the format-only profile's (separate the
+written order) now fall out of the pipeline instead of each being arranged for.
+
+⚠ **This entry understated the seam.** It says the *removal* direction "also happens under
+`CSReformatCode` alone". Measured on a probe carrying every kind of directive and blank runs of 0, 1
+and 2, under `SkalaFormatOnly` — no arrangement task in the profile at all — **both** directions do:
+at `true` the oracle *inserts* the separating blank lines and removes the ones inside a group. So it
+is not "a formatting key in one direction and an arrangement key in the other"; it is a formatting
+key, entire.
+
+⚠ **And the grouping model was wrong, in two ways.** Both `UsingsRule.Separate` and this entry said
+"by first segment and nothing finer". Measured on the same probe:
+
+| gap | oracle at `true` | why |
+|---|---|---|
+| `System.Text` ▸ `System.Globalization` | 0 | same kind, same segment |
+| `System.Globalization` ▸ `Zeta.Support` | 1 | same kind, segment differs |
+| `Zeta.Support` ▸ `Zeta.Support.Deep` | 0 | the segment and nothing finer — this half held |
+| ⚠ `Zeta.Support.Deep` ▸ `using static System.Math` | **1** | a change of **kind** separates on its own |
+| `static System.Math` ▸ `static Zeta.Support.Helper` | 1 | segment differs within the static kind |
+| ⚠ `AliasOne = System…` ▸ `AliasTwo = Zeta…` | **0** | aliases are one group **whatever they alias** |
+| ⚠ `AliasTwo = Zeta…` ▸ `using System.Threading` | **1** | kind again, alias back to plain |
+
+So the group is **(kind, first segment)**, where kind is plain / `using static` / alias, and the
+segment is not consulted for an alias at all. `using System.Text;` and `using static System.Math;`
+share a first segment and are separated — which the old model could not produce.
+
+⚠ **And "it takes every blank line inside the using block back out" is too strong.** A gap holding a
+comment is not this key's gap at either value: at `true` the oracle inserts nothing across a comment
+even between two different groups, and at `false` it *keeps* a blank line the author wrote above one.
+That needs no special case in the implementation — the formatter attributes a gap to the piece below
+it, and a comment piece is not a using directive.
+
+⚠ An `extern alias` is left alone at both values, and that is recorded as **unmeasured** rather than
+inert: the directive needs an aliased assembly reference the probe project has no way to carry.
+
 - options: `dotnet_separate_import_directive_groups`
-- ⚠ status: **open**, and narrow: it is only reachable on a source file that already has a blank line inside its using block, formatted without arranging.
-- ⚠ **triage 2026-08-30: `debt`, size S.** Narrow is not the same as decided, and nothing here is
-  defensible on its own terms: a user who runs `skala format` and a user who runs `skala arrange`
-  get different blank lines from the same file and the same key, which is a seam rather than a
-  choice. The entry already names the end state — the key belongs in the formatter — and the reason
-  given for not moving it ("a key two components both act on is worse than a key one of them acts on
-  late") is an argument about sequencing, not about the behaviour. Paying it: read
-  `dotnet_separate_import_directive_groups` in `PhaseOneOptions`, resolve it in `ResolveBlankLines`
-  for a gap between two `UsingDirectiveSyntax` nodes, and drop the arranger's copy so one component
-  owns it. The fixture already exists in the shape it wants —
-  `constructs/arrangement/usings/import-groups.cs` was deliberately written *without* a blank line so
-  that its format-only half would not measure this gap, and that is the line to remove. ⚠ Needs the
-  oracle for the regenerated format-only fixture only.
+- ⚠ status: **fixed**, `verify dotnet_separate_import_directive_groups` reports **Conformant** — and
+  now on a fixture that actually asks the question. `constructs/arrangement/usings/import-groups.cs`
+  carries a blank line inside its using block for the first time, both its `.expected.cs` and its
+  `.arranged.expected.cs` are regenerated at 2025.2.6, and the removal direction is pinned by the
+  corpus rather than by a unit test standing in for it. `ImportDirectiveGroupTests` carries the
+  oracle's own bytes at both values, and the two `ArrangementOptionTests` that pinned the arranger's
+  copy are replaced by one that asserts the arranger no longer acts on the key at all.
+- ⚠ **`corpus/real` fidelity is unmoved, and the reason is measured rather than assumed.** Not one of
+  the 380 files has a blank line between two using directives — the two candidates a scan turns up
+  are `using var` statements inside method bodies. The construct does not occur in that corpus, so no
+  fix to it could move the number.
+- ⚠ **triage 2026-08-30: `debt`, size S.** Narrow is not the same as decided, and nothing here was
+  defensible on its own terms: a user who ran `skala format` and a user who ran `skala arrange` got
+  different blank lines from the same file and the same key, which is a seam rather than a choice.
 
 ## SK-DIV-0075 — `T x = default(T)` for a reference `T` is a `var` candidate the oracle takes and Skala refuses
 

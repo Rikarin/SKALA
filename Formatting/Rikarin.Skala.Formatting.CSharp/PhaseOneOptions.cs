@@ -279,6 +279,7 @@ public readonly struct PhaseOneOptions {
         BlankLinesInsideType = options.GetInt(Ids.BlankLinesInsideType);
         BlankLinesInsideNamespace = options.GetInt(Ids.BlankLinesInsideNamespace);
         BlankLinesAfterUsingList = options.GetInt(Ids.BlankLinesAfterUsingList);
+        SeparateImportDirectiveGroups = options.GetBool(Ids.SeparateImportDirectiveGroups);
         BlankLinesAfterFileScopedNamespaceDirective = options.GetInt(Ids.BlankLinesAfterFileScopedNamespaceDirective);
         BlankLinesAfterBlockStatements = options.GetInt(Ids.BlankLinesAfterBlockStatements);
         BlankLinesBeforeSingleLineComment = options.GetInt(Ids.BlankLinesBeforeSingleLineComment);
@@ -941,6 +942,32 @@ public readonly struct PhaseOneOptions {
     public int BlankLinesInsideType { get; }
     public int BlankLinesInsideNamespace { get; }
     public int BlankLinesAfterUsingList { get; }
+
+    /// <summary>
+    ///     <c>dotnet_separate_import_directive_groups</c>: exactly one blank line between two adjacent
+    ///     using directives in different groups, and exactly none between two in the same group.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The formatter's, not the arranger's, and that is the whole of SK-DIV-0074.</b> Measured
+    ///     against <c>jb cleanupcode</c> 2025.2.6, the oracle performs <em>both</em> directions under
+    ///     <c>CSReformatCode</c> alone — the format-only profile, with no arrangement task in it — so a
+    ///     user who ran <c>skala format</c> and a user who ran <c>skala arrange</c> used to get different
+    ///     blank lines out of the same file and the same key.
+    ///     <para>
+    ///         ⚠ It is an <em>exact</em> count and not a requirement, which is why
+    ///         <c>ResolveBlankLinesCore</c> returns on it rather than folding it into
+    ///         <c>RequiredBlankLines</c>: at <c>true</c> a two-blank gap between groups comes back as one,
+    ///         which a <c>Math.Max</c> could never produce.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Ordering is not this key's business. Under the cleanup profile the oracle sorts first and
+    ///         separates the sorted order; under format-only it separates the written order untouched.
+    ///         Both fall out of the arranger sorting and the formatter separating afterwards, which is what
+    ///         moving the key here buys beyond closing the seam.
+    ///     </para>
+    /// </remarks>
+    public bool SeparateImportDirectiveGroups { get; }
+
     public int BlankLinesAfterFileScopedNamespaceDirective { get; }
     public int BlankLinesAfterBlockStatements { get; }
     public int BlankLinesBeforeSingleLineComment { get; }
@@ -2205,6 +2232,12 @@ public static class Ids {
         Of("resharper_csharp_blank_lines_inside_namespace");
 
     public static readonly OptionId BlankLinesAfterUsingList = Of("resharper_csharp_blank_lines_after_using_list");
+
+    // ⚠ Beside `BlankLinesAfterUsingList` because it is the same family: that key owns the gap *after*
+    // the using block and this one owns the gaps *inside* it. It was the arranger's until SK-DIV-0074
+    // established that the oracle performs both of its directions under `CSReformatCode` alone, which
+    // made `skala format` and `skala arrange` disagree about one key. One component owns it now.
+    public static readonly OptionId SeparateImportDirectiveGroups = Of("dotnet_separate_import_directive_groups");
 
     public static readonly OptionId BlankLinesAfterFileScopedNamespaceDirective =
         Of("resharper_csharp_blank_lines_after_file_scoped_namespace_directive");

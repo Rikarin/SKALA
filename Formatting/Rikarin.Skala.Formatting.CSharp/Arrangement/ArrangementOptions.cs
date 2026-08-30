@@ -95,7 +95,6 @@ public readonly struct ArrangementOptions {
         SortUsings = options.GetBool(Ids.SortUsings);
         SystemDirectivesFirst = options.GetBool(Ids.SystemDirectivesFirst);
         UsingDirectivePlacement = (UsingDirectivePlacement)options.GetRaw(Ids.UsingDirectivePlacement);
-        SeparateImportDirectiveGroups = options.GetBool(Ids.SeparateImportDirectiveGroups);
         KeepNontrivialAlias = options.GetBool(Ids.KeepNontrivialAlias);
         RemoveOnlyUnusedAliases = options.GetBool(Ids.RemoveOnlyUnusedAliases);
 
@@ -275,16 +274,11 @@ public readonly struct ArrangementOptions {
     /// </remarks>
     public UsingDirectivePlacement UsingDirectivePlacement { get; }
 
-    /// <summary>
-    ///     <c>dotnet_separate_import_directive_groups</c>: a blank line between groups of usings that
-    ///     share a first namespace segment.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ The grouping is by the first segment and nothing finer, measured: <c>Alpha.Wide</c>,
-    ///     <c>Beta.Wide</c>, <c>System</c> and <c>System.Text</c> come back as three groups, with
-    ///     <c>System</c> and <c>System.Text</c> together.
-    /// </remarks>
-    public bool SeparateImportDirectiveGroups { get; }
+    // ⚠ `SeparateImportDirectiveGroups` stood here and is now `PhaseOneOptions`'. SK-DIV-0074: the
+    // oracle performs both of the key's directions under `CSReformatCode` alone, so it is a formatting
+    // key, and one component owns it. Removing it from this type is the point rather than tidying —
+    // `ArrangementOptions.Implemented` is half of the Tier A claim, and leaving the key in both halves
+    // would keep claiming the arranger acts on it.
 
     /// <summary>
     ///     <c>resharper_csharp_keep_nontrivial_alias</c>: an unused alias whose name is not the aliased
@@ -450,9 +444,9 @@ public readonly struct ArrangementOptions {
         public static readonly OptionId SystemDirectivesFirst = Of("dotnet_sort_system_directives_first");
         public static readonly OptionId UsingDirectivePlacement = Of("csharp_using_directive_placement");
 
-        public static readonly OptionId SeparateImportDirectiveGroups =
-            Of("dotnet_separate_import_directive_groups");
-
+        // ⚠ `dotnet_separate_import_directive_groups` is deliberately absent. It is
+        // `PhaseOneOptions.Ids`' since SK-DIV-0074; declaring it here as well would put it in
+        // `Implemented` twice and re-open the seam the move closed.
         public static readonly OptionId KeepNontrivialAlias = Of("resharper_csharp_keep_nontrivial_alias");
         public static readonly OptionId RemoveOnlyUnusedAliases = Of("resharper_remove_only_unused_aliases");
 

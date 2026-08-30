@@ -1260,7 +1260,7 @@
       "defaultSource": "unknown",
       "tier": "A",
       "construct": "UsingDirective",
-      "summary": "A blank line between using groups, grouped by first namespace segment. ⚠ Both directions: at `false` the oracle removes blank lines inside the block as well.",
+      "summary": "Exactly one blank line between two adjacent using directives in different groups, and exactly none between two in the same group. ⚠ A **formatting** key, not an arrangement one: the oracle performs both directions under `CSReformatCode` alone, and it is read in `PhaseOneOptions` and resolved in `CSharpDocumentBuilder.ImportGroupSeparation` since SK-DIV-0074 — the arranger's copy is gone, so `skala format` and `skala arrange` can no longer disagree about it. ⚠ The group is (kind, first segment) and not the first segment alone: `using System.Text;` and `using static System.Math;` share a segment and are separated, because a plain directive, a `using static` and an alias are three kinds. Aliases are one group whatever they alias. A gap holding a comment is not this key's at either value.",
       "since": "0.1",
       "oracle": "constructs/arrangement/usings/import-groups.cs",
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",

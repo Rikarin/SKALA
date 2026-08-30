@@ -5,6 +5,20 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>
+///     The three kinds of using directive <c>dotnet_separate_import_directive_groups</c> distinguishes.
+/// </summary>
+/// <remarks>
+///     ⚠ Measured rather than assumed, and it corrects the model this key carried while it lived in the
+///     arranger: a change of kind separates two directives even when their first namespace segment is
+///     identical. See <c>CSharpDocumentBuilder.ImportGroupSeparation</c>.
+/// </remarks>
+public enum ImportDirectiveKind {
+    Plain,
+    Static,
+    Alias
+}
+
+/// <summary>
 ///     The three-system blank-line resolution.
 /// </summary>
 /// <remarks>
@@ -96,6 +110,15 @@ public sealed partial class CSharpDocumentBuilder {
             blanks = 0;
         }
 
+        // 3½. `dotnet_separate_import_directive_groups`, which is neither a cap, a requirement nor a
+        // removal but all three at once: the gap between two adjacent using directives is *exactly*
+        // what the key says and nothing else has a vote. Returned rather than folded into
+        // `RequiredBlankLines`, because a requirement is a minimum and this is not — a two-blank gap
+        // between two groups comes back as one.
+        if (ImportGroupSeparation(previous, nextToken) is { } separation) {
+            return separation;
+        }
+
         // 4. ⚠ One requirement outranks the removal, and outranks the cap as well.
         // `blank_lines_inside_type` and `blank_lines_inside_namespace` are requirements about the
         // *brace* rather than about the member below it, so the gap they govern is exactly the gap
@@ -113,6 +136,104 @@ public sealed partial class CSharpDocumentBuilder {
         // Both keys are `0` in the export, so at this repository's configuration `Math.Max` with
         // zero is the identity and nothing moves.
         return Math.Max(blanks, InsideDeclarationBraces(previous, nextToken));
+    }
+
+    /// <summary>
+    ///     <c>dotnet_separate_import_directive_groups</c>: the gap between two <em>adjacent</em> using
+    ///     directives, or null when this gap is not one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Measured against <c>jb cleanupcode</c> 2025.2.6 under <c>OracleProfile.FormatOnly</c></b> —
+    ///     the format-only profile, with no arrangement task in it at all — on a using block carrying
+    ///     every kind of directive and blank runs of 0, 1 and 2. Both directions are the format-only
+    ///     profile's, which is SK-DIV-0074's finding and the reason this lives here rather than in
+    ///     <c>UsingsRule</c>.
+    ///     <list type="bullet">
+    ///         <item>
+    ///             ⚠ <b>The group is (kind, first segment), and the "kind" half is new.</b> The recorded model
+    ///             said "by first segment and nothing finer"; measured, <c>using System.Text;</c> and
+    ///             <c>using static System.Math;</c> share a first segment and are <em>separated</em>, and so
+    ///             are <c>using static System.Convert;</c> and <c>using AliasOne = System…;</c>. A plain
+    ///             directive, a <c>using static</c> and an alias are three kinds and a change of kind always
+    ///             separates.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ <b>Aliases are one group whatever they alias.</b>
+    ///             <c>using AliasOne = System.Collections.Generic.List&lt;int&gt;;</c> and
+    ///             <c>using AliasTwo = Zeta.Support.Helper;</c> have different first segments and are
+    ///             <em>not</em> separated, while <c>using static System.Math;</c> and
+    ///             <c>using static Zeta.Support.Helper;</c> are. So the first segment is consulted for a plain
+    ///             and a static directive and not for an alias.
+    ///         </item>
+    ///         <item>
+    ///             Within a kind the first segment is the whole key and nothing finer:
+    ///             <c>Zeta.Support</c> and <c>Zeta.Support.Deep</c> are one group, <c>System.Text</c> and
+    ///             <c>System.Globalization</c> are one group.
+    ///         </item>
+    ///     </list>
+    ///     <para>
+    ///         ⚠ <b>A comment in the gap takes it out of this key's hands, and that is measured too.</b> With
+    ///         a comment between two directives of different groups the oracle inserts nothing at
+    ///         <c>true</c>, and at <c>false</c> it <em>keeps</em> a blank line the author wrote above such a
+    ///         comment — so "it takes every blank line inside the using block back out" is too strong. The
+    ///         null return below is what expresses it, and it needs no special case: a comment piece makes
+    ///         <paramref name="nextToken" /> <c>None</c>, and unlike <see cref="MemberStartingAt" /> this
+    ///         method deliberately does not look through it. Attributing the gap to the member below is
+    ///         right for <c>blank_lines_after_using_list</c> and wrong here.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ An <c>extern alias</c> is left alone at both values — not because it was measured and found
+    ///         inert, but because it was not measured at all: the directive needs an aliased assembly
+    ///         reference that the probe project has no way to carry. Returning null keeps the behaviour it
+    ///         had rather than guessing at a fourth kind.
+    ///     </para>
+    /// </remarks>
+    int? ImportGroupSeparation(Piece previous, SyntaxToken nextToken) {
+        if (previous.Kind != PieceKind.Token || nextToken.IsKind(SyntaxKind.None)) {
+            return null;
+        }
+
+        if (MemberEndingAt(_tokens[previous.TokenIndex]) is not UsingDirectiveSyntax above
+            || MemberStartingAt(-1, nextToken) is not UsingDirectiveSyntax below) {
+            return null;
+        }
+
+        return _options.SeparateImportDirectiveGroups && !SameImportGroup(above, below) ? 1 : 0;
+    }
+
+    /// <summary>Whether two using directives belong to one group. See <see cref="ImportGroupSeparation" />.</summary>
+    static bool SameImportGroup(UsingDirectiveSyntax left, UsingDirectiveSyntax right) {
+        var kind = ImportKind(left);
+        if (kind != ImportKind(right)) {
+            return false;
+        }
+
+        // ⚠ Aliases stop here: measured, two aliases are one group however far apart their targets are.
+        return kind == ImportDirectiveKind.Alias
+            || string.Equals(FirstSegment(left), FirstSegment(right), StringComparison.Ordinal);
+    }
+
+    static ImportDirectiveKind ImportKind(UsingDirectiveSyntax directive) =>
+        directive.Alias is not null ? ImportDirectiveKind.Alias
+        : directive.StaticKeyword.IsKind(SyntaxKind.StaticKeyword) ? ImportDirectiveKind.Static
+        : ImportDirectiveKind.Plain;
+
+    /// <summary>
+    ///     The first segment of what a directive names — <c>System</c> for
+    ///     <c>using System.Collections.Generic;</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Empty for a directive whose target is not a name at all (<c>using Buffer = byte[];</c>), which
+    ///     groups every such directive together. They are aliases, and aliases are one group anyway, so
+    ///     the empty string is never actually consulted.
+    /// </remarks>
+    static string FirstSegment(UsingDirectiveSyntax directive) {
+        var name = directive.Name;
+        while (name is QualifiedNameSyntax qualified) {
+            name = qualified.Left;
+        }
+
+        return name is SimpleNameSyntax simple ? simple.Identifier.ValueText : string.Empty;
     }
 
     /// <summary>
