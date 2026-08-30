@@ -391,6 +391,28 @@ files**. The named counter-example itself, `Convert.FromBase64String`, occurs in
 380: "and its siblings" is carrying the count, and no shipped instrument separates the siblings from
 the rest of the class. The 38 files are the class's; the 14 are what can be named.
 
+⚠ **Triage at `425b01d0`: `debt`, size L, and it is a member of the preference fact** — SK-DIV-0050
+§ "The two facts this family is made of". Re-measured, not inherited: the named counter-example was
+swept at ten widths of the same shape — `byte[] data = Convert.FromBase64String("…");` padded from
+116 to 153 columns — and it diverges at **exactly one** of them, 123, where the oracle takes the `=`
+and Skala chops the argument list. Every wider row agrees. So the entry reproduces at the recorded
+width and the class is a narrow band around it, not a slope.
+
+The verdict is `debt` and the reason is not the output. Skala's answer at 123 columns —
+`Convert.FromBase64String(\n    "…"\n);` — is a perfectly good thing for a C# formatter to write,
+and if the rule that produced it were "chop the argument list, always" this entry would be
+`deliberate`. The rule is instead `11 + column/indent`, a constant fitted to three repositories,
+which this entry's own sweep shows is not reproducing any rule of ReSharper's and is absorbing error
+from elsewhere in the ordering rule. **A fitted constant is not a decision; it is a decision
+deferred**, and the moment the oracle is uninstalled the number becomes unfalsifiable — there is no
+experiment left that can say whether 11 was right. That is the definition of what has to be paid
+first.
+
+Size **L**, and the work is not "pick a better constant" — the sweep already says no value closes
+it. It is the preference fact: `Fitter` resolves the outer group before the inner one and carries
+one flat width per node, so "which of these two constructs gives" cannot be asked at all. The margin
+is the stand-in for that missing question, which is why it wanders.
+
 - options: `resharper_prefer_wrap_around_eq` (Tier D), `resharper_csharp_wrap_before_eq` (Tier D)
 - ⚠ status: **open**, measured. The sweep is [sk-div-0005-margin-sweep.md](sk-div-0005-margin-sweep.md)
   and it says no value of the constant closes this; it is not tail work
@@ -780,6 +802,30 @@ the honest upper bound for the pair.
 The chain half stays done: `constructs/breaks/binary-operators.cs` and
 `constructs/wrapping/binary-chains.cs` are both in the corpus and both at 100 %.
 
+⚠ **Triage at `425b01d0`: `debt`, size M, and it is the containment fact's first member** —
+SK-DIV-0050 § "The two facts this family is made of", where the size is paid once for all three.
+Re-measured: `Use(a > 0\n    && b > 0);` still comes back from the oracle with the argument on lines
+of its own and Skala still leaves it hugging the parenthesis, and the same holds for a three-operand
+chain. The control the entry names is still a control: `var x = a > 0 && b > 0\n    || c > 0;` is
+byte-identical from both engines, so the nested-operator objection to the obvious fix stands.
+
+⚠ **`deliberate` was the tempting verdict and it does not survive the test.** There is a real
+argument available — `keep_user_linebreaks = true` promises to keep the author's break and add
+nothing, and `Use(a > 0\n    && b > 0);` is what the author wrote. But that argument is
+reconstructed after the fact. What the entry actually records is "the wrong fix buys 0.01 points and
+loses two committed fixtures", which is a report of an attempt failing, not of a position being
+taken. And the same missing capability produces, in SK-DIV-0077, output nobody would defend: a block
+body joined onto the closing parenthesis of a parameter list that was broken. **A capability that is
+absent cannot be a style choice in one place and a defect in another.** It is one absence and it is
+debt.
+
+Size **M**, once, shared with SK-DIV-0077 and SK-DIV-0078: a group needs to be able to ask "will
+anything inside me break" without the operator groups asking it of each other. ⚠ It is the *cheap*
+half of this batch's debt, and the reason is worth stating plainly: **the containment fact can be
+settled after the oracle is gone.** "A construct that spans lines makes its container span lines" is
+a principle a person can hold and a test can pin; it needs the oracle for confirmation, not for
+derivation. The preference fact is the opposite, and that is what makes it the urgent one.
+
 - options: `resharper_csharp_wrap_arguments_style` (Tier A, `chop_if_long`), `resharper_keep_user_linebreaks` (Tier A, `true`)
 - ⚠ status: **half closed** (the chain, at M3.1), half **open**, measured
 
@@ -967,7 +1013,7 @@ the *rule* rather than in the code and is worth saying rather than quietly dropp
 - options: `resharper_csharp_wrap_before_first_method_call` (Tier A), `resharper_csharp_wrap_multiple_declaration_style`
 - ⚠ status: **open and deliberate** — a decision not to implement, measured
 
-## SK-DIV-0011 — a lambda's expression body may leave the arrow's line, and the discriminator is unknown
+## SK-DIV-0011 — ⚠ MOOT, folded into SK-DIV-0050: the same fact measured on a sole-argument lambda
 
 The oracle sometimes breaks after a lambda's `=>` and sometimes chops the body instead:
 
@@ -999,8 +1045,31 @@ class, which is still 45/21 and which this entry shares with SK-DIV-0007** — s
 the class's, not the entry's, and the entry's own signature accounts for 40 of the class's 45 lines
 but only 7 of its 21 files. It remains the second largest single class after SK-DIV-0005.
 
+⚠ **Triage at `425b01d0`: `moot`, superseded by SK-DIV-0050. Not because it stopped reproducing —
+because it turned out to be the same fact under a different shape.** Re-measured with a generated
+sweep: `Outer(() => Fold…(islnds, se…));` — a lambda that *is* the sole argument, which is the case
+this entry says separates it from everything else — held at a fixed total while width is moved from
+the body call's name into the body call's argument list.
+
+- At a total of 131 the oracle never takes the arrow at any inner width, and neither does Skala:
+  **conformant across the whole sweep**.
+- At a total of 155 the oracle takes the arrow at inner widths 20, 24 and 28 and declines it from 32
+  up; Skala takes it at none.
+
+That is a threshold on the inner argument list's own width, and it is the *same* threshold
+SK-DIV-0050's sweep finds for an assigned lambda. The "discriminator is unknown" this entry was
+opened for is SK-DIV-0050's discriminator; the "both are the sole argument, so
+`place_single_method_argument_lambda_on_same_line` does not separate them" observation is correct
+and is exactly why it does not need its own entry — SK-DIV-0050 already records that restricting the
+break point to non-sole arguments moves `corpus/real/` not at all, 380 files byte-identical.
+
+⚠ **The count moves with it, it is not lost.** The 12 hunks over 40 lines across 7 files —
+signature: a line the oracle wrote ends in `=>` and Skala's does not — is the corpus evidence for
+SK-DIV-0050's missing break point, and is recorded there. This entry keeps the two hand-found shapes
+because they are the shapes that first showed the arrow moving, and they still reproduce.
+
 - options: `resharper_place_single_method_argument_lambda_on_same_line` (Tier A, `true`, `oracle-probe`)
-- ⚠ status: **open**, measured. The discriminator is still unknown; this is not tail work either
+- ⚠ status: **moot** — superseded by SK-DIV-0050, which carries the fact, the size and the count
 
 ## SK-DIV-0012 — three small shapes, each measured, each left
 
@@ -1606,8 +1675,56 @@ belongs to is not open when the break is emitted, and the writer renders it flat
 `constructs/breaks/type-parameter-single.cs` is that shape, kept out of the aligned fixture for that
 reason.
 
+⚠ **Triage at `425b01d0`: the two halves get different verdicts. First half `deliberate`; second
+half `debt`, size S.**
+
+⚠ **The recorded example is right and its stated reason is wrong, and the correction matters.**
+Re-measured with a generated sweep — the declaration's total width held fixed while width is moved
+between the method *name* and the *type parameter list* — the oracle's choice flips on a sharp
+threshold in the type parameter list's own width. At a total of 124 columns: list widths 20 through
+27 chop the parameter list, 28 through 40 wrap the type parameter list. The flip is one column wide.
+
+But the threshold is not a rule anyone would want:
+
+| declaration width | 122 | 124 | 128 | 140 | 160 |
+|---|---:|---:|---:|---:|---:|
+| first list width that wraps the list | 29 | 28 | none in 20…40 | 20 | 33 |
+
+Non-monotonic, with a total width at which the oracle never wraps the list at all. That is the same
+curve SK-DIV-0005's margin sweep and SK-DIV-0050's arrow sweep produce, at a third construct — see
+SK-DIV-0050 § "The two facts this family is made of", where this half is recorded as a member of the
+preference fact.
+
+⚠ **And the gap between the two rules is wider than the entry's title suggests.** "A type parameter
+list wraps when the list itself runs past the margin" describes Skala accurately; what it does not do
+is approximate the oracle even loosely. Measured directly:
+`public void EtaOne<TFirst…, TSecond…, TThird…, TFourthTypeParam>(int a, int b) { }` at 122 columns
+has its type parameter list ending at column **104**, sixteen columns inside the margin, and the
+oracle wraps the list anyway. The oracle's rule is not "the list overflows" under any reading.
+
+**First half: `deliberate`, and here is the argument that survives the oracle's retirement.** A type
+parameter list wraps when the type parameter list is too long, and not otherwise. It is a rule a
+person can state in one sentence, predict without running the formatter, and explain to someone
+holding a diff: *the thing that overflowed is the thing that got wrapped.* The oracle's answer is a
+threshold that varies non-monotonically with a width the reader cannot see, and reproducing it would
+mean a user could not predict which of the two lists moves without measuring both. Choosing the
+predictable rule over the faithful one is a position, not a shortfall — and it happens to be free,
+at **0.00** points of line fidelity against **0.14** for arming the fill by the declaration's head.
+⚠ It is deliberate on the *rule*, not on every line: the shapes above stay divergent and are
+expected to, and that is the cost the position is paying.
+
+**Second half: `debt`, size S.** Re-measured on `constructs/breaks/type-parameter-single.cs`. At the
+export's `align_multiline_type_parameter_list = false` both engines break inside the `<`, byte
+identical. At `true` the oracle still breaks and **Skala emits the declaration flat at 125
+columns**. That is not a style difference: Skala holds a break point for that gap, knows the line is
+over the margin, and renders it flat anyway, because the alignment column is read after the anchor's
+gap has been written and the group is not open yet. A formatter leaving a line over its own
+configured maximum when it has a break point for it is wrong under any house style. Size **S** — the
+ordering inside `CSharpDocumentBuilder`'s alignment scope, not a new break point or a new scope kind
+— and it is confined to one value of one Tier key, which is why it has stayed cheap and invisible.
+
 - options: `resharper_csharp_wrap_before_type_parameter_langle`, `resharper_align_multiline_type_parameter_list`, `resharper_csharp_wrap_parameters_style`
-- ⚠ status: **open**, measured; the first half is the ordering rule's and belongs with SK-DIV-0002.
+- ⚠ status: first half **deliberate**, argued above; second half **open**, measured, `debt` size S.
 
 ## SK-DIV-0050 — a lambda's `=>` is a break point of the oracle's and not of Skala's
 
@@ -1686,6 +1803,74 @@ pinned while the disagreement is described here. The divergent shapes are kept o
 reason SK-DIV-0024 keeps `type-parameter-single.cs` out of the aligned fixture: a fixture that
 diverges takes the `constructs` file ratchet down with it, and one non-exact file cannot be diluted
 by any reasonable number of exact ones.
+
+⚠ **Triage at `425b01d0`: `debt`. Two sizes, because the entry is two things.** Re-measured with a
+generated sweep rather than the recorded rows: `Action a = () => Call…(firstA, se…);` held at a
+fixed total width while the width is moved between the call's *name* and the call's *argument list*.
+
+- **The missing break point is unconditional and it is size M.** Over totals 122–166 the oracle takes
+  the lambda's arrow on **every** row of the sweep, and Skala takes it on none — it chops the body's
+  argument list every time. There is no width at which the two agree. **No one chose this**: Skala
+  breaks after an expression-bodied *member*'s arrow and cannot break after a *lambda*'s, and the
+  only thing separating the two cases is that Roslyn hangs the token on a different node. A
+  difference in output that traces to a difference in a parser's node shapes is a defect by
+  definition — there is no sentence about C# style that produces it. Fixing *that* needs a group on
+  the lambda's arrow gap — machinery
+  `PlanExpressionBody` already has — and it can be built and tested with no oracle at all.
+- **The preference — when the arrow wins over the body's list — is size L and is the shared fact.**
+  This is why the `Preserve`-with-`PrefersOuterBreak` attempt cost a `corpus/real/` file: it armed
+  the point unconditionally.
+
+⚠ **The contradiction this entry records as unexplainable now has a shape, and it is a threshold on
+the *inner* list's own width.** At a fixed total of 131 columns, moving width from the call's name
+into its argument list: at argument-list widths 20, 30, 40 and 50 the oracle **takes the arrow**; at
+60, 70, 80 and 90 it **declines the arrow and chops the argument list**. Narrowed to one column the
+flip is at 54. The two shapes the entry calls a contradiction are simply two sides of that
+threshold.
+
+⚠ **But the threshold is not a function anything in `Fitter` can hold, which is the finding that
+matters.** The same sweep run at five totals puts the flip at:
+
+| declaration width | 125 | 131 | 141 | 151 | 171 |
+|---|---:|---:|---:|---:|---:|
+| first argument-list width that declines the arrow | 58 | 54 | 50 | 52 | 54 |
+
+Non-monotonic, and it falls and rises again — the same curve SK-DIV-0005's margin sweep reports for
+the `=` and SK-DIV-0024's for the type parameter list, arriving now at a third construct. Three
+independent constructs, one curve: the margin is not modelling ReSharper, it is modelling the error.
+
+### The two facts this family is made of
+
+⚠ **This entry has been the family's anchor and the family is not one fact, it is two.** They are
+recorded here once so the other members can point at them instead of restating them:
+
+1. **The containment fact — "a group must be able to ask whether anything inside it will break."**
+   No widths are involved: an inner construct is *certain* to span lines (the author broke it, or it
+   is too long to do otherwise) and the container has to see that and break too. `Fitter` resolves
+   the outer group first and carries one flat width per node, so the question cannot be asked.
+   Members: **SK-DIV-0007** (an argument list around an author-broken binary chain),
+   **SK-DIV-0077** (a call around a broken anonymous-method parameter list), **SK-DIV-0078** (an
+   expression body's arrow over a broken binary-pattern chain). One mechanism closes all three, and
+   — this is the important half — **it is statable and testable without the oracle**: "a construct
+   that spans lines makes its container span lines" is a principle, not a fitted number. Size **M**
+   once, not three times.
+2. **The preference fact — "two constructs on one line, one break needed, which one gives."**
+   Members: **SK-DIV-0005** (`=` versus the argument list), **SK-DIV-0024**'s first half (`<…>`
+   versus `(…)`), and this entry (`=>` versus the body's list). In all three the oracle's answer is a
+   sharp threshold on the *inner* construct's own width, and in all three that threshold moves
+   non-monotonically with the outer width. Size **L**: it is a subsystem `Fitter` does not have, and
+   unlike the containment fact **it cannot be settled after the oracle is uninstalled** — there is no
+   principle to appeal to, only measurement, and the instrument goes away.
+
+⚠ **SK-DIV-0011 has been folded into this entry as `moot`** — it is the same fact measured on a
+sole-argument lambda instead of an assigned one, and its corpus count is carried below.
+
+⚠ **The corpus count moves here from SK-DIV-0011: 12 hunks over 40 lines across 7 files, measured at
+`8cbd66d` and _not_ re-measured at `425b01d0`.** It is carried, not confirmed, and it is labelled
+that way deliberately — the signature it counts (a hunk in which a line the oracle wrote ends in
+`=>` and Skala's does not) is this entry's missing break point, so the number belongs here, but the
+next reader should re-derive it rather than quote it. On the `8cbd66d` basis it is the second
+largest single class after SK-DIV-0005.
 
 - options: `resharper_csharp_wrap_before_arrow_with_expressions`, `resharper_keep_user_linebreaks`, `resharper_csharp_keep_existing_linebreaks`, `resharper_place_single_method_argument_lambda_on_same_line`, `resharper_csharp_wrap_parameters_style`
 - ⚠ status: **open**, measured; the break point is missing and the rule that would arm it is not known.
@@ -2032,6 +2217,48 @@ var result = someCollectionOfThingsHere.Where(c => c.IsEnabled).Select(c => c.Na
 remarks ("the property travels with the call it feeds") — there is no call after it to travel with.
 Whatever rule the oracle is applying to a chain-final property has not been identified.
 
+⚠ **Triage at `425b01d0`: `debt`, size M.** Re-measured after this week's conditional-access
+chain-root fix, which did not reach it:
+`someCollectionOfThingsHere.Where(…).Select(…).OrderBy(…).ToList().Count` still comes back chopped
+from the oracle and still comes back from Skala as
+
+```csharp
+var result = someCollectionOfThingsHere.Where(c => c.IsEnabled).Select(c => c.Name).OrderBy(n => n
+).ToList().Count;
+```
+
+**That output is the whole verdict.** It is a 106-column line followed by an orphaned `)` at column
+zero of its statement, produced because the chain got no group at all and the last argument list
+that could take a break took it. It is not a different opinion about where chains should break; it
+is what a formatter emits when it has no opinion. No user would accept it and no argument
+reconstructs it.
+
+⚠ **SK-DIV-0068's item 2 belongs here and is now measured to.** `source?[0].Children.Where(…)…`
+reproduces with the `?` removed as well — `source[0].Children…` — so an element access in a chain is
+a break point of the oracle's and not of Skala's for exactly the reason this entry names: the
+outermost node is not one `IsChainRoot` matches. Same predicate, same absence, one fix.
+
+⚠ **So is item 1's `!`, and its untested reading is now tested.** `a.SelfLink()!.SelfLink()…`
+reproduces with no `?.` anywhere in it. And at `wrap_before_first_method_call = true` — the value
+SK-DIV-0068 records as never having been asked — the oracle writes `receiver?.SelfLink()!\n
+.SelfLink()` where Skala writes `receiver\n    ?.SelfLink()!`. Both values now agree with the
+reading SK-DIV-0068 could only guess at: **the oracle treats everything up to and including the `!`
+as the chain's receiver, and the call after the `!` as the chain's first method call.** That half is
+a rule change inside the boundary computation, size S.
+
+Size **M** for the entry: widening `IsChainRoot` past
+`InvocationExpressionSyntax or ConditionalAccessExpressionSyntax` to reach a chain-final
+`MemberAccessExpressionSyntax` and a chain-internal `ElementAccessExpressionSyntax` puts a group on
+every `a.B().C().Prop` in the tree, and the group has to agree with the two indent scopes
+`CSharpDocumentBuilder` opens from the same predicate. It is a new scope population, not a new
+subsystem, and — unlike SK-DIV-0050's preference fact — **the target shape is not in doubt**: the
+oracle's layout here is also the only sane one, so this can be finished after the oracle is gone if
+it has to be. It should not have to be.
+
+⚠ One thing genuinely stays unknown and is smaller than the entry implies: the oracle breaks
+*before* a chain-final `.Count`, which `wrap_after_property_in_chained_method_calls = false` does
+not predict. That is one break's placement inside a fix whose shape is otherwise settled.
+
 - options: none identified — `resharper_wrap_after_property_in_chained_method_calls` is implicated
   but the shape is broken at both of its values
 - ⚠ status: **open**, measured, unfixed. Deliberately not fixed alongside SK-DIV-0030: widening
@@ -2077,6 +2304,35 @@ shape A, and until the run ended on the `?` the formatter wanted to write them t
 Both files moved *toward* the oracle in the same commit — the committed indent was four columns
 deeper than `jb cleanupcode` produces.
 
+⚠ **Triage at `425b01d0`: `debt`, size M, and it is still its own fact.** Re-measured all three
+shapes plus the `.`-for-`?.` control. A and B are still conformant. C still diverges to the column,
+in exactly the recorded direction — the oracle writes `.Self()\n    .Inner?.Children…` and Skala
+writes `.Self().Inner\n    ?.Children…`. The control with every `?.` replaced by `.` is still
+byte-identical, so the remainder is still a fact about the conditional access and not about the
+property rule.
+
+⚠ **Checked specifically against this week's conditional-access chain-root fix: it does not close
+this.** That fix moved where a chain's *root* is; shape C is about how far back the property-run
+walk in `Collect` may travel from the break, which is a different loop. This entry is **not** a
+duplicate of SK-DIV-0066 either: 0066 is a chain that gets no group at all, this is a chain that
+gets the right group and the wrong break column.
+
+**Why `debt` and not `deliberate`.** The two shapes are the same expression with one character
+changed. `a.Self().Inner.Children.Where(…)` and `a.Self().Inner?.Children.Where(…)` break at
+different places in Skala, and nothing about a null-conditional access is a reason for `.Inner` to
+change sides. A rule that is right for a property run and silently wrong for the same run when a `?`
+appears in the middle of it is not a position; it is a walk that stops one link short. There is no
+sentence describing Skala's behaviour here that a reader would accept as intentional.
+
+Size **M**. The remaining fix has to let the run continue past the `?` into the receiver's own
+property chain, and the walk that would do it is the one the conditional-access arm already performs
+on `Expression` — so it is a restructure that makes the two walks share a traversal rather than an
+extra arm bolted onto `Collect`. ⚠ It is not urgent in the oracle's-retirement sense: the target
+shape is unambiguous once stated, so this is repayable afterwards if it has to be.
+
+⚠ The half that was fixed rather than deferred stays fixed, and the reason it had to be is worth
+keeping: `format --check` on Skala's own repository fails otherwise.
+
 - options: `resharper_wrap_after_property_in_chained_method_calls` — read correctly, and conformant on
   every property run that does not straddle a `?`
 - ⚠ status: **open** for shape C only, measured. The remaining fix has to let the run continue past
@@ -2101,11 +2357,61 @@ All three surfaced from the same eight-shape probe and none is large enough to c
 3. **A chopped chain that is the left operand of `??` takes one continuation level from Skala and two
    from the oracle.** ⚠ Only observable when the chain chops *and* the `??` breaks; the obvious
    control — the same chain right of the `??`, and the same chain left of a `+` — is conformant, so
-   this is not simply "a chain inside a binary operand".
+   this is not simply "a chain inside a binary operand". ⚠ **The `+` half of that control is wrong;
+   see the triage below.**
+
+⚠ **Triage at `425b01d0`: `debt`, but the entry is no longer three of anything.** All three still
+reproduce; two of them turn out to belong to SK-DIV-0066 and the third's recorded shape is wrong.
+
+**Item 1 — the `!`. Re-measured, re-attributed, and its untested reading is now tested.** It
+reproduces with no `?.` in the expression at all (`a.SelfLink()!.SelfLink()…` diverges the same
+way), so it is SK-DIV-0066's family and not SK-DIV-0030's. And at `wrap_before_first_method_call =
+true` — the value this entry records as never having been asked — the oracle writes
+`receiver?.SelfLink()!\n    .SelfLink()` against Skala's `receiver\n    ?.SelfLink()!`. **Both
+values now confirm the reading the entry could only propose:** the oracle treats everything through
+the `!` as the chain's receiver and the call after it as the chain's first method call. Size **S**,
+a rule change in the first-call boundary; recorded in SK-DIV-0066, which is where the fix lands.
+
+**Item 2 — the element access. Re-measured, and it is SK-DIV-0066's, exactly as the entry suspects.**
+`source[0].Children.Where(…)…` without the `?` diverges the same way as `source?[0]…`. The cause is
+`IsChainRoot` not matching a chain-internal `ElementAccessExpressionSyntax`, which is the same
+predicate 0066 has to widen. It costs nothing extra there.
+
+**Item 3 — the `??` operand. ⚠ Re-measured and the recorded shape is wrong, in the direction that
+makes it bigger.** The entry says the control "the same chain left of a `+`" is conformant and
+concludes "this is not simply a chain inside a binary operand". Measured today, at the export's
+values, on one file holding all three:
+
+```csharp
+// the oracle — and it is the same for `??` and for `+`
+var w = someParticularThingWithALongName.SelfLink()
+        .SelfLink()                                   // two continuation levels: 8 columns
+        .SelectName(n => n.Name)
+    + otherFallbackValueName.SomeFallbackProperty;    // the operator's own level: 4
+
+// Skala — the operator line agrees, the chain's lines do not
+var w = someParticularThingWithALongName.SelfLink()
+    .SelfLink()                                       // one level: 4 columns
+    .SelectName(n => n.Name)
+    + otherFallbackValueName.SomeFallbackProperty;
+```
+
+The `+` control diverges too, and identically to `??` — the chain's continuation lines take two
+levels from the oracle and one from Skala, while the operator's own line agrees at one. The
+right-hand-operand control **is** conformant, and that is what names the
+fact: a binary expression opens a continuation scope, and its **left** operand's own continuation
+lines have to be inside it. Skala only enters that scope after the first break, so a chain that
+begins on the statement's own line never gets the operand's level. It is not about `??`, and it is
+not about coalescing — it is one indent scope entered one break too late. Size **S**, and it is
+larger in reach than "only observable when the chain chops and the `??` breaks" implied.
+
+**So this entry is now one item, not three**, and it should be read as the record of where the other
+two went. It stays open because item 3 has no home elsewhere.
 
 - options: none
-- ⚠ status: **open**, measured, unfixed. Recorded so that the next chain-planner pass has the shapes
-  rather than having to rediscover them.
+- ⚠ status: items 1 and 2 **re-attributed to SK-DIV-0066**, which is where their fix belongs — still
+  unfixed, in both places; item 3 **open**, re-measured, and its recorded control was wrong — the
+  fact is every left binary operand, not `??`
 
 ## SK-DIV-0069 — `outdent_dots` spends one amount for the whole chain; the oracle spends one per line
 
@@ -2151,6 +2457,33 @@ differential nor the ratchets can do: a fixture only ever measures the export's 
 faults are at the *other* one. Ten keys are pinned to the five fixtures touched here; nine had to come
 back unchanged and one had to improve.
 
+⚠ **Triage at `425b01d0`: `debt`, size S, and it is a distinct fact from the other three chain
+entries.** Re-measured at both values on the nested conditional access. At the export's
+`outdent_dots = false` the two engines are still byte-identical. At `true` the divergence is still
+exactly one column on exactly the `?.` line — the oracle writes it at column 10, Skala at 11 — and
+the `.` line agrees at 11 in both.
+
+**`deliberate` is not available here, however small the difference is.** `outdent_dots` means "pull
+the wrapped line back by the width of the operator that starts it", and there is only one reading of
+that sentence: an operator two characters wide pulls back two. Skala computes one amount for the
+whole chain and spends the `.`'s, so a `?.` line is outdented by one — which is neither the option's
+meaning nor any other coherent rule. Nobody decided this; the arithmetic was written where a chain
+has one operator and the shape with two was unreachable until SK-DIV-0030 and SK-DIV-0065 were
+fixed.
+
+Size **S**: the amount is computed once for the group in the outdent scope and has to be computed
+per break point from that break's own leading operator. No new group, no new scope kind, no new
+break point. ⚠ It is not urgent against the oracle's retirement — the option's own wording settles
+the target — but it is cheap, and being cheap is the argument for doing it rather than for leaving
+it.
+
+⚠ **The reason this stays a divergence rather than a fidelity defect is unchanged and is the
+strongest part of the original entry**: the export sets `resharper_outdent_dots = false`, nothing
+outdents, and the two engines agree to the column on every chain in the corpus. The fixture
+exclusion stands for the reason it was made — one non-exact file cannot be diluted — and so does the
+finding beside it, that all three faults were found by running `verify` on every key pinned to a
+changed fixture. ⚠ That practice is the reusable part of this entry and it should outlive the entry.
+
 - options: `resharper_outdent_dots` — read correctly, and conformant on every chain whose wrapped
   lines all begin with the same operator, which is every chain the corpus contains
 - ⚠ status: **open**, measured, unfixed. It is an arithmetic in the outdent scope rather than in the
@@ -2182,8 +2515,36 @@ key, so the exclusion is measured and not a consequence of this divergence.
 
 Found while building that fixture, and kept out of it for the same reason as SK-DIV-0030.
 
+⚠ **Triage at `425b01d0`: `deliberate`.** Re-measured, both halves: the field still comes back from
+the oracle broken between its type and its first declarator, Skala still chops at the commas, and
+the local declaration of the same shape is still byte-identical from both engines. Nothing moved.
+
+**The argument, without the oracle.** A declaration with several declarators wraps at its commas, and
+a field and a local wrap the same way. Both halves of that are defensible on their own terms:
+
+- **Wrapping at the commas puts the break where the list is.** `List<int>? a = null,\n    b = null,\n    c = null;`
+  gives one declarator per line, each aligned under the first, and the type stays where the eye
+  looks for it. The oracle's layout — `List<int>?\n    a = null, b = null, c = null;` — breaks
+  between the type and its declarators and then leaves all three crowded on one continuation line,
+  which is the one break that does *not* separate the things being listed. If the line is too long
+  because there are three declarators, the declarators are what should move.
+- **A field and a local are the same construct and should not format differently.** This is the half
+  the entry already proves and does not claim credit for: the oracle formats
+  `System.Int32 a = 1, b = 2, …` one way inside a method and `List<int>? a = null, …` another way at
+  class scope, for no reason a reader could name. Skala is the consistent one, and consistency
+  between two spellings of the same declaration is exactly the sort of thing a formatter is for.
+
+⚠ **The honest caveat, so this is not an acceptance wearing an argument.** This is a divergence
+Skala is choosing to keep, not one that costs nothing: `CSharpDocumentBuilder.AlignsFromOwnColumn`'s
+exclusion of `FieldDeclarationSyntax` from `align_multiple_declaration` is downstream of it, and the
+exclusion is measured — the oracle does not move a field's declarators at either value of that key —
+so the exclusion stands on its own and does not have to be revisited if this position is ever
+reversed. The shape does not appear in the harness's ranked classes, so nothing in the work queue is
+waiting on it.
+
 - options: `resharper_csharp_align_multiple_declaration`, `resharper_csharp_wrap_multiple_declaration_style`
-- ⚠ status: **open**, measured, unfixed
+- ⚠ status: **deliberate** — argued above; the difference is kept and the fixture keeps pinning the
+  half where the two engines agree
 
 ## SK-DIV-0032 — `alignment_tab_fill_style` has three layouts and Skala writes one of them, under the wrong name
 
@@ -2627,6 +2988,33 @@ control, and **no option is globbed to it**. The construct was moved there out o
 key-flip sweep. All three keys were re-checked on the reduced fixture and the first two still move the
 oracle at both values; the third moved neither engine's oracle side before the change either.
 
+⚠ **Triage at `425b01d0`: `debt`, size M shared — the containment fact** (SK-DIV-0050 § "The two
+facts this family is made of"), paid once with SK-DIV-0007 and SK-DIV-0078. Re-measured, all four
+rows, unbatched: row 1 still comes back whole, and rows 2, 3 and 4 all still diverge. Nothing this
+week touched it.
+
+⚠ **This is the entry that settles the family's verdict, because its output is the one that cannot
+be defended.** Skala's answers to rows 3 and 4 are
+
+```csharp
+Use(delegate(          // Skala
+        int first
+    ) { return first; }
+);
+```
+
+— a parameter list broken across three lines with the block body then joined onto the closing
+parenthesis's line. Ask the test the triage runs on: would you defend that to someone who has never
+heard of ReSharper? There is no reading under which a formatter *meant* to write it. It is what
+falls out when the outer group is resolved before the inner one and cannot be told the inner one
+broke, and row 2 is the same absence from the other side — a one-line block body re-joined when
+everything fits, which Skala also gets wrong.
+
+⚠ Note what is **not** debt here. `place_single_method_argument_lambda_on_same_line` applying to an
+anonymous method (row 1) is measured and conformant, and the entry's care over the fixture — moving
+the construct out of `preservation/lambda-parens.cs` so three keys stop being unattributable — is
+work that stands. The debt is one mechanism, not four keys.
+
 - options: `resharper_place_single_method_argument_lambda_on_same_line`, `resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement`, `resharper_csharp_wrap_after_declaration_lpar`, `resharper_csharp_wrap_before_declaration_rpar`
 - ⚠ status: **open**; SK-DIV-0050's family, and it needs the same missing fact.
 
@@ -2658,6 +3046,20 @@ control, and **no option is globbed to it**. The construct was moved there out o
 there is no arrow to break — so that `resharper_csharp_wrap_before_binary_pattern_op` is measured on
 its own. Re-checked after the rewrite: the oracle keeps the before-the-operator breaks and re-joins
 the after-the-operator ones at `true`, and does the reverse at `false`, so both values still move it.
+
+⚠ **Triage at `425b01d0`: `debt`, size M shared — the containment fact** (SK-DIV-0050 § "The two
+facts this family is made of"), paid once with SK-DIV-0007 and SK-DIV-0077. Re-measured on the
+entry's own shape and it reproduces to the column, including the second-order consequence the entry
+does not spell out: because Skala keeps `o is int` on the arrow's line, its continuation lines land
+four columns to the left of the oracle's, so the divergence is three lines wide, not one.
+
+⚠ **This entry is the family's cleanest argument for `debt` over `deliberate`, because the rule is
+already written down and already agreed.** `place_expr_method_on_single_line =
+if_owner_is_single_line` is the export's value, `PlanExpressionBody`'s own remarks state the reading
+correctly — "a body that spans lines makes it not single-line however short its first line is" — and
+Skala's output contradicts its own documented rule. That is not a considered difference from
+ReSharper; it is a rule the formatter holds and cannot apply. It stays debt even if ReSharper never
+existed.
 
 - options: `resharper_csharp_wrap_before_binary_pattern_op`, `resharper_place_expr_method_on_single_line`, `resharper_csharp_wrap_chained_binary_patterns`
 - ⚠ status: **open**; the ordering fact is missing, and it is shared with SK-DIV-0077.
