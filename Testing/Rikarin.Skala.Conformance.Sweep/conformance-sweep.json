@@ -24,7 +24,7 @@
   },
   {
     "Key": "csharp_new_line_before_open_brace",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 5,
     "SkalaDistinct": 5,
@@ -309,7 +309,7 @@
   },
   {
     "Key": "csharp_style_var_for_built_in_types",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -332,7 +332,7 @@
   },
   {
     "Key": "csharp_style_var_when_type_is_apparent",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -387,21 +387,21 @@
     "Values": [
       {
         "Value": "true",
-        "OracleHash": "ad05037a",
-        "SkalaHash": "ad05037a",
+        "OracleHash": "7551d0ef",
+        "SkalaHash": "7551d0ef",
         "Agree": true
       },
       {
         "Value": "false",
-        "OracleHash": "b48de85d",
-        "SkalaHash": "b48de85d",
+        "OracleHash": "7c30c7e3",
+        "SkalaHash": "7c30c7e3",
         "Agree": true
       }
     ]
   },
   {
     "Key": "dotnet_style_parentheses_in_arithmetic_binary_operators",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -424,7 +424,7 @@
   },
   {
     "Key": "dotnet_style_parentheses_in_other_binary_operators",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -447,7 +447,7 @@
   },
   {
     "Key": "dotnet_style_parentheses_in_relational_binary_operators",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -470,7 +470,7 @@
   },
   {
     "Key": "dotnet_style_predefined_type_for_locals_parameters_members",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -879,7 +879,7 @@
   },
   {
     "Key": "resharper_csharp_align_multiline_property_pattern",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -2097,7 +2097,7 @@
   },
   {
     "Key": "resharper_csharp_default_value_when_type_evident",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -2120,7 +2120,7 @@
   },
   {
     "Key": "resharper_csharp_default_value_when_type_not_evident",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -2143,7 +2143,7 @@
   },
   {
     "Key": "resharper_csharp_empty_block_style",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -3471,7 +3471,7 @@
   },
   {
     "Key": "resharper_csharp_keep_nontrivial_alias",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -3737,7 +3737,7 @@
   },
   {
     "Key": "resharper_csharp_new_line_before_while",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -3783,7 +3783,7 @@
   },
   {
     "Key": "resharper_csharp_object_creation_when_type_evident",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -3806,7 +3806,7 @@
   },
   {
     "Key": "resharper_csharp_object_creation_when_type_not_evident",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -3921,7 +3921,7 @@
   },
   {
     "Key": "resharper_csharp_parentheses_redundancy_style",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -4424,7 +4424,7 @@
   },
   {
     "Key": "resharper_csharp_prefer_explicit_discard_declaration",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -6471,7 +6471,7 @@
   },
   {
     "Key": "resharper_csharp_special_else_if_treatment",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -8195,7 +8195,7 @@
   },
   {
     "Key": "resharper_remove_only_unused_aliases",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,

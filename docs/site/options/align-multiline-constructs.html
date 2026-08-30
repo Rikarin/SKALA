@@ -146,7 +146,7 @@
 </section>
 <section class="option" id="resharper_csharp_align_multiline_comments">
 <h2><code>resharper_csharp_align_multiline_comments</code> <a class="self" href="#resharper_csharp_align_multiline_comments">#</a></h2>
-<p>Align multiline constructs — Align multiline comments with asterisks. Observable one key away from the export and not implemented, so a fixture would score INERT rather than measure anything. <code>true</code> is the export's value, and at it the oracle pulls every <code> * </code> continuation line of a block comment onto the opening <code>/*</code>'s column plus one; at <code>false</code> it leaves the comment exactly as written, which is what Skala does at both values. A comment with no leading asterisks is untouched at either value by both engines. It rewrites the interior of a comment token, which no other key in this family does and which the formatter has no trivia rewriter for — and it is the only member of the family whose export value is the one Skala fails to honour, so it is a divergence at the export's own values (SK-DIV-0033) rather than merely an unimplemented option.</p>
+<p>Align multiline constructs — Align multiline comments with asterisks. Implemented at the export's <code>true</code>, where Skala reproduces the oracle byte for byte: every continuation line of a qualifying block comment lands on the opening <code>/*</code>'s column plus one, the closing <code>*/</code>'s line included. ⚠ The qualifying shape is narrower than 'a comment whose lines begin with <code>*</code>' — <strong>every</strong> continuation line must, and an empty or whitespace-only line among them disqualifies the comment, measured. ⚠ Registered <code>OfUnoracled</code>, because at <code>false</code> the oracle freezes a starred comment entire including the column its <code>/*</code> is written at, and Skala re-indents that at both values — honoured, observable, not conformant at one of two values. SK-DIV-0033.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -329,7 +329,7 @@
 </section>
 <section class="option" id="resharper_csharp_alignment_tab_fill_style">
 <h2><code>resharper_csharp_alignment_tab_fill_style</code> <a class="self" href="#resharper_csharp_alignment_tab_fill_style">#</a></h2>
-<p>Align multiline constructs — How to align when tabs are used for indents</p>
+<p>Align multiline constructs — How to align when tabs are used for indents. Implemented: <code>LayoutWriter.WriteIndentTo</code> writes all three layouts and <code>TabFillStyleTests</code> pins each against the oracle's own bytes under <code>indent_style = tab</code>. <code>use_spaces</code> — the export's value — tabs to the line's <em>level</em> column and spells the alignment remainder in spaces; <code>use_tabs_only</code> rounds to the nearest tab stop, ties downwards, and writes no spaces at all; <code>optimal_fill</code> divides the whole column by the tab width. Registered <code>OfInert</code> rather than <code>Of</code>, and the reason is the corpus and not the key: every committed fixture is space-indented, at which all three values spell the identical column, so no <code>oracle</code> glob is possible and the key-flip sweep cannot reach it. It becomes Tier A when the corpus can carry a per-directory <code>.editorconfig</code> (SK-DIV-0032).</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>use_spaces</code>, <code>use_tabs_only</code>, <code>optimal_fill</code></td></tr>

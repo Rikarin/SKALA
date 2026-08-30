@@ -32,7 +32,7 @@
 </section>
 <section class="option" id="dotnet_separate_import_directive_groups">
 <h2><code>dotnet_separate_import_directive_groups</code> <a class="self" href="#dotnet_separate_import_directive_groups">#</a></h2>
-<p>A blank line between using groups, grouped by first namespace segment. ⚠ Both directions: at <code>false</code> the oracle removes blank lines inside the block as well.</p>
+<p>Exactly one blank line between two adjacent using directives in different groups, and exactly none between two in the same group. ⚠ A <strong>formatting</strong> key, not an arrangement one: the oracle performs both directions under <code>CSReformatCode</code> alone, and it is read in <code>PhaseOneOptions</code> and resolved in <code>CSharpDocumentBuilder.ImportGroupSeparation</code> since SK-DIV-0074 — the arranger's copy is gone, so <code>skala format</code> and <code>skala arrange</code> can no longer disagree about it. ⚠ The group is (kind, first segment) and not the first segment alone: <code>using System.Text;</code> and <code>using static System.Math;</code> share a segment and are separated, because a plain directive, a <code>using static</code> and an alias are three kinds. Aliases are one group whatever they alias. A gap holding a comment is not this key's at either value.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
