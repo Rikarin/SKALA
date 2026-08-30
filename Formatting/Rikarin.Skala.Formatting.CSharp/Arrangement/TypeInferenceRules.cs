@@ -402,10 +402,11 @@ public sealed class ObjectCreationRule : ArrangementRule {
         /// when_type_evident = explicitly_typed      Make() =&gt; new List&lt;int&gt;()   local = new()
         /// when_type_not_evident = explicitly_typed  Make() =&gt; new()               local = new List&lt;int&gt;()
         ///     </code>
-        ///     A declarator, a field or property initializer and a parameter's default all write the type
-        ///     beside the creation, so they are evident; <c>local = new()</c> is an assignment to a name
-        ///     declared somewhere else, so it is not. Two mirrored rows are what a swapped classification
-        ///     produces, and nothing else on the file moved.
+        ///     A declarator and a field or property initializer write the type beside the creation, and a
+        ///     <c>return</c> or arrow body has it in the member's own header, so all of those are evident;
+        ///     <c>local = new()</c> is an assignment to a name declared somewhere else, so it is not. Two
+        ///     mirrored rows are what a swapped classification produces, and nothing else on the file
+        ///     moved.
         ///     <para>
         ///         ⚠ Invisible at the export, where both keys are <c>target_typed</c> and the branch does not
         ///         matter. That is why it survived: the committed fixture pins one configuration.
@@ -470,8 +471,8 @@ public sealed class DefaultValueRule : ArrangementRule {
             //
             // So a *parameter's own default* is evident — the type is on the parameter beside it — and
             // `Held = default` is not, because `Held` is declared elsewhere. This method said the
-            // opposite, and `default-literal.cs`'s header comment still asserts the old reading; both
-            // are corrected here. Invisible at the export, where both keys are `default_literal`.
+            // opposite and so did `default-literal.cs`'s header comment; both are corrected. Invisible
+            // at the export, where both keys are `default_literal`.
             return node.Parent is AssignmentExpressionSyntax
                 ? options.DefaultValueWhenTypeNotEvident == DefaultValueStyle.DefaultLiteral
                 : options.DefaultValueWhenTypeEvident == DefaultValueStyle.DefaultLiteral;
