@@ -142,7 +142,8 @@ Rows: 228. Rows with a threshold in range: 218. Rows that cross more than once: 
 
 The word-length profiles agree on the threshold at 44 of the 52 totals where more than one of them has a threshold to compare —
 which is not unanimous. Where they disagree the boundary is partly a fact about how many
-identifiers the probe fitted inside the construct, and those rows are the probe's, not the oracle's.
+identifiers the probe fitted inside the construct, and those rows are the probe's, not the
+oracle's.
 
 ### What decides it, tested
 
@@ -478,9 +479,9 @@ The third break — the gap after the return type, before the method name — ap
 The oracle never changes its mind *within* a row: whichever construct gives is settled
 before the inner width is consulted at all, and what moves the answer is the total.
 
-The word-length profiles agree on the threshold at 0 of the 0 totals where more than one of them has a threshold to compare —
-which is not unanimous. Where they disagree the boundary is partly a fact about how many
-identifiers the probe fitted inside the construct, and those rows are the probe's, not the oracle's.
+No total has a threshold under more than one word-length profile, so there is nothing
+here to disagree about — which is itself the answer: a boundary the probe's identifier
+lengths could have moved would have produced one.
 
 ### What decides it, tested
 

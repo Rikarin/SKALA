@@ -1186,22 +1186,27 @@ public static class PreferenceSweep {
             group.Select(static reading => reading.Threshold).Distinct().Count() == 1
         );
 
-        builder.Append("The word-length profiles agree on the threshold at ")
-            .Append(unanimous.ToString(CultureInfo.InvariantCulture))
-            .Append(" of the ")
-            .Append(agreements.Count.ToString(CultureInfo.InvariantCulture))
-            .AppendLine(" totals where more than one of them has a threshold to compare —");
-        builder.AppendLine(
-            agreements.Count > 0 && unanimous == agreements.Count
-                ? "unanimously. The boundary is a fact about the oracle and the width, not about how many"
-                : "which is not unanimous. Where they disagree the boundary is partly a fact about how many"
-        );
-        builder.AppendLine(
-            agreements.Count > 0 && unanimous == agreements.Count
-                ? "identifiers the probe happened to fit inside the construct."
-                : "identifiers the probe fitted inside the construct, and those rows are the probe's, not"
-                + " the oracle's."
-        );
+        if (agreements.Count == 0) {
+            builder.AppendLine("No total has a threshold under more than one word-length profile, so there is nothing");
+            builder.AppendLine(
+                "here to disagree about — which is itself the answer: a boundary the probe's identifier"
+            );
+            builder.AppendLine("lengths could have moved would have produced one.");
+        } else {
+            builder.Append("The word-length profiles agree on the threshold at ")
+                .Append(unanimous.ToString(CultureInfo.InvariantCulture))
+                .Append(" of the ")
+                .Append(agreements.Count.ToString(CultureInfo.InvariantCulture))
+                .AppendLine(" totals where more than one of them has a threshold to compare —");
+            builder.AppendLine(
+                unanimous == agreements.Count
+                    ? "unanimously. The boundary is a fact about the oracle and the width, not about how"
+                    + " many\nidentifiers the probe happened to fit inside the construct."
+                    : "which is not unanimous. Where they disagree the boundary is partly a fact about how"
+                    + " many\nidentifiers the probe fitted inside the construct, and those rows are the"
+                    + " probe's, not the\noracle's."
+            );
+        }
 
         if (jagged.Count > 0) {
             builder.AppendLine();
