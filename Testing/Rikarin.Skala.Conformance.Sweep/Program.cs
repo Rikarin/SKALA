@@ -25,6 +25,11 @@ using Rikarin.Skala.Testing;
 //   verify <key>      one option, unbatched, with both engines' output at every value printed in
 //                     full. ⚠ How a row in the table is checked before anything is demoted on the
 //                     strength of it.
+//   freeze            ⚠ commits the sweep's per-configuration outputs to Testing/corpus/sweep/, so
+//                     that the guarantee they carry survives ReSharper's uninstallation. A reviewed
+//                     action whose diff is the review, exactly like `./build.sh Oracle` — and it
+//                     measures nothing: every byte it writes must hash to an `OracleHash` the
+//                     committed sweep already records, or it is refused. See FrozenFreeze.
 //   fixed-point       ⚠ whether the two sides of an arrangement verdict are stopped at the same
 //                     place. Skala's half loops to a fixed point and the oracle's half is one
 //                     `cleanupcode` invocation; this runs the oracle twice over its own output and
@@ -40,7 +45,7 @@ using Rikarin.Skala.Testing;
 if (args.Length == 0) {
     Console.Error.WriteLine(
         "usage: sweep | defaults | nightly [--family=…] [--out=…] [--apply] | plan [--family=…] | "
-        + "pairwise [--family=…] [--out=…] | pairwise-plan [--family=…] | verify <key> | fixed-point"
+        + "pairwise [--family=…] [--out=…] | pairwise-plan [--family=…] | verify <key> | fixed-point | freeze"
     );
     return 2;
 }
@@ -66,6 +71,11 @@ switch (args[0]) {
         return Nightly();
     case "fixed-point":
         return ArrangementFixedPoint.Run(Corpus.BaseEditorConfigPath, Console.Out);
+    case "freeze":
+        return FrozenFreeze.Run(
+            Path.Combine(Corpus.RepositoryRoot, "Testing", "Rikarin.Skala.Conformance.Sweep"),
+            Console.Out
+        );
     case "verify":
         if (args.Length < 2) {
             Console.Error.WriteLine("usage: verify <key>");

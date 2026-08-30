@@ -1,0 +1,43 @@
+// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaCleanup generated=2026-08-30
+namespace Skala.Corpus.Arrangement;
+
+// accessor_owner_body = expression_body has two shapes and the key names only one of them: a
+// get-only property collapses onto the PROPERTY, a property with more than one accessor keeps its
+// accessor list and each accessor gets the expression body.
+public class AccessorOwner {
+    int _n;
+    string _text = "";
+
+    public int GetOnly => _n;
+
+    public int GetAndSet {
+        get => _n;
+        set => _n = value;
+    }
+
+    public string Computed => _text.Trim();
+
+    public int this[int index] => _n + index;
+
+    // An accessor with two statements is not a candidate; the property keeps its block.
+    public int Guarded {
+        get {
+            Console.WriteLine("read");
+            return _n;
+        }
+    }
+
+    // An accessor with an attribute or a modifier is left alone by the owner collapse.
+    public int Restricted {
+        get => _n;
+        private set => _n = value;
+    }
+
+    public int LocalFunctionOwner() {
+        int Add(int x) {
+            return x + _n;
+        }
+
+        return Add(1);
+    }
+}
