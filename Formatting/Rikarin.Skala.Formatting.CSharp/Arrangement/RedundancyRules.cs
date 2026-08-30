@@ -436,7 +436,17 @@ public static class ParenthesesRedundancy {
 
         return node.Expression switch {
             // The always_for_clarity families, and the non-obvious operations.
-            BinaryExpressionSyntax binary => always || !IsKept(binary.Kind(), node.Parent, options),
+            //
+            // ⚠ `a ?? (b ?? c)` is the one shape `remove` does *not* reach, and it is measured rather
+            // than reasoned: asked at both values on a probe carrying `a ?? (b ?? c)`,
+            // `a || (b || c)`, `a && (b && c)`, `a + (b + c)` and `a ? b : (c ? d : e)`, the oracle
+            // removes all of the others at both values and keeps this one at both. Right-associativity
+            // is not the reason — the conditional operator is right-associative too and loses its
+            // parentheses. At the export's value `IsKept` already keeps it, so this changes nothing
+            // there; it is the `remove` bypass that would otherwise take it.
+            BinaryExpressionSyntax binary =>
+                !IsCoalesceNesting(binary.Kind(), node.Parent)
+                && (always || !IsKept(binary.Kind(), node.Parent, options)),
 
             // `(x = 1)` inside a larger expression is doing work that the reader is being shown.
             AssignmentExpressionSyntax or ConditionalExpressionSyntax => false,
@@ -506,6 +516,14 @@ public static class ParenthesesRedundancy {
     ///     The operations <c>resharper_parentheses_non_obvious_operations</c> names: an operand of one
     ///     of these keeps its parentheses whatever the operand is.
     /// </summary>
+    /// <summary>
+    ///     A <c>??</c> that is the operand of another <c>??</c>, which keeps its parentheses at both
+    ///     values of <c>parentheses_redundancy_style</c>.
+    /// </summary>
+    static bool IsCoalesceNesting(SyntaxKind kind, SyntaxNode? parent) =>
+        kind == SyntaxKind.CoalesceExpression
+        && parent is BinaryExpressionSyntax { RawKind: (int)SyntaxKind.CoalesceExpression };
+
     static bool IsNonObvious(SyntaxKind kind) =>
         kind is SyntaxKind.LeftShiftExpression
             or SyntaxKind.RightShiftExpression
