@@ -6,7 +6,7 @@ differential" adds, plus the two files that make the measurement reproducible.
 
 | Path | What it is |
 |---|---|
-| `constructs/` | One C# construct each, named after the option it pins. `blank-lines/` is deliberately over-populated (118 files) because that is where the bug density is. |
+| `constructs/` | One C# construct each, named after the option it pins. `blank-lines/` is deliberately over-populated (118 files) because that is where the bug density is. ⚠ `syntax/` is the exception to "named after the option": it is named after the *construct*, because those files exist to make a construct present at all rather than to pin a key. See [`docs/construct-coverage.md`](../../docs/construct-coverage.md). |
 | `real/` | Vendored from three real trees. Provenance and licences in [`real/NOTICE.md`](real/NOTICE.md). |
 | `pathological/` | The formatter's enemies: a 4 000-character line, thirty-deep nesting, a `#if` splitting a method signature, raw strings full of braces, mixed line endings, a BOM, tabs in a spaces file, a file that does not parse. |
 | `pathological/open/` | ⚠ Minimised fuzz findings whose defect is **not fixed yet**, with [`register.md`](pathological/open/register.md). Excluded from `Corpus.Files()` — one of them makes `skala format` throw, and a file that throws takes down every path that formats the corpus rather than failing one assertion. `OpenDefectTests` asserts instead that each still fails the way its entry records, so a fix breaks that suite and is told where the file goes next. Byte-significant: an editor that trims on save destroys three of them. |
@@ -14,7 +14,7 @@ differential" adds, plus the two files that make the measurement reproducible.
 | `unformatted/` | ⚠ `corpus/real/` with its formatting **destroyed** first, one subtree per mode, each with the oracle's answer for the *degraded* file. It exists because `real/`'s inputs are already 91 % line-identical to their fixtures, so that differential mostly measures whether Skala leaves good code alone. Provenance and numbers in [`unformatted/NOTICE.md`](unformatted/NOTICE.md). |
 | `<file>.expected.cs` | The committed `jb cleanupcode` output, with a header naming the ReSharper version and the config hash. ⚠ Regenerating is `./build.sh Oracle` — a reviewed commit, never a test. |
 | `fidelity.json` | The ratchet. CI asserts fidelity does not fall below it; raising it is a commit. |
-| `syntax-kinds.txt` | Every `SyntaxKind` the pinned Roslyn declares, with the layout the document builder gives it. A package bump that adds a kind fails `SyntaxKindInventoryTests`. |
+| `syntax-kinds.txt` | Every `SyntaxKind` the pinned Roslyn declares, with the layout the document builder gives it. A package bump that adds a kind fails `SyntaxKindInventoryTests`. ⚠ It is also the denominator of [`docs/construct-coverage.md`](../../docs/construct-coverage.md), which asks the question no other instrument here can — *which constructs does this corpus contain no instance of* — because a construct absent when `jb` is uninstalled is absent for ever. `fidelity coverage` re-measures it and needs no oracle. |
 
 ## What `sweep/` can and cannot answer
 

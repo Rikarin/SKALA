@@ -133,7 +133,10 @@ stands in for, at fourteen shapes and one-column resolution, into
 [the artefact that outlives the oracle](docs/sk-div-preference-sweep.md); `preference
 --render=<json>` rewrites that artefact's prose from the committed grid and needs no ReSharper at
 all; `locate <set> <kind>` prints the divergent lines
-attributed to one construct; `tree <dir> [n]` runs both tools over an arbitrary repository; and
+attributed to one construct; `coverage` answers the opposite question to `constructs` — which
+`SyntaxKind`s the corpus contains *no* instance of, which is the one measurement ReSharper's
+uninstallation makes permanent, into [`docs/construct-coverage.md`](docs/construct-coverage.md);
+`tree <dir> [n]` runs both tools over an arbitrary repository; and
 `sample <tree> <n> <dest>` redraws a corpus sample reproducibly, by a hash of each file's path.
 
 ## Release 1.0 — what became a contract

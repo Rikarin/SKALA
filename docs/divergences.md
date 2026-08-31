@@ -4514,3 +4514,169 @@ piece with `CommentFlags(piece)` and never with `Realign`.
   rather than left, when the body's own lines are ragged in the other direction, or when a line of the
   body would be pushed to a negative column. A uniform shift that clamps at zero is not the same rule
   as one that does not, and this probe cannot tell them apart.
+
+## SK-DIV-0095 — `__makeref`, `__reftype` and `__refvalue` take a space before their parenthesis
+
+⚠ **Found by the syntax-coverage audit** (`fidelity coverage`), which is the only reason it was found
+at all: `MakeRefExpression`, `RefTypeExpression`, `RefValueExpression` and `ArgListExpression` were
+four of the thirty-seven `SyntaxKind`s that occurred **nowhere** in `Testing/corpus/`, so no fidelity
+number, no fixture and no divergence class had ever been a statement about them.
+
+Measured against `jb cleanupcode` 2025.2.6 under `OracleProfile.FormatOnly`, at the export's values:
+
+| written | oracle | Skala |
+|---|---|---|
+| `__makeref(origin)` | `__makeref(origin)` | `__makeref (origin)` |
+| `__reftype(reference)` | `__reftype(reference)` | `__reftype (reference)` |
+| `__refvalue(reference, int)` | `__refvalue(reference, int)` | `__refvalue (reference, int)` |
+| `__arglist(alpha, bravo)` | `__arglist(alpha, bravo)` | `__arglist(alpha, bravo)` — **agrees** |
+
+⚠ **The mechanism, and why `__arglist` is the one that agrees.** `SpaceRules.BeforeOpenParen`
+switches on `next.Parent`. `ArgListExpression` carries a real `ArgumentListSyntax`, so it reaches the
+`ArgumentListSyntax` arm and takes `space_before_method_call_parentheses`. The other three carry no
+argument list at all — the `(` belongs to `MakeRefExpressionSyntax` / `RefTypeExpressionSyntax` /
+`RefValueExpressionSyntax` directly — so they fall through to the `default` arm, where
+`SyntaxFacts.IsKeywordKind(prev.Kind())` is true of `__makeref` and the rule returns
+`space_between_keyword_and_expression`, which the export sets to `true`. That fallback is written for
+`return (value)` and `await (task)`; three keywords whose parenthesis is a call site in everything but
+the parse tree reach it by accident.
+
+- options: `resharper_csharp_space_between_keyword_and_expression` (wrongly), `resharper_csharp_space_before_method_call_parentheses` (correctly)
+- ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/varargs-and-typed-references.cs`,
+  whose fixture is the oracle's answer.
+- ⚠ **Low severity, deliberately recorded anyway.** Nobody writes `__makeref` on purpose. But this is
+  precisely the class of defect the audit exists to find: it survived ten milestones because the
+  construct was absent from the corpus, and after `jb` is uninstalled no `.expected.cs` for it could
+  ever be authored.
+
+## SK-DIV-0096 — an accessor list written on one line is expanded by the oracle and left alone by Skala
+
+⚠ **Found by the syntax-coverage audit.** `EventDeclaration`, `AddAccessorDeclaration` and
+`RemoveAccessorDeclaration` occurred nowhere in the corpus, and no corpus file anywhere carried a
+non-auto accessor list written on a single line — so the shape had never been measured.
+
+`keep_existing_declaration_block_arrangement = false`, which the export sets, expands an accessor
+list one accessor per line. Measured on eight shapes in one file, 2026-08-31:
+
+| written | oracle | Skala |
+|---|---|---|
+| `int P { get => 1; }` | three lines | unchanged |
+| `int P { get => 1; set { } }` | four lines | unchanged |
+| `int P { get { return 1; } set { } }` | four lines | unchanged |
+| `int P { get; set; }` | unchanged | unchanged |
+| `int P { get; set { } }` | four lines | unchanged |
+| `int P => 1;` | unchanged | unchanged |
+| `event EventHandler E { add { } remove { } }` | four lines | unchanged |
+| `int this[int i] { get => i; set { } }` | four lines | unchanged |
+
+So the oracle's rule is: **an accessor list is broken one accessor per line unless every accessor is
+semicolon-only.** An auto-property is the sole exception; an indexer's and an event's accessor lists
+are governed identically, and an expression-bodied member has no accessor list to break. Skala
+reformats none of them — `skala format` reports `0 files reformatted, 1 left alone` on the whole file.
+
+⚠ **The mechanism.** `BreakPlan.PlanOnePerLine` applies the key to `TypeDeclarationSyntax` and
+`NamespaceDeclarationSyntax` members and to a `BlockSyntax`'s statements, and to nothing else. An
+`AccessorListSyntax` is a declaration block by the same key's own definition and has no arm.
+
+⚠ **This narrows SK-DIV-0092's reasoning.** That entry argues the key
+`blank_lines_around_single_line_property` governs a shape "this export never produces", because the
+oracle expands `public int X { get => 1; }` onto three lines. True of the oracle; **not true of
+Skala**, which leaves the shape on one line and therefore does apply the key to it. The two engines
+diverge on the blank-line question there as a consequence of this entry, not independently of it.
+
+- options: `resharper_csharp_keep_existing_declaration_block_arrangement`
+- ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/field-keyword.cs`, whose last
+  property is the one-line accessor-list form. ⚠ `constructs/syntax/event-accessors.cs` does **not**
+  pin it — its accessor lists were written expanded and both engines agree on them, which is worth
+  saying because a reader would otherwise expect the event fixture to be the one that fails.
+
+## SK-DIV-0097 — a labelled statement's statement always starts a new line, and Skala writes `label: {`
+
+⚠ **Found by the syntax-coverage audit.** `LabeledStatement` occurred twice in the whole corpus and
+`GotoDefaultStatement` nowhere; neither instance was a label on a block.
+
+Measured 2026-08-31. The oracle puts the labelled statement on its own line whatever it is:
+
+| written | oracle | Skala |
+|---|---|---|
+| `block: { Consume(1); }` | `block:` / `{` / `Consume(1);` / `}` | `block: {` / `Consume(1);` / `}` |
+| `empty: { }` | `empty:` / `{ }` | `empty: { }` |
+| `plain: Consume(2);` | `plain:` / `Consume(2);` | agrees |
+
+⚠ **No key turns it off, and three candidates were eliminated rather than assumed.** Re-measured with
+`outdent_statement_labels = false`, `keep_existing_embedded_arrangement = true` and
+`keep_existing_embedded_block_arrangement = true` all set at once: the oracle still breaks. It is
+unconditional. The divergence is only ever visible when the label's statement is a **block** — Skala
+agrees on `plain:`, because a non-block statement's own break comes from elsewhere.
+
+- options: none. Not `resharper_csharp_outdent_statement_labels`, not either `keep_existing_embedded_*`.
+- ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/goto-and-labels.cs`.
+
+## SK-DIV-0098 — an expression body after a wrapped constraint clause goes to its own line
+
+⚠ **Found by the syntax-coverage audit.** `AllowsConstraintClause` and `DefaultConstraint` occurred
+nowhere and `TypeConstraint` was thin, so no fixture had a member with its constraint clauses on
+their own lines *and* an expression body.
+
+Measured 2026-08-31, and the width hypothesis is the one the measurement refutes:
+
+| written | oracle |
+|---|---|
+| `static T Short<T>(T s) where T : class => s;` (one line, 46 columns) | unchanged |
+| `static T Two<T>(T s) where T : class, new() => s;` (one line) | unchanged |
+| `static T W<T>(T s)` / `    where T : class => s;` (35 columns on the constraint line) | `where T : class =>` / `s;` |
+
+So it is **not a width rule**: at 35 columns, well inside the 120-column margin, the oracle still
+breaks. The rule is that when a member's declaration head is already wrapped — a constraint clause on
+its own line — the expression body's operand goes to a line of its own, with the `=>` left on the
+constraint line. Skala keeps `=> s;` on the constraint line at any width.
+
+⚠ **"Is that a fact about the probe, or about the key?"** The first reading of this was "a constraint
+clause forces the break", which the one-line rows above refute: a constraint that stays on the
+declaration's line keeps the body with it. What forces the break is the *head already being wrapped*,
+not the constraint's presence.
+
+- options: none identified. `keep_existing_expr_member_arrangement = false` is set in the export and
+  is a plausible owner, but it was not flipped in this measurement and the entry does not claim it.
+- ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/generic-constraints.cs`.
+
+## SK-DIV-0099 — a declaration head that overflows is not broken, and a break already in it is indented one level short
+
+⚠ **Found by the syntax-coverage audit**, on two constructs at once — a `using` alias to a
+non-name type (C# 12, which occurred **nowhere** in the corpus, while ordinary name aliases were
+common) and a field declaration whose type alone exceeds the margin.
+
+Measured 2026-08-31 in two directions, because the two halves are different claims. **Given a flat
+input**, the oracle breaks and Skala does not:
+
+| written flat | oracle | Skala |
+|---|---|---|
+| `using Overflows = (…IReadOnlyList<string> Names, …IReadOnlyDictionary<string, int> Counts);` at 140 columns | break after `=`, continuation at column 4, then a chop inside the tuple | unchanged, 140 columns |
+| `…IReadOnlyDictionary<string, …IReadOnlyList<string>> Overflowing;` at 121 columns | break before the declarator, continuation at column 8 | unchanged, 121 columns |
+| the same field at 117 columns | unchanged | unchanged — **the oracle's rule is a width rule here** |
+| `delegate* unmanaged[Stdcall, MemberFunction, SuppressGCTransition]<…> Overflowing;` at 121 columns | break before the declarator | unchanged |
+
+**Given the oracle's own output as input**, Skala keeps the break and puts the continuation one
+indent level to the left of where the oracle put it:
+
+| construct | oracle's continuation column | Skala's |
+|---|---|---|
+| `using` alias | 4 | **0** |
+| field declarator (member indent 4) | 8 | **4** |
+
+In both, the continuation lands at the construct's own start column rather than one level in. A
+`using` continuation at column 0 is the worse of the two, because nothing else in a compilation unit
+sits there.
+
+⚠ **One entry for two constructs, and the arithmetic is not the argument.** Both are exactly one
+indent level short, which is suggestive and is *not* evidence that one mechanism owns both — the two
+go through different builder paths and nothing here has measured whether the same code is at fault.
+Recorded together because it is one measurement made twice; it splits into two entries the moment
+somebody measures a mechanism.
+
+⚠ **Scoped to alias directives.** A plain `using System.…;` has no `=` to break at and was not asked
+about; nothing here says what the oracle does with one.
+
+- options: none identified.
+- ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/alias-any-type.cs` and
+  `constructs/syntax/unsafe-and-function-pointers.cs`.
