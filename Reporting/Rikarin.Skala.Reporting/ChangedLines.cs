@@ -23,19 +23,19 @@ namespace Rikarin.Skala.Reporting;
 /// </remarks>
 public sealed class ChangedLines {
     ChangedLines(Dictionary<string, ImmutableArray<LineRange>> ranges, string reference) {
-        _ranges = ranges;
+        this.ranges = ranges;
         Reference = reference;
     }
 
-    readonly Dictionary<string, ImmutableArray<LineRange>> _ranges;
+    readonly Dictionary<string, ImmutableArray<LineRange>> ranges;
 
     /// <summary>The ref the ranges are relative to.</summary>
     public string Reference { get; }
 
     /// <summary>Files with at least one changed line.</summary>
-    public int FileCount => _ranges.Count;
+    public int FileCount => ranges.Count;
 
-    public int RangeCount => _ranges.Values.Sum(static ranges => ranges.Length);
+    public int RangeCount => ranges.Values.Sum(static ranges => ranges.Length);
 
     /// <summary>A half-open run of lines, one-based, as <c>git diff</c> reports it.</summary>
     public readonly record struct LineRange(int Start, int End) {
@@ -134,7 +134,7 @@ public sealed class ChangedLines {
 
     /// <summary>Whether a finding sits on a line the ref changed.</summary>
     public bool Contains(Finding finding) {
-        if (!_ranges.TryGetValue(Normalize(finding.Path), out var ranges)) {
+        if (!this.ranges.TryGetValue(Normalize(finding.Path), out var ranges)) {
             return false;
         }
 
