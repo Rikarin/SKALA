@@ -162,10 +162,18 @@ public static class FixCommand {
 
         var applicable = report.Reportable.Where(finding => IsApplicable(finding, request)).ToList();
         if (applicable.Count == 0 && naming.Applied == 0) {
-            return new(ExitCodes.Ok, "skala fix: nothing to apply.\n");
+            var nothing = new StringBuilder();
+            AppendSkippedNaming(nothing, naming);
+            nothing.AppendLine(
+                naming.Skipped.IsDefaultOrEmpty
+                    ? "skala fix: nothing to apply."
+                    : "skala fix: nothing else to apply."
+            );
+            return new(ExitCodes.Ok, nothing.ToString());
         }
 
         var output = new StringBuilder();
+        AppendSkippedNaming(output, naming);
         var applied = naming.Applied;
         var reverted = 0;
         var changedFiles = naming.ChangedPaths.ToHashSet(StringComparer.Ordinal);
@@ -211,6 +219,25 @@ public static class FixCommand {
 
         output.AppendLine(".");
         return new(ExitCodes.Ok, output.ToString());
+    }
+
+    static void AppendSkippedNaming(StringBuilder output, NamingFixOutcome naming) {
+        if (naming.Skipped.IsDefaultOrEmpty) {
+            return;
+        }
+
+        output.Append("skala fix: skipped ")
+            .Append(naming.Skipped.Length.ToString(CultureInfo.InvariantCulture))
+            .AppendLine(" IDE1006 rename(s) whose proposed names did not compile:");
+        foreach (var skipped in naming.Skipped.Take(10)) {
+            output.Append("  ").AppendLine(skipped);
+        }
+
+        if (naming.Skipped.Length > 10) {
+            output.Append("  ... and ")
+                .Append((naming.Skipped.Length - 10).ToString(CultureInfo.InvariantCulture))
+                .AppendLine(" more");
+        }
     }
 
     static bool IsApplicable(Finding finding, FixRequest request) {

@@ -40,8 +40,10 @@ while an explicitly incompatible `--load=loose|binlog` is rejected. The command
 applies Roslyn's own rename action one symbol at a time, so references in other files and projects
 move with the declaration. The pass refuses `loose` and `binlog`, refuses a partially failed
 workspace, previews without writing under `--dry-run`, rebinds the changed solution, and formats
-only the documents the rename touched. The rename is atomic and is refused if a declaration or
-reference change would touch a formatter-off region. `format` and `arrange` never rename symbols.
+only the documents the rename touched. Every proposed rename is compiled before it joins the batch;
+a suggestion that would introduce a binding error is reported and skipped while the remaining
+IDE1006 findings continue. The written batch is refused if a declaration or reference change would
+touch a formatter-off region. `format` and `arrange` never rename symbols.
 
 `verify` defaults to `--load=auto`: one unambiguous `.slnx`, `.sln`, or `.csproj` is loaded as a
 workspace, and a repository with no target stays on the loose fast path. Multiple targets require

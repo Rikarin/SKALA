@@ -15,7 +15,8 @@ namespace Rikarin.Skala.Analysis;
 public sealed record NamingFixOutcome(
     int Applied,
     ImmutableArray<string> ChangedPaths,
-    string? Error = null);
+    string? Error = null,
+    ImmutableArray<string> Skipped = default);
 
 /// <summary>
 ///     Applies Roslyn's own naming code action over an MSBuild workspace, one symbol at a time.
@@ -134,12 +135,17 @@ public static class NamingFixCommand {
             : StringComparer.Ordinal;
         var allowed = reportablePaths.Select(Path.GetFullPath).ToHashSet(comparison);
         var applied = 0;
+        var attempted = 0;
+        var rejected = new HashSet<NamingTarget>();
+        var skipped = ImmutableArray.CreateBuilder<string>();
 
-        while (applied < MaximumRenames) {
-            var next = FindFirst(solution, analyzers, allowed, cancellation);
+        while (attempted < MaximumRenames) {
+            var next = FindFirst(solution, analyzers, allowed, rejected, cancellation);
             if (next is null) {
                 break;
             }
+
+            attempted++;
 
             var document = solution.GetDocument(next.Location.SourceTree!);
             if (document is null) {
@@ -174,15 +180,36 @@ public static class NamingFixCommand {
                 return new NamingFixOutcome(applied, [], "Roslyn's IDE1006 rename produced no solution change");
             }
 
+            // Roslyn's naming fixer can offer a spelling that is valid by the naming rule but not by
+            // binding. `_ranges` -> `ranges` beside `out var ranges`, for example, produces CS0844.
+            // Validate this candidate before adding it to the accumulated solution, reject only that
+            // symbol, and continue with the remaining IDE1006 findings.
+            var candidateErrors = IntroducedErrors(solution, changed, cancellation);
+            if (!candidateErrors.IsEmpty) {
+                var targetKey = Target(next, cancellation);
+                rejected.Add(targetKey);
+                skipped.Add(
+                    targetKey.Path
+                    + ":"
+                    + (targetKey.Line + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    + " '"
+                    + targetKey.Identifier
+                    + "' because it would introduce "
+                    + string.Join(", ", candidateErrors.Take(3))
+                );
+                continue;
+            }
+
             solution = changed;
             applied++;
         }
 
-        if (applied == MaximumRenames && FindFirst(solution, analyzers, allowed, cancellation) is not null) {
+        if (attempted == MaximumRenames
+            && FindFirst(solution, analyzers, allowed, rejected, cancellation) is not null) {
             return new NamingFixOutcome(
                 applied,
                 [],
-                $"the IDE1006 fix stopped after {MaximumRenames} renames; violations remain"
+                $"the IDE1006 fix stopped after {MaximumRenames} rename attempts; violations remain"
             );
         }
 
@@ -233,13 +260,14 @@ public static class NamingFixCommand {
             }
         }
 
-        return new(applied, changedPaths);
+        return new(applied, changedPaths, Skipped: skipped.ToImmutable());
     }
 
     static Diagnostic? FindFirst(
         Solution solution,
         ImmutableArray<DiagnosticAnalyzer> analyzers,
         HashSet<string> allowed,
+        HashSet<NamingTarget> rejected,
         CancellationToken cancellation
     ) {
         foreach (var project in solution.Projects.OrderBy(static project => project.FilePath, StringComparer.Ordinal)) {
@@ -266,6 +294,7 @@ public static class NamingFixCommand {
                 .Where(diagnostic => diagnostic.Location.SourceTree?.FilePath is { } path
                     && allowed.Contains(Path.GetFullPath(path))
                 )
+                .Where(diagnostic => !rejected.Contains(Target(diagnostic, cancellation)))
                 .OrderBy(static diagnostic => diagnostic.Location.SourceTree!.FilePath, StringComparer.Ordinal)
                 .ThenBy(static diagnostic => diagnostic.Location.SourceSpan.Start)
                 .FirstOrDefault();
@@ -277,9 +306,43 @@ public static class NamingFixCommand {
         return null;
     }
 
-    static ImmutableArray<string> CompilerErrors(Solution solution, CancellationToken cancellation) {
+    readonly record struct NamingTarget(string Path, int Line, string Identifier);
+
+    static NamingTarget Target(Diagnostic diagnostic, CancellationToken cancellation) {
+        var location = diagnostic.Location;
+        var tree = location.SourceTree!;
+        return new NamingTarget(
+            Path.GetFullPath(tree.FilePath),
+            location.GetLineSpan().StartLinePosition.Line,
+            tree.GetText(cancellation).ToString(location.SourceSpan)
+        );
+    }
+
+    static ImmutableArray<string> IntroducedErrors(
+        Solution before,
+        Solution after,
+        CancellationToken cancellation
+    ) {
+        var affected = after.GetChanges(before)
+            .GetProjectChanges()
+            .Select(static change => change.ProjectId)
+            .ToHashSet();
+        return IntroducedErrors(
+            CompilerErrors(before, cancellation, affected),
+            CompilerErrors(after, cancellation, affected)
+        );
+    }
+
+    static ImmutableArray<string> CompilerErrors(
+        Solution solution,
+        CancellationToken cancellation,
+        HashSet<ProjectId>? projects = null
+    ) {
         var errors = ImmutableArray.CreateBuilder<string>();
-        foreach (var project in solution.Projects.Where(static project => project.Language == LanguageNames.CSharp)) {
+        foreach (var project in solution.Projects.Where(project =>
+                     project.Language == LanguageNames.CSharp
+                     && (projects is null || projects.Contains(project.Id))
+                 )) {
             if (project.GetCompilationAsync(cancellation).GetAwaiter().GetResult() is not { } compilation) {
                 continue;
             }

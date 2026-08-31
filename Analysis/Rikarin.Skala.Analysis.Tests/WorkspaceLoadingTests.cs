@@ -302,6 +302,69 @@ public sealed class WorkspaceLoadingTests {
     }
 
     [Fact]
+    public void Fix_IDE1006SkipsANameThatWouldNotCompileAndContinues() {
+        using var scratch = new Scratch();
+        scratch.Write(
+            ".editorconfig",
+            NamingConfig
+            + """
+
+              dotnet_naming_rule.fields.symbols = fields
+              dotnet_naming_rule.fields.style = camel
+              dotnet_naming_rule.fields.severity = warning
+              dotnet_naming_symbols.fields.applicable_kinds = field
+              dotnet_naming_symbols.fields.applicable_accessibilities = private
+              dotnet_naming_style.camel.capitalization = camel_case
+              """
+        );
+        var conflict = scratch.Write(
+            "AConflict.cs",
+            """
+            using System.Collections.Generic;
+
+            namespace Scratch;
+
+            public sealed class Conflict {
+                readonly Dictionary<string, int> _ranges = new();
+
+                public bool Contains(string key) {
+                    if (!_ranges.TryGetValue(key, out var ranges)) {
+                        return false;
+                    }
+
+                    return ranges > 0;
+                }
+            }
+            """
+        );
+        var safe = scratch.Write("Zsafe_name.cs", "namespace Scratch;\n\npublic sealed class safe_name;\n");
+        var project = scratch.Write("Scratch.csproj", Project);
+        var conflictBefore = File.ReadAllText(conflict);
+        var safeBefore = File.ReadAllText(safe);
+
+        var result = FixCommand.Run(
+            new FixRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                SafeOnly = false,
+                Include = [Hosting.RoslynCodeStyle.NamingDiagnosticId],
+                DryRun = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.Ok, result.ExitCode);
+        Assert.Contains("skipped 1 IDE1006 rename", result.Output, StringComparison.Ordinal);
+        Assert.Contains("'_ranges'", result.Output, StringComparison.Ordinal);
+        Assert.Contains("CS0844", result.Output, StringComparison.Ordinal);
+        Assert.Contains("applied 1 fix (dry run, nothing written)", result.Output, StringComparison.Ordinal);
+        Assert.Equal(conflictBefore, File.ReadAllText(conflict));
+        Assert.Equal(safeBefore, File.ReadAllText(safe));
+    }
+
+    [Fact]
     public void Fix_IDE1006RefusesAnAtomicRenameThatTouchesFormatterOff() {
         using var scratch = new Scratch();
         scratch.Write(".editorconfig", NamingConfig);
