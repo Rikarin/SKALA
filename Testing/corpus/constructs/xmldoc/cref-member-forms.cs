@@ -61,3 +61,25 @@ class CrefMemberForms {
     /// <inheritdoc cref="object.GetHashCode" />
     public override int GetHashCode() => base.GetHashCode();
 }
+
+/// <summary>
+///     ExtensionMemberCref — C# 14's <c>cref="T.extension(receiver).Member"</c>. ⚠ Kept in this
+///     fixture rather than assumed unreachable: the doc-comment profile was measured to indent and
+///     whitespace-normalise <see cref="Extensions.extension(string).IsBlank" /> exactly as it does an
+///     ordinary <see cref="Extensions.Ordinary(int)" />, so the sub-formatter really does walk it.
+/// </summary>
+/// <seealso cref="Extensions.extension(string).Repeated(int)" />
+/// <seealso cref="Extensions.extension(System.Collections.Generic.IReadOnlyList{string}).Largest" />
+static class Extensions {
+    extension(string subject) {
+        public bool IsBlank => subject.Length == 0;
+
+        public string Repeated(int times) => string.Concat(System.Linq.Enumerable.Repeat(subject, times));
+    }
+
+    extension(IReadOnlyList<string> subjects) {
+        public string Largest => subjects.Count == 0 ? string.Empty : subjects[^1];
+    }
+
+    public static int Ordinary(int value) => value;
+}
