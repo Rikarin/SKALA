@@ -202,7 +202,7 @@ public static class OutputSurface {
         string destination
     ) {
         if (Directory.Exists(destination)) {
-            Directory.Delete(destination, recursive: true);
+            Directory.Delete(destination, true);
         }
 
         Directory.CreateDirectory(destination);
@@ -230,7 +230,7 @@ public static class OutputSurface {
         File.Copy(
             Path.Combine(corpusRoot, relative.Replace('/', Path.DirectorySeparatorChar)),
             target,
-            overwrite: true
+            true
         );
     }
 

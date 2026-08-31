@@ -102,7 +102,7 @@ public static class SuppressionAuditor {
         CancellationToken cancellation = default
     ) {
         var entries = ImmutableArray.CreateBuilder<SuppressionEntry>();
-        foreach (var (path, line) in Grep(repositoryRoot, reference: null, cancellation)) {
+        foreach (var (path, line) in Grep(repositoryRoot, null, cancellation)) {
             ScanSource(entries, path, line);
         }
 

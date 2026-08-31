@@ -131,7 +131,7 @@ public static partial class ExitCodeSurface {
         File.WriteAllText(clean, Clean);
         File.WriteAllText(dirty, Dirty);
 
-        return new Dictionary<string, int>(StringComparer.Ordinal) {
+        return new(StringComparer.Ordinal) {
             ["format --check (already formatted)"] = tool.Run(workRoot, "format", "--check", clean).ExitCode,
             ["format --check (needs formatting)"] = tool.Run(workRoot, "format", "--check", dirty).ExitCode,
             ["format --diff (needs formatting)"] = tool.Run(workRoot, "format", "--diff", dirty).ExitCode,

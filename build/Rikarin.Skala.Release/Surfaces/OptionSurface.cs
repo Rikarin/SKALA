@@ -143,7 +143,7 @@ public static class OptionSurface {
 
         foreach (var option in document.RootElement.GetProperty("options").EnumerateArray()) {
             var key = option.GetProperty("key").GetString()!;
-            options[key] = new OptionRecord(
+            options[key] = new(
                 key,
                 option.TryGetProperty("tier", out var tier) ? tier.GetString() ?? "" : "",
                 option.TryGetProperty("default", out var value) ? Text(value) : "",

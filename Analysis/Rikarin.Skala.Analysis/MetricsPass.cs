@@ -65,7 +65,7 @@ public static class MetricsPass {
                         case PropertyDeclarationSyntax:
                         case AccessorDeclarationSyntax:
                         case LocalFunctionStatementSyntax: {
-                            var values = MemberMetrics.Compute(node, model: null, cancellation);
+                            var values = MemberMetrics.Compute(node, null, cancellation);
                             cognitive.Add(values.Cognitive);
                             cyclomatic.Add(values.Cyclomatic);
                             statements.Add(values.Statements);

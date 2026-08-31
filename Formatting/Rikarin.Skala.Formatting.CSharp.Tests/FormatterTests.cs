@@ -624,7 +624,7 @@ public sealed class SafetyTests {
                 StringComparison.Ordinal
             );
         } finally {
-            directory.Delete(recursive: true);
+            directory.Delete(true);
         }
     }
 }

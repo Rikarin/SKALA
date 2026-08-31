@@ -375,7 +375,7 @@ public static class FrozenFreeze {
         TextWriter log
     ) {
         if (Directory.Exists(FrozenCorpus.Root)) {
-            Directory.Delete(FrozenCorpus.Root, recursive: true);
+            Directory.Delete(FrozenCorpus.Root, true);
         }
 
         var outputs = new List<FrozenOutput>(targets.Length);

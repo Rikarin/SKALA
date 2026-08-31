@@ -129,7 +129,7 @@ public static class RuleSurface {
 
         foreach (var rule in document.RootElement.GetProperty("rules").EnumerateArray()) {
             var id = rule.GetProperty("id").GetString()!;
-            rules[id] = new RuleRecord(
+            rules[id] = new(
                 id,
                 rule.TryGetProperty("concept", out var concept) ? concept.GetString() ?? "" : "",
                 rule.TryGetProperty("defaultSeverity", out var severity) ? severity.GetString() ?? "" : "",

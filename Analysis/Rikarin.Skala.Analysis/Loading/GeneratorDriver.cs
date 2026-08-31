@@ -90,13 +90,13 @@ public static class GeneratorDriver {
             // code is entirely right to use.
             var driver = CSharpGeneratorDriver.Create(
                 generators.ToImmutable(),
-                additionalTexts: [
+                [
                     .. additionalFiles
                         .Where(File.Exists)
                         .Select(static path => (AdditionalText)new FileText(path))
                 ],
-                parseOptions: parseOptions,
-                optionsProvider: configOptions
+                parseOptions,
+                configOptions
             );
 
             driver.RunGeneratorsAndUpdateCompilation(

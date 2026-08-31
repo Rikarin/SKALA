@@ -390,7 +390,7 @@ public sealed class KeyFlipSweep {
                          partition.Key,
                          BatchSize
                      )) {
-                var produced = FormatWithOracle(batch, round: null);
+                var produced = FormatWithOracle(batch, null);
                 invocations++;
 
                 for (var i = 0; i < batch.Count; i++) {

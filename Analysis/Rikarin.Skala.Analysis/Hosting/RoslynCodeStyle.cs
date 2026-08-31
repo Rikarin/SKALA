@@ -75,7 +75,7 @@ public static class RoslynCodeStyle {
                     continue;
                 }
 
-                if (Activator.CreateInstance(type, nonPublic: true) is CodeFixProvider candidate
+                if (Activator.CreateInstance(type, true) is CodeFixProvider candidate
                     && candidate.FixableDiagnosticIds.Contains(NamingDiagnosticId, StringComparer.Ordinal)) {
                     namingFixer = candidate;
                     break;

@@ -101,7 +101,7 @@ public static class PreprocessorFidelity {
             return symbols;
         } finally {
             try {
-                scratch.Delete(recursive: true);
+                scratch.Delete(true);
             } catch (IOException) { }
         }
     }

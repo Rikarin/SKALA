@@ -1,6 +1,5 @@
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
-using System.Collections.Immutable;
 using System.Text.Json;
 
 namespace Rikarin.Skala.Reporting.Tests;

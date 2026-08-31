@@ -104,13 +104,13 @@ public static class CorpusSample {
         }
 
         if (Directory.Exists(destination)) {
-            Directory.Delete(destination, recursive: true);
+            Directory.Delete(destination, true);
         }
 
         foreach (var file in taken) {
             var target = Path.Combine(destination, file.RelativePath.Replace('/', Path.DirectorySeparatorChar));
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(file.FullPath, target, overwrite: true);
+            File.Copy(file.FullPath, target, true);
         }
 
         var areas = taken.GroupBy(static file => file.RelativePath.Split('/')[0], StringComparer.Ordinal)

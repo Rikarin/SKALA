@@ -22,7 +22,7 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 public sealed class FileCollectionTests : IDisposable {
     readonly string root = Directory.CreateTempSubdirectory("skala-collect-").FullName;
 
-    public void Dispose() => Directory.Delete(root, recursive: true);
+    public void Dispose() => Directory.Delete(root, true);
 
     string Write(string relative, string content) {
         var path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));

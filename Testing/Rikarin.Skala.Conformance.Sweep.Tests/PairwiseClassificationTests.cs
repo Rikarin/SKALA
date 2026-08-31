@@ -58,10 +58,10 @@ public sealed class PairwiseClassificationTests {
         Assert.Equal(
             PairOutcome.BaselineDivergent,
             PairSweep.Classify(
-                oracleDistinct: 2,
-                skalaDistinct: 2,
-                corners: [Corner("true", "true", false, true)],
-                baselineAgrees: false
+                2,
+                2,
+                [Corner("true", "true", false, true)],
+                false
             )
         );
 
@@ -70,13 +70,13 @@ public sealed class PairwiseClassificationTests {
         Assert.Equal(
             PairOutcome.Conformant,
             PairSweep.Classify(
-                oracleDistinct: 2,
-                skalaDistinct: 2,
-                corners: [
+                2,
+                2,
+                [
                     Corner("true", "true", true, true),
                     Corner("false", "false", true, false)
                 ],
-                baselineAgrees: true
+                true
             )
         );
 
@@ -86,15 +86,15 @@ public sealed class PairwiseClassificationTests {
         Assert.Equal(
             PairOutcome.InteractionOnly,
             PairSweep.Classify(
-                oracleDistinct: 2,
-                skalaDistinct: 2,
-                corners: [
+                2,
+                2,
+                [
                     Corner("true", "true", true, true),
                     Corner("false", "true", true, true),
                     Corner("true", "false", false, false),
                     Corner("false", "false", true, false)
                 ],
-                baselineAgrees: true
+                true
             )
         );
 
@@ -112,13 +112,13 @@ public sealed class PairwiseClassificationTests {
         Assert.Equal(
             PairOutcome.Divergent,
             PairSweep.Classify(
-                oracleDistinct: 2,
-                skalaDistinct: 2,
-                corners: [
+                2,
+                2,
+                [
                     Corner("true", "true", false, true),
                     Corner("false", "false", false, false)
                 ],
-                baselineAgrees: true
+                true
             )
         );
 
@@ -133,15 +133,15 @@ public sealed class PairwiseClassificationTests {
     [Fact]
     public void NeitherEngineMoved_IsUnexercised_AndNeverConformant() {
         var outcome = PairSweep.Classify(
-            oracleDistinct: 1,
-            skalaDistinct: 1,
-            corners: [
+            1,
+            1,
+            [
                 Corner("true", "true", true, true),
                 Corner("false", "true", true, true),
                 Corner("true", "false", true, false),
                 Corner("false", "false", true, false)
             ],
-            baselineAgrees: true
+            true
         );
 
         Assert.Equal(PairOutcome.Unexercised, outcome);
@@ -181,14 +181,14 @@ public sealed class PairwiseClassificationTests {
         Assert.Equal(
             PairOutcome.Inherited,
             PairSweep.Classify(
-                oracleDistinct: 2,
-                skalaDistinct: 2,
-                corners: [
+                2,
+                2,
+                [
                     Corner("true", "120", true, true),
                     Corner("true", "1", false, false, true),
                     Corner("false", "1", false, false, true)
                 ],
-                baselineAgrees: true
+                true
             )
         );
 
@@ -206,14 +206,14 @@ public sealed class PairwiseClassificationTests {
         Assert.Equal(
             PairOutcome.InteractionOnly,
             PairSweep.Classify(
-                oracleDistinct: 2,
-                skalaDistinct: 2,
-                corners: [
+                2,
+                2,
+                [
                     Corner("true", "120", true, true),
                     Corner("true", "1", false, false, true),
                     Corner("false", "1", false, false)
                 ],
-                baselineAgrees: true
+                true
             )
         );
 

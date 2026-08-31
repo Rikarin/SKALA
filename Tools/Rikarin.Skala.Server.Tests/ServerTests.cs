@@ -25,7 +25,7 @@ public sealed class Scratch : IDisposable {
 
     public void Dispose() {
         try {
-            Directory.Delete(Root, recursive: true);
+            Directory.Delete(Root, true);
         } catch (IOException) {
             // A handle the runtime still holds is not worth failing a test over.
         }

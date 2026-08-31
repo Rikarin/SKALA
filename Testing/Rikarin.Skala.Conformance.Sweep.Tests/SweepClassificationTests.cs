@@ -149,10 +149,10 @@ public sealed class SweepClassificationTests {
             "constructs/sample.cs",
             outcome,
             [new SweepValue("true", "a", "a", true), new SweepValue("false", "b", "b", true)],
-            OracleDistinct: 2,
-            SkalaDistinct: 2,
-            BaselineAgrees: true,
-            LineEndingOnly: false,
-            Cost: TimeSpan.Zero
+            2,
+            2,
+            true,
+            false,
+            TimeSpan.Zero
         );
 }

@@ -40,7 +40,7 @@ public sealed class FormatCommandTests : IDisposable {
             }
         }
 
-        Directory.Delete(directory, recursive: true);
+        Directory.Delete(directory, true);
     }
 
     string Write(string name, string content) {

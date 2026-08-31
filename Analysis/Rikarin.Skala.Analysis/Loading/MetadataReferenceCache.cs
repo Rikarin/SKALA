@@ -31,7 +31,7 @@ public static class MetadataReferenceCache {
     public static MetadataReference? Get(string path, IReadOnlyList<string>? aliases = null) {
         FileInfo info;
         try {
-            info = new FileInfo(path);
+            info = new(path);
             if (!info.Exists) {
                 return null;
             }

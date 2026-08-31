@@ -280,10 +280,10 @@ public static class NamingFixCommand {
                 analyzers,
                 new CompilationWithAnalyzersOptions(
                     project.AnalyzerOptions,
-                    onAnalyzerException: null,
-                    concurrentAnalysis: true,
-                    logAnalyzerExecutionTime: false,
-                    reportSuppressedDiagnostics: false
+                    null,
+                    true,
+                    false,
+                    false
                 )
             )
                 .GetAnalyzerDiagnosticsAsync(cancellation)

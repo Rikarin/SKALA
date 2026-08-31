@@ -314,7 +314,7 @@ public static class AnalyzerHost {
 
             var model = unit.Compilation.GetSemanticModel(tree);
             var semantic = withAnalyzers
-                .GetAnalysisResultAsync(model, filterSpan: null, cancellation)
+                .GetAnalysisResultAsync(model, null, cancellation)
                 .GetAwaiter()
                 .GetResult();
             builder.AddRange(semantic.GetAllDiagnostics());

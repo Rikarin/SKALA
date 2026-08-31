@@ -25,7 +25,7 @@ public sealed class NewCodeTests : IDisposable {
 
     public void Dispose() {
         try {
-            Directory.Delete(root, recursive: true);
+            Directory.Delete(root, true);
         } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
@@ -233,7 +233,7 @@ public sealed class NewCodeTests : IDisposable {
         var audit = SuppressionAuditor.Compare(
             root,
             "HEAD",
-            baselinePath: null,
+            null,
             TestContext.Current.CancellationToken
         );
 
@@ -280,7 +280,7 @@ public sealed class NewCodeTests : IDisposable {
         var audit = SuppressionAuditor.Compare(
             root,
             "HEAD",
-            baselinePath: null,
+            null,
             TestContext.Current.CancellationToken
         );
 
@@ -304,7 +304,7 @@ public sealed class NewCodeTests : IDisposable {
         var audit = SuppressionAuditor.Compare(
             root,
             "HEAD",
-            baselinePath: null,
+            null,
             TestContext.Current.CancellationToken
         );
         Assert.DoesNotContain(audit.Added, static e => e.Source == SuppressionSource.EditorConfig);
@@ -328,7 +328,7 @@ public sealed class NewCodeTests : IDisposable {
         var audit = SuppressionAuditor.Compare(
             root,
             "HEAD",
-            baselinePath: null,
+            null,
             TestContext.Current.CancellationToken
         );
         Assert.Contains(audit.Added, static e => e is { Source: SuppressionSource.EditorConfig, RuleId: "SK3002" });

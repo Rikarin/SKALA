@@ -33,7 +33,7 @@ public static class SarifWriter {
         var driver = new ToolComponent {
             Name = "Skala",
             Version = report.ToolVersion,
-            InformationUri = new Uri("https://github.com/Rikarin/Skala"),
+            InformationUri = new("https://github.com/Rikarin/Skala"),
             Rules = Rules(report)
         };
 
@@ -170,7 +170,7 @@ public static class SarifWriter {
                 ShortDescription = new() { Text = rule.Title },
                 FullDescription = new() { Text = rule.Rationale },
                 Help = new() { Text = rule.Summary },
-                HelpUri = new Uri("https://github.com/Rikarin/Skala/blob/main/docs/rules/" + rule.Id + ".md"),
+                HelpUri = new("https://github.com/Rikarin/Skala/blob/main/docs/rules/" + rule.Id + ".md"),
 
                 // ⚠ Level *and* enablement. `RuleSeverity.None` means the rule never runs, which is
                 // `enabled: false` in SARIF and not a level at all — see `SarifSeverity`.
@@ -214,7 +214,7 @@ public static class SarifWriter {
             Locations = [
                 new Location {
                     PhysicalLocation = new() {
-                        ArtifactLocation = new() { Uri = new Uri(uri, UriKind.Relative) },
+                        ArtifactLocation = new() { Uri = new(uri, UriKind.Relative) },
                         Region = new() {
                             StartLine = Math.Max(1, finding.Line),
                             StartColumn = Math.Max(1, finding.Column),
@@ -264,7 +264,7 @@ public static class SarifWriter {
                             .GroupBy(static edit => edit.Path, StringComparer.Ordinal)
                             .Select(group => new ArtifactChange {
                                     ArtifactLocation = new() {
-                                        Uri = new Uri(Relative(report.RepositoryRoot, group.Key), UriKind.Relative)
+                                        Uri = new(Relative(report.RepositoryRoot, group.Key), UriKind.Relative)
                                     },
                                     Replacements = [
                                         .. group.Select(static edit => new Replacement {

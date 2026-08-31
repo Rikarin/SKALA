@@ -294,7 +294,7 @@ public static class FuzzMutations {
         }
 
         var edits = new List<(int Position, int Delete, string Insert)>();
-        foreach (var line in Sample(boundaries, random, maximum: 3)) {
+        foreach (var line in Sample(boundaries, random, 3)) {
             var span = map.Text.Lines[line];
             var content = span.ToString();
             var indent = 0;
@@ -313,7 +313,7 @@ public static class FuzzMutations {
             return null;
         }
 
-        var edits = Sample(map.Gaps, random, maximum: 4)
+        var edits = Sample(map.Gaps, random, 4)
             .Select(gap => (gap.Start, 0, " " + text + " "))
             .ToList();
 
@@ -447,7 +447,7 @@ public static class FuzzMutations {
             return null;
         }
 
-        var edits = Sample(map.Gaps, random, maximum: 3)
+        var edits = Sample(map.Gaps, random, 3)
             .Select(gap => (gap.Start, gap.End - gap.Start, "\n"))
             .ToList();
 

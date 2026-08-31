@@ -366,7 +366,7 @@ public static class AgentRenderer {
                 .Append(fixable.Count.ToString(CultureInfo.InvariantCulture))
                 .Append(fixable.Count == 1 ? " finding has" : " findings have")
                 .Line(" safe automatic fixes — run: skala fix --safe");
-            budget -= Emit(builder, report, fixable, budget, indent: "  ");
+            budget -= Emit(builder, report, fixable, budget, "  ");
             builder.Line();
         }
 
@@ -375,7 +375,7 @@ public static class AgentRenderer {
                 .Append(action.Count.ToString(CultureInfo.InvariantCulture))
                 .Append(action.Count == 1 ? " finding needs" : " findings need")
                 .Line(" a decision");
-            Emit(builder, report, action, budget, indent: "  ");
+            Emit(builder, report, action, budget, "  ");
             builder.Line();
         }
 

@@ -441,8 +441,8 @@ public sealed class BreakPlan {
                     collection.Elements.GetSeparators(),
                     options.KeepExistingListPatternsArrangement,
                     options.WrapListPattern,
-                    wrapAfterOpen: true,
-                    wrapBeforeClose: true,
+                    true,
+                    true,
                     placeOnSingleLine: options.PlaceSimpleListPatternOnSingleLine,
                     keepOutranksChopAlways: true
                 );
@@ -457,8 +457,8 @@ public sealed class BreakPlan {
                     listPattern.Patterns.GetSeparators(),
                     options.KeepExistingListPatternsArrangement,
                     options.WrapListPattern,
-                    wrapAfterOpen: true,
-                    wrapBeforeClose: true,
+                    true,
+                    true,
                     placeOnSingleLine: options.PlaceSimpleListPatternOnSingleLine,
                     keepOutranksChopAlways: true
                 );
@@ -481,8 +481,8 @@ public sealed class BreakPlan {
                     // chop_always` — rewrites it. The C# formatter does not read them; a wrapped
                     // braced construct always puts its braces on their own lines, which is what
                     // these two constants say. See PhaseOneOptions.Ids.
-                    wrapAfterOpen: true,
-                    wrapBeforeClose: true,
+                    true,
+                    true,
                     placeOnSingleLine: options.PlaceSimplePropertyPatternOnSingleLine
                 );
                 return;
@@ -1036,7 +1036,7 @@ public sealed class BreakPlan {
             node.CloseBraceToken,
             node.Initializers,
             node.Initializers.GetSeparators(),
-            array: false
+            false
         );
 
     /// <summary>
@@ -1383,8 +1383,8 @@ public sealed class BreakPlan {
             node.Arguments.GetSeparators(),
             true,
             WrapStyle.WrapIfLong,
-            wrapAfterOpen: false,
-            wrapBeforeClose: false
+            false,
+            false
         );
 
     /// <summary>
@@ -1612,7 +1612,7 @@ public sealed class BreakPlan {
         // key would stop being observable on exactly the shape its fixture pins.
         var indents = options.IndentTypeConstraints;
         var firstBroken = options.KeepsUserBreaksBetweenItems && BreaksBefore(firstWhere);
-        constraints[Key(node)] = new ConstraintRun(
+        constraints[Key(node)] = new(
             new GroupPlan(
                 outer,
                 style == WrapStyle.ChopAlways && wrapsBeforeFirst ? GroupMode.Break : GroupMode.Preserve,
@@ -2858,7 +2858,7 @@ public sealed class BreakPlan {
                 // from the oracle as `Corpus => [` when the bracket has to chop, and
                 // `Vector4[] Planes(…) =>\n    [a, b, c];` keeps the arrow's break when it does not.
                 // Leaving both to the ordering rule is what produces the pair.
-                SourceBroken: BreaksBefore(target) && node.Expression is not CollectionExpressionSyntax,
+                BreaksBefore(target) && node.Expression is not CollectionExpressionSyntax,
                 PrefersOuterBreak: node.Expression is CollectionExpressionSyntax,
                 BreaksWithOwner: ownerGroup >= 0,
                 Owner: ownerGroup,
@@ -3363,7 +3363,7 @@ public sealed class BreakPlan {
     }
 
     void DescribeInner(SyntaxNode node, int group, GroupMode mode, in GroupFacts facts) =>
-        inner[Key(node)] = new GroupPlan(group, mode, facts);
+        inner[Key(node)] = new(group, mode, facts);
 
     void Point(SyntaxToken token, int group, bool fill = false) {
         if (token.IsKind(SyntaxKind.None)) {
@@ -3375,7 +3375,7 @@ public sealed class BreakPlan {
             return;
         }
 
-        gaps[token.SpanStart] = new GapSpec(fill ? GapRule.FillPoint : GapRule.Point, group);
+        gaps[token.SpanStart] = new(fill ? GapRule.FillPoint : GapRule.Point, group);
     }
 
     /// <summary>A point the source broke stays broken; one it did not stays flat.</summary>
@@ -3389,13 +3389,13 @@ public sealed class BreakPlan {
 
     void Flat(SyntaxToken token) {
         if (!token.IsKind(SyntaxKind.None) && !gaps.ContainsKey(token.SpanStart)) {
-            gaps[token.SpanStart] = new GapSpec(GapRule.Flat, -1);
+            gaps[token.SpanStart] = new(GapRule.Flat, -1);
         }
     }
 
     void Mandatory(SyntaxToken token) {
         if (!token.IsKind(SyntaxKind.None)) {
-            gaps[token.SpanStart] = new GapSpec(GapRule.Mandatory, -1);
+            gaps[token.SpanStart] = new(GapRule.Mandatory, -1);
         }
     }
 

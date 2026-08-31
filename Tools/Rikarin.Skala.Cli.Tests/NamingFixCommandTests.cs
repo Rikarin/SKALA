@@ -67,7 +67,7 @@ public sealed class NamingFixCommandTests {
 
         public void Dispose() {
             try {
-                Directory.Delete(Root, recursive: true);
+                Directory.Delete(Root, true);
             } catch (IOException) {
                 // A leftover temp directory is not worth failing a test over.
             }

@@ -57,7 +57,7 @@ public static class XmlDocFidelity {
             var options = OptionResolver.Resolve(file.Path).Options;
             var expected = OracleFixture.Read(file);
 
-            var without = CSharpFormatter.Format(file.Path, text, options, null, null, xmlDoc: false).Formatted;
+            var without = CSharpFormatter.Format(file.Path, text, options, null, null, false).Formatted;
             var with = CSharpFormatter.Format(file.Path, text, options).Formatted;
 
             plain.Add((file.ToString(), expected, without));

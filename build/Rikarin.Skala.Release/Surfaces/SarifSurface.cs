@@ -76,7 +76,7 @@ public static class SarifSurface {
 
     static SortedSet<string> Shape(SkalaTool tool, string workRoot) {
         if (Directory.Exists(workRoot)) {
-            Directory.Delete(workRoot, recursive: true);
+            Directory.Delete(workRoot, true);
         }
 
         Directory.CreateDirectory(workRoot);

@@ -590,7 +590,7 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     bool GroupBreaks(int group) {
         if (groupPlans is null) {
-            groupPlans = new Dictionary<int, GroupPlan>();
+            groupPlans = new();
             foreach (var plan in plan.Groups) {
                 groupPlans[plan.Id] = plan;
             }

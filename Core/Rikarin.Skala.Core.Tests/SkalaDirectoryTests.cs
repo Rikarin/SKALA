@@ -21,7 +21,7 @@ public sealed class SkalaDirectoryTests : IDisposable {
 
     public void Dispose() {
         try {
-            Directory.Delete(root, recursive: true);
+            Directory.Delete(root, true);
         } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 

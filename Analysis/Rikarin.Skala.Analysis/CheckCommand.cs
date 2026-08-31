@@ -225,7 +225,7 @@ public static class CheckCommand {
                 loaded.Mode,
                 root,
                 fingerprint,
-                useCache: !request.NoCache,
+                !request.NoCache,
                 cancellation,
                 request.Profile
             );
@@ -286,7 +286,7 @@ public static class CheckCommand {
                 Paths(loaded, request),
                 root,
                 Duplication.CloneDetector.DefaultMinTokens,
-                useCache: !request.NoCache,
+                !request.NoCache,
                 cancellation
             );
 

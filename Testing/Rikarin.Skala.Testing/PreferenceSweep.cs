@@ -1221,7 +1221,7 @@ public static class PreferenceSweep {
                     if (outcome is not (Outcome.Skipped or Outcome.Other)) {
                         var slot = construct.Id + ":" + outcome;
                         if (!exemplars.ContainsKey(slot)) {
-                            exemplars[slot] = new Exemplar(
+                            exemplars[slot] = new(
                                 construct.Id,
                                 probe.Filler,
                                 probe.Total,
@@ -1298,7 +1298,7 @@ public static class PreferenceSweep {
             );
         } finally {
             try {
-                scratch.Delete(recursive: true);
+                scratch.Delete(true);
             } catch (IOException) { }
         }
     }

@@ -112,7 +112,7 @@ public static class UnformatCorpus {
         foreach (var mode in Unformat.Modes) {
             var root = ModeRoot(mode);
             if (Directory.Exists(root)) {
-                Directory.Delete(root, recursive: true);
+                Directory.Delete(root, true);
             }
 
             var written = 0;

@@ -112,7 +112,7 @@ public sealed class TemporaryTree : IDisposable {
 
     public void Dispose() {
         if (Directory.Exists(Root)) {
-            Directory.Delete(Root, recursive: true);
+            Directory.Delete(Root, true);
         }
     }
 }

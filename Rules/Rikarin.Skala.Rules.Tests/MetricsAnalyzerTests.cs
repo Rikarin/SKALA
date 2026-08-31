@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Maintainability;
 using Rikarin.Skala.Rules.Metadata;
@@ -183,7 +182,7 @@ public sealed class MetricsAnalyzerTests {
             // ⚠ Roslyn's own `.editorconfig` reader lower-cases keys and compares them case
             // insensitively. A test that used an ordinal comparer would pass on a lookup the real
             // provider would answer differently.
-            this.values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            this.values = new(StringComparer.OrdinalIgnoreCase);
             foreach (var (key, value) in values) {
                 this.values[key] = value;
             }

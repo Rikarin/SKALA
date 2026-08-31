@@ -139,7 +139,7 @@ public static class ArrangementFixedPoint {
             return movedSecond == 0 && notConverged.Count == 0 ? 0 : 1;
         } finally {
             try {
-                scratch.Delete(recursive: true);
+                scratch.Delete(true);
             } catch (IOException) {
                 // A scratch directory the tool still holds open is not worth failing over.
             }

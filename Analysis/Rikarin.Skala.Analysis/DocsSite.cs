@@ -724,7 +724,7 @@ public static class DocsSite {
                         }
 
                         if (!readers.TryGetValue(key, out var set)) {
-                            set = new SortedSet<string>(StringComparer.Ordinal);
+                            set = new(StringComparer.Ordinal);
                             readers[key] = set;
                         }
 

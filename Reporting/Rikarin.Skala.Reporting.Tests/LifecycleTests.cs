@@ -571,7 +571,7 @@ public sealed class LifecycleTests {
             Assert.Equal("def5678", entries[1].Sha);
             Assert.Contains("findings", History.Render(entries, 20), StringComparison.Ordinal);
         } finally {
-            Directory.Delete(directory, recursive: true);
+            Directory.Delete(directory, true);
         }
     }
 

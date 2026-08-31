@@ -24,7 +24,7 @@ public sealed class CrossPlatformScratch : IDisposable {
 
     public void Dispose() {
         try {
-            Directory.Delete(Root, recursive: true);
+            Directory.Delete(Root, true);
         } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             // ⚠ A long-path tree is exactly the thing Windows cannot always delete, and a test that
             // fails in teardown reports the wrong defect.

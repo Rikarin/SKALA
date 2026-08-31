@@ -123,7 +123,7 @@ public static class SyntaxCoverage {
                 occurrences[kind] = occurrences.GetValueOrDefault(kind) + count;
                 files[kind] = files.GetValueOrDefault(kind) + 1;
                 if (!inSets.TryGetValue(kind, out var owners)) {
-                    inSets[kind] = owners = new SortedSet<string>(StringComparer.Ordinal);
+                    inSets[kind] = owners = new(StringComparer.Ordinal);
                 }
 
                 owners.Add(file.Set);
@@ -166,7 +166,7 @@ public static class SyntaxCoverage {
         foreach (var name in ProbeNames) {
             counts[name] = 0;
             files[name] = 0;
-            inSets[name] = new SortedSet<string>(StringComparer.Ordinal);
+            inSets[name] = new(StringComparer.Ordinal);
         }
 
         foreach (var file in (sets ?? [Corpus.Constructs, Corpus.Real, Corpus.Pathological]).SelectMany(Corpus.Files)) {

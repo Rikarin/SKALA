@@ -272,7 +272,7 @@ public sealed class FuzzerTests {
                 var subject = Fuzzer.Build(FuzzRandom.Derive(31, index), FuzzMode.Both, corpus);
                 var (violations, _) = Fuzzer.Execute(
                     subject,
-                    arrangement: false,
+                    false,
                     saboteur,
                     TestContext.Current.CancellationToken
                 );

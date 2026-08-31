@@ -227,7 +227,7 @@ public static class MarginSweep {
             return cells;
         } finally {
             try {
-                scratch.Delete(recursive: true);
+                scratch.Delete(true);
             } catch (IOException) { }
         }
     }

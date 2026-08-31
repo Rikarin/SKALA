@@ -135,7 +135,7 @@ public sealed class OracleRunner {
             return results;
         } finally {
             try {
-                scratch.Delete(recursive: true);
+                scratch.Delete(true);
             } catch (IOException) {
                 // A scratch directory the tool still holds open is not worth failing a build over.
             }
@@ -195,7 +195,7 @@ public sealed class OracleRunner {
             return results;
         } finally {
             try {
-                scratch.Delete(recursive: true);
+                scratch.Delete(true);
             } catch (IOException) {
                 // A scratch directory the tool still holds open is not worth failing a build over.
             }

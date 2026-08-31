@@ -196,7 +196,7 @@ public static class BinlogLoader {
 
         CSharpCommandLineArguments parsed;
         try {
-            parsed = CSharpCommandLineParser.Default.Parse(arguments, baseDirectory, sdkDirectory: null);
+            parsed = CSharpCommandLineParser.Default.Parse(arguments, baseDirectory, null);
         } catch (ArgumentException exception) {
             diagnostics.Add(
                 new SkalaDiagnostic(
@@ -226,7 +226,7 @@ public static class BinlogLoader {
                 continue;
             }
 
-            trees.Add(CSharpSyntaxTree.ParseText(text, parseOptions, full, cancellationToken: cancellation));
+            trees.Add(CSharpSyntaxTree.ParseText(text, parseOptions, full, cancellation));
 
             // ⚠ Generated sources are analysed and never reported on: a diagnostic the user cannot
             // fix is noise (docs/plan/07 § binlog, "Generated sources").

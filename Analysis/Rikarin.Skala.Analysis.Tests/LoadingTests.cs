@@ -20,7 +20,7 @@ public sealed class Scratch : IDisposable {
 
     public void Dispose() {
         try {
-            Directory.Delete(Root, recursive: true);
+            Directory.Delete(Root, true);
         } catch (IOException) { }
     }
 }

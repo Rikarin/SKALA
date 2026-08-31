@@ -240,16 +240,16 @@ public sealed class ArrangementRoutingTests {
         Assert.True(arrangement > 1, "there are no arrangement options, so this test asserted nothing.");
 
         // The oracle errored on the whole cleanup partition, while the whitespace partition was fine.
-        Assert.True(KeyFlipSweep.IsBrokenMeasurement(arrangement, observed: 0));
+        Assert.True(KeyFlipSweep.IsBrokenMeasurement(arrangement, 0));
 
         // The oracle answered every arrangement option with the file it was given: the configurations
         // are reaching it and not varying, which is what a wrong profile looks like from outside.
-        Assert.True(KeyFlipSweep.IsUnvaryingRound(arrangement, moved: 0));
+        Assert.True(KeyFlipSweep.IsUnvaryingRound(arrangement, 0));
 
         // ⚠ And the pooled counts a round-wide canary would have been handed instead. Both are silent,
         // which is the reading this per-profile split exists to prevent.
         var round = SweepPlan.Build([]).Candidates.Count;
-        Assert.False(KeyFlipSweep.IsBrokenMeasurement(round, observed: round - arrangement));
-        Assert.False(KeyFlipSweep.IsUnvaryingRound(round, moved: round - arrangement));
+        Assert.False(KeyFlipSweep.IsBrokenMeasurement(round, round - arrangement));
+        Assert.False(KeyFlipSweep.IsUnvaryingRound(round, round - arrangement));
     }
 }

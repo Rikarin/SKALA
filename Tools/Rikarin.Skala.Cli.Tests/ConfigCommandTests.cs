@@ -286,7 +286,7 @@ public sealed class ConfigCommandTests {
             // for as long as the key was typed `int`.
             Assert.DoesNotContain("indent_size = tab' is not", run.StandardOutput, StringComparison.Ordinal);
         } finally {
-            Directory.Delete(directory, recursive: true);
+            Directory.Delete(directory, true);
         }
     }
 
@@ -315,7 +315,7 @@ public sealed class ConfigCommandTests {
             Assert.Contains(".editorconfig:3", row, StringComparison.Ordinal);
             Assert.Contains("not what the file says", run.StandardOutput, StringComparison.Ordinal);
         } finally {
-            Directory.Delete(directory, recursive: true);
+            Directory.Delete(directory, true);
         }
     }
 

@@ -305,7 +305,7 @@ public sealed class DiagnosticCache {
     ///     written by a build with the rule enabled cannot serve it back to one without.
     /// </remarks>
     public void Put(string key, string path, ImmutableArray<Finding> findings) {
-        entries[key] = new CacheEntry {
+        entries[key] = new() {
             Key = key,
             Path = path,
             Findings = [
@@ -322,7 +322,7 @@ public sealed class DiagnosticCache {
         var directory = Path.Combine(repositoryRoot, ".skala", "cache");
         try {
             if (Directory.Exists(directory)) {
-                Directory.Delete(directory, recursive: true);
+                Directory.Delete(directory, true);
             }
         } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }

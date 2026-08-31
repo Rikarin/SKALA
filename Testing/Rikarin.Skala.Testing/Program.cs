@@ -977,7 +977,7 @@ static int RegenerateCleanup(
             );
 
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(file.Path, target, overwrite: true);
+            File.Copy(file.Path, target, true);
             produced[target] = file;
         }
 
@@ -994,7 +994,7 @@ static int RegenerateCleanup(
         return written;
     } finally {
         try {
-            scratch.Delete(recursive: true);
+            scratch.Delete(true);
         } catch (IOException) {
             // A scratch directory the tool still holds open is not worth failing a build over.
         }

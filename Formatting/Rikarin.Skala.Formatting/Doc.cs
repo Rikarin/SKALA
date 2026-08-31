@@ -413,7 +413,7 @@ public sealed class Document {
 
     public ReadOnlySpan<int> ChildrenOf(int node) {
         ref var slot = ref Nodes[node];
-        return new ReadOnlySpan<int>(Children, slot.Payload, slot.Count);
+        return new(Children, slot.Payload, slot.Count);
     }
 
     public string TextOf(int node) => Strings[Nodes[node].Payload];
