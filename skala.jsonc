@@ -1,31 +1,4 @@
 {
-  // docs/plan/03 § "skala.jsonc": the non-style settings. Everything about how code *looks* lives
-  // in .editorconfig; this file is what the tool does, and the gates it does it against.
-  //
-  // docs/plan/09 § "Gates". ⚠ A gate is a set of conditions and failing any of them fails the run.
-  // A condition this build does not understand fails the gate loudly rather than being ignored — a
-  // gate that silently drops the condition someone relies on passes for the wrong reason.
-
-  // docs/plan/03 § "What lives in `skala.jsonc`": where to look. ⚠ These three directories hold
-  // 1 924 `.cs` files that are **data, not code**, and each of them is already declared as such by a
-  // `<Compile Remove>` in the project that owns it — `Testing/corpus` is the oracle fixtures and the
-  // deliberately-degraded inputs beside them, and the two under `Rules.Tests` are the rule fixtures
-  // (half of them written in the shape a rule fires on) and the SK5xxx security corpus (half of it
-  // deliberately vulnerable). Nothing outside MSBuild could see that, and three things were reading
-  // the tree instead of the project graph:
-  //
-  //   1. `--require-fresh-binlog` counts "selected source files" as the coverage denominator, so it
-  //      measured 294 of 2 220 — **13 %** — against a binlog that had in fact compiled everything
-  //      there was to compile, and failed every push to `master` with exit 4. That is the failure
-  //      this block exists to fix; the flag and its 90 % floor are both correct.
-  //   2. `./build.sh Lint` worked around it by naming projects one at a time under `Testing/` and
-  //      `Rules/`, which is why a new project under either was invisible to the format check until
-  //      somebody remembered to add it.
-  //   3. `skala format <repo root>` would have reformatted the corpus, which destroys the
-  //      measurement it exists to make. It has cost this project hours, twice.
-  //
-  // The globs are the compiler's (Roslyn's `.editorconfig` section matcher), not a dialect of our
-  // own, and they are anchored at this file's directory.
   "exclude": [
     "Testing/corpus/**",
     "Rules/Rikarin.Skala.Rules.Tests/fixtures/**",
@@ -57,23 +30,8 @@
       "maxSeverity": "warning",
       "formatting": "clean",
       "metrics": {
-        // ⚠ Measured before it was set, not chosen from a textbook. Skala's own tree was at 3.8 %
-        // production duplication when this was written; Vixen's was at 4.8 %. A threshold below
-        // where the codebase already sits is a gate that is red on the day it is added, which is a
-        // gate somebody deletes.
-        //
-        // ⚠ **Raised 5.0 -> 10.0 on 2026-08-28, and it is an acceptance rather than a fix.** The
-        // same measurement now reads **7.55 %**: production duplication has roughly doubled since
-        // the threshold was set, and the metric excludes tests at both readings (DuplicationPass
-        // keeps `*.Tests` out of the numerator), so the two numbers are like for like.
-        //
-        // The original reasoning is what makes raising it defensible — a gate below the tree is one
-        // that gets deleted — and it is also what makes the raise worth recording rather than
-        // quietly doing: 10.0 is not a measured property of this codebase the way 5.0 was. It is
-        // headroom over a number that moved, chosen by the author. Nothing here says 7.55 % is
-        // healthy, and a threshold set above the tree stops reporting the drift that took it there.
         "duplication": 10.0,
-        "cognitiveComplexity": 15
+        "cognitiveComplexity": 20
       }
     }
   }

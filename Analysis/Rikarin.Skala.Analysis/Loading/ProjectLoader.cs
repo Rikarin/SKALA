@@ -16,6 +16,13 @@ namespace Rikarin.Skala.Analysis.Loading;
 ///     SKIPPED block, so a loose result can never be mistaken for a binlog one.
 /// </remarks>
 public static class ProjectLoader {
+    /// <summary>
+    ///     Choose workspace when discovery found one target or found an ambiguity that the caller must
+    ///     resolve; choose loose only when there is genuinely no workspace target.
+    /// </summary>
+    public static LoadMode ResolveAutoMode(LoadRequest request) =>
+        WorkspaceLoader.Resolve(request).ShouldAttemptWorkspace ? LoadMode.Workspace : LoadMode.Loose;
+
     public static LoadedProject Load(LoadRequest request, CancellationToken cancellation = default) {
         var attempted = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
 

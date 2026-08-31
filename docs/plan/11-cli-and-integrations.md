@@ -10,6 +10,7 @@ skala format   [paths…]  [--check] [--diff] [--range a:b] [--staged] [--since 
                          [--arrange[=syntactic|full]] [--reflow] [--no-xmldoc] [--quiet]
                          [--define A,B] [--load binlog|workspace|loose|none]      ← M5
 skala arrange  [paths…]  [--check] [--include <ids>] [--exclude <ids>]
+                         [--load auto|binlog|workspace|loose|none] [--project <file>]
 skala check    [paths…]  [--gate <name>] [--since <ref>] [--baseline <file>]
                          [--load binlog|workspace|loose] [--binlog <file>] [--project <file>]
                          [--require-fresh-binlog] [--rules <ids>] [--include-hints]
@@ -45,10 +46,12 @@ a suggestion that would introduce a binding error is reported and skipped while 
 IDE1006 findings continue. The written batch is refused if a declaration or reference change would
 touch a formatter-off region. `format` and `arrange` never rename symbols.
 
-`verify` defaults to `--load=auto`: one unambiguous `.slnx`, `.sln`, or `.csproj` is loaded as a
-workspace, and a repository with no target stays on the loose fast path. Multiple targets require
-`--project`. Once auto discovers a target, a workspace load failure is fatal rather than a silent
-fallback to a semantics-free green result.
+`arrange` and `verify` default to `--load=auto`: one unambiguous `.slnx`, `.sln`, or `.csproj` is
+loaded as a workspace, and a repository with no target stays on the loose fast path. Multiple
+targets require `--project`. Once auto discovers a target, a workspace load failure is fatal rather
+than a silent fallback to a semantics-free result. This shared default is part of the gate contract:
+the `skala arrange <path>` instruction emitted by `verify` must run the same semantic rules that
+produced the finding.
 
 ⚠ **`skala daemon`, `--no-daemon` and `SKALA_NO_DAEMON` are removed, not deprecated.** The daemon is
 deleted (§ "The daemon, and why it is gone"), so the flag would have had nothing to turn off. A flag

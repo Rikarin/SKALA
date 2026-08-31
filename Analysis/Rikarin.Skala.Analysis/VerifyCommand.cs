@@ -156,7 +156,7 @@ public static class VerifyCommand {
             ?? FormatCommand.FindRepositoryRoot(request.Paths.Count > 0 ? request.Paths[0] : ".")
             ?? Directory.GetCurrentDirectory()
         );
-        var target = WorkspaceLoader.Resolve(
+        return ProjectLoader.ResolveAutoMode(
             new LoadRequest {
                 RepositoryRoot = root,
                 Mode = LoadMode.Workspace,
@@ -164,7 +164,5 @@ public static class VerifyCommand {
                 Paths = request.Paths
             }
         );
-
-        return target.ShouldAttemptWorkspace ? LoadMode.Workspace : LoadMode.Loose;
     }
 }

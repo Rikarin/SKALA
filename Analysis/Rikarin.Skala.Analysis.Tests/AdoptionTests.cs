@@ -124,7 +124,7 @@ public sealed class AdoptionTests {
         BaselineCommand.Run(
             BaselineCommand.Verb.Create,
             Request(scratch) with { BaselinePath = baselinePath, IncludeArrangement = true },
-            apply: true,
+            true,
             TestContext.Current.CancellationToken
         );
 

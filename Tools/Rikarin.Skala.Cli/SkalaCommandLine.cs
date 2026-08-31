@@ -3,6 +3,7 @@ using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
+using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Server;
 using System.CommandLine;
 
@@ -361,8 +362,13 @@ public static partial class SkalaCommandLine {
             Arity = ArgumentArity.ZeroOrMore
         };
 
-        var load = new Option<string?>("--load") {
-            Description = "How to find the compilation: binlog | workspace | loose | none (default loose)."
+        var load = new Option<string>("--load") {
+            Description = "auto | binlog | workspace | loose | none. Default auto: one workspace target, else loose.",
+            DefaultValueFactory = static _ => "auto"
+        };
+
+        var project = new Option<string?>("--project") {
+            Description = "The .slnx/.sln/.csproj for auto or --load=workspace."
         };
 
         var command = new Command(
@@ -381,9 +387,16 @@ public static partial class SkalaCommandLine {
         command.Options.Add(option);
         command.Options.Add(define);
         command.Options.Add(load);
+        command.Options.Add(project);
 
         command.SetAction(parse => {
-                var mode = parse.GetValue(load) ?? "loose";
+                var mode = parse.GetValue(load) ?? "auto";
+                if (!string.Equals(mode, "auto", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(mode, "none", StringComparison.OrdinalIgnoreCase)
+                    && !LoadModes.TryParse(mode, out _)) {
+                    Console.Error.WriteLine("skala arrange: --load must be auto, binlog, workspace, loose or none.");
+                    return ExitCodes.ConfigurationError;
+                }
 
                 // ⚠ <b>`arrange` was throwing the loader's diagnostics away.</b> `CompilationsFor`
                 // kept `loaded.Units` and dropped `loaded.Diagnostics`, so `SK9020` (the binlog is
@@ -407,7 +420,7 @@ public static partial class SkalaCommandLine {
                     Define = ParseDefines(parse.GetValue(define)),
                     Compilations = string.Equals(mode, "none", StringComparison.OrdinalIgnoreCase)
                         ? null
-                        : files => CompilationsFor(files, mode, loadDiagnostics)
+                        : files => CompilationsFor(files, mode, loadDiagnostics, parse.GetValue(project))
                 };
 
                 return Run(() => {
@@ -448,14 +461,26 @@ public static partial class SkalaCommandLine {
     static IReadOnlyList<Microsoft.CodeAnalysis.CSharp.CSharpCompilation> CompilationsFor(
         IReadOnlyList<string> files,
         string mode,
-        List<SkalaDiagnostic> diagnostics
+        List<SkalaDiagnostic> diagnostics,
+        string? projectPath = null
     ) {
         try {
             var root = FindRepositoryRoot(files.Count > 0 ? files[0] : ".") ?? Directory.GetCurrentDirectory();
+            var loadMode = LoadModes.Parse(mode);
+            if (string.Equals(mode, "auto", StringComparison.OrdinalIgnoreCase)) {
+                loadMode = ProjectLoader.ResolveAutoMode(
+                    new LoadRequest {
+                        RepositoryRoot = root, Mode = LoadMode.Workspace, ProjectPath = projectPath, Paths = files
+                    }
+                );
+            }
+
             var loaded = ProjectLoader.Load(
                 new LoadRequest {
                     RepositoryRoot = root,
-                    Mode = LoadModes.Parse(mode),
+                    Mode = loadMode,
+                    ProjectPath = projectPath,
+                    AllowFallback = loadMode != LoadMode.Workspace,
 
                     // ⚠ The files `arrange` actually collected, so the coverage check compares the
                     // binlog against what this run is about rather than against the whole tree.

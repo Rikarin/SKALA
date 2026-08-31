@@ -4,7 +4,6 @@ using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
-using System.Collections.Immutable;
 using System.Diagnostics;
 
 namespace Rikarin.Skala.Analysis.Tests;

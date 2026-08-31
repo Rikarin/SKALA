@@ -57,7 +57,7 @@ daemon behind it ([`plan/11`](plan/11-cli-and-integrations.md) § "The daemon, a
 | `hooks install` | Writes `.git/hooks/pre-commit` unless a hook manager owns it | ✅ |
 
 `verify` is `format --check` + `arrange --check` + `check`, and its own `--help` text says so.
-Auto-load gives arrangement a real semantic model when one workspace target is unambiguous;
+Auto-load on both commands gives arrangement a real semantic model when one workspace target is unambiguous;
 without a project, the syntactic arrangement subset runs and the semantic rules are reported as
 skipped.
 

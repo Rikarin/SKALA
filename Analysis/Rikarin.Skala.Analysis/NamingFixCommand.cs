@@ -311,7 +311,7 @@ public static class NamingFixCommand {
     static NamingTarget Target(Diagnostic diagnostic, CancellationToken cancellation) {
         var location = diagnostic.Location;
         var tree = location.SourceTree!;
-        return new NamingTarget(
+        return new(
             Path.GetFullPath(tree.FilePath),
             location.GetLineSpan().StartLinePosition.Line,
             tree.GetText(cancellation).ToString(location.SourceSpan)
