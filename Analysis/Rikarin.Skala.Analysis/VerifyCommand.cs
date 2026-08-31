@@ -53,7 +53,7 @@ public sealed record VerifyRequest {
 /// </summary>
 /// <remarks>
 ///     docs/plan/10 § "`skala verify` — the one command". It is <c>format --check</c> plus
-///     <c>check --gate=local</c> in one pass, with output shaped for a model rather than a terminal,
+///     <c>arrange --check</c> plus <c>check --gate=local</c> in one pass, with output shaped for a model,
 ///     and its contract is deliberately narrow so that it can be memorised:
 ///     <list type="bullet">
 ///         <item>⚠ <b>Exit 0 means "nothing to do". Nothing else means that.</b></item>
@@ -104,6 +104,7 @@ public static class VerifyCommand {
                 Gate = "local",
                 Format = request.Format,
                 IncludeFormatting = true,
+                IncludeArrangement = true,
                 NoCache = request.NoCache,
                 Define = request.Define,
 
@@ -129,7 +130,7 @@ public static class VerifyCommand {
             cancellation
         );
 
-        if (result.ExitCode == ExitCodes.LoadFailure) {
+        if (result.ExitCode is ExitCodes.LoadFailure or ExitCodes.InternalError) {
             return result;
         }
 

@@ -4,6 +4,7 @@ using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Hosting;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
 
@@ -114,6 +115,29 @@ public sealed class AnalysisTests {
         );
 
         Assert.Equal(ExitCodes.Ok, result.ExitCode);
+    }
+
+    [Fact]
+    public void Verify_IncludesArrangeCheckWithoutWriting() {
+        using var scratch = new Scratch();
+        var path = scratch.Write(
+            "Holder.cs",
+            "namespace Scratch;\n\npublic sealed class Holder {\n    public int Value() {\n        return 1;\n    }\n}\n"
+        );
+        var before = File.ReadAllText(path);
+
+        var result = VerifyCommand.Run(
+            new VerifyRequest {
+                RepositoryRoot = scratch.Root, Paths = [scratch.Root], Mode = LoadMode.Loose, NoCache = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.GateFailed, result.ExitCode);
+        Assert.Contains(ArrangeIds.BodyStyle, result.Output, StringComparison.Ordinal);
+        Assert.Contains("skala arrange Holder.cs", result.Output, StringComparison.Ordinal);
+        Assert.Contains("SKIPPED", result.Output, StringComparison.Ordinal);
+        Assert.Equal(before, File.ReadAllText(path));
     }
 
     [Fact]

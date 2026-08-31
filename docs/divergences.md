@@ -1190,10 +1190,10 @@ further in, unchanged by that branch and owned by `PlanAroundEquals`.
 - options: `resharper_csharp_keep_existing_embedded_block_arrangement` (Tier A), `resharper_csharp_wrap_for_stmt_header_style` (Tier A, item 3, at M3.2), `resharper_csharp_align_multiline_for_stmt` (Tier D, and never the cause of item 3)
 - ⚠ status: **items 1 and 2 open**, item 3 **closed** at M3.2, all three measured
 
-## SK-DIV-0013 — three rewrites the export configures and the oracle will not perform
+## SK-DIV-0013 — three configured rewrites the oracle would not perform
 
-`resharper_null_checking_pattern_style = not_null_pattern`, `resharper_empty_string = empty_literal`
-and `resharper_braces_redundant = true` are all set in the export, all listed in
+At the time of this measurement, `resharper_null_checking_pattern_style = not_null_pattern`,
+`resharper_empty_string = empty_literal` and `resharper_braces_redundant = true` were all set in the export, all listed in
 [06](plan/06-arrangement-and-syntax-styles.md), and `jb cleanupcode` 2025.2.6 performs **none** of
 them. Swept as elements and as `CSCodeStyleAttributes` attributes, with the corresponding
 `resharper_arrange_*_highlighting` keys left at their exported severities and raised to `warning`:

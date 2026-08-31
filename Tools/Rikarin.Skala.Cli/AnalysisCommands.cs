@@ -179,7 +179,8 @@ public static partial class SkalaCommandLine {
     ///     <c>skala verify</c> — docs/plan/10 § "`skala verify` — the one command".
     /// </summary>
     /// <remarks>
-    ///     ⚠ Its defaults are the contract. Auto workspace discovery, agent output, formatting included:
+    ///     ⚠ Its defaults are the contract. Auto workspace discovery, agent output, formatting and
+    ///     arrangement included:
     ///     it uses real semantics when one target is unambiguous and still works with no project, build or
     ///     network when the agent just wrote a file into a scratch directory.
     /// </remarks>
@@ -223,7 +224,7 @@ public static partial class SkalaCommandLine {
 
         var command = new Command(
             "verify",
-            "format --check + check --gate=local, in one pass, shaped for an agent. Exit 0 means nothing to do."
+            "format --check + arrange --check + check --gate=local, shaped for an agent. Exit 0 means nothing to do."
         );
 
         command.Arguments.Add(paths);

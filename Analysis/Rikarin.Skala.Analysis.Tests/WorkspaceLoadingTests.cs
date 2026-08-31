@@ -1,6 +1,7 @@
 using System.Reflection;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Reporting;
 
 namespace Rikarin.Skala.Analysis.Tests;
@@ -213,6 +214,26 @@ public sealed class WorkspaceLoadingTests {
 
         Assert.Equal(ExitCodes.GateFailed, result.ExitCode);
         Assert.Contains("IDE1006", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Verify_AutoUsesWorkspaceSemanticsForArrangement() {
+        using var scratch = new Scratch();
+        var path = scratch.Write(
+            "Holder.cs",
+            "namespace Scratch;\n\npublic sealed class Holder {\n    public bool HasValue(object? value) => value != null;\n}\n"
+        );
+        scratch.Write("Scratch.csproj", Project);
+        var before = File.ReadAllText(path);
+
+        var result = VerifyCommand.Run(
+            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.GateFailed, result.ExitCode);
+        Assert.Contains(ArrangeIds.NullCheckingPattern, result.Output, StringComparison.Ordinal);
+        Assert.Equal(before, File.ReadAllText(path));
     }
 
     [Fact]

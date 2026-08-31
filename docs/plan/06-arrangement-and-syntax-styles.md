@@ -126,7 +126,7 @@ wins when the RHS names the type; target-typed `new` wins when the LHS names it 
 
 ```ini
 resharper_null_checking_pattern_style = not_null_pattern      # `is not null`, not `!= null`
-resharper_empty_string                = empty_literal         # `""`, not `string.Empty`
+resharper_empty_string                = string_empty          # `string.Empty`, not `""`
 resharper_prefer_explicit_discard_declaration = false         # `out _`, not `out var _`
 resharper_prefer_separate_deconstructed_variables_declaration = false
 resharper_arrange_var_keywords_in_deconstructing_declaration_highlighting = suggestion

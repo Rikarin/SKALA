@@ -113,9 +113,10 @@ This is the finding, and it is the M4 analogue of SK-DIV-0005: swept, not found,
    nor as a `CSCodeStyleAttributes` attribute does it rewrite `if (p != null)`, on nullable or
    non-nullable operands, with `resharper_arrange_null_checking_pattern_highlighting` left at its
    exported `hint` **or raised to `warning`**.
-2. **`string.Empty` → `""`.** `resharper_empty_string = empty_literal` is set. Cleanup produces
+2. **`string.Empty` → `""`.** At the time of this sweep,
+   `resharper_empty_string = empty_literal` was set. Cleanup produces
    `string.Empty` (via `CSFixBuiltinTypeReferences` normalising `String.Empty`) and stops there. The
-   export's own `resharper_arrange_empty_string_highlighting = none` is consistent with this.
+   then-exported `resharper_arrange_empty_string_highlighting = none` is consistent with this.
 3. **Redundant nested braces `{ { x; } }`.** `resharper_braces_redundant = true` is set; no task
    removes them.
 

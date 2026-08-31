@@ -42,7 +42,7 @@ daemon behind it ([`plan/11`](plan/11-cli-and-integrations.md) § "The daemon, a
 | `format <paths>` | Spaces, blank lines, braces, indentation, break presence and position, and wrapping. Writes, checks, diffs, or formats the git index | ✅ |
 | `arrange <paths>` | Rewrites the tree: body styles, `var`, target-typed `new`, qualifiers, usings. Needs a project for the semantic half | ✅ |
 | `check <paths>` | Loads a compilation three ways, runs Skala's analyzers plus Roslyn's IDE1006 naming analyzer, writes SARIF, evaluates a named gate | ✅ |
-| `verify <paths>` | `format --check` + `check --gate=local` in one pass, shaped for an agent. Exit 0 means nothing to do | ✅ |
+| `verify <paths>` | `format --check` + `arrange --check` + `check --gate=local`, shaped for an agent. Exit 0 means nothing to do | ✅ |
 | `fix <paths>` | Applies finding edits; explicit `IDE1006` uses Roslyn's solution-wide rename action; verifies and re-formats what it touched | ✅ |
 | `explain <rule>` | A rule's rationale, examples and known false positives | ✅ |
 | `rules list` · `rules docs` | The catalogue as a table; regenerates `docs/rules/` from `rules.json` | ✅ |
@@ -56,10 +56,10 @@ daemon behind it ([`plan/11`](plan/11-cli-and-integrations.md) § "The daemon, a
 | `mcp <path>` | MCP over stdio, six tools | ✅ |
 | `hooks install` | Writes `.git/hooks/pre-commit` unless a hook manager owns it | ✅ |
 
-⚠ **`skala arrange` does not exist.** It is M4, and it is the one command the plan documents describe
-in the present tense throughout — [`plan/06`](plan/06-arrangement-and-syntax-styles.md) is written as
-if `arrange`, `format --arrange=syntactic` and `arrange --aggressive` all work. None of them parses.
-`verify` is `format --check` + `check`, and its own `--help` text says so.
+`verify` is `format --check` + `arrange --check` + `check`, and its own `--help` text says so.
+Auto-load gives arrangement a real semantic model when one workspace target is unambiguous;
+without a project, the syntactic arrangement subset runs and the semantic rules are reported as
+skipped.
 
 ## 1.2 Flags, per command
 

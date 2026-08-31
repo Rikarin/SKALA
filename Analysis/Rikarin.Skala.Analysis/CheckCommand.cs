@@ -41,6 +41,9 @@ public sealed record CheckRequest {
     /// <summary>⚠ Whether formatting findings (SK0001) take part. <c>verify</c> turns them on.</summary>
     public bool IncludeFormatting { get; init; } = true;
 
+    /// <summary>Whether <c>arrange --check</c> findings take part. <c>verify</c> turns them on.</summary>
+    public bool IncludeArrangement { get; init; }
+
     public bool ShowSuppressions { get; init; }
 
     public IReadOnlyList<string> Define { get; init; } = [];
@@ -260,6 +263,20 @@ public static class CheckCommand {
             findings.AddRange(formatting);
         }
 
+        var arrangementFailed = false;
+        if (request.IncludeArrangement) {
+            var arrangement = ArrangementFindings.Collect(
+                root,
+                Paths(loaded, request),
+                request,
+                loaded,
+                diagnostics,
+                cancellation
+            );
+            findings.AddRange(arrangement.Findings);
+            arrangementFailed = arrangement.Failed;
+        }
+
         // ⚠ Duplication is a whole-repository pass and is therefore opt-in. It runs before the
         // merge so its findings take part in supersession and filtering like any other.
         var duplication = new Duplication.DuplicationResult();
@@ -288,12 +305,17 @@ public static class CheckCommand {
         // before the ordinal was assigned is a different hash.
         merged = Fingerprints.Assign(merged);
 
+        var skippedRules = AnalyzerHost.SkippedFor(loaded.Mode);
+        if (request.IncludeArrangement) {
+            skippedRules = skippedRules.AddRange(ArrangementFindings.SkippedFor(loaded.Mode));
+        }
+
         var report = new RunReport {
             RepositoryRoot = root,
             Mode = loaded.Mode,
             Findings = merged,
             Diagnostics = diagnostics.ToImmutable(),
-            SkippedRules = AnalyzerHost.SkippedFor(loaded.Mode),
+            SkippedRules = skippedRules,
             Verbose = request.Verbose,
             Extensions = hosted.Extensions,
             LoadSummary = loaded.Summary,
@@ -328,10 +350,10 @@ public static class CheckCommand {
             output += Environment.NewLine + Profile(costs, stopwatch.Elapsed);
         }
 
-        var exit = !gate.Passed
-            ? ExitCodes.GateFailed
-            : report.Diagnostics.Any(static d => d.Id == RuleIds.TokenStreamChanged)
-                ? ExitCodes.InternalError
+        var exit = arrangementFailed || report.Diagnostics.Any(static d => d.Id == RuleIds.TokenStreamChanged)
+            ? ExitCodes.InternalError
+            : !gate.Passed
+                ? ExitCodes.GateFailed
                 : ExitCodes.Ok;
 
         return (new CommandResult(exit, output), report);

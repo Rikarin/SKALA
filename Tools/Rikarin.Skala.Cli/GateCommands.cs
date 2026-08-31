@@ -96,6 +96,7 @@ public static partial class SkalaCommandLine {
                     BaselinePath = parse.GetValue(file),
                     Define = ParseDefines(parse.GetValue(define)),
                     IncludeFormatting = !parse.GetValue(noFormatting),
+                    IncludeArrangement = true,
 
                     // ⚠ Hints are in the baseline even though they are hidden in the report. A rule
                     // later promoted from `hint` to `warning` must not turn a thousand accepted

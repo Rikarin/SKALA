@@ -51,6 +51,12 @@ public sealed record ArrangeRequest {
     ///     </para>
     /// </remarks>
     public Func<IReadOnlyList<string>, IReadOnlyList<CSharpCompilation>>? Compilations { get; init; }
+
+    /// <summary>
+    ///     Receives each check result before it is rendered or written. Analysis uses this to include
+    ///     arrangement in <c>verify</c> without duplicating the arrangement pipeline.
+    /// </summary>
+    public Action<PipelineResult>? Observe { get; init; }
 }
 
 /// <summary>
@@ -118,6 +124,7 @@ public static class ArrangeCommand {
                     cancellation
                 );
 
+                request.Observe?.Invoke(result);
                 diagnostics.AddRange(result.Diagnostics);
                 var edits = range is { } span ? EditEmitter.Restrict(result.Edits, span) : result.Edits;
                 if (edits.Count == 0) {

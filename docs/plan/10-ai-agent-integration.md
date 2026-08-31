@@ -26,17 +26,13 @@ fixes, and a gate that treats *new suppressions* as findings.
 skala verify [<paths>] [--fix] [--format=agent|json]
 ```
 
-It is `format --check` + `check --gate=local`, in one pass, with output shaped
-for a model rather than for a terminal.
-
-⚠ This said "`format --check` + `arrange --check` + `check --gate=local`" and `verify` has never run
-`arrange`. It makes exactly one call — `CheckCommand.Run` with `IncludeFormatting = true`, which is
-the `format --check` half — and `skala arrange` is a separate verb nothing else invokes. The
-command's own `--help`, its implementation comment and [11](11-cli-and-integrations.md) all state
-the two-part contract; only this line claimed three. Arrangement is a semantic rewrite that wants a
-compilation and is minutes-scale, which is why it is not in the command whose contract is "fast
-enough that an agent runs it after every edit". It is the command that goes in `CLAUDE.md`, and its contract
-is deliberately narrow so it can be memorised:
+It is `format --check` + `arrange --check` + `check --gate=local`, with output shaped for a model
+rather than for a terminal. Arrangement remains a deliberately structural command and its rewrites
+are not included in `fix --safe`: `verify` reports the exact `skala arrange <path>` command when
+structural cleanup is needed. Auto-load supplies real project semantics when one workspace target
+is unambiguous; loose mode runs the syntactic subset and lists the semantic arrangement rules as
+skipped. It is the command that goes in `CLAUDE.md`, and its contract is deliberately narrow so it
+can be memorised:
 
 - Exit 0 means "nothing to do". Nothing else means that.
 - Every finding either carries a fix or carries a one-sentence instruction. Never both, never

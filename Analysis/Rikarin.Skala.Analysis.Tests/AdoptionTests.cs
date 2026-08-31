@@ -123,7 +123,7 @@ public sealed class AdoptionTests {
         var baselinePath = Path.Combine(scratch.Root, ".skala", "baseline.sarif");
         BaselineCommand.Run(
             BaselineCommand.Verb.Create,
-            Request(scratch) with { BaselinePath = baselinePath },
+            Request(scratch) with { BaselinePath = baselinePath, IncludeArrangement = true },
             apply: true,
             TestContext.Current.CancellationToken
         );

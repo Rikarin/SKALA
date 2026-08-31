@@ -332,10 +332,10 @@ The order matters, because the wrong order produces a 40 000-line first diff and
 3. `skala format --check --diff | head -200` — look at what it *would* do, on a branch.
 4. `skala format` in one commit, alone, with a message saying so. Add its SHA to
    `.git-blame-ignore-revs`. ⚠ This commit will be enormous and must contain nothing else.
-5. `skala verify` — now the modernization and analysis findings, which are a *different* commit or
-   several. ⚠ Not the arrangement ones: `verify` is `format --check` plus `check --gate=local` and
-   does not run `arrange`. Arrangement is its own verb and its own step, deliberately, because it
-   rewrites the tree and wants a compilation.
+5. `skala verify` — formatting, arrangement, modernization, naming, and analysis findings in the
+   agent-facing completion gate. It runs `format --check`, `arrange --check`, and
+   `check --gate=local`; arrangement remains its own writing command because its structural rewrites
+   require an explicit decision.
 6. `skala baseline create --apply` — accept the current analysis findings. ⚠ Commit
    `.skala/baseline.sarif`. It is the one thing under `.skala/` that is not scratch, and the marker
    Skala writes there un-ignores it by name for exactly that reason; everything else in the

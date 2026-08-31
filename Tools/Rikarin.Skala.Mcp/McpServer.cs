@@ -113,7 +113,7 @@ sealed class SkalaTools(string repositoryRoot) {
     }
 
     [Description(
-        "Is this acceptable? Runs format --check and the analyzers in one pass and returns the "
+        "Is this acceptable? Runs format --check, arrange --check, and the analyzers and returns the "
         + "three-bucket report: formatting first, safe fixes second, decisions last. Exit 0 means "
         + "nothing to do. Uses an unambiguous workspace automatically, or loose mode with no project."
     )]

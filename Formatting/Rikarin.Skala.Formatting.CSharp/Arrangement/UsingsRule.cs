@@ -545,7 +545,7 @@ public sealed class UsingsRule : ArrangementRule {
 ///     ⚠ SK-DIV-0013 again: the oracle does not perform this one either — it normalises
 ///     <c>String.Empty</c> to <c>string.Empty</c> and stops — so it is fixture-pinned rather than
 ///     oracle-pinned, and excluded from the agreement number. Skala performs it because the export asks
-///     for it and doc 06 lists it.
+///     for it when configured and doc 06 records the current direction separately.
 /// </remarks>
 public sealed class EmptyStringRule : ArrangementRule {
     public override string Id => ArrangeIds.EmptyString;
