@@ -14,10 +14,10 @@ namespace Rikarin.Skala.Analysis.Tests;
 ///     where three were meant. A mocked git cannot have either bug and so cannot catch either.
 /// </remarks>
 public sealed class NewCodeTests : IDisposable {
-    readonly string _root = Path.Combine(Path.GetTempPath(), "skala-newcode-" + Path.GetRandomFileName());
+    readonly string root = Path.Combine(Path.GetTempPath(), "skala-newcode-" + Path.GetRandomFileName());
 
     public NewCodeTests() {
-        Directory.CreateDirectory(_root);
+        Directory.CreateDirectory(root);
         Git("init", "-q");
         Git("config", "user.email", "test@skala");
         Git("config", "user.name", "Test");
@@ -25,13 +25,13 @@ public sealed class NewCodeTests : IDisposable {
 
     public void Dispose() {
         try {
-            Directory.Delete(_root, recursive: true);
+            Directory.Delete(root, recursive: true);
         } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
     void Git(params string[] arguments) {
         var start = new ProcessStartInfo("git") {
-            WorkingDirectory = _root,
+            WorkingDirectory = root,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
@@ -48,7 +48,7 @@ public sealed class NewCodeTests : IDisposable {
     }
 
     void Write(string relative, string content) {
-        var path = Path.Combine(_root, relative);
+        var path = Path.Combine(root, relative);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, content);
     }
@@ -63,7 +63,7 @@ public sealed class NewCodeTests : IDisposable {
             RuleId = "SK1010",
             Severity = SkalaSeverity.Warning,
             Message = "x",
-            Path = Path.Combine(_root, relative.Replace('/', Path.DirectorySeparatorChar)),
+            Path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar)),
             Line = line,
             EndLine = line,
             Column = 1,
@@ -89,7 +89,7 @@ public sealed class NewCodeTests : IDisposable {
         lines[19] = "// CHANGED";
         Write("Core/Foo.cs", string.Join('\n', lines) + "\n");
 
-        var changed = ChangedLines.Since(_root, "HEAD", TestContext.Current.CancellationToken);
+        var changed = ChangedLines.Since(root, "HEAD", TestContext.Current.CancellationToken);
 
         Assert.True(changed.Contains(At(20)));
         Assert.False(changed.Contains(At(17)));
@@ -102,7 +102,7 @@ public sealed class NewCodeTests : IDisposable {
         Write("Core/Foo.cs", "// one\n// two\n");
         Commit("base");
 
-        var changed = ChangedLines.Since(_root, "HEAD", TestContext.Current.CancellationToken);
+        var changed = ChangedLines.Since(root, "HEAD", TestContext.Current.CancellationToken);
         Assert.Equal(0, changed.FileCount);
         Assert.False(changed.Contains(At(1)));
     }
@@ -114,7 +114,7 @@ public sealed class NewCodeTests : IDisposable {
         Commit("base");
         Write("Core/Foo.cs", "// a\n// e\n");
 
-        var changed = ChangedLines.Since(_root, "HEAD", TestContext.Current.CancellationToken);
+        var changed = ChangedLines.Since(root, "HEAD", TestContext.Current.CancellationToken);
 
         // Everything that remains is unchanged text; nothing was added.
         Assert.False(changed.Contains(At(1)));
@@ -132,7 +132,7 @@ public sealed class NewCodeTests : IDisposable {
         Commit("base");
 
         Assert.Throws<InvalidOperationException>(() => ChangedLines.Since(
-                _root,
+                root,
                 "orgin/main",
                 TestContext.Current.CancellationToken
             )
@@ -148,7 +148,7 @@ public sealed class NewCodeTests : IDisposable {
         lines[4] = "// CHANGED";
         Write("Core/Foo.cs", string.Join('\n', lines) + "\n");
 
-        var tagged = ChangedLines.Since(_root, "HEAD", TestContext.Current.CancellationToken).Apply([At(5), At(9)]);
+        var tagged = ChangedLines.Since(root, "HEAD", TestContext.Current.CancellationToken).Apply([At(5), At(9)]);
 
         Assert.True(tagged[0].IsInChangedCode);
         Assert.False(tagged[1].IsInChangedCode);
@@ -168,7 +168,7 @@ public sealed class NewCodeTests : IDisposable {
         Commit("base");
         Write("Core/Added.cs", "// one\n// two\n// three\n");
 
-        var changed = ChangedLines.Since(_root, "HEAD", TestContext.Current.CancellationToken);
+        var changed = ChangedLines.Since(root, "HEAD", TestContext.Current.CancellationToken);
 
         Assert.True(changed.Contains(At(1, "Core/Added.cs")));
         Assert.True(changed.Contains(At(3, "Core/Added.cs")));
@@ -183,7 +183,7 @@ public sealed class NewCodeTests : IDisposable {
         Commit("base");
         Write("generated/Gen.cs", "// generated\n");
 
-        var changed = ChangedLines.Since(_root, "HEAD", TestContext.Current.CancellationToken);
+        var changed = ChangedLines.Since(root, "HEAD", TestContext.Current.CancellationToken);
         Assert.False(changed.Contains(At(1, "generated/Gen.cs")));
     }
 
@@ -199,7 +199,7 @@ public sealed class NewCodeTests : IDisposable {
         Commit("base");
         Write("Core/Foo.cs", "// a\n// CHANGED\n// c\n");
 
-        Assert.True(ChangedLines.Since(_root, "HEAD", TestContext.Current.CancellationToken).Contains(At(2)));
+        Assert.True(ChangedLines.Since(root, "HEAD", TestContext.Current.CancellationToken).Contains(At(2)));
     }
 
     // ---------------------------------------------------------------- --no-new-suppressions
@@ -231,7 +231,7 @@ public sealed class NewCodeTests : IDisposable {
         );
 
         var audit = SuppressionAuditor.Compare(
-            _root,
+            root,
             "HEAD",
             baselinePath: null,
             TestContext.Current.CancellationToken
@@ -252,14 +252,14 @@ public sealed class NewCodeTests : IDisposable {
         Write("Core/Foo.cs", "public class Foo { }\n");
         Commit("base");
 
-        var baselinePath = Path.Combine(_root, "baseline.sarif");
+        var baselinePath = Path.Combine(root, "baseline.sarif");
         var report = new RunReport {
-            RepositoryRoot = _root, Mode = LoadMode.Loose, Findings = Fingerprints.Assign([At(3)])
+            RepositoryRoot = root, Mode = LoadMode.Loose, Findings = Fingerprints.Assign([At(3)])
         };
 
         Baseline.Write(baselinePath, report, report.Findings);
 
-        var audit = SuppressionAuditor.Compare(_root, "HEAD", baselinePath, TestContext.Current.CancellationToken);
+        var audit = SuppressionAuditor.Compare(root, "HEAD", baselinePath, TestContext.Current.CancellationToken);
         Assert.Contains(audit.Added, static e => e is { Source: SuppressionSource.Baseline, RuleId: "SK1010" });
     }
 
@@ -278,7 +278,7 @@ public sealed class NewCodeTests : IDisposable {
         Commit("base");
 
         var audit = SuppressionAuditor.Compare(
-            _root,
+            root,
             "HEAD",
             baselinePath: null,
             TestContext.Current.CancellationToken
@@ -302,7 +302,7 @@ public sealed class NewCodeTests : IDisposable {
         Write(".editorconfig", "[*.cs]\ndotnet_diagnostic.SK1010.severity = error\n");
 
         var audit = SuppressionAuditor.Compare(
-            _root,
+            root,
             "HEAD",
             baselinePath: null,
             TestContext.Current.CancellationToken
@@ -326,7 +326,7 @@ public sealed class NewCodeTests : IDisposable {
         Write(".editorconfig", "[**/*.cs]\ndotnet_diagnostic.SK3002.severity = none\n");
 
         var audit = SuppressionAuditor.Compare(
-            _root,
+            root,
             "HEAD",
             baselinePath: null,
             TestContext.Current.CancellationToken

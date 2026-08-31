@@ -460,13 +460,13 @@ public static class AnalyzerHost {
     ///     enough to identify it and the ordinal disambiguates what is left.
     /// </remarks>
     static string Snippet(SyntaxTree tree, TextSpan span) {
-        const int Limit = 400;
+        const int limit = 400;
         var text = tree.GetText();
         if (span.Start < 0 || span.End > text.Length) {
             return string.Empty;
         }
 
-        var bounded = span.Length <= Limit ? span : new TextSpan(span.Start, Limit);
+        var bounded = span.Length <= limit ? span : new TextSpan(span.Start, limit);
         return Reporting.Fingerprints.Normalize(text.ToString(bounded));
     }
 

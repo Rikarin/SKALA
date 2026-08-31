@@ -26,12 +26,12 @@ namespace Rikarin.Skala.Analysis.Loading;
 ///     </para>
 /// </remarks>
 public static class MSBuildRuntime {
-    static int _registered;
+    static int registered;
 
     /// <summary>Whether the SDK's MSBuild was found. False is reported, never thrown.</summary>
     public static bool Ensure(out string? error) {
         error = null;
-        if (Interlocked.CompareExchange(ref _registered, 1, 0) != 0) {
+        if (Interlocked.CompareExchange(ref registered, 1, 0) != 0) {
             return true;
         }
 

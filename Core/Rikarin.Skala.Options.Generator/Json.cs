@@ -186,11 +186,11 @@ internal readonly struct JsonValue {
     public static readonly JsonValue True = new(JsonKind.Boolean, null, 1, null, null);
     public static readonly JsonValue False = new(JsonKind.Boolean, null, 0, null, null);
 
-    readonly JsonKind _kind;
-    readonly string? _string;
-    readonly double _number;
-    readonly Dictionary<string, JsonValue>? _members;
-    readonly List<JsonValue>? _items;
+    readonly JsonKind kind;
+    readonly string? @string;
+    readonly double number;
+    readonly Dictionary<string, JsonValue>? members;
+    readonly List<JsonValue>? items;
 
     JsonValue(
         JsonKind kind,
@@ -199,11 +199,11 @@ internal readonly struct JsonValue {
         Dictionary<string, JsonValue>? members,
         List<JsonValue>? items
     ) {
-        _kind = kind;
-        _string = text;
-        _number = number;
-        _members = members;
-        _items = items;
+        this.kind = kind;
+        @string = text;
+        this.number = number;
+        this.members = members;
+        this.items = items;
     }
 
     public static JsonValue FromString(string value) => new(JsonKind.String, value, 0, null, null);
@@ -214,31 +214,31 @@ internal readonly struct JsonValue {
 
     public static JsonValue FromArray(List<JsonValue> items) => new(JsonKind.Array, null, 0, null, items);
 
-    public bool IsNull => _kind == JsonKind.Null;
-    public IReadOnlyList<JsonValue> Items => _items ?? (IReadOnlyList<JsonValue>)Array.Empty<JsonValue>();
-    public IEnumerable<KeyValuePair<string, JsonValue>> Members => _members ?? [];
+    public bool IsNull => kind == JsonKind.Null;
+    public IReadOnlyList<JsonValue> Items => items ?? (IReadOnlyList<JsonValue>)Array.Empty<JsonValue>();
+    public IEnumerable<KeyValuePair<string, JsonValue>> Members => members ?? [];
 
     public JsonValue this[string name] =>
-        _members is not null && _members.TryGetValue(name, out var value) ? value : Null;
+        members is not null && members.TryGetValue(name, out var value) ? value : Null;
 
     public string? AsString() =>
-        _kind switch {
-            JsonKind.String => _string,
-            JsonKind.Number => _number.ToString(CultureInfo.InvariantCulture),
-            JsonKind.Boolean => _number != 0 ? "true" : "false",
+        kind switch {
+            JsonKind.String => @string,
+            JsonKind.Number => number.ToString(CultureInfo.InvariantCulture),
+            JsonKind.Boolean => number != 0 ? "true" : "false",
             _ => null
         };
 
-    public int? AsInt() => _kind == JsonKind.Number ? (int)_number : null;
-    public bool AsBool() => _kind == JsonKind.Boolean && _number != 0;
+    public int? AsInt() => kind == JsonKind.Number ? (int)number : null;
+    public bool AsBool() => kind == JsonKind.Boolean && number != 0;
 
     public IReadOnlyList<string> AsStringList() {
-        if (_items is null) {
+        if (items is null) {
             return [];
         }
 
-        var result = new List<string>(_items.Count);
-        foreach (var item in _items) {
+        var result = new List<string>(items.Count);
+        foreach (var item in items) {
             var text = item.AsString();
             if (text is not null) {
                 result.Add(text);

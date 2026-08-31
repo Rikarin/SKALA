@@ -43,15 +43,15 @@ namespace Rikarin.Skala.Server;
 ///     </para>
 /// </remarks>
 public sealed class LanguageServer {
-    readonly FormatService _service = new();
-    readonly ConcurrentDictionary<string, string> _open = new(StringComparer.Ordinal);
-    readonly TextReader _input;
-    readonly TextWriter _output;
-    bool _shutdown;
+    readonly FormatService service = new();
+    readonly ConcurrentDictionary<string, string> open = new(StringComparer.Ordinal);
+    readonly TextReader input;
+    readonly TextWriter output;
+    bool shutdown;
 
     public LanguageServer(TextReader input, TextWriter output) {
-        _input = input;
-        _output = output;
+        this.input = input;
+        this.output = output;
     }
 
     public async Task RunAsync(CancellationToken cancellation) {
@@ -66,7 +66,7 @@ public sealed class LanguageServer {
                 await WriteMessageAsync(response).ConfigureAwait(false);
             }
 
-            if (_shutdown && message["method"]?.GetValue<string>() == "exit") {
+            if (shutdown && message["method"]?.GetValue<string>() == "exit") {
                 return;
             }
         }
@@ -85,11 +85,11 @@ public sealed class LanguageServer {
                 return null;
 
             case "shutdown":
-                _shutdown = true;
+                shutdown = true;
                 return Result(id, null);
 
             case "exit":
-                _shutdown = true;
+                shutdown = true;
                 return null;
 
             case "textDocument/didOpen":
@@ -102,7 +102,7 @@ public sealed class LanguageServer {
 
             case "textDocument/didClose":
                 if (UriOf(message) is { } closing) {
-                    _open.TryRemove(closing, out _);
+                    open.TryRemove(closing, out _);
                 }
 
                 return null;
@@ -149,7 +149,7 @@ public sealed class LanguageServer {
     void Track(JsonObject message, string documentKey, string textKey) {
         var document = message["params"]?[documentKey] as JsonObject;
         if (document?["uri"]?.GetValue<string>() is { } uri && document[textKey]?.GetValue<string>() is { } text) {
-            _open[uri] = text;
+            open[uri] = text;
         }
     }
 
@@ -162,7 +162,7 @@ public sealed class LanguageServer {
         if (message["params"]?["contentChanges"] is JsonArray changes
             && changes.Count > 0
             && changes[^1]?["text"]?.GetValue<string>() is { } text) {
-            _open[uri] = text;
+            open[uri] = text;
         }
     }
 
@@ -173,8 +173,8 @@ public sealed class LanguageServer {
             return new();
         }
 
-        var text = _open.GetValueOrDefault(uri);
-        var result = _service.Format(path, text, null, null);
+        var text = open.GetValueOrDefault(uri);
+        var result = service.Format(path, text, null, null);
         var source = SourceText.From(text ?? result.Original.ToString(), Encoding.UTF8);
 
         // ⚠ Filtered after a whole-file fit, never fitted from the range's first line.
@@ -193,7 +193,7 @@ public sealed class LanguageServer {
     JsonObject Diagnostics(JsonObject message) {
         var items = new JsonArray();
         if (UriOf(message) is { } uri && PathOf(uri) is { } path) {
-            var result = _service.Format(path, _open.GetValueOrDefault(uri), null, null);
+            var result = service.Format(path, open.GetValueOrDefault(uri), null, null);
             var source = result.Original;
             foreach (var diagnostic in result.Diagnostics) {
                 items.Add(Render(source, diagnostic));
@@ -230,12 +230,12 @@ public sealed class LanguageServer {
             return actions;
         }
 
-        var result = _service.Format(path, _open.GetValueOrDefault(uri), null, null);
+        var result = service.Format(path, open.GetValueOrDefault(uri), null, null);
         if (!result.Changed) {
             return actions;
         }
 
-        var source = SourceText.From(_open.GetValueOrDefault(uri) ?? result.Original.ToString(), Encoding.UTF8);
+        var source = SourceText.From(open.GetValueOrDefault(uri) ?? result.Original.ToString(), Encoding.UTF8);
         var edits = new JsonArray();
         foreach (var edit in result.Edits) {
             edits.Add(new JsonObject { ["range"] = RangeOf(source, edit.Span), ["newText"] = edit.NewText });
@@ -295,7 +295,7 @@ public sealed class LanguageServer {
     async Task<JsonObject?> ReadMessageAsync() {
         var length = -1;
         while (true) {
-            var header = await _input.ReadLineAsync().ConfigureAwait(false);
+            var header = await input.ReadLineAsync().ConfigureAwait(false);
             if (header is null) {
                 return null;
             }
@@ -323,7 +323,7 @@ public sealed class LanguageServer {
         var buffer = new char[length];
         var read = 0;
         while (read < length) {
-            var got = await _input.ReadAsync(buffer.AsMemory(read)).ConfigureAwait(false);
+            var got = await input.ReadAsync(buffer.AsMemory(read)).ConfigureAwait(false);
             if (got == 0) {
                 return null;
             }
@@ -337,8 +337,8 @@ public sealed class LanguageServer {
     async Task WriteMessageAsync(JsonObject message) {
         var body = message.ToJsonString(new JsonSerializerOptions(JsonSerializerDefaults.Web));
         var bytes = Encoding.UTF8.GetByteCount(body);
-        await _output.WriteAsync(string.Create(CultureInfo.InvariantCulture, $"Content-Length: {bytes}\r\n\r\n{body}"))
+        await output.WriteAsync(string.Create(CultureInfo.InvariantCulture, $"Content-Length: {bytes}\r\n\r\n{body}"))
             .ConfigureAwait(false);
-        await _output.FlushAsync().ConfigureAwait(false);
+        await output.FlushAsync().ConfigureAwait(false);
     }
 }

@@ -26,69 +26,69 @@ public sealed record BuiltDocument(Document Document, IReadOnlyList<SkalaDiagnos
 ///     </para>
 /// </remarks>
 public sealed partial class CSharpDocumentBuilder {
-    readonly SourceText _text;
-    readonly string _source;
-    readonly Piece[] _pieces;
-    readonly SyntaxToken[] _tokens;
-    readonly PhaseOneOptions _options;
-    readonly DocumentBuilder _doc = new();
-    readonly List<SkalaDiagnostic> _diagnostics = [];
-    readonly List<int> _blockStack = [];
+    readonly SourceText text;
+    readonly string source;
+    readonly Piece[] pieces;
+    readonly SyntaxToken[] tokens;
+    readonly PhaseOneOptions options;
+    readonly DocumentBuilder doc = new();
+    readonly List<SkalaDiagnostic> diagnostics = [];
+    readonly List<int> blockStack = [];
 
     /// <summary>One per open statement, member, accessor or call chain, and per block scope.</summary>
-    readonly List<Frame> _frames = [];
+    readonly List<Frame> frames = [];
 
-    readonly HashSet<int> _verbatimMembers = [];
-    readonly string _path;
-    BreakPlan _plan = null!;
+    readonly HashSet<int> verbatimMembers = [];
+    readonly string path;
+    BreakPlan plan = null!;
 
-    int _cursor;
-    int _lastPiece = -1;
+    int cursor;
+    int lastPiece = -1;
 
     /// <summary>Where <see cref="EmitLeadingGap" /> already wrote a gap, so it is not written twice.</summary>
-    int _gapEmittedAt = -1;
+    int gapEmittedAt = -1;
 
-    int _verbatimUntil = -1;
-    int _continuousDepth;
+    int verbatimUntil = -1;
+    int continuousDepth;
 
     /// <summary>Group id to the plan that created it, built on first use by <c>SpansLines</c>.</summary>
-    Dictionary<int, GroupPlan>? _groupPlans;
+    Dictionary<int, GroupPlan>? groupPlans;
 
     CSharpDocumentBuilder(string path, SourceText text, SyntaxNode root, in PhaseOneOptions options) {
-        _path = path;
-        _text = text;
-        _source = text.ToString();
-        _options = options;
-        (_pieces, _tokens) = SourcePieces.Split(root, text);
+        this.path = path;
+        this.text = text;
+        source = text.ToString();
+        this.options = options;
+        (pieces, tokens) = SourcePieces.Split(root, text);
     }
 
     public static BuiltDocument Build(string path, SourceText text, SyntaxNode root, in PhaseOneOptions options) {
         var builder = new CSharpDocumentBuilder(path, text, root, options);
         builder.Run(root);
-        return new(builder._doc.Build(), builder._diagnostics);
+        return new(builder.doc.Build(), builder.diagnostics);
     }
 
     void Run(SyntaxNode root) {
-        PreprocessorGuard.MarkUnbalancedMembers(root, _text, _verbatimMembers, _diagnostics, _path);
+        PreprocessorGuard.MarkUnbalancedMembers(root, text, verbatimMembers, diagnostics, path);
 
         // ⚠ The break plan is built before the walk, not during it: a gap can belong to two
         // constructs at once and only a pass that sees both can decide which one owns it
         // (see BreakPlan's remarks). Ids are handed out here so that the plan's numbering and the
         // document's agree.
-        _plan = BreakPlan.Build(root, _source, _options);
-        for (var i = 0; i < _plan.GroupCount; i++) {
-            _doc.NextGroupId();
+        plan = BreakPlan.Build(root, source, options);
+        for (var i = 0; i < plan.GroupCount; i++) {
+            doc.NextGroupId();
         }
 
-        foreach (var planned in _plan.Groups) {
-            _doc.DescribeGroup(planned.Id, planned.Facts);
+        foreach (var planned in plan.Groups) {
+            doc.DescribeGroup(planned.Id, planned.Facts);
         }
 
-        var group = _doc.NextGroupId();
-        _doc.OpenGroup(GroupMode.Flat, group);
+        var group = doc.NextGroupId();
+        doc.OpenGroup(GroupMode.Flat, group);
         Visit(root);
         EmitUpTo(int.MaxValue);
-        _doc.Close();
+        doc.Close();
     }
 
     // ── The structural walk ──────────────────────────────────────────────────────────────────
@@ -191,15 +191,15 @@ public sealed partial class CSharpDocumentBuilder {
     bool AlignsFromOwnColumn(SyntaxNode node) =>
         node switch {
             InitializerExpressionSyntax or AnonymousObjectCreationExpressionSyntax =>
-                _options.AlignMultilineArrayAndObjectInitializer,
-            CollectionExpressionSyntax or ListPatternSyntax => _options.AlignMultilineListPattern,
-            PropertyPatternClauseSyntax => _options.AlignMultilinePropertyPattern,
-            SwitchExpressionSyntax => _options.AlignMultilineSwitchExpression,
-            QueryExpressionSyntax => _options.AlignLinqQuery,
+                options.AlignMultilineArrayAndObjectInitializer,
+            CollectionExpressionSyntax or ListPatternSyntax => options.AlignMultilineListPattern,
+            PropertyPatternClauseSyntax => options.AlignMultilinePropertyPattern,
+            SwitchExpressionSyntax => options.AlignMultilineSwitchExpression,
+            QueryExpressionSyntax => options.AlignLinqQuery,
             BinaryExpressionSyntax =>
-                _options.AlignMultilineBinaryExpressionsChain && BreakPlan.IsChainRootOperator(node),
-            BinaryPatternSyntax => _options.AlignMultilineBinaryPatterns && BreakPlan.IsChainRootOperator(node),
-            BaseListSyntax { Types.Count: > 0 } => _options.AlignMultilineExtendsList,
+                options.AlignMultilineBinaryExpressionsChain && BreakPlan.IsChainRootOperator(node),
+            BinaryPatternSyntax => options.AlignMultilineBinaryPatterns && BreakPlan.IsChainRootOperator(node),
+            BaseListSyntax { Types.Count: > 0 } => options.AlignMultilineExtendsList,
 
             // ⚠ `align_multiline_calls_chain` is deliberately absent, and the reason is a *layout*
             // dependency rather than a missing scope. Its anchor is the column the chain's first `.`
@@ -216,19 +216,19 @@ public sealed partial class CSharpDocumentBuilder {
             // `System.Int32 a = 1,\n             b = 2` to the first declarator's column and leaves
             // the identical field declaration on its continuation indent, at both values.
             VariableDeclarationSyntax { Variables.Count: > 1, Parent: not FieldDeclarationSyntax } =>
-                _options.AlignMultipleDeclaration,
+                options.AlignMultipleDeclaration,
 
             // ⚠ Only where the list wraps at its own parameters. Under
             // `wrap_before_type_parameter_langle` the break is the gap before the `<` and the list
             // has no interior point to align, so an Align scope there would anchor a column nothing
             // ever lands on.
             TypeParameterListSyntax { Parameters.Count: > 0 } =>
-                _options.AlignMultilineTypeParameterList && !_options.WrapBeforeTypeParameterLangle,
+                options.AlignMultilineTypeParameterList && !options.WrapBeforeTypeParameterLangle,
             _ => false
         };
 
     void VisitPlanned(SyntaxNode node) {
-        var planned = _plan.GroupsOf(node);
+        var planned = plan.GroupsOf(node);
         if (planned.Count == 0) {
             VisitInner(node);
             return;
@@ -269,7 +269,7 @@ public sealed partial class CSharpDocumentBuilder {
         var indented = new int[planned.Count];
         for (var i = 0; i < planned.Count; i++) {
             var plan = planned[i];
-            _doc.OpenGroup(plan.Mode, plan.Id);
+            doc.OpenGroup(plan.Mode, plan.Id);
 
             // ⚠ The continuation scope a group's own break points need is opened here, inside the
             // group and closed inside it, rather than lazily at the break. Lazily is what milestone
@@ -288,7 +288,7 @@ public sealed partial class CSharpDocumentBuilder {
             // ⚠ Whether the level is actually spent is decided here and not in the plan, and the
             // fitter needs the answer: the ordering rule asks what column a break inside this group
             // lands on, and that is one level deeper only when this group is the one paying for it.
-            _doc.DescribeGroup(plan.Id, plan.Facts with { SpendsIndent = indented[i] > 0 });
+            doc.DescribeGroup(plan.Id, plan.Facts with { SpendsIndent = indented[i] > 0 });
 
             for (var level = 0; level < indented[i]; level++) {
                 OpenIndent(IndentKind.Continuous);
@@ -322,7 +322,7 @@ public sealed partial class CSharpDocumentBuilder {
                 CloseIndent(IndentKind.Continuous);
             }
 
-            _doc.Close();
+            doc.Close();
         }
     }
 
@@ -357,7 +357,7 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         return op.Text.Length
-            + (SpaceRules.Decide(op, op.GetNextToken(), _options) == SpaceKind.Required ? 1 : 0);
+            + (SpaceRules.Decide(op, op.GetNextToken(), options) == SpaceKind.Required ? 1 : 0);
     }
 
     /// <summary>The operator a wrapped line of this construct starts with, or <c>default</c>.</summary>
@@ -372,20 +372,20 @@ public sealed partial class CSharpDocumentBuilder {
     SyntaxToken OutdentToken(SyntaxNode node) {
         switch (node) {
             case BinaryExpressionSyntax binary
-                when _options.OutdentBinaryOps
-                && _options.WrapBeforeBinaryOpsign
+                when options.OutdentBinaryOps
+                && options.WrapBeforeBinaryOpsign
                 && BreakPlan.IsChainRootOperator(binary):
                 return binary.OperatorToken;
 
             case BinaryPatternSyntax pattern
-                when _options.OutdentBinaryPatternOps
-                && _options.WrapBeforeBinaryPatternOp
+                when options.OutdentBinaryPatternOps
+                && options.WrapBeforeBinaryPatternOp
                 && BreakPlan.IsChainRootOperator(pattern):
                 return pattern.OperatorToken;
 
             case InvocationExpressionSyntax or ConditionalAccessExpressionSyntax
-                when _options.OutdentDots
-                && !_options.WrapAfterDotInMethodCalls
+                when options.OutdentDots
+                && !options.WrapAfterDotInMethodCalls
                 && BreakPlan.IsChainRoot(node):
                 return node switch {
                     InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } =>
@@ -415,16 +415,16 @@ public sealed partial class CSharpDocumentBuilder {
             return false;
         }
 
-        if (_continuousDepth != 0) {
+        if (continuousDepth != 0) {
             return false;
         }
 
-        for (var i = _frames.Count - 1; i >= 0; i--) {
-            if (!_frames[i].Started) {
+        for (var i = frames.Count - 1; i >= 0; i--) {
+            if (!frames[i].Started) {
                 continue;
             }
 
-            return !_frames[i].Activated;
+            return !frames[i].Activated;
         }
 
         return true;
@@ -496,27 +496,27 @@ public sealed partial class CSharpDocumentBuilder {
 
     void EmitLeadingGapAt(int position) {
         EmitUpTo(position);
-        if (_cursor >= _pieces.Length || _lastPiece < 0) {
+        if (cursor >= pieces.Length || lastPiece < 0) {
             return;
         }
 
-        var piece = _pieces[_cursor];
+        var piece = pieces[cursor];
 
         // ⚠ Nested groups can start at the same token — a binary chain and its leftmost operand,
         // an invocation and the member access inside it — and the gap before that token is one gap.
         // Emitting it twice writes two breaks and, worse, opens a continuation scope that is closed
         // once.
-        if (piece.Span.Start < _verbatimUntil || piece.Span.Start == _gapEmittedAt) {
+        if (piece.Span.Start < verbatimUntil || piece.Span.Start == gapEmittedAt) {
             return;
         }
 
         EmitGap(
-            _cursor,
+            cursor,
             piece.Kind,
             piece.Span.Start,
-            piece.Kind == PieceKind.Token ? _tokens[piece.TokenIndex] : default
+            piece.Kind == PieceKind.Token ? tokens[piece.TokenIndex] : default
         );
-        _gapEmittedAt = piece.Span.Start;
+        gapEmittedAt = piece.Span.Start;
     }
 
     void VisitInner(SyntaxNode node) {
@@ -535,7 +535,7 @@ public sealed partial class CSharpDocumentBuilder {
         //   x is A            a
         //       or B    vs    + b     ← one level, not two
         if (IsChainRoot(node) || IsPatternChainRoot(node)) {
-            _frames.Add(
+            frames.Add(
                 new Frame(
                     IsPatternChainRoot(node) ? FrameKind.Pattern : FrameKind.Chain,
                     false,
@@ -547,11 +547,11 @@ public sealed partial class CSharpDocumentBuilder {
                 )
             );
             Dispatch(node);
-            if (_frames[^1].Activated) {
+            if (frames[^1].Activated) {
                 CloseIndent(IndentKind.Continuous);
             }
 
-            _frames.RemoveAt(_frames.Count - 1);
+            frames.RemoveAt(frames.Count - 1);
             return;
         }
 
@@ -574,23 +574,23 @@ public sealed partial class CSharpDocumentBuilder {
         // captured before the parameter was visited puts the enclosing scope's depth back the moment
         // the parameter ends, and the body never sees the reset. Measured: `M(\n a,\n x => p\n
         // && q\n)` came out with `&&` at the argument's own level where the oracle gives it one more.
-        _frames.Add(
+        frames.Add(
             new Frame(
                 FrameKind.Unit,
                 false,
                 ResetsDepth: node is AnonymousFunctionExpressionSyntax && !IsSoleLambdaArgument(node),
-                SavedDepth: _continuousDepth
+                SavedDepth: continuousDepth
             )
         );
 
         Dispatch(node);
-        if (_frames[^1].Activated) {
+        if (frames[^1].Activated) {
             CloseIndent(IndentKind.Continuous);
         }
 
-        var restored = _frames[^1].SavedDepth;
-        _frames.RemoveAt(_frames.Count - 1);
-        _continuousDepth = restored;
+        var restored = frames[^1].SavedDepth;
+        frames.RemoveAt(frames.Count - 1);
+        continuousDepth = restored;
     }
 
     /// <summary>
@@ -612,7 +612,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     </code>
     /// </remarks>
     bool IsSoleLambdaArgument(SyntaxNode node) =>
-        _options.PlaceSingleMethodArgumentLambdaOnSameLine
+        options.PlaceSingleMethodArgumentLambdaOnSameLine
         && node.Parent is ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } };
 
     /// <summary>
@@ -668,7 +668,7 @@ public sealed partial class CSharpDocumentBuilder {
             or TypeParameterConstraintClauseSyntax;
 
     void Dispatch(SyntaxNode node) {
-        if (_verbatimMembers.Contains(node.SpanStart) && node is MemberDeclarationSyntax) {
+        if (verbatimMembers.Contains(node.SpanStart) && node is MemberDeclarationSyntax) {
             EmitVerbatim(node);
             return;
         }
@@ -760,7 +760,7 @@ public sealed partial class CSharpDocumentBuilder {
             case NodeLayout.Continuation when node is TypeParameterConstraintClauseSyntax:
                 // resharper_indent_type_constraints: a `where` clause on its own line is a
                 // continuation of the declaration, and the option says whether it takes a level.
-                if (!_options.IndentTypeConstraints) {
+                if (!options.IndentTypeConstraints) {
                     VisitChildren(node);
                     return;
                 }
@@ -818,10 +818,10 @@ public sealed partial class CSharpDocumentBuilder {
             // leaves behind, not to the one it is closing.
             if (!semicolon.IsKind(SyntaxKind.None)
                 && token.SpanStart == semicolon.SpanStart
-                && _frames.Count > 0
-                && _frames[^1].Activated) {
+                && frames.Count > 0
+                && frames[^1].Activated) {
                 CloseIndent(IndentKind.Continuous);
-                _frames[^1] = _frames[^1] with { Activated = false };
+                frames[^1] = frames[^1] with { Activated = false };
             }
         }
     }
@@ -859,7 +859,7 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     ConstraintRunState BeginConstraintRun(SyntaxNode node) =>
-        _plan.TryConstraintRun(node, out var run)
+        plan.TryConstraintRun(node, out var run)
             ? new ConstraintRunState { Last = LastConstraintClause(node), Run = run }
             : default;
 
@@ -916,9 +916,9 @@ public sealed partial class CSharpDocumentBuilder {
     ///     wrapped clause two indents in.
     /// </remarks>
     int OpenRunGroup(GroupPlan plan) {
-        _doc.OpenGroup(plan.Mode, plan.Id);
+        doc.OpenGroup(plan.Mode, plan.Id);
         var spends = plan.SpendsIndent && CanSpendAContinuationLevel();
-        _doc.DescribeGroup(plan.Id, plan.Facts with { SpendsIndent = spends });
+        doc.DescribeGroup(plan.Id, plan.Facts with { SpendsIndent = spends });
         if (spends) {
             OpenIndent(IndentKind.Continuous);
         }
@@ -931,7 +931,7 @@ public sealed partial class CSharpDocumentBuilder {
             CloseIndent(IndentKind.Continuous);
         }
 
-        _doc.Close();
+        doc.Close();
     }
 
     static SyntaxNode? LastConstraintClause(SyntaxNode node) {
@@ -963,10 +963,10 @@ public sealed partial class CSharpDocumentBuilder {
     void VisitChild(SyntaxNode owner, SyntaxNode child) {
         if (child is BlockSyntax or AccessorListSyntax
             && OwnsAContinuationFrame(owner)
-            && _frames.Count > 0
-            && _frames[^1].Activated) {
+            && frames.Count > 0
+            && frames[^1].Activated) {
             CloseIndent(IndentKind.Continuous);
-            _frames[^1] = _frames[^1] with { Activated = false };
+            frames[^1] = frames[^1] with { Activated = false };
         }
 
         Visit(child);
@@ -981,7 +981,7 @@ public sealed partial class CSharpDocumentBuilder {
         // elements are measured against the continuation column, not against the column the
         // construct starts at, and a group opened around the node is entered at the latter. See
         // BreakPlan's `_inner` for why the two cannot be the same group.
-        var hasInner = _plan.TryInnerGroup(node, out var elements);
+        var hasInner = plan.TryInnerGroup(node, out var elements);
 
         // csharp_indent_braces: the braces themselves take the inner level rather than the outer.
         //
@@ -1001,11 +1001,11 @@ public sealed partial class CSharpDocumentBuilder {
         //                                      }
         //                                  }
         //                              }
-        var indentBraces = _options.IndentBraces
-            && (_options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(open)) != 0;
+        var indentBraces = options.IndentBraces
+            && (options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(open)) != 0;
 
         // resharper_indent_inside_namespace = false flattens a block namespace's members.
-        var suppress = node is NamespaceDeclarationSyntax && !_options.IndentInsideNamespace;
+        var suppress = node is NamespaceDeclarationSyntax && !options.IndentInsideNamespace;
 
         // ⚠ `use_continuous_indent_inside_initializer_braces = false` used to suppress the scope
         // outright — the initializer's contents landed on the level of the construct that owns them —
@@ -1027,7 +1027,7 @@ public sealed partial class CSharpDocumentBuilder {
         // `corpus/real` on the strength of a row that does not ask about it.
         var singleInsideInitializer = node is InitializerExpressionSyntax
             or AnonymousObjectCreationExpressionSyntax
-            && !_options.UseContinuousIndentInsideInitializerBraces;
+            && !options.UseContinuousIndentInsideInitializerBraces;
 
         // ⚠ A generic type's `where` clauses come before its `{`, so the run belongs to this walk as
         // much as to VisitChildren's. Without it a constrained class declaration has the plan and no
@@ -1040,7 +1040,7 @@ public sealed partial class CSharpDocumentBuilder {
                 if (opened && !close.IsKind(SyntaxKind.None) && token.SpanStart == close.SpanStart) {
                     EmitUpTo(close.SpanStart);
                     if (hasInner) {
-                        _doc.Close();
+                        doc.Close();
                     }
 
                     var closeIndent = singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block;
@@ -1061,9 +1061,9 @@ public sealed partial class CSharpDocumentBuilder {
                     // ⚠ Same rule as VisitChild's: a body indents from its declaration's level.
                     // `class C\n    : B {` puts the base list on a continuation line, and the members
                     // still take one level from the class rather than two.
-                    if (OwnsAContinuationFrame(node) && _frames.Count > 0 && _frames[^1].Activated) {
+                    if (OwnsAContinuationFrame(node) && frames.Count > 0 && frames[^1].Activated) {
                         CloseIndent(IndentKind.Continuous);
-                        _frames[^1] = _frames[^1] with { Activated = false };
+                        frames[^1] = frames[^1] with { Activated = false };
                     }
 
                     var braceIndent = singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block;
@@ -1085,8 +1085,8 @@ public sealed partial class CSharpDocumentBuilder {
                         // initializer that would have fitted on one continuation line comes out with
                         // one element per line instead.
                         EmitLeadingGapAt(FirstElementStart(node));
-                        _doc.DescribeGroup(elements.Id, elements.Facts);
-                        _doc.OpenGroup(elements.Mode, elements.Id);
+                        doc.DescribeGroup(elements.Id, elements.Facts);
+                        doc.OpenGroup(elements.Mode, elements.Id);
                     }
 
                     opened = true;
@@ -1102,7 +1102,7 @@ public sealed partial class CSharpDocumentBuilder {
         if (opened) {
             EmitUpTo(close.IsKind(SyntaxKind.None) ? int.MaxValue : close.SpanStart);
             if (hasInner) {
-                _doc.Close();
+                doc.Close();
             }
 
             CloseIndent(singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block);
@@ -1150,7 +1150,7 @@ public sealed partial class CSharpDocumentBuilder {
         // readings are indistinguishable under the export's `continuous_indent_multiplier = 1` — which
         // is exactly why the sweep called this key `SPURIOUS`, with Skala moving where the oracle
         // could not — and separate at any other multiplier. See IndentKind.OneLevel.
-        var singleInsideParens = layout == NodeLayout.Parens && !_options.UseContinuousIndentInsideParens;
+        var singleInsideParens = layout == NodeLayout.Parens && !options.UseContinuousIndentInsideParens;
         var suppress = aligned;
 
         // ⚠ `align_tuple_components = true`: the column *after* the tuple's `(`, which is a
@@ -1163,7 +1163,7 @@ public sealed partial class CSharpDocumentBuilder {
         // The scope opens after the `(` has been written, so `CurrentColumn` is already the first
         // component's. Opening it around the node — the way `Visit` does — would read the `(`'s own
         // column and land one to the left.
-        var innerIndent = node is TupleExpressionSyntax && _options.AlignTupleComponents
+        var innerIndent = node is TupleExpressionSyntax && options.AlignTupleComponents
             ? IndentKind.Align
             : singleInsideParens
                 ? IndentKind.OneLevel
@@ -1186,7 +1186,7 @@ public sealed partial class CSharpDocumentBuilder {
         // keeps the lambda on the call's line, so that parenthesis never gets a line of its own and
         // would otherwise be collapsed into whatever the lambda's body opens.
         var unconditional = node is ParenthesizedExpressionSyntax
-            || _options.PlaceSingleMethodArgumentLambdaOnSameLine
+            || options.PlaceSingleMethodArgumentLambdaOnSameLine
             && node is ArgumentListSyntax { Arguments: [{ Expression: AnonymousFunctionExpressionSyntax }] };
 
         // ⚠ A collection expression's elements are elements, like an initializer's: a chain broken
@@ -1249,7 +1249,7 @@ public sealed partial class CSharpDocumentBuilder {
         var scopeKind = marker ? IndentKind.None : innerIndent;
         var levels = marker ? 1 : inside;
 
-        var savedDepth = _continuousDepth;
+        var savedDepth = continuousDepth;
         var pending = 0;
         foreach (var child in node.ChildNodesAndTokens()) {
             if (child.IsToken) {
@@ -1257,12 +1257,12 @@ public sealed partial class CSharpDocumentBuilder {
                 if (opened > 0 && token.SpanStart == close.SpanStart) {
                     EmitUpTo(close.SpanStart);
                     if (element) {
-                        if (_frames[^1].Activated) {
-                            _doc.Close();
+                        if (frames[^1].Activated) {
+                            doc.Close();
                         }
 
-                        _frames.RemoveAt(_frames.Count - 1);
-                        _continuousDepth = savedDepth;
+                        frames.RemoveAt(frames.Count - 1);
+                        continuousDepth = savedDepth;
                     }
 
                     // ⚠ The scopes the closing delimiter itself is inside stay open across it, and
@@ -1300,9 +1300,9 @@ public sealed partial class CSharpDocumentBuilder {
 
                     opened = levels;
                     if (element) {
-                        savedDepth = _continuousDepth;
-                        _continuousDepth = 0;
-                        _frames.Add(new Frame(FrameKind.Unit, false));
+                        savedDepth = continuousDepth;
+                        continuousDepth = 0;
+                        frames.Add(new Frame(FrameKind.Unit, false));
                     }
                 }
             } else if (child.AsNode() is { } inner) {
@@ -1313,12 +1313,12 @@ public sealed partial class CSharpDocumentBuilder {
         if (opened > 0) {
             EmitUpTo(close.SpanStart);
             if (element) {
-                if (_frames[^1].Activated) {
-                    _doc.Close();
+                if (frames[^1].Activated) {
+                    doc.Close();
                 }
 
-                _frames.RemoveAt(_frames.Count - 1);
-                _continuousDepth = savedDepth;
+                frames.RemoveAt(frames.Count - 1);
+                continuousDepth = savedDepth;
             }
 
             for (var i = 0; i < opened; i++) {
@@ -1353,7 +1353,7 @@ public sealed partial class CSharpDocumentBuilder {
     bool ClosesAtABreakPoint(SyntaxNode node, NodeLayout layout) {
         var (_, close) = DelimiterTokens(node, layout);
         return !close.IsKind(SyntaxKind.None)
-            && _plan.TryGap(close.SpanStart, out var spec)
+            && plan.TryGap(close.SpanStart, out var spec)
             && spec.Rule == GapRule.Point;
     }
 
@@ -1365,12 +1365,12 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     ParenthesesIndentStyle ParenthesesStyleFor(SyntaxNode node) =>
         node switch {
-            TypeArgumentListSyntax => _options.IndentTypeargAngles,
-            TypeParameterListSyntax => _options.IndentTypeparamAngles,
-            ArgumentListSyntax => _options.IndentInvocationPars,
-            ParameterListSyntax { Parent: TypeDeclarationSyntax } => _options.IndentPrimaryConstructorDeclPars,
-            ParameterListSyntax => _options.IndentMethodDeclPars,
-            _ => _options.IndentPars
+            TypeArgumentListSyntax => options.IndentTypeargAngles,
+            TypeParameterListSyntax => options.IndentTypeparamAngles,
+            ArgumentListSyntax => options.IndentInvocationPars,
+            ParameterListSyntax { Parent: TypeDeclarationSyntax } => options.IndentPrimaryConstructorDeclPars,
+            ParameterListSyntax => options.IndentMethodDeclPars,
+            _ => options.IndentPars
         };
 
     /// <summary>
@@ -1392,7 +1392,7 @@ public sealed partial class CSharpDocumentBuilder {
         // one construct that asks for it is a `for` header under `wrap_for_stmt_header_style`, and it
         // has to be an inner group for the reason BreakPlan.PlanForHeader records: a group around the
         // statement spans the body too, so its flat width is unbounded and it would break every time.
-        var hasHeader = _plan.TryInnerGroup(node, out var header);
+        var hasHeader = plan.TryInnerGroup(node, out var header);
         var headerOpen = false;
 
         foreach (var child in node.ChildNodesAndTokens()) {
@@ -1401,7 +1401,7 @@ public sealed partial class CSharpDocumentBuilder {
                 if (parenScopes > 0 && token.SpanStart == close.SpanStart) {
                     EmitUpTo(close.SpanStart);
                     if (headerOpen) {
-                        _doc.Close();
+                        doc.Close();
                         headerOpen = false;
                     }
 
@@ -1421,8 +1421,8 @@ public sealed partial class CSharpDocumentBuilder {
                         // VisitBraced uses at the `{`: that gap belongs to whatever encloses the
                         // header, and a group that swallows it can never be flat.
                         EmitUpTo(open.GetNextToken().SpanStart);
-                        _doc.DescribeGroup(header.Id, header.Facts);
-                        _doc.OpenGroup(header.Mode, header.Id);
+                        doc.DescribeGroup(header.Id, header.Facts);
+                        doc.OpenGroup(header.Mode, header.Id);
                         headerOpen = true;
                     }
                 }
@@ -1447,7 +1447,7 @@ public sealed partial class CSharpDocumentBuilder {
         if (parenScopes > 0) {
             EmitUpTo(close.SpanStart);
             if (headerOpen) {
-                _doc.Close();
+                doc.Close();
             }
 
             for (var i = 0; i < parenScopes; i++) {
@@ -1476,7 +1476,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     </para>
     /// </remarks>
     void VisitLabeled(LabeledStatementSyntax node) {
-        var outdented = _options.OutdentStatementLabels;
+        var outdented = options.OutdentStatementLabels;
         if (outdented) {
             OpenIndent(IndentKind.Outdent);
         }
@@ -1508,7 +1508,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     as unimplemented from milestone 1 until 3.1.
     /// </remarks>
     IndentKind ConditionIndent =>
-        _options.AlignMultilineStatementConditions
+        options.AlignMultilineStatementConditions
             ? IndentKind.Align
             : IndentKind.Continuous;
 
@@ -1524,7 +1524,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     is on. Turn it off and the family's table applies here like anywhere else.
     /// </remarks>
     (int Inside, int Closer) ConditionLevels =>
-        ConditionIndent == IndentKind.Align ? (1, 0) : DelimiterLevels(_options.IndentStatementPars);
+        ConditionIndent == IndentKind.Align ? (1, 0) : DelimiterLevels(options.IndentStatementPars);
 
     /// <summary>
     ///     The <c>_continuousDepth</c> each open statement header sits at, while its parentheses are
@@ -1554,10 +1554,10 @@ public sealed partial class CSharpDocumentBuilder {
     ///         <see cref="OpenIndent" /> counts an aligned scope as a continuation too.
     ///     </para>
     /// </remarks>
-    readonly List<int> _continuousHeaders = [];
+    readonly List<int> continuousHeaders = [];
 
     /// <summary>Whether a group's <see cref="GroupPlan.OwnLevel" /> is the header's to pay.</summary>
-    bool HeaderPaysForTheOwnLevel() => _continuousHeaders.Count > 0 && _continuousHeaders[^1] == _continuousDepth;
+    bool HeaderPaysForTheOwnLevel() => continuousHeaders.Count > 0 && continuousHeaders[^1] == continuousDepth;
 
     int OpenConditionScopes() {
         var (inside, _) = ConditionLevels;
@@ -1570,7 +1570,7 @@ public sealed partial class CSharpDocumentBuilder {
         // runs exactly once per header. CloseConditionScopesAfterRparen runs on every token of the
         // walk with nothing pending and cannot own the pop.
         if (inside > 0) {
-            _continuousHeaders.Add(ConditionIndent == IndentKind.Continuous ? _continuousDepth : -1);
+            continuousHeaders.Add(ConditionIndent == IndentKind.Continuous ? continuousDepth : -1);
         }
 
         return inside;
@@ -1581,8 +1581,8 @@ public sealed partial class CSharpDocumentBuilder {
     ///     those close after the token.
     /// </summary>
     int CloseConditionScopesBeforeRparen(int opened) {
-        if (opened > 0 && _continuousHeaders.Count > 0) {
-            _continuousHeaders.RemoveAt(_continuousHeaders.Count - 1);
+        if (opened > 0 && continuousHeaders.Count > 0) {
+            continuousHeaders.RemoveAt(continuousHeaders.Count - 1);
         }
 
         var (_, closer) = ConditionLevels;
@@ -1616,7 +1616,7 @@ public sealed partial class CSharpDocumentBuilder {
         EmitToken(node.OpenBraceToken);
 
         // csharp_indent_switch_labels = true: the labels take one indent from the switch.
-        var labelled = _options.IndentSwitchLabels;
+        var labelled = options.IndentSwitchLabels;
         if (labelled) {
             OpenIndent(IndentKind.Block);
         }
@@ -1660,7 +1660,7 @@ public sealed partial class CSharpDocumentBuilder {
         foreach (var statement in node.Statements) {
             // ⚠ resharper_indent_break_from_case = false puts the control transfer back at the
             // label's own level, which is a different shape and not a rounding error.
-            if (!_options.IndentBreakFromCase
+            if (!options.IndentBreakFromCase
                 && statement is BreakStatementSyntax or ContinueStatementSyntax or GotoStatementSyntax) {
                 OpenIndent(IndentKind.Outdent);
                 Visit(statement);
@@ -1678,7 +1678,7 @@ public sealed partial class CSharpDocumentBuilder {
     // ── Indent scopes ────────────────────────────────────────────────────────────────────────
 
     void OpenIndent(IndentKind kind, bool unconditional = false, int columns = 0) {
-        _doc.OpenIndent(kind, unconditional, columns);
+        doc.OpenIndent(kind, unconditional, columns);
 
         // ⚠ Neither an outdent kind is a continuation and neither is a block, so neither touches the
         // frame machinery. `OutdentColumns` shifts a column and spends no level at all, which is the
@@ -1693,17 +1693,17 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ `Single` belongs here and not below: it is a continuation scope whose width happens not
         // to be multiplied, so it composes and does not reset the continuation context.
         if (kind is IndentKind.Continuous or IndentKind.Align or IndentKind.OneLevel) {
-            _continuousDepth++;
+            continuousDepth++;
             return;
         }
 
-        _blockStack.Add(_continuousDepth);
-        _continuousDepth = 0;
+        blockStack.Add(continuousDepth);
+        continuousDepth = 0;
 
         // ⚠ A block is a frame boundary. A continuation level spent inside it must be closed inside
         // it too, or the document builder's Close pops the wrong container and the whole brace
         // structure of the file shifts by one.
-        _frames.Add(new Frame(FrameKind.Unit, false));
+        frames.Add(new Frame(FrameKind.Unit, false));
     }
 
     /// <param name="alignsCloser">
@@ -1711,23 +1711,23 @@ public sealed partial class CSharpDocumentBuilder {
     /// </param>
     void CloseIndent(IndentKind kind, bool alignsCloser = false) {
         if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None) {
-            _doc.Close(alignsCloser);
+            doc.Close(alignsCloser);
             return;
         }
 
         if (kind is IndentKind.Continuous or IndentKind.Align or IndentKind.OneLevel) {
-            _continuousDepth--;
+            continuousDepth--;
         } else {
-            if (_frames[^1].Activated) {
-                _doc.Close();
+            if (frames[^1].Activated) {
+                doc.Close();
             }
 
-            _frames.RemoveAt(_frames.Count - 1);
-            _continuousDepth = _blockStack[^1];
-            _blockStack.RemoveAt(_blockStack.Count - 1);
+            frames.RemoveAt(frames.Count - 1);
+            continuousDepth = blockStack[^1];
+            blockStack.RemoveAt(blockStack.Count - 1);
         }
 
-        _doc.Close(alignsCloser);
+        doc.Close(alignsCloser);
     }
 
     // ── The piece stream ─────────────────────────────────────────────────────────────────────
@@ -1748,17 +1748,17 @@ public sealed partial class CSharpDocumentBuilder {
         // continuation scope instead of after it has been closed. The `]` came out at eight
         // columns and at four on the second pass, because a space before it in the source moves the
         // `]` off the omitted token's position and the collision stops happening (SK-FUZZ-0004).
-        if (_cursor < _pieces.Length
-            && _pieces[_cursor].Span.Start == token.SpanStart
-            && _pieces[_cursor].Span.Length == token.Span.Length
-            && _pieces[_cursor].Kind == PieceKind.Token) {
-            EmitPiece(_cursor++);
+        if (cursor < pieces.Length
+            && pieces[cursor].Span.Start == token.SpanStart
+            && pieces[cursor].Span.Length == token.Span.Length
+            && pieces[cursor].Kind == PieceKind.Token) {
+            EmitPiece(cursor++);
         }
     }
 
     void EmitUpTo(int position) {
-        while (_cursor < _pieces.Length && _pieces[_cursor].Span.Start < position) {
-            EmitPiece(_cursor++);
+        while (cursor < pieces.Length && pieces[cursor].Span.Start < position) {
+            EmitPiece(cursor++);
         }
     }
 
@@ -1772,7 +1772,7 @@ public sealed partial class CSharpDocumentBuilder {
         // EditEmitter turned the overlap into an edit that deleted the rest of the file. The
         // token-stream check refused the write, so nothing was ever lost on disk — but the file
         // could not be formatted at all until the tag was taken out.
-        if (node.SpanStart < _verbatimUntil) {
+        if (node.SpanStart < verbatimUntil) {
             return;
         }
 
@@ -1787,66 +1787,66 @@ public sealed partial class CSharpDocumentBuilder {
         // `@formatter:off` — `#if` … `// @formatter:off` … `void M() {` … `#endif`. Both halves are
         // needed: without the unbalanced `#if` this node is never emitted verbatim, and without the
         // tag `_verbatimUntil` never moves.
-        if (node.SpanStart < _verbatimUntil) {
+        if (node.SpanStart < verbatimUntil) {
             return;
         }
 
         var span = node.Span;
-        if (span.Start != _gapEmittedAt) {
-            EmitGap(_cursor, PieceKind.Token, span.Start, node.GetFirstToken());
+        if (span.Start != gapEmittedAt) {
+            EmitGap(cursor, PieceKind.Token, span.Start, node.GetFirstToken());
         }
 
         MarkFramesStarted();
 
         var source = new SourceSpan(span.Start, span.Length);
-        _doc.Anchor(source, -1);
+        doc.Anchor(source, -1);
         // The node's first line takes the code's indentation; its interior lines are never
         // reindented, because the writer only indents at a line start and this text is one piece.
-        _doc.Verbatim(_source[span.Start..span.End], source);
+        doc.Verbatim(this.source[span.Start..span.End], source);
 
-        while (_cursor < _pieces.Length && _pieces[_cursor].Span.Start < span.End) {
-            _lastPiece = _cursor;
-            _cursor++;
+        while (cursor < pieces.Length && pieces[cursor].Span.Start < span.End) {
+            lastPiece = cursor;
+            cursor++;
         }
     }
 
     void EmitPiece(int index) {
-        var piece = _pieces[index];
+        var piece = pieces[index];
 
         // Inside a `@formatter:off` span everything was written as one raw chunk already.
-        if (piece.Span.Start < _verbatimUntil) {
-            _lastPiece = index;
+        if (piece.Span.Start < verbatimUntil) {
+            lastPiece = index;
             return;
         }
 
-        if (piece.IsComment && FormatterTagGuard.IsOffTag(piece.Text, _options.Tags)) {
+        if (piece.IsComment && FormatterTagGuard.IsOffTag(piece.Text, options.Tags)) {
             EmitFormatterOffSpan(index);
             return;
         }
 
-        var token = piece.Kind == PieceKind.Token ? _tokens[piece.TokenIndex] : default;
-        if (piece.Span.Start != _gapEmittedAt) {
+        var token = piece.Kind == PieceKind.Token ? tokens[piece.TokenIndex] : default;
+        if (piece.Span.Start != gapEmittedAt) {
             EmitGap(index, piece.Kind, piece.Span.Start, token);
         }
 
         MarkFramesStarted();
 
         var span = new SourceSpan(piece.Span.Start, piece.Span.Length);
-        _doc.Anchor(span, piece.TokenIndex);
+        doc.Anchor(span, piece.TokenIndex);
 
         switch (piece.Kind) {
             case PieceKind.Token:
                 // ⚠ `indent_raw_literal_string`, all three values. A multi-line raw literal's
                 // interior and its closing delimiter move together, and the shift is uniform, so
                 // the string's value is unchanged; see VerbatimFlags.Realign.
-                _doc.Text(piece.Text, span, RawLiteralFlags(piece));
+                doc.Text(piece.Text, span, RawLiteralFlags(piece));
                 break;
 
             case PieceKind.DisabledText:
             case PieceKind.Skipped:
                 // ⚠ Never reindented. Silently doing something clever here is how formatters
                 // destroy code (docs/plan/04 § "Trivia").
-                _doc.Verbatim(piece.Text, span, VerbatimFlags.SelfIndented);
+                doc.Verbatim(piece.Text, span, VerbatimFlags.SelfIndented);
                 break;
 
             // ⚠ Trimmed on the right. A directive's trailing whitespace is never part of anything,
@@ -1854,21 +1854,21 @@ public sealed partial class CSharpDocumentBuilder {
             // code in the corpus — 71 lines across 14 files of `corpus/real/` were nothing but this.
             // The rest of a verbatim piece is still byte-for-byte.
             case PieceKind.ConditionalDirective:
-                EmitDirective(piece, span, _options.IndentPreprocessorIf);
+                EmitDirective(piece, span, options.IndentPreprocessorIf);
                 break;
 
             case PieceKind.OtherDirective:
-                EmitDirective(piece, span, _options.IndentPreprocessorOther);
+                EmitDirective(piece, span, options.IndentPreprocessorOther);
                 break;
 
             case PieceKind.RegionDirective:
-                EmitDirective(piece, span, _options.IndentPreprocessorRegion);
+                EmitDirective(piece, span, options.IndentPreprocessorRegion);
                 break;
 
             case PieceKind.BlockComment:
                 // A multi-line comment's continuation lines carry their own indentation; the first
                 // line takes the code's — unless `align_multiline_comments` claims them, below.
-                _doc.Verbatim(piece.Text, span, CommentFlags(piece) | StarredFlag(piece));
+                doc.Verbatim(piece.Text, span, CommentFlags(piece) | StarredFlag(piece));
                 break;
 
             // ⚠ `/** … */` is deliberately not offered to `align_multiline_comments`. It is a
@@ -1876,7 +1876,7 @@ public sealed partial class CSharpDocumentBuilder {
             // never asked about the combination — so it keeps the behaviour it had rather than
             // inheriting a rule measured on a different token kind.
             case PieceKind.BlockDocComment:
-                _doc.Verbatim(piece.Text, span, CommentFlags(piece));
+                doc.Verbatim(piece.Text, span, CommentFlags(piece));
                 break;
 
             case PieceKind.DocCommentLine:
@@ -1886,7 +1886,7 @@ public sealed partial class CSharpDocumentBuilder {
                 // `///<summary>` untouched) and nowhere else either. Applying it costs 79 lines
                 // across 15 files of `corpus/real/`. See SK-DIV-0006: `jb cleanupcode`'s
                 // CSReformatCode does not format doc comments at all.
-                _doc.Text(piece.Text, span, CommentFlags(piece));
+                doc.Text(piece.Text, span, CommentFlags(piece));
                 break;
 
             // ⚠ Not trimmed, and not respaced either. A comment's own text is the author's, and the
@@ -1902,15 +1902,15 @@ public sealed partial class CSharpDocumentBuilder {
             // `space_before_trailing_comment`, which is the gap between the code and the `//` and is
             // a different key with its own fixture.
             case PieceKind.LineComment:
-                _doc.Text(piece.Text, span, CommentFlags(piece));
+                doc.Text(piece.Text, span, CommentFlags(piece));
                 break;
 
             default:
-                _doc.Text(piece.Text, span);
+                doc.Text(piece.Text, span);
                 break;
         }
 
-        _lastPiece = index;
+        lastPiece = index;
     }
 
     /// <summary>
@@ -1933,11 +1933,11 @@ public sealed partial class CSharpDocumentBuilder {
     ///     source, which is what separates it from <c>align</c>.
     /// </remarks>
     VerbatimFlags RawLiteralFlags(Piece piece) {
-        if (!_tokens[piece.TokenIndex].IsKind(SyntaxKind.MultiLineRawStringLiteralToken)) {
+        if (!tokens[piece.TokenIndex].IsKind(SyntaxKind.MultiLineRawStringLiteralToken)) {
             return VerbatimFlags.None;
         }
 
-        return _options.IndentRawLiteralString switch {
+        return options.IndentRawLiteralString switch {
             RawStringIndentStyle.Align => VerbatimFlags.Realign,
             RawStringIndentStyle.Indent => VerbatimFlags.RealignToIndent,
             _ => VerbatimFlags.None
@@ -1995,7 +1995,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     unqualified rather than half-moved.
     /// </remarks>
     VerbatimFlags StarredFlag(Piece piece) =>
-        _options.AlignMultilineComments && IsStarredBlockComment(piece.Text)
+        options.AlignMultilineComments && IsStarredBlockComment(piece.Text)
             ? VerbatimFlags.AlignStarred
             : VerbatimFlags.None;
 
@@ -2027,7 +2027,7 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     VerbatimFlags CommentFlags(Piece piece) =>
-        _options.StickComment && piece.StartsLine && LineStart(piece.Span.Start) == piece.Span.Start
+        options.StickComment && piece.StartsLine && LineStart(piece.Span.Start) == piece.Span.Start
             ? VerbatimFlags.AtColumnZero
             : VerbatimFlags.None;
 
@@ -2037,7 +2037,7 @@ public sealed partial class CSharpDocumentBuilder {
     /// </summary>
     bool TouchesInactiveBranch(Piece previous, int nextPieceIndex) =>
         previous.Inactive
-        || nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length && _pieces[nextPieceIndex].Inactive;
+        || nextPieceIndex >= 0 && nextPieceIndex < pieces.Length && pieces[nextPieceIndex].Inactive;
 
     /// <summary>
     ///     One preprocessor directive, at the column <c>indent_preprocessor_{if,other,region}</c> asks
@@ -2070,41 +2070,41 @@ public sealed partial class CSharpDocumentBuilder {
 
         switch (style) {
             case PreprocessorIndentStyle.UsualIndent:
-                _doc.Verbatim(text, span, VerbatimFlags.None);
+                doc.Verbatim(text, span, VerbatimFlags.None);
                 return;
 
             case PreprocessorIndentStyle.Outdent:
                 OpenIndent(IndentKind.Outdent);
-                _doc.Verbatim(text, span, VerbatimFlags.None);
+                doc.Verbatim(text, span, VerbatimFlags.None);
                 CloseIndent(IndentKind.Outdent);
                 return;
 
             case PreprocessorIndentStyle.DoNotChange when piece.StartsLine:
                 // The author's own indentation, carried in the text so that the writer adds none.
                 var start = LineStart(piece.Span.Start);
-                _doc.Verbatim(_source[start..piece.Span.Start] + text, span, VerbatimFlags.SelfIndented);
+                doc.Verbatim(source[start..piece.Span.Start] + text, span, VerbatimFlags.SelfIndented);
                 return;
 
             default:
-                _doc.Verbatim(text, span, VerbatimFlags.AtColumnZero);
+                doc.Verbatim(text, span, VerbatimFlags.AtColumnZero);
                 return;
         }
     }
 
     /// <summary>Every open frame has now seen a piece of its own.</summary>
     void MarkFramesStarted() {
-        for (var i = _frames.Count - 1; i >= 0 && !_frames[i].Started; i--) {
-            _frames[i] = _frames[i] with { Started = true };
-            if (!_frames[i].ResetsDepth) {
+        for (var i = frames.Count - 1; i >= 0 && !frames[i].Started; i--) {
+            frames[i] = frames[i] with { Started = true };
+            if (!frames[i].ResetsDepth) {
                 continue;
             }
 
-            _continuousDepth = 0;
+            continuousDepth = 0;
 
             // ⚠ Every frame the same walk has just started sits inside this one, so it restores to
             // the reset value rather than to the depth it captured before the reset happened.
-            for (var j = i + 1; j < _frames.Count; j++) {
-                _frames[j] = _frames[j] with { SavedDepth = 0 };
+            for (var j = i + 1; j < frames.Count; j++) {
+                frames[j] = frames[j] with { SavedDepth = 0 };
             }
         }
     }
@@ -2118,42 +2118,42 @@ public sealed partial class CSharpDocumentBuilder {
         // the line the author wrote the tag on, which is the one line they can be certain they meant.
         // A tag in a *trailing* comment does not extend backwards — the oracle formats the code
         // before it on that line, and so does this.
-        var piece = _pieces[index];
+        var piece = pieces[index];
         var start = piece.StartsLine ? LineStart(piece.Span.Start) : piece.Span.Start;
-        var end = _source.Length;
-        for (var i = index + 1; i < _pieces.Length; i++) {
-            if (_pieces[i].IsComment && FormatterTagGuard.IsOnTag(_pieces[i].Text, _options.Tags)) {
-                end = _pieces[i].Span.End;
+        var end = source.Length;
+        for (var i = index + 1; i < pieces.Length; i++) {
+            if (pieces[i].IsComment && FormatterTagGuard.IsOnTag(pieces[i].Text, options.Tags)) {
+                end = pieces[i].Span.End;
                 break;
             }
         }
 
         EmitGap(index, PieceKind.LineComment, start, default);
         var span = new SourceSpan(start, end - start);
-        _doc.Anchor(span, -1);
+        doc.Anchor(span, -1);
 
         // The chunk now carries the tag line's own indentation, so the writer must not add its own.
-        _doc.Verbatim(
-            _source[start..end],
+        doc.Verbatim(
+            source[start..end],
             span,
             piece.StartsLine ? VerbatimFlags.SelfIndented : VerbatimFlags.None
         );
 
-        _verbatimUntil = end;
-        _lastPiece = index;
+        verbatimUntil = end;
+        lastPiece = index;
     }
 
     /// <summary>The offset of the first character of the line <paramref name="position" /> is on.</summary>
     int LineStart(int position) {
         var start = position;
-        while (start > 0 && _source[start - 1] is ' ' or '\t') {
+        while (start > 0 && source[start - 1] is ' ' or '\t') {
             start--;
         }
 
         // ⚠ Only whitespace is walked back over, and only to a line boundary. A tag comment that
         // follows something other than indentation on its line is not at the start of a line, and
         // `Piece.StartsLine` has already said so — this is the second half of the same statement.
-        return start > 0 && _source[start - 1] is not ('\n' or '\r') ? position : start;
+        return start > 0 && source[start - 1] is not ('\n' or '\r') ? position : start;
     }
 
     // ⚠ "Which comment is a tag" used to be answered here too, by a private `ContainsTag`. It is
@@ -2164,14 +2164,14 @@ public sealed partial class CSharpDocumentBuilder {
     // ── Gaps ─────────────────────────────────────────────────────────────────────────────────
 
     void EmitGap(int nextPieceIndex, PieceKind nextKind, int nextStart, SyntaxToken nextToken) {
-        if (_lastPiece < 0) {
+        if (lastPiece < 0) {
             // Anything before the first piece is the file's prologue: a BOM, leading blank lines.
             // No anchor precedes it, so the emitter keeps it byte-for-byte.
             return;
         }
 
-        var previous = _pieces[_lastPiece];
-        var gap = _source[previous.Span.End..nextStart];
+        var previous = pieces[lastPiece];
+        var gap = source[previous.Span.End..nextStart];
         var newLines = CountNewLines(gap);
 
         // ⚠ A gap that touches disabled text is copied byte-for-byte. Roslyn's DisabledTextTrivia
@@ -2190,7 +2190,7 @@ public sealed partial class CSharpDocumentBuilder {
             && newLines > 0
             || TouchesInactiveBranch(previous, nextPieceIndex)) {
             if (gap.Length > 0) {
-                _doc.Verbatim(gap, new SourceSpan(previous.Span.End, gap.Length), VerbatimFlags.AtColumnZero);
+                doc.Verbatim(gap, new SourceSpan(previous.Span.End, gap.Length), VerbatimFlags.AtColumnZero);
             }
 
             return;
@@ -2219,17 +2219,17 @@ public sealed partial class CSharpDocumentBuilder {
         // adds breaks the author never wrote (SK-DIV-0064).
         // ⚠ Both arms are unreachable for disabled text, which the two returns above have already
         // taken: an inactive `#if` branch is copied byte for byte and no key here reaches inside it.
-        if (_options.DisableLineBreakChanges && newLines == 0) {
+        if (options.DisableLineBreakChanges && newLines == 0) {
             EmitFlatGap(previous, nextKind, nextToken, gap);
             return;
         }
 
-        if ((_options.DisableLineBreakChanges || _options.DisableLineBreakRemoval) && newLines > 0) {
+        if ((options.DisableLineBreakChanges || options.DisableLineBreakRemoval) && newLines > 0) {
             Break(
                 nextPieceIndex,
                 nextToken,
                 ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
-                _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
             );
 
             return;
@@ -2241,7 +2241,7 @@ public sealed partial class CSharpDocumentBuilder {
         var spec = default(GapSpec);
         var planned = previous.Kind == PieceKind.Token
             && nextKind == PieceKind.Token
-            && _plan.TryGap(nextStart, out spec);
+            && plan.TryGap(nextStart, out spec);
 
         if (planned) {
             // ⚠ A preserved run goes *before* the point rather than into its flat rendering, because
@@ -2255,17 +2255,17 @@ public sealed partial class CSharpDocumentBuilder {
                 case GapRule.Point:
                 case GapRule.FillPoint:
                     if (preserved is not null) {
-                        _doc.Space(preserved);
+                        doc.Space(preserved);
                     }
 
-                    _doc.BreakPoint(
+                    doc.BreakPoint(
                         spec.Group,
                         preserved is null && FlatGapSpace(previous, nextKind, nextToken, gap) != SpaceKind.Forbidden,
                         spec.Rule == GapRule.FillPoint,
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                         ? DefaultNewLine()
-                        : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
                     );
                     return;
 
@@ -2286,7 +2286,7 @@ public sealed partial class CSharpDocumentBuilder {
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                         ? DefaultNewLine()
-                        : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                        : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
                     );
                     return;
             }
@@ -2313,12 +2313,12 @@ public sealed partial class CSharpDocumentBuilder {
             nextPieceIndex,
             nextToken,
             ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
-            _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+            options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
         );
     }
 
     string DefaultNewLine() =>
-        _options.LineEnding switch {
+        options.LineEnding switch {
             LineEnding.Crlf => "\r\n",
             LineEnding.Cr => "\r",
             _ => "\n"
@@ -2337,10 +2337,10 @@ public sealed partial class CSharpDocumentBuilder {
         var frame = FrameToSpend(nextPieceIndex, nextToken);
         if (frame >= 0) {
             OpenIndent(IndentKind.Continuous);
-            _frames[frame] = _frames[frame] with { Activated = true };
+            frames[frame] = frames[frame] with { Activated = true };
         }
 
-        _doc.Line(LineKind.Hard, blanks, newLine);
+        doc.Line(LineKind.Hard, blanks, newLine);
     }
 
     /// <summary>
@@ -2361,12 +2361,12 @@ public sealed partial class CSharpDocumentBuilder {
             || nextToken.IsKind(SyntaxKind.QuestionToken)
             && nextToken.Parent is ConditionalAccessExpressionSyntax;
 
-        for (var i = _frames.Count - 1; i >= 0; i--) {
-            if (!_frames[i].Started) {
+        for (var i = frames.Count - 1; i >= 0; i--) {
+            if (!frames[i].Started) {
                 continue;
             }
 
-            if (_frames[i].Activated) {
+            if (frames[i].Activated) {
                 return -1;
             }
 
@@ -2374,11 +2374,11 @@ public sealed partial class CSharpDocumentBuilder {
             // break outward: the Align scope under it is an absolute column, so a level spent by an
             // enclosing frame would be discarded by the writer anyway and only the bookkeeping
             // would differ.
-            if (_frames[i].Aligned) {
+            if (frames[i].Aligned) {
                 return -1;
             }
 
-            if (_frames[i].Kind == FrameKind.Chain) {
+            if (frames[i].Kind == FrameKind.Chain) {
                 if (beforeDot) {
                     return i;
                 }
@@ -2386,7 +2386,7 @@ public sealed partial class CSharpDocumentBuilder {
                 continue;
             }
 
-            if (_frames[i].Kind == FrameKind.Pattern) {
+            if (frames[i].Kind == FrameKind.Pattern) {
                 if (nextToken.Parent is BinaryPatternSyntax pattern && pattern.OperatorToken == nextToken) {
                     return i;
                 }
@@ -2394,7 +2394,7 @@ public sealed partial class CSharpDocumentBuilder {
                 continue;
             }
 
-            return _continuousDepth == 0 && IsContinuation(nextPieceIndex, nextToken) ? i : -1;
+            return continuousDepth == 0 && IsContinuation(nextPieceIndex, nextToken) ? i : -1;
         }
 
         return -1;
@@ -2431,9 +2431,9 @@ public sealed partial class CSharpDocumentBuilder {
                 return false;
             }
 
-            for (var i = nextPieceIndex + 1; i < _pieces.Length; i++) {
-                if (_pieces[i].Kind == PieceKind.Token) {
-                    return IsContinuation(-1, _tokens[_pieces[i].TokenIndex]);
+            for (var i = nextPieceIndex + 1; i < pieces.Length; i++) {
+                if (pieces[i].Kind == PieceKind.Token) {
+                    return IsContinuation(-1, tokens[pieces[i].TokenIndex]);
                 }
             }
 
@@ -2595,11 +2595,11 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     void EmitFlatGap(Piece previous, PieceKind nextKind, SyntaxToken nextToken, string gap) {
         if (PreservedRun(gap) is { } preserved) {
-            _doc.Space(preserved);
+            doc.Space(preserved);
             return;
         }
 
-        _doc.Space(FlatGapSpace(previous, nextKind, nextToken, gap));
+        doc.Space(FlatGapSpace(previous, nextKind, nextToken, gap));
     }
 
     /// <summary>
@@ -2613,7 +2613,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     ending, and this key has no opinion about line endings.
     /// </remarks>
     string? PreservedRun(string gap) =>
-        _options.DisableSpaceChanges && gap.Length > 1 && CountNewLines(gap) == 0 ? gap : null;
+        options.DisableSpaceChanges && gap.Length > 1 && CountNewLines(gap) == 0 ? gap : null;
 
     /// <summary>
     ///     <c>disable_space_changes</c>: the one-bit half of the run, which every caller needs.
@@ -2625,7 +2625,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     <c>space_before_trailing_comment</c>'s values, and this key can (SK-DIV-0060, SK-DIV-0062).
     /// </remarks>
     SpaceKind FlatGapSpace(Piece previous, PieceKind nextKind, SyntaxToken nextToken, string gap) {
-        if (!_options.DisableSpaceChanges) {
+        if (!options.DisableSpaceChanges) {
             return GapSpace(previous, nextKind, nextToken);
         }
 
@@ -2639,14 +2639,14 @@ public sealed partial class CSharpDocumentBuilder {
             or PieceKind.BlockComment
             or PieceKind.DocCommentLine
             or PieceKind.BlockDocComment) {
-            return _options.SpaceBeforeTrailingComment ? SpaceKind.Required : SpaceKind.Forbidden;
+            return options.SpaceBeforeTrailingComment ? SpaceKind.Required : SpaceKind.Forbidden;
         }
 
         if (previous.Kind != PieceKind.Token || nextKind != PieceKind.Token) {
             return SpaceKind.Required;
         }
 
-        var kind = SpaceRules.Decide(_tokens[previous.TokenIndex], nextToken, _options);
+        var kind = SpaceRules.Decide(tokens[previous.TokenIndex], nextToken, options);
 
         // ⚠ A gap no rule governs is resolved against the source, here rather than in the writer.
         // `extra_spaces = remove_all` collapses a run to one space and inserts none, so "preserve"
@@ -2659,8 +2659,8 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     bool HasSpace(int start, int end) {
-        for (var i = start; i < end && i < _source.Length; i++) {
-            if (_source[i] is ' ' or '\t') {
+        for (var i = start; i < end && i < source.Length; i++) {
+            if (source[i] is ' ' or '\t') {
                 return true;
             }
         }
@@ -2680,7 +2680,7 @@ public sealed partial class CSharpDocumentBuilder {
             return false;
         }
 
-        var previousToken = _tokens[previous.TokenIndex];
+        var previousToken = tokens[previous.TokenIndex];
 
         if (previousToken.IsKind(SyntaxKind.OpenBraceToken) && nextToken.IsKind(SyntaxKind.CloseBraceToken)) {
             // ⚠ `together_same_line` joins the pair too, and this read `== Together` — so Skala gave
@@ -2697,7 +2697,7 @@ public sealed partial class CSharpDocumentBuilder {
             // and third are the same bytes.) ⚠ `together_same_line`'s second half — pulling the pair
             // back onto the declaration's line against `new_line_before_open_brace` — is NOT
             // implemented: it needs the brace-split direction Skala does not have. SK-DIV-0091.
-            return _options.EmptyBlockStyle is EmptyBlockStyle.Together or EmptyBlockStyle.TogetherSameLine
+            return options.EmptyBlockStyle is EmptyBlockStyle.Together or EmptyBlockStyle.TogetherSameLine
                 && OpensAJoinableBody(previousToken);
         }
 
@@ -2707,11 +2707,11 @@ public sealed partial class CSharpDocumentBuilder {
             // with the oracle. See BraceOwners for the seven groups the C# formatter actually has and
             // the probe that established them.
             return OpensAJoinableBody(nextToken)
-                && (_options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(nextToken)) == 0;
+                && (options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(nextToken)) == 0;
         }
 
         if (previousToken.IsKind(SyntaxKind.ElseKeyword)) {
-            return nextToken.IsKind(SyntaxKind.IfKeyword) && _options.SpecialElseIfTreatment;
+            return nextToken.IsKind(SyntaxKind.IfKeyword) && options.SpecialElseIfTreatment;
         }
 
         if (!previousToken.IsKind(SyntaxKind.CloseBraceToken)) {
@@ -2719,10 +2719,10 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         return nextToken.Kind() switch {
-            SyntaxKind.ElseKeyword => !_options.NewLineBeforeElse,
-            SyntaxKind.CatchKeyword => !_options.NewLineBeforeCatch,
-            SyntaxKind.FinallyKeyword => !_options.NewLineBeforeFinally,
-            SyntaxKind.WhileKeyword => nextToken.Parent is DoStatementSyntax && !_options.NewLineBeforeWhile,
+            SyntaxKind.ElseKeyword => !options.NewLineBeforeElse,
+            SyntaxKind.CatchKeyword => !options.NewLineBeforeCatch,
+            SyntaxKind.FinallyKeyword => !options.NewLineBeforeFinally,
+            SyntaxKind.WhileKeyword => nextToken.Parent is DoStatementSyntax && !options.NewLineBeforeWhile,
             _ => false
         };
     }
@@ -2752,10 +2752,10 @@ public sealed partial class CSharpDocumentBuilder {
             return false;
         }
 
-        var previousToken = _tokens[previous.TokenIndex];
+        var previousToken = tokens[previous.TokenIndex];
 
         // `allow_comment_after_lbrace = false`: a comment may not sit on the brace's line.
-        if (!_options.AllowCommentAfterLbrace
+        if (!options.AllowCommentAfterLbrace
             && nextKind is PieceKind.LineComment or PieceKind.DocCommentLine
             && previousToken.IsKind(SyntaxKind.OpenBraceToken)) {
             return true;
@@ -2773,7 +2773,7 @@ public sealed partial class CSharpDocumentBuilder {
         return nextKind == PieceKind.Token
             && previousToken.IsKind(SyntaxKind.ElseKeyword)
             && nextToken.IsKind(SyntaxKind.IfKeyword)
-            && !_options.SpecialElseIfTreatment;
+            && !options.SpecialElseIfTreatment;
     }
 
     static bool OpensAJoinableBody(SyntaxToken brace) =>
@@ -2878,19 +2878,19 @@ public sealed partial class CSharpDocumentBuilder {
 
         // ⚠ special_else_if_treatment = true: `else if` is one line, not a nested block, so the
         // inner if takes no indent of its own.
-        if (owner is ElseClauseSyntax && embedded is IfStatementSyntax && _options.SpecialElseIfTreatment) {
+        if (owner is ElseClauseSyntax && embedded is IfStatementSyntax && options.SpecialElseIfTreatment) {
             return false;
         }
 
         var flush = owner switch {
-            ForStatementSyntax => embedded is ForStatementSyntax && !_options.IndentNestedForStmt,
+            ForStatementSyntax => embedded is ForStatementSyntax && !options.IndentNestedForStmt,
             ForEachStatementSyntax or ForEachVariableStatementSyntax =>
                 embedded is ForEachStatementSyntax or ForEachVariableStatementSyntax
-                && !_options.IndentNestedForeachStmt,
-            WhileStatementSyntax => embedded is WhileStatementSyntax && !_options.IndentNestedWhileStmt,
-            UsingStatementSyntax => embedded is UsingStatementSyntax && !_options.IndentNestedUsingsStmt,
-            LockStatementSyntax => embedded is LockStatementSyntax && !_options.IndentNestedLockStmt,
-            FixedStatementSyntax => embedded is FixedStatementSyntax && !_options.IndentNestedFixedStmt,
+                && !options.IndentNestedForeachStmt,
+            WhileStatementSyntax => embedded is WhileStatementSyntax && !options.IndentNestedWhileStmt,
+            UsingStatementSyntax => embedded is UsingStatementSyntax && !options.IndentNestedUsingsStmt,
+            LockStatementSyntax => embedded is LockStatementSyntax && !options.IndentNestedLockStmt,
+            FixedStatementSyntax => embedded is FixedStatementSyntax && !options.IndentNestedFixedStmt,
             _ => false
         };
 

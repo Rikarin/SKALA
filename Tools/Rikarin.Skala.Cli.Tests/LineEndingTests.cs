@@ -23,12 +23,12 @@ namespace Rikarin.Skala.Cli.Tests;
 ///     </para>
 /// </remarks>
 public sealed class LineEndingTests : IDisposable {
-    readonly CrossPlatformScratch _scratch = new("skala-eol-");
+    readonly CrossPlatformScratch scratch = new("skala-eol-");
 
     const string Crlf = "class C{\r\nvoid M(){\r\nM();\r\n}\r\n}\r\n";
     const string Lf = "class C{\nvoid M(){\nM();\n}\n}\n";
 
-    public void Dispose() => _scratch.Dispose();
+    public void Dispose() => scratch.Dispose();
 
     static (int Crlf, int Lf) Count(string text) {
         var crlf = 0;
@@ -49,7 +49,7 @@ public sealed class LineEndingTests : IDisposable {
     }
 
     void Configure(string endOfLine, bool enforce) =>
-        _scratch.WriteText(
+        scratch.WriteText(
             ".editorconfig",
             $"root = true\n\n[*.cs]\nend_of_line = {endOfLine}\nresharper_enforce_line_ending_style = {(enforce ? "true" : "false")}\n"
         );
@@ -58,9 +58,9 @@ public sealed class LineEndingTests : IDisposable {
     [Fact]
     public void CrlfInput_UnderLf_IsWrittenAsLf() {
         Configure("lf", true);
-        var path = _scratch.WriteText("A.cs", Crlf);
+        var path = scratch.WriteText("A.cs", Crlf);
 
-        var run = _scratch.Run("format", path);
+        var run = scratch.Run("format", path);
         Assert.Equal(0, run.ExitCode);
 
         var formatted = File.ReadAllText(path);
@@ -74,9 +74,9 @@ public sealed class LineEndingTests : IDisposable {
     [Fact]
     public void LfInput_UnderCrlf_IsWrittenAsCrlf() {
         Configure("crlf", true);
-        var path = _scratch.WriteText("B.cs", Lf);
+        var path = scratch.WriteText("B.cs", Lf);
 
-        var run = _scratch.Run("format", path);
+        var run = scratch.Run("format", path);
         Assert.Equal(0, run.ExitCode);
 
         var formatted = File.ReadAllText(path);
@@ -93,9 +93,9 @@ public sealed class LineEndingTests : IDisposable {
     [Fact]
     public void CrlfInput_UnderLfWithEnforcementOff_KeepsCrlf() {
         Configure("lf", false);
-        var path = _scratch.WriteText("C.cs", Crlf);
+        var path = scratch.WriteText("C.cs", Crlf);
 
-        _scratch.Run("format", path);
+        scratch.Run("format", path);
 
         var formatted = File.ReadAllText(path);
         var (crlf, lf) = Count(formatted);
@@ -111,15 +111,15 @@ public sealed class LineEndingTests : IDisposable {
     [Fact]
     public void Check_AgreesWithFormat_AboutLineEndings() {
         Configure("lf", true);
-        var path = _scratch.WriteText("D.cs", Crlf);
+        var path = scratch.WriteText("D.cs", Crlf);
 
-        Assert.Equal(2, _scratch.Run("format", "--check", path).ExitCode);
+        Assert.Equal(2, scratch.Run("format", "--check", path).ExitCode);
 
-        _scratch.Run("format", path);
+        scratch.Run("format", path);
 
         // And now nothing is left to do — the second pass is the one that catches a converter that
         // reports an edit it does not make.
-        Assert.Equal(0, _scratch.Run("format", "--check", path).ExitCode);
+        Assert.Equal(0, scratch.Run("format", "--check", path).ExitCode);
     }
 
     /// <summary>
@@ -131,9 +131,9 @@ public sealed class LineEndingTests : IDisposable {
     [Fact]
     public void ABomSurvivesALineEndingConversion() {
         Configure("lf", true);
-        var path = _scratch.WriteBytes("E.cs", [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(Crlf)]);
+        var path = scratch.WriteBytes("E.cs", [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(Crlf)]);
 
-        _scratch.Run("format", path);
+        scratch.Run("format", path);
 
         var bytes = File.ReadAllBytes(path);
         Assert.Equal(Encoding.UTF8.GetPreamble(), bytes[..3]);

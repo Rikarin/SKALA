@@ -17,28 +17,28 @@ namespace Rikarin.Skala.Formatting;
 ///     </para>
 /// </remarks>
 public sealed class DocumentBuilder {
-    readonly List<string> _strings = [];
+    readonly List<string> strings = [];
 
     /// <summary>Children of frames that are still open, innermost last.</summary>
-    readonly List<int> _pending = [];
+    readonly List<int> pending = [];
 
     /// <summary>Children of frames that have closed. Node slices point in here.</summary>
-    readonly List<int> _children = [];
+    readonly List<int> children = [];
 
-    readonly List<Frame> _stack = [];
+    readonly List<Frame> stack = [];
 
     /// <summary>Group metadata, indexed by group id and filled as ids are handed out.</summary>
-    readonly List<GroupFacts> _facts = [];
+    readonly List<GroupFacts> facts = [];
 
-    DocNode[] _nodes = new DocNode[512];
-    int[] _flatWidth = new int[512];
-    int[] _headWidth = new int[512];
+    DocNode[] nodes = new DocNode[512];
+    int[] flatWidth = new int[512];
+    int[] headWidth = new int[512];
 
     /// <summary>Width to the first break point, optional ones included. <see cref="Document.PointWidthOf" />.</summary>
-    int[] _pointWidth = new int[512];
+    int[] pointWidth = new int[512];
 
     /// <summary>Width from a group's own first break point to the next. <see cref="Document.AfterPointOf" />.</summary>
-    int[] _afterPoint = new int[512];
+    int[] afterPoint = new int[512];
 
     /// <summary>
     ///     The groups that own at least one break point.
@@ -47,38 +47,38 @@ public sealed class DocumentBuilder {
     ///     ⚠ It gates <see cref="MeasureSegments" />'s descent, so that the root group — which owns no
     ///     points and contains the file — is never walked and the measure stays linear in practice.
     /// </remarks>
-    readonly HashSet<int> _ownPoints = [];
+    readonly HashSet<int> ownPoints = [];
 
     /// <summary>Flat width from one fill point to the next. <see cref="Document.SegmentOf" />.</summary>
-    int[] _segment = new int[512];
+    int[] segment = new int[512];
 
     /// <summary>Whether the subtree holds a break point of any kind. Stops the two measures above.</summary>
-    bool[] _breaks = new bool[512];
+    bool[] breaks = new bool[512];
 
-    int _nodeCount;
-    int _groupCount;
-    int _root = -1;
+    int nodeCount;
+    int groupCount;
+    int root = -1;
 
     public DocumentBuilder() {
         // Index 0 is reserved so that a zero payload can mean "nothing here".
-        _strings.Add(string.Empty);
+        strings.Add(string.Empty);
         OpenConcat();
     }
 
     /// <summary>The number of groups handed out so far.</summary>
-    public int GroupCount => _groupCount;
+    public int GroupCount => groupCount;
 
     /// <summary>Allocates a group id, so that <see cref="OpenIfBroken" /> can reference the group.</summary>
     public int NextGroupId() {
-        _facts.Add(new GroupFacts());
-        return _groupCount++;
+        facts.Add(new GroupFacts());
+        return groupCount++;
     }
 
     /// <summary>
     ///     Records what the fitter needs to know about a group before it meets it, which only the front
     ///     end can answer.
     /// </summary>
-    public void DescribeGroup(int groupId, GroupFacts facts) => _facts[groupId] = facts;
+    public void DescribeGroup(int groupId, GroupFacts facts) => this.facts[groupId] = facts;
 
     /// <summary>
     ///     A token's text.
@@ -90,7 +90,7 @@ public sealed class DocumentBuilder {
     ///     argument list around a multi-line string exactly as it chops one that is too wide.
     /// </remarks>
     public void Text(string value, SourceSpan source, VerbatimFlags flags = VerbatimFlags.None) {
-        var index = _pending.Count;
+        var index = pending.Count;
         var multiline = ContainsNewLine(value);
         Leaf(
             DocKind.Text,
@@ -101,12 +101,12 @@ public sealed class DocumentBuilder {
             multiline ? Document.Unbounded : TextWidth.Measure(value),
             multiline ? FirstLineWidth(value) : TextWidth.Measure(value)
         );
-        _nodes[_pending[index]].Flags = (int)flags;
+        nodes[pending[index]].Flags = (int)flags;
     }
 
     /// <summary>Raw text, copied byte-for-byte and never reindented.</summary>
     public void Verbatim(string value, SourceSpan source, VerbatimFlags flags = VerbatimFlags.None) {
-        var index = _pending.Count;
+        var index = pending.Count;
         var multiline = ContainsNewLine(value);
         Leaf(
             DocKind.Verbatim,
@@ -117,7 +117,7 @@ public sealed class DocumentBuilder {
             multiline ? Document.Unbounded : TextWidth.Measure(value),
             multiline ? FirstLineWidth(value) : TextWidth.Measure(value)
         );
-        _nodes[_pending[index]].Flags = (int)flags;
+        nodes[pending[index]].Flags = (int)flags;
     }
 
     public void Space(SpaceKind kind) =>
@@ -175,7 +175,7 @@ public sealed class DocumentBuilder {
     ///     <see cref="LineFlags.FillPoint" />.
     /// </param>
     public void BreakPoint(int group, bool flatSpace, bool fill = false, int blankLines = 0, string? newLine = null) {
-        var index = _pending.Count;
+        var index = pending.Count;
         Leaf(
             DocKind.Line,
             (int)LineKind.Soft,
@@ -185,10 +185,10 @@ public sealed class DocumentBuilder {
             flatSpace ? 1 : 0,
             flatSpace ? 1 : 0
         );
-        ref var node = ref _nodes[_pending[index]];
+        ref var node = ref nodes[pending[index]];
         node.Arg2 = group;
         node.Flags = (flatSpace ? (int)LineFlags.FlatSpace : 0) | (fill ? (int)LineFlags.FillPoint : 0);
-        _ownPoints.Add(group);
+        ownPoints.Add(group);
 
         // ⚠ A break point stops the point measure, which is what distinguishes it from the head.
         // ⚠ And it contributes nothing to it. "The rest of this line if every break point is taken"
@@ -198,8 +198,8 @@ public sealed class DocumentBuilder {
         // disagreeing is worth a column, and a column is a wrap: an expression-bodied member whose
         // declaration is exactly 120 wide came back with its parameter list chopped, while the same
         // declaration with a block body did not.
-        _pointWidth[_pending[index]] = 0;
-        _breaks[_pending[index]] = true;
+        pointWidth[pending[index]] = 0;
+        breaks[pending[index]] = true;
     }
 
     /// <summary>A sync point between output and input, emitted immediately before what it introduces.</summary>
@@ -230,12 +230,12 @@ public sealed class DocumentBuilder {
     ///     indentation of the line its opener was on.
     /// </param>
     public void Close(bool alignsCloser = false) {
-        var frame = _stack[^1];
-        _stack.RemoveAt(_stack.Count - 1);
+        var frame = stack[^1];
+        stack.RemoveAt(stack.Count - 1);
 
         var start = frame.ChildStart;
-        var count = _pending.Count - start;
-        var childStart = _children.Count;
+        var count = pending.Count - start;
+        var childStart = children.Count;
         var width = 0;
         var head = 0;
         var point = 0;
@@ -243,27 +243,27 @@ public sealed class DocumentBuilder {
         var stopped = false;
         var pointStopped = false;
 
-        for (var i = start; i < _pending.Count; i++) {
-            var child = _pending[i];
-            _children.Add(child);
+        for (var i = start; i < pending.Count; i++) {
+            var child = pending[i];
+            children.Add(child);
             if (width < Document.Unbounded) {
-                width += _flatWidth[child];
+                width += flatWidth[child];
             }
 
             // The head stops accumulating at the first child that contains a break of its own.
             if (!stopped) {
-                head += _headWidth[child];
-                stopped = _flatWidth[child] >= Document.Unbounded;
+                head += headWidth[child];
+                stopped = flatWidth[child] >= Document.Unbounded;
             }
 
             // ⚠ The point measure stops at the first *optional* break too, which is the whole
             // difference between it and the head.
             if (!pointStopped) {
-                point += _pointWidth[child];
-                pointStopped = _breaks[child];
+                point += pointWidth[child];
+                pointStopped = this.breaks[child];
             }
 
-            breaks |= _breaks[child];
+            breaks |= this.breaks[child];
         }
 
         if (width > Document.Unbounded) {
@@ -274,14 +274,14 @@ public sealed class DocumentBuilder {
             point = Document.Unbounded;
         }
 
-        _pending.RemoveRange(start, count);
+        pending.RemoveRange(start, count);
 
         // ⚠ IfBroken's flat width is its Else branch's, not the sum: a flat owner emits one branch.
         if (frame.Kind == DocKind.IfBroken) {
-            width = count > 1 ? _flatWidth[_children[childStart + 1]] : 0;
-            head = count > 1 ? _headWidth[_children[childStart + 1]] : 0;
-            point = count > 1 ? _pointWidth[_children[childStart + 1]] : 0;
-            breaks = count > 1 && _breaks[_children[childStart + 1]];
+            width = count > 1 ? flatWidth[children[childStart + 1]] : 0;
+            head = count > 1 ? headWidth[children[childStart + 1]] : 0;
+            point = count > 1 ? pointWidth[children[childStart + 1]] : 0;
+            breaks = count > 1 && this.breaks[children[childStart + 1]];
         }
 
         // ⚠ A group that always breaks has no flat form, so nothing that contains it has one either.
@@ -296,7 +296,7 @@ public sealed class DocumentBuilder {
         // "chop if long *or multiline*" half of chop_if_long, one level up.
         if (frame.Kind == DocKind.Group
             && (GroupMode)frame.Arg0 == GroupMode.Preserve
-            && _facts[frame.Arg1] is { SourceBroken: true, JoinsIfFits: false, HidesFlatWidthWhenBroken: true }) {
+            && facts[frame.Arg1] is { SourceBroken: true, JoinsIfFits: false, HidesFlatWidthWhenBroken: true }) {
             width = Document.Unbounded;
         }
 
@@ -305,49 +305,49 @@ public sealed class DocumentBuilder {
             head = 0;
             breaks = true;
             for (var i = 0; i < count; i++) {
-                var child = _children[childStart + i];
-                if (_nodes[child].Kind == DocKind.Line && (LineKind)_nodes[child].Arg0 == LineKind.Soft) {
+                var child = children[childStart + i];
+                if (nodes[child].Kind == DocKind.Line && (LineKind)nodes[child].Arg0 == LineKind.Soft) {
                     break;
                 }
 
-                head += _headWidth[child];
+                head += headWidth[child];
             }
         }
 
         var index = Allocate(frame.Kind, frame.Arg0, frame.Arg1, default, childStart, width, head);
-        _pointWidth[index] = point;
-        _breaks[index] = breaks;
-        _afterPoint[index] = frame.Kind == DocKind.Group ? MeasureSegments(childStart, count, frame.Arg1) : 0;
-        _nodes[index].Count = count;
-        _nodes[index].Flags = alignsCloser ? 1 : 0;
-        _nodes[index].Arg2 = frame.Kind == DocKind.Group ? _facts[frame.Arg1].Owner : frame.Arg2;
+        pointWidth[index] = point;
+        this.breaks[index] = breaks;
+        afterPoint[index] = frame.Kind == DocKind.Group ? MeasureSegments(childStart, count, frame.Arg1) : 0;
+        nodes[index].Count = count;
+        nodes[index].Flags = alignsCloser ? 1 : 0;
+        nodes[index].Arg2 = frame.Kind == DocKind.Group ? facts[frame.Arg1].Owner : frame.Arg2;
 
-        if (_stack.Count == 0) {
-            _root = index;
+        if (stack.Count == 0) {
+            root = index;
         } else {
-            _pending.Add(index);
+            pending.Add(index);
         }
     }
 
     public Document Build() {
-        while (_stack.Count > 0) {
+        while (stack.Count > 0) {
             Close();
         }
 
         return new Document(
-            _nodes,
-            _nodeCount,
-            [.. _children],
-            [.. _strings],
-            _root,
-            _groupCount,
-            _flatWidth,
-            _headWidth,
-            _pointWidth,
-            _afterPoint,
-            _segment,
-            _breaks,
-            [.. _facts]
+            nodes,
+            nodeCount,
+            [.. children],
+            [.. strings],
+            root,
+            groupCount,
+            flatWidth,
+            headWidth,
+            pointWidth,
+            afterPoint,
+            segment,
+            breaks,
+            [.. facts]
         );
     }
 
@@ -374,7 +374,7 @@ public sealed class DocumentBuilder {
     ///     visited by exactly one of them.
     /// </remarks>
     int MeasureSegments(int childStart, int count, int group) {
-        if (!_ownPoints.Contains(group)) {
+        if (!ownPoints.Contains(group)) {
             return 0;
         }
 
@@ -393,21 +393,21 @@ public sealed class DocumentBuilder {
         var last = current;
         Flush();
         if (last >= 0) {
-            _nodes[last].Flags |= (int)LineFlags.LastPoint;
+            nodes[last].Flags |= (int)LineFlags.LastPoint;
         }
 
-        return first < 0 ? 0 : _afterPoint[first];
+        return first < 0 ? 0 : afterPoint[first];
 
         void Flush() {
             if (current >= 0) {
-                _segment[current] = flat;
-                _afterPoint[current] = point;
+                segment[current] = flat;
+                afterPoint[current] = point;
             }
         }
 
         void Walk(int start, int n) {
             for (var i = 0; i < n; i++) {
-                var child = _children[start + i];
+                var child = children[start + i];
                 if (IsOwnBreakPoint(child, group)) {
                     Flush();
                     current = child;
@@ -430,7 +430,7 @@ public sealed class DocumentBuilder {
                 // unconditionally.
                 // ⚠ `IfBroken` is not spliced: its flat width is one branch's rather than the sum,
                 // so splicing it would count both.
-                ref var node = ref _nodes[child];
+                ref var node = ref nodes[child];
                 if (node.Count > 0 && node.Kind is DocKind.Concat or DocKind.Group or DocKind.Indent or DocKind.Fill) {
                     Walk(node.Payload, node.Count);
                     continue;
@@ -441,7 +441,7 @@ public sealed class DocumentBuilder {
                 // the fill's own points, and measuring one of those as "infinitely wide" makes the
                 // fill point in front of it break — so a byte array written eight per line came back
                 // seven and one.
-                if (node.Kind == DocKind.Line && _flatWidth[child] >= Document.Unbounded) {
+                if (node.Kind == DocKind.Line && flatWidth[child] >= Document.Unbounded) {
                     Flush();
                     current = -1;
                     continue;
@@ -451,13 +451,13 @@ public sealed class DocumentBuilder {
                     continue;
                 }
 
-                flat = flat >= Document.Unbounded || _flatWidth[child] >= Document.Unbounded
+                flat = flat >= Document.Unbounded || flatWidth[child] >= Document.Unbounded
                     ? Document.Unbounded
-                    : flat + _flatWidth[child];
+                    : flat + flatWidth[child];
 
                 if (!pointStopped) {
-                    point += _pointWidth[child];
-                    pointStopped = _breaks[child];
+                    point += pointWidth[child];
+                    pointStopped = breaks[child];
                 }
             }
         }
@@ -465,28 +465,28 @@ public sealed class DocumentBuilder {
 
     /// <summary>Whether this child is a break point belonging to the group being closed.</summary>
     bool IsOwnBreakPoint(int child, int group) {
-        ref var node = ref _nodes[child];
+        ref var node = ref nodes[child];
         return node.Kind == DocKind.Line && (LineKind)node.Arg0 == LineKind.Soft && node.Arg2 == group;
     }
 
     void Open(DocKind kind, int arg0, int arg1, int arg2 = -1) =>
-        _stack.Add(new Frame(kind, arg0, arg1, _pending.Count, arg2));
+        stack.Add(new Frame(kind, arg0, arg1, pending.Count, arg2));
 
     void Leaf(DocKind kind, int arg0, int arg1, SourceSpan source, int payload, int width, int head) =>
-        _pending.Add(Allocate(kind, arg0, arg1, source, payload, width, head));
+        pending.Add(Allocate(kind, arg0, arg1, source, payload, width, head));
 
     int Allocate(DocKind kind, int arg0, int arg1, SourceSpan source, int payload, int width, int head) {
-        if (_nodeCount == _nodes.Length) {
-            Array.Resize(ref _nodes, _nodes.Length * 2);
-            Array.Resize(ref _flatWidth, _flatWidth.Length * 2);
-            Array.Resize(ref _headWidth, _headWidth.Length * 2);
-            Array.Resize(ref _pointWidth, _pointWidth.Length * 2);
-            Array.Resize(ref _afterPoint, _afterPoint.Length * 2);
-            Array.Resize(ref _segment, _segment.Length * 2);
-            Array.Resize(ref _breaks, _breaks.Length * 2);
+        if (nodeCount == nodes.Length) {
+            Array.Resize(ref nodes, nodes.Length * 2);
+            Array.Resize(ref flatWidth, flatWidth.Length * 2);
+            Array.Resize(ref headWidth, headWidth.Length * 2);
+            Array.Resize(ref pointWidth, pointWidth.Length * 2);
+            Array.Resize(ref afterPoint, afterPoint.Length * 2);
+            Array.Resize(ref segment, segment.Length * 2);
+            Array.Resize(ref breaks, breaks.Length * 2);
         }
 
-        ref var node = ref _nodes[_nodeCount];
+        ref var node = ref nodes[nodeCount];
         node.Kind = kind;
         node.Arg0 = arg0;
         node.Arg1 = arg1;
@@ -495,21 +495,21 @@ public sealed class DocumentBuilder {
         node.Flags = 0;
         node.Arg2 = -1;
         node.Source = source;
-        _flatWidth[_nodeCount] = width;
-        _headWidth[_nodeCount] = head;
+        flatWidth[nodeCount] = width;
+        headWidth[nodeCount] = head;
 
         // A leaf's point width is its head width and it holds no break; Line and Close override
         // both. Written here so that every allocation site does not have to.
-        _pointWidth[_nodeCount] = head;
-        _afterPoint[_nodeCount] = 0;
-        _segment[_nodeCount] = 0;
-        _breaks[_nodeCount] = kind == DocKind.Line && (LineKind)arg0 != LineKind.Soft;
-        return _nodeCount++;
+        pointWidth[nodeCount] = head;
+        afterPoint[nodeCount] = 0;
+        segment[nodeCount] = 0;
+        breaks[nodeCount] = kind == DocKind.Line && (LineKind)arg0 != LineKind.Soft;
+        return nodeCount++;
     }
 
     int AddString(string value) {
-        _strings.Add(value);
-        return _strings.Count - 1;
+        strings.Add(value);
+        return strings.Count - 1;
     }
 
     /// <summary>Columns up to the first newline: what a multi-line token contributes to its line.</summary>

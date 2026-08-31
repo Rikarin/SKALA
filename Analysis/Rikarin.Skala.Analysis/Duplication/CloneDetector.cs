@@ -579,7 +579,7 @@ public static class CloneDetector {
 
     /// <summary>One file, lexed, with the lines it turned out to duplicate.</summary>
     sealed class LexedFile {
-        bool[]? _duplicated;
+        bool[]? duplicated;
 
         public required string Path { get; init; }
 
@@ -595,12 +595,12 @@ public static class CloneDetector {
         /// <summary>⚠ A set, not a sum: a line in three groups is one duplicated line.</summary>
         public int DuplicatedLineCount {
             get {
-                if (_duplicated is null) {
+                if (duplicated is null) {
                     return 0;
                 }
 
                 var count = 0;
-                foreach (var line in _duplicated) {
+                foreach (var line in duplicated) {
                     if (line) {
                         count++;
                     }
@@ -612,9 +612,9 @@ public static class CloneDetector {
 
         /// <summary>Marks the 0-based line range an occurrence touches, ends included.</summary>
         public void MarkDuplicated(int firstLine, int lastLine) {
-            _duplicated ??= new bool[Text.Lines.Count];
-            for (var line = firstLine; line <= lastLine && line < _duplicated.Length; line++) {
-                _duplicated[line] = true;
+            duplicated ??= new bool[Text.Lines.Count];
+            for (var line = firstLine; line <= lastLine && line < duplicated.Length; line++) {
+                duplicated[line] = true;
             }
         }
     }

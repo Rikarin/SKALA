@@ -41,18 +41,18 @@ internal sealed class CloneIndex {
     /// <summary>⚠ Bump when the normalisation or the layout changes. An old index is discarded, not read.</summary>
     const int FormatVersion = 1;
 
-    readonly string _path;
-    readonly ConcurrentDictionary<string, Entry> _loaded = new(StringComparer.Ordinal);
-    readonly ConcurrentDictionary<string, Entry> _live = new(StringComparer.Ordinal);
-    volatile bool _changed;
-    int _hits;
+    readonly string path;
+    readonly ConcurrentDictionary<string, Entry> loaded = new(StringComparer.Ordinal);
+    readonly ConcurrentDictionary<string, Entry> live = new(StringComparer.Ordinal);
+    volatile bool changed;
+    int hits;
 
     CloneIndex(string path) {
-        _path = path;
+        this.path = path;
     }
 
     /// <summary>⚠ Interlocked: the lex pass that calls <see cref="TryGet" /> is parallel.</summary>
-    public int Hits => Volatile.Read(ref _hits);
+    public int Hits => Volatile.Read(ref hits);
 
     /// <summary>Opens the index in <paramref name="cacheDirectory" />, or an empty one if it cannot be read.</summary>
     public static CloneIndex Load(string cacheDirectory) {
@@ -63,31 +63,30 @@ internal sealed class CloneIndex {
 
     /// <summary>The cached stream for <paramref name="path" />, if its content still hashes the same.</summary>
     public TokenStream? TryGet(string path, string contentHash) {
-        if (_loaded.TryGetValue(path, out var entry)
+        if (loaded.TryGetValue(path, out var entry)
             && string.Equals(entry.ContentHash, contentHash, StringComparison.Ordinal)) {
-            Interlocked.Increment(ref _hits);
+            Interlocked.Increment(ref hits);
             return entry.Tokens;
         }
 
-        _changed = true;
+        changed = true;
         return null;
     }
 
-    public void Put(string path, string contentHash, TokenStream tokens) =>
-        _live[path] = new(path, contentHash, tokens);
+    public void Put(string path, string contentHash, TokenStream tokens) => live[path] = new(path, contentHash, tokens);
 
     public void Save() {
         // Nothing new, nothing gone: the bytes on disk already say this.
-        if (!_changed && _live.Count == _loaded.Count) {
+        if (!changed && live.Count == loaded.Count) {
             return;
         }
 
         try {
-            SkalaDirectory.EnsureForFile(_path);
+            SkalaDirectory.EnsureForFile(path);
 
             // ⚠ Ordinal by path, so two runs over the same tree produce byte-identical files. A cache
             // whose bytes move every run is a cache that shows up in every diff and every backup.
-            var entries = _live.Values.ToList();
+            var entries = live.Values.ToList();
             entries.Sort(static (left, right) => string.CompareOrdinal(left.Path, right.Path));
 
             var payload = WritePayload(entries);
@@ -101,7 +100,7 @@ internal sealed class CloneIndex {
             BinaryPrimitives.WriteInt32LittleEndian(header.AsSpan(16 + version.Length), payload.Length);
             XxHash128.Hash(payload).CopyTo(header.AsSpan(20 + version.Length));
 
-            using var file = new FileStream(_path, FileMode.Create, FileAccess.Write, FileShare.None);
+            using var file = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
             file.Write(header);
             file.Write(payload);
         } catch (Exception exception) when (exception is IOException
@@ -113,32 +112,32 @@ internal sealed class CloneIndex {
 
     void Read() {
         try {
-            if (!File.Exists(_path)) {
-                _changed = true;
+            if (!File.Exists(path)) {
+                changed = true;
                 return;
             }
 
-            var bytes = File.ReadAllBytes(_path);
+            var bytes = File.ReadAllBytes(path);
             if (bytes.Length < 20 || BinaryPrimitives.ReadUInt32LittleEndian(bytes) != Magic) {
-                _changed = true;
+                changed = true;
                 return;
             }
 
             if (BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(4)) != FormatVersion) {
-                _changed = true;
+                changed = true;
                 return;
             }
 
             var versionLength = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(8));
             if (versionLength is < 0 or > 64 || bytes.Length < 20 + versionLength + 16) {
-                _changed = true;
+                changed = true;
                 return;
             }
 
             var version = Encoding.UTF8.GetString(bytes, 12, versionLength);
             if (!string.Equals(version, SkalaVersion.Value, StringComparison.Ordinal)) {
                 // A different build may normalise differently. Its streams are not this build's.
-                _changed = true;
+                changed = true;
                 return;
             }
 
@@ -146,7 +145,7 @@ internal sealed class CloneIndex {
             var payloadLength = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(16 + versionLength));
             var payloadStart = 20 + versionLength + 16;
             if (count < 0 || payloadLength < 0 || payloadStart + payloadLength != bytes.Length) {
-                _changed = true;
+                changed = true;
                 return;
             }
 
@@ -154,27 +153,27 @@ internal sealed class CloneIndex {
             if (!XxHash128.Hash(payload).AsSpan().SequenceEqual(bytes.AsSpan(payloadStart - 16, 16))) {
                 // ⚠ The checksum is the difference between "the file was truncated" and "the file was
                 // truncated and the last entry is now a plausible-looking lie".
-                _changed = true;
+                changed = true;
                 return;
             }
 
             var reader = new Cursor(payload);
             for (var i = 0; i < count; i++) {
                 var entry = ReadEntry(ref reader);
-                _loaded[entry.Path] = entry;
+                loaded[entry.Path] = entry;
             }
 
             if (!reader.AtEnd) {
-                _loaded.Clear();
-                _changed = true;
+                loaded.Clear();
+                changed = true;
             }
         } catch (Exception exception) when (exception is IOException
                                                 or UnauthorizedAccessException
                                                 or NotSupportedException
                                                 or InvalidDataException
                                                 or OutOfMemoryException) {
-            _loaded.Clear();
-            _changed = true;
+            loaded.Clear();
+            changed = true;
         }
     }
 
@@ -236,15 +235,15 @@ internal sealed class CloneIndex {
 
     /// <summary>A bounds-checked read over the payload. Every overrun is one exception the caller catches.</summary>
     ref struct Cursor(ReadOnlySpan<byte> bytes) {
-        readonly ReadOnlySpan<byte> _bytes = bytes;
-        int _at;
+        readonly ReadOnlySpan<byte> bytes = bytes;
+        int at;
 
-        public readonly bool AtEnd => _at == _bytes.Length;
+        public readonly bool AtEnd => at == bytes.Length;
 
         public ushort ReadUInt16() {
             Need(2);
-            var value = BinaryPrimitives.ReadUInt16LittleEndian(_bytes.Slice(_at, 2));
-            _at += 2;
+            var value = BinaryPrimitives.ReadUInt16LittleEndian(bytes.Slice(at, 2));
+            at += 2;
             return value;
         }
 
@@ -253,7 +252,7 @@ internal sealed class CloneIndex {
             var shift = 0;
             while (true) {
                 Need(1);
-                var b = _bytes[_at++];
+                var b = bytes[at++];
                 value |= (b & 0x7F) << shift;
                 if ((b & 0x80) == 0) {
                     break;
@@ -275,13 +274,13 @@ internal sealed class CloneIndex {
         public string ReadString() {
             var length = ReadVarInt();
             Need(length);
-            var value = Encoding.UTF8.GetString(_bytes.Slice(_at, length));
-            _at += length;
+            var value = Encoding.UTF8.GetString(bytes.Slice(at, length));
+            at += length;
             return value;
         }
 
         readonly void Need(int bytes) {
-            if (bytes < 0 || _at + bytes > _bytes.Length) {
+            if (bytes < 0 || at + bytes > this.bytes.Length) {
                 throw new InvalidDataException("clones.idx: truncated");
             }
         }
@@ -289,42 +288,42 @@ internal sealed class CloneIndex {
 
     /// <summary>A growable byte buffer. <see cref="List{T}" /> of bytes is the wrong shape at this volume.</summary>
     sealed class Buffer(int capacity) {
-        byte[] _bytes = new byte[Math.Max(64, capacity)];
-        int _at;
+        byte[] bytes = new byte[Math.Max(64, capacity)];
+        int at;
 
         public void WriteUInt16(ushort value) {
             Ensure(2);
-            BinaryPrimitives.WriteUInt16LittleEndian(_bytes.AsSpan(_at), value);
-            _at += 2;
+            BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(at), value);
+            at += 2;
         }
 
         public void WriteVarInt(int value) {
             Ensure(5);
             var remaining = (uint)value;
             while (remaining >= 0x80) {
-                _bytes[_at++] = (byte)(remaining | 0x80);
+                bytes[at++] = (byte)(remaining | 0x80);
                 remaining >>= 7;
             }
 
-            _bytes[_at++] = (byte)remaining;
+            bytes[at++] = (byte)remaining;
         }
 
         public void WriteString(string value) {
             var length = Encoding.UTF8.GetByteCount(value);
             WriteVarInt(length);
             Ensure(length);
-            Encoding.UTF8.GetBytes(value, _bytes.AsSpan(_at));
-            _at += length;
+            Encoding.UTF8.GetBytes(value, bytes.AsSpan(at));
+            at += length;
         }
 
-        public byte[] ToArray() => _bytes.AsSpan(0, _at).ToArray();
+        public byte[] ToArray() => bytes.AsSpan(0, at).ToArray();
 
         void Ensure(int bytes) {
-            if (_at + bytes <= _bytes.Length) {
+            if (at + bytes <= this.bytes.Length) {
                 return;
             }
 
-            Array.Resize(ref _bytes, Math.Max(_bytes.Length * 2, _at + bytes));
+            Array.Resize(ref this.bytes, Math.Max(this.bytes.Length * 2, at + bytes));
         }
     }
 }

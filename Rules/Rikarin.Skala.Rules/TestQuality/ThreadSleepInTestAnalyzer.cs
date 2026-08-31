@@ -91,15 +91,15 @@ public sealed class ThreadSleepInTestAnalyzer : DiagnosticAnalyzer {
     ///     very different conversations.
     /// </summary>
     static string Describe(InvocationExpressionSyntax invocation) {
-        const string Advice = "; a test that waits for a duration passes or fails on how loaded the machine is";
+        const string advice = "; a test that waits for a duration passes or fails on how loaded the machine is";
 
         if (invocation.ArgumentList.Arguments.Count == 1
             && invocation.ArgumentList.Arguments[0].Expression is LiteralExpressionSyntax {
                 RawKind: (int)SyntaxKind.NumericLiteralExpression
             } literal) {
-            return "`Thread.Sleep(" + literal.Token.ValueText + ")` in a test" + Advice;
+            return "`Thread.Sleep(" + literal.Token.ValueText + ")` in a test" + advice;
         }
 
-        return "`Thread.Sleep` in a test" + Advice;
+        return "`Thread.Sleep` in a test" + advice;
     }
 }

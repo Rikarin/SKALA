@@ -24,10 +24,10 @@ public sealed class OracleRunner {
     /// </remarks>
     public const string Profile = "SkalaFormatOnly";
 
-    readonly string _executable;
+    readonly string executable;
 
     public OracleRunner(string? executable = null) {
-        _executable = executable ?? FindExecutable();
+        this.executable = executable ?? FindExecutable();
     }
 
     public string Version {
@@ -224,7 +224,7 @@ public sealed class OracleRunner {
     ///     </para>
     /// </remarks>
     string Run(string workingDirectory, params string[] arguments) {
-        var start = new ProcessStartInfo(_executable) {
+        var start = new ProcessStartInfo(executable) {
             WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -237,7 +237,7 @@ public sealed class OracleRunner {
 
         using var process =
             Process.Start(start)
-            ?? throw new InvalidOperationException($"{_executable} did not start.");
+            ?? throw new InvalidOperationException($"{executable} did not start.");
 
         // ⚠ Both started before either is awaited, so neither pipe can fill while the other is read.
         var output = process.StandardOutput.ReadToEndAsync();

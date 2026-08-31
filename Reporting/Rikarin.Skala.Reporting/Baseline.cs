@@ -39,22 +39,20 @@ public sealed class Baseline {
     Baseline(ImmutableArray<BaselineEntry> entries, string path) {
         Entries = entries;
         Path = path;
-        _v2 = entries.Select(static entry => entry.FingerprintV2)
+        v2 = entries.Select(static entry => entry.FingerprintV2)
             .Where(static value => value.Length > 0)
             .ToImmutableHashSet(StringComparer.Ordinal);
-        _v1 = entries.Where(static entry => entry.FingerprintV2.Length == 0)
+        v1 = entries.Where(static entry => entry.FingerprintV2.Length == 0)
             .Select(static entry => entry.FingerprintV1)
             .Where(static value => value.Length > 0)
             .ToImmutableHashSet(StringComparer.Ordinal);
     }
 
-    readonly ImmutableHashSet<string> _v2;
-    readonly ImmutableHashSet<string> _v1;
+    readonly ImmutableHashSet<string> v2;
+    readonly ImmutableHashSet<string> v1;
 
     public ImmutableArray<BaselineEntry> Entries { get; }
-
     public string Path { get; }
-
     public int Count => Entries.Length;
 
     /// <summary>The conventional location, relative to the repository root.</summary>
@@ -180,7 +178,7 @@ public sealed class Baseline {
 
     /// <summary>Whether the baseline already accepted this finding.</summary>
     public bool Contains(Finding finding) =>
-        _v2.Contains(Fingerprints.V2(finding)) || _v1.Contains(Fingerprints.V1(finding));
+        v2.Contains(Fingerprints.V2(finding)) || v1.Contains(Fingerprints.V1(finding));
 
     /// <summary>
     ///     Splits a run against this baseline.
@@ -198,7 +196,7 @@ public sealed class Baseline {
 
         foreach (var finding in findings) {
             var v2 = Fingerprints.V2(finding);
-            var known = _v2.Contains(v2) || _v1.Contains(Fingerprints.V1(finding));
+            var known = this.v2.Contains(v2) || v1.Contains(Fingerprints.V1(finding));
             if (known) {
                 seen.Add(v2);
                 seen.Add(Fingerprints.V1(finding));

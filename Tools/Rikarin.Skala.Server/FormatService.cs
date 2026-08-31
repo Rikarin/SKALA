@@ -29,10 +29,10 @@ namespace Rikarin.Skala.Server;
 ///     </para>
 /// </remarks>
 public sealed class FormatService {
-    readonly ConcurrentDictionary<string, Entry> _cache = new(StringComparer.Ordinal);
-    readonly Lock _eviction = new();
-    long _tick;
-    long _bytes;
+    readonly ConcurrentDictionary<string, Entry> cache = new(StringComparer.Ordinal);
+    readonly Lock eviction = new();
+    long tick;
+    long bytes;
 
     /// <summary>
     ///     ⚠ <b>The bound is bytes, and it used to be entries.</b> docs/plan/13 § "Memory" says
@@ -51,10 +51,10 @@ public sealed class FormatService {
     ///     path stamps a monotonic tick with one interlocked write, and only the miss path — which is
     ///     already doing a full format — ever sorts or evicts.
     /// </summary>
-    public int Held => _cache.Count;
+    public int Held => cache.Count;
 
     /// <summary>Approximate retained bytes, against <see cref="CapacityBytes" />.</summary>
-    public long Bytes => Interlocked.Read(ref _bytes);
+    public long Bytes => Interlocked.Read(ref bytes);
 
     public long Hits { get; private set; }
 
@@ -75,21 +75,21 @@ public sealed class FormatService {
         var options = ConfigurationCache.Options(chain, overrides);
         var key = KeyOf(source, chain, overrides, preprocessorSymbols);
 
-        if (_cache.TryGetValue(key, out var cached)) {
+        if (cache.TryGetValue(key, out var cached)) {
             Hits++;
 
             // The whole cost of being an LRU on the hot path: one interlocked increment and one
             // interlocked write.
-            cached.Touch(Interlocked.Increment(ref _tick));
+            cached.Touch(Interlocked.Increment(ref tick));
             return cached.Result;
         }
 
         Misses++;
         var result = CSharpFormatter.Format(path, source, options, crashRoot, preprocessorSymbols);
 
-        var entry = new Entry(result, Interlocked.Increment(ref _tick), Weigh(key, source.Length, result));
-        if (_cache.TryAdd(key, entry)) {
-            Interlocked.Add(ref _bytes, entry.Bytes);
+        var entry = new Entry(result, Interlocked.Increment(ref tick), Weigh(key, source.Length, result));
+        if (cache.TryAdd(key, entry)) {
+            Interlocked.Add(ref bytes, entry.Bytes);
         }
 
         Trim(CapacityBytes);
@@ -112,13 +112,13 @@ public sealed class FormatService {
 
         // ⚠ One evictor at a time, or several threads each compute the same ordering and evict each
         // other's choices until the cache is empty — the wholesale clear this replaced, by accident.
-        lock (_eviction) {
+        lock (eviction) {
             var low = (long)(target * 0.8);
             if (Bytes <= low) {
                 return;
             }
 
-            var ordered = _cache.ToArray();
+            var ordered = cache.ToArray();
             Array.Sort(ordered, static (left, right) => left.Value.LastUsed.CompareTo(right.Value.LastUsed));
 
             foreach (var candidate in ordered) {
@@ -126,8 +126,8 @@ public sealed class FormatService {
                     return;
                 }
 
-                if (_cache.TryRemove(candidate.Key, out var removed)) {
-                    Interlocked.Add(ref _bytes, -removed.Bytes);
+                if (cache.TryRemove(candidate.Key, out var removed)) {
+                    Interlocked.Add(ref bytes, -removed.Bytes);
                     Evictions++;
                 }
             }
@@ -135,9 +135,9 @@ public sealed class FormatService {
     }
 
     public void Clear() {
-        lock (_eviction) {
-            _cache.Clear();
-            Interlocked.Exchange(ref _bytes, 0);
+        lock (eviction) {
+            cache.Clear();
+            Interlocked.Exchange(ref bytes, 0);
         }
     }
 
@@ -198,10 +198,10 @@ public sealed class FormatService {
 
         public long Bytes { get; } = bytes;
 
-        public long LastUsed => Interlocked.Read(ref _lastUsed);
+        public long LastUsed => Interlocked.Read(ref lastUsed);
 
-        long _lastUsed = tick;
+        long lastUsed = tick;
 
-        public void Touch(long tick) => Interlocked.Exchange(ref _lastUsed, tick);
+        public void Touch(long tick) => Interlocked.Exchange(ref lastUsed, tick);
     }
 }

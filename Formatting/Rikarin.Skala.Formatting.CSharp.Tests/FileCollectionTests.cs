@@ -20,12 +20,12 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     </para>
 /// </remarks>
 public sealed class FileCollectionTests : IDisposable {
-    readonly string _root = Directory.CreateTempSubdirectory("skala-collect-").FullName;
+    readonly string root = Directory.CreateTempSubdirectory("skala-collect-").FullName;
 
-    public void Dispose() => Directory.Delete(_root, recursive: true);
+    public void Dispose() => Directory.Delete(root, recursive: true);
 
     string Write(string relative, string content) {
-        var path = Path.Combine(_root, relative.Replace('/', Path.DirectorySeparatorChar));
+        var path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, content);
         return path;
@@ -38,7 +38,7 @@ public sealed class FileCollectionTests : IDisposable {
         Write("obj/Generated.cs", "class G { }\n");
         Write("bin/Built.cs", "class D { }\n");
 
-        Assert.Equal([outside], FormatCommand.Collect([_root]));
+        Assert.Equal([outside], FormatCommand.Collect([root]));
     }
 
     /// <summary>

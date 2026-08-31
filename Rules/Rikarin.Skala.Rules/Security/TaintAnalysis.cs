@@ -152,8 +152,8 @@ public static class TaintAnalysis {
     ///     on rather than an approximation of it.
     /// </remarks>
     sealed class Walker {
-        readonly TaintSymbols _symbols;
-        readonly List<TaintFinding>? _findings;
+        readonly TaintSymbols symbols;
+        readonly List<TaintFinding>? findings;
 
         public Walker(
             TaintSymbols symbols,
@@ -161,8 +161,8 @@ public static class TaintAnalysis {
             HashSet<CaptureId> captures,
             List<TaintFinding>? findings
         ) {
-            _symbols = symbols;
-            _findings = findings;
+            this.symbols = symbols;
+            this.findings = findings;
             Tainted = tainted;
             Captures = captures;
         }
@@ -250,7 +250,7 @@ public static class TaintAnalysis {
         ///     several statements and out again through <c>ToString()</c>.
         /// </remarks>
         void PropagateToReceiver(IInvocationOperation invocation) {
-            if (invocation.Instance is null || !_symbols.IsPropagator(invocation.TargetMethod)) {
+            if (invocation.Instance is null || !symbols.IsPropagator(invocation.TargetMethod)) {
                 return;
             }
 
@@ -274,7 +274,7 @@ public static class TaintAnalysis {
         /// </remarks>
         IOperation RootReceiver(IOperation instance) {
             while (instance is IInvocationOperation { Instance: { } inner } chained
-                   && _symbols.IsPropagator(chained.TargetMethod)) {
+                   && symbols.IsPropagator(chained.TargetMethod)) {
                 instance = inner;
             }
 
@@ -311,14 +311,14 @@ public static class TaintAnalysis {
         }
 
         void ReportPropertySink(ISimpleAssignmentOperation assignment) {
-            if (_findings is null
+            if (findings is null
                 || assignment.Target is not IPropertyReferenceOperation reference
-                || _symbols.Sink(reference.Property) is not { Kind: "property" } sink
+                || symbols.Sink(reference.Property) is not { Kind: "property" } sink
                 || !IsTainted(assignment.Value)) {
                 return;
             }
 
-            _findings.Add(new TaintFinding(assignment.Value.Syntax.GetLocation(), sink, Describe(assignment.Value)));
+            findings.Add(new TaintFinding(assignment.Value.Syntax.GetLocation(), sink, Describe(assignment.Value)));
         }
 
         void ReportCallSink(
@@ -326,12 +326,12 @@ public static class TaintAnalysis {
             IMethodSymbol method,
             System.Collections.Immutable.ImmutableArray<IArgumentOperation> arguments
         ) {
-            if (_findings is null) {
+            if (findings is null) {
                 return;
             }
 
             var expected = method.MethodKind == MethodKind.Constructor ? "constructor" : "method";
-            if (_symbols.Sink(method) is not { } sink || sink.Kind != expected) {
+            if (symbols.Sink(method) is not { } sink || sink.Kind != expected) {
                 return;
             }
 
@@ -343,7 +343,7 @@ public static class TaintAnalysis {
                     continue;
                 }
 
-                _findings.Add(new TaintFinding(argument.Value.Syntax.GetLocation(), sink, Describe(argument.Value)));
+                findings.Add(new TaintFinding(argument.Value.Syntax.GetLocation(), sink, Describe(argument.Value)));
                 return;
             }
 
@@ -402,12 +402,12 @@ public static class TaintAnalysis {
                     return IsTainted(argument.Value);
 
                 case IPropertyReferenceOperation property:
-                    return _symbols.IsSource(property.Property)
+                    return symbols.IsSource(property.Property)
                         || CarriesText(property.Property.Type)
                         && IsTainted(property.Instance);
 
                 case IFieldReferenceOperation field:
-                    return _symbols.IsSource(field.Field)
+                    return symbols.IsSource(field.Field)
                         || CarriesText(field.Field.Type) && IsTainted(field.Instance);
 
                 case IArrayElementReferenceOperation element:
@@ -445,15 +445,15 @@ public static class TaintAnalysis {
         bool IsTaintedCall(IInvocationOperation invocation) {
             // ⚠ Sanitizer first. `int.Parse(request.Query["id"])` is an `int`, and an `int`
             // interpolated into SQL cannot carry a quote, however tainted its argument was.
-            if (_symbols.IsSanitizer(invocation.TargetMethod)) {
+            if (symbols.IsSanitizer(invocation.TargetMethod)) {
                 return false;
             }
 
-            if (_symbols.IsSource(invocation.TargetMethod)) {
+            if (symbols.IsSource(invocation.TargetMethod)) {
                 return true;
             }
 
-            if (_symbols.IsPropagator(invocation.TargetMethod)) {
+            if (symbols.IsPropagator(invocation.TargetMethod)) {
                 if (IsTainted(invocation.Instance)) {
                     return true;
                 }

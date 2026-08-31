@@ -696,10 +696,10 @@ public static class DocsSite {
     ///     is why an unlinked entry is a normal outcome here and not a defect.
     /// </remarks>
     sealed class SiteLinks {
-        readonly Dictionary<string, string> _slugOf;
-        readonly Dictionary<string, string> _constructOf = new(StringComparer.Ordinal);
-        readonly HashSet<string> _ruleIds = new(StringComparer.Ordinal);
-        readonly Dictionary<string, SortedSet<string>> _readers = new(StringComparer.Ordinal);
+        readonly Dictionary<string, string> slugOf;
+        readonly Dictionary<string, string> constructOf = new(StringComparer.Ordinal);
+        readonly HashSet<string> ruleIds = new(StringComparer.Ordinal);
+        readonly Dictionary<string, SortedSet<string>> readers = new(StringComparer.Ordinal);
         static readonly SortedSet<string> Empty = new(StringComparer.Ordinal);
 
         public SiteLinks(
@@ -707,13 +707,13 @@ public static class DocsSite {
             List<OptionInfo> options,
             List<RuleInfo> rules
         ) {
-            _slugOf = slugOf;
+            this.slugOf = slugOf;
             foreach (var option in options) {
-                _constructOf[option.Key] = option.Construct;
+                constructOf[option.Key] = option.Construct;
             }
 
             foreach (var rule in rules) {
-                _ruleIds.Add(rule.Id);
+                ruleIds.Add(rule.Id);
             }
 
             foreach (var rule in rules) {
@@ -723,9 +723,9 @@ public static class DocsSite {
                             continue;
                         }
 
-                        if (!_readers.TryGetValue(key, out var set)) {
+                        if (!readers.TryGetValue(key, out var set)) {
                             set = new SortedSet<string>(StringComparer.Ordinal);
-                            _readers[key] = set;
+                            readers[key] = set;
                         }
 
                         set.Add(rule.Id);
@@ -734,18 +734,18 @@ public static class DocsSite {
             }
         }
 
-        public SortedSet<string> RulesReading(string key) => _readers.TryGetValue(key, out var set) ? set : Empty;
+        public SortedSet<string> RulesReading(string key) => readers.TryGetValue(key, out var set) ? set : Empty;
 
         /// <summary>An anchor to the key's entry on its construct page.</summary>
         public string KeyLink(string key, string root) {
-            if (!_constructOf.TryGetValue(key, out var construct)) {
+            if (!constructOf.TryGetValue(key, out var construct)) {
                 return "<code>" + Esc(key) + "</code>";
             }
 
             return "<a href=\""
                 + root
                 + "options/"
-                + Esc(_slugOf[construct])
+                + Esc(slugOf[construct])
                 + ".html#"
                 + Esc(key)
                 + "\"><code>"
@@ -825,7 +825,7 @@ public static class DocsSite {
 
         /// <summary>The canonical key for any spelling ReSharper accepts, or null.</summary>
         string? Canonical(string token) =>
-            OptionRegistry.TryResolve(token, out var id) && _constructOf.ContainsKey(OptionRegistry.Get(id).Key)
+            OptionRegistry.TryResolve(token, out var id) && constructOf.ContainsKey(OptionRegistry.Get(id).Key)
                 ? OptionRegistry.Get(id).Key
                 : null;
 
@@ -836,7 +836,7 @@ public static class DocsSite {
         /// </summary>
         string? RuleIdIn(string token) {
             foreach (var part in token.Split('.')) {
-                if (_ruleIds.Contains(part)) {
+                if (ruleIds.Contains(part)) {
                     return part;
                 }
             }

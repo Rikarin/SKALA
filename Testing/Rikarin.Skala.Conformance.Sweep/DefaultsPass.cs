@@ -60,12 +60,12 @@ public sealed class DefaultsPass {
     /// <summary>The configuration that produces ReSharper-with-defaults: nothing but the terminator.</summary>
     public const string BareConfig = "root = true\n";
 
-    readonly OracleRunner _runner;
-    readonly TextWriter _log;
+    readonly OracleRunner runner;
+    readonly TextWriter log;
 
     public DefaultsPass(OracleRunner runner, TextWriter log) {
-        _runner = runner;
-        _log = log;
+        this.runner = runner;
+        this.log = log;
     }
 
     public IReadOnlyList<DerivedDefault> Run(SweepPlanResult plan) {
@@ -75,7 +75,7 @@ public sealed class DefaultsPass {
         }
 
         var rounds = candidates.Max(static candidate => candidate.Values.Count);
-        _log.WriteLine($"defaults: {Count(candidates.Count)} options, {Count(rounds)} rounds, bare base configuration");
+        log.WriteLine($"defaults: {Count(candidates.Count)} options, {Count(rounds)} rounds, bare base configuration");
 
         var fixtures = candidates
             .DistinctBy(static candidate => candidate.Fixture.Path, StringComparer.Ordinal)
@@ -92,7 +92,7 @@ public sealed class DefaultsPass {
             }
         }
 
-        _log.WriteLine($"  bare baseline: {Count(bare.Count)} fixtures");
+        log.WriteLine($"  bare baseline: {Count(bare.Count)} fixtures");
 
         var matched = candidates.ToDictionary(
             static candidate => candidate.Key,
@@ -123,7 +123,7 @@ public sealed class DefaultsPass {
                 }
             }
 
-            _log.WriteLine(
+            log.WriteLine(
                 $"  round {Count(round + 1)}/{Count(rounds)}: {Count(work.Length)} options set, {Count(agreed)} fixtures unchanged"
                 + $" ({Stopwatch.GetElapsedTime(started).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)} s)"
             );
@@ -242,7 +242,7 @@ public sealed class DefaultsPass {
     ///     terminator part of every option's answer.
     /// </summary>
     string?[] Format(IReadOnlyList<SweepCandidate> batch, Func<SweepCandidate, string> config) => [
-        .. ScratchTree.Format(_runner, batch, config)
+        .. ScratchTree.Format(runner, batch, config)
             .Select(static body => body is null ? null : TextNormalisation.Normalise(body))
     ];
 

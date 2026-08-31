@@ -101,18 +101,18 @@ public sealed class FormatterTagGuard {
     /// <summary>No regions: every rewrite is allowed. The state of almost every file.</summary>
     public static FormatterTagGuard Open { get; } = new([], string.Empty);
 
-    readonly ImmutableArray<TextSpan> _regions;
-    readonly string _source;
+    readonly ImmutableArray<TextSpan> regions;
+    readonly string source;
 
     FormatterTagGuard(ImmutableArray<TextSpan> regions, string source) {
-        _regions = regions;
-        _source = source;
+        this.regions = regions;
+        this.source = source;
     }
 
-    public bool IsEmpty => _regions.IsEmpty;
+    public bool IsEmpty => regions.IsEmpty;
 
     /// <summary>The regions, in source order. Empty when the tags are off or absent.</summary>
-    public ImmutableArray<TextSpan> Regions => _regions;
+    public ImmutableArray<TextSpan> Regions => regions;
 
     /// <summary>
     ///     The guard for one tree, or <see cref="Open" /> when there is nothing to protect.
@@ -314,7 +314,7 @@ public sealed class FormatterTagGuard {
     ///     say no to.
     /// </remarks>
     public bool Touches(TextSpan span) {
-        foreach (var region in _regions) {
+        foreach (var region in regions) {
             if (region.OverlapsWith(span) || region.Contains(span.Start)) {
                 return true;
             }
@@ -325,7 +325,7 @@ public sealed class FormatterTagGuard {
 
     /// <summary>A node that lies entirely inside a region. It is never visited and never rewritten.</summary>
     public bool Encloses(TextSpan span) {
-        foreach (var region in _regions) {
+        foreach (var region in regions) {
             if (region.Contains(span)) {
                 return true;
             }
@@ -356,7 +356,7 @@ public sealed class FormatterTagGuard {
     ///     </para>
     /// </remarks>
     public bool Straddles(TextSpan span) {
-        foreach (var region in _regions) {
+        foreach (var region in regions) {
             if (region.OverlapsWith(span) && !region.Contains(span) && !span.Contains(region)) {
                 return true;
             }
@@ -389,14 +389,14 @@ public sealed class FormatterTagGuard {
         var full = original.FullSpan;
         string? text = null;
 
-        foreach (var region in _regions) {
+        foreach (var region in regions) {
             var overlap = region.Intersection(full);
             if (overlap is not { Length: > 0 } slice) {
                 continue;
             }
 
             text ??= rewritten.ToFullString();
-            if (!text.AsSpan().Contains(_source.AsSpan()[slice.Start..slice.End], StringComparison.Ordinal)) {
+            if (!text.AsSpan().Contains(source.AsSpan()[slice.Start..slice.End], StringComparison.Ordinal)) {
                 return false;
             }
         }
@@ -415,8 +415,8 @@ public sealed class FormatterTagGuard {
     ///     block that was reordered across an <c>off</c> tag has no partial answer worth keeping.
     /// </remarks>
     public bool PreservesAll(string text) {
-        foreach (var region in _regions) {
-            if (!text.AsSpan().Contains(_source.AsSpan()[region.Start..region.End], StringComparison.Ordinal)) {
+        foreach (var region in regions) {
+            if (!text.AsSpan().Contains(source.AsSpan()[region.Start..region.End], StringComparison.Ordinal)) {
                 return false;
             }
         }

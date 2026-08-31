@@ -220,7 +220,7 @@ public static class History {
             return string.Empty;
         }
 
-        const string Blocks = "▁▂▃▄▅▆▇█";
+        const string blocks = "▁▂▃▄▅▆▇█";
         var min = values.Min();
         var max = values.Max();
         var range = max - min;
@@ -229,8 +229,8 @@ public static class History {
         foreach (var value in values) {
             // ⚠ A flat series renders as the lowest block, not as the highest. All-equal values
             // scaled by an empty range would otherwise show as a full bar and read as "at maximum".
-            var level = range <= 0 ? 0 : (int)Math.Round((value - min) / range * (Blocks.Length - 1));
-            builder.Append(Blocks[Math.Clamp(level, 0, Blocks.Length - 1)]);
+            var level = range <= 0 ? 0 : (int)Math.Round((value - min) / range * (blocks.Length - 1));
+            builder.Append(blocks[Math.Clamp(level, 0, blocks.Length - 1)]);
         }
 
         return builder.ToString();

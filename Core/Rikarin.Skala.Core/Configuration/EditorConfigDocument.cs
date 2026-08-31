@@ -14,7 +14,7 @@ public sealed record EditorConfigAssignment(string Key, string Value, int Line, 
 ///     A <c>[glob]</c> section, or the preamble before the first one where <c>root = true</c> lives.
 /// </summary>
 public sealed class EditorConfigSection {
-    readonly List<EditorConfigAssignment> _assignments = [];
+    readonly List<EditorConfigAssignment> assignments = [];
 
     internal EditorConfigSection(EditorConfigDocument document, string? name, int line, int order) {
         Document = document;
@@ -33,9 +33,9 @@ public sealed class EditorConfigSection {
     /// <summary>Position in the file. Later sections win over earlier ones.</summary>
     public int Order { get; }
 
-    public IReadOnlyList<EditorConfigAssignment> Assignments => _assignments;
+    public IReadOnlyList<EditorConfigAssignment> Assignments => assignments;
 
-    internal void Add(EditorConfigAssignment assignment) => _assignments.Add(assignment);
+    internal void Add(EditorConfigAssignment assignment) => assignments.Add(assignment);
 }
 
 /// <summary>
@@ -50,7 +50,7 @@ public sealed class EditorConfigSection {
 public sealed class EditorConfigDocument {
     public const string FileName = ".editorconfig";
 
-    static int _nextVersion;
+    static int nextVersion;
 
     EditorConfigDocument(string path, string text) {
         Path = path;
@@ -58,7 +58,7 @@ public sealed class EditorConfigDocument {
         Text = text;
         Sections = Parse(this, text, out var isRoot);
         IsRoot = isRoot;
-        Version = System.Threading.Interlocked.Increment(ref _nextVersion);
+        Version = System.Threading.Interlocked.Increment(ref nextVersion);
     }
 
     public string Path { get; }

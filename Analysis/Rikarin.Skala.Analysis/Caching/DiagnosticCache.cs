@@ -217,20 +217,20 @@ public sealed class DiagnosticCache {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = false
     };
 
-    readonly string _path;
-    readonly Dictionary<string, CacheEntry> _entries = new(StringComparer.Ordinal);
-    bool _dirty;
+    readonly string path;
+    readonly Dictionary<string, CacheEntry> entries = new(StringComparer.Ordinal);
+    bool dirty;
 
     public DiagnosticCache(string repositoryRoot, string compilationName) {
         var directory = Path.Combine(repositoryRoot, ".skala", "cache");
-        _path = Path.Combine(directory, Sanitise(compilationName) + ".diagnostics.json");
+        path = Path.Combine(directory, Sanitise(compilationName) + ".diagnostics.json");
     }
 
     public int Hits { get; private set; }
 
     public int Misses { get; private set; }
 
-    public int Held => _entries.Count;
+    public int Held => entries.Count;
 
     /// <summary>
     ///     ⚠ The set of rule ids that may never be cached per file. Read from the catalogue, not
@@ -251,42 +251,42 @@ public sealed class DiagnosticCache {
 
     public void Load() {
         try {
-            if (!File.Exists(_path)) {
+            if (!File.Exists(path)) {
                 return;
             }
 
-            var entries = JsonSerializer.Deserialize<List<CacheEntry>>(File.ReadAllText(_path), Json);
+            var entries = JsonSerializer.Deserialize<List<CacheEntry>>(File.ReadAllText(path), Json);
             if (entries is null) {
                 return;
             }
 
             foreach (var entry in entries) {
-                _entries[entry.Key] = entry;
+                this.entries[entry.Key] = entry;
             }
         } catch (Exception exception) when (exception is IOException
                                                 or JsonException
                                                 or UnauthorizedAccessException
                                                 or NotSupportedException) {
             // ⚠ Corruption is never a failure. Discard and re-run.
-            _entries.Clear();
+            entries.Clear();
         }
     }
 
     public void Save() {
-        if (!_dirty) {
+        if (!dirty) {
             return;
         }
 
         try {
-            SkalaDirectory.EnsureForFile(_path);
-            File.WriteAllText(_path, JsonSerializer.Serialize(_entries.Values.ToList(), Json));
+            SkalaDirectory.EnsureForFile(path);
+            File.WriteAllText(path, JsonSerializer.Serialize(entries.Values.ToList(), Json));
         } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             // A read-only tree does not fail a check.
         }
     }
 
     public bool TryGet(string key, out ImmutableArray<Finding> findings, string path) {
-        if (_entries.TryGetValue(key, out var entry)) {
+        if (entries.TryGetValue(key, out var entry)) {
             Hits++;
             findings = [.. entry.Findings.Select(finding => Rehydrate(finding, path))];
             return true;
@@ -305,7 +305,7 @@ public sealed class DiagnosticCache {
     ///     written by a build with the rule enabled cannot serve it back to one without.
     /// </remarks>
     public void Put(string key, string path, ImmutableArray<Finding> findings) {
-        _entries[key] = new CacheEntry {
+        entries[key] = new CacheEntry {
             Key = key,
             Path = path,
             Findings = [
@@ -315,7 +315,7 @@ public sealed class DiagnosticCache {
             ]
         };
 
-        _dirty = true;
+        dirty = true;
     }
 
     public static void Clear(string repositoryRoot) {

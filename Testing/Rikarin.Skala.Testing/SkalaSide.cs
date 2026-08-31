@@ -24,7 +24,7 @@ namespace Rikarin.Skala.Testing;
 /// </remarks>
 public static class SkalaSide {
     static readonly Lock Gate = new();
-    static CSharpCompilation? _arrangement;
+    static CSharpCompilation? arrangement;
 
     /// <summary>
     ///     Skala's answer for one option at one value, resolved from the repository's own chain.
@@ -108,7 +108,7 @@ public static class SkalaSide {
     /// </remarks>
     static CSharpCompilation ArrangementCompilation() {
         lock (Gate) {
-            return _arrangement ??= ArrangementDifferential.Compile(Corpus.ArrangementConstructs());
+            return arrangement ??= ArrangementDifferential.Compile(Corpus.ArrangementConstructs());
         }
     }
 

@@ -21,12 +21,12 @@ namespace Rikarin.Skala.Analysis.Loading;
 public static class MetadataReferenceCache {
     static readonly ConcurrentDictionary<string, MetadataReference> Cache = new(StringComparer.Ordinal);
 
-    static long _hits;
-    static long _misses;
+    static long hits;
+    static long misses;
 
-    public static long Hits => Interlocked.Read(ref _hits);
+    public static long Hits => Interlocked.Read(ref hits);
 
-    public static long Misses => Interlocked.Read(ref _misses);
+    public static long Misses => Interlocked.Read(ref misses);
 
     public static MetadataReference? Get(string path, IReadOnlyList<string>? aliases = null) {
         FileInfo info;
@@ -47,11 +47,11 @@ public static class MetadataReferenceCache {
         );
 
         if (Cache.TryGetValue(key, out var cached)) {
-            Interlocked.Increment(ref _hits);
+            Interlocked.Increment(ref hits);
             return cached;
         }
 
-        Interlocked.Increment(ref _misses);
+        Interlocked.Increment(ref misses);
         try {
             var reference = MetadataReference.CreateFromFile(path);
             var result = aliases is { Count: > 0 }
@@ -69,7 +69,7 @@ public static class MetadataReferenceCache {
 
     public static void Clear() {
         Cache.Clear();
-        Interlocked.Exchange(ref _hits, 0);
-        Interlocked.Exchange(ref _misses, 0);
+        Interlocked.Exchange(ref hits, 0);
+        Interlocked.Exchange(ref misses, 0);
     }
 }

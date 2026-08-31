@@ -27,12 +27,12 @@ namespace Rikarin.Skala.Cli.Tests;
 ///     </para>
 /// </remarks>
 public sealed class ExitCodeContractTests : IDisposable {
-    readonly string _directory = Directory.CreateTempSubdirectory("skala-exit-").FullName;
+    readonly string directory = Directory.CreateTempSubdirectory("skala-exit-").FullName;
 
-    public void Dispose() => Directory.Delete(_directory, recursive: true);
+    public void Dispose() => Directory.Delete(directory, recursive: true);
 
     string Write(string name, string content) {
-        var path = Path.Combine(_directory, name);
+        var path = Path.Combine(directory, name);
         File.WriteAllText(path, content);
         return path;
     }

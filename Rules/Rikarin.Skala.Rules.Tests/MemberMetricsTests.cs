@@ -662,7 +662,7 @@ public sealed class MemberMetricsTests {
     /// </summary>
     [Fact]
     public void CyclomaticComplexity_OfAProperty_CoversBothAccessorsOnce() {
-        const string Source = """
+        const string source = """
                               class Holder {
                                   int backing;
 
@@ -673,7 +673,7 @@ public sealed class MemberMetricsTests {
                               }
                               """;
 
-        var compilation = RuleFixtures.Compile(Source, "property.cs");
+        var compilation = RuleFixtures.Compile(source, "property.cs");
         var tree = compilation.SyntaxTrees.Single();
         var property = tree.GetRoot(TestContext.Current.CancellationToken)
             .DescendantNodes()

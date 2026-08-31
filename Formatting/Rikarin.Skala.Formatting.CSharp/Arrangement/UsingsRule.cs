@@ -33,17 +33,17 @@ public sealed class UsingsRule : ArrangementRule {
     ///     answer when only one compilation was available and it could not be trusted to speak for the
     ///     others — the syntactic scope takes exactly that path.
     /// </remarks>
-    readonly ImmutableHashSet<string> _removable;
+    readonly ImmutableHashSet<string> removable;
 
     public UsingsRule(ImmutableHashSet<string>? removable = null) {
-        _removable = removable ?? [];
+        this.removable = removable ?? [];
     }
 
     public override string Id => ArrangeIds.Usings;
 
     /// <summary>
     ///     ⚠ False. Sorting needs no semantics at all, and removal takes its answer from
-    ///     <see cref="_removable" /> rather than from a model — so the rule runs in the syntactic subset
+    ///     <see cref="removable" /> rather than from a model — so the rule runs in the syntactic subset
     ///     and simply removes nothing there. An agent on a loose file still gets its usings sorted.
     /// </summary>
     public override bool NeedsSemantics => false;
@@ -58,7 +58,7 @@ public sealed class UsingsRule : ArrangementRule {
     /// </remarks>
     public override bool IsEnabled(in ArrangementOptions options) =>
         options.SortUsings
-        || !_removable.IsEmpty
+        || !removable.IsEmpty
         || options.UsingDirectivePlacement == UsingDirectivePlacement.InsideNamespace;
 
     public override SyntaxNode Apply(ArrangementContext context) {
@@ -239,7 +239,7 @@ public sealed class UsingsRule : ArrangementRule {
         if (directive.GlobalKeyword.IsKind(SyntaxKind.GlobalKeyword)
             || directive.StaticKeyword != default
             || !HasNoComment(directive)
-            || !_removable.Contains(Key(directive))) {
+            || !removable.Contains(Key(directive))) {
             return false;
         }
 

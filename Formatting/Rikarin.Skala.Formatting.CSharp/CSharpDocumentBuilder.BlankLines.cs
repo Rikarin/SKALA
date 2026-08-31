@@ -46,7 +46,7 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     int ResolveBlankLines(Piece previous, int nextPieceIndex, SyntaxToken nextToken, int sourceBlanks) {
         var blanks = ResolveBlankLinesCore(previous, nextPieceIndex, nextToken, sourceBlanks);
-        return _options.DisableLineBreakRemoval ? Math.Max(blanks, sourceBlanks) : blanks;
+        return options.DisableLineBreakRemoval ? Math.Max(blanks, sourceBlanks) : blanks;
     }
 
     int ResolveBlankLinesCore(Piece previous, int nextPieceIndex, SyntaxToken nextToken, int sourceBlanks) {
@@ -64,14 +64,14 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ `disable_line_break_changes` arrives at the same return, and that is the measurement
         // rather than an economy: the oracle's answer to it includes "blank runs included", so it is
         // the union of this key and `disable_line_break_removal` and not a third rule (SK-DIV-0063).
-        if (_options.DisableBlankLineChanges || _options.DisableLineBreakChanges) {
+        if (options.DisableBlankLineChanges || options.DisableLineBreakChanges) {
             return sourceBlanks;
         }
 
         var declaration = nextToken.IsKind(SyntaxKind.None) || InDeclarationContext(nextToken);
 
         // 1. Caps. The author's runs are truncated, never extended.
-        var cap = Math.Max(0, declaration ? _options.KeepBlankLinesInDeclarations : _options.KeepBlankLinesInCode);
+        var cap = Math.Max(0, declaration ? options.KeepBlankLinesInDeclarations : options.KeepBlankLinesInCode);
 
         // 0. ⚠ Inside a `///` run the blank count is structure, and none of the three systems below
         // gets a vote. Roslyn ends a documentation comment at a blank line, so the gap between two
@@ -193,12 +193,12 @@ public sealed partial class CSharpDocumentBuilder {
             return null;
         }
 
-        if (MemberEndingAt(_tokens[previous.TokenIndex]) is not UsingDirectiveSyntax above
+        if (MemberEndingAt(tokens[previous.TokenIndex]) is not UsingDirectiveSyntax above
             || MemberStartingAt(-1, nextToken) is not UsingDirectiveSyntax below) {
             return null;
         }
 
-        return _options.SeparateImportDirectiveGroups && !SameImportGroup(above, below) ? 1 : 0;
+        return options.SeparateImportDirectiveGroups && !SameImportGroup(above, below) ? 1 : 0;
     }
 
     /// <summary>Whether two using directives belong to one group. See <see cref="ImportGroupSeparation" />.</summary>
@@ -255,7 +255,7 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     int InsideDeclarationBraces(Piece previous, SyntaxToken nextToken) {
         if (previous.Kind == PieceKind.Token) {
-            var open = _tokens[previous.TokenIndex];
+            var open = tokens[previous.TokenIndex];
             if (open.IsKind(SyntaxKind.OpenBraceToken) && Requirement(open) is { } after) {
                 return after;
             }
@@ -265,8 +265,8 @@ public sealed partial class CSharpDocumentBuilder {
 
         int? Requirement(SyntaxToken brace) =>
             brace.Parent switch {
-                BaseTypeDeclarationSyntax => _options.BlankLinesInsideType,
-                NamespaceDeclarationSyntax => _options.BlankLinesInsideNamespace,
+                BaseTypeDeclarationSyntax => options.BlankLinesInsideType,
+                NamespaceDeclarationSyntax => options.BlankLinesInsideNamespace,
                 _ => null
             };
     }
@@ -281,18 +281,18 @@ public sealed partial class CSharpDocumentBuilder {
     bool BetweenDocumentationLines(Piece previous, int nextPieceIndex) =>
         previous.Kind == PieceKind.DocCommentLine
         && nextPieceIndex >= 0
-        && nextPieceIndex < _pieces.Length
-        && _pieces[nextPieceIndex].Kind == PieceKind.DocCommentLine;
+        && nextPieceIndex < pieces.Length
+        && pieces[nextPieceIndex].Kind == PieceKind.DocCommentLine;
 
     bool RemovesNearBrace(Piece previous, SyntaxToken nextToken, bool declaration) {
         var enabled = declaration
-            ? _options.RemoveBlankLinesNearBracesInDeclarations
-            : _options.RemoveBlankLinesNearBracesInCode;
+            ? options.RemoveBlankLinesNearBracesInDeclarations
+            : options.RemoveBlankLinesNearBracesInCode;
         if (!enabled) {
             return false;
         }
 
-        if (previous.Kind == PieceKind.Token && _tokens[previous.TokenIndex].IsKind(SyntaxKind.OpenBraceToken)) {
+        if (previous.Kind == PieceKind.Token && tokens[previous.TokenIndex].IsKind(SyntaxKind.OpenBraceToken)) {
             return true;
         }
 
@@ -304,8 +304,8 @@ public sealed partial class CSharpDocumentBuilder {
 
         // Regions get their blank lines whether or not there is a declaration on either side.
         if (nextPieceIndex >= 0
-            && nextPieceIndex < _pieces.Length
-            && _pieces[nextPieceIndex].Kind == PieceKind.RegionDirective
+            && nextPieceIndex < pieces.Length
+            && pieces[nextPieceIndex].Kind == PieceKind.RegionDirective
             || previous.Kind == PieceKind.RegionDirective) {
             required = Math.Max(required, RegionRequirement(previous, nextPieceIndex));
         }
@@ -333,7 +333,7 @@ public sealed partial class CSharpDocumentBuilder {
         // fires: `constructs/blank-lines/a-file-header-comment*.cs` are the two fixtures that say so,
         // and both were failing before this rule existed.
         if (IsStartComment(previous)) {
-            required = Math.Max(required, _options.BlankLinesAfterStartComment);
+            required = Math.Max(required, options.BlankLinesAfterStartComment);
         }
 
         // ⚠ A comment directly above a declaration is part of it, so the gap BELOW the comment is
@@ -353,20 +353,20 @@ public sealed partial class CSharpDocumentBuilder {
 
         // Statements, which the member rules below do not reach.
         if (previous.Kind == PieceKind.Token) {
-            var previousToken = _tokens[previous.TokenIndex];
+            var previousToken = tokens[previous.TokenIndex];
 
             if (previousToken.Parent is SwitchLabelSyntax) {
-                required = Math.Max(required, _options.BlankLinesAfterCase);
+                required = Math.Max(required, options.BlankLinesAfterCase);
             }
 
             // The three "after" statement requirements, attributed to the statement that ends here.
             if (StatementEndingAt(previousToken) is { } statementAbove) {
                 if (IsControlTransfer(statementAbove)) {
-                    required = Math.Max(required, _options.BlankLinesAfterControlTransferStatements);
+                    required = Math.Max(required, options.BlankLinesAfterControlTransferStatements);
                 }
 
                 if (SpansLines(statementAbove)) {
-                    required = Math.Max(required, _options.BlankLinesAfterMultilineStatements);
+                    required = Math.Max(required, options.BlankLinesAfterMultilineStatements);
                 }
 
                 // ⚠ blank_lines_after_block_statements asks the same question of the statement above
@@ -387,22 +387,22 @@ public sealed partial class CSharpDocumentBuilder {
                 // between a switch section's last block and the next label belongs to
                 // `blank_lines_before_case`, which is 0 here, and the oracle leaves it empty.
                 if (HasChildBlock(statementAbove) && nextToken.Parent is not SwitchLabelSyntax) {
-                    required = Math.Max(required, _options.BlankLinesAfterBlockStatements);
+                    required = Math.Max(required, options.BlankLinesAfterBlockStatements);
                 }
             }
         }
 
         if (StatementStartingAt(nextToken) is { } statementBelow) {
             if (IsControlTransfer(statementBelow)) {
-                required = Math.Max(required, _options.BlankLinesBeforeControlTransferStatements);
+                required = Math.Max(required, options.BlankLinesBeforeControlTransferStatements);
             }
 
             if (SpansLines(statementBelow)) {
-                required = Math.Max(required, _options.BlankLinesBeforeMultilineStatements);
+                required = Math.Max(required, options.BlankLinesBeforeMultilineStatements);
             }
 
             if (HasChildBlock(statementBelow)) {
-                required = Math.Max(required, _options.BlankLinesBeforeBlockStatements);
+                required = Math.Max(required, options.BlankLinesBeforeBlockStatements);
             }
         }
 
@@ -411,19 +411,19 @@ public sealed partial class CSharpDocumentBuilder {
             && nextToken.Parent.Parent is SwitchSectionSyntax section
             && section.Parent is SwitchStatementSyntax owner
             && owner.Sections.IndexOf(section) is var index and > 0) {
-            required = Math.Max(required, _options.BlankLinesBeforeCase);
+            required = Math.Max(required, options.BlankLinesBeforeCase);
             required = Math.Max(required, SectionRequirement(section));
             required = Math.Max(required, SectionRequirement(owner.Sections[index - 1]));
         }
 
         if (nextPieceIndex >= 0
-            && nextPieceIndex < _pieces.Length
-            && _pieces[nextPieceIndex].Kind == PieceKind.LineComment
-            && _pieces[nextPieceIndex].StartsLine) {
-            required = Math.Max(required, _options.BlankLinesBeforeSingleLineComment);
+            && nextPieceIndex < pieces.Length
+            && pieces[nextPieceIndex].Kind == PieceKind.LineComment
+            && pieces[nextPieceIndex].StartsLine) {
+            required = Math.Max(required, options.BlankLinesBeforeSingleLineComment);
         }
 
-        var above = previous.Kind == PieceKind.Token ? MemberEndingAt(_tokens[previous.TokenIndex]) : null;
+        var above = previous.Kind == PieceKind.Token ? MemberEndingAt(tokens[previous.TokenIndex]) : null;
         var below = MemberStartingAt(nextPieceIndex, nextToken);
 
         if (above is null && below is null) {
@@ -433,13 +433,13 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ blank_lines_after_using_list applies to the boundary, not to either member's own rule.
         if (above is UsingDirectiveSyntax or ExternAliasDirectiveSyntax
             && below is not (UsingDirectiveSyntax or ExternAliasDirectiveSyntax)) {
-            required = Math.Max(required, _options.BlankLinesAfterUsingList);
+            required = Math.Max(required, options.BlankLinesAfterUsingList);
         }
 
         if (above is FileScopedNamespaceDeclarationSyntax
             || previous.Kind == PieceKind.Token
-            && EndsFileScopedNamespaceDirective(_tokens[previous.TokenIndex])) {
-            required = Math.Max(required, _options.BlankLinesAfterFileScopedNamespaceDirective);
+            && EndsFileScopedNamespaceDirective(tokens[previous.TokenIndex])) {
+            required = Math.Max(required, options.BlankLinesAfterFileScopedNamespaceDirective);
         }
 
         if (above is not null) {
@@ -465,7 +465,7 @@ public sealed partial class CSharpDocumentBuilder {
             return true;
         }
 
-        return nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length && IsDirective(_pieces[nextPieceIndex].Kind);
+        return nextPieceIndex >= 0 && nextPieceIndex < pieces.Length && IsDirective(pieces[nextPieceIndex].Kind);
     }
 
     static bool IsDirective(PieceKind kind) =>
@@ -473,14 +473,14 @@ public sealed partial class CSharpDocumentBuilder {
 
     int RegionRequirement(Piece previous, int nextPieceIndex) {
         var nextIsRegion = nextPieceIndex >= 0
-            && nextPieceIndex < _pieces.Length
-            && _pieces[nextPieceIndex].Kind == PieceKind.RegionDirective;
+            && nextPieceIndex < pieces.Length
+            && pieces[nextPieceIndex].Kind == PieceKind.RegionDirective;
         var previousIsRegion = previous.Kind == PieceKind.RegionDirective;
 
         // Right inside the braces the removal rule wins anyway; elsewhere a region is separated
         // from the code around it.
         if (nextIsRegion && previousIsRegion) {
-            return _options.BlankLinesInsideRegion;
+            return options.BlankLinesInsideRegion;
         }
 
         // The gap just inside a region — after `#region`, before `#endregion` — is the region's
@@ -488,9 +488,9 @@ public sealed partial class CSharpDocumentBuilder {
         var opensBefore = previousIsRegion && previous.Text.StartsWith("#region", StringComparison.Ordinal);
         var closesAfter =
             nextIsRegion
-            && _pieces[nextPieceIndex].Text.StartsWith("#endregion", StringComparison.Ordinal);
+            && pieces[nextPieceIndex].Text.StartsWith("#endregion", StringComparison.Ordinal);
 
-        return opensBefore || closesAfter ? _options.BlankLinesInsideRegion : _options.BlankLinesAroundRegion;
+        return opensBefore || closesAfter ? options.BlankLinesInsideRegion : options.BlankLinesAroundRegion;
     }
 
     /// <summary>
@@ -542,8 +542,8 @@ public sealed partial class CSharpDocumentBuilder {
             previous = token;
         }
 
-        return _plan.HasForcedBreakIn(node.Span.Start + 1, node.Span.End)
-            || OutputIndentColumns(node) + OutputWidth(node) > _options.MaxLineLength;
+        return plan.HasForcedBreakIn(node.Span.Start + 1, node.Span.End)
+            || OutputIndentColumns(node) + OutputWidth(node) > options.MaxLineLength;
     }
 
     /// <summary>Whether the gap between two adjacent tokens will hold a line break.</summary>
@@ -551,9 +551,9 @@ public sealed partial class CSharpDocumentBuilder {
         var newLine = false;
         var comment = false;
         for (var i = previous.Span.End; i < next.SpanStart; i++) {
-            if (_source[i] == '\n') {
+            if (source[i] == '\n') {
                 newLine = true;
-            } else if (!char.IsWhiteSpace(_source[i])) {
+            } else if (!char.IsWhiteSpace(source[i])) {
                 comment = true;
             }
         }
@@ -562,7 +562,7 @@ public sealed partial class CSharpDocumentBuilder {
             return false;
         }
 
-        if (comment || !_plan.TryGap(next.SpanStart, out var spec)) {
+        if (comment || !plan.TryGap(next.SpanStart, out var spec)) {
             return true;
         }
 
@@ -589,14 +589,14 @@ public sealed partial class CSharpDocumentBuilder {
     ///     </para>
     /// </remarks>
     bool GroupBreaks(int group) {
-        if (_groupPlans is null) {
-            _groupPlans = new Dictionary<int, GroupPlan>();
-            foreach (var plan in _plan.Groups) {
-                _groupPlans[plan.Id] = plan;
+        if (groupPlans is null) {
+            groupPlans = new Dictionary<int, GroupPlan>();
+            foreach (var plan in plan.Groups) {
+                groupPlans[plan.Id] = plan;
             }
         }
 
-        if (!_groupPlans.TryGetValue(group, out var found)) {
+        if (!groupPlans.TryGetValue(group, out var found)) {
             return true;
         }
 
@@ -637,15 +637,15 @@ public sealed partial class CSharpDocumentBuilder {
             return false;
         }
 
-        for (var i = 0; i < _pieces.Length; i++) {
-            if (_pieces[i].Kind is not (PieceKind.LineComment or PieceKind.BlockComment)) {
+        for (var i = 0; i < pieces.Length; i++) {
+            if (pieces[i].Kind is not (PieceKind.LineComment or PieceKind.BlockComment)) {
                 return false;
             }
 
-            if (_pieces[i].Span.End == previous.Span.End) {
+            if (pieces[i].Span.End == previous.Span.End) {
                 // The last piece of the run is the one whose successor is not a plain comment.
-                return i + 1 >= _pieces.Length
-                    || _pieces[i + 1].Kind is not (PieceKind.LineComment or PieceKind.BlockComment);
+                return i + 1 >= pieces.Length
+                    || pieces[i + 1].Kind is not (PieceKind.LineComment or PieceKind.BlockComment);
             }
         }
 
@@ -670,11 +670,11 @@ public sealed partial class CSharpDocumentBuilder {
     int SectionRequirement(SwitchSectionSyntax section) {
         var required = 0;
         if (section.Statements is [BlockSyntax]) {
-            required = Math.Max(required, _options.BlankLinesAroundBlockCaseSection);
+            required = Math.Max(required, options.BlankLinesAroundBlockCaseSection);
         }
 
         if (SpansLines(section)) {
-            required = Math.Max(required, _options.BlankLinesAroundMultilineCaseSection);
+            required = Math.Max(required, options.BlankLinesAroundMultilineCaseSection);
         }
 
         return required;
@@ -856,19 +856,19 @@ public sealed partial class CSharpDocumentBuilder {
     int RequirementFor(SyntaxNode member) {
         var single = IsSingleLine(member);
         return member switch {
-            NamespaceDeclarationSyntax or FileScopedNamespaceDeclarationSyntax => _options.BlankLinesAroundNamespace,
+            NamespaceDeclarationSyntax or FileScopedNamespaceDeclarationSyntax => options.BlankLinesAroundNamespace,
             BaseTypeDeclarationSyntax or DelegateDeclarationSyntax =>
-                single ? _options.BlankLinesAroundSingleLineType : _options.BlankLinesAroundType,
+                single ? options.BlankLinesAroundSingleLineType : options.BlankLinesAroundType,
             MethodDeclarationSyntax
                 or ConstructorDeclarationSyntax
                 or DestructorDeclarationSyntax
                 or OperatorDeclarationSyntax
                 or ConversionOperatorDeclarationSyntax =>
-                single ? _options.BlankLinesAroundSingleLineInvocable : _options.BlankLinesAroundInvocable,
+                single ? options.BlankLinesAroundSingleLineInvocable : options.BlankLinesAroundInvocable,
             LocalFunctionStatementSyntax =>
-                single ? _options.BlankLinesAroundSingleLineLocalMethod : _options.BlankLinesAroundLocalMethod,
+                single ? options.BlankLinesAroundSingleLineLocalMethod : options.BlankLinesAroundLocalMethod,
             PropertyDeclarationSyntax property => IsAutoProperty(property)
-                ? single ? _options.BlankLinesAroundSingleLineAutoProperty : _options.BlankLinesAroundAutoProperty
+                ? single ? options.BlankLinesAroundSingleLineAutoProperty : options.BlankLinesAroundAutoProperty
                 : single
                     // ⚠ "A single-line property" is an ACCESSOR-LIST property on one line —
                     // `public int X { get => 1; }` — and not an expression-bodied one. Measured
@@ -879,14 +879,14 @@ public sealed partial class CSharpDocumentBuilder {
                     // ⚠ This refutes the claim the key's own fixture carried, which is corrected with
                     // it. Skala applied the key to `=> 1;` and so moved where the oracle could not,
                     // which was the whole of that row. SK-DIV-0092.
-                    ? property.AccessorList is null ? 0 : _options.BlankLinesAroundSingleLineProperty
-                    : _options.BlankLinesAroundProperty,
+                    ? property.AccessorList is null ? 0 : options.BlankLinesAroundSingleLineProperty
+                    : options.BlankLinesAroundProperty,
             IndexerDeclarationSyntax or EventDeclarationSyntax =>
-                single ? _options.BlankLinesAroundSingleLineProperty : _options.BlankLinesAroundProperty,
+                single ? options.BlankLinesAroundSingleLineProperty : options.BlankLinesAroundProperty,
             FieldDeclarationSyntax or EventFieldDeclarationSyntax =>
-                single ? _options.BlankLinesAroundSingleLineField : _options.BlankLinesAroundField,
+                single ? options.BlankLinesAroundSingleLineField : options.BlankLinesAroundField,
             AccessorDeclarationSyntax =>
-                single ? _options.BlankLinesAroundSingleLineAccessor : _options.BlankLinesAroundAccessor,
+                single ? options.BlankLinesAroundSingleLineAccessor : options.BlankLinesAroundAccessor,
             _ => 0
         };
     }
@@ -913,7 +913,7 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ Always the sticky start, for the reason the gap rule above gives: the comment above a
         // member is part of it whatever `stick_comment` is set to.
         var start = StickyStart(member);
-        var lines = _text.Lines;
+        var lines = text.Lines;
         var first = lines.GetLineFromPosition(start);
         if (first.LineNumber != lines.GetLineFromPosition(member.Span.End).LineNumber) {
             return false;
@@ -924,7 +924,7 @@ public sealed partial class CSharpDocumentBuilder {
         // break "inside" the member makes every member multi-line at once — which reads as a
         // blank-line bug rather than as a measurement one: adjacent single-line fields suddenly take
         // `blank_lines_around_field = 1` instead of `blank_lines_around_single_line_field = 0`.
-        if (_plan.HasForcedBreakIn(member.Span.Start + 1, member.Span.End)) {
+        if (plan.HasForcedBreakIn(member.Span.Start + 1, member.Span.End)) {
             return false;
         }
 
@@ -953,7 +953,7 @@ public sealed partial class CSharpDocumentBuilder {
         // line the formatter rewrites anyway. docs/plan/16 § R2 is about exactly this: the fitter
         // is the novel code, and the property suite is what contains its risk.
         var width = OutputIndentColumns(member) + OutputWidth(member);
-        return width <= _options.MaxLineLength;
+        return width <= options.MaxLineLength;
     }
 
     /// <summary>
@@ -983,7 +983,7 @@ public sealed partial class CSharpDocumentBuilder {
     int OutputWidth(SyntaxNode member) {
         var width = 0;
         var previous = default(SyntaxToken);
-        var budget = _options.MaxLineLength;
+        var budget = options.MaxLineLength;
 
         foreach (var token in member.DescendantTokens()) {
             // ⚠ Zero-width tokens are not pieces and are not written; see EmitToken.
@@ -1058,10 +1058,10 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         if (comments) {
-            return width + (_options.SpaceBeforeTrailingComment ? 1 : 0);
+            return width + (options.SpaceBeforeTrailingComment ? 1 : 0);
         }
 
-        var kind = SpaceRules.Decide(previous, next, _options);
+        var kind = SpaceRules.Decide(previous, next, options);
         if (kind == SpaceKind.Preserve) {
             kind = HasSpace(previous.Span.End, next.SpanStart) ? SpaceKind.Required : SpaceKind.Forbidden;
         }
@@ -1077,7 +1077,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        width += (_options.SpaceBeforeTrailingComment ? 1 : 0) + TextWidth.Measure(trivia.ToString());
+        width += (options.SpaceBeforeTrailingComment ? 1 : 0) + TextWidth.Measure(trivia.ToString());
         comments = true;
     }
 
@@ -1093,11 +1093,11 @@ public sealed partial class CSharpDocumentBuilder {
                     level++;
                     break;
 
-                case NamespaceDeclarationSyntax when _options.IndentInsideNamespace:
+                case NamespaceDeclarationSyntax when options.IndentInsideNamespace:
                     level++;
                     break;
 
-                case SwitchStatementSyntax when _options.IndentSwitchLabels:
+                case SwitchStatementSyntax when options.IndentSwitchLabels:
                     level++;
                     break;
 
@@ -1106,7 +1106,7 @@ public sealed partial class CSharpDocumentBuilder {
             }
         }
 
-        return level * _options.IndentSize;
+        return level * options.IndentSize;
     }
 
     /// <summary>
@@ -1184,13 +1184,13 @@ public sealed partial class CSharpDocumentBuilder {
         if (token.IsKind(SyntaxKind.None) && nextPieceIndex >= 0) {
             // The next piece is a comment or a directive: look through it to the code it precedes,
             // which is what stick_comment asks for.
-            for (var i = nextPieceIndex; i < _pieces.Length; i++) {
-                if (_pieces[i].Kind == PieceKind.Token) {
-                    token = _tokens[_pieces[i].TokenIndex];
+            for (var i = nextPieceIndex; i < pieces.Length; i++) {
+                if (pieces[i].Kind == PieceKind.Token) {
+                    token = tokens[pieces[i].TokenIndex];
                     break;
                 }
 
-                if (!_pieces[i].IsComment) {
+                if (!pieces[i].IsComment) {
                     return null;
                 }
             }

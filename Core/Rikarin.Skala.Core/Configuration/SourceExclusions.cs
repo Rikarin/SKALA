@@ -69,12 +69,12 @@ public sealed class SourceExclusions {
 
     static readonly ConcurrentDictionary<string, SourceExclusions> Cache = new(StringComparer.Ordinal);
 
-    readonly AnalyzerConfigSet? _probe;
+    readonly AnalyzerConfigSet? probe;
 
     SourceExclusions(string? repositoryRoot, ImmutableArray<string> patterns) {
         RepositoryRoot = repositoryRoot;
         Patterns = patterns;
-        _probe = patterns.IsEmpty || repositoryRoot is null ? null : Probe(repositoryRoot, patterns);
+        probe = patterns.IsEmpty || repositoryRoot is null ? null : Probe(repositoryRoot, patterns);
     }
 
     /// <summary>Nothing declared: the built-in directories and no more.</summary>
@@ -142,8 +142,8 @@ public sealed class SourceExclusions {
             }
         }
 
-        return _probe is not null
-            && _probe.GetOptionsForSourcePath(Path.GetFullPath(fullPath)).AnalyzerOptions.ContainsKey(ProbeKey);
+        return probe is not null
+            && probe.GetOptionsForSourcePath(Path.GetFullPath(fullPath)).AnalyzerOptions.ContainsKey(ProbeKey);
     }
 
     /// <summary>

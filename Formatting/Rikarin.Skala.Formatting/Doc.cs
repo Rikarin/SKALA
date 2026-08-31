@@ -280,13 +280,13 @@ public struct DocNode {
 ///     A document: a struct arena of nodes plus the side tables they index.
 /// </summary>
 public sealed class Document {
-    readonly int[] _flatWidth;
-    readonly int[] _headWidth;
-    readonly int[] _pointWidth;
-    readonly int[] _afterPoint;
-    readonly int[] _segment;
-    readonly bool[] _hasBreak;
-    readonly GroupFacts[] _facts;
+    readonly int[] flatWidth;
+    readonly int[] headWidth;
+    readonly int[] pointWidth;
+    readonly int[] afterPoint;
+    readonly int[] segment;
+    readonly bool[] hasBreak;
+    readonly GroupFacts[] facts;
 
     internal Document(
         DocNode[] nodes,
@@ -309,13 +309,13 @@ public sealed class Document {
         Strings = strings;
         Root = root;
         GroupCount = groupCount;
-        _flatWidth = flatWidth;
-        _headWidth = headWidth;
-        _pointWidth = pointWidth;
-        _afterPoint = afterPoint;
-        _segment = segment;
-        _hasBreak = hasBreak;
-        _facts = facts;
+        this.flatWidth = flatWidth;
+        this.headWidth = headWidth;
+        this.pointWidth = pointWidth;
+        this.afterPoint = afterPoint;
+        this.segment = segment;
+        this.hasBreak = hasBreak;
+        this.facts = facts;
     }
 
     public DocNode[] Nodes { get; }
@@ -339,7 +339,7 @@ public sealed class Document {
     ///     where a group's contents are already known, which removes one full traversal". A subtree
     ///     containing a hard break is <see cref="Unbounded" />.
     /// </remarks>
-    public int FlatWidthOf(int node) => _flatWidth[node];
+    public int FlatWidthOf(int node) => flatWidth[node];
 
     /// <summary>
     ///     The width from the node's start to the first break inside it, or its flat width when there
@@ -356,7 +356,7 @@ public sealed class Document {
     ///     brace either way. Measuring a tail by its flat width costs 7.6 points of line fidelity, which
     ///     is how this distinction was found.
     /// </remarks>
-    public int HeadWidthOf(int node) => _headWidth[node];
+    public int HeadWidthOf(int node) => headWidth[node];
 
     /// <summary>
     ///     The width from the node's start to the first <em>break point</em> inside it — the one
@@ -375,7 +375,7 @@ public sealed class Document {
     ///         flat, and a group that does not fit flat has some inner break that will be taken.
     ///     </para>
     /// </remarks>
-    public int PointWidthOf(int node) => _pointWidth[node];
+    public int PointWidthOf(int node) => pointWidth[node];
 
     /// <summary>
     ///     The width from a group's <em>own</em> first break point to the next break point after it.
@@ -387,7 +387,7 @@ public sealed class Document {
     ///     the next one — <c>new Dictionary&lt;…&gt; {</c> — because that is the rest of the line when
     ///     the group declines to break and lets the construct inside it wrap instead.
     /// </remarks>
-    public int AfterPointOf(int node) => _afterPoint[node];
+    public int AfterPointOf(int node) => afterPoint[node];
 
     /// <summary>
     ///     The flat width from one break point to the next one of the same group: what a fill puts on
@@ -400,13 +400,13 @@ public sealed class Document {
     ///     not "does the next item's first line fit". Measuring the head instead leaves multi-line items
     ///     trailing off the end of a line that already has one on it.
     /// </remarks>
-    public int SegmentOf(int node) => _segment[node];
+    public int SegmentOf(int node) => segment[node];
 
     /// <summary>Whether the subtree holds a break of any kind — a hard line or a break point.</summary>
-    public bool HasBreak(int node) => _hasBreak[node];
+    public bool HasBreak(int node) => hasBreak[node];
 
     /// <summary>What the fitter needs to know about one group beyond its mode and its width.</summary>
-    public GroupFacts FactsOf(int group) => _facts[group];
+    public GroupFacts FactsOf(int group) => facts[group];
 
     /// <summary>A subtree that contains a hard break can never be flat; this is its flat width.</summary>
     public const int Unbounded = int.MaxValue / 4;

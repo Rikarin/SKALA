@@ -22,9 +22,9 @@ namespace Rikarin.Skala.Cli.Tests;
 ///     </para>
 /// </remarks>
 public sealed class SarifPathTests : IDisposable {
-    readonly CrossPlatformScratch _scratch = new("skala-sarif-");
+    readonly CrossPlatformScratch scratch = new("skala-sarif-");
 
-    public void Dispose() => _scratch.Dispose();
+    public void Dispose() => scratch.Dispose();
 
     /// <summary>Every <c>artifactLocation.uri</c> anywhere in the document, however deeply nested.</summary>
     static List<string> ArtifactUris(JsonElement element) {
@@ -60,13 +60,13 @@ public sealed class SarifPathTests : IDisposable {
     }
 
     JsonDocument Check() {
-        _scratch.InitialiseGit();
-        _scratch.WriteText(".editorconfig", "root = true\n\n[*.cs]\nindent_size = 4\n");
-        _scratch.WriteText(Path.Combine("src", "Deep", "Nested", "A.cs"), "class C{void M(){M();}}\n");
-        _scratch.WriteText(Path.Combine("src", "B.cs"), "class D{void M(){M();}}\n");
+        scratch.InitialiseGit();
+        scratch.WriteText(".editorconfig", "root = true\n\n[*.cs]\nindent_size = 4\n");
+        scratch.WriteText(Path.Combine("src", "Deep", "Nested", "A.cs"), "class C{void M(){M();}}\n");
+        scratch.WriteText(Path.Combine("src", "B.cs"), "class D{void M(){M();}}\n");
 
-        var report = Path.Combine(_scratch.Root, "report.sarif");
-        var run = _scratch.Run("check", "--load=loose", "--no-cache", "--output", report, ".");
+        var report = Path.Combine(scratch.Root, "report.sarif");
+        var run = scratch.Run("check", "--load=loose", "--no-cache", "--output", report, ".");
 
         Assert.True(
             File.Exists(report),

@@ -37,22 +37,22 @@ public sealed class Fitter {
     /// <summary>A group containing a hard break can never be flat; this is its flat width.</summary>
     public const int Unbounded = Document.Unbounded;
 
-    readonly Document _document;
-    readonly ResolvedMode[] _modes;
-    readonly bool[] _resolved;
-    readonly int _width;
-    readonly int _indentWidth;
+    readonly Document document;
+    readonly ResolvedMode[] modes;
+    readonly bool[] resolved;
+    readonly int width;
+    readonly int indentWidth;
 
     public Fitter(Document document, int width, int indentWidth = 4) {
-        _indentWidth = Math.Max(1, indentWidth);
-        _document = document;
-        _modes = new ResolvedMode[Math.Max(1, document.GroupCount)];
-        _resolved = new bool[Math.Max(1, document.GroupCount)];
-        _width = width;
+        this.indentWidth = Math.Max(1, indentWidth);
+        this.document = document;
+        modes = new ResolvedMode[Math.Max(1, document.GroupCount)];
+        resolved = new bool[Math.Max(1, document.GroupCount)];
+        this.width = width;
     }
 
     /// <summary>The mode table, indexed by group id.</summary>
-    public ResolvedMode[] Modes => _modes;
+    public ResolvedMode[] Modes => modes;
 
     /// <summary>
     ///     How many <see cref="GroupMode.Owner" /> groups were reached before their owner.
@@ -76,24 +76,24 @@ public sealed class Fitter {
     ///     group is not the line it lands on; see <see cref="LayoutWriter" />'s TrailingWidth.
     /// </param>
     public ResolvedMode Enter(int node, int column, int continuationColumn, int trailing) {
-        ref var slot = ref _document.Nodes[node];
+        ref var slot = ref document.Nodes[node];
         var id = slot.Arg1;
-        var facts = _document.FactsOf(id);
+        var facts = document.FactsOf(id);
         var mode = Decide(
             (GroupMode)slot.Arg0,
             facts,
             new Measures(
                 column,
                 continuationColumn,
-                _document.FlatWidthOf(node),
-                facts.MeasuresHead ? _document.HeadWidthOf(node) : _document.FlatWidthOf(node),
-                _document.PointWidthOf(node),
-                _document.AfterPointOf(node),
+                document.FlatWidthOf(node),
+                facts.MeasuresHead ? document.HeadWidthOf(node) : document.FlatWidthOf(node),
+                document.PointWidthOf(node),
+                document.AfterPointOf(node),
                 trailing
             )
         );
-        _modes[id] = mode;
-        _resolved[id] = true;
+        modes[id] = mode;
+        resolved[id] = true;
         return mode;
     }
 
@@ -122,7 +122,7 @@ public sealed class Fitter {
         int Trailing);
 
     /// <summary>The mode a group resolved to. Flat until the walk reaches it.</summary>
-    public ResolvedMode ModeOf(int group) => _modes[group];
+    public ResolvedMode ModeOf(int group) => modes[group];
 
     ResolvedMode Decide(GroupMode mode, in GroupFacts facts, in Measures m) {
         var owner = facts.Owner;
@@ -137,21 +137,21 @@ public sealed class Fitter {
                 return Fits(m.Column, m.BreakWidth, m.Trailing) ? ResolvedMode.Flat : Worth(facts, m);
 
             case GroupMode.Owner:
-                if (owner < 0 || !_resolved[owner]) {
+                if (owner < 0 || !resolved[owner]) {
                     // ⚠ Broken is the only monotone answer when the owner is unknown, and an owner
                     // that is unknown at this point is a front-end bug rather than a layout.
                     OwnerUnresolved++;
                     return ResolvedMode.Broken;
                 }
 
-                return _modes[owner] == ResolvedMode.Broken ? ResolvedMode.Broken : ResolvedMode.Flat;
+                return modes[owner] == ResolvedMode.Broken ? ResolvedMode.Broken : ResolvedMode.Flat;
 
             default:
                 // ⚠ A chain's links break together even though each keeps its own group. The owner
                 // holds no break points and answers only "does the whole chain fit on one line";
                 // when it says no, every link breaks, which is what chop_if_long means for a
                 // construct whose points are spread across nested nodes.
-                if (facts.BreaksWithOwner && owner >= 0 && _resolved[owner] && _modes[owner] == ResolvedMode.Broken) {
+                if (facts.BreaksWithOwner && owner >= 0 && resolved[owner] && modes[owner] == ResolvedMode.Broken) {
                     return ResolvedMode.Broken;
                 }
 
@@ -281,8 +281,8 @@ public sealed class Fitter {
     ///         value of it will close the last of this class. SK-DIV-0005 records that as the argument.
     ///     </para>
     /// </remarks>
-    int OuterBreakMargin(in Measures m) => 11 + m.ContinuationColumn / _indentWidth;
+    int OuterBreakMargin(in Measures m) => 11 + m.ContinuationColumn / indentWidth;
 
     bool Fits(int column, int flatWidth, int trailing = 0) =>
-        flatWidth < Unbounded && trailing < Unbounded && column + flatWidth + trailing <= _width;
+        flatWidth < Unbounded && trailing < Unbounded && column + flatWidth + trailing <= width;
 }

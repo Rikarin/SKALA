@@ -135,13 +135,13 @@ public static class RoslynCodeStyle {
     ///     DiagnosticAnalyzer a different CLR type from the host's.
     /// </summary>
     sealed class CodeStyleAssemblyLoader(string directory) : IAnalyzerAssemblyLoader {
-        readonly AssemblyLoadContext _context = new CodeStyleLoadContext(directory);
+        readonly AssemblyLoadContext context = new CodeStyleLoadContext(directory);
 
         public void AddDependencyLocation(string fullPath) { }
 
         public Assembly LoadFromPath(string fullPath) {
             var name = AssemblyName.GetAssemblyName(fullPath);
-            return FindLoaded(name) ?? _context.LoadFromAssemblyPath(Path.GetFullPath(fullPath));
+            return FindLoaded(name) ?? context.LoadFromAssemblyPath(Path.GetFullPath(fullPath));
         }
     }
 

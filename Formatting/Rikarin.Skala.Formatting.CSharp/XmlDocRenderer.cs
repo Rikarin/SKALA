@@ -30,27 +30,27 @@ public readonly record struct XmlDocLine(string Text, bool Verbatim);
 ///     nothing and would have to be taught about text.
 /// </remarks>
 public sealed class XmlDocRenderer {
-    readonly XmlDocOptions _options;
-    readonly int _budget;
-    readonly string _indentUnit;
-    readonly List<XmlDocLine> _lines = [];
-    readonly StringBuilder _current = new();
+    readonly XmlDocOptions options;
+    readonly int budget;
+    readonly string indentUnit;
+    readonly List<XmlDocLine> lines = [];
+    readonly StringBuilder current = new();
 
     /// <summary>The unbreakable unit being accumulated — a word plus everything glued to it.</summary>
-    readonly StringBuilder _token = new();
+    readonly StringBuilder token = new();
 
-    bool _tokenIsTag;
+    bool tokenIsTag;
 
     /// <summary>⚠ The next flush must not be separated from what is already on the line.</summary>
-    bool _weld;
+    bool weld;
 
-    int _level;
-    int _width;
-    bool _empty = true;
+    int level;
+    int width;
+    bool empty = true;
 
     /// <summary>How many elements enclose what is being written. Zero is the comment itself.</summary>
     /// <remarks>
-    ///     ⚠ Not <see cref="_level" />, which is an indent level and can stay at zero through a whole
+    ///     ⚠ Not <see cref="level" />, which is an indent level and can stay at zero through a whole
     ///     nest when <c>indent_child_elements</c> says so. This counts enclosing elements, because the
     ///     rule it serves is about structure: an element written directly under the <c>///</c> marker
     ///     always gets a line of its own, and <c>linebreak_before_elements</c> has nothing to say about
@@ -62,15 +62,15 @@ public sealed class XmlDocRenderer {
     ///     while <c>&lt;para&gt;</c> inside a <c>&lt;remarks&gt;</c> does not — so the key is real, and
     ///     it is a rule about nesting rather than about the element's name.
     /// </remarks>
-    int _depth;
+    int depth;
 
     /// <summary>⚠ Something has been placed on the current line, so the next unit needs a space.</summary>
     /// <remarks>
     ///     ⚠ This used to be <c>_width &gt; IndentWidth()</c>, which is the same question only while a
-    ///     line's measured width starts at its indent. <see cref="_carry" /> is exactly the case where
+    ///     line's measured width starts at its indent. <see cref="carry" /> is exactly the case where
     ///     it does not.
     /// </remarks>
-    bool _placed;
+    bool placed;
 
     /// <summary>
     ///     ⚠ The column the next line's fill starts at, when its content began on a start tag's line.
@@ -89,13 +89,13 @@ public sealed class XmlDocRenderer {
     ///         oracle's.
     ///     </para>
     /// </remarks>
-    int _carry;
+    int carry;
 
     /// <summary>⚠ Set when glue could not be honoured, which makes the whole comment untouchable.</summary>
-    bool _glueBroken;
+    bool glueBroken;
 
     XmlDocRenderer(in XmlDocOptions options, int budget) {
-        _options = options;
+        this.options = options;
 
         // ⚠ No floor, and the `Math.Max(20, …)` that used to be here was a guess that hid a
         // measurement. At `xmldoc_max_line_length = 0` and at `1` the oracle puts one word on each
@@ -103,8 +103,8 @@ public sealed class XmlDocRenderer {
         // is not the 120-column answer either. Nothing needs protecting: `Flush` only wraps when the
         // line already holds something, so a budget of zero still emits one unit per line rather
         // than looping.
-        _budget = Math.Max(0, budget);
-        _indentUnit = options.IndentUnit;
+        this.budget = Math.Max(0, budget);
+        indentUnit = options.IndentUnit;
     }
 
     /// <summary>
@@ -118,11 +118,11 @@ public sealed class XmlDocRenderer {
         var renderer = new XmlDocRenderer(options, budget);
         renderer.Nodes(nodes);
         renderer.Break();
-        if (renderer._glueBroken) {
+        if (renderer.glueBroken) {
             return null;
         }
 
-        var lines = renderer._lines;
+        var lines = renderer.lines;
         while (lines.Count > 0 && lines[^1] is { Verbatim: false, Text.Length: 0 }) {
             lines.RemoveAt(lines.Count - 1);
         }
@@ -148,8 +148,8 @@ public sealed class XmlDocRenderer {
                     // the oracle profile never enabled the doc-comment task that would have shown
                     // it. The blank line is dropped again by `Render`'s trailing-blank trim when the
                     // instruction is the last thing in the comment, which is the right answer.
-                    if (verbatim.ProcessingInstruction && _options.BlankLineAfterPi) {
-                        _lines.Add(new XmlDocLine(string.Empty, false));
+                    if (verbatim.ProcessingInstruction && options.BlankLineAfterPi) {
+                        lines.Add(new XmlDocLine(string.Empty, false));
                     }
 
                     break;
@@ -168,7 +168,7 @@ public sealed class XmlDocRenderer {
         // ⚠ An element written directly under the marker owns its line whatever the list says. See
         // `_depth`: the oracle splits five top-level elements off one another at the export's list,
         // at `b` alone and at an empty list alike, and answers the list only for nested ones.
-        var owns = _depth == 0 || _options.BreakBefore(element.Name);
+        var owns = depth == 0 || options.BreakBefore(element.Name);
 
         // ⚠ Glue to a *word* wins over every break rule. A line break between `<c>x</c>` and the
         // `s` after it would insert whitespace the author did not write, which is the one thing a
@@ -178,8 +178,8 @@ public sealed class XmlDocRenderer {
         var breaksBefore = !element.GluedToWord
             && (owns
                 || (multiline
-                        ? _options.LinebreakBeforeMultilineElements
-                        : _options.LinebreakBeforeSinglelineElements));
+                        ? options.LinebreakBeforeMultilineElements
+                        : options.LinebreakBeforeSinglelineElements));
 
         if (breaksBefore) {
             Break();
@@ -205,7 +205,7 @@ public sealed class XmlDocRenderer {
         if (element.GluedToWord) {
             // An element that has to span lines cannot stay welded to the word before it, and
             // moving it would change the text. The whole comment is left as written.
-            _glueBroken = true;
+            glueBroken = true;
             return;
         }
 
@@ -277,7 +277,7 @@ public sealed class XmlDocRenderer {
         }
 
         if (element.HasChildElements) {
-            if (_options.LinebreaksInsideTagsForElementsWithChildElements) {
+            if (options.LinebreaksInsideTagsForElementsWithChildElements) {
                 if (!element.HasText) {
                     return true;
                 }
@@ -304,9 +304,9 @@ public sealed class XmlDocRenderer {
         // element's flat inner content — no start tag, no end tag — and the comparison is strictly
         // greater. Asked before width, like the key above it, because a threshold the content
         // crosses opens the element up however well it would have fitted.
-        return _options.LinebreaksInsideTagsForElementsLongerThan != int.MaxValue
+        return options.LinebreaksInsideTagsForElementsLongerThan != int.MaxValue
             && FlatNodes(element.Children) is { } inner
-            && TextWidth.Measure(inner) > _options.LinebreaksInsideTagsForElementsLongerThan;
+            && TextWidth.Measure(inner) > options.LinebreaksInsideTagsForElementsLongerThan;
     }
 
     /// <summary>
@@ -339,12 +339,12 @@ public sealed class XmlDocRenderer {
     /// </param>
     string Tag(XmlDocElement element, string close) {
         var builder = new StringBuilder(element.Header);
-        var equals = _options.SpacesAroundEqInAttribute ? " = " : "=";
+        var equals = options.SpacesAroundEqInAttribute ? " = " : "=";
         foreach (var attribute in element.Attributes) {
             builder.Append(' ').Append(attribute.Name).Append(equals).Append(attribute.Value);
         }
 
-        if (close == ">" && _options.SpaceAfterLastAttribute && element.Attributes.Length > 0) {
+        if (close == ">" && options.SpaceAfterLastAttribute && element.Attributes.Length > 0) {
             builder.Append(' ');
         }
 
@@ -352,7 +352,7 @@ public sealed class XmlDocRenderer {
     }
 
     /// <summary>The element's self-closing tag.</summary>
-    string SelfClosingTag(XmlDocElement element) => Tag(element, _options.SpaceBeforeSelfClosing ? " />" : "/>");
+    string SelfClosingTag(XmlDocElement element) => Tag(element, options.SpaceBeforeSelfClosing ? " />" : "/>");
 
     /// <summary>Writes an element across several lines: start tag, indented content, end tag.</summary>
     /// <remarks>
@@ -365,46 +365,46 @@ public sealed class XmlDocRenderer {
     ///     answer.
     /// </remarks>
     void Open(XmlDocElement element) {
-        var hug = !_options.LinebreaksInsideTagsForMultilineElements && element.Verbatim is null;
+        var hug = !options.LinebreaksInsideTagsForMultilineElements && element.Verbatim is null;
         Push(Tag(element, ">"), false, true);
 
         // ⚠ The start tag's closing column, kept across the break it is about to take. See `_carry`.
         Flush();
-        var carry = _width;
+        var carry = width;
         if (hug) {
             // ⚠ Welded, not merely kept on the line. The oracle writes `<summary>A summary …` with no
             // gap behind the tag at `linebreaks_inside_tags_for_multiline_elements = false`, and a
             // start tag that is only "on the same line" picks up the ordinary word separator.
-            _weld = true;
+            weld = true;
         } else {
             EndLine();
         }
 
-        var outer = _level;
-        _level = outer
+        var outer = level;
+        level = outer
             + XmlDocOptions.Delta(
-                element.Verbatim is not null || element.HasText ? _options.IndentText : _options.IndentChildElements
+                element.Verbatim is not null || element.HasText ? options.IndentText : options.IndentChildElements
             );
 
-        var depth = _depth;
-        _depth = depth + 1;
+        var depth = this.depth;
+        this.depth = depth + 1;
         if (element.Verbatim is { } verbatim) {
             Lines(verbatim);
         } else {
             // ⚠ No carry in hug mode: the content really is on the start tag's line, so the width is
             // already counted and handing it to `Start` a second time would reserve it twice.
-            _carry = hug ? 0 : carry;
+            this.carry = hug ? 0 : carry;
             Nodes(element.Children);
-            _carry = 0;
+            this.carry = 0;
         }
 
-        _depth = depth;
+        this.depth = depth;
 
         if (!hug) {
             Break();
         }
 
-        _level = outer;
+        level = outer;
         Push("</" + element.Name + ">", hug, true);
     }
 
@@ -442,7 +442,7 @@ public sealed class XmlDocRenderer {
             return start + close;
         }
 
-        return _options.SpacesInsideTags
+        return options.SpacesInsideTags
             ? start + " " + inner + " " + close
             : start + element.InnerLead + inner + element.InnerTrail + close;
     }
@@ -456,7 +456,7 @@ public sealed class XmlDocRenderer {
                     break;
 
                 case XmlDocBreak hard:
-                    if (hard.BlankLines > 0 || _options.KeepUserLinebreaks) {
+                    if (hard.BlankLines > 0 || options.KeepUserLinebreaks) {
                         return null;
                     }
 
@@ -472,7 +472,7 @@ public sealed class XmlDocRenderer {
                     // parent, so the parent is opened too and the prose beside the child is hoisted
                     // with it. Skala used to apply `with_child_elements` only to an element whose
                     // content was *nothing but* elements, which left mixed content on one line.
-                    if (_options.BreakBefore(element.Name)
+                    if (options.BreakBefore(element.Name)
                         || Flat(element) is not { } flat
                         || Structural(element)) {
                         return null;
@@ -522,21 +522,21 @@ public sealed class XmlDocRenderer {
     ///     </para>
     /// </remarks>
     bool FitsOpen(XmlDocElement element, string flat) =>
-        !_options.WrapLines
-        || !(_options.WrapText || element.HasChildElements)
-        || IndentWidth() + TextWidth.Measure(flat) - element.Name.Length - "</>".Length <= _budget;
+        !options.WrapLines
+        || !(options.WrapText || element.HasChildElements)
+        || IndentWidth() + TextWidth.Measure(flat) - element.Name.Length - "</>".Length <= budget;
 
     void Push(string text, bool glued, bool tag) {
         if (glued) {
             // ⚠ Glue has to survive an empty token buffer. Whatever came before may already be on
             // the line, and forgetting that here is how `<c>x</c>s` becomes `<c>x</c> s`.
-            _weld |= _token.Length == 0;
+            weld |= token.Length == 0;
         } else {
             Flush();
         }
 
-        _tokenIsTag |= tag;
-        _token.Append(text);
+        tokenIsTag |= tag;
+        token.Append(text);
     }
 
     /// <summary>Ends the unbreakable unit and places it, wrapping the line first if it must.</summary>
@@ -559,50 +559,50 @@ public sealed class XmlDocRenderer {
     ///     </para>
     /// </remarks>
     void Flush() {
-        if (_token.Length == 0) {
+        if (token.Length == 0) {
             return;
         }
 
-        var text = _token.ToString();
-        var weld = _weld;
-        var mayWrap = !weld && _options.WrapLines && (_tokenIsTag || _options.WrapText);
-        _token.Clear();
-        _tokenIsTag = false;
-        _weld = false;
+        var text = token.ToString();
+        var weld = this.weld;
+        var mayWrap = !weld && options.WrapLines && (tokenIsTag || options.WrapText);
+        token.Clear();
+        tokenIsTag = false;
+        this.weld = false;
 
         var width = TextWidth.Measure(text);
-        if (!_empty && mayWrap && _width + 1 + width > _budget) {
+        if (!empty && mayWrap && this.width + 1 + width > budget) {
             EndLine();
         }
 
         Start();
-        if (!weld && _placed) {
-            _current.Append(' ');
-            _width++;
+        if (!weld && placed) {
+            current.Append(' ');
+            this.width++;
         }
 
-        _current.Append(text);
-        _width += width;
-        _placed = true;
+        current.Append(text);
+        this.width += width;
+        placed = true;
     }
 
     void Start() {
-        if (!_empty) {
+        if (!empty) {
             return;
         }
 
-        for (var i = 0; i < _level; i++) {
-            _current.Append(_indentUnit);
+        for (var i = 0; i < level; i++) {
+            current.Append(indentUnit);
         }
 
         // ⚠ The emitted text is the indent; the measured width may be more. See `_carry`.
-        _width = Math.Max(IndentWidth(), _carry);
-        _carry = 0;
-        _empty = false;
-        _placed = false;
+        width = Math.Max(IndentWidth(), carry);
+        carry = 0;
+        empty = false;
+        placed = false;
     }
 
-    int IndentWidth() => _level * _options.IndentSize;
+    int IndentWidth() => level * options.IndentSize;
 
     void Break() {
         Flush();
@@ -614,29 +614,29 @@ public sealed class XmlDocRenderer {
         // carry whether or not there was anything on the line to end — `linebreak_before_elements`
         // breaks in front of a `<para>` that is the first thing in its parent, and the `<para>` line
         // starts at its own indent rather than at the parent's start tag.
-        _carry = 0;
-        if (_empty) {
+        carry = 0;
+        if (empty) {
             return;
         }
 
-        _lines.Add(new XmlDocLine(_current.ToString(), false));
-        _current.Clear();
-        _width = 0;
-        _empty = true;
-        _placed = false;
+        lines.Add(new XmlDocLine(current.ToString(), false));
+        current.Clear();
+        width = 0;
+        empty = true;
+        placed = false;
     }
 
     void HardBreak(XmlDocBreak hard) {
         if (hard.BlankLines > 0) {
             Break();
-            for (var i = 0; i < Math.Min(hard.BlankLines, _options.MaxBlankLinesBetweenTags); i++) {
-                _lines.Add(new XmlDocLine(string.Empty, false));
+            for (var i = 0; i < Math.Min(hard.BlankLines, options.MaxBlankLinesBetweenTags); i++) {
+                lines.Add(new XmlDocLine(string.Empty, false));
             }
 
             return;
         }
 
-        if (_options.KeepUserLinebreaks) {
+        if (options.KeepUserLinebreaks) {
             Break();
         }
     }
@@ -644,7 +644,7 @@ public sealed class XmlDocRenderer {
     void Lines(ImmutableArray<string> lines) {
         Break();
         foreach (var line in lines) {
-            _lines.Add(new XmlDocLine(line, true));
+            this.lines.Add(new XmlDocLine(line, true));
         }
     }
 }

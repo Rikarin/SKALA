@@ -10,26 +10,26 @@ namespace Rikarin.Skala.Core.Tests;
 ///     writer goes through <see cref="SkalaDirectory" /> so that a seventh call site cannot forget it.
 /// </remarks>
 public sealed class SkalaDirectoryTests : IDisposable {
-    readonly string _root = Path.Combine(
+    readonly string root = Path.Combine(
         Path.GetTempPath(),
         "skala-hygiene-" + Guid.NewGuid().ToString("n")[..12]
     );
 
     public SkalaDirectoryTests() {
-        Directory.CreateDirectory(_root);
+        Directory.CreateDirectory(root);
     }
 
     public void Dispose() {
         try {
-            Directory.Delete(_root, recursive: true);
+            Directory.Delete(root, recursive: true);
         } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
     [Fact]
     public void Ensure_WritesTheSelfIgnoreMarker() {
-        SkalaDirectory.Ensure(_root);
+        SkalaDirectory.Ensure(root);
 
-        var marker = Path.Combine(_root, ".skala", ".gitignore");
+        var marker = Path.Combine(root, ".skala", ".gitignore");
         Assert.True(File.Exists(marker), "`.skala/` was created without the marker that hides it.");
         Assert.StartsWith("*", File.ReadAllText(marker), StringComparison.Ordinal);
     }
@@ -44,16 +44,16 @@ public sealed class SkalaDirectoryTests : IDisposable {
     /// </summary>
     [Fact]
     public void TheBaseline_IsNotIgnored() {
-        if (!Git(_root, "init", "-q")) {
+        if (!Git(root, "init", "-q")) {
             return;
         }
 
-        SkalaDirectory.Ensure(_root);
-        File.WriteAllText(Path.Combine(_root, ".skala", "baseline.sarif"), "{}");
+        SkalaDirectory.Ensure(root);
+        File.WriteAllText(Path.Combine(root, ".skala", "baseline.sarif"), "{}");
 
         Assert.Contains(
             "baseline.sarif",
-            GitStatus(_root),
+            GitStatus(root),
             StringComparison.Ordinal
         );
     }
@@ -68,16 +68,16 @@ public sealed class SkalaDirectoryTests : IDisposable {
     [InlineData("cache/x.json")]
     [InlineData("crash/abc123/input.cs")]
     public void EverythingElse_IsStillIgnored(string relative) {
-        if (!Git(_root, "init", "-q")) {
+        if (!Git(root, "init", "-q")) {
             return;
         }
 
-        var file = Path.Combine(_root, ".skala", relative.Replace('/', Path.DirectorySeparatorChar));
+        var file = Path.Combine(root, ".skala", relative.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-        SkalaDirectory.Ensure(_root);
+        SkalaDirectory.Ensure(root);
         File.WriteAllText(file, "x");
 
-        Assert.Equal(string.Empty, GitStatus(_root).Trim());
+        Assert.Equal(string.Empty, GitStatus(root).Trim());
     }
 
     /// <summary>
@@ -87,13 +87,13 @@ public sealed class SkalaDirectoryTests : IDisposable {
     /// </summary>
     [Fact]
     public void TheMarker_StillHidesItself() {
-        if (!Git(_root, "init", "-q")) {
+        if (!Git(root, "init", "-q")) {
             return;
         }
 
-        SkalaDirectory.Ensure(_root);
+        SkalaDirectory.Ensure(root);
 
-        Assert.Equal(string.Empty, GitStatus(_root).Trim());
+        Assert.Equal(string.Empty, GitStatus(root).Trim());
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public sealed class SkalaDirectoryTests : IDisposable {
     /// </summary>
     [Fact]
     public void Mark_UpgradesTheLegacyMarkerInPlace() {
-        var skala = SkalaDirectory.Ensure(_root);
+        var skala = SkalaDirectory.Ensure(root);
         var marker = Path.Combine(skala, ".gitignore");
         File.WriteAllText(marker, "*\n");
 
@@ -114,11 +114,11 @@ public sealed class SkalaDirectoryTests : IDisposable {
 
     [Fact]
     public void Ensure_WithSegments_CreatesTheSubdirectoryAndStillMarksTheRoot() {
-        var created = SkalaDirectory.Ensure(_root, "cache");
+        var created = SkalaDirectory.Ensure(root, "cache");
 
         Assert.True(Directory.Exists(created));
         Assert.EndsWith("cache", created, StringComparison.Ordinal);
-        Assert.True(File.Exists(Path.Combine(_root, ".skala", ".gitignore")));
+        Assert.True(File.Exists(Path.Combine(root, ".skala", ".gitignore")));
     }
 
     /// <summary>
@@ -128,12 +128,12 @@ public sealed class SkalaDirectoryTests : IDisposable {
     /// </summary>
     [Fact]
     public void EnsureForFile_MarksTheNearestSkalaAbove() {
-        var file = Path.Combine(_root, ".skala", "cache", "loose.diagnostics.json");
+        var file = Path.Combine(root, ".skala", "cache", "loose.diagnostics.json");
 
         SkalaDirectory.EnsureForFile(file);
 
         Assert.True(Directory.Exists(Path.GetDirectoryName(file)!));
-        Assert.True(File.Exists(Path.Combine(_root, ".skala", ".gitignore")));
+        Assert.True(File.Exists(Path.Combine(root, ".skala", ".gitignore")));
     }
 
     /// <summary>
@@ -142,17 +142,17 @@ public sealed class SkalaDirectoryTests : IDisposable {
     /// </summary>
     [Fact]
     public void EnsureForFile_OutsideSkala_WritesNoMarker() {
-        var file = Path.Combine(_root, "reports", "mine.sarif");
+        var file = Path.Combine(root, "reports", "mine.sarif");
 
         SkalaDirectory.EnsureForFile(file);
 
-        Assert.True(Directory.Exists(Path.Combine(_root, "reports")));
-        Assert.False(File.Exists(Path.Combine(_root, "reports", ".gitignore")));
+        Assert.True(Directory.Exists(Path.Combine(root, "reports")));
+        Assert.False(File.Exists(Path.Combine(root, "reports", ".gitignore")));
     }
 
     [Fact]
     public void Mark_DoesNotOverwriteAMarkerTheUserEdited() {
-        var skala = SkalaDirectory.Ensure(_root);
+        var skala = SkalaDirectory.Ensure(root);
         var marker = Path.Combine(skala, ".gitignore");
         File.WriteAllText(marker, "# mine\n*\n!keep.txt\n");
 
@@ -163,10 +163,10 @@ public sealed class SkalaDirectoryTests : IDisposable {
 
     [Fact]
     public void Ensure_IsIdempotent() {
-        SkalaDirectory.Ensure(_root, "cache");
-        SkalaDirectory.Ensure(_root, "cache");
+        SkalaDirectory.Ensure(root, "cache");
+        SkalaDirectory.Ensure(root, "cache");
 
-        Assert.Single(Directory.GetFiles(Path.Combine(_root, ".skala")));
+        Assert.Single(Directory.GetFiles(Path.Combine(root, ".skala")));
     }
 
     /// <summary>
@@ -175,19 +175,19 @@ public sealed class SkalaDirectoryTests : IDisposable {
     /// </summary>
     [Fact]
     public void ASkalaDirectory_IsInvisibleToGitStatus() {
-        if (!Git(_root, "init", "-q")) {
+        if (!Git(root, "init", "-q")) {
             return; // No git on this machine; the other tests still cover the marker's contents.
         }
 
-        File.WriteAllText(Path.Combine(_root, "a.txt"), "seed\n");
-        Git(_root, "add", "-A");
-        Git(_root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "seed");
+        File.WriteAllText(Path.Combine(root, "a.txt"), "seed\n");
+        Git(root, "add", "-A");
+        Git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "seed");
 
-        SkalaDirectory.Ensure(_root, "cache");
-        File.WriteAllText(Path.Combine(_root, ".skala", "report.sarif"), "{}");
-        File.WriteAllText(Path.Combine(_root, ".skala", "cache", "x.json"), "[]");
+        SkalaDirectory.Ensure(root, "cache");
+        File.WriteAllText(Path.Combine(root, ".skala", "report.sarif"), "{}");
+        File.WriteAllText(Path.Combine(root, ".skala", "cache", "x.json"), "[]");
 
-        Assert.Equal(string.Empty, GitStatus(_root).Trim());
+        Assert.Equal(string.Empty, GitStatus(root).Trim());
     }
 
     static bool Git(string directory, params string[] arguments) {

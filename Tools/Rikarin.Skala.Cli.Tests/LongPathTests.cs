@@ -20,14 +20,14 @@ namespace Rikarin.Skala.Cli.Tests;
 ///     </para>
 /// </remarks>
 public sealed class LongPathTests : IDisposable {
-    readonly CrossPlatformScratch _scratch = new("skala-long-");
+    readonly CrossPlatformScratch scratch = new("skala-long-");
 
     // ⚠ 34 characters per segment, not 300: every file system caps a single *component* at 255, so
     // a long path has to be built out of many ordinary-length ones. Eight of these plus the
     // temporary root and the file name clears 260 comfortably on every platform.
     const string Segment = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-    public void Dispose() => _scratch.Dispose();
+    public void Dispose() => scratch.Dispose();
 
     /// <summary>
     ///     The deep relative path, or <c>null</c> when the host refuses to create it.
@@ -40,7 +40,7 @@ public sealed class LongPathTests : IDisposable {
     /// </remarks>
     string? Deep(string fileName) {
         var relative = Path.Combine(Enumerable.Repeat(Segment, 8).ToArray());
-        var full = Path.Combine(_scratch.Root, relative, fileName);
+        var full = Path.Combine(scratch.Root, relative, fileName);
         Assert.True(full.Length > 260, $"the fixture is only {full.Length} characters long.");
 
         try {
@@ -56,12 +56,12 @@ public sealed class LongPathTests : IDisposable {
 
     [Fact]
     public void Format_RewritesAFileMoreThan260CharactersDeep() {
-        _scratch.WriteText(".editorconfig", "root = true\n\n[*.cs]\nindent_size = 4\n");
+        scratch.WriteText(".editorconfig", "root = true\n\n[*.cs]\nindent_size = 4\n");
         if (Deep("Formatted.cs") is not { } path) {
             return;
         }
 
-        var run = _scratch.Run("format", path);
+        var run = scratch.Run("format", path);
 
         Assert.Equal(0, run.ExitCode);
         Assert.Equal("class C {\n    void M() {\n        M();\n    }\n}\n", File.ReadAllText(path));
@@ -69,12 +69,12 @@ public sealed class LongPathTests : IDisposable {
 
     [Fact]
     public void FormatCheck_SeesAFileMoreThan260CharactersDeep() {
-        _scratch.WriteText(".editorconfig", "root = true\n\n[*.cs]\nindent_size = 4\n");
+        scratch.WriteText(".editorconfig", "root = true\n\n[*.cs]\nindent_size = 4\n");
         if (Deep("Checked.cs") is not { } path) {
             return;
         }
 
-        var run = _scratch.Run("format", "--check", path);
+        var run = scratch.Run("format", "--check", path);
 
         // ⚠ Exit 2, not 0. A tool that could not open the file would also print "0 files would be
         // reformatted" and exit 0, and that is the answer this test exists to reject.
@@ -89,14 +89,14 @@ public sealed class LongPathTests : IDisposable {
     /// </summary>
     [Fact]
     public void Check_AnalysesALongPathAndWritesItRelativeIntoTheSarif() {
-        _scratch.InitialiseGit();
-        _scratch.WriteText(".editorconfig", "root = true\n\n[*.cs]\nindent_size = 4\n");
+        scratch.InitialiseGit();
+        scratch.WriteText(".editorconfig", "root = true\n\n[*.cs]\nindent_size = 4\n");
         if (Deep("Analysed.cs") is null) {
             return;
         }
 
-        var report = Path.Combine(_scratch.Root, "report.sarif");
-        var run = _scratch.Run("check", "--load=loose", "--no-cache", "--output", report, ".");
+        var report = Path.Combine(scratch.Root, "report.sarif");
+        var run = scratch.Run("check", "--load=loose", "--no-cache", "--output", report, ".");
 
         Assert.True(
             File.Exists(report),
@@ -108,6 +108,6 @@ public sealed class LongPathTests : IDisposable {
 
         var expected = string.Join('/', Enumerable.Repeat(Segment, 8)) + "/Analysed.cs";
         Assert.Contains(expected, text, StringComparison.Ordinal);
-        Assert.DoesNotContain(_scratch.Root.Replace('\\', '/'), text, StringComparison.Ordinal);
+        Assert.DoesNotContain(scratch.Root.Replace('\\', '/'), text, StringComparison.Ordinal);
     }
 }

@@ -245,7 +245,7 @@ public static class HostedAnalyzers {
     ///     shared types unify and isolates everything else.
     /// </remarks>
     sealed class PackageLoadContext(string name, string directory) : AssemblyLoadContext("skala/" + name) {
-        readonly AssemblyDependencyResolver _resolver = new(directory + Path.DirectorySeparatorChar);
+        readonly AssemblyDependencyResolver resolver = new(directory + Path.DirectorySeparatorChar);
 
         protected override Assembly? Load(AssemblyName assemblyName) {
             if (assemblyName.Name is { } simple
@@ -261,7 +261,7 @@ public static class HostedAnalyzers {
                 return LoadFromAssemblyPath(beside);
             }
 
-            var resolved = _resolver.ResolveAssemblyToPath(assemblyName);
+            var resolved = resolver.ResolveAssemblyToPath(assemblyName);
             return resolved is null ? null : LoadFromAssemblyPath(resolved);
         }
     }

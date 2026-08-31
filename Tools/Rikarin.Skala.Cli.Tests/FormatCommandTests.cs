@@ -8,7 +8,7 @@ namespace Rikarin.Skala.Cli.Tests;
 ///     sees are the only part of the tool that is a contract (ADR-010).
 /// </summary>
 public sealed class FormatCommandTests : IDisposable {
-    readonly string _directory = Directory.CreateTempSubdirectory("skala-format-").FullName;
+    readonly string directory = Directory.CreateTempSubdirectory("skala-format-").FullName;
 
     /// <summary>
     ///     ⚠ Two of these tests <c>git init</c> inside the scratch directory, and that is what makes the
@@ -33,18 +33,18 @@ public sealed class FormatCommandTests : IDisposable {
     ///     </para>
     /// </remarks>
     public void Dispose() {
-        foreach (var file in Directory.EnumerateFiles(_directory, "*", SearchOption.AllDirectories)) {
+        foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)) {
             var attributes = File.GetAttributes(file);
             if ((attributes & FileAttributes.ReadOnly) != 0) {
                 File.SetAttributes(file, attributes & ~FileAttributes.ReadOnly);
             }
         }
 
-        Directory.Delete(_directory, recursive: true);
+        Directory.Delete(directory, recursive: true);
     }
 
     string Write(string name, string content) {
-        var path = Path.Combine(_directory, name);
+        var path = Path.Combine(directory, name);
         File.WriteAllText(path, content);
         return path;
     }
@@ -169,7 +169,7 @@ public sealed class FormatCommandTests : IDisposable {
 
     CliRun Run(params string[] arguments) {
         var start = new ProcessStartInfo("dotnet") {
-            WorkingDirectory = _directory,
+            WorkingDirectory = directory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
@@ -189,7 +189,7 @@ public sealed class FormatCommandTests : IDisposable {
 
     string Git(params string[] arguments) {
         var start = new ProcessStartInfo("git") {
-            WorkingDirectory = _directory,
+            WorkingDirectory = directory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false

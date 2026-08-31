@@ -32,10 +32,10 @@ namespace Rikarin.Skala.Rules.Security;
 ///     </para>
 /// </remarks>
 public sealed class TaintSymbols {
-    readonly Dictionary<string, HashSet<string>> _sources;
-    readonly Dictionary<string, HashSet<string>> _propagators;
-    readonly Dictionary<string, HashSet<string>> _sanitizers;
-    readonly List<TaintSink> _sinks;
+    readonly Dictionary<string, HashSet<string>> sources;
+    readonly Dictionary<string, HashSet<string>> propagators;
+    readonly Dictionary<string, HashSet<string>> sanitizers;
+    readonly List<TaintSink> sinks;
 
     TaintSymbols(
         Dictionary<string, HashSet<string>> sources,
@@ -43,14 +43,14 @@ public sealed class TaintSymbols {
         Dictionary<string, HashSet<string>> sanitizers,
         List<TaintSink> sinks
     ) {
-        _sources = sources;
-        _propagators = propagators;
-        _sanitizers = sanitizers;
-        _sinks = sinks;
+        this.sources = sources;
+        this.propagators = propagators;
+        this.sanitizers = sanitizers;
+        this.sinks = sinks;
     }
 
     /// <summary>Whether any sink for a rule could ever match in this compilation.</summary>
-    public bool HasSinks => _sinks.Count > 0;
+    public bool HasSinks => sinks.Count > 0;
 
     /// <summary>
     ///     The table restricted to one rule's sinks, or <c>null</c> when the compilation cannot produce
@@ -113,13 +113,13 @@ public sealed class TaintSymbols {
     }
 
     /// <summary>Whether reading this member reads a value that crossed a trust boundary.</summary>
-    public bool IsSource(ISymbol? symbol) => Matches(symbol, _sources);
+    public bool IsSource(ISymbol? symbol) => Matches(symbol, sources);
 
     /// <summary>Whether this call carries its arguments' taint into its result.</summary>
-    public bool IsPropagator(ISymbol? symbol) => Matches(symbol, _propagators);
+    public bool IsPropagator(ISymbol? symbol) => Matches(symbol, propagators);
 
     /// <summary>Whether this call produces a value that can no longer carry an injection.</summary>
-    public bool IsSanitizer(ISymbol? symbol) => Matches(symbol, _sanitizers);
+    public bool IsSanitizer(ISymbol? symbol) => Matches(symbol, sanitizers);
 
     /// <summary>The sink this member is, or <c>null</c>.</summary>
     public TaintSink? Sink(ISymbol? symbol) {
@@ -128,7 +128,7 @@ public sealed class TaintSymbols {
         }
 
         var name = symbol is IMethodSymbol { MethodKind: MethodKind.Constructor } ? ".ctor" : symbol.Name;
-        foreach (var sink in _sinks) {
+        foreach (var sink in sinks) {
             if ((sink.MatchesAnyMember || string.Equals(sink.Member, name, StringComparison.Ordinal))
                 && DeclaresType(symbol, sink.Type)) {
                 return sink;

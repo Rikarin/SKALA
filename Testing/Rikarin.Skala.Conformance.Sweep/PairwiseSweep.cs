@@ -50,9 +50,9 @@ public sealed record PairwiseRun(
 ///     </para>
 /// </remarks>
 public sealed class PairwiseSweep {
-    readonly OracleRunner _runner;
-    readonly string _baseConfig;
-    readonly TextWriter _log;
+    readonly OracleRunner runner;
+    readonly string baseConfig;
+    readonly TextWriter log;
 
     /// <summary>
     ///     What the committed single sweep found each (key, value) doing on its own, or empty.
@@ -61,7 +61,7 @@ public sealed class PairwiseSweep {
     ///     ⚠ Empty when there is no committed sweep to ask, which excuses nothing — every corner is then
     ///     evidence about the pair, which is the strict reading and the one that cannot hide a finding.
     /// </remarks>
-    readonly Dictionary<(string Key, string Value), bool> _alone;
+    readonly Dictionary<(string Key, string Value), bool> alone;
 
     public PairwiseSweep(
         OracleRunner runner,
@@ -69,10 +69,10 @@ public sealed class PairwiseSweep {
         TextWriter log,
         IReadOnlyDictionary<(string Key, string Value), bool>? measuredAlone = null
     ) {
-        _runner = runner;
-        _baseConfig = File.ReadAllText(baseConfigPath);
-        _log = log;
-        _alone = measuredAlone is null
+        this.runner = runner;
+        baseConfig = File.ReadAllText(baseConfigPath);
+        this.log = log;
+        alone = measuredAlone is null
             ? []
             : measuredAlone.ToDictionary(static entry => entry.Key, static entry => entry.Value);
         ConfigDigest = OracleFixture.HashConfig(baseConfigPath);
@@ -128,14 +128,14 @@ public sealed class PairwiseSweep {
                 0,
                 TimeSpan.Zero,
                 TimeSpan.Zero,
-                _runner.Version,
+                runner.Version,
                 ConfigDigest,
                 []
             );
         }
 
         var rounds = candidates.Max(static candidate => candidate.Corners);
-        _log.WriteLine(
+        log.WriteLine(
             $"pairwise: {Count(candidates.Count)} pairs, {Count(candidates.Sum(static c => c.Corners))} corners, {Count(rounds)} rounds"
         );
 
@@ -152,7 +152,7 @@ public sealed class PairwiseSweep {
         var baseline = MeasureBaseline(candidates, ref invocations);
         oracleClock += Stopwatch.GetElapsedTime(baselineStart);
         var agreeing = baseline.Count(static entry => entry.Value);
-        _log.WriteLine(
+        log.WriteLine(
             $"  baseline: {Count(agreeing)}/{Count(baseline.Count)} fixtures already agree under the base configuration"
         );
 
@@ -167,7 +167,7 @@ public sealed class PairwiseSweep {
                     + "is broken, so nothing below it can be read."
                 )
             );
-            _log.WriteLine(
+            log.WriteLine(
                 "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: Skala and the oracle disagree on every fixture "
                 + "before any key is set."
             );
@@ -193,7 +193,7 @@ public sealed class PairwiseSweep {
 
                 var oracleStart = Stopwatch.GetTimestamp();
                 var produced = ScratchTree.Format(
-                    _runner,
+                    runner,
                     [.. batch.Select(static candidate => candidate.Fixture)],
                     i => ConfigFor(Overrides(batch[i], round))
                 );
@@ -225,7 +225,7 @@ public sealed class PairwiseSweep {
                 }
             }
 
-            _log.WriteLine(
+            log.WriteLine(
                 $"  round {Count(round + 1)}/{Count(rounds)}: {Count(work.Length)} pairs, {Count(answered)} answered, {Count(moved)} oracle outputs differ from the input"
             );
 
@@ -240,7 +240,7 @@ public sealed class PairwiseSweep {
                         + "configuration never reached it."
                     )
                 );
-                _log.WriteLine("  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` returned nothing this round.");
+                log.WriteLine("  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` returned nothing this round.");
             } else if (KeyFlipSweep.IsUnvaryingRound(work.Length, moved)) {
                 broken.Add(
                     new BrokenRound(
@@ -252,7 +252,7 @@ public sealed class PairwiseSweep {
                         + "configurations are reaching it but they are not varying."
                     )
                 );
-                _log.WriteLine(
+                log.WriteLine(
                     "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: every pair answered with the input it was given."
                 );
             }
@@ -265,7 +265,7 @@ public sealed class PairwiseSweep {
             invocations,
             oracleClock,
             skalaClock,
-            _runner.Version,
+            runner.Version,
             ConfigDigest,
             broken
         );
@@ -273,7 +273,7 @@ public sealed class PairwiseSweep {
 
     /// <summary>The export, with both of the pair's keys forced, in order.</summary>
     public string ConfigFor(IReadOnlyList<KeyValuePair<string, string>> overrides) =>
-        _baseConfig
+        baseConfig
         + "\n[*.cs]\n"
         + string.Concat(overrides.Select(static o => o.Key + " = " + o.Value + "\n"));
 
@@ -299,9 +299,9 @@ public sealed class PairwiseSweep {
     ///     unmeasured key excuse every corner it appears in — which is how a pass stops finding anything.
     /// </remarks>
     bool AttributableToOneKey(PairCandidate candidate, IReadOnlyList<KeyValuePair<string, string>> assignments) =>
-        (_alone.TryGetValue((candidate.Primary.Key, assignments[0].Value), out var primaryAgreed)
+        (alone.TryGetValue((candidate.Primary.Key, assignments[0].Value), out var primaryAgreed)
             && !primaryAgreed)
-        || (_alone.TryGetValue((candidate.Secondary.Key, assignments[1].Value), out var secondaryAgreed)
+        || (alone.TryGetValue((candidate.Secondary.Key, assignments[1].Value), out var secondaryAgreed)
             && !secondaryAgreed);
 
     PairSweep Verdict(
@@ -384,7 +384,7 @@ public sealed class PairwiseSweep {
         var agrees = new Dictionary<string, bool>(StringComparer.Ordinal);
         for (var start = 0; start < fixtures.Length; start += KeyFlipSweep.BatchSize) {
             var batch = fixtures.Skip(start).Take(KeyFlipSweep.BatchSize).ToArray();
-            var produced = ScratchTree.Format(_runner, batch, _ => _baseConfig);
+            var produced = ScratchTree.Format(runner, batch, _ => baseConfig);
             invocations++;
 
             for (var i = 0; i < batch.Length; i++) {

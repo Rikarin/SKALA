@@ -85,37 +85,37 @@ public enum VerbatimFlags {
 ///     Walks a resolved document and produces the output text plus the anchor map.
 /// </summary>
 public sealed class LayoutWriter {
-    readonly Document _document;
-    readonly Fitter _fitter;
-    readonly StringBuilder _output = new();
-    readonly List<AnchorPoint> _anchors = [];
-    readonly string _indentUnit;
-    readonly string _defaultNewLine;
-    readonly List<Scope> _scopes = [];
+    readonly Document document;
+    readonly Fitter fitter;
+    readonly StringBuilder output = new();
+    readonly List<AnchorPoint> anchors = [];
+    readonly string indentUnit;
+    readonly string defaultNewLine;
+    readonly List<Scope> scopes = [];
 
-    int _column;
-    int _line;
-    int? _pendingCloserLevel;
-    bool _atLineStart = true;
-    bool _pendingSpace;
+    int column;
+    int line;
+    int? pendingCloserLevel;
+    bool atLineStart = true;
+    bool pendingSpace;
 
     /// <summary>The pending gap's own text, when it is preserved rather than rendered as one space.</summary>
-    string? _pendingSpaceText;
+    string? pendingSpaceText;
 
     /// <summary>Whether the break that ended the last line renders as a space when it does not break.</summary>
-    bool _createdLineSpace;
+    bool createdLineSpace;
 
-    SourceSpan _pendingAnchorSpan;
-    int _pendingAnchorToken = -1;
-    bool _hasPendingAnchor;
+    SourceSpan pendingAnchorSpan;
+    int pendingAnchorToken = -1;
+    bool hasPendingAnchor;
 
-    readonly int _continuousMultiplier;
-    readonly int _indentWidth;
-    readonly int _width;
+    readonly int continuousMultiplier;
+    readonly int indentWidth;
+    readonly int width;
 
     /// <summary><c>alignment_tab_fill_style</c>: how the whitespace reaching a column is spelled.</summary>
     /// <remarks>⚠ Read by <see cref="WriteIndentTo" /> and only there. SK-DIV-0032.</remarks>
-    readonly TabFillStyle _tabFill;
+    readonly TabFillStyle tabFill;
 
     /// <summary>
     ///     The input, and non-null exactly when <c>disable_indenter</c> is on.
@@ -126,7 +126,7 @@ public sealed class LayoutWriter {
     ///     author wrote, which can only be read out of the input, and the null here is what says the
     ///     ordinary path is in force rather than a flag beside a string nobody passed.
     /// </remarks>
-    readonly string? _source;
+    readonly string? source;
 
     LayoutWriter(
         Document document,
@@ -137,15 +137,15 @@ public sealed class LayoutWriter {
         string? suppressedIndentSource,
         TabFillStyle tabFill
     ) {
-        _document = document;
-        _width = width;
-        _indentWidth = indentUnit == "\t" ? TextWidth.TabStop : indentUnit.Length;
-        _fitter = new(document, width, _indentWidth);
-        _indentUnit = indentUnit;
-        _defaultNewLine = defaultNewLine;
-        _continuousMultiplier = Math.Max(1, continuousMultiplier);
-        _source = suppressedIndentSource;
-        _tabFill = tabFill;
+        this.document = document;
+        this.width = width;
+        indentWidth = indentUnit == "\t" ? TextWidth.TabStop : indentUnit.Length;
+        fitter = new(document, width, indentWidth);
+        this.indentUnit = indentUnit;
+        this.defaultNewLine = defaultNewLine;
+        this.continuousMultiplier = Math.Max(1, continuousMultiplier);
+        source = suppressedIndentSource;
+        this.tabFill = tabFill;
     }
 
     /// <param name="width"><c>max_line_length</c>: the budget every Auto group is tested against.</param>
@@ -181,44 +181,44 @@ public sealed class LayoutWriter {
         );
         writer.Walk();
         return new(
-            writer._output.ToString(),
-            writer._anchors,
-            writer._fitter.Modes,
-            writer._fitter.OwnerUnresolved
+            writer.output.ToString(),
+            writer.anchors,
+            writer.fitter.Modes,
+            writer.fitter.OwnerUnresolved
         );
     }
 
     void Walk() {
         var stack = new Stack<(int Node, int Child)>();
-        stack.Push((_document.Root, 0));
+        stack.Push((document.Root, 0));
 
         while (stack.Count > 0) {
             var (node, child) = stack.Pop();
-            ref var slot = ref _document.Nodes[node];
+            ref var slot = ref document.Nodes[node];
 
             if (child == 0) {
                 switch (slot.Kind) {
                     case DocKind.Text:
-                        WritePiece(_document.TextOf(node), slot.Source, (VerbatimFlags)slot.Flags);
+                        WritePiece(document.TextOf(node), slot.Source, (VerbatimFlags)slot.Flags);
                         continue;
 
                     case DocKind.Verbatim:
-                        WritePiece(_document.TextOf(node), slot.Source, (VerbatimFlags)slot.Flags);
+                        WritePiece(document.TextOf(node), slot.Source, (VerbatimFlags)slot.Flags);
                         continue;
 
                     case DocKind.Anchor:
-                        _pendingAnchorSpan = slot.Source;
-                        _pendingAnchorToken = slot.Arg0;
-                        _hasPendingAnchor = true;
+                        pendingAnchorSpan = slot.Source;
+                        pendingAnchorToken = slot.Arg0;
+                        hasPendingAnchor = true;
                         continue;
 
                     case DocKind.Space:
                         if ((SpaceKind)slot.Arg0 != SpaceKind.Forbidden) {
-                            _pendingSpace = true;
+                            pendingSpace = true;
 
                             // ⚠ A payload means the gap is preserved byte for byte rather than
                             // rendered as one space. `disable_space_changes` is the only producer.
-                            _pendingSpaceText = slot.Payload > 0 ? _document.Strings[slot.Payload] : null;
+                            pendingSpaceText = slot.Payload > 0 ? document.Strings[slot.Payload] : null;
                         }
 
                         continue;
@@ -236,7 +236,7 @@ public sealed class LayoutWriter {
                         // land on, and against the rest of the line as well as its own width. See
                         // Fitter's remarks for why this is not a separate pass, and TrailingWidth
                         // for why the group's own width is not the whole measurement.
-                        _fitter.Enter(node, CurrentColumn(), ContinuationColumn(slot.Arg1), TrailingWidth(stack));
+                        fitter.Enter(node, CurrentColumn(), ContinuationColumn(slot.Arg1), TrailingWidth(stack));
                         break;
 
                     default:
@@ -244,10 +244,10 @@ public sealed class LayoutWriter {
                 }
             }
 
-            var children = _document.ChildrenOf(node);
+            var children = document.ChildrenOf(node);
 
             if (slot.Kind == DocKind.IfBroken) {
-                var branch = _fitter.ModeOf(slot.Arg0) == ResolvedMode.Broken ? 0 : 1;
+                var branch = fitter.ModeOf(slot.Arg0) == ResolvedMode.Broken ? 0 : 1;
                 if (child == 0 && branch < children.Length) {
                     stack.Push((children[branch], 0));
                 }
@@ -295,14 +295,14 @@ public sealed class LayoutWriter {
         // }               ← the `if`'s level, not the `&amp;&amp; second` line's
         // </code>
         var outer = LevelForNested();
-        _scopes.Add(
+        scopes.Add(
             kind switch {
-                IndentKind.Block => new Scope(true, outer + _indentWidth, _line, outer, unconditional),
+                IndentKind.Block => new Scope(true, outer + indentWidth, line, outer, unconditional),
                 IndentKind.Continuous =>
-                    new Scope(false, _continuousMultiplier * _indentWidth, _line, outer, unconditional),
-                IndentKind.OneLevel => new Scope(false, _indentWidth, _line, outer, unconditional),
+                    new Scope(false, continuousMultiplier * indentWidth, line, outer, unconditional),
+                IndentKind.OneLevel => new Scope(false, indentWidth, line, outer, unconditional),
                 IndentKind.Outdent =>
-                    new Scope(true, Math.Max(0, outer - _indentWidth), _line, outer, unconditional),
+                    new Scope(true, Math.Max(0, outer - indentWidth), line, outer, unconditional),
 
                 // ⚠ `align_multiline_statement_conditions = true`: an absolute column rather than a
                 // level, captured where the scope opens — which is immediately after the condition's
@@ -314,14 +314,14 @@ public sealed class LayoutWriter {
                 // `LevelColumn` alone: `alignment_tab_fill_style = use_spaces` spells the level part of
                 // an indent in tabs and the alignment part in spaces, so it has to know which part of
                 // this scope's column is which. `CloserLevel` — `outer` — is the level part.
-                IndentKind.Align => new Scope(true, CurrentColumn(), _line, outer, unconditional, IsAlignment: true),
+                IndentKind.Align => new Scope(true, CurrentColumn(), line, outer, unconditional, IsAlignment: true),
 
                 // ⚠ Columns, not a level, and it carries them in a field of its own rather than in
                 // `Level` so that the collapse in `Level(bool)` never sees them. `Level` is 0 here:
                 // an outdent scope adds nothing and subtracts a column count, which is a different
                 // question from "how many levels does this line take".
                 IndentKind.OutdentColumns =>
-                    new Scope(false, 0, _line, outer, unconditional, Math.Max(0, columns)),
+                    new Scope(false, 0, line, outer, unconditional, Math.Max(0, columns)),
                 _ => new Scope(false, 0, int.MaxValue, outer, unconditional)
             }
         );
@@ -343,10 +343,10 @@ public sealed class LayoutWriter {
     /// </remarks>
     void Pop(bool alignsCloser) {
         if (alignsCloser) {
-            _pendingCloserLevel = _scopes[^1].CloserLevel;
+            pendingCloserLevel = scopes[^1].CloserLevel;
         }
 
-        _scopes.RemoveAt(_scopes.Count - 1);
+        scopes.RemoveAt(scopes.Count - 1);
     }
 
     /// <summary>
@@ -433,8 +433,8 @@ public sealed class LayoutWriter {
     int Level(bool nested, bool levelsOnly = false) {
         var level = 0;
         var blocked = -1;
-        for (var i = _scopes.Count - 1; i >= 0; i--) {
-            var scope = _scopes[i];
+        for (var i = scopes.Count - 1; i >= 0; i--) {
+            var scope = scopes[i];
 
             // ⚠ Before the block check and before `blocked` is touched, and both are deliberate. A
             // column outdent is not a level: it never satisfies an enclosing scope's collapse, and
@@ -443,7 +443,7 @@ public sealed class LayoutWriter {
             // subtraction has to survive the early return below. Its own opening line is exempt,
             // which is what leaves the first operand of a chain where it was.
             if (scope.ColumnOutdent != 0) {
-                if (scope.OpenLine < _line) {
+                if (scope.OpenLine < line) {
                     level -= scope.ColumnOutdent;
                 }
 
@@ -455,7 +455,7 @@ public sealed class LayoutWriter {
             }
 
             if (scope.Unconditional) {
-                if (nested ? scope.OpenLine <= _line : scope.OpenLine < _line) {
+                if (nested ? scope.OpenLine <= line : scope.OpenLine < line) {
                     level += scope.Level;
                     blocked = scope.OpenLine;
                 }
@@ -463,7 +463,7 @@ public sealed class LayoutWriter {
                 continue;
             }
 
-            if (scope.OpenLine < _line && scope.OpenLine != blocked) {
+            if (scope.OpenLine < line && scope.OpenLine != blocked) {
                 level += scope.Level;
                 blocked = scope.OpenLine;
             }
@@ -519,14 +519,14 @@ public sealed class LayoutWriter {
 
     /// <summary>The indentation already written at the start of the line being built.</summary>
     int CurrentLineIndent() {
-        var start = _output.Length;
-        while (start > 0 && _output[start - 1] != '\n') {
+        var start = output.Length;
+        while (start > 0 && output[start - 1] != '\n') {
             start--;
         }
 
         var indent = 0;
-        for (var i = start; i < _output.Length && _output[i] is ' ' or '\t'; i++) {
-            indent = TextWidth.Advance(_output[i].ToString(), indent);
+        for (var i = start; i < output.Length && output[i] is ' ' or '\t'; i++) {
+            indent = TextWidth.Advance(output[i].ToString(), indent);
         }
 
         return indent;
@@ -590,30 +590,30 @@ public sealed class LayoutWriter {
     ///     </para>
     /// </remarks>
     void WriteIndentTo(int column, int levelColumn) {
-        var tabs = _indentUnit == "\t";
-        var units = _tabFill switch {
-            TabFillStyle.UseSpaces when tabs => Math.Min(levelColumn, column) / _indentWidth,
+        var tabs = indentUnit == "\t";
+        var units = tabFill switch {
+            TabFillStyle.UseSpaces when tabs => Math.Min(levelColumn, column) / indentWidth,
 
             // Round to the nearest stop, ties downwards: 15 ⇒ 4 units, 14 ⇒ 3, 23 ⇒ 6, 18 ⇒ 4.
-            TabFillStyle.UseTabsOnly when tabs => (2 * column + _indentWidth - 1) / (2 * _indentWidth),
-            _ => column / _indentWidth
+            TabFillStyle.UseTabsOnly when tabs => (2 * column + indentWidth - 1) / (2 * indentWidth),
+            _ => column / indentWidth
         };
 
         for (var i = 0; i < units; i++) {
-            _output.Append(_indentUnit);
+            output.Append(indentUnit);
         }
 
-        _column = units * _indentWidth;
+        this.column = units * indentWidth;
 
         // ⚠ `use_tabs_only` stops here. It reaches a tab stop and not the alignment column, and the
         // remainder is deliberately not spelled — filling it with spaces would be `optimal_fill`.
-        if (tabs && _tabFill == TabFillStyle.UseTabsOnly) {
+        if (tabs && tabFill == TabFillStyle.UseTabsOnly) {
             return;
         }
 
-        for (var i = _column; i < column; i++) {
-            _output.Append(' ');
-            _column++;
+        for (var i = this.column; i < column; i++) {
+            output.Append(' ');
+            this.column++;
         }
     }
 
@@ -627,11 +627,11 @@ public sealed class LayoutWriter {
     ///     level too optimistic on every nested construct in a file.
     /// </remarks>
     int CurrentColumn() {
-        if (_atLineStart) {
-            return _pendingCloserLevel ?? Effective();
+        if (atLineStart) {
+            return pendingCloserLevel ?? Effective();
         }
 
-        return _column + PendingWidth;
+        return column + PendingWidth;
     }
 
     /// <summary>
@@ -767,7 +767,7 @@ public sealed class LayoutWriter {
     int TrailingWidth(Stack<(int Node, int Child)> stack) {
         var total = 0;
         foreach (var (node, child) in stack) {
-            var children = _document.ChildrenOf(node);
+            var children = document.ChildrenOf(node);
             for (var i = child; i < children.Length; i++) {
                 var sibling = children[i];
 
@@ -779,16 +779,16 @@ public sealed class LayoutWriter {
                 // an item on the line, the item's own group then finds itself one column over and
                 // breaks, and the second pass sees a multi-line item and breaks before it. Two files
                 // out of Vixen's 4 708 did exactly that.
-                if (_document.Nodes[sibling].Kind == DocKind.Line) {
+                if (document.Nodes[sibling].Kind == DocKind.Line) {
                     return total;
                 }
 
-                var width = _document.PointWidthOf(sibling);
+                var width = document.PointWidthOf(sibling);
                 total = total >= Document.Unbounded || width >= Document.Unbounded
                     ? Document.Unbounded
                     : total + width;
 
-                if (_document.HasBreak(sibling)) {
+                if (document.HasBreak(sibling)) {
                     return total;
                 }
             }
@@ -817,24 +817,24 @@ public sealed class LayoutWriter {
         var outside = false;
         foreach (var (node, child) in stack) {
             if (!outside) {
-                ref var frame = ref _document.Nodes[node];
+                ref var frame = ref document.Nodes[node];
                 outside = frame.Kind == DocKind.Group && frame.Arg1 == group;
                 continue;
             }
 
-            var children = _document.ChildrenOf(node);
+            var children = document.ChildrenOf(node);
             for (var i = child; i < children.Length; i++) {
                 var sibling = children[i];
-                if (_document.Nodes[sibling].Kind == DocKind.Line) {
+                if (document.Nodes[sibling].Kind == DocKind.Line) {
                     return total;
                 }
 
-                var width = _document.PointWidthOf(sibling);
+                var width = document.PointWidthOf(sibling);
                 total = total >= Document.Unbounded || width >= Document.Unbounded
                     ? Document.Unbounded
                     : total + width;
 
-                if (_document.HasBreak(sibling)) {
+                if (document.HasBreak(sibling)) {
                     return total;
                 }
             }
@@ -861,21 +861,21 @@ public sealed class LayoutWriter {
     int ContinuationColumn(int group) {
         var level = 0;
         var counted = -1;
-        for (var i = _scopes.Count - 1; i >= 0; i--) {
-            var scope = _scopes[i];
+        for (var i = scopes.Count - 1; i >= 0; i--) {
+            var scope = scopes[i];
             if (scope.IsBlock) {
                 level += scope.Level;
                 break;
             }
 
-            if (scope.OpenLine <= _line && scope.OpenLine != counted) {
+            if (scope.OpenLine <= line && scope.OpenLine != counted) {
                 level += scope.Level;
                 counted = scope.OpenLine;
             }
         }
 
-        if (_document.FactsOf(group).SpendsIndent) {
-            level += _continuousMultiplier * _indentWidth;
+        if (document.FactsOf(group).SpendsIndent) {
+            level += continuousMultiplier * indentWidth;
         }
 
         return level;
@@ -888,17 +888,17 @@ public sealed class LayoutWriter {
 
             // ⚠ A break point renders as its flat form when its group stayed flat, and the flat
             // form is per-point: nothing after `(`, a space after `,`.
-            var flat = slot.Arg2 < 0 || _fitter.ModeOf(slot.Arg2) == ResolvedMode.Flat;
+            var flat = slot.Arg2 < 0 || fitter.ModeOf(slot.Arg2) == ResolvedMode.Flat;
 
             // ⚠ A fill point in a broken group is the one break decision that is not the group's.
             // It breaks when the next item would not fit and stays put otherwise, which is what
             // makes `wrap_if_long` a fill rather than a chop.
             if (!flat && (flags & LineFlags.FillPoint) != 0) {
-                var width = _pendingSpace ? PendingWidth : (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
-                var column = _atLineStart
-                    ? _pendingCloserLevel ?? Effective()
-                    : _column + width;
-                var segment = _document.SegmentOf(node);
+                var width = pendingSpace ? PendingWidth : (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
+                var column = atLineStart
+                    ? pendingCloserLevel ?? Effective()
+                    : this.column + width;
+                var segment = document.SegmentOf(node);
 
                 // ⚠ At the group's last point the segment ends where the group does, and the line
                 // does not — so what follows the group counts, exactly as it does when a group is
@@ -912,12 +912,12 @@ public sealed class LayoutWriter {
                         : segment + trailing;
                 }
 
-                flat = segment < Document.Unbounded && column + segment <= _width;
+                flat = segment < Document.Unbounded && column + segment <= this.width;
             }
 
             if (flat) {
                 if ((flags & LineFlags.FlatSpace) != 0) {
-                    _pendingSpace = true;
+                    pendingSpace = true;
                 }
 
                 return;
@@ -929,23 +929,23 @@ public sealed class LayoutWriter {
         // `disable_space_changes` preserved is discarded here too, and that is exactly why such a
         // gap is a pending space and not text: preserving a run byte for byte must not survive into
         // a line the run no longer ends.
-        _pendingSpace = false;
-        _pendingSpaceText = null;
+        pendingSpace = false;
+        pendingSpaceText = null;
 
         // ⚠ …except with the indenter off, where it is not discarded but moved: the line this break
         // creates begins with the break point's own flat rendering. See <see cref="WriteSuppressedIndent" />.
-        _createdLineSpace = kind == LineKind.Soft && ((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0;
+        createdLineSpace = kind == LineKind.Soft && ((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0;
 
-        var newLine = slot.Payload > 0 ? _document.Strings[slot.Payload] : _defaultNewLine;
-        _output.Append(newLine);
-        _line++;
+        var newLine = slot.Payload > 0 ? document.Strings[slot.Payload] : defaultNewLine;
+        output.Append(newLine);
+        line++;
         for (var i = 0; i < slot.Arg1; i++) {
-            _output.Append(newLine);
-            _line++;
+            output.Append(newLine);
+            line++;
         }
 
-        _atLineStart = true;
-        _column = 0;
+        atLineStart = true;
+        column = 0;
     }
 
     /// <summary>
@@ -983,125 +983,125 @@ public sealed class LayoutWriter {
     ///     </para>
     /// </remarks>
     void WriteSuppressedIndent(SourceSpan source) {
-        _column = 0;
-        if (source.Length == 0 || source.Start > _source!.Length) {
+        column = 0;
+        if (source.Length == 0 || source.Start > this.source!.Length) {
             CreatedLineGap();
             return;
         }
 
         var start = source.Start;
-        while (start > 0 && _source[start - 1] is ' ' or '\t') {
+        while (start > 0 && this.source[start - 1] is ' ' or '\t') {
             start--;
         }
 
-        if (start > 0 && _source[start - 1] is not ('\n' or '\r')) {
+        if (start > 0 && this.source[start - 1] is not ('\n' or '\r')) {
             CreatedLineGap();
             return;
         }
 
         for (var i = start; i < source.Start; i++) {
-            _output.Append(_source[i]);
+            output.Append(this.source[i]);
         }
 
-        _column = TextWidth.Advance(_source[start..source.Start], 0);
+        column = TextWidth.Advance(this.source[start..source.Start], 0);
         return;
 
         void CreatedLineGap() {
-            if (!_createdLineSpace) {
+            if (!createdLineSpace) {
                 return;
             }
 
-            _output.Append(' ');
-            _column = 1;
+            output.Append(' ');
+            column = 1;
         }
     }
 
     /// <summary>The columns the pending gap will occupy, which is 1 unless it is a preserved run.</summary>
-    int PendingWidth => !_pendingSpace ? 0 : _pendingSpaceText is null ? 1 : TextWidth.Measure(_pendingSpaceText);
+    int PendingWidth => !pendingSpace ? 0 : pendingSpaceText is null ? 1 : TextWidth.Measure(pendingSpaceText);
 
     /// <summary>Writes the pending gap — one space, or the author's own run under `disable_space_changes`.</summary>
     void FlushPendingSpace() {
-        if (!_pendingSpace) {
+        if (!pendingSpace) {
             return;
         }
 
-        var gap = _pendingSpaceText ?? " ";
-        _output.Append(gap);
-        _column = TextWidth.Advance(gap, _column);
-        _pendingSpace = false;
-        _pendingSpaceText = null;
+        var gap = pendingSpaceText ?? " ";
+        output.Append(gap);
+        column = TextWidth.Advance(gap, column);
+        pendingSpace = false;
+        pendingSpaceText = null;
     }
 
     void WritePiece(string text, SourceSpan source, VerbatimFlags flags) {
         // ⚠ Not realigned while the indenter is off. A raw literal's interior lines move only to
         // follow its opening quotes, and under this key the opening quotes did not move.
-        if ((flags & VerbatimFlags.Realign) != 0 && _source is null) {
+        if ((flags & VerbatimFlags.Realign) != 0 && this.source is null) {
             text = Realign(
                 text,
-                _atLineStart ? _pendingCloserLevel ?? Effective() : _column + PendingWidth
+                atLineStart ? pendingCloserLevel ?? Effective() : column + PendingWidth
             );
-        } else if ((flags & VerbatimFlags.RealignToIndent) != 0 && _source is null) {
+        } else if ((flags & VerbatimFlags.RealignToIndent) != 0 && this.source is null) {
             // ⚠ The indentation of the line the opening quotes are on, plus one level — not the
             // level the scope stack is at. A literal opened part-way along `var a = """` takes the
             // line's own indent, and the two differ whenever a continuation scope is open.
             text = Realign(
                 text,
-                (_atLineStart ? _pendingCloserLevel ?? Effective() : CurrentLineIndent()) + _indentWidth
+                (atLineStart ? pendingCloserLevel ?? Effective() : CurrentLineIndent()) + indentWidth
             );
-        } else if ((flags & VerbatimFlags.AlignStarred) != 0 && _source is null) {
+        } else if ((flags & VerbatimFlags.AlignStarred) != 0 && this.source is null) {
             // ⚠ The opening delimiter's own column plus one — measured, and it is the *opener's*
             // column rather than the code's indent, which is why a block comment that begins on a
             // code line puts its asterisks 26 columns in rather than 5. Same expression as
             // `Realign` above and for the same reason: at a line start the indentation has not been
             // written yet, so the column has to come from the scope stack.
-            text = AlignStarred(text, (_atLineStart ? _pendingCloserLevel ?? Effective() : _column + PendingWidth) + 1);
+            text = AlignStarred(text, (atLineStart ? pendingCloserLevel ?? Effective() : column + PendingWidth) + 1);
         }
 
-        if (_atLineStart) {
+        if (atLineStart) {
             if ((flags & VerbatimFlags.AtColumnZero) == 0 && (flags & VerbatimFlags.SelfIndented) == 0) {
-                if (_source is null) {
+                if (this.source is null) {
                     // ⚠ A closing delimiter's column is its scope's `CloserLevel`, which is a level and
                     // never an alignment column — so the level column and the target coincide and the
                     // whole indent is written in whole units. Only the `Effective` branch can differ.
-                    var closer = _pendingCloserLevel;
+                    var closer = pendingCloserLevel;
                     WriteIndentTo(closer ?? Effective(), closer ?? LevelColumn());
                 } else {
                     WriteSuppressedIndent(source);
                 }
             }
 
-            _atLineStart = false;
-            _pendingSpace = false;
-            _pendingSpaceText = null;
-            _pendingCloserLevel = null;
-        } else if (_pendingCloserLevel is not null) {
-            _pendingCloserLevel = null;
+            atLineStart = false;
+            pendingSpace = false;
+            pendingSpaceText = null;
+            pendingCloserLevel = null;
+        } else if (pendingCloserLevel is not null) {
+            pendingCloserLevel = null;
             FlushPendingSpace();
         } else {
             FlushPendingSpace();
         }
 
-        var start = _output.Length;
-        _output.Append(text);
-        _column = TextWidth.Advance(text, _column);
+        var start = output.Length;
+        output.Append(text);
+        column = TextWidth.Advance(text, column);
 
-        if (_hasPendingAnchor) {
-            _anchors.Add(new AnchorPoint(_pendingAnchorSpan, start, _output.Length, _pendingAnchorToken));
-            _hasPendingAnchor = false;
+        if (hasPendingAnchor) {
+            anchors.Add(new AnchorPoint(pendingAnchorSpan, start, output.Length, pendingAnchorToken));
+            hasPendingAnchor = false;
         }
 
         // A piece that ends with a newline (a multi-line comment written verbatim never does, but a
         // disabled #if block does) leaves the writer at the start of a line.
         if (text.Length > 0 && (text[^1] == '\n' || text[^1] == '\r')) {
-            _atLineStart = true;
-            _column = 0;
+            atLineStart = true;
+            column = 0;
         }
 
         // A multi-line piece — a raw string, a disabled block — moves the line counter with it, so
         // that scopes opened before it still know which side of a break they are on.
         foreach (var c in text) {
             if (c == '\n') {
-                _line++;
+                line++;
             }
         }
     }

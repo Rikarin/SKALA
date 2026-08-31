@@ -79,7 +79,7 @@ public sealed class ThisQualifierRule : ArrangementRule {
 
     sealed class Rewriter(FormatterTagGuard guard, SemanticModel model, ArrangementOptions options)
         : GuardedRewriter(guard) {
-        readonly bool _adds = options.QualifyField
+        readonly bool adds = options.QualifyField
             || options.QualifyProperty
             || options.QualifyMethod
             || options.QualifyEvent;
@@ -116,7 +116,7 @@ public sealed class ThisQualifierRule : ArrangementRule {
 
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) {
             var visited = (IdentifierNameSyntax)base.VisitIdentifierName(node)!;
-            if (!_adds) {
+            if (!adds) {
                 return visited;
             }
 

@@ -88,14 +88,14 @@ public sealed class KeyFlipSweep {
     /// </remarks>
     public const int BatchSize = 60;
 
-    readonly OracleRunner _runner;
-    readonly string _baseConfig;
-    readonly TextWriter _log;
+    readonly OracleRunner runner;
+    readonly string baseConfig;
+    readonly TextWriter log;
 
     public KeyFlipSweep(OracleRunner runner, string baseConfigPath, TextWriter log) {
-        _runner = runner;
-        _baseConfig = File.ReadAllText(baseConfigPath);
-        _log = log;
+        this.runner = runner;
+        baseConfig = File.ReadAllText(baseConfigPath);
+        this.log = log;
         // ⚠ Through OracleFixture rather than hashed here. The digest this run stamps into
         // conformance-sweep.md is compared against the one the fixture headers carry, and a second
         // implementation of "the digest" is how two files come to disagree about one configuration.
@@ -163,14 +163,14 @@ public sealed class KeyFlipSweep {
                 0,
                 TimeSpan.Zero,
                 TimeSpan.Zero,
-                _runner.Version,
+                runner.Version,
                 ConfigDigest,
                 []
             );
         }
 
         var rounds = candidates.Max(static candidate => candidate.Values.Count);
-        _log.WriteLine(
+        log.WriteLine(
             $"sweep: {Count(candidates.Count)} options, {Count(candidates.Sum(static c => c.Values.Count))} configurations, {Count(rounds)} rounds"
         );
 
@@ -191,7 +191,7 @@ public sealed class KeyFlipSweep {
         var baseline = MeasureBaseline(candidates, ref invocations);
         oracleClock += Stopwatch.GetElapsedTime(baselineStart);
         var agreeing = baseline.Count(static entry => entry.Value);
-        _log.WriteLine(
+        log.WriteLine(
             $"  baseline: {Count(agreeing)}/{Count(baseline.Count)} fixtures already agree under the base configuration"
         );
 
@@ -214,7 +214,7 @@ public sealed class KeyFlipSweep {
                     + "comparison is broken, so nothing below it can be read."
                 )
             );
-            _log.WriteLine(
+            log.WriteLine(
                 "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: Skala and the oracle disagree on every fixture "
                 + "before any key is flipped. Check the comparison before reading anything below it."
             );
@@ -299,7 +299,7 @@ public sealed class KeyFlipSweep {
                 }
 
                 moved += movedHere;
-                _log.WriteLine(
+                log.WriteLine(
                     $"  round {Count(round + 1)}/{Count(rounds)} {partition.Key.Name}: {Count(members.Length)} options, {Count(answered)} answered, {Count(movedHere)} oracle outputs differ from the input"
                 );
 
@@ -315,7 +315,7 @@ public sealed class KeyFlipSweep {
                             + " option in this round. It errored, or the configuration never reached it."
                         )
                     );
-                    _log.WriteLine(
+                    log.WriteLine(
                         "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` returned nothing for the "
                         + partition.Key.Name
                         + " half of this round. It errored, or the configuration never reached it."
@@ -333,7 +333,7 @@ public sealed class KeyFlipSweep {
                             + "reaching it but they are not varying."
                         )
                     );
-                    _log.WriteLine(
+                    log.WriteLine(
                         "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` answered every "
                         + partition.Key.Name
                         + " option in this round with the input it was given. The configurations are not varying."
@@ -358,7 +358,7 @@ public sealed class KeyFlipSweep {
             invocations,
             oracleClock,
             skalaClock,
-            _runner.Version,
+            runner.Version,
             ConfigDigest,
             broken
         );
@@ -517,9 +517,9 @@ public sealed class KeyFlipSweep {
     /// </param>
     string?[] FormatWithOracle(IReadOnlyList<SweepCandidate> batch, int? round) =>
         ScratchTree.Format(
-            _runner,
+            runner,
             batch,
-            candidate => round is { } index ? ConfigFor(candidate.Key, candidate.Values[index]) : _baseConfig
+            candidate => round is { } index ? ConfigFor(candidate.Key, candidate.Values[index]) : baseConfig
         );
 
     /// <summary>
@@ -532,7 +532,7 @@ public sealed class KeyFlipSweep {
     ///     The appended section is <c>[*.cs]</c>, which is more specific than the export's own
     ///     <c>[*]</c> and than its multi-extension section, and comes last.
     /// </remarks>
-    public string ConfigFor(string key, string value) => _baseConfig + "\n[*.cs]\n" + key + " = " + value + "\n";
+    public string ConfigFor(string key, string value) => baseConfig + "\n[*.cs]\n" + key + " = " + value + "\n";
 
     static string Digest(string text) => SkalaSide.Digest(text);
 

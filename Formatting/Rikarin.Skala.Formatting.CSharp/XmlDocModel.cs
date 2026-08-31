@@ -120,13 +120,13 @@ public sealed class XmlDocModel {
     static readonly string[] VerbatimElements = ["code", "c"];
 
     /// <summary>Whether whitespace has been seen since the last word or element.</summary>
-    bool _separated = true;
+    bool separated = true;
 
     /// <summary>Whether the last thing emitted at this level was prose rather than markup.</summary>
-    bool _afterWord;
+    bool afterWord;
 
     /// <summary>⚠ <c>space_after_triple_slash</c>, which decides how a verbatim line is captured.</summary>
-    bool _markerSpace;
+    bool markerSpace;
 
     XmlDocModel() { }
 
@@ -146,7 +146,7 @@ public sealed class XmlDocModel {
     ///     a space the writer will not put back is how a code sample loses a column.
     /// </param>
     public static ImmutableArray<XmlDocNode>? Build(DocumentationCommentTriviaSyntax comment, bool markerSpace) {
-        var model = new XmlDocModel { _markerSpace = markerSpace };
+        var model = new XmlDocModel { markerSpace = markerSpace };
         var builder = ImmutableArray.CreateBuilder<XmlDocNode>();
         return model.Add(builder, comment.Content) ? builder.ToImmutable() : null;
     }
@@ -164,8 +164,8 @@ public sealed class XmlDocModel {
                     }
 
                     builder.Add(built);
-                    _separated = false;
-                    _afterWord = false;
+                    separated = false;
+                    afterWord = false;
                     break;
 
                 case XmlEmptyElementSyntax empty:
@@ -181,26 +181,26 @@ public sealed class XmlDocModel {
                             true,
                             [],
                             null,
-                            !_separated,
-                            !_separated && _afterWord
+                            !separated,
+                            !separated && afterWord
                         )
                     );
 
-                    _separated = false;
-                    _afterWord = false;
+                    separated = false;
+                    afterWord = false;
                     break;
 
                 case XmlProcessingInstructionSyntax:
-                    builder.Add(new XmlDocVerbatim(SourceLines(node.ToString(), _markerSpace), true));
-                    _separated = true;
-                    _afterWord = false;
+                    builder.Add(new XmlDocVerbatim(SourceLines(node.ToString(), markerSpace), true));
+                    separated = true;
+                    afterWord = false;
                     break;
 
                 case XmlCDataSectionSyntax:
                 case XmlCommentSyntax:
-                    builder.Add(new XmlDocVerbatim(SourceLines(node.ToString(), _markerSpace)));
-                    _separated = true;
-                    _afterWord = false;
+                    builder.Add(new XmlDocVerbatim(SourceLines(node.ToString(), markerSpace)));
+                    separated = true;
+                    afterWord = false;
                     break;
 
                 default:
@@ -222,8 +222,8 @@ public sealed class XmlDocModel {
         }
 
         var header = "<" + name;
-        var glued = !_separated;
-        var gluedToWord = glued && _afterWord;
+        var glued = !separated;
+        var gluedToWord = glued && afterWord;
         if (IsVerbatimElement(name)) {
             return new XmlDocElement(
                 name,
@@ -231,7 +231,7 @@ public sealed class XmlDocModel {
                 attributes,
                 false,
                 [],
-                VerbatimBody(element.Content.ToString(), _markerSpace),
+                VerbatimBody(element.Content.ToString(), markerSpace),
                 glued,
                 gluedToWord
             );
@@ -240,8 +240,8 @@ public sealed class XmlDocModel {
         // ⚠ The child walk owns `_separated` from here: whitespace inside the element decides
         // whether *its* children are glued, and the state must come back describing the element's
         // last child rather than the text before its start tag.
-        _separated = true;
-        _afterWord = false;
+        separated = true;
+        afterWord = false;
         var content = element.Content.ToString();
         var children = ImmutableArray.CreateBuilder<XmlDocNode>();
         return Add(children, element.Content)
@@ -358,7 +358,7 @@ public sealed class XmlDocModel {
     /// </remarks>
     void AddText(ImmutableArray<XmlDocNode>.Builder builder, XmlTextSyntax text) {
         var word = new StringBuilder();
-        var glued = !_separated;
+        var glued = !separated;
         var newLines = 0;
 
         void FlushWord() {
@@ -409,8 +409,8 @@ public sealed class XmlDocModel {
 
         FlushWord();
         FlushBreaks();
-        _separated = !glued;
-        _afterWord = builder.Count > 0 && builder[^1] is XmlDocWord;
+        separated = !glued;
+        afterWord = builder.Count > 0 && builder[^1] is XmlDocWord;
     }
 
     /// <summary>

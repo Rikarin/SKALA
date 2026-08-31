@@ -159,17 +159,17 @@ public static class GeneratorDriver {
     ///     <c>ISourceGenerator</c> the host knows.
     /// </summary>
     sealed class AnalyzerAssemblyLoader : IAnalyzerAssemblyLoader {
-        readonly Dictionary<string, AssemblyLoadContext> _contexts = new(StringComparer.Ordinal);
-        readonly Lock _gate = new();
+        readonly Dictionary<string, AssemblyLoadContext> contexts = new(StringComparer.Ordinal);
+        readonly Lock gate = new();
 
         public void AddDependencyLocation(string fullPath) { }
 
         public Assembly LoadFromPath(string fullPath) {
             var directory = Path.GetDirectoryName(Path.GetFullPath(fullPath)) ?? string.Empty;
             AssemblyLoadContext context;
-            lock (_gate) {
-                if (!_contexts.TryGetValue(directory, out context!)) {
-                    _contexts[directory] = context = new DirectoryContext(directory);
+            lock (gate) {
+                if (!contexts.TryGetValue(directory, out context!)) {
+                    contexts[directory] = context = new DirectoryContext(directory);
                 }
             }
 
