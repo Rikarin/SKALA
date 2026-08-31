@@ -72,6 +72,35 @@ public sealed class LifecycleTests {
             Fingerprints.V2(Finding(file: "Engine/Renamed/Foo.cs"))
         );
 
+    /// <summary>
+    ///     ⚠ <c>SK7020</c> names a paired occurrence in its message, but that occurrence's lines are
+    ///     no more part of this finding's identity than its own <see cref="Finding.Line" /> is.
+    /// </summary>
+    [Fact]
+    public void FingerprintV2_OfADuplicatedBlockSurvivesThePairedCloneMovingDownTheFile() {
+        var before = Finding(ruleId: "SK7020", snippet: string.Empty) with {
+            Message = "duplicated block of 128 tokens (40 lines), also at Testing/Program.cs:1003-1035"
+        };
+        var after = before with {
+            Message = "duplicated block of 128 tokens (40 lines), also at Testing/Program.cs:1029-1061"
+        };
+
+        Assert.Equal(Fingerprints.V2(before), Fingerprints.V2(after));
+    }
+
+    /// <summary>⚠ The paired file path is display text too, not fingerprint identity.</summary>
+    [Fact]
+    public void FingerprintV2_OfADuplicatedBlockSurvivesThePairedFileBeingRenamed() {
+        var before = Finding(ruleId: "SK7020", snippet: string.Empty) with {
+            Message = "duplicated block of 128 tokens (40 lines), also at Testing/Program.cs:1003-1035"
+        };
+        var after = before with {
+            Message = "duplicated block of 128 tokens (40 lines), also at Tests/RenamedProgram.cs:1003-1035"
+        };
+
+        Assert.Equal(Fingerprints.V2(before), Fingerprints.V2(after));
+    }
+
     [Fact]
     public void FingerprintV2_DiffersWhenTheEnclosingSymbolDoes() =>
         Assert.NotEqual(
@@ -202,6 +231,91 @@ public sealed class LifecycleTests {
             Assert.Equal(0, comparison.NewCount);
             Assert.Empty(comparison.Fixed);
             Assert.All(comparison.Findings, static f => Assert.Equal(BaselineBucket.Existing, f.Bucket));
+        } finally {
+            File.Delete(path);
+        }
+    }
+
+    /// <summary>
+    ///     ⚠ Baselines already committed before SK7020's identity was corrected carry its volatile
+    ///     v2 hash. Reading one must recover the stable identity from the SARIF fields, or adopting the
+    ///     fix itself makes every accepted duplicated block new once.
+    /// </summary>
+    [Fact]
+    public void Baseline_LegacyDuplicatedBlockFingerprintMatchesAfterThePairedCloneMoves() {
+        var accepted = Finding(ruleId: "SK7020", snippet: string.Empty) with {
+            Message = "duplicated block of 128 tokens (40 lines), also at Testing/Program.cs:1003-1035"
+        };
+        var report = Report(accepted);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
+
+        try {
+            Baseline.Write(path, report, report.Findings);
+            var stable = Fingerprints.V2(report.Findings.Single());
+            File.WriteAllText(
+                path,
+                File.ReadAllText(path).Replace(stable, "00000000000000000000000000000000", StringComparison.Ordinal)
+            );
+
+            var moved = Report(
+                accepted with {
+                    Message = "duplicated block of 128 tokens (40 lines), also at Testing/Program.cs:1029-1061"
+                }
+            );
+            var comparison = Baseline.Read(path).Compare(moved.Findings);
+
+            Assert.Equal(0, comparison.NewCount);
+            Assert.Empty(comparison.Fixed);
+            Assert.Equal(BaselineBucket.Existing, comparison.Findings.Single().Bucket);
+        } finally {
+            File.Delete(path);
+        }
+    }
+
+    /// <summary>
+    ///     ⚠ Removing the related location reveals legitimate identity collisions: two different
+    ///     clone groups can have the same token and line counts. Legacy entries gave both ordinal zero,
+    ///     so migration must assign the same path-ordered ordinals as a fresh run.
+    /// </summary>
+    [Fact]
+    public void Baseline_LegacyDuplicatedBlockCollisionsRecoverTheirStableOrdinals() {
+        var first = Finding(ruleId: "SK7020", start: 100, snippet: string.Empty) with {
+            Message = "duplicated block of 128 tokens (40 lines), also at Testing/First.cs:1003-1035"
+        };
+        var second = Finding(ruleId: "SK7020", start: 200, snippet: string.Empty) with {
+            Message = "duplicated block of 128 tokens (40 lines), also at Testing/Second.cs:2003-2035"
+        };
+        var accepted = Report(first, second);
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
+
+        try {
+            Baseline.Write(path, accepted, accepted.Findings);
+            var text = File.ReadAllText(path);
+            text = text.Replace(
+                Fingerprints.V2(accepted.Findings[0]),
+                "00000000000000000000000000000000",
+                StringComparison.Ordinal
+            );
+            text = text.Replace(
+                Fingerprints.V2(accepted.Findings[1]),
+                "11111111111111111111111111111111",
+                StringComparison.Ordinal
+            );
+            File.WriteAllText(path, text);
+
+            var moved = Report(
+                first with {
+                    Message = "duplicated block of 128 tokens (40 lines), also at Testing/First.cs:1029-1061"
+                },
+                second with {
+                    Message = "duplicated block of 128 tokens (40 lines), also at Testing/Second.cs:2029-2061"
+                }
+            );
+            var comparison = Baseline.Read(path).Compare(moved.Findings);
+
+            Assert.Equal(0, comparison.NewCount);
+            Assert.Empty(comparison.Fixed);
+            Assert.All(comparison.Findings, static finding => Assert.Equal(BaselineBucket.Existing, finding.Bucket));
         } finally {
             File.Delete(path);
         }

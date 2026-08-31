@@ -26,6 +26,9 @@ namespace Rikarin.Skala.Reporting;
 ///     </para>
 /// </remarks>
 public static class Fingerprints {
+    const string DuplicatedBlockRuleId = "SK7020";
+    const string DuplicatedBlockRelatedLocation = ", also at ";
+
     /// <summary>M5's fingerprint: rule id, normalised message, file name.</summary>
     public const string Version1 = "skala/v1";
 
@@ -86,14 +89,36 @@ public static class Fingerprints {
     }
 
     /// <summary>The four-term fingerprint doc 09 specifies.</summary>
-    public static string V2(Finding finding) {
+    public static string V2(Finding finding) =>
+        V2(finding.RuleId, Identity(finding), finding.EnclosingSymbol, finding.OrdinalWithinSymbol);
+
+    static string V2(string ruleId, string identity, string enclosingSymbol, int ordinalWithinSymbol) {
         var builder = new StringBuilder();
-        builder.Append(finding.RuleId).Append('');
-        builder.Append(Identity(finding));
-        builder.Append('').Append(finding.EnclosingSymbol).Append('');
-        builder.Append(finding.OrdinalWithinSymbol.ToString(CultureInfo.InvariantCulture));
+        builder.Append(ruleId).Append('');
+        builder.Append(identity);
+        builder.Append('').Append(enclosingSymbol).Append('');
+        builder.Append(ordinalWithinSymbol.ToString(CultureInfo.InvariantCulture));
         return Hash(builder);
     }
+
+    /// <summary>
+    ///     Recomputes identities that can be recovered from an already-serialised SARIF result.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Existing SK7020 baselines contain the old, volatile v2 hash. Its stable identity can be
+    ///     recovered from the message and the other two v2 terms that SARIF stores, allowing the old
+    ///     entry to match without rewriting the baseline. Other rules return null because SARIF does
+    ///     not store their source snippet.
+    /// </remarks>
+    internal static string? CanonicalStoredV2(
+        string ruleId,
+        string message,
+        string enclosingSymbol,
+        int ordinalWithinSymbol
+    ) =>
+        ruleId == DuplicatedBlockRuleId
+            ? V2(ruleId, Normalize(MessageIdentity(ruleId, message)), enclosingSymbol, ordinalWithinSymbol)
+            : null;
 
     /// <summary>
     ///     The text <see cref="V2" /> hashes to tell one finding from another: the snippet, or the
@@ -110,7 +135,25 @@ public static class Fingerprints {
     ///     an unrelated edit.
     /// </remarks>
     static string Identity(Finding finding) =>
-        Normalize(finding.Snippet.Length > 0 ? finding.Snippet : finding.Message);
+        Normalize(finding.Snippet.Length > 0 ? finding.Snippet : MessageIdentity(finding.RuleId, finding.Message));
+
+    /// <summary>The stable text of a finding, before whitespace normalisation.</summary>
+    /// <remarks>
+    ///     ⚠ <c>SK7020</c>'s message names the other occurrences after <c>", also at "</c>. Those
+    ///     locations are useful display text, but their paths and line ranges move independently of
+    ///     the finding being fingerprinted. Hashing the suffix made inserting a line above either
+    ///     occurrence — or renaming the paired file — invalidate the baseline.
+    /// </remarks>
+    static string MessageIdentity(string ruleId, string message) {
+        if (ruleId == DuplicatedBlockRuleId) {
+            var relatedLocation = message.IndexOf(DuplicatedBlockRelatedLocation, StringComparison.Ordinal);
+            if (relatedLocation >= 0) {
+                return message[..relatedLocation];
+            }
+        }
+
+        return message;
+    }
 
     /// <summary>
     ///     Whitespace collapsed, identifiers preserved (docs/plan/09).

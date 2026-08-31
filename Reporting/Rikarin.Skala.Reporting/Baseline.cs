@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis.Sarif;
 using Newtonsoft.Json;
+using Rikarin.Skala.Core.Diagnostics;
 
 namespace Rikarin.Skala.Reporting;
 
@@ -81,27 +82,96 @@ public sealed class Baseline {
         var log = JsonConvert.DeserializeObject<SarifLog>(File.ReadAllText(path))
             ?? throw new InvalidDataException($"{path} is not a SARIF log.");
 
-        var entries = ImmutableArray.CreateBuilder<BaselineEntry>();
-        foreach (var run in log.Runs ?? []) {
-            foreach (var result in run.Results ?? []) {
-                var prints = result.PartialFingerprints;
-                entries.Add(
-                    new BaselineEntry(
-                        result.RuleId ?? string.Empty,
-                        Location(result),
-                        result.Message?.Text ?? string.Empty,
-                        Print(prints, Fingerprints.Version2),
-                        Print(prints, Fingerprints.Version1)
-                    )
-                );
-            }
+        var results = (log.Runs ?? []).SelectMany(static run => run.Results ?? []).ToArray();
+        var migrated = MigrateStoredV2(results);
+        var entries = ImmutableArray.CreateBuilder<BaselineEntry>(results.Length);
+        for (var i = 0; i < results.Length; i++) {
+            var result = results[i];
+            var prints = result.PartialFingerprints;
+            entries.Add(
+                new BaselineEntry(
+                    result.RuleId ?? string.Empty,
+                    Location(result),
+                    result.Message?.Text ?? string.Empty,
+                    migrated.TryGetValue(i, out var canonical)
+                        ? canonical
+                        : Print(prints, Fingerprints.Version2),
+                    Print(prints, Fingerprints.Version1)
+                )
+            );
         }
 
         return new Baseline(entries.ToImmutable(), path);
     }
 
+    /// <summary>Recovers stable SK7020 v2 hashes from baselines written with its volatile message.</summary>
+    static Dictionary<int, string> MigrateStoredV2(Result[] results) {
+        var duplicatedBlocks = new List<(int Index, Finding Finding, bool Legacy)>();
+        for (var i = 0; i < results.Length; i++) {
+            var result = results[i];
+            var stored = Print(result.PartialFingerprints, Fingerprints.Version2);
+            if (stored.Length == 0) {
+                continue;
+            }
+
+            var ruleId = result.RuleId ?? string.Empty;
+            var message = result.Message?.Text ?? string.Empty;
+            var symbol = Property<string>(result, "enclosingSymbol") ?? string.Empty;
+            var ordinal = Property<int?>(result, "ordinalWithinSymbol") ?? 0;
+            var canonical = Fingerprints.CanonicalStoredV2(ruleId, message, symbol, ordinal);
+            if (canonical is null) {
+                continue;
+            }
+
+            var region = result.Locations is [{ PhysicalLocation.Region: { } value }, ..] ? value : null;
+            duplicatedBlocks.Add(
+                (
+                    i,
+                    new Finding {
+                        RuleId = ruleId,
+                        Severity = SkalaSeverity.Hidden,
+                        Message = message,
+                        Path = Location(result),
+                        Start = region?.CharOffset ?? 0,
+                        EnclosingSymbol = symbol
+                    },
+                    !string.Equals(stored, canonical, StringComparison.Ordinal)
+                )
+            );
+        }
+
+        if (duplicatedBlocks.TrueForAll(static entry => !entry.Legacy)) {
+            return [];
+        }
+
+        // The old message suffix made every paired location a separate identity and therefore gave
+        // colliding stable prefixes ordinal zero. Reassign over all stored SK7020 entries so legacy
+        // collisions receive the same deterministic ordinals as a current analysis run.
+        var assigned = Fingerprints.Assign([.. duplicatedBlocks.Select(static entry => entry.Finding)]);
+        var migrated = new Dictionary<int, string>();
+        for (var i = 0; i < duplicatedBlocks.Count; i++) {
+            if (duplicatedBlocks[i].Legacy) {
+                migrated.Add(duplicatedBlocks[i].Index, Fingerprints.V2(assigned[i]));
+            }
+        }
+
+        return migrated;
+    }
+
     static string Print(IDictionary<string, string>? prints, string key) =>
         prints is not null && prints.TryGetValue(key, out var value) ? value : string.Empty;
+
+    static T? Property<T>(PropertyBagHolder? holder, string name) {
+        if (holder?.PropertyNames is null || !holder.PropertyNames.Contains(name)) {
+            return default;
+        }
+
+        try {
+            return holder.GetProperty<T>(name);
+        } catch (Exception exception) when (exception is JsonException or InvalidOperationException) {
+            return default;
+        }
+    }
 
     static string Location(Result result) =>
         result.Locations is [{ PhysicalLocation.ArtifactLocation.Uri: { } uri }, ..]
