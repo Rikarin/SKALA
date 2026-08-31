@@ -61,9 +61,15 @@ using Rikarin.Skala.Testing;
 //                     the four constructs SK-DIV-0005, SK-DIV-0024 and SK-DIV-0050 are about. It is
 //                     the one open divergence whose target cannot be restated from first principles
 //                     after ReSharper is uninstalled, so the grid is committed beside the prose.
-//                     ⚠ Varies *width*, never option values — the export's configuration throughout.
+//                     ⚠ Varies *width*, and varies an option value only when `--keys` says so and
+//                     the artefact then records which — a grid under a non-default wrap key is a
+//                     different measurement, not a bigger one, and belongs in its own file.
 //                       --totals=A..B     flat line widths to sweep, inclusive. Default 124..180.
 //                       --inner=A..B      inner construct widths, delimiters included. Default 10..100.
+//                       --only=A,B        sweep only these constructs, by id. Default all of them.
+//                       --keys=K=V;K=V    .editorconfig keys appended for this run, recorded in the
+//                                         artefact. ⚠ Use with --out: never overwrite the export's
+//                                         grid with one measured under another configuration.
 //                       --out=PATH        path without extension. Default docs/sk-div-preference-sweep.
 //                       --render=JSON     ⚠ rewrite the prose from a committed grid, without the
 //                                         oracle. Every sentence in the markdown is computed from the
@@ -262,13 +268,33 @@ switch (args[0]) {
             ?["--out=".Length..]
             ?? Path.Combine(Corpus.RepositoryRoot, "docs", "sk-div-preference-sweep");
 
+        // ⚠ `--keys` re-runs the same grid under a non-default wrap key, and the result belongs in its
+        // own artefact rather than mixed into the export's: `--out` is therefore not optional in
+        // practice when it is used. The key is recorded in the artefact so the two cannot be confused
+        // later, which is the whole point of measuring under it at all.
+        var overrides = args
+            .FirstOrDefault(static argument => argument.StartsWith("--keys=", StringComparison.Ordinal))
+            ?["--keys=".Length..]
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(static pair => pair.Split('=', 2))
+            .Select(static pair => new KeyValuePair<string, string>(pair[0].Trim(), pair[1].Trim()))
+            .ToList();
+
+        var chosen = args
+            .FirstOrDefault(static argument => argument.StartsWith("--only=", StringComparison.Ordinal))
+            ?["--only=".Length..]
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.Ordinal);
+
         var artefact = PreferenceSweep.Run(
             new OracleRunner(),
             Corpus.BaseEditorConfigPath,
             [.. Enumerable.Range(totalRange.From, totalRange.To - totalRange.From + 1)],
             innerRange.From,
             innerRange.To,
-            Console.Error
+            Console.Error,
+            overrides,
+            chosen
         );
 
         PreferenceSweep.Write(artefact, output + ".json", output + ".md");

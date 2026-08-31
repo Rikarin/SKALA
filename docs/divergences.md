@@ -1942,6 +1942,45 @@ Non-monotonic, and it falls and rises again — the same curve SK-DIV-0005's mar
 the `=` and SK-DIV-0024's for the type parameter list, arriving now at a third construct. Three
 independent constructs, one curve: the margin is not modelling ReSharper, it is modelling the error.
 
+### ⚠ Closed at `acf28b23`: the arrow is an `=` whose floor is nine columns higher
+
+[`sk-div-preference-sweep.md`](sk-div-preference-sweep.md) version 3 settles the preference half of
+this entry, and the answer is that **there was never an arrow-shaped fact here.** Version 2 of that
+sweep reported the arrow's floor as 58 against `eq`'s 0 and called it the one shape whose floor moves
+with both its shape and its contents. It reached that by subtracting two shapes that differ by
+*two* things: the arrow, and nine columns of head. The second turns out to be worth forty-nine
+columns of floor.
+
+Measured against an `=` built at the **same** head width, over the same inner construct, under the
+same filler — six matched pairs, 24 measurements — the arrow's floor is higher by a constant that
+runs 6 to 11, and forcing every one of them to **9** costs at most 0.26 percentage points of
+agreement on any shape under any filler. Everything else the arrow needs, it shares with
+SK-DIV-0005: the law (*break the inner construct when breaking it brings the head line within the
+margin*), and the floor's dependence on the head width and on the content.
+
+⚠ **One body shape is the exception, and it is a sentence rather than a number: over an operand
+chain the arrow always wins.** `arrow-binary` breaks its body's chain in **0 of 5 082 cells**, where
+an `=` at the same head width of 24 breaks it in 3 664. That is the law switched off rather than a
+large floor, and — this is the part that matters for the fix — it needs no oracle to state, to
+implement or to test.
+
+So the two halves of this entry are now both buildable without ReSharper:
+
+- The missing break point (size M) was always oracle-free, and still is.
+- The preference (size L) is `PlanAroundEquals`'s own floor at the lambda's head width, plus 9,
+  and unconditional over a binary operand chain. The `Preserve`-with-`PrefersOuterBreak` attempt
+  cost a `corpus/real/` file because it armed the point unconditionally; the grid says
+  unconditional is right for exactly one body shape and wrong for the rest.
+
+⚠ **And it costs SK-DIV-0005 a correction, which is recorded there and repeated here because this
+entry quotes it.** "Nothing to the left of the inner construct moves `F`" was established on four
+shapes that all break at column 12. What sits *between* the outer break and the inner construct is
+inert — a qualifier, a cast, a type argument list, and now a lambda's parameter list, which is why
+`arrow-generic` reproduces `arrow` column for column across all 57 totals. Where the outer break
+itself sits is not inert: the same argument list floors at 0, 49, 52 and 53 at head widths 12, 21,
+29 and 50. The five-total table above reads as an unmodellable curve partly because every row in it
+holds the head width fixed at one value.
+
 ### The two facts this family is made of
 
 ⚠ **This entry has been the family's anchor and the family is not one fact, it is two.** They are
