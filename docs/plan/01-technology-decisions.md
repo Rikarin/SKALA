@@ -23,7 +23,9 @@ alternative is not. Central package management (`Directory.Packages.props`) is o
 | Package | Version | Why |
 |---|---|---|
 | `Microsoft.CodeAnalysis.CSharp` | 5.9.0 | The C# parser, syntax tree, semantic model, `IOperation`, `ControlFlowGraph`, and `AnalyzerConfig`. Non-negotiable and irreplaceable. |
+| `Microsoft.CodeAnalysis.CSharp.CodeStyle` | 5.9.0 | Roslyn's supported IDE1006 naming analyzer and solution-wide rename fix. Loaded from an isolated payload so the rest of the IDE rule set does not become Skala's rule set. |
 | `Microsoft.CodeAnalysis.CSharp.Workspaces` | 5.9.0 | `AdhocWorkspace`, `SyntaxAnnotation` plumbing, `Formatter` (used only for *validating* against Roslyn's whitespace behaviour, never for output — ADR-004), `Simplifier` for the arrangement pass. |
+| `Microsoft.Bcl.AsyncInterfaces` | 10.0.1 | Private implementation dependency of the Roslyn 5.9 CodeStyle fixer assemblies. Their analyzer-only package does not declare it, so Skala copies the exact referenced assembly (`10.0.0.1`) into the isolated CodeStyle payload explicitly. |
 | ⚠ `Microsoft.CodeAnalysis.Analyzers` | ~~3.3.4~~ | **Not referenced, and the pin is wrong.** Roslyn 5.9.0 requires a prerelease of it, which the 3.3.4 in this row predates; `Rikarin.Skala.Options.Generator`'s csproj records the decision not to reference it explicitly. The intent — "Skala's own rules are held to the same bar" — is unmet, not deferred. |
 | `System.IO.Hashing` | 10.0.10 | XxHash128 for the incremental cache keys. Vixen already uses it; same choice, same reason — it is the fastest non-cryptographic hash in the BCL and the cache is not a security boundary. |
 | `System.Collections.Immutable` | in-box | Roslyn's currency. Not a choice. |

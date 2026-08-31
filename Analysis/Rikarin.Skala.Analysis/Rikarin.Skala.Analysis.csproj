@@ -24,6 +24,16 @@
                       GeneratePathProperty="true"
                       PrivateAssets="all"
                       ExcludeAssets="all" />
+    <!--
+      The CodeStyle package is analyzer-only and consequently declares no runtime dependencies.
+      Its 5.9 fixer assemblies nevertheless reference Microsoft.Bcl.AsyncInterfaces 10.0.1. Keep
+      that implementation dependency inside the same isolated payload instead of relying on a host
+      (the test host happened to carry it; the standalone CLI correctly did not).
+    -->
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces"
+                      GeneratePathProperty="true"
+                      PrivateAssets="all"
+                      ExcludeAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="MSBuild.StructuredLogger" />
     <PackageReference Include="System.IO.Hashing" />
@@ -61,6 +71,10 @@
 
   <ItemGroup>
     <None Include="$(PkgMicrosoft_CodeAnalysis_CSharp_CodeStyle)/analyzers/dotnet/cs/*.dll"
+          Link="RoslynCodeStyle/%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
+    <None Include="$(PkgMicrosoft_Bcl_AsyncInterfaces)/lib/netstandard2.0/Microsoft.Bcl.AsyncInterfaces.dll"
           Link="RoslynCodeStyle/%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest"
           CopyToPublishDirectory="PreserveNewest" />
