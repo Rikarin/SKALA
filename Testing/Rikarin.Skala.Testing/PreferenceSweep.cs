@@ -47,6 +47,18 @@ namespace Rikarin.Skala.Testing;
 ///     </para>
 /// </remarks>
 public static class PreferenceSweep {
+    /// <summary>
+    ///     What this sweep measures, as a number that changes when the question does.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ 3: twelve more constructs, of which nine exist to vary the column the outer break sits at —
+    ///     the variable versions 1 and 2 held fixed at 12 on ten of their fourteen shapes, and the one
+    ///     that turns out to move `F` furthest. Every shape those versions measured is re-measured here
+    ///     and its numbers are unchanged; the new shapes are why the conclusion is not. Version 2's
+    ///     percentages are comparable with these, which is not true of version 1's.
+    /// </remarks>
+    const int Version = 3;
+
     /// <summary>The margin the export sets, and the indent every probe sits at.</summary>
     const int Margin = 120;
 
@@ -195,7 +207,32 @@ public static class PreferenceSweep {
         Func<IReadOnlyList<string>, string> File,
         int Depth,
         string? ThirdName = null,
-        bool FillerLeftOfOuterBreak = false);
+        bool FillerLeftOfOuterBreak = false,
+
+        /// <summary>
+        ///     The shape this one is built to be subtracted from: same inner construct, same head width,
+        ///     a different outer break.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ Declared rather than inferred, because the pairing is the experiment. Version 2 of this
+        ///     artefact compared `arrow` against `eq` and read the difference as the arrow's, when the
+        ///     two also differ by nine columns of head — and the head width turned out to move a floor
+        ///     from 0 to 49. A pair is only a pair when the head widths match, and nothing but a
+        ///     declaration can promise that.
+        /// </remarks>
+        string? Pair = null,
+
+        /// <summary>
+        ///     What the inner construct *is*, as a label shapes can be grouped by — an argument list, an
+        ///     array initialiser, an object initialiser, an operand chain.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ Distinct from <c>InnerName</c>, which describes the shape's inner construct in the
+        ///     sentence a reader wants beside the template and is therefore different for every shape.
+        ///     Two shapes hold the same content when this matches, and comparing `F` across shapes that
+        ///     do not is the mistake this field exists to make visible.
+        /// </remarks>
+        string Kind = "");
 
     /// <summary>A way of filling an inner construct to an exact width.</summary>
     /// <param name="TokenLengths">
@@ -312,7 +349,21 @@ public static class PreferenceSweep {
         string OuterBreak,
         string InnerConstruct,
         string? ThirdBreak = null,
-        bool FillerLeftOfOuterBreak = false);
+        bool FillerLeftOfOuterBreak = false,
+
+        /// <summary>
+        ///     The column the outer break's continuation resumes at, indent excluded — how far into the
+        ///     line the inner construct's container begins.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ Recorded because it is the variable this artefact discovered it had been holding fixed.
+        ///     Ten of the fourteen shapes version 2 measured have an outer break at column 12, and the
+        ///     four that agree on `F` behind a bare callee, a qualifier, a cast and a type argument list
+        ///     are four of those ten. Varying it moves `F` by fifty columns.
+        /// </remarks>
+        int OuterColumn = 0,
+        string? Pair = null,
+        string Kind = "");
 
     public sealed record FillerNote(string Id, IReadOnlyList<int> TokenLengths, string Description);
 
@@ -413,7 +464,8 @@ public static class PreferenceSweep {
                 );
             },
             static bodies => Body(bodies),
-            2
+            2,
+            Kind: "an argument list"
         ),
 
         // ⚠ The head-width control for the arrow family, and it exists to kill the cheapest
@@ -441,7 +493,8 @@ public static class PreferenceSweep {
                 );
             },
             static bodies => Body(bodies),
-            2
+            2,
+            Kind: "an argument list"
         ),
 
         // ⚠ Two more of the same, at the two remaining head widths the arrow family has: `eq` reaches
@@ -468,7 +521,8 @@ public static class PreferenceSweep {
                 );
             },
             static bodies => Body(bodies),
-            2
+            2,
+            Kind: "an argument list"
         ),
         new(
             "eq-widest",
@@ -489,7 +543,8 @@ public static class PreferenceSweep {
                 );
             },
             static bodies => Body(bodies),
-            2
+            2,
+            Kind: "an argument list"
         ),
         // ⚠ Three more `=` shapes, at the head widths of the three arrow shapes whose *body* is not an
         // argument list. Without them `arrow-binary` cannot be read: it never breaks its operand chain
@@ -516,7 +571,8 @@ public static class PreferenceSweep {
                 );
             },
             static bodies => Body(bodies),
-            2
+            2,
+            Kind: "an operand chain"
         ),
         new(
             "eq-array-wide",
@@ -537,7 +593,8 @@ public static class PreferenceSweep {
                 );
             },
             static bodies => Body(bodies),
-            2
+            2,
+            Kind: "an array initialiser"
         ),
         new(
             "eq-object-wide",
@@ -558,7 +615,8 @@ public static class PreferenceSweep {
                 );
             },
             static bodies => Body(bodies),
-            2
+            2,
+            Kind: "an object initialiser"
         ),
         new(
             "eq-array",
@@ -585,7 +643,8 @@ public static class PreferenceSweep {
                 );
             },
             static bodies => Body(bodies),
-            2
+            2,
+            Kind: "an array initialiser"
         ),
         new(
             "arrow",
@@ -610,7 +669,9 @@ public static class PreferenceSweep {
             },
             static bodies => Body(bodies),
             2,
-            "the `=` above the lambda"
+            "the `=` above the lambda",
+            Pair: "eq-wide",
+            Kind: "an argument list"
         ),
 
         // ⚠ Everything down to `type-parameters` is the arrow family, and it exists because `arrow` is
@@ -644,7 +705,9 @@ public static class PreferenceSweep {
             },
             static bodies => Body(bodies),
             2,
-            "the `=` above the lambda"
+            "the `=` above the lambda",
+            Pair: "eq-array-wide",
+            Kind: "an array initialiser"
         ),
         new(
             "arrow-object",
@@ -666,7 +729,9 @@ public static class PreferenceSweep {
             },
             static bodies => Body(bodies),
             2,
-            "the `=` above the lambda"
+            "the `=` above the lambda",
+            Pair: "eq-object-wide",
+            Kind: "an object initialiser"
         ),
         new(
             "arrow-binary",
@@ -691,7 +756,9 @@ public static class PreferenceSweep {
             },
             static bodies => Body(bodies),
             2,
-            "the `=` above the lambda"
+            "the `=` above the lambda",
+            Pair: "eq-binary-wide",
+            Kind: "an operand chain"
         ),
         new(
             "arrow-generic",
@@ -718,7 +785,9 @@ public static class PreferenceSweep {
             },
             static bodies => Body(bodies),
             2,
-            "the `=` above the lambda, or the type argument list"
+            "the `=` above the lambda, or the type argument list",
+            Pair: "eq-wide",
+            Kind: "an argument list"
         ),
         new(
             "arrow-param-one",
@@ -740,7 +809,9 @@ public static class PreferenceSweep {
             },
             static bodies => Body(bodies),
             2,
-            "the `=` above the lambda"
+            "the `=` above the lambda",
+            Pair: "eq-wider",
+            Kind: "an argument list"
         ),
         new(
             "arrow-param-typed",
@@ -766,7 +837,9 @@ public static class PreferenceSweep {
             },
             static bodies => Body(bodies),
             2,
-            "the `=` above the lambda, or the parameter list"
+            "the `=` above the lambda, or the parameter list",
+            Pair: "eq-widest",
+            Kind: "an argument list"
         ),
         new(
             "type-parameters",
@@ -823,7 +896,8 @@ public static class PreferenceSweep {
             },
             static bodies => Body(bodies),
             2,
-            "the `.` of the qualifier"
+            "the `.` of the qualifier",
+            Kind: "an argument list"
         ),
         new(
             "cast-call",
@@ -850,7 +924,8 @@ public static class PreferenceSweep {
             },
             static bodies => Body(bodies),
             2,
-            "after the cast, or before the `.`"
+            "after the cast, or before the `.`",
+            Kind: "an argument list"
         ),
         new(
             "generic-call",
@@ -872,7 +947,8 @@ public static class PreferenceSweep {
             },
             static bodies => Body(bodies),
             2,
-            "the type argument list"
+            "the type argument list",
+            Kind: "an argument list"
         ),
         new(
             "object-initializer",
@@ -896,7 +972,8 @@ public static class PreferenceSweep {
                 );
             },
             static bodies => Body(bodies),
-            2
+            2,
+            Kind: "an object initialiser"
         ),
         new(
             "lambda-argument",
@@ -968,7 +1045,8 @@ public static class PreferenceSweep {
                 );
             },
             static bodies => Body(bodies),
-            2
+            2,
+            Kind: "an operand chain"
         ),
         new(
             "ternary",
@@ -1076,6 +1154,7 @@ public static class PreferenceSweep {
         var scratch = Directory.CreateTempSubdirectory("skala-preference-");
         try {
             var plans = Generate(constructs, fillers, totals, innerFrom, innerTo, scratch.FullName);
+
             var files = plans.Keys
                 .Order(StringComparer.Ordinal)
                 .Select(static path => new CorpusFile("preference", Path.GetFileName(path), path))
@@ -1169,10 +1248,7 @@ public static class PreferenceSweep {
             return new Artefact(
                 "sk-div-preference-sweep",
 
-                // ⚠ 2: fourteen constructs rather than four, third-break cells out of the denominator,
-                // and `{ "…" }` two columns wider than version 1 built it. None of those percentages is
-                // comparable with a version 1 number.
-                2,
+                Version,
                 "jb cleanupcode",
                 runner.Version,
                 OracleRunner.Profile,
@@ -1187,18 +1263,7 @@ public static class PreferenceSweep {
                     "T  the oracle took the construct's third break and declined both of the two",
                     "?  the oracle broke somewhere this probe does not name"
                 ],
-                [
-                    .. constructs.Select(static construct => new ConstructNote(
-                            construct.Id,
-                            construct.Divergence,
-                            construct.Template,
-                            construct.Outer,
-                            construct.InnerName,
-                            construct.ThirdName,
-                            construct.FillerLeftOfOuterBreak
-                        )
-                    )
-                ],
+                Notes([.. constructs.Select(static construct => construct.Id)]),
                 [
                     .. fillers.Select(static filler =>
                         new FillerNote(filler.Id, filler.TokenLengths, filler.Description)
@@ -1306,9 +1371,51 @@ public static class PreferenceSweep {
     ///     a reader who wants to ask the grid a question the prose does not answer can change the question
     ///     without re-running the oracle — which, after the oracle is uninstalled, is the only way left.
     /// </remarks>
-    public static Artefact Read(string jsonPath) =>
-        JsonSerializer.Deserialize<Artefact>(File.ReadAllText(jsonPath), JsonOptions)
-        ?? throw new InvalidOperationException(jsonPath + " did not deserialise.");
+    public static Artefact Read(string jsonPath) {
+        var artefact = JsonSerializer.Deserialize<Artefact>(File.ReadAllText(jsonPath), JsonOptions)
+            ?? throw new InvalidOperationException(jsonPath + " did not deserialise.");
+
+        // ⚠ The shape notes and the version are refreshed from the code rather than trusted from the
+        // file, and the grid is not. The distinction is what the artefact is *for*: the grid is the
+        // measurement, which no amount of re-reading can improve and which this method must never
+        // touch, while a note is a description of the probe that produced it. A description that can
+        // drift from the probe is worse than no description, and after the oracle is uninstalled
+        // `--render` is the only way either of them can be corrected at all.
+        return artefact with {
+            Version = Version,
+            Constructs = Notes([.. artefact.Constructs.Select(static note => note.Id)])
+        };
+    }
+
+    /// <summary>The shape notes for the named constructs, built from the code and nothing else.</summary>
+    static IReadOnlyList<ConstructNote> Notes(IReadOnlyCollection<string> ids) {
+        var known = Constructs().ToDictionary(static construct => construct.Id, StringComparer.Ordinal);
+        return [
+            .. ids.Where(known.ContainsKey)
+                .Select(id => known[id])
+                .Select(static construct => new ConstructNote(
+                        construct.Id,
+                        construct.Divergence,
+                        construct.Template,
+                        construct.Outer,
+                        construct.InnerName,
+                        construct.ThirdName,
+                        construct.FillerLeftOfOuterBreak,
+
+                        // ⚠ Read off the construct's own layout rather than declared beside it, so the
+                        // number cannot drift from the one the classifier used. Zero for the two shapes
+                        // whose filler sits left of the outer break: there the outer break's column
+                        // moves with the width being swept, so no single column describes the shape and
+                        // publishing one would invent a constant.
+                        construct.FillerLeftOfOuterBreak
+                            ? 0
+                            : construct.Wrap("xxxx", "(aa, bb)").Outer.To - 1,
+                        construct.Pair,
+                        construct.Kind
+                    )
+                )
+        ];
+    }
 
     static string Resolution(IReadOnlyList<int> totals, int innerFrom, int innerTo) =>
         "total "
@@ -2153,29 +2260,55 @@ public static class PreferenceSweep {
 
         public double FloorPercent => 100.0 * WithFloor / Math.Max(1, Chose);
 
-        public static Fit Of(List<Row> rows) {
-            var cells = new List<(int Inner, bool Enough, bool Measured)>();
-            var third = 0;
-            var unnamed = 0;
+        /// <summary>One cell of a grid, as the two-term model sees it.</summary>
+        /// <param name="Enough">
+        ///     Whether breaking the inner construct brings the head line within the margin — the law's
+        ///     own term, which needs no fitting.
+        /// </param>
+        /// <param name="Measured">Whether the oracle actually broke the inner construct.</param>
+        internal readonly record struct Cell(int Inner, bool Enough, bool Measured);
+
+        /// <summary>
+        ///     Every cell of these rows the question has an answer for.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ Third-break cells are not here, and that is the point of the method existing. Version 1
+        ///     of this artefact counted them as agreements, which is how `type-parameters` published
+        ///     "4 977 of 4 977" with 2 522 cells inside it where the oracle had declined both of the two
+        ///     constructs under test. Anything that scores this model scores it over this list.
+        /// </remarks>
+        internal static List<Cell> Cells(List<Row> rows) {
+            var cells = new List<Cell>();
             foreach (var row in rows) {
                 for (var i = 0; i < row.Codes.Length; i++) {
                     var code = row.Codes[i];
-                    if (code == '.') {
-                        continue;
-                    }
-
-                    if (code == 'T') {
-                        third++;
-                        continue;
-                    }
-
                     if (code is not ('O' or 'I')) {
-                        unnamed++;
                         continue;
                     }
 
                     var inner = row.InnerFrom + i;
-                    cells.Add((inner, row.Sufficient is { } enough && inner >= enough, code == 'I'));
+                    cells.Add(new Cell(inner, row.Sufficient is { } enough && inner >= enough, code == 'I'));
+                }
+            }
+
+            return cells;
+        }
+
+        /// <summary>How many cells the law with this floor gets right.</summary>
+        internal static int Score(List<Row> rows, int floor) =>
+            Cells(rows).Count(cell => (cell.Enough && cell.Inner >= floor) == cell.Measured);
+
+        public static Fit Of(List<Row> rows) {
+            var cells = Cells(rows);
+            var third = 0;
+            var unnamed = 0;
+            foreach (var row in rows) {
+                foreach (var code in row.Codes) {
+                    if (code == 'T') {
+                        third++;
+                    } else if (code is not ('.' or 'O' or 'I')) {
+                        unnamed++;
+                    }
                 }
             }
 
@@ -2254,13 +2387,22 @@ public static class PreferenceSweep {
         builder.AppendLine("irreducible content of the \"preference fact\" — read the fitted `F` and the accuracy");
         builder.AppendLine("beside it in the table below, and in each construct's own section.");
         builder.AppendLine();
-        builder.AppendLine("⚠ **`F` is not one constant per shape, which is what version 1 of this file called it.**");
-        builder.AppendLine("Fourteen shapes later it is one constant per *content*: a parenthesised argument list");
-        builder.AppendLine("floors at the same width behind a bare callee, a qualifier, a cast and a type argument");
-        builder.AppendLine("list, and what moves it is whether the list holds several arguments, one, or a lone");
-        builder.AppendLine("string literal. Nothing to the left of the inner construct moves it at all. Two shapes");
-        builder.AppendLine("need no floor whatever, and one — the lambda arrow — has a floor that moves with both");
-        builder.AppendLine("its shape and its contents, which is why it is the shape still needing its grid.");
+        builder.AppendLine("⚠ **`F` is not one constant per shape, and it is not one constant per content either.**");
+        builder.AppendLine("Version 1 of this file called it the first and version 2 called it the second. Version 2");
+        builder.AppendLine("had fourteen shapes, ten of which break at column 12, and the four it compared to");
+        builder.AppendLine("establish \"nothing to the left of the inner construct moves `F`\" were four of those ten.");
+        builder.AppendLine("That half of the claim survives intact and is worth keeping: a bare callee, a qualifier,");
+        builder.AppendLine("a cast and a type argument list *between* the outer break and the inner construct are");
+        builder.AppendLine("inert, and so is a lambda's parameter list. What those four shapes could not show is that");
+        builder.AppendLine("they also shared a head width. **Where the outer break sits moves `F` further than the");
+        builder.AppendLine("content does** — see [What moves `F`](#what-moves-f-where-the-outer-break-sits) — and");
+        builder.AppendLine("once two shapes are compared at the *same* head width, the lambda arrow stops being the");
+        builder.AppendLine("outlier this file has called it since version 1. It is an `=` whose floor is nine columns");
+        builder.AppendLine("higher, over an argument list, an array initialiser and an object initialiser alike, at");
+        builder.AppendLine("every head width swept — with one exception, and the exception is a sentence rather than");
+        builder.AppendLine("a number: **over an operand chain the arrow always wins.** Both are in");
+        builder.AppendLine("[The arrow, subtracted](#the-arrow-subtracted), and together they are the whole of what");
+        builder.AppendLine("SK-DIV-0050 adds to SK-DIV-0005.");
         builder.AppendLine();
         builder.Append("Oracle: `")
             .Append(artefact.Oracle)
@@ -2320,6 +2462,8 @@ public static class PreferenceSweep {
 
         Confound(builder, artefact);
         Summary(builder, artefact);
+        HeadWidth(builder, artefact);
+        Pairs(builder, artefact);
 
         builder.AppendLine("## The filler profiles");
         builder.AppendLine();
@@ -2404,6 +2548,225 @@ public static class PreferenceSweep {
     ///     costs nothing to state and a re-measurement to discover. Stated here rather than in a commit
     ///     message, because the next reader will have the same idea.
     /// </remarks>
+    /// <summary>
+    ///     `F` against the column the outer break sits at, for every shape whose inner construct is the
+    ///     same.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This section exists because version 2 of this artefact concluded that `F` is one constant
+    ///     per *content* and that nothing to the left of the inner construct moves it, on evidence that
+    ///     could not have shown otherwise: ten of its fourteen shapes have their outer break at column
+    ///     12, and the four it compared to establish the claim were four of those ten. They vary what
+    ///     sits *between* the outer break and the inner construct — a qualifier, a cast, a type argument
+    ///     list — and that is genuinely inert. Where the outer break itself sits is not.
+    /// </remarks>
+    static void HeadWidth(StringBuilder builder, Artefact artefact) {
+        var families = artefact.Constructs
+            .Where(static construct =>
+                !construct.FillerLeftOfOuterBreak && construct.OuterColumn > 0 && construct.Kind.Length > 0
+            )
+            .GroupBy(static construct => construct.Kind, StringComparer.Ordinal)
+            .Where(static group => group.Select(static c => c.OuterColumn).Distinct().Count() > 1)
+            .ToList();
+
+        if (families.Count == 0) {
+            return;
+        }
+
+        builder.AppendLine("## What moves `F`: where the outer break sits");
+        builder.AppendLine();
+        builder.AppendLine("⚠ **The head width is the variable version 2 of this file was holding fixed.** Its");
+        builder.AppendLine("conclusion — that `F` is one constant per *content*, and that nothing to the left of the");
+        builder.AppendLine("inner construct moves it — was drawn from four shapes that all break at column 12 and");
+        builder.AppendLine("differ only in what sits *between* the break and the inner construct. That part holds:");
+        builder.AppendLine("a qualifier, a cast and a type argument list are inert. Where the outer break itself");
+        builder.AppendLine("sits is not, and it moves `F` by more than the content does.");
+        builder.AppendLine();
+        builder.AppendLine("**outer** is the column the outer break's continuation resumes at, indent excluded.");
+        builder.AppendLine();
+
+        foreach (var family in families.OrderBy(static group => group.Key, StringComparer.Ordinal)) {
+            builder.Append("### `F` against the outer break's column — ").AppendLine(family.Key);
+            builder.AppendLine();
+            builder.AppendLine("| shape | outer | " + string.Join(
+                " | ",
+                artefact.Fillers.Select(static filler => "`" + filler.Id + "`")
+            ) + " |");
+            builder.AppendLine("|---|---:|" + string.Concat(artefact.Fillers.Select(static _ => "---:|")));
+            foreach (var construct in family.OrderBy(static c => c.OuterColumn)) {
+                builder.Append("| `").Append(construct.Id).Append("` | ")
+                    .Append(construct.OuterColumn.ToString(CultureInfo.InvariantCulture))
+                    .Append(" | ");
+                builder.AppendLine(
+                    string.Join(
+                        " | ",
+                        artefact.Fillers.Select(filler => Cell(artefact, construct.Id, filler.Id))
+                    ) + " |"
+                );
+            }
+
+            builder.AppendLine();
+        }
+    }
+
+    /// <summary>The fitted floor for one shape under one filler, or `—` where that pair has no cells.</summary>
+    static string Cell(Artefact artefact, string construct, string filler) {
+        var fit = Fit.Of(
+            [.. artefact.Grid.Where(row => row.Construct == construct && row.Filler == filler)]
+        );
+
+        return fit.Chose == 0 ? "—" : fit.Floor.ToString(CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    ///     Each arrow shape against the `=` shape built to be identical to it but for the arrow.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This is the whole of SK-DIV-0050's remaining question, and it is a subtraction rather than a
+    ///     number: what does the arrow cost that an `=` at the same head width, over the same inner
+    ///     construct, does not already cost? Version 2 asked it by comparing `arrow` against `eq` and
+    ///     read a floor of 58 against 0. Those two shapes also differ by nine columns of head, and the
+    ///     section above shows nine columns of head is worth forty-nine of them.
+    /// </remarks>
+    static void Pairs(StringBuilder builder, Artefact artefact) {
+        var paired = artefact.Constructs.Where(static construct => construct.Pair is not null).ToList();
+        if (paired.Count == 0) {
+            return;
+        }
+
+        var widest = artefact.Grid.Max(static row => row.InnerFrom + row.Codes.Length - 1);
+
+        builder.AppendLine("## The arrow, subtracted");
+        builder.AppendLine();
+        builder.AppendLine("Each row is one shape whose outer break is a lambda's `=>` beside the `=` shape built to");
+        builder.AppendLine("match it — same inner construct, same head width, same filler, so that the only thing left");
+        builder.AppendLine("between them is the arrow. **Δ** is the `=` shape's floor subtracted from the arrow's, and");
+        builder.AppendLine("it is the only quantity in this artefact that is about the arrow rather than about the");
+        builder.AppendLine("line it sits in.");
+        builder.AppendLine();
+
+        var rows = new List<(ConstructNote Construct, FillerNote Filler, Fit Mine, Fit Theirs)>();
+        foreach (var construct in paired) {
+            foreach (var filler in artefact.Fillers) {
+                var mine = Fit.Of(
+                    [.. artefact.Grid.Where(row => row.Construct == construct.Id && row.Filler == filler.Id)]
+                );
+
+                var theirs = Fit.Of(
+                    [.. artefact.Grid.Where(row => row.Construct == construct.Pair && row.Filler == filler.Id)]
+                );
+
+                if (mine.Chose > 0 && theirs.Chose > 0) {
+                    rows.Add((construct, filler, mine, theirs));
+                }
+            }
+        }
+
+        // ⚠ A pair whose arrow shape fits a floor wider than the widest inner construct swept is not a
+        // pair with a large Δ. It is a pair in which the law is switched off on one side, and averaging
+        // it into a constant would hide the one place the arrow does something an `=` never does.
+        var off = rows.Where(row => row.Mine.Floor > widest || row.Theirs.Floor > widest).ToList();
+        var live = rows.Where(row => row.Mine.Floor <= widest && row.Theirs.Floor <= widest).ToList();
+        var constant = live.Count == 0
+            ? 0
+            : live.Select(static row => row.Mine.Floor - row.Theirs.Floor).Order().ElementAt(live.Count / 2);
+
+        builder.AppendLine("| arrow shape | `=` shape | outer | filler | arrow `F` | `=` `F` | Δ | at Δ | best |");
+        builder.AppendLine("|---|---|---:|---|---:|---:|---:|---:|---:|");
+        foreach (var (construct, filler, mine, theirs) in rows) {
+            var forced = Fit.Score(
+                [.. artefact.Grid.Where(row => row.Construct == construct.Id && row.Filler == filler.Id)],
+                theirs.Floor + constant
+            );
+
+            builder.Append("| `").Append(construct.Id).Append("` | `").Append(construct.Pair)
+                .Append("` | ").Append(construct.OuterColumn.ToString(CultureInfo.InvariantCulture))
+                .Append(" | `").Append(filler.Id).Append("` | ")
+                .Append(mine.Floor.ToString(CultureInfo.InvariantCulture)).Append(" | ")
+                .Append(theirs.Floor.ToString(CultureInfo.InvariantCulture)).Append(" | ")
+                .Append((mine.Floor - theirs.Floor).ToString(CultureInfo.InvariantCulture)).Append(" | ")
+                .Append((100.0 * forced / mine.Chose).ToString("0.00", CultureInfo.InvariantCulture))
+                .Append(" % | ")
+                .Append(mine.FloorPercent.ToString("0.00", CultureInfo.InvariantCulture))
+                .AppendLine(" % |");
+        }
+
+        builder.AppendLine();
+        if (live.Count > 0) {
+            var deltas = live.Select(static row => row.Mine.Floor - row.Theirs.Floor).ToList();
+            var loss = live.Max(row => row.Mine.FloorPercent - (100.0 * Fit.Score(
+                [.. artefact.Grid.Where(r => r.Construct == row.Construct.Id && r.Filler == row.Filler.Id)],
+                row.Theirs.Floor + constant
+            ) / row.Mine.Chose));
+
+            builder.Append("**Δ is one constant, and it is ")
+                .Append(constant.ToString(CultureInfo.InvariantCulture))
+                .Append(".** Over ")
+                .Append(live.Count.ToString(CultureInfo.InvariantCulture))
+                .Append(" matched measurements it runs ")
+                .Append(deltas.Min().ToString(CultureInfo.InvariantCulture))
+                .Append(" to ")
+                .Append(deltas.Max().ToString(CultureInfo.InvariantCulture))
+                .AppendLine(", and forcing every one of them to the");
+            builder.Append("single value ")
+                .Append(constant.ToString(CultureInfo.InvariantCulture))
+                .Append(" — the **at Δ** column against **best** — costs at most ")
+                .Append(loss.ToString("0.00", CultureInfo.InvariantCulture))
+                .AppendLine(" percentage points of");
+            builder.AppendLine("agreement on any shape, any filler. **So a lambda's arrow is an `=` whose floor is that");
+            builder.AppendLine("much higher, and nothing else.** Every other term SK-DIV-0050 needs — the law, and the");
+            builder.AppendLine("floor's dependence on the head width and the content — it shares with SK-DIV-0005 and");
+            builder.AppendLine("reads out of the table above this one.");
+            builder.AppendLine();
+        }
+
+        if (off.Count > 0) {
+            builder.AppendLine("⚠ **One body shape is the exception, and it is not a large Δ — it is the law switched");
+            builder.Append("off.** ");
+            builder.AppendLine(
+                string.Join(
+                    ", ",
+                    off.Select(static row => "`" + row.Construct.Id + "` × `" + row.Filler.Id + "`")
+                        .Distinct(StringComparer.Ordinal)
+                )
+            );
+            builder.Append("fits a floor wider than the widest inner construct swept (")
+                .Append(widest.ToString(CultureInfo.InvariantCulture))
+                .AppendLine("), which means the best available");
+            builder.AppendLine("model of it is *always take the outer break*. That is not a fitted number and it does");
+            builder.AppendLine("not need one:");
+            builder.AppendLine();
+
+            foreach (var (construct, filler, mine, theirs) in off) {
+                var mineCells = Fit.Cells(
+                    [.. artefact.Grid.Where(row => row.Construct == construct.Id && row.Filler == filler.Id)]
+                );
+
+                var theirCells = Fit.Cells(
+                    [.. artefact.Grid.Where(row => row.Construct == construct.Pair && row.Filler == filler.Id)]
+                );
+
+                builder.Append("- `").Append(construct.Id).Append("` × `").Append(filler.Id)
+                    .Append("` breaks the inner construct in ")
+                    .Append(mineCells.Count(static cell => cell.Measured).ToString(CultureInfo.InvariantCulture))
+                    .Append(" of ")
+                    .Append(mineCells.Count.ToString(CultureInfo.InvariantCulture))
+                    .Append(" cells, where `").Append(construct.Pair)
+                    .Append("` at the same head width breaks it in ")
+                    .Append(theirCells.Count(static cell => cell.Measured).ToString(CultureInfo.InvariantCulture))
+                    .Append(" of ")
+                    .Append(theirCells.Count.ToString(CultureInfo.InvariantCulture))
+                    .AppendLine(".");
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("**The arrow always wins over an operand chain.** That is a sentence, not a constant, and");
+            builder.AppendLine("it is the one thing in SK-DIV-0050's preference half that a floor cannot express — which");
+            builder.AppendLine("also means it is the one thing that can be implemented and tested with no oracle at all.");
+            builder.AppendLine();
+        }
+    }
+
     static void Confound(StringBuilder builder, Artefact artefact) {
         var left = artefact.Constructs.Where(static construct => construct.FillerLeftOfOuterBreak).ToList();
 

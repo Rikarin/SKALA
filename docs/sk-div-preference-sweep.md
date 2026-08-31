@@ -14,13 +14,22 @@ sentence anyone can state without ReSharper installed. The second is the entire
 irreducible content of the "preference fact" — read the fitted `F` and the accuracy
 beside it in the table below, and in each construct's own section.
 
-⚠ **`F` is not one constant per shape, which is what version 1 of this file called it.**
-Fourteen shapes later it is one constant per *content*: a parenthesised argument list
-floors at the same width behind a bare callee, a qualifier, a cast and a type argument
-list, and what moves it is whether the list holds several arguments, one, or a lone
-string literal. Nothing to the left of the inner construct moves it at all. Two shapes
-need no floor whatever, and one — the lambda arrow — has a floor that moves with both
-its shape and its contents, which is why it is the shape still needing its grid.
+⚠ **`F` is not one constant per shape, and it is not one constant per content either.**
+Version 1 of this file called it the first and version 2 called it the second. Version 2
+had fourteen shapes, ten of which break at column 12, and the four it compared to
+establish "nothing to the left of the inner construct moves `F`" were four of those ten.
+That half of the claim survives intact and is worth keeping: a bare callee, a qualifier,
+a cast and a type argument list *between* the outer break and the inner construct are
+inert, and so is a lambda's parameter list. What those four shapes could not show is that
+they also shared a head width. **Where the outer break sits moves `F` further than the
+content does** — see [What moves `F`](#what-moves-f-where-the-outer-break-sits) — and
+once two shapes are compared at the *same* head width, the lambda arrow stops being the
+outlier this file has called it since version 1. It is an `=` whose floor is nine columns
+higher, over an argument list, an array initialiser and an object initialiser alike, at
+every head width swept — with one exception, and the exception is a sentence rather than
+a number: **over an operand chain the arrow always wins.** Both are in
+[The arrow, subtracted](#the-arrow-subtracted), and together they are the whole of what
+SK-DIV-0050 adds to SK-DIV-0005.
 
 Oracle: `jb cleanupcode 2025.2.6`, profile `SkalaFormatOnly`, the repository `.editorconfig` unmodified — margin 120, indent 4.
 
@@ -30,7 +39,7 @@ The machine-readable grid is [`sk-div-preference-sweep.json`](sk-div-preference-
 
 total 124…180 step 1, inner 10…100 step 1. Both axes step by one column because the flips the triage found are one column wide, and every cell of every row is asked because the boundary is not monotone in either axis, so a bisection would find one flip and miss the rest.
 
-## The 23 constructs
+## The 26 constructs
 
 | id | divergence | template | outer break | inner construct | third break |
 |---|---|---|---|---|---|
@@ -38,6 +47,9 @@ total 124…180 step 1, inner 10…100 step 1. Both axes step by one column beca
 | `eq-wide` | SK-DIV-0005 | `var alphaBetaGamma = <name>(<args>);` | `=` | the right-hand side's argument list, behind a head as wide as the arrow's | — |
 | `eq-wider` | SK-DIV-0005 | `var alphaBetaGammaDeltaEps = <name>(<args>);` | `=` | the right-hand side's argument list, behind a 29-column head | — |
 | `eq-widest` | SK-DIV-0005 | `var alphaBetaGammaDeltaEpsilonZetaEtaThetaIotaK = <name>(<args>);` | `=` | the right-hand side's argument list, behind a 50-column head | — |
+| `eq-binary-wide` | SK-DIV-0005 | `var alphaBetaGammaDel = <name> + <operands>;` | `=` | the operand chain, broken at a `+`, behind a 24-column head | — |
+| `eq-array-wide` | SK-DIV-0005 | `var alphaBetaGammaDelta = new <name>[] { <elements> };` | `=` | the right-hand side's array initialiser, behind a 26-column head | — |
+| `eq-object-wide` | SK-DIV-0005 | `var alphaBetaGammaDeltaE = new <name> { <members> };` | `=` | the right-hand side's object initialiser, behind a 27-column head | — |
 | `eq-array` | SK-DIV-0005 | `var value = new <name>[] { <elements> };` | `=` | the right-hand side's array initialiser | — |
 | `arrow` | SK-DIV-0050 | `Action value = () => <name>(<args>);` | `=>` | the lambda body's argument list | the `=` above the lambda |
 | `arrow-array` | SK-DIV-0050 | `Func<int[]> value = () => new <name>[] { <elements> };` | `=>` | the lambda body's array initialiser | the `=` above the lambda |
@@ -107,6 +119,9 @@ disagreement is the finding.
 | `eq-wide` | SK-DIV-0005 | right | 20528 | 0 | 50 | 73.84 % | 92.74 % |
 | `eq-wider` | SK-DIV-0005 | right | 20064 | 0 | 53 | 69.93 % | 92.19 % |
 | `eq-widest` | SK-DIV-0005 | right | 17628 | 0 | 54 | 66.73 % | 92.53 % |
+| `eq-binary-wide` | SK-DIV-0005 | right | 15246 | 0 | 0 | 95.24 % | 95.24 % |
+| `eq-array-wide` | SK-DIV-0005 | right | 19736 | 0 | 73 | 50.93 % | 95.44 % |
+| `eq-object-wide` | SK-DIV-0005 | right | 19539 | 0 | 71 | 56.21 % | 95.18 % |
 | `eq-array` | SK-DIV-0005 | right | 20604 | 0 | 29 | 93.77 % | 99.44 % |
 | `arrow` | SK-DIV-0050 | right | 20528 | 0 | 60 | 63.66 % | 91.43 % |
 | `arrow-array` | SK-DIV-0050 | right | 19736 | 0 | 83 | 40.41 % | 95.30 % |
@@ -127,7 +142,7 @@ disagreement is the finding.
 | `collection-expression` | SK-DIV-0005 | ⚠ left | 16044 | 4704 | 101 | 4.84 % | 97.63 % |
 | `array-initializer` | SK-DIV-0005 | ⚠ left | 17124 | 3612 | 75 | 40.18 % | 94.09 % |
 
-**7 of the 22 shapes where the question has an answer are reproduced to 99 % or better by
+**7 of the 25 shapes where the question has an answer are reproduced to 99 % or better by
 the law and one constant.** The rest are where the preference actually lives, and their
 residue is in the grid at the end of this file and nowhere else.
 
@@ -144,6 +159,116 @@ read off a sweep built that way would be an artefact of the sweep.
 constructs under test in any cell swept. For those, "which of these two gives" has no
 answer to record: the oracle reaches past both every time, and a floor fitted to them
 would be fitted to nothing.
+
+## What moves `F`: where the outer break sits
+
+⚠ **The head width is the variable version 2 of this file was holding fixed.** Its
+conclusion — that `F` is one constant per *content*, and that nothing to the left of the
+inner construct moves it — was drawn from four shapes that all break at column 12 and
+differ only in what sits *between* the break and the inner construct. That part holds:
+a qualifier, a cast and a type argument list are inert. Where the outer break itself
+sits is not, and it moves `F` by more than the content does.
+
+**outer** is the column the outer break's continuation resumes at, indent excluded.
+
+### `F` against the outer break's column — an argument list
+
+| shape | outer | `uniform-5` | `varied-short` | `varied-long` | `single-literal` |
+|---|---:|---:|---:|---:|---:|
+| `eq` | 12 | 0 | 0 | 17 | 29 |
+| `call-member` | 12 | 0 | 0 | 17 | 29 |
+| `cast-call` | 12 | 0 | 0 | 17 | 29 |
+| `generic-call` | 12 | 0 | 0 | 17 | 29 |
+| `eq-wide` | 21 | 49 | 49 | 49 | 71 |
+| `arrow` | 21 | 58 | 58 | 58 | 82 |
+| `arrow-generic` | 21 | 58 | 58 | 58 | 80 |
+| `eq-wider` | 29 | 52 | 52 | 52 | 74 |
+| `arrow-param-one` | 29 | 60 | 60 | 60 | 85 |
+| `eq-widest` | 50 | 53 | 53 | 53 | 73 |
+| `arrow-param-typed` | 50 | 62 | 62 | 62 | 83 |
+
+### `F` against the outer break's column — an array initialiser
+
+| shape | outer | `uniform-5` | `varied-short` | `varied-long` | `single-literal` |
+|---|---:|---:|---:|---:|---:|
+| `eq-array` | 12 | 29 | 29 | 29 | 29 |
+| `eq-array-wide` | 26 | 73 | 73 | 73 | 73 |
+| `arrow-array` | 26 | 83 | 83 | 83 | 83 |
+
+### `F` against the outer break's column — an object initialiser
+
+| shape | outer | `uniform-5` | `varied-short` | `varied-long` | `single-literal` |
+|---|---:|---:|---:|---:|---:|
+| `object-initializer` | 12 | 29 | 29 | 29 | 29 |
+| `eq-object-wide` | 27 | 70 | 71 | 71 | 73 |
+| `arrow-object` | 27 | 76 | 79 | 79 | 84 |
+
+### `F` against the outer break's column — an operand chain
+
+| shape | outer | `uniform-5` | `varied-short` | `varied-long` | `single-literal` |
+|---|---:|---:|---:|---:|---:|
+| `binary-chain` | 12 | 0 | 0 | 0 | — |
+| `eq-binary-wide` | 24 | 0 | 0 | 0 | — |
+| `arrow-binary` | 24 | 101 | 101 | 101 | — |
+
+## The arrow, subtracted
+
+Each row is one shape whose outer break is a lambda's `=>` beside the `=` shape built to
+match it — same inner construct, same head width, same filler, so that the only thing left
+between them is the arrow. **Δ** is the `=` shape's floor subtracted from the arrow's, and
+it is the only quantity in this artefact that is about the arrow rather than about the
+line it sits in.
+
+| arrow shape | `=` shape | outer | filler | arrow `F` | `=` `F` | Δ | at Δ | best |
+|---|---|---:|---|---:|---:|---:|---:|---:|
+| `arrow` | `eq-wide` | 21 | `uniform-5` | 58 | 49 | 9 | 97.82 % | 97.82 % |
+| `arrow` | `eq-wide` | 21 | `varied-short` | 58 | 49 | 9 | 97.82 % | 97.82 % |
+| `arrow` | `eq-wide` | 21 | `varied-long` | 58 | 49 | 9 | 97.82 % | 97.82 % |
+| `arrow` | `eq-wide` | 21 | `single-literal` | 82 | 71 | 11 | 93.10 % | 93.18 % |
+| `arrow-array` | `eq-array-wide` | 26 | `uniform-5` | 83 | 73 | 10 | 95.24 % | 95.30 % |
+| `arrow-array` | `eq-array-wide` | 26 | `varied-short` | 83 | 73 | 10 | 95.24 % | 95.30 % |
+| `arrow-array` | `eq-array-wide` | 26 | `varied-long` | 83 | 73 | 10 | 95.24 % | 95.30 % |
+| `arrow-array` | `eq-array-wide` | 26 | `single-literal` | 83 | 73 | 10 | 95.24 % | 95.30 % |
+| `arrow-object` | `eq-object-wide` | 27 | `uniform-5` | 76 | 70 | 6 | 89.77 % | 89.99 % |
+| `arrow-object` | `eq-object-wide` | 27 | `varied-short` | 79 | 71 | 8 | 92.96 % | 93.14 % |
+| `arrow-object` | `eq-object-wide` | 27 | `varied-long` | 79 | 71 | 8 | 92.05 % | 92.31 % |
+| `arrow-object` | `eq-object-wide` | 27 | `single-literal` | 84 | 73 | 11 | 94.67 % | 94.86 % |
+| `arrow-binary` | `eq-binary-wide` | 24 | `uniform-5` | 101 | 0 | 101 | 23.14 % | 100.00 % |
+| `arrow-binary` | `eq-binary-wide` | 24 | `varied-short` | 101 | 0 | 101 | 23.14 % | 100.00 % |
+| `arrow-binary` | `eq-binary-wide` | 24 | `varied-long` | 101 | 0 | 101 | 23.14 % | 100.00 % |
+| `arrow-generic` | `eq-wide` | 21 | `uniform-5` | 58 | 49 | 9 | 97.72 % | 97.72 % |
+| `arrow-generic` | `eq-wide` | 21 | `varied-short` | 58 | 49 | 9 | 97.72 % | 97.72 % |
+| `arrow-generic` | `eq-wide` | 21 | `varied-long` | 58 | 49 | 9 | 97.72 % | 97.72 % |
+| `arrow-generic` | `eq-wide` | 21 | `single-literal` | 80 | 71 | 9 | 95.44 % | 95.44 % |
+| `arrow-param-one` | `eq-wider` | 29 | `uniform-5` | 60 | 52 | 8 | 97.99 % | 98.01 % |
+| `arrow-param-one` | `eq-wider` | 29 | `varied-short` | 60 | 52 | 8 | 97.99 % | 98.01 % |
+| `arrow-param-one` | `eq-wider` | 29 | `varied-long` | 60 | 52 | 8 | 97.99 % | 98.01 % |
+| `arrow-param-one` | `eq-wider` | 29 | `single-literal` | 85 | 74 | 11 | 94.42 % | 94.52 % |
+| `arrow-param-typed` | `eq-widest` | 50 | `uniform-5` | 62 | 53 | 9 | 97.80 % | 97.80 % |
+| `arrow-param-typed` | `eq-widest` | 50 | `varied-short` | 62 | 53 | 9 | 97.80 % | 97.80 % |
+| `arrow-param-typed` | `eq-widest` | 50 | `varied-long` | 62 | 53 | 9 | 97.80 % | 97.80 % |
+| `arrow-param-typed` | `eq-widest` | 50 | `single-literal` | 83 | 73 | 10 | 98.18 % | 98.23 % |
+
+**Δ is one constant, and it is 9.** Over 24 matched measurements it runs 6 to 11, and forcing every one of them to the
+single value 9 — the **at Δ** column against **best** — costs at most 0.26 percentage points of
+agreement on any shape, any filler. **So a lambda's arrow is an `=` whose floor is that
+much higher, and nothing else.** Every other term SK-DIV-0050 needs — the law, and the
+floor's dependence on the head width and the content — it shares with SK-DIV-0005 and
+reads out of the table above this one.
+
+⚠ **One body shape is the exception, and it is not a large Δ — it is the law switched
+off.** `arrow-binary` × `uniform-5`, `arrow-binary` × `varied-short`, `arrow-binary` × `varied-long`
+fits a floor wider than the widest inner construct swept (100), which means the best available
+model of it is *always take the outer break*. That is not a fitted number and it does
+not need one:
+
+- `arrow-binary` × `uniform-5` breaks the inner construct in 0 of 5082 cells, where `eq-binary-wide` at the same head width breaks it in 3664 of 5082.
+- `arrow-binary` × `varied-short` breaks the inner construct in 0 of 5082 cells, where `eq-binary-wide` at the same head width breaks it in 3664 of 5082.
+- `arrow-binary` × `varied-long` breaks the inner construct in 0 of 5082 cells, where `eq-binary-wide` at the same head width breaks it in 3664 of 5082.
+
+**The arrow always wins over an operand chain.** That is a sentence, not a constant, and
+it is the one thing in SK-DIV-0050's preference half that a floor cannot express — which
+also means it is the one thing that can be implemented and tested with no oracle at all.
 
 ## The filler profiles
 
@@ -637,6 +762,351 @@ The boundary itself, at total 142 under `single-literal`. One column of the inne
         var alphaBetaGammaDeltaEpsilonZetaEtaThetaIotaK = Doli(
             "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
         );
+```
+
+### `eq-binary-wide` — SK-DIV-0005
+
+| total | `uniform-5` | `varied-long` | `varied-short` | agree? |
+|---:|---:|---:|---:|---|
+| 124 | — | — | — | yes |
+| 125 | all | all | all | yes |
+| 126 | all | all | all | yes |
+| 127 | all | all | all | yes |
+| 128 | all | all | all | yes |
+| 129 | all | all | all | yes |
+| 130 | all | all | all | yes |
+| 131 | all | all | all | yes |
+| 132 | all | all | all | yes |
+| 133 | 11 ⚠ | 11 ⚠ | 11 ⚠ | yes |
+| 134 | 12 ⚠ | 12 ⚠ | 12 ⚠ | yes |
+| 135 | 13 ⚠ | 13 ⚠ | 13 ⚠ | yes |
+| 136 | 14 ⚠ | 14 ⚠ | 14 ⚠ | yes |
+| 137 | 15 ⚠ | 15 ⚠ | 15 ⚠ | yes |
+| 138 | 16 ⚠ | 16 ⚠ | 16 ⚠ | yes |
+| 139 | 17 ⚠ | 17 ⚠ | 17 ⚠ | yes |
+| 140 | 18 | 18 | 18 | yes |
+| 141 | 19 | 19 | 19 | yes |
+| 142 | 20 | 20 | 20 | yes |
+| 143 | 21 | 21 | 21 | yes |
+| 144 | 22 | 22 | 22 | yes |
+| 145 | 23 | 23 | 23 | yes |
+| 146 | 24 | 24 | 24 | yes |
+| 147 | 25 | 25 | 25 | yes |
+| 148 | 26 | 26 | 26 | yes |
+| 149 | 27 | 27 | 27 | yes |
+| 150 | 28 | 28 | 28 | yes |
+| 151 | 29 | 29 | 29 | yes |
+| 152 | 30 | 30 | 30 | yes |
+| 153 | 31 | 31 | 31 | yes |
+| 154 | 32 | 32 | 32 | yes |
+| 155 | 33 | 33 | 33 | yes |
+| 156 | 34 | 34 | 34 | yes |
+| 157 | 35 | 35 | 35 | yes |
+| 158 | 36 | 36 | 36 | yes |
+| 159 | 37 | 37 | 37 | yes |
+| 160 | 38 | 38 | 38 | yes |
+| 161 | 39 | 39 | 39 | yes |
+| 162 | 40 | 40 | 40 | yes |
+| 163 | 41 | 41 | 41 | yes |
+| 164 | 42 | 42 | 42 | yes |
+| 165 | 43 | 43 | 43 | yes |
+| 166 | 44 | 44 | 44 | yes |
+| 167 | 45 | 45 | 45 | yes |
+| 168 | 46 | 46 | 46 | yes |
+| 169 | 47 | 47 | 47 | yes |
+| 170 | 48 | 48 | 48 | yes |
+| 171 | 49 | 49 | 49 | yes |
+| 172 | 50 | 50 | 50 | yes |
+| 173 | 51 | 51 | 51 | yes |
+| 174 | 52 | 52 | 52 | yes |
+| 175 | 53 | 53 | 53 | yes |
+| 176 | 54 | 54 | 54 | yes |
+| 177 | 55 | 55 | 55 | yes |
+| 178 | 56 | 56 | 56 | yes |
+| 179 | 57 | 57 | 57 | yes |
+| 180 | 58 | 58 | 58 | yes |
+
+Rows: 171. Rows with a threshold in range: 144. Rows that cross more than once: 21.
+
+- `uniform-5`: threshold 11…58 over totals 133…180, turning direction 0 times. `total − threshold` spans 122…122 — **constant**.
+
+- `varied-long`: threshold 11…58 over totals 133…180, turning direction 0 times. `total − threshold` spans 122…122 — **constant**.
+
+- `varied-short`: threshold 11…58 over totals 133…180, turning direction 0 times. `total − threshold` spans 122…122 — **constant**.
+
+The word-length profiles agree on the threshold at 48 of the 48 totals where more than one of them has a threshold to compare —
+unanimously. The boundary is a fact about the oracle and the width, not about how many
+identifiers the probe happened to fit inside the construct.
+
+⚠ 21 rows cross more than once and are marked in the table above.
+
+### What decides it, tested
+
+**The margin law** — *break the inner construct exactly when breaking it brings the head
+line within the margin, and reach further out when it does not* — predicts **14520 of 15246** cells
+the oracle answered with one of the two, 95.24 %. It carries no fitted number and needs no oracle to state.
+
+**The margin law with a floor** — the same, and additionally the inner construct must be at
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
+
+| filler | cells | `F` | law alone | law with floor |
+|---|---:|---:|---:|---:|
+| `uniform-5` | 5082 | 0 | 95.24 % | 95.24 % |
+| `varied-long` | 5082 | 0 | 95.24 % | 95.24 % |
+| `varied-short` | 5082 | 0 | 95.24 % | 95.24 % |
+| **every filler** | 15246 | **0** | 95.24 % | **95.24 %** |
+
+Across the filler profiles the two-term model scores 95.24 % to 95.24 %, graded here on the worst.
+
+⚠ **A rule for some content shapes and not others.** The floor is not one constant here —
+it moves with what the inner construct is made of, so the model closes some rows and
+leaves others open. The grid is the only record of the ones it leaves open.
+
+
+The boundary itself, at total 133 under `uniform-5`. One column of the inner construct separates these two:
+
+```csharp
+// inner 10 — the oracle takes the `=`
+        var alphaBetaGammaDel =
+            Dolicorvumhezinofsokufatelipigovcurmedisokzonukabepitilocguvrehizondosunafetibipoglucvemi + bopugave;
+
+// inner 11 — one column wider, and it breaks the inner construct instead
+        var alphaBetaGammaDel = Dolicorvumhezinofsokufatelipigovcurmedisokzonukabepitilocguvrehizondosunafetibipoglucvem
+            + bopug
+            + l;
+```
+
+### `eq-array-wide` — SK-DIV-0005
+
+| total | `single-literal` | `uniform-5` | `varied-long` | `varied-short` | agree? |
+|---:|---:|---:|---:|---:|---|
+| 124 | — | — | — | — | yes |
+| 125 | — | — | — | — | yes |
+| 126 | — | — | — | — | yes |
+| 127 | — | — | — | — | yes |
+| 128 | — | — | — | — | yes |
+| 129 | — | — | — | — | yes |
+| 130 | — | — | — | — | yes |
+| 131 | 84 | 84 | 84 | 84 | yes |
+| 132 | 84 | 84 | 84 | 84 | yes |
+| 133 | 83 | 83 | 83 | 83 | yes |
+| 134 | 82 | 82 | 82 | 82 | yes |
+| 135 | 82 | 82 | 82 | 82 | yes |
+| 136 | 81 | 81 | 81 | 81 | yes |
+| 137 | 80 | 80 | 80 | 80 | yes |
+| 138 | 80 | 80 | 80 | 80 | yes |
+| 139 | 79 | 79 | 79 | 79 | yes |
+| 140 | 78 | 78 | 78 | 78 | yes |
+| 141 | 78 | 78 | 78 | 78 | yes |
+| 142 | 77 | 77 | 77 | 77 | yes |
+| 143 | 76 | 76 | 76 | 76 | yes |
+| 144 | 76 | 76 | 76 | 76 | yes |
+| 145 | 75 | 75 | 75 | 75 | yes |
+| 146 | 74 | 74 | 74 | 74 | yes |
+| 147 | 74 | 74 | 74 | 74 | yes |
+| 148 | 73 | 73 | 73 | 73 | yes |
+| 149 | 72 | 72 | 72 | 72 | yes |
+| 150 | 72 | 72 | 72 | 72 | yes |
+| 151 | 71 | 71 | 71 | 71 | yes |
+| 152 | 70 | 70 | 70 | 70 | yes |
+| 153 | 70 | 70 | 70 | 70 | yes |
+| 154 | 69 | 69 | 69 | 69 | yes |
+| 155 | 69 | 69 | 69 | 69 | yes |
+| 156 | 69 | 69 | 69 | 69 | yes |
+| 157 | 70 | 70 | 70 | 70 | yes |
+| 158 | 70 | 70 | 70 | 70 | yes |
+| 159 | 70 | 70 | 70 | 70 | yes |
+| 160 | 70 | 70 | 70 | 70 | yes |
+| 161 | 70 | 70 | 70 | 70 | yes |
+| 162 | 70 | 70 | 70 | 70 | yes |
+| 163 | 71 | 71 | 71 | 71 | yes |
+| 164 | 71 | 71 | 71 | 71 | yes |
+| 165 | 71 | 71 | 71 | 71 | yes |
+| 166 | 71 | 71 | 71 | 71 | yes |
+| 167 | 71 | 71 | 71 | 71 | yes |
+| 168 | 71 | 71 | 71 | 71 | yes |
+| 169 | 71 | 71 | 71 | 71 | yes |
+| 170 | 72 | 72 | 72 | 72 | yes |
+| 171 | 72 | 72 | 72 | 72 | yes |
+| 172 | 72 | 72 | 72 | 72 | yes |
+| 173 | 72 | 72 | 72 | 72 | yes |
+| 174 | 72 | 72 | 72 | 72 | yes |
+| 175 | 72 | 72 | 72 | 72 | yes |
+| 176 | 73 | 73 | 73 | 73 | yes |
+| 177 | 73 | 73 | 73 | 73 | yes |
+| 178 | 73 | 73 | 73 | 73 | yes |
+| 179 | 73 | 73 | 73 | 73 | yes |
+| 180 | 73 | 73 | 73 | 73 | yes |
+
+Rows: 228. Rows with a threshold in range: 200. Rows that cross more than once: 0.
+
+- `single-literal`: threshold 69…84 over totals 131…180, turning direction 1 time. `total − threshold` spans 47…107.
+
+- `uniform-5`: threshold 69…84 over totals 131…180, turning direction 1 time. `total − threshold` spans 47…107.
+
+- `varied-long`: threshold 69…84 over totals 131…180, turning direction 1 time. `total − threshold` spans 47…107.
+
+- `varied-short`: threshold 69…84 over totals 131…180, turning direction 1 time. `total − threshold` spans 47…107.
+
+The word-length profiles agree on the threshold at 50 of the 50 totals where more than one of them has a threshold to compare —
+unanimously. The boundary is a fact about the oracle and the width, not about how many
+identifiers the probe happened to fit inside the construct.
+
+### What decides it, tested
+
+**The margin law** — *break the inner construct exactly when breaking it brings the head
+line within the margin, and reach further out when it does not* — predicts **10052 of 19736** cells
+the oracle answered with one of the two, 50.93 %. It carries no fitted number and needs no oracle to state.
+
+**The margin law with a floor** — the same, and additionally the inner construct must be at
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
+
+| filler | cells | `F` | law alone | law with floor |
+|---|---:|---:|---:|---:|
+| `single-literal` | 4934 | 73 | 50.93 % | 95.44 % |
+| `uniform-5` | 4934 | 73 | 50.93 % | 95.44 % |
+| `varied-long` | 4934 | 73 | 50.93 % | 95.44 % |
+| `varied-short` | 4934 | 73 | 50.93 % | 95.44 % |
+| **every filler** | 19736 | **73** | 50.93 % | **95.44 %** |
+
+Across the filler profiles the two-term model scores 95.44 % to 95.44 %, graded here on the worst.
+
+⚠ **A rule for some content shapes and not others.** The floor is not one constant here —
+it moves with what the inner construct is made of, so the model closes some rows and
+leaves others open. The grid is the only record of the ones it leaves open.
+
+
+The boundary itself, at total 131 under `single-literal`. One column of the inner construct separates these two:
+
+```csharp
+// inner 83 — the oracle takes the `=`
+        var alphaBetaGammaDelta =
+            new Dolico[] { "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ" };
+
+// inner 84 — one column wider, and it breaks the inner construct instead
+        var alphaBetaGammaDelta = new Dolic[] {
+            "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+        };
+```
+
+### `eq-object-wide` — SK-DIV-0005
+
+| total | `single-literal` | `uniform-5` | `varied-long` | `varied-short` | agree? |
+|---:|---:|---:|---:|---:|---|
+| 124 | — | 53 | 58 | 60 | **no** |
+| 125 | — | 53 | 58 | 60 | **no** |
+| 126 | — | 53 | 58 | 60 | **no** |
+| 127 | — | 53 | 58 | 60 | **no** |
+| 128 | — | 53 | 58 | 60 | **no** |
+| 129 | — | 53 | 58 | 60 | **no** |
+| 130 | — | 54 | 59 | 61 | **no** |
+| 131 | 85 | 55 | 60 | 62 | **no** |
+| 132 | 84 | 56 | 61 | 63 | **no** |
+| 133 | 84 | 57 | 62 | 64 | **no** |
+| 134 | 83 | 58 | 63 | 65 | **no** |
+| 135 | 82 | 59 | 64 | 66 | **no** |
+| 136 | 82 | 60 | 65 | 67 | **no** |
+| 137 | 81 | 61 | 66 | 68 | **no** |
+| 138 | 80 | 62 | 67 | 69 | **no** |
+| 139 | 80 | 63 | 68 | 70 | **no** |
+| 140 | 79 | 64 | 69 | 71 | **no** |
+| 141 | 78 | 65 | 70 | 72 | **no** |
+| 142 | 78 | 66 | 71 | 73 | **no** |
+| 143 | 77 | 67 | 72 | 74 | **no** |
+| 144 | 76 | 68 | 73 | 75 | **no** |
+| 145 | 76 | 69 | 74 | 76 | **no** |
+| 146 | 75 | 70 | 75 | 75 | **no** |
+| 147 | 74 | 71 | 74 | 74 | **no** |
+| 148 | 74 | 72 | 74 | 74 | **no** |
+| 149 | 73 | 73 | 73 | 73 | yes |
+| 150 | 72 | 72 | 72 | 72 | yes |
+| 151 | 71 | 71 | 71 | 71 | yes |
+| 152 | 71 | 71 | 71 | 71 | yes |
+| 153 | 70 | 70 | 70 | 70 | yes |
+| 154 | 69 | 69 | 69 | 69 | yes |
+| 155 | 70 | 70 | 70 | 70 | yes |
+| 156 | 70 | 70 | 70 | 70 | yes |
+| 157 | 70 | 70 | 70 | 70 | yes |
+| 158 | 70 | 70 | 70 | 70 | yes |
+| 159 | 70 | 70 | 70 | 70 | yes |
+| 160 | 70 | 70 | 70 | 70 | yes |
+| 161 | 71 | 71 | 71 | 71 | yes |
+| 162 | 71 | 71 | 71 | 71 | yes |
+| 163 | 71 | 71 | 71 | 71 | yes |
+| 164 | 71 | 71 | 71 | 71 | yes |
+| 165 | 71 | 71 | 71 | 71 | yes |
+| 166 | 71 | 71 | 71 | 71 | yes |
+| 167 | 71 | 71 | 71 | 71 | yes |
+| 168 | 72 | 72 | 72 | 72 | yes |
+| 169 | 72 | 72 | 72 | 72 | yes |
+| 170 | 72 | 72 | 72 | 72 | yes |
+| 171 | 72 | 72 | 72 | 72 | yes |
+| 172 | 72 | 72 | 72 | 72 | yes |
+| 173 | 72 | 72 | 72 | 72 | yes |
+| 174 | 73 | 73 | 73 | 73 | yes |
+| 175 | 73 | 73 | 73 | 73 | yes |
+| 176 | 73 | 73 | 73 | 73 | yes |
+| 177 | 73 | 73 | 73 | 73 | yes |
+| 178 | 73 | 73 | 73 | 73 | yes |
+| 179 | 73 | 73 | 73 | 73 | yes |
+| 180 | 73 | 73 | 73 | 73 | yes |
+
+Rows: 228. Rows with a threshold in range: 221. Rows that cross more than once: 0.
+
+- `single-literal`: threshold 69…85 over totals 131…180, turning direction 1 time. `total − threshold` spans 46…107.
+
+- `uniform-5`: threshold 53…73 over totals 124…180, turning direction 2 times. `total − threshold` spans 71…107.
+
+- `varied-long`: threshold 58…75 over totals 124…180, turning direction 2 times. `total − threshold` spans 66…107.
+
+- `varied-short`: threshold 60…76 over totals 124…180, turning direction 2 times. `total − threshold` spans 64…107.
+
+The word-length profiles agree on the threshold at 32 of the 57 totals where more than one of them has a threshold to compare —
+which is not unanimous. Where they disagree the boundary is partly a fact about how many
+identifiers the probe fitted inside the construct, and those rows are the probe's, not the
+oracle's.
+
+### What decides it, tested
+
+**The margin law** — *break the inner construct exactly when breaking it brings the head
+line within the margin, and reach further out when it does not* — predicts **10982 of 19539** cells
+the oracle answered with one of the two, 56.21 %. It carries no fitted number and needs no oracle to state.
+
+**The margin law with a floor** — the same, and additionally the inner construct must be at
+least `F` columns wide on its own — is fitted below, per content profile and then over all
+of them at once. It is the only thing here a later reader cannot derive without
+measuring, and where the profiles disagree the pooled row is the honest one:
+
+| filler | cells | `F` | law alone | law with floor |
+|---|---:|---:|---:|---:|
+| `single-literal` | 4671 | 73 | 48.51 % | 94.99 % |
+| `uniform-5` | 4956 | 70 | 60.53 % | 94.17 % |
+| `varied-long` | 4956 | 71 | 58.11 % | 95.88 % |
+| `varied-short` | 4956 | 71 | 57.22 % | 96.41 % |
+| **every filler** | 19539 | **71** | 56.21 % | **95.18 %** |
+
+Across the filler profiles the two-term model scores 94.17 % to 96.41 %, graded here on the worst.
+
+⚠ **A rule for some content shapes and not others.** The floor is not one constant here —
+it moves with what the inner construct is made of, so the model closes some rows and
+leaves others open. The grid is the only record of the ones it leaves open.
+
+
+The boundary itself, at total 131 under `single-literal`. One column of the inner construct separates these two:
+
+```csharp
+// inner 84 — the oracle takes the `=`
+        var alphaBetaGammaDeltaE =
+            new Dolico { Value = "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ" };
+
+// inner 85 — one column wider, and it breaks the inner construct instead
+        var alphaBetaGammaDeltaE = new Dolic {
+            Value = "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+        };
 ```
 
 ### `eq-array` — SK-DIV-0005
@@ -2869,10 +3339,56 @@ What `Third` is, for this construct — total 139, inner 10, `single-literal`:
 
 ## Every crossing back
 
-None. Within a row the oracle's answer changes at most once, from taking the outer break
-to declining it, so each row *is* locally monotone in the inner width — the
-non-monotonicity this artefact records lives entirely in the other axis, in how the
-threshold moves with the total.
+⚠ 45 places where a **wider** inner construct brings the outer break back. Each one is a
+row a bisection over the inner width would have reported the wrong boundary for.
+
+| construct | filler | total | last inner | first outer |
+|---|---|---:|---:|---:|
+| `eq-binary-wide` | `uniform-5` | 125 | 20 | 21 |
+| `eq-binary-wide` | `uniform-5` | 126 | 68 | 69 |
+| `eq-binary-wide` | `uniform-5` | 127 | 72 | 73 |
+| `eq-binary-wide` | `uniform-5` | 128 | 75 | 76 |
+| `eq-binary-wide` | `uniform-5` | 129 | 79 | 80 |
+| `eq-binary-wide` | `uniform-5` | 130 | 82 | 83 |
+| `eq-binary-wide` | `uniform-5` | 131 | 86 | 87 |
+| `eq-binary-wide` | `uniform-5` | 132 | 90 | 91 |
+| `eq-binary-wide` | `uniform-5` | 133 | 93 | 94 |
+| `eq-binary-wide` | `uniform-5` | 134 | 94 | 95 |
+| `eq-binary-wide` | `uniform-5` | 135 | 95 | 96 |
+| `eq-binary-wide` | `uniform-5` | 136 | 96 | 97 |
+| `eq-binary-wide` | `uniform-5` | 137 | 97 | 98 |
+| `eq-binary-wide` | `uniform-5` | 138 | 98 | 99 |
+| `eq-binary-wide` | `uniform-5` | 139 | 99 | 100 |
+| `eq-binary-wide` | `varied-long` | 125 | 20 | 21 |
+| `eq-binary-wide` | `varied-long` | 126 | 68 | 69 |
+| `eq-binary-wide` | `varied-long` | 127 | 72 | 73 |
+| `eq-binary-wide` | `varied-long` | 128 | 75 | 76 |
+| `eq-binary-wide` | `varied-long` | 129 | 79 | 80 |
+| `eq-binary-wide` | `varied-long` | 130 | 82 | 83 |
+| `eq-binary-wide` | `varied-long` | 131 | 86 | 87 |
+| `eq-binary-wide` | `varied-long` | 132 | 90 | 91 |
+| `eq-binary-wide` | `varied-long` | 133 | 93 | 94 |
+| `eq-binary-wide` | `varied-long` | 134 | 94 | 95 |
+| `eq-binary-wide` | `varied-long` | 135 | 95 | 96 |
+| `eq-binary-wide` | `varied-long` | 136 | 96 | 97 |
+| `eq-binary-wide` | `varied-long` | 137 | 97 | 98 |
+| `eq-binary-wide` | `varied-long` | 138 | 98 | 99 |
+| `eq-binary-wide` | `varied-long` | 139 | 99 | 100 |
+| `eq-binary-wide` | `varied-short` | 125 | 20 | 21 |
+| `eq-binary-wide` | `varied-short` | 126 | 68 | 69 |
+| `eq-binary-wide` | `varied-short` | 127 | 72 | 73 |
+| `eq-binary-wide` | `varied-short` | 128 | 75 | 76 |
+| `eq-binary-wide` | `varied-short` | 129 | 79 | 80 |
+| `eq-binary-wide` | `varied-short` | 130 | 82 | 83 |
+| `eq-binary-wide` | `varied-short` | 131 | 86 | 87 |
+| `eq-binary-wide` | `varied-short` | 132 | 90 | 91 |
+| `eq-binary-wide` | `varied-short` | 133 | 93 | 94 |
+| `eq-binary-wide` | `varied-short` | 134 | 94 | 95 |
+| `eq-binary-wide` | `varied-short` | 135 | 95 | 96 |
+| `eq-binary-wide` | `varied-short` | 136 | 96 | 97 |
+| `eq-binary-wide` | `varied-short` | 137 | 97 | 98 |
+| `eq-binary-wide` | `varied-short` | 138 | 98 | 99 |
+| `eq-binary-wide` | `varied-short` | 139 | 99 | 100 |
 
 ## Cells the probe could not name
 
@@ -6231,6 +6747,688 @@ form of the same thing is in the JSON.
 | 178 | 10 | 58 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
 | 179 | 10 | 59 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
 | 180 | 10 | 60 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+
+### `eq-array-wide` × `single-literal`
+
+| total | inner from | enough alone | outcome by inner width |
+|---:|---:|---:|---|
+| 124 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO......................` |
+| 125 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.....................` |
+| 126 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO....................` |
+| 127 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO...................` |
+| 128 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO..................` |
+| 129 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.................` |
+| 130 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO................` |
+| 131 | 10 | 11 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOII...............` |
+| 132 | 10 | 12 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIII..............` |
+| 133 | 10 | 13 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIII.............` |
+| 134 | 10 | 14 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIII............` |
+| 135 | 10 | 15 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIII...........` |
+| 136 | 10 | 16 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIII..........` |
+| 137 | 10 | 17 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIII.........` |
+| 138 | 10 | 18 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIII........` |
+| 139 | 10 | 19 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIII.......` |
+| 140 | 10 | 20 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIII......` |
+| 141 | 10 | 21 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIII.....` |
+| 142 | 10 | 22 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIII....` |
+| 143 | 10 | 23 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIII...` |
+| 144 | 10 | 24 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIII..` |
+| 145 | 10 | 25 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII.` |
+| 146 | 10 | 26 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 147 | 10 | 27 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 148 | 10 | 28 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 149 | 10 | 29 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 150 | 10 | 30 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 151 | 10 | 31 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 152 | 10 | 32 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 153 | 10 | 33 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 154 | 10 | 34 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 155 | 10 | 35 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 156 | 10 | 36 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 157 | 10 | 37 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 158 | 10 | 38 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 159 | 10 | 39 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 160 | 10 | 40 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 161 | 10 | 41 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 162 | 10 | 42 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 163 | 10 | 43 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 164 | 10 | 44 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 165 | 10 | 45 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 166 | 10 | 46 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 167 | 10 | 47 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 168 | 10 | 48 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 169 | 10 | 49 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 170 | 10 | 50 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 171 | 10 | 51 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 172 | 10 | 52 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 173 | 10 | 53 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 174 | 10 | 54 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 175 | 10 | 55 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 176 | 10 | 56 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 177 | 10 | 57 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 178 | 10 | 58 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 179 | 10 | 59 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 180 | 10 | 60 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+
+### `eq-array-wide` × `uniform-5`
+
+| total | inner from | enough alone | outcome by inner width |
+|---:|---:|---:|---|
+| 124 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO......................` |
+| 125 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.....................` |
+| 126 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO....................` |
+| 127 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO...................` |
+| 128 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO..................` |
+| 129 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.................` |
+| 130 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO................` |
+| 131 | 10 | 11 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOII...............` |
+| 132 | 10 | 12 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIII..............` |
+| 133 | 10 | 13 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIII.............` |
+| 134 | 10 | 14 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIII............` |
+| 135 | 10 | 15 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIII...........` |
+| 136 | 10 | 16 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIII..........` |
+| 137 | 10 | 17 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIII.........` |
+| 138 | 10 | 18 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIII........` |
+| 139 | 10 | 19 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIII.......` |
+| 140 | 10 | 20 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIII......` |
+| 141 | 10 | 21 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIII.....` |
+| 142 | 10 | 22 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIII....` |
+| 143 | 10 | 23 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIII...` |
+| 144 | 10 | 24 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIII..` |
+| 145 | 10 | 25 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII.` |
+| 146 | 10 | 26 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 147 | 10 | 27 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 148 | 10 | 28 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 149 | 10 | 29 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 150 | 10 | 30 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 151 | 10 | 31 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 152 | 10 | 32 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 153 | 10 | 33 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 154 | 10 | 34 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 155 | 10 | 35 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 156 | 10 | 36 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 157 | 10 | 37 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 158 | 10 | 38 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 159 | 10 | 39 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 160 | 10 | 40 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 161 | 10 | 41 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 162 | 10 | 42 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 163 | 10 | 43 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 164 | 10 | 44 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 165 | 10 | 45 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 166 | 10 | 46 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 167 | 10 | 47 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 168 | 10 | 48 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 169 | 10 | 49 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 170 | 10 | 50 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 171 | 10 | 51 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 172 | 10 | 52 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 173 | 10 | 53 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 174 | 10 | 54 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 175 | 10 | 55 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 176 | 10 | 56 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 177 | 10 | 57 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 178 | 10 | 58 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 179 | 10 | 59 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 180 | 10 | 60 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+
+### `eq-array-wide` × `varied-long`
+
+| total | inner from | enough alone | outcome by inner width |
+|---:|---:|---:|---|
+| 124 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO......................` |
+| 125 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.....................` |
+| 126 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO....................` |
+| 127 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO...................` |
+| 128 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO..................` |
+| 129 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.................` |
+| 130 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO................` |
+| 131 | 10 | 11 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOII...............` |
+| 132 | 10 | 12 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIII..............` |
+| 133 | 10 | 13 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIII.............` |
+| 134 | 10 | 14 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIII............` |
+| 135 | 10 | 15 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIII...........` |
+| 136 | 10 | 16 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIII..........` |
+| 137 | 10 | 17 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIII.........` |
+| 138 | 10 | 18 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIII........` |
+| 139 | 10 | 19 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIII.......` |
+| 140 | 10 | 20 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIII......` |
+| 141 | 10 | 21 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIII.....` |
+| 142 | 10 | 22 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIII....` |
+| 143 | 10 | 23 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIII...` |
+| 144 | 10 | 24 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIII..` |
+| 145 | 10 | 25 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII.` |
+| 146 | 10 | 26 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 147 | 10 | 27 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 148 | 10 | 28 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 149 | 10 | 29 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 150 | 10 | 30 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 151 | 10 | 31 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 152 | 10 | 32 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 153 | 10 | 33 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 154 | 10 | 34 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 155 | 10 | 35 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 156 | 10 | 36 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 157 | 10 | 37 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 158 | 10 | 38 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 159 | 10 | 39 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 160 | 10 | 40 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 161 | 10 | 41 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 162 | 10 | 42 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 163 | 10 | 43 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 164 | 10 | 44 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 165 | 10 | 45 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 166 | 10 | 46 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 167 | 10 | 47 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 168 | 10 | 48 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 169 | 10 | 49 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 170 | 10 | 50 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 171 | 10 | 51 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 172 | 10 | 52 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 173 | 10 | 53 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 174 | 10 | 54 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 175 | 10 | 55 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 176 | 10 | 56 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 177 | 10 | 57 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 178 | 10 | 58 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 179 | 10 | 59 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 180 | 10 | 60 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+
+### `eq-array-wide` × `varied-short`
+
+| total | inner from | enough alone | outcome by inner width |
+|---:|---:|---:|---|
+| 124 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO......................` |
+| 125 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.....................` |
+| 126 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO....................` |
+| 127 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO...................` |
+| 128 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO..................` |
+| 129 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.................` |
+| 130 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO................` |
+| 131 | 10 | 11 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOII...............` |
+| 132 | 10 | 12 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIII..............` |
+| 133 | 10 | 13 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIII.............` |
+| 134 | 10 | 14 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIII............` |
+| 135 | 10 | 15 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIII...........` |
+| 136 | 10 | 16 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIII..........` |
+| 137 | 10 | 17 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIII.........` |
+| 138 | 10 | 18 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIII........` |
+| 139 | 10 | 19 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIII.......` |
+| 140 | 10 | 20 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIII......` |
+| 141 | 10 | 21 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIII.....` |
+| 142 | 10 | 22 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIII....` |
+| 143 | 10 | 23 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIII...` |
+| 144 | 10 | 24 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIII..` |
+| 145 | 10 | 25 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII.` |
+| 146 | 10 | 26 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 147 | 10 | 27 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 148 | 10 | 28 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 149 | 10 | 29 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 150 | 10 | 30 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 151 | 10 | 31 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 152 | 10 | 32 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 153 | 10 | 33 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 154 | 10 | 34 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 155 | 10 | 35 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 156 | 10 | 36 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 157 | 10 | 37 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 158 | 10 | 38 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 159 | 10 | 39 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 160 | 10 | 40 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 161 | 10 | 41 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 162 | 10 | 42 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 163 | 10 | 43 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 164 | 10 | 44 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 165 | 10 | 45 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 166 | 10 | 46 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 167 | 10 | 47 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 168 | 10 | 48 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 169 | 10 | 49 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 170 | 10 | 50 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 171 | 10 | 51 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 172 | 10 | 52 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 173 | 10 | 53 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 174 | 10 | 54 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 175 | 10 | 55 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 176 | 10 | 56 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 177 | 10 | 57 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 178 | 10 | 58 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 179 | 10 | 59 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 180 | 10 | 60 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+
+### `eq-binary-wide` × `uniform-5`
+
+| total | inner from | enough alone | outcome by inner width |
+|---:|---:|---:|---|
+| 124 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO..............` |
+| 125 | 10 | 10 | `IIIIIIIIIIIOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.............` |
+| 126 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOOOOOOOOOO............` |
+| 127 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOOOOOOO...........` |
+| 128 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOOOOO..........` |
+| 129 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOO.........` |
+| 130 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOO........` |
+| 131 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOO.......` |
+| 132 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOO......` |
+| 133 | 10 | 11 | `OIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO.....` |
+| 134 | 10 | 12 | `OOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO....` |
+| 135 | 10 | 13 | `OOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO...` |
+| 136 | 10 | 14 | `OOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO..` |
+| 137 | 10 | 15 | `OOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO.` |
+| 138 | 10 | 16 | `OOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO` |
+| 139 | 10 | 17 | `OOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIO` |
+| 140 | 10 | 18 | `OOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 141 | 10 | 19 | `OOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 142 | 10 | 20 | `OOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 143 | 10 | 21 | `OOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 144 | 10 | 22 | `OOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 145 | 10 | 23 | `OOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 146 | 10 | 24 | `OOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 147 | 10 | 25 | `OOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 148 | 10 | 26 | `OOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 149 | 10 | 27 | `OOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 150 | 10 | 28 | `OOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 151 | 10 | 29 | `OOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 152 | 10 | 30 | `OOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 153 | 10 | 31 | `OOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 154 | 10 | 32 | `OOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 155 | 10 | 33 | `OOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 156 | 10 | 34 | `OOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 157 | 10 | 35 | `OOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 158 | 10 | 36 | `OOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 159 | 10 | 37 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 160 | 10 | 38 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 161 | 10 | 39 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 162 | 10 | 40 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 163 | 10 | 41 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 164 | 10 | 42 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 165 | 10 | 43 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 166 | 10 | 44 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 167 | 10 | 45 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 168 | 10 | 46 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 169 | 10 | 47 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 170 | 10 | 48 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 171 | 10 | 49 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 172 | 10 | 50 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 173 | 10 | 51 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 174 | 10 | 52 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 175 | 10 | 53 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 176 | 10 | 54 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 177 | 10 | 55 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 178 | 10 | 56 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 179 | 10 | 57 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 180 | 10 | 58 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+
+### `eq-binary-wide` × `varied-long`
+
+| total | inner from | enough alone | outcome by inner width |
+|---:|---:|---:|---|
+| 124 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO..............` |
+| 125 | 10 | 10 | `IIIIIIIIIIIOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.............` |
+| 126 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOOOOOOOOOO............` |
+| 127 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOOOOOOO...........` |
+| 128 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOOOOO..........` |
+| 129 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOO.........` |
+| 130 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOO........` |
+| 131 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOO.......` |
+| 132 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOO......` |
+| 133 | 10 | 11 | `OIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO.....` |
+| 134 | 10 | 12 | `OOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO....` |
+| 135 | 10 | 13 | `OOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO...` |
+| 136 | 10 | 14 | `OOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO..` |
+| 137 | 10 | 15 | `OOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO.` |
+| 138 | 10 | 16 | `OOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO` |
+| 139 | 10 | 17 | `OOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIO` |
+| 140 | 10 | 18 | `OOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 141 | 10 | 19 | `OOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 142 | 10 | 20 | `OOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 143 | 10 | 21 | `OOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 144 | 10 | 22 | `OOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 145 | 10 | 23 | `OOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 146 | 10 | 24 | `OOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 147 | 10 | 25 | `OOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 148 | 10 | 26 | `OOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 149 | 10 | 27 | `OOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 150 | 10 | 28 | `OOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 151 | 10 | 29 | `OOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 152 | 10 | 30 | `OOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 153 | 10 | 31 | `OOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 154 | 10 | 32 | `OOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 155 | 10 | 33 | `OOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 156 | 10 | 34 | `OOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 157 | 10 | 35 | `OOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 158 | 10 | 36 | `OOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 159 | 10 | 37 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 160 | 10 | 38 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 161 | 10 | 39 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 162 | 10 | 40 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 163 | 10 | 41 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 164 | 10 | 42 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 165 | 10 | 43 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 166 | 10 | 44 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 167 | 10 | 45 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 168 | 10 | 46 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 169 | 10 | 47 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 170 | 10 | 48 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 171 | 10 | 49 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 172 | 10 | 50 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 173 | 10 | 51 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 174 | 10 | 52 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 175 | 10 | 53 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 176 | 10 | 54 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 177 | 10 | 55 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 178 | 10 | 56 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 179 | 10 | 57 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 180 | 10 | 58 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+
+### `eq-binary-wide` × `varied-short`
+
+| total | inner from | enough alone | outcome by inner width |
+|---:|---:|---:|---|
+| 124 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO..............` |
+| 125 | 10 | 10 | `IIIIIIIIIIIOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.............` |
+| 126 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOOOOOOOOOO............` |
+| 127 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOOOOOOO...........` |
+| 128 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOOOOO..........` |
+| 129 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOOOO.........` |
+| 130 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOOOOO........` |
+| 131 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOOOOO.......` |
+| 132 | 10 | 10 | `IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOOOO......` |
+| 133 | 10 | 11 | `OIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO.....` |
+| 134 | 10 | 12 | `OOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO....` |
+| 135 | 10 | 13 | `OOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO...` |
+| 136 | 10 | 14 | `OOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO..` |
+| 137 | 10 | 15 | `OOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO.` |
+| 138 | 10 | 16 | `OOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIOO` |
+| 139 | 10 | 17 | `OOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIO` |
+| 140 | 10 | 18 | `OOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 141 | 10 | 19 | `OOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 142 | 10 | 20 | `OOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 143 | 10 | 21 | `OOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 144 | 10 | 22 | `OOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 145 | 10 | 23 | `OOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 146 | 10 | 24 | `OOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 147 | 10 | 25 | `OOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 148 | 10 | 26 | `OOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 149 | 10 | 27 | `OOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 150 | 10 | 28 | `OOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 151 | 10 | 29 | `OOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 152 | 10 | 30 | `OOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 153 | 10 | 31 | `OOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 154 | 10 | 32 | `OOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 155 | 10 | 33 | `OOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 156 | 10 | 34 | `OOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 157 | 10 | 35 | `OOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 158 | 10 | 36 | `OOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 159 | 10 | 37 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 160 | 10 | 38 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 161 | 10 | 39 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 162 | 10 | 40 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 163 | 10 | 41 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 164 | 10 | 42 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 165 | 10 | 43 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 166 | 10 | 44 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 167 | 10 | 45 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 168 | 10 | 46 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 169 | 10 | 47 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 170 | 10 | 48 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 171 | 10 | 49 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 172 | 10 | 50 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 173 | 10 | 51 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 174 | 10 | 52 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 175 | 10 | 53 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 176 | 10 | 54 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 177 | 10 | 55 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 178 | 10 | 56 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 179 | 10 | 57 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 180 | 10 | 58 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+
+### `eq-object-wide` × `single-literal`
+
+| total | inner from | enough alone | outcome by inner width |
+|---:|---:|---:|---|
+| 124 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.....................` |
+| 125 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO....................` |
+| 126 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO...................` |
+| 127 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO..................` |
+| 128 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.................` |
+| 129 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO................` |
+| 130 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO...............` |
+| 131 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOII..............` |
+| 132 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIII.............` |
+| 133 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIII............` |
+| 134 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIII...........` |
+| 135 | 10 | 15 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIII..........` |
+| 136 | 10 | 16 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIII.........` |
+| 137 | 10 | 17 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIII........` |
+| 138 | 10 | 18 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIII.......` |
+| 139 | 10 | 19 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIII......` |
+| 140 | 10 | 20 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIII.....` |
+| 141 | 10 | 21 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIII....` |
+| 142 | 10 | 22 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIII...` |
+| 143 | 10 | 23 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIII..` |
+| 144 | 10 | 24 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIII.` |
+| 145 | 10 | 25 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 146 | 10 | 26 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 147 | 10 | 27 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 148 | 10 | 28 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 149 | 10 | 29 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 150 | 10 | 30 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 151 | 10 | 31 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 152 | 10 | 32 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 153 | 10 | 33 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 154 | 10 | 34 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 155 | 10 | 35 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 156 | 10 | 36 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 157 | 10 | 37 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 158 | 10 | 38 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 159 | 10 | 39 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 160 | 10 | 40 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 161 | 10 | 41 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 162 | 10 | 42 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 163 | 10 | 43 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 164 | 10 | 44 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 165 | 10 | 45 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 166 | 10 | 46 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 167 | 10 | 47 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 168 | 10 | 48 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 169 | 10 | 49 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 170 | 10 | 50 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 171 | 10 | 51 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 172 | 10 | 52 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 173 | 10 | 53 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 174 | 10 | 54 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 175 | 10 | 55 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 176 | 10 | 56 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 177 | 10 | 57 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 178 | 10 | 58 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 179 | 10 | 59 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 180 | 10 | 60 | `.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+
+### `eq-object-wide` × `uniform-5`
+
+| total | inner from | enough alone | outcome by inner width |
+|---:|---:|---:|---|
+| 124 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII.....................` |
+| 125 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII....................` |
+| 126 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII...................` |
+| 127 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII..................` |
+| 128 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII.................` |
+| 129 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII................` |
+| 130 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...............` |
+| 131 | 10 | 11 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII..............` |
+| 132 | 10 | 12 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII.............` |
+| 133 | 10 | 13 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII............` |
+| 134 | 10 | 14 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...........` |
+| 135 | 10 | 15 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII..........` |
+| 136 | 10 | 16 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII.........` |
+| 137 | 10 | 17 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII........` |
+| 138 | 10 | 18 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII.......` |
+| 139 | 10 | 19 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII......` |
+| 140 | 10 | 20 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII.....` |
+| 141 | 10 | 21 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII....` |
+| 142 | 10 | 22 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...` |
+| 143 | 10 | 23 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII..` |
+| 144 | 10 | 24 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII.` |
+| 145 | 10 | 25 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 146 | 10 | 26 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 147 | 10 | 27 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 148 | 10 | 28 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 149 | 10 | 29 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 150 | 10 | 30 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 151 | 10 | 31 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 152 | 10 | 32 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 153 | 10 | 33 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 154 | 10 | 34 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 155 | 10 | 35 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 156 | 10 | 36 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 157 | 10 | 37 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 158 | 10 | 38 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 159 | 10 | 39 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 160 | 10 | 40 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 161 | 10 | 41 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 162 | 10 | 42 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 163 | 10 | 43 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 164 | 10 | 44 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 165 | 10 | 45 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 166 | 10 | 46 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 167 | 10 | 47 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 168 | 10 | 48 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 169 | 10 | 49 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 170 | 10 | 50 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 171 | 10 | 51 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 172 | 10 | 52 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 173 | 10 | 53 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 174 | 10 | 54 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 175 | 10 | 55 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 176 | 10 | 56 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 177 | 10 | 57 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 178 | 10 | 58 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 179 | 10 | 59 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 180 | 10 | 60 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+
+### `eq-object-wide` × `varied-long`
+
+| total | inner from | enough alone | outcome by inner width |
+|---:|---:|---:|---|
+| 124 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIII.....................` |
+| 125 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIII....................` |
+| 126 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIII...................` |
+| 127 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII..................` |
+| 128 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIII.................` |
+| 129 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII................` |
+| 130 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII...............` |
+| 131 | 10 | 11 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII..............` |
+| 132 | 10 | 12 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII.............` |
+| 133 | 10 | 13 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII............` |
+| 134 | 10 | 14 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII...........` |
+| 135 | 10 | 15 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII..........` |
+| 136 | 10 | 16 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII.........` |
+| 137 | 10 | 17 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII........` |
+| 138 | 10 | 18 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII.......` |
+| 139 | 10 | 19 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII......` |
+| 140 | 10 | 20 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII.....` |
+| 141 | 10 | 21 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII....` |
+| 142 | 10 | 22 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII...` |
+| 143 | 10 | 23 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII..` |
+| 144 | 10 | 24 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII.` |
+| 145 | 10 | 25 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 146 | 10 | 26 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 147 | 10 | 27 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 148 | 10 | 28 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 149 | 10 | 29 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 150 | 10 | 30 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 151 | 10 | 31 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 152 | 10 | 32 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 153 | 10 | 33 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 154 | 10 | 34 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 155 | 10 | 35 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 156 | 10 | 36 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 157 | 10 | 37 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 158 | 10 | 38 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 159 | 10 | 39 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 160 | 10 | 40 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 161 | 10 | 41 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 162 | 10 | 42 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 163 | 10 | 43 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 164 | 10 | 44 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 165 | 10 | 45 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 166 | 10 | 46 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 167 | 10 | 47 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 168 | 10 | 48 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 169 | 10 | 49 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 170 | 10 | 50 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 171 | 10 | 51 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 172 | 10 | 52 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 173 | 10 | 53 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 174 | 10 | 54 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 175 | 10 | 55 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 176 | 10 | 56 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 177 | 10 | 57 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 178 | 10 | 58 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 179 | 10 | 59 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 180 | 10 | 60 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+
+### `eq-object-wide` × `varied-short`
+
+| total | inner from | enough alone | outcome by inner width |
+|---:|---:|---:|---|
+| 124 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIII.....................` |
+| 125 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIII....................` |
+| 126 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIII...................` |
+| 127 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIII..................` |
+| 128 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIII.................` |
+| 129 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII................` |
+| 130 | 10 | 10 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII...............` |
+| 131 | 10 | 11 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII..............` |
+| 132 | 10 | 12 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII.............` |
+| 133 | 10 | 13 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII............` |
+| 134 | 10 | 14 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII...........` |
+| 135 | 10 | 15 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII..........` |
+| 136 | 10 | 16 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII.........` |
+| 137 | 10 | 17 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII........` |
+| 138 | 10 | 18 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII.......` |
+| 139 | 10 | 19 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII......` |
+| 140 | 10 | 20 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII.....` |
+| 141 | 10 | 21 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII....` |
+| 142 | 10 | 22 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII...` |
+| 143 | 10 | 23 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII..` |
+| 144 | 10 | 24 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII.` |
+| 145 | 10 | 25 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 146 | 10 | 26 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 147 | 10 | 27 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 148 | 10 | 28 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 149 | 10 | 29 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 150 | 10 | 30 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 151 | 10 | 31 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 152 | 10 | 32 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 153 | 10 | 33 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 154 | 10 | 34 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 155 | 10 | 35 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 156 | 10 | 36 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 157 | 10 | 37 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 158 | 10 | 38 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 159 | 10 | 39 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 160 | 10 | 40 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 161 | 10 | 41 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 162 | 10 | 42 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 163 | 10 | 43 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 164 | 10 | 44 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 165 | 10 | 45 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 166 | 10 | 46 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 167 | 10 | 47 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 168 | 10 | 48 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 169 | 10 | 49 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 170 | 10 | 50 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 171 | 10 | 51 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 172 | 10 | 52 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 173 | 10 | 53 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 174 | 10 | 54 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 175 | 10 | 55 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 176 | 10 | 56 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 177 | 10 | 57 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 178 | 10 | 58 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 179 | 10 | 59 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
+| 180 | 10 | 60 | `OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOIIIIIIIIIIIIIIIIIIIIIIIIIIII` |
 
 ### `eq-wide` × `single-literal`
 
