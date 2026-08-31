@@ -109,6 +109,20 @@ public static class PreferenceSweep {
     readonly record struct Span(int From, int To) {
         public static Span Point(int column) => new(column, column + 1);
 
+        /// <summary>
+        ///     The arrow gap of a lambda, as a break point that can be taken on either side of the
+        ///     <c>=&gt;</c>.
+        /// </summary>
+        /// <param name="body">The column the lambda's body starts at, which is three past the arrow.</param>
+        /// <remarks>
+        ///     ⚠ A span rather than a point because `wrap_before_arrow_with_expressions` decides which
+        ///     side of the arrow the continuation resumes on, and the sweep is run under both. It is the
+        ///     same break point either way — the arrow gap — and classifying one value of the key as the
+        ///     outer break and the other as "somewhere this probe does not name" would report a key that
+        ///     moves the boundary when what it moves is the rendering.
+        /// </remarks>
+        public static Span Arrow(int body) => new(body - 3, body + 1);
+
         public bool Contains(int column) => column >= From && column < To;
     }
 
@@ -477,6 +491,75 @@ public static class PreferenceSweep {
             static bodies => Body(bodies),
             2
         ),
+        // ⚠ Three more `=` shapes, at the head widths of the three arrow shapes whose *body* is not an
+        // argument list. Without them `arrow-binary` cannot be read: it never breaks its operand chain
+        // anywhere in the grid, and `binary-chain` under an `=` always breaks it — but those two sit at
+        // head widths 24 and 12, and the head width is the thing this artefact now knows moves a floor
+        // by fifty columns. Subtracting the two would be subtracting the head width and calling the
+        // remainder the arrow. These make the subtraction honest.
+        new(
+            "eq-binary-wide",
+            "SK-DIV-0005",
+            "=",
+            "the operand chain, broken at a `+`, behind a 24-column head",
+            "var alphaBetaGammaDel = <name> + <operands>;",
+            static (name, inner) => {
+                const string head = "var alphaBetaGammaDel = ";
+                var flat = head + name + " " + inner + ";";
+                var open = head.Length + name.Length;
+                return new Layout(
+                    flat,
+                    Span.Point(head.Length),
+                    new Span(open + 1, open + 1 + inner.Length),
+                    null,
+                    open
+                );
+            },
+            static bodies => Body(bodies),
+            2
+        ),
+        new(
+            "eq-array-wide",
+            "SK-DIV-0005",
+            "=",
+            "the right-hand side's array initialiser, behind a 26-column head",
+            "var alphaBetaGammaDelta = new <name>[] { <elements> };",
+            static (name, inner) => {
+                const string head = "var alphaBetaGammaDelta = new ";
+                var flat = head + name + "[] " + inner + ";";
+                var open = head.Length + name.Length + 3;
+                return new Layout(
+                    flat,
+                    Span.Point("var alphaBetaGammaDelta = ".Length),
+                    new Span(open + 2, open + inner.Length - 1),
+                    null,
+                    open + 1
+                );
+            },
+            static bodies => Body(bodies),
+            2
+        ),
+        new(
+            "eq-object-wide",
+            "SK-DIV-0005",
+            "=",
+            "the right-hand side's object initialiser, behind a 27-column head",
+            "var alphaBetaGammaDeltaE = new <name> { <members> };",
+            static (name, inner) => {
+                const string head = "var alphaBetaGammaDeltaE = new ";
+                var flat = head + name + " " + inner + ";";
+                var open = head.Length + name.Length + 1;
+                return new Layout(
+                    flat,
+                    Span.Point("var alphaBetaGammaDeltaE = ".Length),
+                    new Span(open + 2, open + inner.Length - 1),
+                    null,
+                    open + 1
+                );
+            },
+            static bodies => Body(bodies),
+            2
+        ),
         new(
             "eq-array",
             "SK-DIV-0005",
@@ -519,7 +602,7 @@ public static class PreferenceSweep {
                 // oracle never once prefers it is evidence, and an unnamed outcome is not.
                 return new Layout(
                     flat,
-                    Span.Point(head.Length),
+                    Span.Arrow(head.Length),
                     new Span(open + 1, open + inner.Length),
                     Span.Point("Action value = ".Length),
                     open + 1
@@ -553,7 +636,7 @@ public static class PreferenceSweep {
                 // after it, so the head is one column narrower than where the continuation resumes.
                 return new Layout(
                     flat,
-                    Span.Point("Func<int[]> value = () => ".Length),
+                    Span.Arrow("Func<int[]> value = () => ".Length),
                     new Span(open + 2, open + inner.Length - 1),
                     Span.Point("Func<int[]> value = ".Length),
                     open + 1
@@ -575,7 +658,7 @@ public static class PreferenceSweep {
                 var open = head.Length + name.Length + 1;
                 return new Layout(
                     flat,
-                    Span.Point("Func<object> value = () => ".Length),
+                    Span.Arrow("Func<object> value = () => ".Length),
                     new Span(open + 2, open + inner.Length - 1),
                     Span.Point("Func<object> value = ".Length),
                     open + 1
@@ -600,7 +683,7 @@ public static class PreferenceSweep {
                 // begins *at* an operator and the span is every column the chain occupies.
                 return new Layout(
                     flat,
-                    Span.Point(head.Length),
+                    Span.Arrow(head.Length),
                     new Span(open + 1, open + 1 + inner.Length),
                     Span.Point("Func<int> value = ".Length),
                     open
@@ -627,7 +710,7 @@ public static class PreferenceSweep {
                 // falls inside it and is caught first, which is what the classifier's order is for.
                 return new Layout(
                     flat,
-                    Span.Point("Action value = () => ".Length),
+                    Span.Arrow("Action value = () => ".Length),
                     new Span(open + 1, open + inner.Length),
                     new Span("Action value = ".Length, open + 1),
                     open + 1
@@ -649,7 +732,7 @@ public static class PreferenceSweep {
                 var open = head.Length + name.Length;
                 return new Layout(
                     flat,
-                    Span.Point(head.Length),
+                    Span.Arrow(head.Length),
                     new Span(open + 1, open + inner.Length),
                     new Span("Action<int> value = ".Length, head.Length),
                     open + 1
@@ -675,7 +758,7 @@ public static class PreferenceSweep {
                 // the arrow and covers both, rather than leaving a wrapped parameter list unnamed.
                 return new Layout(
                     flat,
-                    Span.Point(head.Length),
+                    Span.Arrow(head.Length),
                     new Span(open + 1, open + inner.Length),
                     new Span("Action<int, int> value = ".Length, head.Length),
                     open + 1
@@ -1245,12 +1328,16 @@ public static class PreferenceSweep {
         var text = (construct.Id, filler.TokenLengths.Length) switch {
             ("eq-array", 0) => BracedLiteral(inner),
             ("eq-array", _) => Braced(inner, filler.TokenLengths),
+            ("eq-array-wide", 0) => BracedLiteral(inner),
+            ("eq-array-wide", _) => Braced(inner, filler.TokenLengths),
             ("arrow-array", 0) => BracedLiteral(inner),
             ("arrow-array", _) => Braced(inner, filler.TokenLengths),
             ("array-initializer", 0) => BracedLiteral(inner),
             ("array-initializer", _) => Braced(inner, filler.TokenLengths),
             ("object-initializer", 0) => MemberLiteral(inner),
             ("object-initializer", _) => Members(inner, filler.TokenLengths),
+            ("eq-object-wide", 0) => MemberLiteral(inner),
+            ("eq-object-wide", _) => Members(inner, filler.TokenLengths),
             ("arrow-object", 0) => MemberLiteral(inner),
             ("arrow-object", _) => Members(inner, filler.TokenLengths),
             ("collection-expression", 0) => BracketedLiteral(inner),
@@ -1262,6 +1349,8 @@ public static class PreferenceSweep {
             // one. Returning nothing here drops the whole row, which is what the grid should say.
             ("binary-chain", 0) => null,
             ("binary-chain", _) => Operands(inner, filler.TokenLengths),
+            ("eq-binary-wide", 0) => null,
+            ("eq-binary-wide", _) => Operands(inner, filler.TokenLengths),
             ("arrow-binary", 0) => null,
             ("arrow-binary", _) => Operands(inner, filler.TokenLengths),
             ("ternary", 0) => null,
