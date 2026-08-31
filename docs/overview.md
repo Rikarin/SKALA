@@ -77,9 +77,9 @@ and this one is the parser's.** Taken from `skala <command> --help` for all sixt
 | `-j, --jobs <n>` | ✅ | | | | | ⚠ **`format` only.** Default `min(cores, 10)` |
 | `--no-cache` | ✅ | ✅ | ✅ | | | ⚠ **Two different caches.** On `format` it is the `.editorconfig` memo; on `check`/`verify` it is the incremental analysis cache |
 | `-d, --define` | ✅ | ✅ | ✅ | ✅ | | Preprocessor symbols, repeatable and comma-separated |
-| `--load` | ✅ | ✅ | ✅ | ✅ | | ⚠ Three different defaults: `none` on `format`, `binlog` on `check`, `loose` on `verify` and `fix` |
+| `--load` | ✅ | ✅ | ✅ | ✅ | | `none` on `format`, `binlog` on `check`, `auto` on `verify` and `fix` |
 | `--binlog` | | ✅ | | ✅ | | |
-| `--project` | | ✅ | | ✅ | | For `--load=workspace` |
+| `--project` | | ✅ | ✅ | ✅ | | Selects the workspace target when discovery is ambiguous |
 | `--require-fresh-binlog` | | ✅ | | | | CI sets it |
 | `--gate <name>` | | ✅ | | | | Default `local` |
 | `--format` | | ✅ | ✅ | | ✅ | `check`/`report`: seven renderers. `verify`: three |
@@ -98,7 +98,7 @@ and this one is the parser's.** Taken from `skala <command> --help` for all sixt
 | `--duplication` | | ✅ | | | | ⚠ Off by default: a whole-repository pass |
 | `--fix` | | | ✅ | | | |
 | `--safe` | | | | ✅ | | The default and the only unqualified mode |
-| `--include <ids>` | | | | ✅ | | ⚠ Required without `--safe`; `IDE1006` also requires `--load workspace` |
+| `--include <ids>` | | | | ✅ | | ⚠ Required without `--safe`; `IDE1006` automatically selects workspace mode |
 | `--dry-run` | | | | ✅ | | |
 | `-n, --limit` | | | | | | `trend` only |
 

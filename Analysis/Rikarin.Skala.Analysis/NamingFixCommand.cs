@@ -23,8 +23,8 @@ public sealed record NamingFixOutcome(
 /// <remarks>
 ///     A naming fix is a rename, not a text replacement: references in other documents and projects
 ///     move with the declaration. It is consequently workspace-only and is reached only through the
-///     explicit unsafe form <c>skala fix --include IDE1006 --load workspace</c>. It never participates
-///     in <c>--safe</c>, formatting, or arrangement.
+///     explicit unsafe form <c>skala fix --include IDE1006</c>, which infers workspace mode. It never
+///     participates in <c>--safe</c>, formatting, or arrangement.
 /// </remarks>
 public static class NamingFixCommand {
     const int MaximumRenames = 10_000;
@@ -39,7 +39,7 @@ public static class NamingFixCommand {
             return new NamingFixOutcome(
                 0,
                 [],
-                "IDE1006 fixes require --load workspace so Roslyn can rename references across the solution"
+                "IDE1006 fixes require a workspace so Roslyn can rename references across the solution"
             );
         }
 
@@ -53,7 +53,7 @@ public static class NamingFixCommand {
             );
         }
 
-        var target = WorkspaceLoader.Resolve(
+        var resolution = WorkspaceLoader.Resolve(
             new LoadRequest {
                 RepositoryRoot = repositoryRoot,
                 Mode = LoadMode.Workspace,
@@ -61,6 +61,11 @@ public static class NamingFixCommand {
                 Paths = request.Paths
             }
         );
+        if (resolution.Error is { } resolutionError) {
+            return new NamingFixOutcome(0, [], resolutionError);
+        }
+
+        var target = resolution.Target;
         if (target is null) {
             return new NamingFixOutcome(0, [], "no .slnx, .sln or .csproj was found for the IDE1006 fix");
         }
@@ -206,7 +211,9 @@ public static class NamingFixCommand {
             var beforeText = before.GetTextAsync(cancellation).GetAwaiter().GetResult();
             var guard = FixCommand.TagGuard(path, beforeText.ToString());
             if (!guard.IsEmpty
-                && after.GetTextChangesAsync(before, cancellation).GetAwaiter().GetResult()
+                && after.GetTextChangesAsync(before, cancellation)
+                    .GetAwaiter()
+                    .GetResult()
                     .Any(change => guard.Touches(change.Span))) {
                 return new NamingFixOutcome(
                     0,
@@ -242,22 +249,23 @@ public static class NamingFixCommand {
             }
 
             var diagnostics = compilation.WithAnalyzers(
-                    analyzers,
-                    new CompilationWithAnalyzersOptions(
-                        project.AnalyzerOptions,
-                        onAnalyzerException: null,
-                        concurrentAnalysis: true,
-                        logAnalyzerExecutionTime: false,
-                        reportSuppressedDiagnostics: false
-                    )
+                analyzers,
+                new CompilationWithAnalyzersOptions(
+                    project.AnalyzerOptions,
+                    onAnalyzerException: null,
+                    concurrentAnalysis: true,
+                    logAnalyzerExecutionTime: false,
+                    reportSuppressedDiagnostics: false
                 )
+            )
                 .GetAnalyzerDiagnosticsAsync(cancellation)
                 .GetAwaiter()
                 .GetResult();
 
             var next = diagnostics.Where(static diagnostic => diagnostic.Id == RoslynCodeStyle.NamingDiagnosticId)
                 .Where(diagnostic => diagnostic.Location.SourceTree?.FilePath is { } path
-                                     && allowed.Contains(Path.GetFullPath(path)))
+                    && allowed.Contains(Path.GetFullPath(path))
+                )
                 .OrderBy(static diagnostic => diagnostic.Location.SourceTree!.FilePath, StringComparer.Ordinal)
                 .ThenBy(static diagnostic => diagnostic.Location.SourceSpan.Start)
                 .FirstOrDefault();

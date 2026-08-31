@@ -183,7 +183,6 @@ public sealed class WorkspaceLoadingTests {
             new FixRequest {
                 RepositoryRoot = scratch.Root,
                 Paths = [scratch.Root],
-                Mode = LoadMode.Workspace,
                 ProjectPath = project,
                 SafeOnly = false,
                 Include = [Hosting.RoslynCodeStyle.NamingDiagnosticId]
@@ -198,6 +197,58 @@ public sealed class WorkspaceLoadingTests {
         Assert.Contains("class Bad_name", File.ReadAllText(declaration), StringComparison.Ordinal);
         Assert.Contains("Bad_name Value", File.ReadAllText(reference), StringComparison.Ordinal);
         Assert.DoesNotContain("bad_name", File.ReadAllText(reference), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Verify_AutoUsesTheOnlyWorkspaceTarget() {
+        using var scratch = new Scratch();
+        scratch.Write(".editorconfig", NamingConfig);
+        scratch.Write("bad_name.cs", "namespace Scratch;\n\npublic sealed class bad_name;\n");
+        scratch.Write("Scratch.csproj", Project);
+
+        var result = VerifyCommand.Run(
+            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.GateFailed, result.ExitCode);
+        Assert.Contains("IDE1006", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Verify_AutoRefusesAmbiguousWorkspaceTargets() {
+        using var scratch = new Scratch();
+        scratch.Write("Example.cs", "namespace Scratch;\n\npublic sealed class Example;\n");
+        scratch.Write("First.csproj", Project);
+        scratch.Write("Second.csproj", Project);
+
+        var result = VerifyCommand.Run(
+            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [scratch.Root], NoCache = true },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.LoadFailure, result.ExitCode);
+        Assert.Contains("multiple '*.csproj' workspace targets", result.Output, StringComparison.Ordinal);
+        Assert.Contains("--project", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Verify_ProjectSelectsOneOfSeveralWorkspaceTargets() {
+        using var scratch = new Scratch();
+        scratch.Write(".editorconfig", NamingConfig);
+        scratch.Write("bad_name.cs", "namespace Scratch;\n\npublic sealed class bad_name;\n");
+        var selected = scratch.Write("First.csproj", Project);
+        scratch.Write("Second.csproj", Project);
+
+        var result = VerifyCommand.Run(
+            new VerifyRequest {
+                RepositoryRoot = scratch.Root, Paths = [scratch.Root], ProjectPath = selected, NoCache = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.GateFailed, result.ExitCode);
+        Assert.Contains("IDE1006", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]

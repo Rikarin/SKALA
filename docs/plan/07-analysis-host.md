@@ -12,6 +12,12 @@ skala check --load=workspace            MSBuildLocator + MSBuildWorkspace
 skala check --load=loose                parse files, reference the shared framework
 ```
 
+`auto` is a selector used by `verify` and `fix`, not a fourth produced load mode. `verify` uses the
+single highest-priority workspace target (`.slnx`, then `.sln`, then `.csproj`) when discovery is
+unambiguous and otherwise uses loose mode. Multiple candidates fail with an instruction to pass
+`--project`; a target that is found and then fails to load never falls through to a green loose run.
+`fix --include IDE1006` infers workspace directly, while ordinary safe fixes keep the loose fast path.
+
 ### `binlog` — the default (ADR-007)
 
 ```

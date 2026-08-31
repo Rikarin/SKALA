@@ -115,14 +115,14 @@ sealed class SkalaTools(string repositoryRoot) {
     [Description(
         "Is this acceptable? Runs format --check and the analyzers in one pass and returns the "
         + "three-bucket report: formatting first, safe fixes second, decisions last. Exit 0 means "
-        + "nothing to do. Works with no project and no build."
+        + "nothing to do. Uses an unambiguous workspace automatically, or loose mode with no project."
     )]
     string Verify(
         [Description("Files or directories. Empty means the whole repository.")] string[]? paths = null,
         [Description("Apply the safe fixes first, then report what is left.")] bool fix = false
     ) {
         var result = VerifyCommand.Run(
-            new VerifyRequest { Paths = paths ?? [], RepositoryRoot = repositoryRoot, Mode = LoadMode.Loose, Fix = fix }
+            new VerifyRequest { Paths = paths ?? [], RepositoryRoot = repositoryRoot, Fix = fix }
         );
 
         return Bound(result.Output.Length == 0 ? "OK  nothing to do.\n" : result.Output);
@@ -209,7 +209,6 @@ sealed class SkalaTools(string repositoryRoot) {
             new FixRequest {
                 Paths = paths ?? [],
                 RepositoryRoot = repositoryRoot,
-                Mode = LoadMode.Loose,
                 SafeOnly = safeOnly,
                 Include = rules ?? [],
                 DryRun = dryRun

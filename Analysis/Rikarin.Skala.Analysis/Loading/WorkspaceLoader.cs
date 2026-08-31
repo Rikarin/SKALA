@@ -21,7 +21,23 @@ namespace Rikarin.Skala.Analysis.Loading;
 public static class WorkspaceLoader {
     public static LoadedProject Load(LoadRequest request, CancellationToken cancellation) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
-        var target = Resolve(request);
+        var resolution = Resolve(request);
+        if (resolution.Error is { } error) {
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.NothingToLoad,
+                    SkalaSeverity.Error,
+                    error,
+                    request.ProjectPath ?? request.RepositoryRoot
+                )
+            );
+
+            return new LoadedProject {
+                Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true
+            };
+        }
+
+        var target = resolution.Target;
         if (target is null) {
             diagnostics.Add(
                 new SkalaDiagnostic(
@@ -224,9 +240,12 @@ public static class WorkspaceLoader {
         };
     }
 
-    internal static string? Resolve(LoadRequest request) {
+    internal static WorkspaceTargetResolution Resolve(LoadRequest request) {
         if (request.ProjectPath is { Length: > 0 } named) {
-            return File.Exists(named) ? Path.GetFullPath(named) : null;
+            var path = Path.GetFullPath(named);
+            return File.Exists(path)
+                ? new WorkspaceTargetResolution(path, null)
+                : new WorkspaceTargetResolution(null, $"workspace target '{path}' does not exist");
         }
 
         // ⚠ .slnx before .sln: this repository and Vixen are both on the XML solution format, and
@@ -239,11 +258,23 @@ public static class WorkspaceLoader {
                 )
                 .ToArray();
 
-            if (matches.Length > 0) {
-                return matches[0];
+            if (matches.Length == 1) {
+                return new WorkspaceTargetResolution(matches[0], null);
+            }
+
+            if (matches.Length > 1) {
+                return new WorkspaceTargetResolution(
+                    null,
+                    $"multiple '{pattern}' workspace targets were found; choose one with --project: "
+                    + string.Join(", ", matches.Take(3).Select(Path.GetFileName))
+                );
             }
         }
 
-        return null;
+        return new WorkspaceTargetResolution(null, null);
     }
+}
+
+internal sealed record WorkspaceTargetResolution(string? Target, string? Error) {
+    public bool ShouldAttemptWorkspace => Target is not null || Error is not null;
 }

@@ -164,7 +164,7 @@ public sealed class AnalysisTests {
     }
 
     [Fact]
-    public void Fix_IDE1006RequiresAnExplicitWorkspaceLoad() {
+    public void Fix_IDE1006RejectsAnExplicitLooseLoad() {
         using var scratch = new Scratch();
         scratch.Write("bad_name.cs", "public sealed class bad_name;\n");
 
@@ -180,7 +180,7 @@ public sealed class AnalysisTests {
         );
 
         Assert.Equal(ExitCodes.ConfigurationError, result.ExitCode);
-        Assert.Contains("--load workspace", result.Output, StringComparison.Ordinal);
+        Assert.Contains("omit --load", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]

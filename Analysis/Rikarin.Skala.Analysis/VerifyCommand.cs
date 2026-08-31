@@ -1,6 +1,7 @@
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Reporting;
 
 namespace Rikarin.Skala.Analysis;
@@ -11,10 +12,14 @@ public sealed record VerifyRequest {
 
     public string? RepositoryRoot { get; init; }
 
-    /// <summary>⚠ <c>loose</c> by default: verify must work with no project, no build and no network.</summary>
-    public LoadMode Mode { get; init; } = LoadMode.Loose;
+    /// <summary>
+    ///     Null means auto: use one unambiguous workspace target when present, otherwise loose.
+    /// </summary>
+    public LoadMode? Mode { get; init; }
 
     public string? BinlogPath { get; init; }
+
+    public string? ProjectPath { get; init; }
 
     public ReportFormat Format { get; init; } = ReportFormat.Agent;
 
@@ -64,12 +69,14 @@ public sealed record VerifyRequest {
 /// </remarks>
 public static class VerifyCommand {
     public static CommandResult Run(VerifyRequest request, CancellationToken cancellation = default) {
+        request = request with { Mode = ResolveMode(request) };
         if (request.Fix) {
             var fixResult = FixCommand.Run(
                 new FixRequest {
                     Paths = request.Paths,
                     RepositoryRoot = request.RepositoryRoot,
                     Mode = request.Mode,
+                    ProjectPath = request.ProjectPath,
                     SafeOnly = true,
                     Define = request.Define
                 },
@@ -90,8 +97,10 @@ public static class VerifyCommand {
             new CheckRequest {
                 Paths = request.Paths,
                 RepositoryRoot = request.RepositoryRoot,
-                Mode = request.Mode,
+                Mode = request.Mode ?? LoadMode.Loose,
                 BinlogPath = request.BinlogPath,
+                ProjectPath = request.ProjectPath,
+                AllowLoadFallback = request.Mode != LoadMode.Workspace,
                 Gate = "local",
                 Format = request.Format,
                 IncludeFormatting = true,
@@ -134,5 +143,27 @@ public static class VerifyCommand {
         var clean = report.New.All(static finding => finding.Severity == Core.Diagnostics.SkalaSeverity.Hidden);
 
         return new CommandResult(clean ? ExitCodes.Ok : ExitCodes.GateFailed, result.Output);
+    }
+
+    static LoadMode ResolveMode(VerifyRequest request) {
+        if (request.Mode is { } explicitMode) {
+            return explicitMode;
+        }
+
+        var root = Path.GetFullPath(
+            request.RepositoryRoot
+            ?? FormatCommand.FindRepositoryRoot(request.Paths.Count > 0 ? request.Paths[0] : ".")
+            ?? Directory.GetCurrentDirectory()
+        );
+        var target = WorkspaceLoader.Resolve(
+            new LoadRequest {
+                RepositoryRoot = root,
+                Mode = LoadMode.Workspace,
+                ProjectPath = request.ProjectPath,
+                Paths = request.Paths
+            }
+        );
+
+        return target.ShouldAttemptWorkspace ? LoadMode.Workspace : LoadMode.Loose;
     }
 }

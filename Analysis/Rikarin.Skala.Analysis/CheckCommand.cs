@@ -27,6 +27,9 @@ public sealed record CheckRequest {
 
     public bool RequireFreshBinlog { get; init; }
 
+    /// <summary>Whether an unavailable requested mode may fall through to a less precise one.</summary>
+    public bool AllowLoadFallback { get; init; } = true;
+
     public string Gate { get; init; } = "local";
 
     public ReportFormat Format { get; init; } = ReportFormat.Terminal;
@@ -133,6 +136,7 @@ public static class CheckCommand {
                 BinlogPath = request.BinlogPath,
                 ProjectPath = request.ProjectPath,
                 RequireFreshBinlog = request.RequireFreshBinlog,
+                AllowFallback = request.AllowLoadFallback,
                 Paths = request.Paths,
                 Define = request.Define
             },

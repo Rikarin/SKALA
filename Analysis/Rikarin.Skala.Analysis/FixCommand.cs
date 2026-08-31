@@ -17,7 +17,8 @@ public sealed record FixRequest {
 
     public string? RepositoryRoot { get; init; }
 
-    public LoadMode Mode { get; init; } = LoadMode.Loose;
+    /// <summary>Null means auto: naming uses workspace; other fixes retain the loose fast path.</summary>
+    public LoadMode? Mode { get; init; }
 
     public string? BinlogPath { get; init; }
 
@@ -86,7 +87,7 @@ public static class FixCommand {
             return new CommandResult(
                 ExitCodes.ConfigurationError,
                 "skala fix: IDE1006 is a solution-wide rename and is never part of --safe; "
-                + "use `--include IDE1006 --load workspace` explicitly.\n"
+                + "use `--include IDE1006` explicitly.\n"
             );
         }
 
@@ -94,21 +95,25 @@ public static class FixCommand {
             Hosting.RoslynCodeStyle.NamingDiagnosticId,
             StringComparer.OrdinalIgnoreCase
         );
-        if (namingRequested && request.Mode != LoadMode.Workspace) {
+        if (namingRequested && request.Mode is not null and not LoadMode.Workspace) {
+            var selected = request.Mode.Value.ToString().ToLowerInvariant();
             return new CommandResult(
                 ExitCodes.ConfigurationError,
-                "skala fix: IDE1006 fixes require --load workspace so Roslyn can rename references "
-                + "across the solution.\n"
+                $"skala fix: IDE1006 cannot use the explicitly selected --load={selected}; "
+                + "omit --load or use --load workspace.\n"
             );
         }
 
-        var (_, report) = CheckCommand.Run(
+        var mode = request.Mode ?? (namingRequested ? LoadMode.Workspace : LoadMode.Loose);
+        request = request with { Mode = mode };
+        var (checkResult, report) = CheckCommand.Run(
             new CheckRequest {
                 Paths = request.Paths,
                 RepositoryRoot = root,
-                Mode = request.Mode,
+                Mode = mode,
                 BinlogPath = request.BinlogPath,
                 ProjectPath = request.ProjectPath,
+                AllowLoadFallback = mode == LoadMode.Binlog,
                 IncludeFormatting = false,
                 NoCache = true,
                 Define = request.Define,
@@ -116,6 +121,9 @@ public static class FixCommand {
             },
             cancellation
         );
+        if (checkResult.ExitCode == ExitCodes.LoadFailure) {
+            return checkResult;
+        }
 
         var naming = new NamingFixOutcome(0, []);
         if (namingRequested) {
@@ -139,9 +147,10 @@ public static class FixCommand {
                     new CheckRequest {
                         Paths = request.Paths,
                         RepositoryRoot = root,
-                        Mode = request.Mode,
+                        Mode = mode,
                         BinlogPath = request.BinlogPath,
                         ProjectPath = request.ProjectPath,
+                        AllowLoadFallback = false,
                         IncludeFormatting = false,
                         NoCache = true,
                         Define = request.Define,

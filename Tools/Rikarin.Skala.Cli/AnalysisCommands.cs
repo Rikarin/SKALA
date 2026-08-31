@@ -179,9 +179,9 @@ public static partial class SkalaCommandLine {
     ///     <c>skala verify</c> — docs/plan/10 § "`skala verify` — the one command".
     /// </summary>
     /// <remarks>
-    ///     ⚠ Its defaults are the contract. <c>--load=loose</c>, agent output, formatting included: it
-    ///     has to work with no project, no build and no network, because the agent that runs it may have
-    ///     written a file into a scratch directory thirty seconds ago.
+    ///     ⚠ Its defaults are the contract. Auto workspace discovery, agent output, formatting included:
+    ///     it uses real semantics when one target is unambiguous and still works with no project, build or
+    ///     network when the agent just wrote a file into a scratch directory.
     /// </remarks>
     static Command CreateVerifyCommand() {
         var paths = new Argument<string[]>("paths") {
@@ -194,8 +194,12 @@ public static partial class SkalaCommandLine {
         };
 
         var load = new Option<string>("--load") {
-            Description = "binlog | workspace | loose. ⚠ Default loose: verify must work with no project.",
-            DefaultValueFactory = static _ => "loose"
+            Description = "auto | binlog | workspace | loose. Default auto: one workspace target, else loose.",
+            DefaultValueFactory = static _ => "auto"
+        };
+
+        var project = new Option<string?>("--project") {
+            Description = "The .slnx/.sln/.csproj for auto or --load=workspace."
         };
 
         var define = new Option<string[]>("--define", "-d") {
@@ -223,15 +227,26 @@ public static partial class SkalaCommandLine {
         );
 
         command.Arguments.Add(paths);
-        foreach (var option in new Option[] { fix, format, load, define, noCache, since, baseline }) {
+        foreach (var option in new Option[] { fix, format, load, project, define, noCache, since, baseline }) {
             command.Options.Add(option);
         }
 
         command.SetAction(parse => {
-                var mode = LoadModes.TryParse(parse.GetValue(load), out var parsed) ? parsed : LoadMode.Loose;
+                var loadText = parse.GetValue(load);
+                LoadMode? mode = null;
+                if (!string.Equals(loadText, "auto", StringComparison.OrdinalIgnoreCase)) {
+                    if (!LoadModes.TryParse(loadText, out var parsed)) {
+                        Console.Error.WriteLine("skala verify: --load must be auto, binlog, workspace or loose.");
+                        return ExitCodes.ConfigurationError;
+                    }
+
+                    mode = parsed;
+                }
+
                 var request = new VerifyRequest {
                     Paths = parse.GetValue(paths) ?? [],
                     Mode = mode,
+                    ProjectPath = parse.GetValue(project),
                     Fix = parse.GetValue(fix),
                     Format = ParseFormat(parse.GetValue(format), noColor: false),
                     NoCache = parse.GetValue(noCache),
@@ -264,20 +279,23 @@ public static partial class SkalaCommandLine {
         };
 
         var include = new Option<string[]>("--include") {
-            Description = "⚠ Required without --safe: unsafe rules to apply. IDE1006 also requires --load workspace.",
+            Description = "⚠ Required without --safe: unsafe rules to apply. IDE1006 infers workspace mode.",
             Arity = ArgumentArity.ZeroOrMore
         };
 
         var dryRun = new Option<bool>("--dry-run") { Description = "Say what would be applied and write nothing." };
         var load = new Option<string>("--load") {
-            Description = "binlog | workspace | loose.", DefaultValueFactory = static _ => "loose"
+            Description = "auto | binlog | workspace | loose. Default auto; IDE1006 infers workspace.",
+            DefaultValueFactory = static _ => "auto"
         };
 
         var binlog = new Option<string?>("--binlog") {
             Description = "The binary log to read, instead of the conventional locations."
         };
 
-        var project = new Option<string?>("--project") { Description = "The .slnx/.sln/.csproj for --load=workspace." };
+        var project = new Option<string?>("--project") {
+            Description = "The workspace target for IDE1006 or --load=workspace."
+        };
 
         var define = new Option<string[]>("--define", "-d") {
             Description = "Preprocessor symbols.", Arity = ArgumentArity.ZeroOrMore
@@ -290,7 +308,17 @@ public static partial class SkalaCommandLine {
         }
 
         command.SetAction(parse => {
-                var mode = LoadModes.TryParse(parse.GetValue(load), out var parsed) ? parsed : LoadMode.Loose;
+                var loadText = parse.GetValue(load);
+                LoadMode? mode = null;
+                if (!string.Equals(loadText, "auto", StringComparison.OrdinalIgnoreCase)) {
+                    if (!LoadModes.TryParse(loadText, out var parsed)) {
+                        Console.Error.WriteLine("skala fix: --load must be auto, binlog, workspace or loose.");
+                        return ExitCodes.ConfigurationError;
+                    }
+
+                    mode = parsed;
+                }
+
                 var included = parse.GetValue(include) ?? [];
                 var request = new FixRequest {
                     Paths = parse.GetValue(paths) ?? [],
