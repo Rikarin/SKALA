@@ -243,7 +243,18 @@ public static class PreferenceSweep {
         IReadOnlyList<Row> Grid,
         IReadOnlyList<Flip> Flips,
         IReadOnlyList<Unnamed> Unnamed,
-        IReadOnlyList<Exemplar>? Exemplars = null);
+        IReadOnlyList<Exemplar>? Exemplars = null,
+
+        /// <summary>
+        ///     Keys appended to the repository's <c>.editorconfig</c> for this run, or nothing when it
+        ///     was measured under the export unmodified.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ Recorded rather than remembered. A grid measured under a non-default wrap key and a
+        ///     grid measured under the export are the same file format and different measurements, and
+        ///     the only thing that can tell a later reader which one they have is the artefact itself.
+        /// </remarks>
+        IReadOnlyList<string>? Keys = null);
 
     /// <summary>
     ///     A cell the probe could not name, kept verbatim.
@@ -390,6 +401,82 @@ public static class PreferenceSweep {
             static bodies => Body(bodies),
             2
         ),
+
+        // ⚠ The head-width control for the arrow family, and it exists to kill the cheapest
+        // explanation of SK-DIV-0050's floor before anything more elaborate is proposed. `eq` reaches
+        // its inner construct at column 12 and `arrow` reaches its at 21, and if a floor of 58 were
+        // really a fact about how far into the line the inner construct starts, then an `=` with a
+        // 21-column head would show it too. The variable name is fixed at fourteen characters rather
+        // than swept, so this differs from `eq` in exactly one number.
+        new(
+            "eq-wide",
+            "SK-DIV-0005",
+            "=",
+            "the right-hand side's argument list, behind a head as wide as the arrow's",
+            "var alphaBetaGamma = <name>(<args>);",
+            static (name, inner) => {
+                const string head = "var alphaBetaGamma = ";
+                var flat = head + name + inner + ";";
+                var open = head.Length + name.Length;
+                return new Layout(
+                    flat,
+                    Span.Point(head.Length),
+                    new Span(open + 1, open + inner.Length),
+                    null,
+                    open + 1
+                );
+            },
+            static bodies => Body(bodies),
+            2
+        ),
+
+        // ⚠ Two more of the same, at the two remaining head widths the arrow family has: `eq` reaches
+        // its inner construct at 12, `eq-wide` at 21, `eq-wider` at 29 and `eq-widest` at 50, which are
+        // the head widths of `arrow`, `arrow-param-one` and `arrow-param-typed`. Paired that way the
+        // two families can be subtracted from each other at equal head width, which is the only way to
+        // ask what the arrow costs that does not also change how far in the inner construct starts.
+        new(
+            "eq-wider",
+            "SK-DIV-0005",
+            "=",
+            "the right-hand side's argument list, behind a 29-column head",
+            "var alphaBetaGammaDeltaEps = <name>(<args>);",
+            static (name, inner) => {
+                const string head = "var alphaBetaGammaDeltaEps = ";
+                var flat = head + name + inner + ";";
+                var open = head.Length + name.Length;
+                return new Layout(
+                    flat,
+                    Span.Point(head.Length),
+                    new Span(open + 1, open + inner.Length),
+                    null,
+                    open + 1
+                );
+            },
+            static bodies => Body(bodies),
+            2
+        ),
+        new(
+            "eq-widest",
+            "SK-DIV-0005",
+            "=",
+            "the right-hand side's argument list, behind a 50-column head",
+            "var alphaBetaGammaDeltaEpsilonZetaEtaThetaIotaK = <name>(<args>);",
+            static (name, inner) => {
+                const string head = "var alphaBetaGammaDeltaEpsilonZetaEtaThetaIotaK = ";
+                var flat = head + name + inner + ";";
+                var open = head.Length + name.Length;
+                return new Layout(
+                    flat,
+                    Span.Point(head.Length),
+                    new Span(open + 1, open + inner.Length),
+                    null,
+                    open + 1
+                );
+            },
+            static bodies => Body(bodies),
+            2
+        ),
         new(
             "eq-array",
             "SK-DIV-0005",
@@ -441,6 +528,162 @@ public static class PreferenceSweep {
             static bodies => Body(bodies),
             2,
             "the `=` above the lambda"
+        ),
+
+        // ⚠ Everything down to `type-parameters` is the arrow family, and it exists because `arrow` is
+        // the one shape whose floor version 2 of this artefact could not reduce to a constant per
+        // *content*: it fitted 58 behind several arguments and 82 behind a lone string literal, where
+        // the same argument list behind an `=` fits 0 and 29. Four of these hold the arrow fixed and
+        // change what the body is, so that "is 58 a fact about the arrow or about the body?" is asked
+        // rather than assumed; two hold the body fixed and change the parameter list, which is the
+        // only thing this family has that sits to the left of the outer break and could move a floor
+        // the other thirteen shapes say nothing to the left can move.
+        new(
+            "arrow-array",
+            "SK-DIV-0050",
+            "=>",
+            "the lambda body's array initialiser",
+            "Func<int[]> value = () => new <name>[] { <elements> };",
+            static (name, inner) => {
+                const string head = "Func<int[]> value = () => new ";
+                var flat = head + name + "[] " + inner + ";";
+                var open = head.Length + name.Length + 3;
+
+                // ⚠ `{ a` — as in `eq-array`, the head ends at the brace and the break eats the space
+                // after it, so the head is one column narrower than where the continuation resumes.
+                return new Layout(
+                    flat,
+                    Span.Point("Func<int[]> value = () => ".Length),
+                    new Span(open + 2, open + inner.Length - 1),
+                    Span.Point("Func<int[]> value = ".Length),
+                    open + 1
+                );
+            },
+            static bodies => Body(bodies),
+            2,
+            "the `=` above the lambda"
+        ),
+        new(
+            "arrow-object",
+            "SK-DIV-0050",
+            "=>",
+            "the lambda body's object initialiser",
+            "Func<object> value = () => new <name> { <members> };",
+            static (name, inner) => {
+                const string head = "Func<object> value = () => new ";
+                var flat = head + name + " " + inner + ";";
+                var open = head.Length + name.Length + 1;
+                return new Layout(
+                    flat,
+                    Span.Point("Func<object> value = () => ".Length),
+                    new Span(open + 2, open + inner.Length - 1),
+                    Span.Point("Func<object> value = ".Length),
+                    open + 1
+                );
+            },
+            static bodies => Body(bodies),
+            2,
+            "the `=` above the lambda"
+        ),
+        new(
+            "arrow-binary",
+            "SK-DIV-0050",
+            "=>",
+            "the lambda body's operand chain, broken at a `+`",
+            "Func<int> value = () => <name> + <operands>;",
+            static (name, inner) => {
+                const string head = "Func<int> value = () => ";
+                var flat = head + name + " " + inner + ";";
+                var open = head.Length + name.Length;
+
+                // ⚠ As in `binary-chain`: `wrap_before_binary_opsign = true`, so the continuation
+                // begins *at* an operator and the span is every column the chain occupies.
+                return new Layout(
+                    flat,
+                    Span.Point(head.Length),
+                    new Span(open + 1, open + 1 + inner.Length),
+                    Span.Point("Func<int> value = ".Length),
+                    open
+                );
+            },
+            static bodies => Body(bodies),
+            2,
+            "the `=` above the lambda"
+        ),
+        new(
+            "arrow-generic",
+            "SK-DIV-0050",
+            "=>",
+            "the lambda body's argument list, behind a type argument list",
+            "Action value = () => Deserialize<<name>>(<args>);",
+            static (name, inner) => {
+                const string head = "Action value = () => Deserialize<";
+                var flat = head + name + ">" + inner + ";";
+                var open = head.Length + name.Length + 1;
+
+                // ⚠ One span from the `=` to the invocation's `(`, because this shape has two places
+                // the oracle can decline both of the two under test — the `=` above the lambda and the
+                // type argument list — and they are the same finding. The outer break at column 21
+                // falls inside it and is caught first, which is what the classifier's order is for.
+                return new Layout(
+                    flat,
+                    Span.Point("Action value = () => ".Length),
+                    new Span(open + 1, open + inner.Length),
+                    new Span("Action value = ".Length, open + 1),
+                    open + 1
+                );
+            },
+            static bodies => Body(bodies),
+            2,
+            "the `=` above the lambda, or the type argument list"
+        ),
+        new(
+            "arrow-param-one",
+            "SK-DIV-0050",
+            "=>",
+            "the lambda body's argument list, behind one untyped parameter",
+            "Action<int> value = alpha => <name>(<args>);",
+            static (name, inner) => {
+                const string head = "Action<int> value = alpha => ";
+                var flat = head + name + inner + ";";
+                var open = head.Length + name.Length;
+                return new Layout(
+                    flat,
+                    Span.Point(head.Length),
+                    new Span(open + 1, open + inner.Length),
+                    new Span("Action<int> value = ".Length, head.Length),
+                    open + 1
+                );
+            },
+            static bodies => Body(bodies),
+            2,
+            "the `=` above the lambda"
+        ),
+        new(
+            "arrow-param-typed",
+            "SK-DIV-0050",
+            "=>",
+            "the lambda body's argument list, behind two typed parameters",
+            "Action<int, int> value = (int alpha, int beta) => <name>(<args>);",
+            static (name, inner) => {
+                const string head = "Action<int, int> value = (int alpha, int beta) => ";
+                var flat = head + name + inner + ";";
+                var open = head.Length + name.Length;
+
+                // ⚠ The parameter list is itself a break point here — `wrap_lambda_and_anonymous_
+                // function_parameters_style = wrap_if_long` — so the third span runs from the `=` to
+                // the arrow and covers both, rather than leaving a wrapped parameter list unnamed.
+                return new Layout(
+                    flat,
+                    Span.Point(head.Length),
+                    new Span(open + 1, open + inner.Length),
+                    new Span("Action<int, int> value = ".Length, head.Length),
+                    open + 1
+                );
+            },
+            static bodies => Body(bodies),
+            2,
+            "the `=` above the lambda, or the parameter list"
         ),
         new(
             "type-parameters",
@@ -731,9 +974,21 @@ public static class PreferenceSweep {
         IReadOnlyList<int> totals,
         int innerFrom,
         int innerTo,
-        TextWriter log
+        TextWriter log,
+        IReadOnlyList<KeyValuePair<string, string>>? overrides = null,
+        IReadOnlyCollection<string>? only = null
     ) {
         var constructs = Constructs();
+        if (only is { Count: > 0 }) {
+            constructs = [.. constructs.Where(construct => only.Contains(construct.Id))];
+            if (constructs.Count != only.Count) {
+                throw new InvalidOperationException(
+                    "--only named a construct this sweep does not have: "
+                    + string.Join(", ", only.Where(id => constructs.All(construct => construct.Id != id)))
+                );
+            }
+        }
+
         var fillers = Fillers();
         var scratch = Directory.CreateTempSubdirectory("skala-preference-");
         try {
@@ -758,7 +1013,7 @@ public static class PreferenceSweep {
             var results = new Dictionary<string, string>(StringComparer.Ordinal);
             for (var offset = 0; offset < files.Count; offset += BatchSize) {
                 var batch = files.GetRange(offset, Math.Min(BatchSize, files.Count - offset));
-                foreach (var (path, formatted) in runner.Format(batch, editorConfig)) {
+                foreach (var (path, formatted) in runner.Format(batch, editorConfig, overrides)) {
                     results[path] = formatted;
                 }
 
@@ -888,7 +1143,10 @@ public static class PreferenceSweep {
                     .. exemplars.Values
                         .OrderBy(static entry => entry.Construct, StringComparer.Ordinal)
                         .ThenBy(static entry => entry.Outcome, StringComparer.Ordinal)
-                ]
+                ],
+                overrides is { Count: > 0 }
+                    ? [.. overrides.Select(static key => key.Key + " = " + key.Value)]
+                    : null
             );
         } finally {
             try {
@@ -987,10 +1245,14 @@ public static class PreferenceSweep {
         var text = (construct.Id, filler.TokenLengths.Length) switch {
             ("eq-array", 0) => BracedLiteral(inner),
             ("eq-array", _) => Braced(inner, filler.TokenLengths),
+            ("arrow-array", 0) => BracedLiteral(inner),
+            ("arrow-array", _) => Braced(inner, filler.TokenLengths),
             ("array-initializer", 0) => BracedLiteral(inner),
             ("array-initializer", _) => Braced(inner, filler.TokenLengths),
             ("object-initializer", 0) => MemberLiteral(inner),
             ("object-initializer", _) => Members(inner, filler.TokenLengths),
+            ("arrow-object", 0) => MemberLiteral(inner),
+            ("arrow-object", _) => Members(inner, filler.TokenLengths),
             ("collection-expression", 0) => BracketedLiteral(inner),
             ("collection-expression", _) => Bracketed(inner, filler.TokenLengths),
             ("type-parameters", _) => TypeParameters(inner, filler.TokenLengths),
@@ -1000,6 +1262,8 @@ public static class PreferenceSweep {
             // one. Returning nothing here drops the whole row, which is what the grid should say.
             ("binary-chain", 0) => null,
             ("binary-chain", _) => Operands(inner, filler.TokenLengths),
+            ("arrow-binary", 0) => null,
+            ("arrow-binary", _) => Operands(inner, filler.TokenLengths),
             ("ternary", 0) => null,
             ("ternary", _) => Conditional(inner, filler.TokenLengths),
             (_, 0) => Literal(inner),
@@ -1915,7 +2179,13 @@ public static class PreferenceSweep {
             .Append(artefact.OracleVersion)
             .Append("`, profile `")
             .Append(artefact.Profile)
-            .Append("`, the repository `.editorconfig` unmodified — margin ")
+            .Append(
+                artefact.Keys is { Count: > 0 }
+                    ? "`, the repository `.editorconfig` with "
+                    + string.Join(", ", artefact.Keys.Select(static key => "`" + key + "`"))
+                    + " appended — margin "
+                    : "`, the repository `.editorconfig` unmodified — margin "
+            )
             .Append(artefact.MaxLineLength.ToString(CultureInfo.InvariantCulture))
             .Append(", indent ")
             .Append(artefact.IndentSize.ToString(CultureInfo.InvariantCulture))
