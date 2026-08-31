@@ -1,6 +1,6 @@
+using Rikarin.Skala.Options;
 using System.Globalization;
 using System.Text;
-using Rikarin.Skala.Options;
 
 namespace Rikarin.Skala.Testing;
 

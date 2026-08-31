@@ -1,6 +1,6 @@
-using System.Text;
 using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Reporting;
+using System.Text;
 
 namespace Rikarin.Skala.Analysis.Tests;
 

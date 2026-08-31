@@ -1,7 +1,7 @@
-using System.Collections.Immutable;
-using System.Globalization;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Options;
+using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Rikarin.Skala.Core.Configuration;
 

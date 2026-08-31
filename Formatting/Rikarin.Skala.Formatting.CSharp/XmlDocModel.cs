@@ -1,8 +1,8 @@
-using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Immutable;
+using System.Text;
 
 namespace Rikarin.Skala.Formatting.CSharp;
 
@@ -191,9 +191,7 @@ public sealed class XmlDocModel {
                     break;
 
                 case XmlProcessingInstructionSyntax:
-                    builder.Add(
-                        new XmlDocVerbatim(SourceLines(node.ToString(), _markerSpace), ProcessingInstruction: true)
-                    );
+                    builder.Add(new XmlDocVerbatim(SourceLines(node.ToString(), _markerSpace), true));
                     _separated = true;
                     _afterWord = false;
                     break;
@@ -256,8 +254,8 @@ public sealed class XmlDocModel {
                 null,
                 glued,
                 gluedToWord,
-                InnerGap(content, fromStart: true),
-                InnerGap(content, fromStart: false)
+                InnerGap(content, true),
+                InnerGap(content, false)
             )
             : null;
     }

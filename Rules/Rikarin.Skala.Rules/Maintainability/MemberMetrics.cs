@@ -1,11 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
+using System;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace Rikarin.Skala.Rules.Maintainability;
 
@@ -112,9 +112,7 @@ public static class MemberMetrics {
         // into the type and then count them again when the member itself is measured, and the two
         // surfaces that read these numbers would both be wrong.
         if (member is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax) {
-            return new MemberMetricValues {
-                Cyclomatic = 1, CyclomaticFromControlFlowGraph = false, Parameters = parameters
-            };
+            return new() { Cyclomatic = 1, CyclomaticFromControlFlowGraph = false, Parameters = parameters };
         }
 
         var walker = new MetricsWalker(RecursionName(member), parameters, cancellation);
@@ -135,7 +133,7 @@ public static class MemberMetrics {
             fromGraph = true;
         }
 
-        return new MemberMetricValues {
+        return new() {
             Cyclomatic = cyclomatic,
             CyclomaticFromControlFlowGraph = fromGraph,
             Cognitive = cognitive,
@@ -152,7 +150,7 @@ public static class MemberMetrics {
     /// </remarks>
     public static TypeMetricValues ComputeTypeSize(SyntaxNode type, CancellationToken cancellation) {
         if (type is not TypeDeclarationSyntax declaration) {
-            return new TypeMetricValues();
+            return new();
         }
 
         var members = 0;
@@ -171,7 +169,7 @@ public static class MemberMetrics {
             members++;
         }
 
-        return new TypeMetricValues { Members = members, Fields = fields };
+        return new() { Members = members, Fields = fields };
     }
 
     /// <summary>

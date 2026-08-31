@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -6,6 +5,7 @@ using Rikarin.Skala.Formatting;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Testing;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Conformance.Tests;
 

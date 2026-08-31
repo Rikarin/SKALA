@@ -1,5 +1,5 @@
-using System.Collections.Immutable;
 using Rikarin.Skala.Options;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Core.Configuration;
 
@@ -192,7 +192,7 @@ public static class OptionResolver {
                     continue;
                 }
 
-                winners[(int)id] = new OptionOrigin(assignment, -1);
+                winners[(int)id] = new(assignment, -1);
                 winnerDocument[(int)id] = int.MaxValue;
                 (candidates[(int)id] ??= []).Add(winners[(int)id]!);
             }
@@ -249,7 +249,7 @@ public static class OptionResolver {
             resolved[i] = resolved[i] with { Value = effective };
         }
 
-        return new ResolutionResult(
+        return new(
             chain.SourcePath,
             chain,
             options,

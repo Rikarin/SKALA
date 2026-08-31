@@ -1,10 +1,9 @@
-using System.Globalization;
-using System.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Options;
-using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Analysis;
 
@@ -41,14 +40,14 @@ public static class ExplainCommand {
     /// </remarks>
     public static CommandResult Run(string ruleId) {
         if (RuleCatalog.Find(ruleId) is { } rule) {
-            return new CommandResult(ExitCodes.Ok, Render(rule));
+            return new(ExitCodes.Ok, Render(rule));
         }
 
         if (OptionRegistry.TryResolve(ruleId, out var optionId)) {
-            return new CommandResult(ExitCodes.Ok, Render(OptionRegistry.Get(optionId)));
+            return new(ExitCodes.Ok, Render(OptionRegistry.Get(optionId)));
         }
 
-        return new CommandResult(ExitCodes.ConfigurationError, NotFound(ruleId));
+        return new(ExitCodes.ConfigurationError, NotFound(ruleId));
     }
 
     /// <summary>

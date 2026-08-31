@@ -1,5 +1,4 @@
 using Rikarin.Skala.Core.Configuration;
-using Rikarin.Skala.Options;
 
 namespace Rikarin.Skala.Core.Tests;
 

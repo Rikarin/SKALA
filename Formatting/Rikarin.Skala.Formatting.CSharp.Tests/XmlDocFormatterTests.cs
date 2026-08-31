@@ -1,9 +1,8 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
-using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Options;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
@@ -31,7 +30,7 @@ public static class XmlDoc {
 
     public static FormatResult Run(string source, params (string Key, string Value)[] overrides) {
         var options = Resolve(overrides);
-        return CSharpFormatter.Format("Test.cs", SourceText.From(source), options, null, null, xmlDoc: true);
+        return CSharpFormatter.Format("Test.cs", SourceText.From(source), options, null, null, true);
     }
 
     public static string Text(string source, params (string Key, string Value)[] overrides) =>
@@ -106,7 +105,7 @@ public sealed class XmlDocSubFormatterTests {
             .Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"))
             .Options;
         var formatted = CSharpFormatter
-            .Format("Test.cs", SourceText.From(source), options, null, null, xmlDoc: false)
+            .Format("Test.cs", SourceText.From(source), options, null, null, false)
             .Formatted;
 
         Assert.Contains("///<summary>A summary line.</summary>", formatted, StringComparison.Ordinal);
@@ -824,7 +823,7 @@ public sealed class XmlDocHazardTests {
         var one = SourceText.From("class C {\n    /// <summary>One two three.</summary>\n    void M() { }\n}\n");
         var two = SourceText.From("class C {\n    /// <summary>One three.</summary>\n    void M() { }\n}\n");
 
-        Assert.NotNull(TokenEquivalence.Compare(one, two, CSharpFormatter.ParseOptions, xmlDocReflow: true));
+        Assert.NotNull(TokenEquivalence.Compare(one, two, CSharpFormatter.ParseOptions, true));
     }
 
     [Fact]
@@ -834,7 +833,7 @@ public sealed class XmlDocHazardTests {
             "class C {\n    /// <summary>\n    ///     One two three.\n    /// </summary>\n    void M() { }\n}\n"
         );
 
-        Assert.Null(TokenEquivalence.Compare(one, two, CSharpFormatter.ParseOptions, xmlDocReflow: true));
+        Assert.Null(TokenEquivalence.Compare(one, two, CSharpFormatter.ParseOptions, true));
 
         // ⚠ And with the flag off it is a hard failure, which is what makes the allowance narrow
         // rather than permanent: nothing but the sub-formatter may move a line break in a comment.

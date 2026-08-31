@@ -156,7 +156,7 @@ public static class Fidelity {
             Classify(file, trace, divergences);
         }
 
-        return new FidelityReport(basis, files, identicalFiles, lines, identicalLines, divergences);
+        return new(basis, files, identicalFiles, lines, identicalLines, divergences);
     }
 
     /// <summary>

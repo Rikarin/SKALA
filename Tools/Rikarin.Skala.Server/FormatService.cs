@@ -1,9 +1,9 @@
-using System.Collections.Concurrent;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting.CSharp;
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Rikarin.Skala.Server;
 
@@ -148,10 +148,10 @@ public sealed class FormatService {
     ///     two texts and the edit list, and two bytes per char is the CLR's string layout.
     /// </summary>
     static long Weigh(string key, int sourceLength, FormatResult result) =>
-        (key.Length * 2L)
-        + (sourceLength * 2L)
-        + ((result.Formatted?.Length ?? 0) * 2L)
-        + (result.Edits.Length * 64L)
+        key.Length * 2L
+        + sourceLength * 2L
+        + (result.Formatted?.Length ?? 0) * 2L
+        + result.Edits.Length * 64L
         + 128L;
 
     /// <summary>

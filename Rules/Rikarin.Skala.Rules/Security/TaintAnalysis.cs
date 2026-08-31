@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 using Rikarin.Skala.Rules.Metadata;
+using System;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace Rikarin.Skala.Rules.Security;
 
@@ -74,8 +74,8 @@ public static class TaintAnalysis {
         for (var i = 0; i < blocks.Length; i++) {
             entry[i] = NewSymbolSet();
             exit[i] = NewSymbolSet();
-            captureEntry[i] = new HashSet<CaptureId>();
-            captureExit[i] = new HashSet<CaptureId>();
+            captureEntry[i] = new();
+            captureExit[i] = new();
         }
 
         for (var pass = 0; pass < MaximumPasses; pass++) {
@@ -478,7 +478,7 @@ public static class TaintAnalysis {
         ///     from a request is tainted". <c>request.Query.Count</c> is an <c>int</c> and stops here;
         ///     <c>request.Query["id"]</c> is a <c>StringValues</c> and does not.
         /// </remarks>
-        static bool CarriesText(ITypeSymbol? type) => CarriesText(type, depth: 0);
+        static bool CarriesText(ITypeSymbol? type) => CarriesText(type, 0);
 
         static bool CarriesText(ITypeSymbol? type, int depth) {
             // ⚠ Bounded. A deeply nested generic is not worth an unbounded walk inside an analyzer,

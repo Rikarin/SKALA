@@ -1,8 +1,8 @@
-using System.Globalization;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Testing;
+using System.Globalization;
 
 namespace Rikarin.Skala.Conformance.Tests;
 

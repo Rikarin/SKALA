@@ -1,9 +1,9 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Text;
 using System.Text.Json;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Rikarin.Skala.Core.Configuration;
 
@@ -108,7 +108,7 @@ public sealed class SourceExclusions {
 
         try {
             var configuration = ToolConfiguration.FromText(path, File.ReadAllText(path));
-            return new SourceExclusions(repositoryRoot, configuration.Exclude);
+            return new(repositoryRoot, configuration.Exclude);
         } catch (IOException) {
             // A configuration we cannot read is not a reason to refuse to walk the tree; the config
             // commands report an unreadable skala.jsonc, and this is not the place to fail twice.

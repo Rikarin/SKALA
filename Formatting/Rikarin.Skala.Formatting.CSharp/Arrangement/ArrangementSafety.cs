@@ -1,9 +1,9 @@
-using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Diagnostics;
+using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
@@ -62,7 +62,7 @@ public static class ArrangementSafety {
             );
         } catch (Exception exception) when (exception is not OperationCanceledException) {
             var artefact = CrashArtifacts.Write(crashRoot, path, originalText, arranged, new PhaseOneOptions());
-            return new SkalaDiagnostic(
+            return new(
                 ArrangeIds.Reverted,
                 SkalaSeverity.Error,
                 "not arranged, the safety re-bind threw and could not answer whether the rewrite was "
@@ -110,7 +110,7 @@ public static class ArrangementSafety {
         var appeared = now.Except(before, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         if (appeared.Length > 0) {
             var artefact = CrashArtifacts.Write(crashRoot, path, originalText, arranged, new PhaseOneOptions());
-            return new SkalaDiagnostic(
+            return new(
                 ArrangeIds.Reverted,
                 SkalaSeverity.Error,
                 $"not arranged, re-binding the rewritten document produced {appeared.Length.ToString(CultureInfo.InvariantCulture)} diagnostic(s) it did not have before: "
@@ -195,7 +195,7 @@ public static class ArrangementSafety {
             }
 
             var artefact = CrashArtifacts.Write(crashRoot, path, originalText, arranged, new PhaseOneOptions());
-            return new SkalaDiagnostic(
+            return new(
                 ArrangeIds.SymbolChanged,
                 SkalaSeverity.Error,
                 $"not arranged, '{key.Name}' in {key.Container} bound to {symbol} before the rewrite and to {now} after it",
@@ -266,7 +266,7 @@ public static class ArrangementSafety {
                 symbol?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "?";
         }
 
-        return new BindingSet(result, counters);
+        return new(result, counters);
     }
 
     /// <summary>

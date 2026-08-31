@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
+using System;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Correctness;
 

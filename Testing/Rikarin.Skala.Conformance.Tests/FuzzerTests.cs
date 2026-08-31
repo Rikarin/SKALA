@@ -1,9 +1,9 @@
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Testing;
+using System.Globalization;
 
 namespace Rikarin.Skala.Conformance.Tests;
 

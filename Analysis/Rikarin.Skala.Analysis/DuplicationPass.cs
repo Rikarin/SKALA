@@ -1,8 +1,8 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Rikarin.Skala.Analysis.Duplication;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Reporting;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Analysis;
 

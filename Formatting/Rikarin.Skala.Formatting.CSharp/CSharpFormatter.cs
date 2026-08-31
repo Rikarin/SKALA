@@ -1,11 +1,11 @@
-using System.Collections.Concurrent;
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Options;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Formatting.CSharp;
 

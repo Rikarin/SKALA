@@ -1,8 +1,7 @@
+using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Testing;
 using System.Diagnostics;
 using System.Globalization;
-using Rikarin.Skala.Core.Configuration;
-using Rikarin.Skala.Formatting.CSharp;
-using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Conformance.Sweep;
 
@@ -481,7 +480,7 @@ public sealed class KeyFlipSweep {
             outcome = OptionSweep.Classify(oracleRaw.Count, skalaRaw.Count, rawAgreements, values.Count);
         }
 
-        return new OptionSweep(
+        return new(
             candidate.Key,
             candidate.Info.Tier,
             candidate.Info.Kind,

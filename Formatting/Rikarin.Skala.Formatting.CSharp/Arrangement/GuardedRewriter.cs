@@ -1,6 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 

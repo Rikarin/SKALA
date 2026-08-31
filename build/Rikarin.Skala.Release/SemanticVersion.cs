@@ -60,7 +60,7 @@ public sealed partial record SemanticVersion(int Major, int Minor, int Patch, st
             : throw new FormatException($"'{text}' is not a semantic version.");
 
     public static bool TryParse(string? text, out SemanticVersion version) {
-        version = new SemanticVersion(0, 0, 0, null);
+        version = new(0, 0, 0, null);
         if (text is null) {
             return false;
         }
@@ -70,7 +70,7 @@ public sealed partial record SemanticVersion(int Major, int Minor, int Patch, st
             return false;
         }
 
-        version = new SemanticVersion(
+        version = new(
             int.Parse(match.Groups["major"].Value, CultureInfo.InvariantCulture),
             int.Parse(match.Groups["minor"].Value, CultureInfo.InvariantCulture),
             int.Parse(match.Groups["patch"].Value, CultureInfo.InvariantCulture),

@@ -86,7 +86,7 @@ public static class VerifyCommand {
             // ⚠ Fix, then verify again, then report what is left. A fixing command that reports the
             // findings it just fixed teaches an agent that fixing does not work.
             var after = Verify(request with { Fix = false }, cancellation);
-            return new CommandResult(after.ExitCode, fixResult.Output + after.Output);
+            return new(after.ExitCode, fixResult.Output + after.Output);
         }
 
         return Verify(request, cancellation);
@@ -143,7 +143,7 @@ public static class VerifyCommand {
         // Reading `Reportable` here would have accepted the options and then ignored them.
         var clean = report.New.All(static finding => finding.Severity == Core.Diagnostics.SkalaSeverity.Hidden);
 
-        return new CommandResult(clean ? ExitCodes.Ok : ExitCodes.GateFailed, result.Output);
+        return new(clean ? ExitCodes.Ok : ExitCodes.GateFailed, result.Output);
     }
 
     static LoadMode ResolveMode(VerifyRequest request) {

@@ -1,7 +1,6 @@
-using System.Globalization;
-using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Testing;
+using System.Globalization;
 
 namespace Rikarin.Skala.Conformance.Sweep;
 

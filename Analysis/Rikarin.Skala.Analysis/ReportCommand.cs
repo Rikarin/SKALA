@@ -1,7 +1,7 @@
-using System.Globalization;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using System.Globalization;
 
 namespace Rikarin.Skala.Analysis;
 
@@ -27,7 +27,7 @@ public static class ReportCommand {
         bool summary
     ) {
         if (!File.Exists(sarifPath)) {
-            return new CommandResult(
+            return new(
                 ExitCodes.ConfigurationError,
                 "skala report: " + sarifPath + " does not exist. `skala check` writes .skala/report.sarif.\n"
             );
@@ -37,7 +37,7 @@ public static class ReportCommand {
         try {
             report = SarifReader.Read(sarifPath, repositoryRoot);
         } catch (Exception exception) when (exception is IOException or InvalidDataException) {
-            return new CommandResult(
+            return new(
                 ExitCodes.ConfigurationError,
                 "skala report: " + sarifPath + " could not be read: " + exception.Message + "\n"
             );
@@ -53,7 +53,7 @@ public static class ReportCommand {
         // renderer over a run that already happened; re-deciding here would be a second
         // implementation of the gate, which doc 09 forbids in as many words.
         if (report.Gate is not { Passed: false } failed) {
-            return new CommandResult(ExitCodes.Ok, output);
+            return new(ExitCodes.Ok, output);
         }
 
         // ⚠ **On stderr, because the render goes to stdout and stdout is very often a file.**
@@ -79,7 +79,7 @@ public static class ReportCommand {
             Console.Error.WriteLine("  " + reason);
         }
 
-        return new CommandResult(ExitCodes.GateFailed, output);
+        return new(ExitCodes.GateFailed, output);
     }
 }
 

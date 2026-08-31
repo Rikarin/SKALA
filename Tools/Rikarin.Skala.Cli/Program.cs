@@ -1,6 +1,6 @@
-using System.CommandLine;
 using Rikarin.Skala.Cli;
 using Rikarin.Skala.Core.Diagnostics;
+using System.CommandLine;
 
 // ⚠ A parse error is exit 3, not System.CommandLine's default 1. docs/plan/09 § "Exit codes" gives
 // 1 to "gate failed" and 3 to "configuration error", and an unrecognized option is a configuration

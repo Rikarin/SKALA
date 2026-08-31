@@ -157,7 +157,7 @@ public static class PairwisePlan {
             }
         }
 
-        return new PairwisePlanResult(candidates, excluded);
+        return new(candidates, excluded);
     }
 }
 

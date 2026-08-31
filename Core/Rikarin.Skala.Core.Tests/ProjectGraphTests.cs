@@ -294,7 +294,7 @@ public sealed record ProjectFile(
         var targetFramework = document.Descendants("TargetFramework").FirstOrDefault()?.Value
             ?? InheritedTargetFramework(name);
 
-        return new ProjectFile(name, path, targetFramework, packages, projects);
+        return new(name, path, targetFramework, packages, projects);
     }
 
     /// <summary>The profiles in Directory.Build.props set the framework by project name.</summary>

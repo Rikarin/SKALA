@@ -62,16 +62,16 @@ public static class CorpusVariants {
 
     /// <summary>docs/plan/05 § "keep_existing_*": all four combinations, named as they read.</summary>
     public static IReadOnlyList<CorpusVariant> Preservation { get; } = [
-        Variant("keep-keep", keepUserLinebreaks: true, keepExisting: true),
+        Variant("keep-keep", true, true),
         Variant(
             "keep-rearrange",
-            keepUserLinebreaks: true,
-            keepExisting: false
-        ), Variant("reflow-keep", keepUserLinebreaks: false, keepExisting: true),
+            true,
+            false
+        ), Variant("reflow-keep", false, true),
         Variant(
             "reflow-rearrange",
-            keepUserLinebreaks: false,
-            keepExisting: false
+            false,
+            false
         )
     ];
 
@@ -100,6 +100,6 @@ public static class CorpusVariants {
             overrides.Add(new KeyValuePair<string, string>(key, keepExisting ? "true" : "false"));
         }
 
-        return new CorpusVariant(name, overrides);
+        return new(name, overrides);
     }
 }

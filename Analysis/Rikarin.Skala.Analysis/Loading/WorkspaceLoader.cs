@@ -1,10 +1,10 @@
-using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.MSBuild;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Rikarin.Skala.Analysis.Loading;
 
@@ -32,9 +32,7 @@ public static class WorkspaceLoader {
                 )
             );
 
-            return new LoadedProject {
-                Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true
-            };
+            return new() { Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true };
         }
 
         var target = resolution.Target;
@@ -48,7 +46,7 @@ public static class WorkspaceLoader {
                 )
             );
 
-            return new LoadedProject { Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable() };
+            return new() { Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable() };
         }
 
         if (!MSBuildRuntime.Ensure(out var locatorError)) {
@@ -61,9 +59,7 @@ public static class WorkspaceLoader {
                 )
             );
 
-            return new LoadedProject {
-                Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true
-            };
+            return new() { Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true };
         }
 
         try {
@@ -94,9 +90,7 @@ public static class WorkspaceLoader {
                 )
             );
 
-            return new LoadedProject {
-                Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true
-            };
+            return new() { Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true };
         }
     }
 
@@ -141,9 +135,7 @@ public static class WorkspaceLoader {
             // ⚠ A named target that will not open is a failure, not an absence: the caller pointed at
             // a solution and it could not be read. Falling through to the syntactic loader here is
             // what produced a clean report over a solution nobody had managed to load.
-            return new LoadedProject {
-                Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true
-            };
+            return new() { Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true };
         }
 
         // ⚠ Verbatim. Every one of these is a project that did not load, or loaded without its
@@ -230,7 +222,7 @@ public static class WorkspaceLoader {
             );
         }
 
-        return new LoadedProject {
+        return new() {
             Mode = LoadMode.Workspace,
             Units = units.ToImmutable(),
             Diagnostics = diagnostics.ToImmutable(),
@@ -259,11 +251,11 @@ public static class WorkspaceLoader {
                 .ToArray();
 
             if (matches.Length == 1) {
-                return new WorkspaceTargetResolution(matches[0], null);
+                return new(matches[0], null);
             }
 
             if (matches.Length > 1) {
-                return new WorkspaceTargetResolution(
+                return new(
                     null,
                     $"multiple '{pattern}' workspace targets were found; choose one with --project: "
                     + string.Join(", ", matches.Take(3).Select(Path.GetFileName))
@@ -271,7 +263,7 @@ public static class WorkspaceLoader {
             }
         }
 
-        return new WorkspaceTargetResolution(null, null);
+        return new(null, null);
     }
 }
 

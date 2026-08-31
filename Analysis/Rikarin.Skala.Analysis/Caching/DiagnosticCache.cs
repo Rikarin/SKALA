@@ -1,14 +1,14 @@
+using Microsoft.CodeAnalysis;
+using Rikarin.Skala.Analysis.Loading;
+using Rikarin.Skala.Core;
+using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.IO.Hashing;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.CodeAnalysis;
-using Rikarin.Skala.Analysis.Loading;
-using Rikarin.Skala.Core;
-using Rikarin.Skala.Reporting;
-using Rikarin.Skala.Rules.Metadata;
 
 namespace Rikarin.Skala.Analysis.Caching;
 
@@ -361,7 +361,7 @@ public sealed class DiagnosticCache {
             );
         }
 
-        return new Finding {
+        return new() {
             RuleId = cached.RuleId,
             Severity = (Core.Diagnostics.SkalaSeverity)cached.Severity,
             Message = cached.Message,

@@ -1,6 +1,6 @@
+using Rikarin.Skala.Testing;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Cli.Tests;
 

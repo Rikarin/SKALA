@@ -1,9 +1,9 @@
-using System.Xml;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Diagnostics;
+using System.Xml;
 
 namespace Rikarin.Skala.Formatting.CSharp;
 

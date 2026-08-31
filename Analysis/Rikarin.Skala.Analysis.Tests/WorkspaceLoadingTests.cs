@@ -1,8 +1,8 @@
-using System.Reflection;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Reporting;
+using System.Reflection;
 
 namespace Rikarin.Skala.Analysis.Tests;
 

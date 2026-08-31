@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Options;

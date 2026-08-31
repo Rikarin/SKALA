@@ -1,5 +1,3 @@
-using Rikarin.Skala.Formatting;
-
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>

@@ -1,7 +1,7 @@
+using Rikarin.Skala.Core.Diagnostics;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.Json;
-using Rikarin.Skala.Core.Diagnostics;
 
 namespace Rikarin.Skala.Reporting;
 
@@ -124,7 +124,7 @@ public static class Gate {
         EvaluateRuleOverrides(definition, report, failures);
         EvaluateSuppressions(report, failures);
 
-        return new GateResult(definition.Name, failures.Count == 0, failures.ToImmutable());
+        return new(definition.Name, failures.Count == 0, failures.ToImmutable());
     }
 
     /// <summary>
@@ -357,7 +357,7 @@ public static class Gate {
             }
         }
 
-        return new GateDefinition {
+        return new() {
             Name = name,
             MaxSeverity = gate.TryGetProperty("maxSeverity", out var severity)
                 ? ParseSeverity(severity.GetString())

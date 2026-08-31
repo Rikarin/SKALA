@@ -1,8 +1,8 @@
-using System.Collections.Immutable;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Analysis;
 
@@ -112,7 +112,7 @@ public static class FormattingFindings {
             ? result.Original.Lines[diagnostic.Line - 1].Start
             : 0;
 
-        return new Finding {
+        return new() {
             RuleId = diagnostic.Id,
             Severity = diagnostic.Severity,
             Message = diagnostic.Message,

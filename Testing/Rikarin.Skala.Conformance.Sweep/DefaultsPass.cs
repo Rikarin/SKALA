@@ -1,7 +1,7 @@
+using Rikarin.Skala.Testing;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Conformance.Sweep;
 
@@ -141,7 +141,7 @@ public sealed class DefaultsPass {
         // with the comparison and not with the fixture. The conformance run's view is folded in by
         // the caller, which has both.
         if (hits.Count == 1) {
-            return new DerivedDefault(
+            return new(
                 candidate.Key,
                 hits[0],
                 DefaultsVerdict.Verified,
@@ -151,7 +151,7 @@ public sealed class DefaultsPass {
         }
 
         if (hits.Count == 0) {
-            return new DerivedDefault(
+            return new(
                 candidate.Key,
                 null,
                 DefaultsVerdict.Contradicted,
@@ -166,7 +166,7 @@ public sealed class DefaultsPass {
             // Insensitive verdict, because a value that changed the output cannot also have
             // reproduced the baseline. It made the field read 47 of 47 and mean nothing. Only the
             // export-base run can say whether the fixture could have seen this option.
-            return new DerivedDefault(
+            return new(
                 candidate.Key,
                 null,
                 DefaultsVerdict.Insensitive,
@@ -175,7 +175,7 @@ public sealed class DefaultsPass {
             );
         }
 
-        return new DerivedDefault(candidate.Key, null, DefaultsVerdict.Ambiguous, false, string.Join(", ", hits));
+        return new(candidate.Key, null, DefaultsVerdict.Ambiguous, false, string.Join(", ", hits));
     }
 
     /// <summary>
@@ -191,8 +191,8 @@ public sealed class DefaultsPass {
     public static IReadOnlyList<DerivedDefault> CrossCheck(
         IReadOnlyList<DerivedDefault> probed,
         IReadOnlyCollection<string> observable
-    ) {
-        return [
+    ) =>
+        [
             .. probed.Select(entry => entry.Verdict == DefaultsVerdict.Insensitive && observable.Contains(entry.Key)
                     ? entry with {
                         Masked = true,
@@ -201,7 +201,6 @@ public sealed class DefaultsPass {
                     : entry
             )
         ];
-    }
 
     /// <summary>
     ///     ⚠ Partitioned by oracle profile before batching, exactly as the conformance sweep is.

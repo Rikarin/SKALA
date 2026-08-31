@@ -1,10 +1,10 @@
+using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Options;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using Rikarin.Skala.Core.Configuration;
-using Rikarin.Skala.Options;
 
 namespace Rikarin.Skala.Testing;
 
@@ -497,7 +497,7 @@ public static class Fuzzer {
             text = mutation.Text;
         }
 
-        return new FuzzCase(
+        return new(
             seed,
             kind,
             from,
@@ -1083,7 +1083,7 @@ public static class Fuzzer {
             var limit = options.Cases ?? 400;
             for (index = 0; index < limit && !caught; index++) {
                 var subject = Build(FuzzRandom.Derive(options.Seed, index), options.Mode, corpus);
-                var (violations, _) = Execute(subject, arrangement: false, saboteur);
+                var (violations, _) = Execute(subject, false, saboteur);
                 foreach (var violation in violations) {
                     if (violation.Property == saboteur.Target) {
                         report.AppendLine(

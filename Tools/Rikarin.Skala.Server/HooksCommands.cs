@@ -1,5 +1,5 @@
-using System.Text;
 using Rikarin.Skala.Core.Configuration;
+using System.Text;
 
 namespace Rikarin.Skala.Server;
 
@@ -20,6 +20,6 @@ public static class HooksCommands {
             output.AppendLine("Pass --apply to write it.");
         }
 
-        return new CommandResult(0, output.ToString());
+        return new(0, output.ToString());
     }
 }

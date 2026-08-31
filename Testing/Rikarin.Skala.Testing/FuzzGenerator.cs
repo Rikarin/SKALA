@@ -55,7 +55,9 @@ public sealed class FuzzGenerator {
     readonly StringBuilder builder = new();
     int counter;
 
-    FuzzGenerator(FuzzRandom random) => this.random = random;
+    FuzzGenerator(FuzzRandom random) {
+        this.random = random;
+    }
 
     /// <summary>One random compilation unit.</summary>
     public static string Compile(FuzzRandom random) {
@@ -155,7 +157,7 @@ public sealed class FuzzGenerator {
         // wrapping rules for, and the only place where a *type* declaration carries one.
         var primary = kind.Contains("record", StringComparison.Ordinal) && random.Chance(0.6);
         if (primary) {
-            head.Append('(').Append(ParameterList(random.Next(1, 5), allowModifiers: false)).Append(')');
+            head.Append('(').Append(ParameterList(random.Next(1, 5), false)).Append(')');
         }
 
         if (random.Chance(0.4)) {
@@ -234,7 +236,7 @@ public sealed class FuzzGenerator {
             return;
         }
 
-        Line(indent, Type(0) + " M" + Next() + "(" + ParameterList(random.Next(0, 4), allowModifiers: true) + ");");
+        Line(indent, Type(0) + " M" + Next() + "(" + ParameterList(random.Next(0, 4), true) + ");");
     }
 
     // ── members ──────────────────────────────────────────────────────────────────────────────────
@@ -256,10 +258,10 @@ public sealed class FuzzGenerator {
                 Property(indent);
                 return;
             case "method":
-                Method(indent, block: true);
+                Method(indent, true);
                 return;
             case "expression-method":
-                Method(indent, block: false);
+                Method(indent, false);
                 return;
             case "constructor":
                 Constructor(indent);
@@ -352,7 +354,7 @@ public sealed class FuzzGenerator {
             + " Create"
             + Next()
             + "("
-            + ParameterList(random.Next(0, 4), allowModifiers: true)
+            + ParameterList(random.Next(0, 4), true)
             + ") => "
             + Expression(1, indent)
             + ";"
@@ -376,7 +378,7 @@ public sealed class FuzzGenerator {
             + Next()
             + parameters.List
             + "("
-            + ParameterList(random.Next(0, 5), allowModifiers: true)
+            + ParameterList(random.Next(0, 5), true)
             + ")"
             + parameters.Constraints;
 
@@ -626,7 +628,7 @@ public sealed class FuzzGenerator {
                     + " Local"
                     + Next()
                     + "("
-                    + ParameterList(random.Next(0, 3), allowModifiers: false)
+                    + ParameterList(random.Next(0, 3), false)
                     + ") => "
                     + Expression(1, indent)
                     + ";"

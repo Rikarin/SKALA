@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -8,6 +6,8 @@ using Microsoft.CodeAnalysis.MSBuild;
 using Rikarin.Skala.Analysis.Hosting;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Reporting;
+using System.Collections.Immutable;
+using System.Text;
 
 namespace Rikarin.Skala.Analysis;
 
@@ -233,7 +233,7 @@ public static class NamingFixCommand {
             }
         }
 
-        return new NamingFixOutcome(applied, changedPaths);
+        return new(applied, changedPaths);
     }
 
     static Diagnostic? FindFirst(

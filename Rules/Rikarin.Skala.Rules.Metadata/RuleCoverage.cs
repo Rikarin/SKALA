@@ -145,7 +145,7 @@ public static class RuleCoverage {
                 : State.Outstanding;
         }
 
-        return new Result { States = states };
+        return new() { States = states };
     }
 
     /// <summary>

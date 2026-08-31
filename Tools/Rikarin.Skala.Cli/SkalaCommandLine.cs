@@ -1,14 +1,10 @@
-using System.CommandLine;
-using Rikarin.Skala.Analysis;
-using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
-using Rikarin.Skala.Mcp;
-using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Server;
+using System.CommandLine;
 
 namespace Rikarin.Skala.Cli;
 

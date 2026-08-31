@@ -1,7 +1,7 @@
-using System.Globalization;
-using System.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting.CSharp;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Testing;
 

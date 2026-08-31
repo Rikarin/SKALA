@@ -57,7 +57,7 @@ public sealed class LineEndingTests : IDisposable {
     /// <summary>The hazard as doc 12 words it: CRLF in, <c>end_of_line = lf</c>, LF out.</summary>
     [Fact]
     public void CrlfInput_UnderLf_IsWrittenAsLf() {
-        Configure("lf", enforce: true);
+        Configure("lf", true);
         var path = _scratch.WriteText("A.cs", Crlf);
 
         var run = _scratch.Run("format", path);
@@ -73,7 +73,7 @@ public sealed class LineEndingTests : IDisposable {
     /// <summary>The converse, which is the direction a Windows repository actually configures.</summary>
     [Fact]
     public void LfInput_UnderCrlf_IsWrittenAsCrlf() {
-        Configure("crlf", enforce: true);
+        Configure("crlf", true);
         var path = _scratch.WriteText("B.cs", Lf);
 
         var run = _scratch.Run("format", path);
@@ -92,7 +92,7 @@ public sealed class LineEndingTests : IDisposable {
     /// </summary>
     [Fact]
     public void CrlfInput_UnderLfWithEnforcementOff_KeepsCrlf() {
-        Configure("lf", enforce: false);
+        Configure("lf", false);
         var path = _scratch.WriteText("C.cs", Crlf);
 
         _scratch.Run("format", path);
@@ -110,7 +110,7 @@ public sealed class LineEndingTests : IDisposable {
     /// </summary>
     [Fact]
     public void Check_AgreesWithFormat_AboutLineEndings() {
-        Configure("lf", enforce: true);
+        Configure("lf", true);
         var path = _scratch.WriteText("D.cs", Crlf);
 
         Assert.Equal(2, _scratch.Run("format", "--check", path).ExitCode);
@@ -130,7 +130,7 @@ public sealed class LineEndingTests : IDisposable {
     /// </summary>
     [Fact]
     public void ABomSurvivesALineEndingConversion() {
-        Configure("lf", enforce: true);
+        Configure("lf", true);
         var path = _scratch.WriteBytes("E.cs", [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(Crlf)]);
 
         _scratch.Run("format", path);

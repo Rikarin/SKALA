@@ -1,7 +1,7 @@
+using Rikarin.Skala.Options;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
-using Rikarin.Skala.Options;
 
 namespace Rikarin.Skala.Core.Configuration;
 
@@ -127,7 +127,7 @@ public static class Distiller {
         // about why the rest of it looks the way it does must not lose the note.
         Flush();
 
-        return new DistillResult(
+        return new(
             builder.ToString(),
             linesIn,
             linesOut + 3,

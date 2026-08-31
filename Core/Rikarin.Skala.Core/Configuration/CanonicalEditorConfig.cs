@@ -99,7 +99,7 @@ public static class CanonicalEditorConfig {
     /// <summary>The manifest for a freshly composed payload.</summary>
     public static CanonicalManifest DescribeManifest(string version, string payload) {
         var document = EditorConfigDocument.FromText(PayloadFileName, payload);
-        return new CanonicalManifest(
+        return new(
             version,
             Hash(payload),
             document.Assignments.Count(),
@@ -130,7 +130,7 @@ public static class CanonicalEditorConfig {
             new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip }
         );
         var root = document.RootElement;
-        return new CanonicalManifest(
+        return new(
             root.GetProperty("version").GetString() ?? "0.0.0",
             root.GetProperty("sha256").GetString() ?? string.Empty,
             root.GetProperty("assignments").GetInt32(),

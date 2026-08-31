@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using System.Diagnostics;
 
 namespace Rikarin.Skala.Analysis.Tests;
 

@@ -1,7 +1,6 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Diagnostics;
-using Rikarin.Skala.Options;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 

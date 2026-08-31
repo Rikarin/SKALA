@@ -1,6 +1,6 @@
+using Rikarin.Skala.Options;
 using System.Collections.Immutable;
 using System.Text;
-using Rikarin.Skala.Options;
 
 namespace Rikarin.Skala.Core.Configuration;
 
@@ -104,7 +104,7 @@ public static class Fixer {
             }
         }
 
-        return new FixResult(builder.ToString(), applied.ToImmutable());
+        return new(builder.ToString(), applied.ToImmutable());
     }
 
     /// <summary>The value the losing generic key would need to stop contradicting the winner.</summary>

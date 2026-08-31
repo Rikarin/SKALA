@@ -1,10 +1,10 @@
-using System.Collections.Immutable;
-using System.Globalization;
-using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
+using System.Globalization;
+using System.Reflection;
 
 namespace Rikarin.Skala.Rules.Tests;
 

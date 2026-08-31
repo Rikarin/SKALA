@@ -60,7 +60,7 @@ public static class CanonicalLayout {
         var end = IndexOf(lines, EndMarker);
 
         if (begin < 0 || end < begin) {
-            return new CanonicalLayoutResult(null, string.Empty, CanonicalEditorConfig.Normalize(text), 1);
+            return new(null, string.Empty, CanonicalEditorConfig.Normalize(text), 1);
         }
 
         var marker = ParseMarker(lines[begin]);
@@ -78,7 +78,7 @@ public static class CanonicalLayout {
 
         var local = string.Join("\n", lines.Skip(localStart));
 
-        return new CanonicalLayoutResult(
+        return new(
             marker,
             CanonicalEditorConfig.Normalize(canonical),
             local.Trim().Length == 0 ? string.Empty : CanonicalEditorConfig.Normalize(local),
@@ -154,7 +154,7 @@ public static class CanonicalLayout {
     static CanonicalMarker ParseMarker(string line) {
         var version = Field(line, "version=") ?? "unknown";
         var sha = Field(line, "sha256=") ?? string.Empty;
-        return new CanonicalMarker(version, sha);
+        return new(version, sha);
     }
 
     static string? Field(string line, string name) {

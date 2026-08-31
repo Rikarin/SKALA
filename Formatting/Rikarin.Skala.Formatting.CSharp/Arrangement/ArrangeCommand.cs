@@ -1,11 +1,11 @@
-using System.Collections.Immutable;
-using System.Globalization;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
+using System.Collections.Immutable;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
@@ -72,7 +72,7 @@ public static class ArrangeCommand {
 
         var files = FormatCommand.Collect(request.Paths).ToList();
         if (files.Count == 0) {
-            return new CommandResult(0, request.Quiet ? string.Empty : "no C# files\n");
+            return new(0, request.Quiet ? string.Empty : "no C# files\n");
         }
 
         var compilations = request.Compilations?.Invoke(files) ?? [];
@@ -199,7 +199,7 @@ public static class ArrangeCommand {
                 ? ExitCodes.FormattingNeeded
                 : ExitCodes.Ok;
 
-        return new CommandResult(exit, output.ToString());
+        return new(exit, output.ToString());
     }
 
     /// <summary>Every compilation that contains this file.</summary>

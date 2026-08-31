@@ -1,7 +1,6 @@
-using System.Globalization;
-using Rikarin.Skala.Formatting;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Testing;
+using System.Globalization;
 
 // The harness's own entry point. ⚠ Every one of these is a deliberate developer-machine action and
 // none of them is a test:

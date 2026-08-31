@@ -1,8 +1,6 @@
+using ModelContextProtocol.Server;
 using System.Text;
 using System.Text.Json;
-using ModelContextProtocol.Protocol;
-using ModelContextProtocol.Server;
-using Rikarin.Skala.Mcp;
 
 namespace Rikarin.Skala.Mcp.Tests;
 

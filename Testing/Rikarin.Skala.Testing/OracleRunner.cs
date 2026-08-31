@@ -26,7 +26,9 @@ public sealed class OracleRunner {
 
     readonly string _executable;
 
-    public OracleRunner(string? executable = null) => _executable = executable ?? FindExecutable();
+    public OracleRunner(string? executable = null) {
+        _executable = executable ?? FindExecutable();
+    }
 
     public string Version {
         get {

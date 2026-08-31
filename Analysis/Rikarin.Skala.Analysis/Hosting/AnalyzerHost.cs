@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
@@ -7,15 +5,17 @@ using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules;
-using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Async;
 using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Design;
 using Rikarin.Skala.Rules.Maintainability;
+using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Modernization;
 using Rikarin.Skala.Rules.Performance;
 using Rikarin.Skala.Rules.Security;
 using Rikarin.Skala.Rules.TestQuality;
+using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Rikarin.Skala.Analysis.Hosting;
 
@@ -121,7 +121,7 @@ public static class AnalyzerHost {
         CancellationToken cancellation,
         bool profile = false
     ) =>
-        Execute(unit, options, hosted, mode, trees: null, profile, cancellation);
+        Execute(unit, options, hosted, mode, null, profile, cancellation);
 
     /// <summary>
     ///     The warm path: run the analyzers over only the trees whose cache key moved.
@@ -170,7 +170,7 @@ public static class AnalyzerHost {
             analyzers,
             new CompilationWithAnalyzersOptions(
                 options,
-                onAnalyzerException: (exception, analyzer, diagnostic) => {
+                (exception, analyzer, diagnostic) => {
                     // ⚠ Recorded and continued, never rethrown. See the type's remarks.
                     var name = analyzer.GetType().FullName ?? analyzer.GetType().Name;
                     lock (failed) {
@@ -190,9 +190,9 @@ public static class AnalyzerHost {
                         );
                     }
                 },
-                concurrentAnalysis: true,
-                logAnalyzerExecutionTime: true,
-                reportSuppressedDiagnostics: true
+                true,
+                true,
+                true
             )
         );
 
@@ -259,7 +259,7 @@ public static class AnalyzerHost {
         }
 
         partial |= diagnostics.Count > 0;
-        return new AnalysisOutcome(
+        return new(
             findings.ToImmutable(),
             diagnostics.ToImmutable(),
             partial,
@@ -389,7 +389,7 @@ public static class AnalyzerHost {
         var span = diagnostic.Location.GetLineSpan();
         var textSpan = diagnostic.Location.SourceSpan;
 
-        return new Finding {
+        return new() {
             RuleId = diagnostic.Id,
             Severity = Severity(diagnostic),
             Message = diagnostic.GetMessage(CultureInfo.InvariantCulture),

@@ -1,7 +1,3 @@
-using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Globalization;
-using System.Text;
 using Rikarin.Skala.Analysis.Hosting;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core;
@@ -10,6 +6,10 @@ using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Analysis;
 

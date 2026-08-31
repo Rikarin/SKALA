@@ -1,10 +1,10 @@
-using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Rikarin.Skala.Analysis.Loading;
 
@@ -31,7 +31,7 @@ public static class LooseLoader {
     public static LoadedProject Load(LoadRequest request) {
         var files = Collect(request).ToList();
         if (files.Count == 0) {
-            return new LoadedProject {
+            return new() {
                 Mode = LoadMode.Loose,
                 Summary = "loose (no .cs files found)",
                 Diagnostics = [
@@ -81,7 +81,7 @@ public static class LooseLoader {
             )
         );
 
-        return new LoadedProject {
+        return new() {
             Mode = LoadMode.Loose,
             Units = [
                 new CompilationUnit {

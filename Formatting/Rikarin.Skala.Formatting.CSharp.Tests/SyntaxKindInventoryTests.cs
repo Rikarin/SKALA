@@ -1,8 +1,7 @@
+using Microsoft.CodeAnalysis.CSharp;
+using Rikarin.Skala.Testing;
 using System.Globalization;
 using System.Text;
-using Microsoft.CodeAnalysis.CSharp;
-using Rikarin.Skala.Formatting.CSharp;
-using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 

@@ -1,13 +1,12 @@
-using System.Collections.Immutable;
-using System.Globalization;
-using System.Text;
-using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Options;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Analysis;
 
@@ -72,7 +71,7 @@ public static class FixCommand {
         );
 
         if (!request.SafeOnly && request.Include.Count == 0) {
-            return new CommandResult(
+            return new(
                 ExitCodes.ConfigurationError,
                 "skala fix: without --safe you must name the rules with --include SK1002,SK1024.\n"
                 + "An unsafe fix changes shape enough to want eyes; naming it is what makes the choice visible.\n"
@@ -84,7 +83,7 @@ public static class FixCommand {
                 Hosting.RoslynCodeStyle.NamingDiagnosticId,
                 StringComparer.OrdinalIgnoreCase
             )) {
-            return new CommandResult(
+            return new(
                 ExitCodes.ConfigurationError,
                 "skala fix: IDE1006 is a solution-wide rename and is never part of --safe; "
                 + "use `--include IDE1006` explicitly.\n"
@@ -97,7 +96,7 @@ public static class FixCommand {
         );
         if (namingRequested && request.Mode is not null and not LoadMode.Workspace) {
             var selected = request.Mode.Value.ToString().ToLowerInvariant();
-            return new CommandResult(
+            return new(
                 ExitCodes.ConfigurationError,
                 $"skala fix: IDE1006 cannot use the explicitly selected --load={selected}; "
                 + "omit --load or use --load workspace.\n"
@@ -137,7 +136,7 @@ public static class FixCommand {
             }
 
             if (naming.Error is { } error) {
-                return new CommandResult(ExitCodes.ConfigurationError, $"skala fix: {error}.\n");
+                return new(ExitCodes.ConfigurationError, $"skala fix: {error}.\n");
             }
 
             // Every ordinary fix below carries offsets into the pre-rename text. Re-run the check
@@ -163,7 +162,7 @@ public static class FixCommand {
 
         var applicable = report.Reportable.Where(finding => IsApplicable(finding, request)).ToList();
         if (applicable.Count == 0 && naming.Applied == 0) {
-            return new CommandResult(ExitCodes.Ok, "skala fix: nothing to apply.\n");
+            return new(ExitCodes.Ok, "skala fix: nothing to apply.\n");
         }
 
         var output = new StringBuilder();
@@ -211,7 +210,7 @@ public static class FixCommand {
         }
 
         output.AppendLine(".");
-        return new CommandResult(ExitCodes.Ok, output.ToString());
+        return new(ExitCodes.Ok, output.ToString());
     }
 
     static bool IsApplicable(Finding finding, FixRequest request) {

@@ -180,7 +180,7 @@ internal static class OptionRegistryReader {
         // ⚠ Dense and stable: ids are assigned by ordinal key order so that adding an option does
         // not renumber the ones after it (docs/plan/03 § "The option registry").
         options.Sort(static (a, b) => string.CompareOrdinal(a.Key, b.Key));
-        return new OptionRegistry(enums, options);
+        return new(enums, options);
     }
 
     public static string Literal(string? value) =>

@@ -105,7 +105,7 @@ public sealed class EditorConfigDocument {
             }
 
             if (trimmed[0] == '[' && trimmed[^1] == ']') {
-                current = new EditorConfigSection(document, trimmed[1..^1], line, sections.Count);
+                current = new(document, trimmed[1..^1], line, sections.Count);
                 sections.Add(current);
                 continue;
             }

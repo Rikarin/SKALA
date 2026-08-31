@@ -224,7 +224,7 @@ public sealed class CanonicalDistributionTests {
             ).Text
         );
 
-        var result = ConfigCommands.DiffCanonical(directory, showOptions: true);
+        var result = ConfigCommands.DiffCanonical(directory, true);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("CLEAN, behind", result.Output, StringComparison.Ordinal);

@@ -1,5 +1,3 @@
-using Rikarin.Skala.Core;
-
 namespace Rikarin.Skala.Core.Tests;
 
 /// <summary>
@@ -17,7 +15,9 @@ public sealed class SkalaDirectoryTests : IDisposable {
         "skala-hygiene-" + Guid.NewGuid().ToString("n")[..12]
     );
 
-    public SkalaDirectoryTests() => Directory.CreateDirectory(_root);
+    public SkalaDirectoryTests() {
+        Directory.CreateDirectory(_root);
+    }
 
     public void Dispose() {
         try {

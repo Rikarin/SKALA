@@ -1,7 +1,5 @@
-using System.ComponentModel;
-using System.Text;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.Extensions.Logging.Abstractions;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rikarin.Skala.Analysis;
@@ -10,6 +8,8 @@ using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.ComponentModel;
+using System.Text;
 
 namespace Rikarin.Skala.Mcp;
 
@@ -40,15 +40,15 @@ public static class McpServer {
     /// <summary>Builds the server over any transport, so a test can drive it without a process.</summary>
     public static ModelContextProtocol.Server.McpServer Create(ITransport transport, string repositoryRoot) {
         var options = new McpServerOptions {
-            ServerInfo = new Implementation { Name = "skala", Version = SkalaVersion.Value },
+            ServerInfo = new() { Name = "skala", Version = SkalaVersion.Value },
             ServerInstructions = Instructions,
-            Capabilities = new ServerCapabilities { Tools = new ToolsCapability() },
+            Capabilities = new() { Tools = new() },
 
             // ⚠ Constructed, not left to the default. `McpServerOptions.ToolCollection` is **null**
             // until something assigns one, so `options.ToolCollection?.Add(tool)` compiles, runs,
             // adds nothing, and produces a server that answers `tools/list` with an empty array —
             // a working handshake and no tools, which looks like a client problem.
-            ToolCollection = new McpServerPrimitiveCollection<McpServerTool>()
+            ToolCollection = new()
         };
 
         foreach (var tool in new SkalaTools(Path.GetFullPath(repositoryRoot)).Create()) {
@@ -59,7 +59,7 @@ public static class McpServer {
             transport,
             options,
             NullLoggerFactory.Instance,
-            serviceProvider: null!
+            null!
         );
     }
 

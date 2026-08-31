@@ -1,8 +1,8 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Diagnostics;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
@@ -271,7 +271,7 @@ public static class Arranger {
             }
         }
 
-        return new ArrangementResult(
+        return new(
             path,
             arranged,
             applied.ToImmutable(),

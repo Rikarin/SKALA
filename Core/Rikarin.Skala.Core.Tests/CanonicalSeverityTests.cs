@@ -37,7 +37,7 @@ public sealed class CanonicalSeverityTests {
                              """;
 
     static CanonicalStatus Describe(string existing) =>
-        CanonicalSync.Describe(Path, exists: existing.Length > 0, existing, Manifest, Canonical);
+        CanonicalSync.Describe(Path, existing.Length > 0, existing, Manifest, Canonical);
 
     /// <summary>
     ///     The exact reported shape: the repository sets no <c>cs*</c> severity at all, and the
@@ -153,7 +153,7 @@ public sealed class CanonicalSeverityTests {
             string.Empty
         );
 
-        var status = CanonicalSync.Describe(Path, exists: true, managed, Manifest, Canonical);
+        var status = CanonicalSync.Describe(Path, true, managed, Manifest, Canonical);
 
         var change = Assert.Single(status.SeverityChanges.Where(static change => change.Diagnostic == "CS9209"));
 
@@ -214,7 +214,7 @@ public sealed class CanonicalSeverityTests {
     public void TheShippedCanonical_MovesNoCompilerSeverities() {
         var status = CanonicalSync.Describe(
             Path,
-            exists: true,
+            true,
             "[*]\nindent_size = 4\n",
             CanonicalEditorConfig.Manifest,
             CanonicalEditorConfig.Text

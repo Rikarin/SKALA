@@ -1472,7 +1472,7 @@ public static class PreferenceSweep {
         // The filler name absorbs whatever the inner construct does not, so the flat line comes to
         // exactly `total`. Measured with a one-character name first, then padded by the shortfall.
         var probe = construct.Wrap("x", text);
-        var fillerLength = total - (construct.Depth * Indent) - (probe.Flat.Length - 1);
+        var fillerLength = total - construct.Depth * Indent - (probe.Flat.Length - 1);
         if (fillerLength < MinimumFiller) {
             return null;
         }
@@ -1482,7 +1482,7 @@ public static class PreferenceSweep {
         // ⚠ Checked rather than trusted. A generator that is four columns out is silent, survives the
         // whole run, and moves every boundary it reports — which is the failure the `Depth` note above
         // records. Two lines of arithmetic here make it impossible.
-        if (text.Length != inner || (construct.Depth * Indent) + layout.Flat.Length != total) {
+        if (text.Length != inner || construct.Depth * Indent + layout.Flat.Length != total) {
             throw new InvalidOperationException(
                 construct.Id
                 + " × "
@@ -1494,12 +1494,12 @@ public static class PreferenceSweep {
                 + ": generated an inner construct of "
                 + text.Length.ToString(CultureInfo.InvariantCulture)
                 + " columns in a line of "
-                + ((construct.Depth * Indent) + layout.Flat.Length).ToString(CultureInfo.InvariantCulture)
+                + (construct.Depth * Indent + layout.Flat.Length).ToString(CultureInfo.InvariantCulture)
                 + "."
             );
         }
 
-        return new Probe(
+        return new(
             construct.Id,
             filler.Id,
             total,
@@ -1536,20 +1536,20 @@ public static class PreferenceSweep {
 
     /// <summary>A parenthesised argument list of exactly <paramref name="width" /> columns.</summary>
     static string? Arguments(int width, int[] lengths) {
-        var inside = Tokens(width - 2, lengths, uppercase: false);
+        var inside = Tokens(width - 2, lengths, false);
         return inside is null ? null : "(" + inside + ")";
     }
 
     /// <summary>An angle-bracketed type parameter list of exactly <paramref name="width" /> columns.</summary>
     static string? TypeParameters(int width, int[] lengths) {
-        var inside = Tokens(width - 2, lengths, uppercase: true);
+        var inside = Tokens(width - 2, lengths, true);
         return inside is null ? null : "<" + inside + ">";
     }
 
     /// <summary>A braced initialiser list of exactly <paramref name="width" /> columns.</summary>
     /// <remarks>⚠ <c>{ a, b }</c> — four columns of delimiter and padding, not two.</remarks>
     static string? Braced(int width, int[] lengths) {
-        var inside = Tokens(width - 4, lengths, uppercase: false);
+        var inside = Tokens(width - 4, lengths, false);
         return inside is null ? null : "{ " + inside + " }";
     }
 
@@ -1568,7 +1568,7 @@ public static class PreferenceSweep {
 
     /// <summary>A collection expression of exactly <paramref name="width" /> columns.</summary>
     static string? Bracketed(int width, int[] lengths) {
-        var inside = Tokens(width - 2, lengths, uppercase: false);
+        var inside = Tokens(width - 2, lengths, false);
         return inside is null ? null : "[" + inside + "]";
     }
 
@@ -1585,7 +1585,7 @@ public static class PreferenceSweep {
     ///     the one of the two this construct is supposed to be.
     /// </remarks>
     static string? Members(int width, int[] lengths) {
-        var inside = Tokens(width - 4, lengths, uppercase: true, suffix: " = 1");
+        var inside = Tokens(width - 4, lengths, true, suffix: " = 1");
         return inside is null ? null : "{ " + inside + " }";
     }
 
@@ -1603,7 +1603,7 @@ public static class PreferenceSweep {
     ///     Building the text the same way the break reads it is what keeps the classifier positional.
     /// </remarks>
     static string? Operands(int width, int[] lengths) {
-        var inside = Tokens(width - 2, lengths, uppercase: false, separator: " + ");
+        var inside = Tokens(width - 2, lengths, false, " + ");
         return inside is null ? null : "+ " + inside;
     }
 
@@ -1828,11 +1828,11 @@ public static class PreferenceSweep {
         // wide as the column its first continuation resumes at. The narrowest inner width where that
         // lands inside the margin is where "break the thing that overflowed" starts being enough.
         var sufficient = outcomes
-            .Where(entry => (construct.Depth * Indent) + entry.Probe.Head <= Margin)
+            .Where(entry => construct.Depth * Indent + entry.Probe.Head <= Margin)
             .Select(static entry => (int?)entry.Probe.Inner)
             .FirstOrDefault();
 
-        return new Row(
+        return new(
             construct.Id,
             construct.Divergence,
             first.Filler,
@@ -1912,7 +1912,7 @@ public static class PreferenceSweep {
                 previous = code;
             }
 
-            return new Reading(
+            return new(
                 row.Construct,
                 row.Filler,
                 row.Total,
@@ -2312,7 +2312,7 @@ public static class PreferenceSweep {
             }
 
             if (cells.Count == 0) {
-                return new Fit(0, third, unnamed, 0, 0, 0);
+                return new(0, third, unnamed, 0, 0, 0);
             }
 
             var plain = cells.Count(static cell => cell.Enough == cell.Measured);
@@ -2324,7 +2324,7 @@ public static class PreferenceSweep {
                 }
             }
 
-            return new Fit(cells.Count, third, unnamed, plain, best.Floor, best.Score);
+            return new(cells.Count, third, unnamed, plain, best.Floor, best.Score);
         }
     }
 
@@ -2714,12 +2714,12 @@ public static class PreferenceSweep {
         if (live.Count > 0) {
             var deltas = live.Select(static row => row.Mine.Floor - row.Theirs.Floor).ToList();
             var loss = live.Max(row => row.Mine.FloorPercent
-                - (100.0
-                    * Fit.Score(
-                        [.. artefact.Grid.Where(r => r.Construct == row.Construct.Id && r.Filler == row.Filler.Id)],
-                        row.Theirs.Floor + constant
-                    )
-                    / row.Mine.Chose)
+                - 100.0
+                * Fit.Score(
+                    [.. artefact.Grid.Where(r => r.Construct == row.Construct.Id && r.Filler == row.Filler.Id)],
+                    row.Theirs.Floor + constant
+                )
+                / row.Mine.Chose
             );
 
             builder.Append("**Δ is one constant, and it is ")

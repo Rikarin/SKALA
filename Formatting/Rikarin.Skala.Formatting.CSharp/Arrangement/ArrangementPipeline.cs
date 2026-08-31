@@ -1,9 +1,8 @@
-using System.Collections.Immutable;
-using System.Globalization;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Diagnostics;
+using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 

@@ -1,8 +1,7 @@
+using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 using System.Text.Json;
-using Rikarin.Skala.Core.Diagnostics;
-using Rikarin.Skala.Reporting;
-using Rikarin.Skala.Rules.Metadata;
 
 namespace Rikarin.Skala.Reporting.Tests;
 
@@ -191,7 +190,7 @@ public sealed class ReportingTests {
             }
         );
 
-        var text = Renderer.Render(report, format, includeHints: true);
+        var text = Renderer.Render(report, format, true);
 
         // Anti-vacuity: a renderer that returned nothing would pass the assertion below trivially.
         Assert.NotEmpty(text);
@@ -223,7 +222,7 @@ public sealed class ReportingTests {
     [Fact]
     public void GithubRenderer_PutsTheVerdictAndTheRunsOwnDiagnosticsInTheLog() {
         var report = Sample(Modernization()) with {
-            Gate = new GateResult("ci", Passed: false, ["3 new finding(s) at or above warning"]),
+            Gate = new GateResult("ci", false, ["3 new finding(s) at or above warning"]),
             Diagnostics = [
                 new SkalaDiagnostic(
                     "SK9030",
@@ -233,7 +232,7 @@ public sealed class ReportingTests {
             ]
         };
 
-        var text = Renderer.Render(report, ReportFormat.Github, includeHints: true);
+        var text = Renderer.Render(report, ReportFormat.Github, true);
 
         Assert.Contains("::notice::SK9030: the gate names a baseline", text, StringComparison.Ordinal);
         Assert.Contains("::error::gate `ci`: FAIL", text, StringComparison.Ordinal);
@@ -242,9 +241,9 @@ public sealed class ReportingTests {
         // ⚠ Not a second gate. A passing gate says so and raises nothing (doc 09: the gate decides,
         // once), so a renderer that had started deciding for itself fails here.
         var passed = Renderer.Render(
-            report with { Gate = new GateResult("ci", Passed: true, []) },
+            report with { Gate = new GateResult("ci", true, []) },
             ReportFormat.Github,
-            includeHints: true
+            true
         );
 
         Assert.Contains("::notice::gate `ci`: PASS", passed, StringComparison.Ordinal);
@@ -281,7 +280,7 @@ public sealed class ReportingTests {
     [Fact]
     public void Gate_FailsOnAnyFindingAtOrAboveMaxSeverity() {
         var report = Sample(Modernization("SK5001") with { Severity = SkalaSeverity.Error });
-        var result = Gate.Evaluate(GateDefinition.Local, report, formattingClean: true);
+        var result = Gate.Evaluate(GateDefinition.Local, report, true);
 
         Assert.False(result.Passed);
         Assert.Contains(result.Failures, failure => failure.Contains("error", StringComparison.Ordinal));
@@ -289,7 +288,7 @@ public sealed class ReportingTests {
 
     [Fact]
     public void Gate_PassesWhenEverythingIsBelowTheBar() =>
-        Assert.True(Gate.Evaluate(GateDefinition.Local, Sample(Modernization()), formattingClean: true).Passed);
+        Assert.True(Gate.Evaluate(GateDefinition.Local, Sample(Modernization()), true).Passed);
 
     /// <summary>
     ///     ⚠ A condition this build cannot evaluate fails the gate rather than being dropped. A gate
@@ -301,7 +300,7 @@ public sealed class ReportingTests {
             Name = "ci", MaxSeverity = SkalaSeverity.Error, Unsupported = ["newIssues", "baseline"]
         };
 
-        var result = Gate.Evaluate(definition, Sample(), formattingClean: true);
+        var result = Gate.Evaluate(definition, Sample(), true);
         Assert.False(result.Passed);
         Assert.Equal(2, result.Failures.Length);
     }
@@ -312,7 +311,7 @@ public sealed class ReportingTests {
             Gate.Evaluate(
                 GateDefinition.Local with { RequireCleanFormatting = true },
                 Sample(),
-                formattingClean: false
+                false
             ).Passed
         );
 
@@ -328,7 +327,7 @@ public sealed class ReportingTests {
         var result = Gate.Evaluate(
             GateDefinition.Local with { RequireCleanFormatting = true },
             Sample(),
-            formattingClean: null
+            null
         );
 
         Assert.False(result.Passed);
@@ -338,7 +337,7 @@ public sealed class ReportingTests {
     /// <summary>A gate that does not name `formatting` does not care that nobody looked.</summary>
     [Fact]
     public void Gate_NotRequiringCleanFormatting_IsUnaffectedByNoFormatting() =>
-        Assert.True(Gate.Evaluate(GateDefinition.Local, Sample(Modernization()), formattingClean: null).Passed);
+        Assert.True(Gate.Evaluate(GateDefinition.Local, Sample(Modernization()), null).Passed);
 
     [Fact]
     public void SkippedRules_AreInTheSarifSoTwoCleanRunsAreComparable() {

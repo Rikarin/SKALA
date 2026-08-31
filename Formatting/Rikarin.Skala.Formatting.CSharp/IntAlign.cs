@@ -1,9 +1,8 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using Rikarin.Skala.Formatting;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Formatting.CSharp;
 
@@ -128,11 +127,11 @@ public static class IntAlign {
         }
 
         if (options.IntAlignNestedTernary) {
-            CollectConditionalChains(root, lines, runs, questions: true);
+            CollectConditionalChains(root, lines, runs, true);
         }
 
         if (options.IntAlignBinaryExpressions) {
-            CollectConditionalChains(root, lines, runs, questions: false);
+            CollectConditionalChains(root, lines, runs, false);
         }
 
         if (options.IntAlignComments) {
@@ -416,7 +415,7 @@ public static class IntAlign {
 
             var run = new List<Row>();
             var previousLine = -2;
-            for (ConditionalExpressionSyntax? member = chain;
+            for (var member = chain;
                  member is not null;
                  member = member.WhenFalse as ConditionalExpressionSyntax) {
                 var start = member.Condition.SpanStart;

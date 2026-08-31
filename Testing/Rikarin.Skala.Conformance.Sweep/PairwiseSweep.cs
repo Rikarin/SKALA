@@ -1,6 +1,6 @@
+using Rikarin.Skala.Testing;
 using System.Diagnostics;
 using System.Globalization;
-using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Conformance.Sweep;
 
@@ -349,7 +349,7 @@ public sealed class PairwiseSweep {
             );
         }
 
-        return new PairSweep(
+        return new(
             candidate.Primary.Key,
             candidate.Secondary.Key,
             candidate.Fixture.ToString(),

@@ -79,7 +79,7 @@ public sealed class FormatterTagTests {
             .Options;
 
         var formatted = CSharpFormatter
-            .Format("Test.cs", SourceText.From(source), options, null, null, xmlDoc: true)
+            .Format("Test.cs", SourceText.From(source), options, null, null, true)
             .Formatted;
 
         Assert.Contains(

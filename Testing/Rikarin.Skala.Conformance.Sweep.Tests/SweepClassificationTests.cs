@@ -1,5 +1,3 @@
-using Rikarin.Skala.Conformance.Sweep;
-
 namespace Rikarin.Skala.Conformance.Sweep.Tests;
 
 /// <summary>
@@ -18,7 +16,7 @@ public sealed class SweepClassificationTests {
     public void NeitherEngineMoved_IsUnexercised_AndNeverConformant() {
         // Both engines produced one distinct output across two values, and those outputs agreed at
         // both. That is the shape most likely to be mistaken for a pass: every value agrees.
-        var outcome = OptionSweep.Classify(oracleDistinct: 1, skalaDistinct: 1, agreements: 2, values: 2);
+        var outcome = OptionSweep.Classify(1, 1, 2, 2);
 
         Assert.Equal(SweepOutcome.Unexercised, outcome);
         Assert.NotEqual(SweepOutcome.Conformant, outcome);
@@ -28,14 +26,14 @@ public sealed class SweepClassificationTests {
     public void BothMoved_AndEveryValueAgrees_IsConformant() =>
         Assert.Equal(
             SweepOutcome.Conformant,
-            OptionSweep.Classify(oracleDistinct: 2, skalaDistinct: 2, agreements: 2, values: 2)
+            OptionSweep.Classify(2, 2, 2, 2)
         );
 
     [Fact]
     public void BothMoved_AndSomeValueDisagrees_IsDivergent() =>
         Assert.Equal(
             SweepOutcome.Divergent,
-            OptionSweep.Classify(oracleDistinct: 2, skalaDistinct: 2, agreements: 1, values: 2)
+            OptionSweep.Classify(2, 2, 1, 2)
         );
 
     /// <summary>⚠ <c>resharper_int_align</c>: ReSharper honours the key and Skala ignores it.</summary>
@@ -43,14 +41,14 @@ public sealed class SweepClassificationTests {
     public void OracleMoved_AndSkalaDidNot_IsInert() =>
         Assert.Equal(
             SweepOutcome.Inert,
-            OptionSweep.Classify(oracleDistinct: 2, skalaDistinct: 1, agreements: 1, values: 2)
+            OptionSweep.Classify(2, 1, 1, 2)
         );
 
     [Fact]
     public void SkalaMoved_AndTheOracleDidNot_IsSpurious() =>
         Assert.Equal(
             SweepOutcome.Spurious,
-            OptionSweep.Classify(oracleDistinct: 1, skalaDistinct: 2, agreements: 1, values: 2)
+            OptionSweep.Classify(1, 2, 1, 2)
         );
 
     /// <summary>
@@ -66,11 +64,11 @@ public sealed class SweepClassificationTests {
     public void OneEngineMoving_IsNeverConformant_HoweverManyValuesAgreed() {
         Assert.NotEqual(
             SweepOutcome.Conformant,
-            OptionSweep.Classify(oracleDistinct: 2, skalaDistinct: 1, agreements: 2, values: 2)
+            OptionSweep.Classify(2, 1, 2, 2)
         );
         Assert.NotEqual(
             SweepOutcome.Conformant,
-            OptionSweep.Classify(oracleDistinct: 1, skalaDistinct: 2, agreements: 2, values: 2)
+            OptionSweep.Classify(1, 2, 2, 2)
         );
     }
 
@@ -95,21 +93,21 @@ public sealed class SweepClassificationTests {
     [Fact]
     public void TheBrokenMeasurementCanary_FiresOnlyWhenNothingWasObservedAtAll() {
         // The two shapes that have actually happened.
-        Assert.True(KeyFlipSweep.IsBrokenMeasurement(population: 164, observed: 0));
-        Assert.True(KeyFlipSweep.IsBrokenMeasurement(population: 197, observed: 0));
+        Assert.True(KeyFlipSweep.IsBrokenMeasurement(164, 0));
+        Assert.True(KeyFlipSweep.IsBrokenMeasurement(197, 0));
 
         // ⚠ And it must stay silent on a healthy run, or it is noise that gets ignored. These are
         // this sweep's own real counts: 199 of 207 fixtures agreed at the baseline, and 180 of 258
         // oracle outputs moved in round 1.
-        Assert.False(KeyFlipSweep.IsBrokenMeasurement(population: 207, observed: 199));
-        Assert.False(KeyFlipSweep.IsBrokenMeasurement(population: 258, observed: 180));
+        Assert.False(KeyFlipSweep.IsBrokenMeasurement(207, 199));
+        Assert.False(KeyFlipSweep.IsBrokenMeasurement(258, 180));
 
         // A single observation is enough to say the instrument reached the subject.
-        Assert.False(KeyFlipSweep.IsBrokenMeasurement(population: 258, observed: 1));
+        Assert.False(KeyFlipSweep.IsBrokenMeasurement(258, 1));
 
         // ⚠ An empty population is not a broken measurement, it is nothing to measure — a
         // `--family` filter that matched no option must not print a defect report.
-        Assert.False(KeyFlipSweep.IsBrokenMeasurement(population: 0, observed: 0));
+        Assert.False(KeyFlipSweep.IsBrokenMeasurement(0, 0));
     }
 
     /// <summary>
@@ -126,21 +124,21 @@ public sealed class SweepClassificationTests {
     [Fact]
     public void TheUnvaryingRoundCanary_IsSilentInARoundOfOne() {
         // The shape that has actually happened: every option set, no fixture moved.
-        Assert.True(KeyFlipSweep.IsUnvaryingRound(population: 197, moved: 0));
-        Assert.True(KeyFlipSweep.IsUnvaryingRound(population: 2, moved: 0));
+        Assert.True(KeyFlipSweep.IsUnvaryingRound(197, 0));
+        Assert.True(KeyFlipSweep.IsUnvaryingRound(2, 0));
 
         // ⚠ Round 15 at 603fbd3: `csharp_new_line_before_open_brace` alone, at the flags domain's
         // synthesised all-members value. Both engines parse it — `all` is a member and dominates the
         // join — and the fixture is already braces-on-their-own-line, so the oracle answered with the
         // text it was given. The old canary called that a broken measurement; it was a healthy round.
-        Assert.False(KeyFlipSweep.IsUnvaryingRound(population: 1, moved: 0));
+        Assert.False(KeyFlipSweep.IsUnvaryingRound(1, 0));
 
         // A round in which anything moved is a round that varied.
-        Assert.False(KeyFlipSweep.IsUnvaryingRound(population: 283, moved: 196));
-        Assert.False(KeyFlipSweep.IsUnvaryingRound(population: 283, moved: 1));
+        Assert.False(KeyFlipSweep.IsUnvaryingRound(283, 196));
+        Assert.False(KeyFlipSweep.IsUnvaryingRound(283, 1));
 
         // Nothing to measure is not a defect, exactly as above.
-        Assert.False(KeyFlipSweep.IsUnvaryingRound(population: 0, moved: 0));
+        Assert.False(KeyFlipSweep.IsUnvaryingRound(0, 0));
     }
 
     static OptionSweep Sample(SweepOutcome outcome) =>

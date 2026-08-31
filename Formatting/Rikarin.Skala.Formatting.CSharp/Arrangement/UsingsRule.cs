@@ -1,8 +1,8 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Rikarin.Skala.Options;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
@@ -35,7 +35,9 @@ public sealed class UsingsRule : ArrangementRule {
     /// </remarks>
     readonly ImmutableHashSet<string> _removable;
 
-    public UsingsRule(ImmutableHashSet<string>? removable = null) => _removable = removable ?? [];
+    public UsingsRule(ImmutableHashSet<string>? removable = null) {
+        _removable = removable ?? [];
+    }
 
     public override string Id => ArrangeIds.Usings;
 

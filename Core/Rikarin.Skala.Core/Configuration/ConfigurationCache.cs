@@ -1,6 +1,6 @@
+using Rikarin.Skala.Options;
 using System.Collections.Concurrent;
 using System.Text;
-using Rikarin.Skala.Options;
 
 namespace Rikarin.Skala.Core.Configuration;
 
@@ -61,7 +61,7 @@ public static class ConfigurationCache {
         }
 
         var document = EditorConfigDocument.Load(path);
-        Documents[path] = new CachedDocument(ticks, length, document);
+        Documents[path] = new(ticks, length, document);
         return document;
     }
 

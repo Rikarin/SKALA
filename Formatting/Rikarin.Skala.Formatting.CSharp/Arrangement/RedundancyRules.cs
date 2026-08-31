@@ -494,7 +494,7 @@ public static class ParenthesesRedundancy {
 
         var reparsed = SyntaxFactory.ParseExpression(printed);
         return !reparsed.ContainsDiagnostics
-            && reparsed.IsEquivalentTo(expected, topLevel: false);
+            && reparsed.IsEquivalentTo(expected, false);
     }
 
     const int MaxProofLength = 8192;

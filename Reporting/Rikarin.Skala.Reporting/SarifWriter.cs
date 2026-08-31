@@ -1,12 +1,11 @@
-using System.Globalization;
-using System.IO.Hashing;
-using System.Reflection;
-using System.Text;
 using Microsoft.CodeAnalysis.Sarif;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
+using System.Globalization;
+using System.Reflection;
+using System.Text;
 using SarifSuppressionKind = Microsoft.CodeAnalysis.Sarif.SuppressionKind;
 
 namespace Rikarin.Skala.Reporting;
@@ -47,12 +46,12 @@ public static class SarifWriter {
         driver.SetProperty("optionOverridesActive", report.HasOverrides);
 
         var run = new Run {
-            Tool = new Tool { Driver = driver, Extensions = Extensions(report) },
+            Tool = new() { Driver = driver, Extensions = Extensions(report) },
             Results = [.. report.Findings.Select(finding => BuildResult(report, finding))],
             Invocations = [BuildInvocation(report)]
         };
 
-        return new SarifLog { Runs = [run] };
+        return new() { Runs = [run] };
     }
 
     /// <summary>
@@ -168,9 +167,9 @@ public static class SarifWriter {
             var descriptor = new ReportingDescriptor {
                 Id = rule.Id,
                 Name = Pascal(rule.Concept),
-                ShortDescription = new MultiformatMessageString { Text = rule.Title },
-                FullDescription = new MultiformatMessageString { Text = rule.Rationale },
-                Help = new MultiformatMessageString { Text = rule.Summary },
+                ShortDescription = new() { Text = rule.Title },
+                FullDescription = new() { Text = rule.Rationale },
+                Help = new() { Text = rule.Summary },
                 HelpUri = new Uri("https://github.com/Rikarin/Skala/blob/main/docs/rules/" + rule.Id + ".md"),
 
                 // ⚠ Level *and* enablement. `RuleSeverity.None` means the rule never runs, which is
@@ -211,12 +210,12 @@ public static class SarifWriter {
         var result = new Result {
             RuleId = finding.RuleId,
             Level = SarifSeverity.Level(finding.Severity),
-            Message = new Message { Text = finding.Message },
+            Message = new() { Text = finding.Message },
             Locations = [
                 new Location {
-                    PhysicalLocation = new PhysicalLocation {
-                        ArtifactLocation = new ArtifactLocation { Uri = new Uri(uri, UriKind.Relative) },
-                        Region = new Region {
+                    PhysicalLocation = new() {
+                        ArtifactLocation = new() { Uri = new Uri(uri, UriKind.Relative) },
+                        Region = new() {
                             StartLine = Math.Max(1, finding.Line),
                             StartColumn = Math.Max(1, finding.Column),
                             EndLine = Math.Max(1, finding.EndLine == 0 ? finding.Line : finding.EndLine),
@@ -259,17 +258,17 @@ public static class SarifWriter {
         if (finding.HasFix) {
             result.Fixes = [
                 new Fix {
-                    Description = new Message { Text = finding.Message },
+                    Description = new() { Text = finding.Message },
                     ArtifactChanges = [
                         .. finding.Fix
                             .GroupBy(static edit => edit.Path, StringComparer.Ordinal)
                             .Select(group => new ArtifactChange {
-                                    ArtifactLocation = new ArtifactLocation {
+                                    ArtifactLocation = new() {
                                         Uri = new Uri(Relative(report.RepositoryRoot, group.Key), UriKind.Relative)
                                     },
                                     Replacements = [
                                         .. group.Select(static edit => new Replacement {
-                                                DeletedRegion = new Region {
+                                                DeletedRegion = new() {
                                                     CharOffset = edit.Start, CharLength = edit.Length
                                                 },
                                                 InsertedContent = edit.Text.Length == 0
@@ -409,8 +408,8 @@ public static class SarifWriter {
                 .. report.Diagnostics.Select(static diagnostic =>
                     new Notification {
                         Level = SarifSeverity.Level(diagnostic.Severity),
-                        Message = new Message { Text = diagnostic.Message },
-                        Descriptor = new ReportingDescriptorReference { Id = diagnostic.Id }
+                        Message = new() { Text = diagnostic.Message },
+                        Descriptor = new() { Id = diagnostic.Id }
                     }
                 )
             ];

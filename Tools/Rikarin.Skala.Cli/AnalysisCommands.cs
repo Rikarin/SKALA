@@ -1,4 +1,3 @@
-using System.CommandLine;
 using Rikarin.Skala.Analysis;
 using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Loading;
@@ -8,6 +7,7 @@ using Rikarin.Skala.Mcp;
 using Rikarin.Skala.Options;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.CommandLine;
 
 namespace Rikarin.Skala.Cli;
 
@@ -249,7 +249,7 @@ public static partial class SkalaCommandLine {
                     Mode = mode,
                     ProjectPath = parse.GetValue(project),
                     Fix = parse.GetValue(fix),
-                    Format = ParseFormat(parse.GetValue(format), noColor: false),
+                    Format = ParseFormat(parse.GetValue(format), false),
                     NoCache = parse.GetValue(noCache),
                     Define = ParseDefines(parse.GetValue(define)),
                     Since = parse.GetValue(since),

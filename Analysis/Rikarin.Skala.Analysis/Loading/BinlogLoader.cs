@@ -1,14 +1,13 @@
-using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.Build.Logging.StructuredLogger;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
+using System.Globalization;
 using BuildProject = Microsoft.Build.Logging.StructuredLogger.Project;
 using SourceText = Microsoft.CodeAnalysis.Text.SourceText;
 using Task = Microsoft.Build.Logging.StructuredLogger.Task;
@@ -55,7 +54,7 @@ public static class BinlogLoader {
                 )
             );
 
-            return new LoadedProject { Mode = LoadMode.Binlog, Diagnostics = diagnostics.ToImmutable() };
+            return new() { Mode = LoadMode.Binlog, Diagnostics = diagnostics.ToImmutable() };
         }
 
         // ⚠ Before any MSBuild type is touched in this frame. See MSBuildRuntime's remarks.
@@ -69,12 +68,12 @@ public static class BinlogLoader {
                 )
             );
 
-            return new LoadedProject { Mode = LoadMode.Binlog, Diagnostics = diagnostics.ToImmutable() };
+            return new() { Mode = LoadMode.Binlog, Diagnostics = diagnostics.ToImmutable() };
         }
 
         var invocations = new List<(string Project, string Arguments)>();
         if (!TryRead(path, invocations, diagnostics)) {
-            return new LoadedProject { Mode = LoadMode.Binlog, Diagnostics = diagnostics.ToImmutable() };
+            return new() { Mode = LoadMode.Binlog, Diagnostics = diagnostics.ToImmutable() };
         }
 
         var units = ImmutableArray.CreateBuilder<CompilationUnit>();
@@ -87,7 +86,7 @@ public static class BinlogLoader {
 
         ReportStaleness(path, units, request, diagnostics);
 
-        return new LoadedProject {
+        return new() {
             Mode = LoadMode.Binlog,
             Units = units.ToImmutable(),
             Diagnostics = diagnostics.ToImmutable(),
@@ -293,7 +292,7 @@ public static class BinlogLoader {
             cancellation
         );
 
-        return new CompilationUnit {
+        return new() {
             Name = name,
             Compilation = compilation,
             TargetFramework = TargetFrameworkOf(parsed),

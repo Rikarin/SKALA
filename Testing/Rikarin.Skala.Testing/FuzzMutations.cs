@@ -1,11 +1,11 @@
-using System.Collections.Immutable;
-using System.Globalization;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Formatting.CSharp;
+using System.Collections.Immutable;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Testing;
 
@@ -181,7 +181,7 @@ public static class FuzzMutations {
 
     /// <summary>Scales the leading whitespace of a random selection of safe lines.</summary>
     static string? Reindent(SourceMap map, FuzzRandom random) {
-        var lines = map.SafeLines(atStart: true, absorbing: true);
+        var lines = map.SafeLines(true, absorbing: true);
         if (lines.Count == 0) {
             return null;
         }
@@ -211,7 +211,7 @@ public static class FuzzMutations {
         // spaces *inside* a `// …` are part of the comment's text, and whether a formatter is allowed
         // to trim them is a question about comment handling rather than about whitespace absorption.
         // With an explicit suffix the mutation is structural and the exclusion does not apply.
-        var lines = map.SafeLines(atStart: false, excludeCommentEnds: suffix is null, absorbing: suffix is null);
+        var lines = map.SafeLines(false, suffix is null, suffix is null);
         if (lines.Count == 0) {
             return null;
         }
@@ -261,7 +261,7 @@ public static class FuzzMutations {
     }
 
     static string? Tabify(SourceMap map, FuzzRandom random) {
-        var lines = map.SafeLines(atStart: true, absorbing: true);
+        var lines = map.SafeLines(true, absorbing: true);
         if (lines.Count == 0) {
             return null;
         }
@@ -688,7 +688,7 @@ public static class FuzzMutations {
                 // interpolated string with nested braces entered the corpus at the M9 merge.
                 var spansLines = Text.Lines.GetLineFromPosition(token.SpanStart).LineNumber
                     != Text.Lines.GetLineFromPosition(token.Span.End).LineNumber;
-                Protect(token.SpanStart, token.Span.End, whole: spansLines);
+                Protect(token.SpanStart, token.Span.End, spansLines);
             }
 
             foreach (var node in root.DescendantNodes()) {
@@ -698,7 +698,7 @@ public static class FuzzMutations {
                     // only the line it starts on and the line it ends on — every interior line,
                     // which is where the string's own value lives, was left open.
                     verbatimRegions.Add(node.Span);
-                    Protect(node.SpanStart, node.Span.End, whole: false);
+                    Protect(node.SpanStart, node.Span.End, false);
                 }
 
                 if (node is InterpolatedStringExpressionSyntax) {
@@ -707,7 +707,7 @@ public static class FuzzMutations {
                     // C# 11 put newlines inside interpolation holes, which is what makes the
                     // *inside* of one reachable from a gap between two ordinary tokens.
                     verbatimRegions.Add(node.Span);
-                    Protect(node.SpanStart, node.Span.End, whole: false);
+                    Protect(node.SpanStart, node.Span.End, false);
                 }
             }
 
@@ -715,7 +715,7 @@ public static class FuzzMutations {
                 if (trivia.IsKind(SyntaxKind.DisabledTextTrivia)
                     || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
                     || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
-                    Protect(trivia.SpanStart, trivia.Span.End, whole: true);
+                    Protect(trivia.SpanStart, trivia.Span.End, true);
                 } else if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
                            || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)) {
                     // ⚠ Every line the trivia spans, not just the one it ends on. A run of `///`

@@ -1,12 +1,12 @@
-using System.Collections.Immutable;
-using System.Reflection;
-using System.Runtime.Loader;
-using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
+using System.Reflection;
+using System.Runtime.Loader;
+using System.Text.Json;
 
 namespace Rikarin.Skala.Analysis.Hosting;
 
@@ -181,7 +181,7 @@ public static class HostedAnalyzers {
             extensions.Add(new ToolExtension(package.Package, package.Version, loaded));
         }
 
-        return new HostedResult(analyzers.ToImmutable(), extensions.ToImmutable(), diagnostics.ToImmutable());
+        return new(analyzers.ToImmutable(), extensions.ToImmutable(), diagnostics.ToImmutable());
     }
 
     static string? Locate(HostedPackage package) {

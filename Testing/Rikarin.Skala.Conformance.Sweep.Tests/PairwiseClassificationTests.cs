@@ -1,5 +1,3 @@
-using Rikarin.Skala.Conformance.Sweep;
-
 namespace Rikarin.Skala.Conformance.Sweep.Tests;
 
 /// <summary>
@@ -62,7 +60,7 @@ public sealed class PairwiseClassificationTests {
             PairSweep.Classify(
                 oracleDistinct: 2,
                 skalaDistinct: 2,
-                corners: [Corner("true", "true", agree: false, reached: true)],
+                corners: [Corner("true", "true", false, true)],
                 baselineAgrees: false
             )
         );
@@ -75,8 +73,8 @@ public sealed class PairwiseClassificationTests {
                 oracleDistinct: 2,
                 skalaDistinct: 2,
                 corners: [
-                    Corner("true", "true", agree: true, reached: true),
-                    Corner("false", "false", agree: true, reached: false)
+                    Corner("true", "true", true, true),
+                    Corner("false", "false", true, false)
                 ],
                 baselineAgrees: true
             )
@@ -91,10 +89,10 @@ public sealed class PairwiseClassificationTests {
                 oracleDistinct: 2,
                 skalaDistinct: 2,
                 corners: [
-                    Corner("true", "true", agree: true, reached: true),
-                    Corner("false", "true", agree: true, reached: true),
-                    Corner("true", "false", agree: false, reached: false),
-                    Corner("false", "false", agree: true, reached: false)
+                    Corner("true", "true", true, true),
+                    Corner("false", "true", true, true),
+                    Corner("true", "false", false, false),
+                    Corner("false", "false", true, false)
                 ],
                 baselineAgrees: true
             )
@@ -117,8 +115,8 @@ public sealed class PairwiseClassificationTests {
                 oracleDistinct: 2,
                 skalaDistinct: 2,
                 corners: [
-                    Corner("true", "true", agree: false, reached: true),
-                    Corner("false", "false", agree: false, reached: false)
+                    Corner("true", "true", false, true),
+                    Corner("false", "false", false, false)
                 ],
                 baselineAgrees: true
             )
@@ -138,10 +136,10 @@ public sealed class PairwiseClassificationTests {
             oracleDistinct: 1,
             skalaDistinct: 1,
             corners: [
-                Corner("true", "true", agree: true, reached: true),
-                Corner("false", "true", agree: true, reached: true),
-                Corner("true", "false", agree: true, reached: false),
-                Corner("false", "false", agree: true, reached: false)
+                Corner("true", "true", true, true),
+                Corner("false", "true", true, true),
+                Corner("true", "false", true, false),
+                Corner("false", "false", true, false)
             ],
             baselineAgrees: true
         );
@@ -186,9 +184,9 @@ public sealed class PairwiseClassificationTests {
                 oracleDistinct: 2,
                 skalaDistinct: 2,
                 corners: [
-                    Corner("true", "120", agree: true, reached: true),
-                    Corner("true", "1", agree: false, reached: false, attributable: true),
-                    Corner("false", "1", agree: false, reached: false, attributable: true)
+                    Corner("true", "120", true, true),
+                    Corner("true", "1", false, false, true),
+                    Corner("false", "1", false, false, true)
                 ],
                 baselineAgrees: true
             )
@@ -211,9 +209,9 @@ public sealed class PairwiseClassificationTests {
                 oracleDistinct: 2,
                 skalaDistinct: 2,
                 corners: [
-                    Corner("true", "120", agree: true, reached: true),
-                    Corner("true", "1", agree: false, reached: false, attributable: true),
-                    Corner("false", "1", agree: false, reached: false)
+                    Corner("true", "120", true, true),
+                    Corner("true", "1", false, false, true),
+                    Corner("false", "1", false, false)
                 ],
                 baselineAgrees: true
             )

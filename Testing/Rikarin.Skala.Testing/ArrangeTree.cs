@@ -1,6 +1,3 @@
-using System.Collections.Immutable;
-using System.Globalization;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -8,6 +5,9 @@ using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
+using System.Collections.Immutable;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Testing;
 
@@ -254,7 +254,7 @@ public static class ArrangeTree {
             }
         }
 
-        return new TreeReport(
+        return new(
             files.Length,
             arranged,
             newDiagnostics,

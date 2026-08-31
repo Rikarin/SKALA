@@ -1,11 +1,11 @@
-using System.Collections.Concurrent;
-using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Rikarin.Skala.Rules.Maintainability;
 
@@ -201,7 +201,7 @@ public sealed class MetricsAnalyzer : DiagnosticAnalyzer {
             // ⚠ A primary constructor is the type's constructor whatever the syntax, and docs/plan/07
             // § "Metrics" says its parameters count. Nothing else on a type declaration is a member
             // metric, so Compute is asked only for this.
-            var metrics = MemberMetrics.Compute(type, model: null, context.CancellationToken);
+            var metrics = MemberMetrics.Compute(type, null, context.CancellationToken);
             if (metrics.Parameters > thresholds.Parameters) {
                 Report(
                     context,
@@ -327,7 +327,7 @@ public sealed class MetricsAnalyzer : DiagnosticAnalyzer {
 /// </remarks>
 sealed class MetricThresholds {
     /// <summary>Defaults, exactly as rules.json documents them. Nothing here is invented.</summary>
-    public static MetricThresholds Default { get; } = new MetricThresholds();
+    public static MetricThresholds Default { get; } = new();
 
     public int Cyclomatic { get; private set; } = 25;
 
@@ -342,7 +342,7 @@ sealed class MetricThresholds {
     public int NestingDepth { get; private set; } = 6;
 
     public static MetricThresholds Read(AnalyzerConfigOptions options) =>
-        new MetricThresholds {
+        new() {
             Cyclomatic = Value(options, RuleIds.CyclomaticComplexity, Default.Cyclomatic),
             Cognitive = Value(options, RuleIds.CognitiveComplexity, Default.Cognitive),
             Statements = Value(options, RuleIds.MethodLengthInStatements, Default.Statements),

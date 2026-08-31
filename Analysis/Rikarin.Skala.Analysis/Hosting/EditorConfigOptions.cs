@@ -1,7 +1,7 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Analysis.Loading;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Analysis.Hosting;
 

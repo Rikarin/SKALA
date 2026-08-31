@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Rikarin.Skala.Testing;
+using System.Diagnostics;
 
 namespace Rikarin.Skala.Cli.Tests;
 
@@ -184,7 +184,7 @@ public sealed class FormatCommandTests : IDisposable {
         var output = process.StandardOutput.ReadToEnd();
         var error = process.StandardError.ReadToEnd();
         process.WaitForExit();
-        return new CliRun(process.ExitCode, output, error);
+        return new(process.ExitCode, output, error);
     }
 
     string Git(params string[] arguments) {

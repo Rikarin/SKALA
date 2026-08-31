@@ -1,8 +1,8 @@
+using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Formatting.CSharp;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using Rikarin.Skala.Core.Configuration;
-using Rikarin.Skala.Formatting.CSharp;
 
 namespace Rikarin.Skala.Testing;
 
@@ -96,7 +96,7 @@ public static class UnformatDifferential {
             }
         }
 
-        return new ModeResult(
+        return new(
             mode,
             Fidelity.Compare(nulls),
             Fidelity.Compare(bare),

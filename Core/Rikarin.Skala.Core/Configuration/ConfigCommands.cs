@@ -1,8 +1,8 @@
+using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Options;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
-using Rikarin.Skala.Core.Diagnostics;
-using Rikarin.Skala.Options;
 
 namespace Rikarin.Skala.Core.Configuration;
 
@@ -215,13 +215,13 @@ public static class ConfigCommands {
         AppendDiagnostics(output, diagnostics.ToImmutable());
 
         if (diagnostics.Any(static d => d.Id == ConfigDiagnosticIds.OptionValueOutOfDomain)) {
-            return new CommandResult(ConfigurationFailure, output.ToString());
+            return new(ConfigurationFailure, output.ToString());
         }
 
         var failing = diagnostics.Any(static d => d.Severity == SkalaSeverity.Error)
             || (strict && diagnostics.Any(static d => d.Severity >= SkalaSeverity.Warning));
 
-        return new CommandResult(failing ? StrictFailure : 0, output.ToString());
+        return new(failing ? StrictFailure : 0, output.ToString());
     }
 
     /// <summary>What changes between two <c>.editorconfig</c> files, semantically rather than textually.</summary>
@@ -377,7 +377,7 @@ public static class ConfigCommands {
             }
         }
 
-        AppendSeverityChanges(output, status, detailed: true);
+        AppendSeverityChanges(output, status, true);
 
         if (showOptions && status.Layout.IsManaged) {
             output.AppendLine();
@@ -397,7 +397,7 @@ public static class ConfigCommands {
         );
 
         var failed = status.Drifted && driftSeverity >= SkalaSeverity.Error;
-        return new CommandResult(failed ? ConfigurationFailure : 0, output.ToString());
+        return new(failed ? ConfigurationFailure : 0, output.ToString());
     }
 
     /// <summary>
@@ -501,7 +501,7 @@ public static class ConfigCommands {
         // ⚠ Before the write, and before the "re-run with --apply" line, because the whole point is
         // that a person decides with this in front of them rather than discovering it from a red
         // build afterwards.
-        AppendSeverityChanges(output, result.Before, detailed: false);
+        AppendSeverityChanges(output, result.Before, false);
 
         if (apply) {
             File.WriteAllText(result.Path, result.Text);

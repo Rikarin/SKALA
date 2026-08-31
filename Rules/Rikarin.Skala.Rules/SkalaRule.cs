@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules;
 
@@ -39,16 +39,16 @@ public static class SkalaRule {
     static Dictionary<string, DiagnosticDescriptor> Build() {
         var result = new Dictionary<string, DiagnosticDescriptor>(StringComparer.Ordinal);
         foreach (var rule in RuleCatalog.All) {
-            result[rule.Id] = new DiagnosticDescriptor(
+            result[rule.Id] = new(
                 rule.Id,
                 rule.Title,
                 "{0}",
                 "Skala." + rule.Category,
                 Severity(rule.DefaultSeverity),
-                isEnabledByDefault: !rule.Retired && rule.DefaultSeverity != RuleSeverity.None,
-                description: rule.Summary,
-                helpLinkUri: "https://github.com/Rikarin/Skala/blob/main/docs/rules/" + rule.Id + ".md",
-                customTags: rule.HasFix ? new[] { "Fixable" } : Array.Empty<string>()
+                !rule.Retired && rule.DefaultSeverity != RuleSeverity.None,
+                rule.Summary,
+                "https://github.com/Rikarin/Skala/blob/main/docs/rules/" + rule.Id + ".md",
+                rule.HasFix ? new[] { "Fixable" } : Array.Empty<string>()
             );
         }
 

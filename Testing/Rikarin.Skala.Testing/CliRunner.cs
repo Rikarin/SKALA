@@ -70,7 +70,7 @@ public static class CliRunner {
         var output = process.StandardOutput.ReadToEnd();
         var error = process.StandardError.ReadToEnd();
         process.WaitForExit();
-        return new CliRun(process.ExitCode, output, error);
+        return new(process.ExitCode, output, error);
     }
 
     static string Metadata(string key) =>

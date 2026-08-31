@@ -1,7 +1,7 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis.Sarif;
 using Newtonsoft.Json;
 using Rikarin.Skala.Core.Diagnostics;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Reporting;
 
@@ -101,7 +101,7 @@ public sealed class Baseline {
             );
         }
 
-        return new Baseline(entries.ToImmutable(), path);
+        return new(entries.ToImmutable(), path);
     }
 
     /// <summary>Recovers stable SK7020 v2 hashes from baselines written with its volatile message.</summary>
@@ -217,7 +217,7 @@ public sealed class Baseline {
             }
         }
 
-        return new BaselineComparison(partitioned.ToImmutable(), newCount, fixedEntries.ToImmutable());
+        return new(partitioned.ToImmutable(), newCount, fixedEntries.ToImmutable());
     }
 
     /// <summary>

@@ -1,5 +1,5 @@
-using System.Text.RegularExpressions;
 using Rikarin.Skala.Options;
+using System.Text.RegularExpressions;
 
 namespace Rikarin.Skala.Testing;
 

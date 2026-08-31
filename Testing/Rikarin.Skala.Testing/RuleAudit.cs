@@ -1,11 +1,9 @@
-using System.Collections.Immutable;
-using System.Globalization;
-using System.Text;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Analysis.Hosting;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Reporting;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Testing;
 
@@ -26,9 +24,8 @@ namespace Rikarin.Skala.Testing;
 ///     </para>
 /// </remarks>
 public static class RuleAudit {
-    public static string Run(IReadOnlyList<string> paths, bool semanticInLoose, bool implicitUsings = false) {
-        return Report(paths, semanticInLoose, implicitUsings);
-    }
+    public static string Run(IReadOnlyList<string> paths, bool semanticInLoose, bool implicitUsings = false) =>
+        Report(paths, semanticInLoose, implicitUsings);
 
     /// <summary>
     ///     A stand-in for the <c>ImplicitUsings</c> file the SDK generates into <c>obj/</c>.

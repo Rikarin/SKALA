@@ -40,7 +40,7 @@ public sealed class SkalaTool {
             throw new FileNotFoundException($"No skala binary at '{full}'.", full);
         }
 
-        return new SkalaTool(full, full.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
+        return new(full, full.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
     }
 
     public ToolRun Run(string workingDirectory, params string[] arguments) {
@@ -66,6 +66,6 @@ public sealed class SkalaTool {
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
         process.WaitForExit();
-        return new ToolRun(process.ExitCode, output.Result, error.Result);
+        return new(process.ExitCode, output.Result, error.Result);
     }
 }

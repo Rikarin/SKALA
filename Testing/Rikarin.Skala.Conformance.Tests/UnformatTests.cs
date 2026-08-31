@@ -1,5 +1,5 @@
-using System.Globalization;
 using Rikarin.Skala.Testing;
+using System.Globalization;
 
 namespace Rikarin.Skala.Conformance.Tests;
 

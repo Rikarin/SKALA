@@ -205,7 +205,7 @@ public sealed class BodyStyleRule : ArrangementRule {
             }
 
             if (visited.Body is not { } block
-                || Extract(block, allowExpressionStatement: true) is not { } expression) {
+                || Extract(block, true) is not { } expression) {
                 return visited;
             }
 
@@ -258,7 +258,7 @@ public sealed class BodyStyleRule : ArrangementRule {
 
             if (style == BodyStyle.ExpressionBody) {
                 if (body is null
-                    || Extract(body, loose, allowThrow: !options.UseHeuristicsForBodyStyle)
+                    || Extract(body, loose, !options.UseHeuristicsForBodyStyle)
                     is not { } expression) {
                     return member;
                 }

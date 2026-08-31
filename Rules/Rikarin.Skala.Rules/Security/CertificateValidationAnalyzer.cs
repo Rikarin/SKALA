@@ -1,8 +1,8 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Security;
 

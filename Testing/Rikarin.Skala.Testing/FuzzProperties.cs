@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -8,6 +6,8 @@ using Rikarin.Skala.Formatting;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Options;
+using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Rikarin.Skala.Testing;
 

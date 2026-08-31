@@ -68,7 +68,7 @@ public sealed class FixTests {
             """
         );
 
-        var result = Fixer.Fix(document, resolveContradictions: true);
+        var result = Fixer.Fix(document, true);
         var fixed_ = EditorConfigDocument.FromText("/repo/.editorconfig", result.Text);
 
         Assert.Equal("true", Assert.Single(fixed_.Assignments, static a => a.Key == "insert_final_newline").Value);
@@ -91,7 +91,7 @@ public sealed class FixTests {
 
         var fixed_ = EditorConfigDocument.FromText(
             "/repo/.editorconfig",
-            Fixer.Fix(document, resolveContradictions: true).Text
+            Fixer.Fix(document, true).Text
         );
         Assert.Equal("lf", Assert.Single(fixed_.Assignments, static a => a.Key == "end_of_line").Value);
         Assert.Equal(

@@ -1,7 +1,7 @@
-using System.Globalization;
-using System.Text;
 using Rikarin.Skala.Options;
 using Rikarin.Skala.Rules.Metadata;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Analysis;
 
@@ -774,7 +774,7 @@ public static class DocsSite {
                 if (entry[i] == '`') {
                     var end = entry.IndexOf('`', i + 1);
                     if (end > i) {
-                        builder.Append(Token(entry[(i + 1)..end], root, selfId, code: true));
+                        builder.Append(Token(entry[(i + 1)..end], root, selfId, true));
                         i = end + 1;
                         continue;
                     }
@@ -786,7 +786,7 @@ public static class DocsSite {
                         i++;
                     }
 
-                    builder.Append(Token(entry[start..i], root, selfId, code: false));
+                    builder.Append(Token(entry[start..i], root, selfId, false));
                     continue;
                 }
 

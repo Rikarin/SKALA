@@ -1,6 +1,6 @@
-using System.Globalization;
 using Rikarin.Skala.Conformance.Sweep;
 using Rikarin.Skala.Testing;
+using System.Globalization;
 
 // The key-flip conformance sweep's entry point. ⚠ Every command here shells out to
 // `jb cleanupcode` and takes minutes; none of them is a test, and none runs on a commit.

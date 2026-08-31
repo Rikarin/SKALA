@@ -1,10 +1,10 @@
-using System.Collections.Immutable;
-using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
+using System.Reflection;
 
 namespace Rikarin.Skala.Rules.Tests;
 
@@ -141,10 +141,10 @@ public static class RuleFixtures {
                 analyzers,
                 new CompilationWithAnalyzersOptions(
                     new AnalyzerOptions([]),
-                    onAnalyzerException: null,
-                    concurrentAnalysis: false,
-                    logAnalyzerExecutionTime: false,
-                    reportSuppressedDiagnostics: true
+                    null,
+                    false,
+                    false,
+                    true
                 )
             )
             .GetAnalyzerDiagnosticsAsync(cancellation)

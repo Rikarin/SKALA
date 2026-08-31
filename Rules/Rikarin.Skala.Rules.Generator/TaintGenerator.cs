@@ -1,10 +1,10 @@
+using Microsoft.CodeAnalysis;
+using Rikarin.Skala.Options.Generator;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using Microsoft.CodeAnalysis;
-using Rikarin.Skala.Options.Generator;
 
 namespace Rikarin.Skala.Rules.Generator;
 
@@ -36,7 +36,7 @@ public sealed class TaintGenerator : IIncrementalGenerator {
         "No AdditionalFile named '{0}' was found; the taint table cannot be generated",
         "Skala.Rules",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        true
     );
 
     static readonly DiagnosticDescriptor UnreadableTable = new(
@@ -45,7 +45,7 @@ public sealed class TaintGenerator : IIncrementalGenerator {
         "'{0}' could not be read: {1}",
         "Skala.Rules",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        true
     );
 
     /// <summary>
@@ -58,7 +58,7 @@ public sealed class TaintGenerator : IIncrementalGenerator {
         "The sink on '{0}.{1}' declares rule '{2}', which is not in the SK#### shape",
         "Skala.Rules",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        true
     );
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {

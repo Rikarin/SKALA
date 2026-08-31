@@ -1,7 +1,6 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis.Sarif;
 using Newtonsoft.Json;
-using Rikarin.Skala.Core.Diagnostics;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Reporting;
 
@@ -40,7 +39,7 @@ public static class SarifReader {
 
         var gateName = Property<string>(invocation, "gate");
 
-        return new RunReport {
+        return new() {
             RepositoryRoot = repositoryRoot,
             Mode = ParseMode(Property<string>(driver, "loadMode")),
             Findings = findings.ToImmutable(),
@@ -69,7 +68,7 @@ public static class SarifReader {
         var region = location?.Region;
         var relative = location?.ArtifactLocation?.Uri?.ToString() ?? string.Empty;
 
-        return new Finding {
+        return new() {
             RuleId = result.RuleId ?? string.Empty,
             Severity = SarifSeverity.Read(Property<string>(result, SarifSeverity.Property), result.Level),
             Message = result.Message?.Text ?? string.Empty,

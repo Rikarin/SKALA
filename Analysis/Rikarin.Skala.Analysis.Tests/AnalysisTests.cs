@@ -1,12 +1,11 @@
-using System.Collections.Immutable;
-using System.Diagnostics;
 using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Hosting;
-using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace Rikarin.Skala.Analysis.Tests;
 

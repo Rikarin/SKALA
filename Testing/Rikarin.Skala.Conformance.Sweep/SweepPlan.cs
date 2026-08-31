@@ -1,4 +1,3 @@
-using System.Globalization;
 using Rikarin.Skala.Options;
 using Rikarin.Skala.Testing;
 
@@ -100,7 +99,7 @@ public static class SweepPlan {
             candidates.Add(new SweepCandidate(info, values, fixture));
         }
 
-        return new SweepPlanResult(candidates, excluded);
+        return new(candidates, excluded);
     }
 
     /// <summary>

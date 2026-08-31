@@ -1,6 +1,6 @@
-using System.Collections.Concurrent;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using System.Collections.Concurrent;
 
 namespace Rikarin.Skala.Core.Configuration;
 

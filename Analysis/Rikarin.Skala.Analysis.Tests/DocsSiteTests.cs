@@ -1,6 +1,6 @@
-using System.Reflection;
 using Rikarin.Skala.Options;
 using Rikarin.Skala.Rules.Metadata;
+using System.Reflection;
 
 namespace Rikarin.Skala.Analysis.Tests;
 

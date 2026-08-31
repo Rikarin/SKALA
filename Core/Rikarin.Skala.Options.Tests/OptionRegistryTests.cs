@@ -1,5 +1,3 @@
-using Rikarin.Skala.Options;
-
 namespace Rikarin.Skala.Options.Tests;
 
 public sealed class OptionRegistryTests {

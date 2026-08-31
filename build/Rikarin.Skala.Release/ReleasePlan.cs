@@ -122,7 +122,7 @@ public static class ReleasePlan {
             );
         }
 
-        return new ReleaseVerdict(
+        return new(
             previous,
             declared,
             next,

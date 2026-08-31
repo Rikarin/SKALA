@@ -134,7 +134,7 @@ public sealed class XmlDocRenderer {
         foreach (var node in nodes) {
             switch (node) {
                 case XmlDocWord word:
-                    Push(word.Text, word.Glued, tag: false);
+                    Push(word.Text, word.Glued, false);
                     break;
 
                 case XmlDocBreak hard:
@@ -186,7 +186,7 @@ public sealed class XmlDocRenderer {
         }
 
         if (!multiline) {
-            Push(flat!, element.Glued, tag: true);
+            Push(flat!, element.Glued, true);
 
             // ⚠ A break *after* as well, and it is the same rule read once rather than twice.
             // Measured on `<remarks>` holding `Leading prose. <c>Code.</c> Trailing prose.` and a
@@ -366,7 +366,7 @@ public sealed class XmlDocRenderer {
     /// </remarks>
     void Open(XmlDocElement element) {
         var hug = !_options.LinebreaksInsideTagsForMultilineElements && element.Verbatim is null;
-        Push(Tag(element, ">"), glued: false, tag: true);
+        Push(Tag(element, ">"), false, true);
 
         // ⚠ The start tag's closing column, kept across the break it is about to take. See `_carry`.
         Flush();
@@ -405,7 +405,7 @@ public sealed class XmlDocRenderer {
         }
 
         _level = outer;
-        Push("</" + element.Name + ">", glued: hug, tag: true);
+        Push("</" + element.Name + ">", hug, true);
     }
 
     /// <summary>

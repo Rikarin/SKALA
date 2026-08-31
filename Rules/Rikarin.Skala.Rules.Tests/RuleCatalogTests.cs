@@ -1,5 +1,5 @@
-using System.Reflection;
 using Rikarin.Skala.Rules.Metadata;
+using System.Reflection;
 
 namespace Rikarin.Skala.Rules.Tests;
 

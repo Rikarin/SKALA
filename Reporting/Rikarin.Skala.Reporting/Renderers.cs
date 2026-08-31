@@ -1,7 +1,7 @@
-using System.Globalization;
-using System.Text;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Reporting;
 
@@ -330,7 +330,7 @@ public static class AgentRenderer {
         //
         // ⚠ With neither `--baseline` nor `--since` in play `IsNew` is true for everything, so the
         // unscoped output is byte-for-byte what it was.
-        var ordered = Renderer.Ordered(report, includeHints: false).Where(report.IsNew).ToList();
+        var ordered = Renderer.Ordered(report, false).Where(report.IsNew).ToList();
 
         var formatting = ordered.Where(static f => f.RuleId == RuleIds.FileIsNotFormatted).ToList();
         var fixable = ordered

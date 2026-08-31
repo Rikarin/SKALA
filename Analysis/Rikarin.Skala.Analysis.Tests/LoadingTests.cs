@@ -5,7 +5,9 @@ namespace Rikarin.Skala.Analysis.Tests;
 
 /// <summary>A scratch directory of C# files, for the loose path an agent actually uses.</summary>
 public sealed class Scratch : IDisposable {
-    public Scratch() => Root = Directory.CreateTempSubdirectory("skala-analysis-").FullName;
+    public Scratch() {
+        Root = Directory.CreateTempSubdirectory("skala-analysis-").FullName;
+    }
 
     public string Root { get; }
 

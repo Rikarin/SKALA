@@ -1,12 +1,11 @@
+using Microsoft.CodeAnalysis.Text;
+using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Formatting;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Microsoft.CodeAnalysis.Text;
-using Rikarin.Skala.Core.Diagnostics;
-using Rikarin.Skala.Formatting;
-using Rikarin.Skala.Formatting.CSharp;
 
 namespace Rikarin.Skala.Server;
 
@@ -171,7 +170,7 @@ public sealed class LanguageServer {
 
     JsonArray Edits(JsonObject message, JsonObject? range) {
         if (UriOf(message) is not { } uri || PathOf(uri) is not { } path) {
-            return new JsonArray();
+            return new();
         }
 
         var text = _open.GetValueOrDefault(uri);
@@ -201,12 +200,12 @@ public sealed class LanguageServer {
             }
         }
 
-        return new JsonObject { ["kind"] = "full", ["items"] = items };
+        return new() { ["kind"] = "full", ["items"] = items };
     }
 
     static JsonObject Render(SourceText source, SkalaDiagnostic diagnostic) {
         var line = Math.Clamp(diagnostic.Line - 1, 0, Math.Max(0, source.Lines.Count - 1));
-        return new JsonObject {
+        return new() {
             ["range"] = new JsonObject {
                 ["start"] = new JsonObject { ["line"] = line, ["character"] = 0 },
                 ["end"] = new JsonObject {
@@ -273,7 +272,7 @@ public sealed class LanguageServer {
     static JsonObject RangeOf(SourceText source, SourceSpan span) {
         var start = source.Lines.GetLinePosition(Math.Clamp(span.Start, 0, source.Length));
         var end = source.Lines.GetLinePosition(Math.Clamp(span.End, 0, source.Length));
-        return new JsonObject {
+        return new() {
             ["start"] = new JsonObject { ["line"] = start.Line, ["character"] = start.Character },
             ["end"] = new JsonObject { ["line"] = end.Line, ["character"] = end.Character }
         };

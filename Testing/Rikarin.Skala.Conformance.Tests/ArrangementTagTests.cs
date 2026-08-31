@@ -245,12 +245,12 @@ public sealed class ArrangementTagTests {
         Assert.DoesNotContain("=> 1;", Arrange(custom, offTag: "@fmt:off", onTag: "@fmt:on"), StringComparison.Ordinal);
         Assert.Contains(
             "=> 1;",
-            Arrange(custom, tagsEnabled: false, offTag: "@fmt:off", onTag: "@fmt:on"),
+            Arrange(custom, false, "@fmt:off", "@fmt:on"),
             StringComparison.Ordinal
         );
 
         // ⚠ The built-in pair, under the same disabling key, is untouched.
-        Assert.DoesNotContain("=> 1;", Arrange(builtin, tagsEnabled: false), StringComparison.Ordinal);
+        Assert.DoesNotContain("=> 1;", Arrange(builtin, false), StringComparison.Ordinal);
         Assert.DoesNotContain("=> 1;", Arrange(builtin), StringComparison.Ordinal);
     }
 }

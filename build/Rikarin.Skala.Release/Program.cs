@@ -1,6 +1,6 @@
+using Rikarin.Skala.Release;
 using System.Globalization;
 using System.Text.Json;
-using Rikarin.Skala.Release;
 
 // The measured-version tool. docs/plan/18-versioning-and-release.md.
 //

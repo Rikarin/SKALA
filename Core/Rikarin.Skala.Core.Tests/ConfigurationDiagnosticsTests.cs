@@ -1,6 +1,6 @@
-using System.Collections.Immutable;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Core.Tests;
 

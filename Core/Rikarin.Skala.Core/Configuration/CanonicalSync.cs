@@ -1,6 +1,6 @@
-using System.Collections.Immutable;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Options;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Core.Configuration;
 
@@ -285,7 +285,7 @@ public static class CanonicalSync {
             applied.Add("normalised the markers and the local banner");
         }
 
-        return new SyncResult(before.Path, assembled, applied.ToImmutable(), before);
+        return new(before.Path, assembled, applied.ToImmutable(), before);
     }
 
     /// <summary>

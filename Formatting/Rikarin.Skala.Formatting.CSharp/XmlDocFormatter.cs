@@ -1,9 +1,9 @@
-using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using System.Collections.Immutable;
+using System.Text;
 
 namespace Rikarin.Skala.Formatting.CSharp;
 
@@ -161,7 +161,7 @@ public static class XmlDocFormatter {
             applied.Add(new XmlDocReplacement(span, replacement.Length));
         }
 
-        return new XmlDocOutcome(
+        return new(
             builder.ToString(),
             reflowed,
             refusals.Count,

@@ -1,11 +1,11 @@
-using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using System.Collections.Immutable;
+using System.Text;
 
 namespace Rikarin.Skala.Analysis.Hosting;
 
@@ -57,7 +57,7 @@ public static class IncrementalAnalysis {
     ) {
         if (!useCache) {
             var cold = AnalyzerHost.Run(unit, options, hosted, mode, cancellation, profile);
-            return new IncrementalOutcome(
+            return new(
                 cold.Findings,
                 cold.Diagnostics,
                 0,
@@ -125,7 +125,7 @@ public static class IncrementalAnalysis {
             var cold = AnalyzerHost.Run(unit, options, hosted, mode, cancellation, profile);
             Store(cache, keys, unit, cold.Findings);
             cache.Save();
-            return new IncrementalOutcome(cold.Findings, cold.Diagnostics, 0, keys.Count, cold.Partial, cold.Costs);
+            return new(cold.Findings, cold.Diagnostics, 0, keys.Count, cold.Partial, cold.Costs);
         }
 
         var warm = AnalyzerHost.RunForTrees(unit, options, hosted, mode, misses, cancellation, profile);

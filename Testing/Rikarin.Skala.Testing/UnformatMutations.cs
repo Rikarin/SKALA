@@ -1,10 +1,10 @@
-using System.Globalization;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Formatting.CSharp;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Testing;
 
@@ -112,13 +112,13 @@ public static class Unformat {
         string? degraded;
         switch (mode) {
             case UnformatMode.Collapse:
-                degraded = Collapse(normalised, alwaysSpace: false);
+                degraded = Collapse(normalised, false);
                 if (degraded is null || !Matches(degraded, original)) {
                     // ⚠ The fallback is not politeness. `NeedsSpace` decides token adjacency from a
                     // six-character window, which is conservative by construction but is still a
                     // guess; one space between every pair of tokens is legal everywhere and still
                     // destroys every line break, which is what this mode is for.
-                    degraded = Collapse(normalised, alwaysSpace: true);
+                    degraded = Collapse(normalised, true);
                     glued = true;
                 }
 
@@ -136,7 +136,7 @@ public static class Unformat {
             return null;
         }
 
-        return new DegradedSource(mode, degraded, TextNormalisation.Lines(degraded).Length, glued);
+        return new(mode, degraded, TextNormalisation.Lines(degraded).Length, glued);
     }
 
     /// <summary>⚠ The corpus carries CRLF and BOMs; the degraded corpus is LF and nothing else.</summary>
@@ -452,8 +452,8 @@ public static class Unformat {
         // ⚠ `absorbing: true` even though these are structural edits. That flag is what folds in the
         // *other* symbol set's disabled text, and a line break moved into the `#else` branch of a
         // file compiled with the `#if` branch is still a line break moved into data.
-        var heads = map.SafeLines(atStart: true, absorbing: true).ToHashSet();
-        var tails = map.SafeLines(atStart: false, absorbing: true).ToHashSet();
+        var heads = map.SafeLines(true, absorbing: true).ToHashSet();
+        var tails = map.SafeLines(false, absorbing: true).ToHashSet();
         var claimed = new HashSet<int>();
         var edits = new List<(int Position, int Delete, string Insert)>();
 
@@ -522,7 +522,7 @@ public static class Unformat {
             edits.Add((gap.Start, gap.End - gap.Start, new string(' ', random.Next(1, 5))));
         }
 
-        foreach (var line in map.SafeLines(atStart: true, absorbing: true)) {
+        foreach (var line in map.SafeLines(true, absorbing: true)) {
             if (!random.Chance(IndentChance)) {
                 continue;
             }
@@ -538,7 +538,7 @@ public static class Unformat {
             }
         }
 
-        foreach (var line in map.SafeLines(atStart: false, excludeCommentEnds: true, absorbing: true)) {
+        foreach (var line in map.SafeLines(false, true, true)) {
             var span = map.Text.Lines[line];
             if (span.End == span.Start || !random.Chance(TrailingChance)) {
                 continue;

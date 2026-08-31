@@ -1,4 +1,3 @@
-using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Options;
 using Rikarin.Skala.Testing;

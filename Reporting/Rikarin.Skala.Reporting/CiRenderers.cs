@@ -1,7 +1,7 @@
+using Rikarin.Skala.Core.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Xml;
-using Rikarin.Skala.Core.Diagnostics;
 
 namespace Rikarin.Skala.Reporting;
 
@@ -99,7 +99,7 @@ public static class GithubRenderer {
         Row(builder, "Duration", Renderer.FormatDuration(report.Duration));
         Row(builder, "Configuration", "`" + report.ConfigurationFingerprint + "`");
 
-        builder.Append('\n').Append(MarkdownRenderer.Table(report, limit: 20));
+        builder.Append('\n').Append(MarkdownRenderer.Table(report, 20));
         return builder.ToString();
     }
 

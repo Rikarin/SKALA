@@ -1,7 +1,7 @@
+using Rikarin.Skala.Reporting;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using Rikarin.Skala.Reporting;
 
 namespace Rikarin.Skala.Analysis;
 
@@ -82,7 +82,7 @@ public static class SuppressionAuditor {
         var previous = before.Select(static entry => entry.Key).ToHashSet();
         var current = now.Select(static entry => entry.Key).ToHashSet();
 
-        return new SuppressionAudit {
+        return new() {
             Enforced = true,
             Reference = reference,
             Current = now,

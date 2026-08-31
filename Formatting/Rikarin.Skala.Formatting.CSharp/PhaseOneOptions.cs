@@ -1,5 +1,5 @@
-using System.Collections.Immutable;
 using Rikarin.Skala.Options;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Formatting.CSharp;
 
@@ -416,7 +416,7 @@ public readonly struct PhaseOneOptions {
         // ⚠ Read here, and therefore read on every path, because the sub-formatter is on by
         // default. It used to be built only where a caller passed `--xmldoc`, which meant a caller
         // that held a `PhaseOneOptions` and nothing else could not turn it on at all.
-        XmlDoc = new XmlDocOptions(options);
+        XmlDoc = new(options);
     }
 
     public int IndentSize { get; }

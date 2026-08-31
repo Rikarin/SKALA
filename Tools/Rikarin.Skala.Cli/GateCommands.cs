@@ -1,8 +1,7 @@
-using System.CommandLine;
 using Rikarin.Skala.Analysis;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
-using Rikarin.Skala.Reporting;
+using System.CommandLine;
 
 namespace Rikarin.Skala.Cli;
 

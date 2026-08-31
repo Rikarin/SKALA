@@ -75,7 +75,7 @@ public sealed class ChangedLines {
 
         var ranges = Parse(repositoryRoot, output);
         AddUntracked(repositoryRoot, ranges, cancellation);
-        return new ChangedLines(ranges, reference);
+        return new(ranges, reference);
     }
 
     /// <summary>

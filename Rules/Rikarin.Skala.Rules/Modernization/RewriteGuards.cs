@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace Rikarin.Skala.Rules.Modernization;
 
@@ -57,7 +57,7 @@ internal static class RewriteGuards {
 
     /// <summary>Whether two expressions are the same text, ignoring trivia.</summary>
     public static bool Same(ExpressionSyntax left, ExpressionSyntax right) =>
-        SyntaxFactory.AreEquivalent(left, right, topLevel: false);
+        SyntaxFactory.AreEquivalent(left, right, false);
 
     /// <summary>
     ///     ⚠ Whether a span a fix is about to delete or rewrite contains something a person wrote.

@@ -94,7 +94,7 @@ public sealed class XmlDocPropertyTests {
             CorpusFormatter.OptionsFor(file.Path),
             null,
             null,
-            xmlDoc: false
+            false
         );
         if (with.Outcome is not FormatOutcome.Formatted || without.Outcome is not FormatOutcome.Formatted) {
             return;

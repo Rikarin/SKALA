@@ -1,16 +1,16 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Async;
 using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Design;
 using Rikarin.Skala.Rules.Maintainability;
+using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Modernization;
 using Rikarin.Skala.Rules.Performance;
 using Rikarin.Skala.Rules.Security;
 using Rikarin.Skala.Rules.TestQuality;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Tests;
 

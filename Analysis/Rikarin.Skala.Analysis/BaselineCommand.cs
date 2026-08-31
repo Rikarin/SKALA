@@ -1,8 +1,8 @@
-using System.Globalization;
-using System.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Analysis;
 

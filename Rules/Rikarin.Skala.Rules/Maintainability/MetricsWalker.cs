@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace Rikarin.Skala.Rules.Maintainability;
 
@@ -62,7 +62,7 @@ sealed class MetricsWalker : CSharpSyntaxWalker {
 
     // ⚠ The right operand of a like-operator chain, once its parent has paid for the sequence.
     // Reference identity, because two structurally equal `a && b` nodes are two sequences.
-    readonly HashSet<SyntaxNode> paidLogicalOperands = new HashSet<SyntaxNode>();
+    readonly HashSet<SyntaxNode> paidLogicalOperands = new();
 
     // ⚠ Method groups cached as delegates. `WithNesting(node, base.VisitIfStatement)` allocates a
     // delegate per `if` otherwise, and over 1.35 M lines that is the metric's whole allocation

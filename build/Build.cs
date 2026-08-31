@@ -1,7 +1,3 @@
-using Nuke.Common;
-using Nuke.Common.IO;
-using Nuke.Common.ProjectModel;
-using Nuke.Common.Tools.DotNet;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 /// <summary>

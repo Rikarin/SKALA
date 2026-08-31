@@ -1,7 +1,7 @@
-using System;
-using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Rikarin.Skala.Rules.Metadata;
+using System;
+using System.Collections.Generic;
 
 namespace Rikarin.Skala.Rules.Security;
 
@@ -89,7 +89,7 @@ public sealed class TaintSymbols {
             return null;
         }
 
-        return new TaintSymbols(
+        return new(
             Index(TaintTable.Sources),
             Index(TaintTable.Propagators),
             Index(TaintTable.Sanitizers),
@@ -101,7 +101,7 @@ public sealed class TaintSymbols {
         var result = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (var entry in entries) {
             if (!result.TryGetValue(entry.Type, out var members)) {
-                result[entry.Type] = members = new HashSet<string>(StringComparer.Ordinal);
+                result[entry.Type] = members = new(StringComparer.Ordinal);
             }
 
             foreach (var member in entry.Members) {

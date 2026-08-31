@@ -39,7 +39,7 @@ public static class TextWidth {
             if (element.Length == 1) {
                 switch (element[0]) {
                     case '\t':
-                        column += TabStop - (column % TabStop);
+                        column += TabStop - column % TabStop;
                         continue;
                     case '\n':
                     case '\r':

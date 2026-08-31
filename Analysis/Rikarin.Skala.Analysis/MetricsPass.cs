@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Reporting;
@@ -95,7 +93,7 @@ public static class MetricsPass {
         cyclomatic.Sort();
         statements.Sort();
 
-        return new MetricsSummary {
+        return new() {
             MemberCount = cognitive.Count,
             CognitiveComplexityP95 = MetricsSummary.Percentile(cognitive, 0.95),
             CognitiveComplexityMax = cognitive[^1],

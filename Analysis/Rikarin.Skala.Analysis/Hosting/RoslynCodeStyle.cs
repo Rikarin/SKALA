@@ -1,11 +1,11 @@
-using System.Collections.Immutable;
-using System.Reflection;
-using System.Runtime.Loader;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
+using System.Reflection;
+using System.Runtime.Loader;
 
 namespace Rikarin.Skala.Analysis.Hosting;
 

@@ -1,6 +1,6 @@
-using System.Collections.Immutable;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Analysis.Loading;
 
@@ -82,7 +82,7 @@ public static class ProjectLoader {
             }
         }
 
-        return new LoadedProject {
+        return new() {
             Mode = LoadMode.Loose, Diagnostics = attempted.ToImmutable(), Summary = "nothing could be loaded"
         };
     }

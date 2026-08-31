@@ -1,5 +1,5 @@
-using System.Text;
 using Rikarin.Skala.Options;
+using System.Text;
 
 // CA1711: a [Flags] enum named *Flags is what every reader expects it to be called.
 #pragma warning disable CA1711
@@ -140,7 +140,7 @@ public sealed class LayoutWriter {
         _document = document;
         _width = width;
         _indentWidth = indentUnit == "\t" ? TextWidth.TabStop : indentUnit.Length;
-        _fitter = new Fitter(document, width, _indentWidth);
+        _fitter = new(document, width, _indentWidth);
         _indentUnit = indentUnit;
         _defaultNewLine = defaultNewLine;
         _continuousMultiplier = Math.Max(1, continuousMultiplier);
@@ -180,7 +180,7 @@ public sealed class LayoutWriter {
             tabFill
         );
         writer.Walk();
-        return new Layout(
+        return new(
             writer._output.ToString(),
             writer._anchors,
             writer._fitter.Modes,
@@ -363,7 +363,7 @@ public sealed class LayoutWriter {
     /// );
     ///     </code>
     /// </remarks>
-    int LevelForNested() => Level(nested: true);
+    int LevelForNested() => Level(true);
 
     /// <summary>
     ///     The indent level for a line starting now.
@@ -377,7 +377,7 @@ public sealed class LayoutWriter {
     ///     location));
     ///     </code>
     /// </remarks>
-    int Effective() => Level(nested: false);
+    int Effective() => Level(false);
 
     /// <summary>
     ///     The same as <see cref="Effective" />, but counting an alignment scope at the level it replaced
@@ -394,7 +394,7 @@ public sealed class LayoutWriter {
     ///     <see cref="IndentKind.Align" /> scope's <c>CloserLevel</c> is the level it was opened at, which
     ///     is exactly the level the alignment column replaced.
     /// </remarks>
-    int LevelColumn() => Level(nested: false, levelsOnly: true);
+    int LevelColumn() => Level(false, true);
 
     /// <summary>
     ///     Walks the scope stack and adds up the levels that apply.

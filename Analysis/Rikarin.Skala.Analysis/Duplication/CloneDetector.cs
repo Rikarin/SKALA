@@ -1,10 +1,10 @@
-using System.Collections.Immutable;
-using System.Globalization;
-using System.Text;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Analysis.Duplication;
 
@@ -64,7 +64,7 @@ public static class CloneDetector {
         string? cacheDirectory,
         CancellationToken cancellation
     ) =>
-        Detect(files, minTokens, cacheDirectory, collapseHashes: false, cancellation);
+        Detect(files, minTokens, cacheDirectory, false, cancellation);
 
     /// <summary>
     ///     The test seam for the rule's central promise.
@@ -93,7 +93,7 @@ public static class CloneDetector {
         }
 
         if (measured.Count == 0) {
-            return new DuplicationResult();
+            return new();
         }
 
         var index = cacheDirectory is null ? null : CloneIndex.Load(cacheDirectory);
@@ -109,7 +109,7 @@ public static class CloneDetector {
                 var hash = ContentHash.Of(input.Text);
                 var tokens = index?.TryGet(input.Path, hash) ?? TokenStream.Lex(input.Text);
                 index?.Put(input.Path, hash, tokens);
-                lexed[i] = new LexedFile {
+                lexed[i] = new() {
                     Path = input.Path, IsTest = input.IsTest, Text = SourceText.From(input.Text), Tokens = tokens
                 };
             }
@@ -123,7 +123,7 @@ public static class CloneDetector {
 
         index?.Save();
 
-        return new DuplicationResult {
+        return new() {
             Groups = groups,
             TestGroups = testGroups,
             DuplicatedLines = duplicated,
@@ -550,7 +550,7 @@ public static class CloneDetector {
 
         // Positions ascend and files are in path order, so the occurrences are already sorted by path
         // then offset and Occurrences[0] is the first occurrence the finding is reported at.
-        return new CloneGroup(minTokens + left + right, occurrences.ToImmutable());
+        return new(minTokens + left + right, occurrences.ToImmutable());
     }
 
     /// <summary>Whether every occurrence has the same token at <paramref name="offset" /> from its seed.</summary>

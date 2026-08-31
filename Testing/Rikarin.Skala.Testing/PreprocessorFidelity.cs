@@ -1,9 +1,9 @@
-using System.Globalization;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Reporting;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Testing;
 

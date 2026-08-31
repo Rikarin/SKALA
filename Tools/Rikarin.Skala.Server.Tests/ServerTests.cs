@@ -1,7 +1,6 @@
+using Rikarin.Skala.Formatting.CSharp;
 using System.Text;
 using System.Text.Json.Nodes;
-using Rikarin.Skala.Formatting.CSharp;
-using Rikarin.Skala.Server;
 
 namespace Rikarin.Skala.Server.Tests;
 
@@ -233,11 +232,11 @@ public sealed class GitHookTests {
     public void Install_WritesTheHook_AndSaysSoFirst() {
         using var scratch = new Scratch();
 
-        var dry = GitHooks.Install(scratch.Root, apply: false);
+        var dry = GitHooks.Install(scratch.Root, false);
         Assert.False(dry.Written);
         Assert.False(File.Exists(dry.Path));
 
-        var written = GitHooks.Install(scratch.Root, apply: true);
+        var written = GitHooks.Install(scratch.Root, true);
         Assert.True(written.Written);
         Assert.Contains("skala format --staged", File.ReadAllText(written.Path), StringComparison.Ordinal);
     }
@@ -249,7 +248,7 @@ public sealed class GitHookTests {
         Directory.CreateDirectory(hooks);
         File.WriteAllText(Path.Combine(hooks, "pre-commit"), "#!/bin/sh\necho mine\n");
 
-        var result = GitHooks.Install(scratch.Root, apply: true);
+        var result = GitHooks.Install(scratch.Root, true);
         Assert.False(result.Written);
         Assert.Equal("#!/bin/sh\necho mine\n", File.ReadAllText(result.Path));
     }
@@ -261,7 +260,7 @@ public sealed class GitHookTests {
         using var scratch = new Scratch();
         File.WriteAllText(Path.Combine(scratch.Root, ".pre-commit-config.yaml"), "repos: []\n");
 
-        var result = GitHooks.Install(scratch.Root, apply: true);
+        var result = GitHooks.Install(scratch.Root, true);
         Assert.False(result.Written);
         Assert.Contains("pre-commit", result.Outcome, StringComparison.Ordinal);
     }
@@ -274,7 +273,7 @@ public sealed class GitHookTests {
             "[core]\n\thooksPath = .githooks\n"
         );
 
-        var result = GitHooks.Install(scratch.Root, apply: true);
+        var result = GitHooks.Install(scratch.Root, true);
         Assert.False(result.Written);
         Assert.Contains("core.hooksPath", result.Outcome, StringComparison.Ordinal);
     }

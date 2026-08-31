@@ -65,7 +65,7 @@ public sealed partial class CSharpDocumentBuilder {
     public static BuiltDocument Build(string path, SourceText text, SyntaxNode root, in PhaseOneOptions options) {
         var builder = new CSharpDocumentBuilder(path, text, root, options);
         builder.Run(root);
-        return new BuiltDocument(builder._doc.Build(), builder._diagnostics);
+        return new(builder._doc.Build(), builder._diagnostics);
     }
 
     void Run(SyntaxNode root) {
@@ -118,7 +118,7 @@ public sealed partial class CSharpDocumentBuilder {
         // construct, so the column to align to is the one after it — and the writer only knows that
         // column once the gap has been resolved.
         EmitLeadingGapAt(AlignAnchor(node));
-        OpenIndent(IndentKind.Align, unconditional: true);
+        OpenIndent(IndentKind.Align, true);
         VisitPlanned(node);
         EmitUpTo(node.Span.End);
         CloseIndent(IndentKind.Align);
@@ -1045,7 +1045,7 @@ public sealed partial class CSharpDocumentBuilder {
 
                     var closeIndent = singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block;
                     if (!indentBraces) {
-                        CloseIndent(closeIndent, alignsCloser: true);
+                        CloseIndent(closeIndent, true);
                     }
 
                     EmitToken(token);
@@ -1270,7 +1270,7 @@ public sealed partial class CSharpDocumentBuilder {
                     // `none` shape — the closer takes the level of the line its opener was on — and
                     // it is exactly wrong for the other two, where the closer takes one more.
                     for (var i = opened; i > closer; i--) {
-                        CloseIndent(scopeKind, alignsCloser: closer == 0 && i == closer + 1);
+                        CloseIndent(scopeKind, closer == 0 && i == closer + 1);
                     }
 
                     pending = closer;
@@ -1562,7 +1562,7 @@ public sealed partial class CSharpDocumentBuilder {
     int OpenConditionScopes() {
         var (inside, _) = ConditionLevels;
         for (var i = 0; i < inside; i++) {
-            OpenIndent(ConditionIndent, unconditional: true);
+            OpenIndent(ConditionIndent, true);
         }
 
         // ⚠ Pushed only when a scope was actually opened, and popped by
@@ -1587,7 +1587,7 @@ public sealed partial class CSharpDocumentBuilder {
 
         var (_, closer) = ConditionLevels;
         for (var i = opened; i > closer; i--) {
-            CloseIndent(ConditionIndent, alignsCloser: closer == 0 && i == closer + 1);
+            CloseIndent(ConditionIndent, closer == 0 && i == closer + 1);
         }
 
         return Math.Min(opened, closer);
@@ -1627,7 +1627,7 @@ public sealed partial class CSharpDocumentBuilder {
 
         EmitUpTo(node.CloseBraceToken.SpanStart);
         if (labelled) {
-            CloseIndent(IndentKind.Block, alignsCloser: true);
+            CloseIndent(IndentKind.Block, true);
         }
 
         EmitToken(node.CloseBraceToken);
@@ -2340,7 +2340,7 @@ public sealed partial class CSharpDocumentBuilder {
             _frames[frame] = _frames[frame] with { Activated = true };
         }
 
-        _doc.Line(LineKind.Hard, blanks, newLine: newLine);
+        _doc.Line(LineKind.Hard, blanks, newLine);
     }
 
     /// <summary>

@@ -1,11 +1,11 @@
+using Microsoft.CodeAnalysis;
+using Rikarin.Skala.Options.Generator;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using Microsoft.CodeAnalysis;
-using Rikarin.Skala.Options.Generator;
 
 namespace Rikarin.Skala.Rules.Generator;
 
@@ -35,7 +35,7 @@ public sealed class RulesGenerator : IIncrementalGenerator {
         "No AdditionalFile named '{0}' was found; the rule catalogue cannot be generated",
         "Skala.Rules",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        true
     );
 
     static readonly DiagnosticDescriptor UnreadableCatalogue = new(
@@ -44,7 +44,7 @@ public sealed class RulesGenerator : IIncrementalGenerator {
         "'{0}' could not be read: {1}",
         "Skala.Rules",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        true
     );
 
     static readonly DiagnosticDescriptor MalformedId = new(
@@ -53,7 +53,7 @@ public sealed class RulesGenerator : IIncrementalGenerator {
         "'{0}' is not a rule id; ids are 'SK' followed by four digits (docs/plan/02 § \"Naming\")",
         "Skala.Rules",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        true
     );
 
     static readonly DiagnosticDescriptor DuplicateId = new(
@@ -62,7 +62,7 @@ public sealed class RulesGenerator : IIncrementalGenerator {
         "'{0}' appears more than once in the catalogue; ADR-012 makes an id permanent and therefore unique",
         "Skala.Rules",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        true
     );
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {

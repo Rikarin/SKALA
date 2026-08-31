@@ -1,5 +1,5 @@
-using System.Collections.Immutable;
 using Rikarin.Skala.Core.Diagnostics;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Reporting.Tests;
 
@@ -78,7 +78,7 @@ public sealed class LifecycleTests {
     /// </summary>
     [Fact]
     public void FingerprintV2_OfADuplicatedBlockSurvivesThePairedCloneMovingDownTheFile() {
-        var before = Finding(ruleId: "SK7020", snippet: string.Empty) with {
+        var before = Finding("SK7020", snippet: string.Empty) with {
             Message = "duplicated block of 128 tokens (40 lines), also at Testing/Program.cs:1003-1035"
         };
         var after = before with {
@@ -91,7 +91,7 @@ public sealed class LifecycleTests {
     /// <summary>⚠ The paired file path is display text too, not fingerprint identity.</summary>
     [Fact]
     public void FingerprintV2_OfADuplicatedBlockSurvivesThePairedFileBeingRenamed() {
-        var before = Finding(ruleId: "SK7020", snippet: string.Empty) with {
+        var before = Finding("SK7020", snippet: string.Empty) with {
             Message = "duplicated block of 128 tokens (40 lines), also at Testing/Program.cs:1003-1035"
         };
         var after = before with {
@@ -157,11 +157,11 @@ public sealed class LifecycleTests {
     /// </remarks>
     [Fact]
     public void FingerprintV2_OfASnippetlessFindingSurvivesAnotherAppearingAboveIt() {
-        var subject = Finding(ruleId: "SK7020", file: "Zed/Last.cs", start: 900) with {
+        var subject = Finding("SK7020", file: "Zed/Last.cs", start: 900) with {
             Snippet = string.Empty, Message = "duplicated block of 131 tokens (102 lines), also at A.cs:12-32"
         };
 
-        var unrelated = Finding(ruleId: "SK7020", file: "Aaa/First.cs", start: 100) with {
+        var unrelated = Finding("SK7020", file: "Aaa/First.cs", start: 100) with {
             Snippet = string.Empty, Message = "duplicated block of 9 tokens (2 lines), also at B.cs:1-2"
         };
 
@@ -178,7 +178,7 @@ public sealed class LifecycleTests {
     /// </summary>
     [Fact]
     public void Ordinal_StillSeparatesTwoIdenticalSnippetlessFindings() {
-        var one = Finding(ruleId: "SK7020", file: "Core/Foo.cs", start: 100) with {
+        var one = Finding("SK7020", file: "Core/Foo.cs", start: 100) with {
             Snippet = string.Empty, Message = "duplicated block of 9 tokens (2 lines), also at B.cs:1-2"
         };
 
@@ -221,7 +221,7 @@ public sealed class LifecycleTests {
 
     [Fact]
     public void Baseline_RoundTripsThroughSarifAndMatchesNothingAsNew() {
-        var report = Report(Finding(), Finding("SK1030", line: 40, start: 900, snippet: "x = x ?? y"));
+        var report = Report(Finding(), Finding("SK1030", 40, 900, snippet: "x = x ?? y"));
         var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
 
         try {
@@ -243,7 +243,7 @@ public sealed class LifecycleTests {
     /// </summary>
     [Fact]
     public void Baseline_LegacyDuplicatedBlockFingerprintMatchesAfterThePairedCloneMoves() {
-        var accepted = Finding(ruleId: "SK7020", snippet: string.Empty) with {
+        var accepted = Finding("SK7020", snippet: string.Empty) with {
             Message = "duplicated block of 128 tokens (40 lines), also at Testing/Program.cs:1003-1035"
         };
         var report = Report(accepted);
@@ -279,10 +279,10 @@ public sealed class LifecycleTests {
     /// </summary>
     [Fact]
     public void Baseline_LegacyDuplicatedBlockCollisionsRecoverTheirStableOrdinals() {
-        var first = Finding(ruleId: "SK7020", start: 100, snippet: string.Empty) with {
+        var first = Finding("SK7020", start: 100, snippet: string.Empty) with {
             Message = "duplicated block of 128 tokens (40 lines), also at Testing/First.cs:1003-1035"
         };
-        var second = Finding(ruleId: "SK7020", start: 200, snippet: string.Empty) with {
+        var second = Finding("SK7020", start: 200, snippet: string.Empty) with {
             Message = "duplicated block of 128 tokens (40 lines), also at Testing/Second.cs:2003-2035"
         };
         var accepted = Report(first, second);
@@ -323,14 +323,14 @@ public sealed class LifecycleTests {
 
     [Fact]
     public void Baseline_PartitionsIntoNewExistingAndFixed() {
-        var accepted = Report(Finding(), Finding("SK1030", line: 40, start: 900, snippet: "x = x ?? y"));
+        var accepted = Report(Finding(), Finding("SK1030", 40, 900, snippet: "x = x ?? y"));
         var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
 
         try {
             Baseline.Write(path, accepted, accepted.Findings);
 
             // One of the two still fires; a third has appeared.
-            var now = Report(Finding(), Finding("SK1034", line: 70, start: 1500, snippet: "items.Count() > 0"));
+            var now = Report(Finding(), Finding("SK1034", 70, 1500, snippet: "items.Count() > 0"));
             var comparison = Baseline.Read(path).Compare(now.Findings);
 
             Assert.Equal(1, comparison.NewCount);
@@ -369,7 +369,7 @@ public sealed class LifecycleTests {
         var result = Gate.Evaluate(
             new GateDefinition { Name = "ci", MaxNewIssues = 0 },
             Report(Finding()),
-            formattingClean: true
+            true
         );
 
         Assert.False(result.Passed);
@@ -394,14 +394,14 @@ public sealed class LifecycleTests {
         var definition = new GateDefinition { Name = "ci", MaxSeverity = SkalaSeverity.Warning };
 
         var unscoped = Report(warning);
-        Assert.False(Gate.Evaluate(definition, unscoped, formattingClean: true).Passed);
+        Assert.False(Gate.Evaluate(definition, unscoped, true).Passed);
 
         var accepted = unscoped with {
             HasBaseline = true,
             Findings = [.. unscoped.Findings.Select(static f => f with { Bucket = BaselineBucket.Existing })]
         };
 
-        Assert.True(Gate.Evaluate(definition, accepted, formattingClean: true).Passed);
+        Assert.True(Gate.Evaluate(definition, accepted, true).Passed);
     }
 
     /// <summary>⚠ "New" is the intersection of the scopings, never the union.</summary>
@@ -426,7 +426,7 @@ public sealed class LifecycleTests {
             Name = "ci", Metrics = ImmutableDictionary<string, double>.Empty.Add("duplication", 3.0)
         };
 
-        var result = Gate.Evaluate(definition, Report(Finding()), formattingClean: true);
+        var result = Gate.Evaluate(definition, Report(Finding()), true);
         Assert.False(result.Passed);
         Assert.Contains(result.Failures, static f => f.Contains("was not measured", StringComparison.Ordinal));
     }
@@ -437,7 +437,7 @@ public sealed class LifecycleTests {
             Name = "ci", Metrics = ImmutableDictionary<string, double>.Empty.Add("coverage", 80)
         };
 
-        Assert.False(Gate.Evaluate(definition, Report(Finding()), formattingClean: true).Passed);
+        Assert.False(Gate.Evaluate(definition, Report(Finding()), true).Passed);
     }
 
     /// <summary>⚠ <c>commentDensity</c> is a floor; everything else is a ceiling.</summary>
@@ -459,7 +459,7 @@ public sealed class LifecycleTests {
                     Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("duplication", 3.0)
                 },
                 report,
-                formattingClean: true
+                true
             ).Passed
         );
 
@@ -469,14 +469,14 @@ public sealed class LifecycleTests {
                     Name = "g", Metrics = ImmutableDictionary<string, double>.Empty.Add("commentDensity", 60)
                 },
                 report,
-                formattingClean: true
+                true
             ).Passed
         );
     }
 
     [Fact]
     public void Gate_RuleOverridesMatchAPrefixGlobAndAnExactId() {
-        var report = Report(Finding("SK5001"), Finding("SK1010", line: 40, start: 900));
+        var report = Report(Finding("SK5001"), Finding("SK1010", 40, 900));
 
         Assert.False(
             Gate.Evaluate(
@@ -484,7 +484,7 @@ public sealed class LifecycleTests {
                     Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK5*", 0)
                 },
                 report,
-                formattingClean: true
+                true
             ).Passed
         );
 
@@ -494,7 +494,7 @@ public sealed class LifecycleTests {
                     Name = "g", RuleOverrides = ImmutableDictionary<string, int>.Empty.Add("SK9001", 0)
                 },
                 report,
-                formattingClean: true
+                true
             ).Passed
         );
     }
@@ -505,7 +505,7 @@ public sealed class LifecycleTests {
         var result = Gate.Evaluate(
             new GateDefinition { Name = "ci", Unsupported = ["coverage"] },
             Report(),
-            formattingClean: true
+            true
         );
 
         Assert.False(result.Passed);
@@ -533,20 +533,20 @@ public sealed class LifecycleTests {
     [Fact]
     public void SuppressionAudit_OffDoesNotFailTheGate() {
         Assert.False(SuppressionAudit.Off.Enforced);
-        Assert.True(Gate.Evaluate(GateDefinition.Local, Report(), formattingClean: true).Passed);
+        Assert.True(Gate.Evaluate(GateDefinition.Local, Report(), true).Passed);
     }
 
     [Fact]
     public void Gate_ANewSuppression_Fails() {
         var report = Report() with {
-            Suppressions = new SuppressionAudit {
+            Suppressions = new() {
                 Enforced = true,
                 Reference = "origin/main",
                 Added = [new SuppressionEntry(SuppressionSource.EditorConfig, "SK3002", ".editorconfig [*.cs]", "none")]
             }
         };
 
-        var result = Gate.Evaluate(GateDefinition.Local, report, formattingClean: true);
+        var result = Gate.Evaluate(GateDefinition.Local, report, true);
         Assert.False(result.Passed);
 
         // ⚠ The .editorconfig form specifically: a grep for `#pragma` is not a constraint.

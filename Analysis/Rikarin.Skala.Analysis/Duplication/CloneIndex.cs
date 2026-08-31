@@ -1,10 +1,10 @@
+using Rikarin.Skala.Core;
+using Rikarin.Skala.Reporting;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.IO.Hashing;
 using System.Runtime.InteropServices;
 using System.Text;
-using Rikarin.Skala.Core;
-using Rikarin.Skala.Reporting;
 
 namespace Rikarin.Skala.Analysis.Duplication;
 
@@ -47,7 +47,9 @@ internal sealed class CloneIndex {
     volatile bool _changed;
     int _hits;
 
-    CloneIndex(string path) => _path = path;
+    CloneIndex(string path) {
+        _path = path;
+    }
 
     /// <summary>⚠ Interlocked: the lex pass that calls <see cref="TryGet" /> is parallel.</summary>
     public int Hits => Volatile.Read(ref _hits);
@@ -72,7 +74,7 @@ internal sealed class CloneIndex {
     }
 
     public void Put(string path, string contentHash, TokenStream tokens) =>
-        _live[path] = new Entry(path, contentHash, tokens);
+        _live[path] = new(path, contentHash, tokens);
 
     public void Save() {
         // Nothing new, nothing gone: the bytes on disk already say this.
@@ -197,7 +199,7 @@ internal sealed class CloneIndex {
             previousEnd = end;
         }
 
-        return new Entry(path, contentHash, TokenStream.FromArrays(codes, starts, ends));
+        return new(path, contentHash, TokenStream.FromArrays(codes, starts, ends));
     }
 
     static byte[] WritePayload(List<Entry> entries) {

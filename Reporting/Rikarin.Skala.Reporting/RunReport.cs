@@ -1,7 +1,7 @@
+using Rikarin.Skala.Core.Diagnostics;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
-using Rikarin.Skala.Core.Diagnostics;
 
 namespace Rikarin.Skala.Reporting;
 

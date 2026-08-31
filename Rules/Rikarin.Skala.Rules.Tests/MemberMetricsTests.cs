@@ -728,7 +728,7 @@ public sealed class MemberMetricsTests {
     public void HasDocumentation_ReadsTheDocCommentAndNotAnyComment(string member, bool expected) {
         var tree = CSharpSyntaxTree.ParseText(
             "public class C {\n" + member + "\n}",
-            new CSharpParseOptions(LanguageVersion.Preview, documentationMode: DocumentationMode.Parse),
+            new CSharpParseOptions(LanguageVersion.Preview, DocumentationMode.Parse),
             cancellationToken: TestContext.Current.CancellationToken
         );
 

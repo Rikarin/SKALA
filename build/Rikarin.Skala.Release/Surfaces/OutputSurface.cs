@@ -1,5 +1,5 @@
-using System.Globalization;
 using Rikarin.Skala.Testing;
+using System.Globalization;
 
 namespace Rikarin.Skala.Release.Surfaces;
 
@@ -302,7 +302,7 @@ public static class OutputSurface {
             )
             .ToList();
 
-        return new OutputMeasurement(
+        return new(
             report.Files,
             report.Files - report.IdenticalFiles,
             report.Divergences.Count,

@@ -1,5 +1,3 @@
-using Rikarin.Skala.Formatting.CSharp;
-
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>

@@ -1,6 +1,6 @@
+using Microsoft.CodeAnalysis;
 using System.Collections.Concurrent;
 using System.Globalization;
-using Microsoft.CodeAnalysis;
 
 namespace Rikarin.Skala.Analysis.Loading;
 

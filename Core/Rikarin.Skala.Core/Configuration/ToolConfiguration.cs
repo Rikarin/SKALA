@@ -1,7 +1,7 @@
-using System.Collections.Immutable;
-using System.Text.Json;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Options;
+using System.Collections.Immutable;
+using System.Text.Json;
 
 namespace Rikarin.Skala.Core.Configuration;
 
@@ -78,7 +78,7 @@ public sealed class ToolConfiguration {
             );
         }
 
-        return new ToolConfiguration(path, canonical, exclude, diagnostics.ToImmutable());
+        return new(path, canonical, exclude, diagnostics.ToImmutable());
     }
 
     /// <summary>

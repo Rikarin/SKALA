@@ -1,7 +1,6 @@
+using Rikarin.Skala.Testing;
 using System.Globalization;
 using System.Text.Json;
-using Rikarin.Skala.Formatting.CSharp;
-using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Conformance.Tests;
 

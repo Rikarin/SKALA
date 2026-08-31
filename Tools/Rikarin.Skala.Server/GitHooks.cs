@@ -1,5 +1,5 @@
-using System.Text;
 using Rikarin.Skala.Core.Configuration;
+using System.Text;
 
 namespace Rikarin.Skala.Server;
 
@@ -43,7 +43,7 @@ public static class GitHooks {
         // ⚠ A repository with `core.hooksPath` set, or with a manager's own hook already in place, is
         // a repository whose hooks somebody else owns. Say what to add and stop.
         if (Detect(repositoryRoot) is { } manager) {
-            return new Result(
+            return new(
                 path,
                 $"{manager} manages this repository's hooks. Add `skala format --staged --quiet` to its configuration instead.",
                 false
@@ -53,10 +53,10 @@ public static class GitHooks {
         if (File.Exists(path)) {
             var existing = File.ReadAllText(path);
             if (existing.Contains(Marker, StringComparison.Ordinal)) {
-                return new Result(path, "already installed", false);
+                return new(path, "already installed", false);
             }
 
-            return new Result(
+            return new(
                 path,
                 "a pre-commit hook is already installed and was not written by skala; not touching it.",
                 false
@@ -64,7 +64,7 @@ public static class GitHooks {
         }
 
         if (!apply) {
-            return new Result(path, "would write a pre-commit hook", false);
+            return new(path, "would write a pre-commit hook", false);
         }
 
         Directory.CreateDirectory(hooks);
@@ -82,7 +82,7 @@ public static class GitHooks {
             );
         }
 
-        return new Result(path, "written", true);
+        return new(path, "written", true);
     }
 
     /// <summary>The hook manager that owns this repository's hooks, or null.</summary>

@@ -1,10 +1,9 @@
-using System.Collections.Immutable;
 using Rikarin.Skala.Analysis.Loading;
-using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Reporting;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Analysis;
 
@@ -60,7 +59,7 @@ public static class ArrangementFindings {
             );
         }
 
-        return new Result(findings.ToImmutable(), failed);
+        return new(findings.ToImmutable(), failed);
     }
 
     /// <summary>Semantic arrangement rules omitted by the deliberately projectless loose load.</summary>

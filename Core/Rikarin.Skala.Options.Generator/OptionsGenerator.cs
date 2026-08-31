@@ -1,11 +1,11 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Rikarin.Skala.Options.Generator;
 
@@ -29,7 +29,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "No AdditionalFile named '{0}' was found; the option model cannot be generated",
         "Skala.Options",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        true
     );
 
     static readonly DiagnosticDescriptor UnreadableRegistry = new(
@@ -38,7 +38,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "'{0}' could not be read: {1}",
         "Skala.Options",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        true
     );
 
     static readonly DiagnosticDescriptor DefaultOutOfDomain = new(
@@ -47,8 +47,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "'{0}' declares type '{1}' but its default '{2}' is not in that domain ({3})",
         "Skala.Options",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true,
-        description: "A default outside the option's domain would be silently replaced by the first enum member, which is a different style than the one configured."
+        true,
+        "A default outside the option's domain would be silently replaced by the first enum member, which is a different style than the one configured."
     );
 
     static readonly DiagnosticDescriptor DefaultOutOfRange = new(
@@ -57,8 +57,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "'{0}' declares {1} but its default is '{2}'",
         "Skala.Options",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true,
-        description: "A bound that refuses the option's own default refuses a configuration nobody wrote, and the message would name a fallback the tool would not accept back."
+        true,
+        "A bound that refuses the option's own default refuses a configuration nobody wrote, and the message would name a fallback the tool would not accept back."
     );
 
     static readonly DiagnosticDescriptor UnjustifiedFreeForm = new(
@@ -67,8 +67,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "{0}",
         "Skala.Options",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true,
-        description: "`type: string` claims every string is legal. 27 options that are really enums carried that claim with no reason behind it and therefore validated nothing; `freeFormBecause` is what makes the claim reviewable."
+        true,
+        "`type: string` claims every string is legal. 27 options that are really enums carried that claim with no reason behind it and therefore validated nothing; `freeFormBecause` is what makes the claim reviewable."
     );
 
     /// <summary>⚠ Named rather than inline: a bare id bypasses doc 08's register (ADR-012).</summary>
@@ -80,8 +80,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "'{0}' names more than one option ({1}); a second name for an option is a second thing to keep in sync",
         "Skala.Options",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true,
-        description: "docs/plan/02-repository-layout.md § \"Naming\"."
+        true,
+        "docs/plan/02-repository-layout.md § \"Naming\"."
     );
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
@@ -238,7 +238,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             }
 
             var bounded = option.Min is not null || option.Max is not null;
-            if (bounded != (option.BoundsBecause is { Length: > 0 })) {
+            if (bounded != option.BoundsBecause is { Length: > 0 }) {
                 context.ReportDiagnostic(
                     Diagnostic.Create(
                         UnjustifiedFreeForm,
@@ -252,7 +252,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             }
 
             var freeForm = option.Kind == OptionValueKind.String;
-            if (freeForm != (option.FreeFormBecause is { Length: > 0 })) {
+            if (freeForm != option.FreeFormBecause is { Length: > 0 }) {
                 context.ReportDiagnostic(
                     Diagnostic.Create(
                         UnjustifiedFreeForm,

@@ -1,9 +1,9 @@
-using System.Globalization;
-using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using Rikarin.Skala.Analysis.Duplication;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
+using System.Globalization;
+using System.Text;
 
 namespace Rikarin.Skala.Analysis.Tests;
 
@@ -61,8 +61,8 @@ public sealed class DuplicationTests {
     /// </summary>
     [Fact]
     public void Detect_WhenEveryIdentifierIsRenamed_StillReportsOneGroup() {
-        var original = Block(120, prefix: "value", call: "Compute", type: "Holder");
-        var renamed = Block(120, prefix: "otherName", call: "Evaluate", type: "Widget");
+        var original = Block(120, "value", "Compute", "Holder");
+        var renamed = Block(120, "otherName", "Evaluate", "Widget");
         Assert.NotEqual(original, renamed);
 
         var result = Detect(
@@ -167,7 +167,7 @@ public sealed class DuplicationTests {
     public void Detect_ExcludesGeneratedFilesFromBothHalvesOfThePercentage() {
         var block = Block(250);
         var production = Production("/repo/Alpha.cs", Alpha(block));
-        var generated = new DuplicationInput("/repo/Beta.g.cs", Beta(block), IsGenerated: true, IsTest: false);
+        var generated = new DuplicationInput("/repo/Beta.g.cs", Beta(block), true, false);
 
         var result = Detect([production, generated]);
 
@@ -426,9 +426,9 @@ public sealed class DuplicationTests {
     static DuplicationResult Detect(IReadOnlyList<DuplicationInput> files) =>
         CloneDetector.Detect(files, MinTokens, null, TestContext.Current.CancellationToken);
 
-    static DuplicationInput Production(string path, string text) => new(path, text, IsGenerated: false, IsTest: false);
+    static DuplicationInput Production(string path, string text) => new(path, text, false, false);
 
-    static DuplicationInput Test(string path, string text) => new(path, text, IsGenerated: false, IsTest: true);
+    static DuplicationInput Test(string path, string text) => new(path, text, false, true);
 
     static DuplicationInput[] Corpus() {
         var shared = Block(250, seed: 5);

@@ -1,10 +1,10 @@
-using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Maintainability;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Rikarin.Skala.Rules.Tests;
 
@@ -115,7 +115,7 @@ public sealed class MetricsAnalyzerTests {
                 }
             }
             """,
-            ruleId: null,
+            null,
             ("dotnet_code_quality.SK7006.threshold", "4"),
 
             // 1 + 2 + 3 + 4 + 5 is 15, which is the default threshold exactly and therefore not over
@@ -150,10 +150,10 @@ public sealed class MetricsAnalyzerTests {
                 [new MetricsAnalyzer()],
                 new CompilationWithAnalyzersOptions(
                     new AnalyzerOptions([], new FixedOptionsProvider(options)),
-                    onAnalyzerException: null,
-                    concurrentAnalysis: false,
-                    logAnalyzerExecutionTime: false,
-                    reportSuppressedDiagnostics: true
+                    null,
+                    false,
+                    false,
+                    true
                 )
             )
             .GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken)
@@ -167,7 +167,7 @@ public sealed class MetricsAnalyzerTests {
 
     /// <summary>The `.editorconfig` chain, reduced to the one section a test cares about.</summary>
     sealed class FixedOptionsProvider(params (string Key, string Value)[] values) : AnalyzerConfigOptionsProvider {
-        readonly FixedOptions options = new FixedOptions(values);
+        readonly FixedOptions options = new(values);
 
         public override AnalyzerConfigOptions GlobalOptions => options;
 

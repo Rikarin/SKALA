@@ -97,6 +97,6 @@ internal sealed class TokenStream {
             Array.Resize(ref ends, count);
         }
 
-        return new TokenStream(codes, starts, ends);
+        return new(codes, starts, ends);
     }
 }

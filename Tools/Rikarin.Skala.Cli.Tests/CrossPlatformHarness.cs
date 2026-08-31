@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Rikarin.Skala.Testing;
+using System.Diagnostics;
 
 namespace Rikarin.Skala.Cli.Tests;
 
@@ -16,7 +16,9 @@ namespace Rikarin.Skala.Cli.Tests;
 ///     and their own <c>.git</c>, so they carry their own runner.
 /// </remarks>
 public sealed class CrossPlatformScratch : IDisposable {
-    public CrossPlatformScratch(string prefix) => Root = Directory.CreateTempSubdirectory(prefix).FullName;
+    public CrossPlatformScratch(string prefix) {
+        Root = Directory.CreateTempSubdirectory(prefix).FullName;
+    }
 
     public string Root { get; }
 
@@ -76,6 +78,6 @@ public sealed class CrossPlatformScratch : IDisposable {
         var output = process.StandardOutput.ReadToEnd();
         var error = process.StandardError.ReadToEnd();
         process.WaitForExit();
-        return new CliRun(process.ExitCode, output, error);
+        return new(process.ExitCode, output, error);
     }
 }

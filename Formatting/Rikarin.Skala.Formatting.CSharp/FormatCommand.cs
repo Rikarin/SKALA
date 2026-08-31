@@ -1,10 +1,9 @@
+using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Core.Diagnostics;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using Microsoft.CodeAnalysis.Text;
-using Rikarin.Skala.Core.Configuration;
-using Rikarin.Skala.Core.Diagnostics;
 
 namespace Rikarin.Skala.Formatting.CSharp;
 
@@ -130,7 +129,7 @@ public static class FormatCommand {
         List<string> files;
         if (request.Staged != StagedMode.Off) {
             if (root is null) {
-                return new CommandResult(
+                return new(
                     ExitCodes.ConfigurationError,
                     "skala format --staged: not inside a git repository\n"
                 );
@@ -148,7 +147,7 @@ public static class FormatCommand {
                     output.AppendLine();
                     output.AppendLine("Formatting the worktree copy would stage work you did not mean to commit.");
                     output.AppendLine("Pass --staged=worktree to format and stage them anyway.");
-                    return new CommandResult(ExitCodes.ConfigurationError, output.ToString());
+                    return new(ExitCodes.ConfigurationError, output.ToString());
                 }
             }
 
@@ -248,7 +247,7 @@ public static class FormatCommand {
                 ? ExitCodes.FormattingNeeded
                 : ExitCodes.Ok;
 
-        return new CommandResult(exit, output.ToString());
+        return new(exit, output.ToString());
     }
 
     /// <summary>One file's result, reduced to what the ordered pass needs.</summary>
@@ -329,19 +328,19 @@ public static class FormatCommand {
         }
 
         if (result.Outcome == FormatOutcome.VerificationFailed) {
-            return new FileOutcome(true, false, null, result.Diagnostics);
+            return new(true, false, null, result.Diagnostics);
         }
 
         // ⚠ Generated and NotParseable both reach here with no edits, and so does a file that was
         // simply already correct. They are three different answers and `--verbose` is what tells
         // them apart.
         if (result.Outcome is FormatOutcome.Generated or FormatOutcome.NotParseable) {
-            return new FileOutcome(false, false, null, result.Diagnostics, result.Outcome);
+            return new(false, false, null, result.Diagnostics, result.Outcome);
         }
 
         var edits = range is { } span ? EditEmitter.Restrict(result.Edits, span) : result.Edits;
         if (edits.Count == 0) {
-            return new FileOutcome(false, false, null, result.Diagnostics);
+            return new(false, false, null, result.Diagnostics);
         }
 
         var original = result.Original.ToString();
@@ -355,7 +354,7 @@ public static class FormatCommand {
             File.WriteAllText(file, text, result.Original.Encoding ?? new UTF8Encoding(false));
         }
 
-        return new FileOutcome(
+        return new(
             false,
             true,
             request.Diff ? UnifiedDiff.Render(Relative(root, file), original, text) : null,

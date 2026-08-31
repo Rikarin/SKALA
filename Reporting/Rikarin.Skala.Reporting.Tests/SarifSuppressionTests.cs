@@ -1,6 +1,6 @@
-using System.Text.Json;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
+using System.Text.Json;
 
 namespace Rikarin.Skala.Reporting.Tests;
 
@@ -115,7 +115,7 @@ public sealed class SarifSuppressionTests {
         var gate = Gate.Evaluate(
             new GateDefinition { Name = "ci", MaxNewIssues = 0, BaselinePath = Baseline.DefaultRelativePath },
             report,
-            formattingClean: true
+            true
         );
 
         var open = Results(report with { Gate = gate })

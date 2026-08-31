@@ -166,7 +166,7 @@ public static class PreprocessorGuard {
             return null;
         }
 
-        var node = root.FindNode(span, findInsideTrivia: false, getInnermostNodeForTie: false);
+        var node = root.FindNode(span, false, false);
         for (; node is not null; node = node.Parent) {
             if (node is MemberDeclarationSyntax and not BaseNamespaceDeclarationSyntax) {
                 return node;

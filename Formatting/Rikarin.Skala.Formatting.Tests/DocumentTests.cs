@@ -75,28 +75,28 @@ public sealed class DocumentBuilderTests {
 public sealed class FitterTests {
     [Fact]
     public void AutoGroup_BreaksOnlyWhenTheLineRunsOut() {
-        Assert.Equal("a b", Call(GroupMode.Auto, new GroupFacts(), width: 10));
-        Assert.Equal("a\nb", Call(GroupMode.Auto, new GroupFacts(), width: 2));
+        Assert.Equal("a b", Call(GroupMode.Auto, new GroupFacts(), 10));
+        Assert.Equal("a\nb", Call(GroupMode.Auto, new GroupFacts(), 2));
     }
 
     [Fact]
     public void PreserveGroup_KeepsTheAuthorsBreak_AndDoesNotAddOne() {
         // ⚠ The two halves of "subject to width" are separate facts, because the export wants a
         // different one per construct family. A group with neither may only reproduce the source.
-        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(SourceBroken: true), width: 80));
-        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(), width: 2));
+        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(true), 80));
+        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(), 2));
     }
 
     [Fact]
     public void PreserveGroup_JoinsOnlyWhenAskedTo_AndOnlyWhenItFits() {
-        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(SourceBroken: true, JoinsIfFits: true), width: 80));
-        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(SourceBroken: true, JoinsIfFits: true), width: 2));
+        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(true, true), 80));
+        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(true, true), 2));
     }
 
     [Fact]
     public void PreserveGroup_BreaksOnlyWhenAskedTo_AndOnlyWhenItMust() {
-        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true), width: 2));
-        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true), width: 80));
+        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true), 2));
+        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true), 80));
     }
 
     [Fact]
@@ -105,8 +105,8 @@ public sealed class FitterTests {
         // depth-first walk resolves it first; the child reads the answer and may only move
         // Flat → Broken, which is why termination is a property of the walk order and not of a
         // convergence argument (docs/plan/04 § "The fitting algorithm").
-        Assert.Equal("aaaa bbbb", OwnerAndChild(width: 80));
-        Assert.Equal("aaaa\nbbbb", OwnerAndChild(width: 6));
+        Assert.Equal("aaaa bbbb", OwnerAndChild(80));
+        Assert.Equal("aaaa\nbbbb", OwnerAndChild(6));
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public sealed class FitterTests {
         builder.DescribeGroup(group, facts);
         builder.OpenGroup(mode, group);
         builder.Text("a", new SourceSpan(0, 1));
-        builder.BreakPoint(group, flatSpace: true);
+        builder.BreakPoint(group, true);
         builder.Text("b", new SourceSpan(2, 1));
         builder.Close();
 
@@ -151,7 +151,7 @@ public sealed class FitterTests {
         builder.OpenGroup(GroupMode.Auto, owner);
         builder.Text("aaaa", new SourceSpan(0, 4));
         builder.OpenGroup(GroupMode.Owner, child);
-        builder.BreakPoint(child, flatSpace: true);
+        builder.BreakPoint(child, true);
         builder.Text("bbbb", new SourceSpan(5, 4));
         builder.Close();
         builder.Close();

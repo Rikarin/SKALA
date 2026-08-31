@@ -1,5 +1,5 @@
-using System.Collections.Immutable;
 using Rikarin.Skala.Options;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Formatting.CSharp;
 

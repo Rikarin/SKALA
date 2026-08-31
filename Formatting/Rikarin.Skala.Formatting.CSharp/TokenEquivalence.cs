@@ -1,8 +1,8 @@
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using System.Text;
 
 namespace Rikarin.Skala.Formatting.CSharp;
 
@@ -61,12 +61,12 @@ public static class TokenEquivalence {
         var count = Math.Min(left.Count, right.Count);
         for (var i = 0; i < count; i++) {
             if (!string.Equals(left[i], right[i], StringComparison.Ordinal)) {
-                return new EquivalenceFailure(i, left[i], right[i]);
+                return new(i, left[i], right[i]);
             }
         }
 
         if (left.Count != right.Count) {
-            return new EquivalenceFailure(
+            return new(
                 count,
                 count < left.Count ? left[count] : "(end of file)",
                 count < right.Count ? right[count] : "(end of file)"

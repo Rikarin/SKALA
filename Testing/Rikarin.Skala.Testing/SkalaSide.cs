@@ -1,9 +1,9 @@
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Rikarin.Skala.Testing;
 
