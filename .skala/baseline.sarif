@@ -1269,201 +1269,69 @@
       },
       "results": [
         {
-          "ruleId": "SK7002",
+          "ruleId": "SK7005",
           "level": "note",
           "message": {
-            "text": "Cognitive complexity is 16, over the threshold of 15"
+            "text": "The primary constructor takes 9 parameters, over the threshold of 8"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Async/AsyncContext.cs"
+                  "uri": "Core/Rikarin.Skala.Core/Configuration/CanonicalSync.cs"
                 },
                 "region": {
-                  "startLine": 134,
-                  "startColumn": 24,
-                  "endLine": 134,
-                  "endColumn": 36,
-                  "charOffset": 5931,
-                  "charLength": 12
+                  "startLine": 90,
+                  "startColumn": 22,
+                  "endLine": 90,
+                  "endColumn": 37,
+                  "charOffset": 4441,
+                  "charLength": 15
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "bd14b67e185593733f82dc127c8bf1c6",
-            "skala/v2": "252caafc840d2c38df302b54c8ddb772"
+            "skala/v1": "fb21fbaf41937c2a4886125482bdf93f",
+            "skala/v2": "c7c0b78a4d16ecc7e61483d8ec72cf34"
           },
           "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Async.AsyncContext"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 25, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Async/BlockingOnAsyncAnalyzer.cs"
-                },
-                "region": {
-                  "startLine": 152,
-                  "startColumn": 9,
-                  "endLine": 152,
-                  "endColumn": 14,
-                  "charOffset": 6786,
-                  "charLength": 5
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "a7a536d1a6b9244ad2eb525824fe03fe",
-            "skala/v2": "0cbec63d55301422076b8d9c1c519829"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Async.BlockingOnAsyncAnalyzer"
+            "skalaSeverity": "hint",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Core.Configuration"
           }
         },
         {
           "ruleId": "SK7001",
           "level": "note",
           "message": {
-            "text": "Cyclomatic complexity is 26, over the threshold of 25"
+            "text": "Cyclomatic complexity is 30, over the threshold of 25"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Async/TaskReturnedFromUsingAnalyzer.cs"
+                  "uri": "Core/Rikarin.Skala.Core/Configuration/ConfigCommands.cs"
                 },
                 "region": {
-                  "startLine": 157,
-                  "startColumn": 17,
-                  "endLine": 157,
-                  "endColumn": 29,
-                  "charOffset": 7113,
-                  "charLength": 12
+                  "startLine": 129,
+                  "startColumn": 33,
+                  "endLine": 129,
+                  "endColumn": 38,
+                  "charOffset": 6220,
+                  "charLength": 5
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "d402dd45d65a55795166a085bdf47841",
-            "skala/v2": "f492137ae465e3e7a1afe0843bc40be1"
+            "skala/v1": "03c3be889b4a34f57c28cf637de501f1",
+            "skala/v2": "46925a2c2cbebdddb7b84c0a907ebdc8"
           },
           "properties": {
             "skalaSeverity": "hint",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Async.TaskReturnedFromUsingAnalyzer"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 24, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Async/TaskReturnedFromUsingAnalyzer.cs"
-                },
-                "region": {
-                  "startLine": 157,
-                  "startColumn": 17,
-                  "endLine": 157,
-                  "endColumn": 29,
-                  "charOffset": 7113,
-                  "charLength": 12
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "ed9724c4f9efe007e4f846ec127c163f",
-            "skala/v2": "f72a6964c268747426802a56a0d561c1"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Async.TaskReturnedFromUsingAnalyzer"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 36, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Async/TaskReturnedFromUsingAnalyzer.cs"
-                },
-                "region": {
-                  "startLine": 263,
-                  "startColumn": 20,
-                  "endLine": 263,
-                  "endColumn": 43,
-                  "charOffset": 11403,
-                  "charLength": 23
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "927dfb454c9fadb8ff0c2b60b1e2e6ff",
-            "skala/v2": "60699c718c462a56772a70c7271d4abb"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Async.TaskReturnedFromUsingAnalyzer"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 31, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Async/UndisposedLocalAnalyzer.cs"
-                },
-                "region": {
-                  "startLine": 140,
-                  "startColumn": 17,
-                  "endLine": 140,
-                  "endColumn": 31,
-                  "charOffset": 6075,
-                  "charLength": 14
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "6c62948ee358f716307f8811c534182b",
-            "skala/v2": "484047a387f444c6c9e8d851a52ed9b3"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Async.UndisposedLocalAnalyzer"
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.ConfigCommands"
           }
         },
         {
@@ -1476,126 +1344,159 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Maintainability/MemberMetrics.cs"
+                  "uri": "Core/Rikarin.Skala.Core/Configuration/ConfigCommands.cs"
                 },
                 "region": {
-                  "startLine": 378,
+                  "startLine": 129,
+                  "startColumn": 33,
+                  "endLine": 129,
+                  "endColumn": 38,
+                  "charOffset": 6220,
+                  "charLength": 5
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "b8554288ec022da50610aa104b953fc0",
+            "skala/v2": "54cb1cb033fc09035c9ed09a3146c0f9"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.ConfigCommands"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 20, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Core/Rikarin.Skala.Core/Configuration/Distiller.cs"
+                },
+                "region": {
+                  "startLine": 50,
+                  "startColumn": 33,
+                  "endLine": 50,
+                  "endColumn": 40,
+                  "charOffset": 2324,
+                  "charLength": 7
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "76702a0adca5b97dc6d871d0c7412dd2",
+            "skala/v2": "170d75c030fe55bf2c0505bf1a650eb4"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.Distiller"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 41, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Core/Rikarin.Skala.Core/Configuration/Fixer.cs"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 29,
+                  "endLine": 17,
+                  "endColumn": 32,
+                  "charOffset": 627,
+                  "charLength": 3
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "02a32bdc19299b6b654faa478191e578",
+            "skala/v2": "d5d86475e70e438f89e070ac4a2ccf95"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.Fixer"
+          }
+        },
+        {
+          "ruleId": "SK7001",
+          "level": "note",
+          "message": {
+            "text": "Cyclomatic complexity is 30, over the threshold of 25"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Core/Rikarin.Skala.Core/Configuration/OptionResolver.cs"
+                },
+                "region": {
+                  "startLine": 126,
                   "startColumn": 36,
-                  "endLine": 378,
-                  "endColumn": 45,
-                  "charOffset": 17528,
-                  "charLength": 9
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "d56b0a9845f3e3ea31271fe11255f1ae",
-            "skala/v2": "e9f20c11817f09bff5144ec095dbe72a"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Maintainability.MemberMetrics"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 17, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Modernization/CountPropertyAnalyzer.cs"
-                },
-                "region": {
-                  "startLine": 54,
-                  "startColumn": 17,
-                  "endLine": 54,
-                  "endColumn": 24,
-                  "charOffset": 2422,
+                  "endLine": 126,
+                  "endColumn": 43,
+                  "charOffset": 5637,
                   "charLength": 7
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "a7d79cbb895c873aa9b0af60e7feb969",
-            "skala/v2": "da4997bc2103f810650e1ac05c61fd53"
+            "skala/v1": "5832e0a7f72def3507849b787d7df420",
+            "skala/v2": "f08f3e768feb689e9ac74be2bc57dd24"
           },
           "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Modernization.CountPropertyAnalyzer"
+            "skalaSeverity": "hint",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.OptionResolver"
           }
         },
         {
           "ruleId": "SK7002",
           "level": "note",
           "message": {
-            "text": "Cognitive complexity is 24, over the threshold of 15"
+            "text": "Cognitive complexity is 36, over the threshold of 15"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Modernization/CountPropertyAnalyzer.cs"
+                  "uri": "Core/Rikarin.Skala.Core/Configuration/OptionResolver.cs"
                 },
                 "region": {
-                  "startLine": 156,
-                  "startColumn": 20,
-                  "endLine": 156,
-                  "endColumn": 33,
-                  "charOffset": 5844,
-                  "charLength": 13
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "1706bddb8fbe460e9f07210d4e22f410",
-            "skala/v2": "a415d203514feebcb558a5c1e2636bba"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Modernization.CountPropertyAnalyzer"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 19, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Modernization/TypePatternAnalyzer.cs"
-                },
-                "region": {
-                  "startLine": 47,
-                  "startColumn": 17,
-                  "endLine": 47,
-                  "endColumn": 24,
-                  "charOffset": 2317,
+                  "startLine": 126,
+                  "startColumn": 36,
+                  "endLine": 126,
+                  "endColumn": 43,
+                  "charOffset": 5637,
                   "charLength": 7
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "28fa9b4ef98cf8e0d76f3c6ccaa7cb9c",
-            "skala/v2": "66a79600ab52deb502612146ad4e4987"
+            "skala/v1": "ca681635aa0934eabbedc8c7dfabcda9",
+            "skala/v2": "42d756812dbd5241da7b574687215510"
           },
           "properties": {
             "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Modernization.TypePatternAnalyzer"
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.OptionResolver"
           }
         },
         {
@@ -1608,93 +1509,225 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Security/TaintAnalysis.cs"
+                  "uri": "build/Rikarin.Skala.Release/ReleaseNotes.cs"
                 },
                 "region": {
-                  "startLine": 63,
-                  "startColumn": 47,
-                  "endLine": 63,
-                  "endColumn": 50,
-                  "charOffset": 3864,
-                  "charLength": 3
+                  "startLine": 27,
+                  "startColumn": 26,
+                  "endLine": 27,
+                  "endColumn": 32,
+                  "charOffset": 1275,
+                  "charLength": 6
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "341efb05c9db2acac1ce5a137ca415f7",
-            "skala/v2": "07ab6dfffe95e92b7a37a84cf4e2c506"
+            "skala/v1": "5a46798b6600a4893a38e6a714ba982f",
+            "skala/v2": "3647d1a17d71db6dd96556eed1f20652"
           },
           "properties": {
             "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Security.TaintAnalysis"
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Release.ReleaseNotes"
           }
         },
         {
-          "ruleId": "SK7001",
+          "ruleId": "SK7005",
           "level": "note",
           "message": {
-            "text": "Cyclomatic complexity is 27, over the threshold of 25"
+            "text": "The primary constructor takes 9 parameters, over the threshold of 8"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Security/TaintAnalysis.cs"
+                  "uri": "build/Rikarin.Skala.Release/ReleasePlan.cs"
                 },
                 "region": {
-                  "startLine": 378,
-                  "startColumn": 14,
-                  "endLine": 378,
-                  "endColumn": 23,
-                  "charOffset": 15957,
-                  "charLength": 9
+                  "startLine": 38,
+                  "startColumn": 22,
+                  "endLine": 38,
+                  "endColumn": 36,
+                  "charOffset": 1499,
+                  "charLength": 14
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "bb9da4a4a4f892b868ae6ad36eefa36d",
-            "skala/v2": "a46cef0424abb2699e5fc30e0b32b94a"
+            "skala/v1": "d8bda001f3341616c5aa908a12c72801",
+            "skala/v2": "a773fb0d752c23e24ea43583a88155e2"
           },
           "properties": {
             "skalaSeverity": "hint",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Security.TaintAnalysis.Walker"
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Release"
           }
         },
         {
           "ruleId": "SK7002",
           "level": "note",
           "message": {
-            "text": "Cognitive complexity is 16, over the threshold of 15"
+            "text": "Cognitive complexity is 17, over the threshold of 15"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules/Security/TaintAnalysis.cs"
+                  "uri": "build/Rikarin.Skala.Release/SemanticVersion.cs"
                 },
                 "region": {
-                  "startLine": 378,
-                  "startColumn": 14,
-                  "endLine": 378,
-                  "endColumn": 23,
-                  "charOffset": 15957,
-                  "charLength": 9
+                  "startLine": 132,
+                  "startColumn": 16,
+                  "endLine": 132,
+                  "endColumn": 33,
+                  "charOffset": 5079,
+                  "charLength": 17
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "5d4c82e0196750c33febf9376d238808",
-            "skala/v2": "1367388d0d4b946933e9ebd0b51428e5"
+            "skala/v1": "f2f029e0678687d63dd7c945e0d1f2ba",
+            "skala/v2": "93db83cef71bf092dce5901faf4541d4"
           },
           "properties": {
             "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Security.TaintAnalysis.Walker"
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Release.SemanticVersion"
+          }
+        },
+        {
+          "ruleId": "SK3002",
+          "level": "error",
+          "message": {
+            "text": "Blocking on an async call with `.Result`; use `await output`"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "build/Rikarin.Skala.Release/SkalaTool.cs"
+                },
+                "region": {
+                  "startLine": 69,
+                  "startColumn": 46,
+                  "endLine": 69,
+                  "endColumn": 59,
+                  "charOffset": 2730,
+                  "charLength": 13
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "9d6e82235c22a62e2a89aeebf269762e",
+            "skala/v2": "89f1239611ef1279335617adb045310b"
+          },
+          "properties": {
+            "skalaSeverity": "error",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Release.SkalaTool.Run(string, params string[])"
+          }
+        },
+        {
+          "ruleId": "SK3002",
+          "level": "error",
+          "message": {
+            "text": "Blocking on an async call with `.Result`; use `await error`"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "build/Rikarin.Skala.Release/SkalaTool.cs"
+                },
+                "region": {
+                  "startLine": 69,
+                  "startColumn": 61,
+                  "endLine": 69,
+                  "endColumn": 73,
+                  "charOffset": 2745,
+                  "charLength": 12
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "484a72c8e599d6aadb3e60bad7a1aed7",
+            "skala/v2": "0e445ad8742db9929f811028aafbc826"
+          },
+          "properties": {
+            "skalaSeverity": "error",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Release.SkalaTool.Run(string, params string[])"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 29, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "build/Rikarin.Skala.Release/Surfaces/OptionSurface.cs"
+                },
+                "region": {
+                  "startLine": 48,
+                  "startColumn": 34,
+                  "endLine": 48,
+                  "endColumn": 37,
+                  "charOffset": 2589,
+                  "charLength": 3
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "ceb59f05b7f4cc96f2692af3cbb5f097",
+            "skala/v2": "44f327e4c015a34d8fb80bff475c89e3"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Release.Surfaces.OptionSurface"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 20, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "build/Rikarin.Skala.Release/Surfaces/RuleSurface.cs"
+                },
+                "region": {
+                  "startLine": 48,
+                  "startColumn": 34,
+                  "endLine": 48,
+                  "endColumn": 37,
+                  "charOffset": 2587,
+                  "charLength": 3
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "652e2c9423266ab11569ecf8a633445d",
+            "skala/v2": "2dbd0e97086914c744c0284934a66479"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Release.Surfaces.RuleSurface"
           }
         },
         {
@@ -1926,237 +1959,6 @@
             "skalaSeverity": "suggestion",
             "tfms": ["netstandard"],
             "enclosingSymbol": "Rikarin.Skala.Options.Generator.OptionsGenerator"
-          }
-        },
-        {
-          "ruleId": "SK7005",
-          "level": "note",
-          "message": {
-            "text": "The primary constructor takes 9 parameters, over the threshold of 8"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Core/Rikarin.Skala.Core/Configuration/CanonicalSync.cs"
-                },
-                "region": {
-                  "startLine": 90,
-                  "startColumn": 22,
-                  "endLine": 90,
-                  "endColumn": 37,
-                  "charOffset": 4441,
-                  "charLength": 15
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "fb21fbaf41937c2a4886125482bdf93f",
-            "skala/v2": "c7c0b78a4d16ecc7e61483d8ec72cf34"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Core.Configuration"
-          }
-        },
-        {
-          "ruleId": "SK7001",
-          "level": "note",
-          "message": {
-            "text": "Cyclomatic complexity is 30, over the threshold of 25"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Core/Rikarin.Skala.Core/Configuration/ConfigCommands.cs"
-                },
-                "region": {
-                  "startLine": 129,
-                  "startColumn": 33,
-                  "endLine": 129,
-                  "endColumn": 38,
-                  "charOffset": 6220,
-                  "charLength": 5
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "03c3be889b4a34f57c28cf637de501f1",
-            "skala/v2": "46925a2c2cbebdddb7b84c0a907ebdc8"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.ConfigCommands"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 21, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Core/Rikarin.Skala.Core/Configuration/ConfigCommands.cs"
-                },
-                "region": {
-                  "startLine": 129,
-                  "startColumn": 33,
-                  "endLine": 129,
-                  "endColumn": 38,
-                  "charOffset": 6220,
-                  "charLength": 5
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "b8554288ec022da50610aa104b953fc0",
-            "skala/v2": "54cb1cb033fc09035c9ed09a3146c0f9"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.ConfigCommands"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 20, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Core/Rikarin.Skala.Core/Configuration/Distiller.cs"
-                },
-                "region": {
-                  "startLine": 50,
-                  "startColumn": 33,
-                  "endLine": 50,
-                  "endColumn": 40,
-                  "charOffset": 2324,
-                  "charLength": 7
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "76702a0adca5b97dc6d871d0c7412dd2",
-            "skala/v2": "170d75c030fe55bf2c0505bf1a650eb4"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.Distiller"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 41, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Core/Rikarin.Skala.Core/Configuration/Fixer.cs"
-                },
-                "region": {
-                  "startLine": 17,
-                  "startColumn": 29,
-                  "endLine": 17,
-                  "endColumn": 32,
-                  "charOffset": 627,
-                  "charLength": 3
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "02a32bdc19299b6b654faa478191e578",
-            "skala/v2": "d5d86475e70e438f89e070ac4a2ccf95"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.Fixer"
-          }
-        },
-        {
-          "ruleId": "SK7001",
-          "level": "note",
-          "message": {
-            "text": "Cyclomatic complexity is 30, over the threshold of 25"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Core/Rikarin.Skala.Core/Configuration/OptionResolver.cs"
-                },
-                "region": {
-                  "startLine": 126,
-                  "startColumn": 36,
-                  "endLine": 126,
-                  "endColumn": 43,
-                  "charOffset": 5637,
-                  "charLength": 7
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "5832e0a7f72def3507849b787d7df420",
-            "skala/v2": "f08f3e768feb689e9ac74be2bc57dd24"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.OptionResolver"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 36, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Core/Rikarin.Skala.Core/Configuration/OptionResolver.cs"
-                },
-                "region": {
-                  "startLine": 126,
-                  "startColumn": 36,
-                  "endLine": 126,
-                  "endColumn": 43,
-                  "charOffset": 5637,
-                  "charLength": 7
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "ca681635aa0934eabbedc8c7dfabcda9",
-            "skala/v2": "42d756812dbd5241da7b574687215510"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Core.Configuration.OptionResolver"
           }
         },
         {
@@ -3117,270 +2919,6 @@
           }
         },
         {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 19, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Analysis/Rikarin.Skala.Analysis.Tests/DocsSiteTests.cs"
-                },
-                "region": {
-                  "startLine": 156,
-                  "startColumn": 17,
-                  "endLine": 156,
-                  "endColumn": 61,
-                  "charOffset": 7542,
-                  "charLength": 44
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "d68a2a118e72b2df572fe712e39fea1f",
-            "skala/v2": "718a5ae03abd70fa77ee9d9259bb8957"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Analysis.Tests.DocsSiteTests"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 18, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "build/Rikarin.Skala.Release/ReleaseNotes.cs"
-                },
-                "region": {
-                  "startLine": 27,
-                  "startColumn": 26,
-                  "endLine": 27,
-                  "endColumn": 32,
-                  "charOffset": 1275,
-                  "charLength": 6
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "5a46798b6600a4893a38e6a714ba982f",
-            "skala/v2": "3647d1a17d71db6dd96556eed1f20652"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Release.ReleaseNotes"
-          }
-        },
-        {
-          "ruleId": "SK7005",
-          "level": "note",
-          "message": {
-            "text": "The primary constructor takes 9 parameters, over the threshold of 8"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "build/Rikarin.Skala.Release/ReleasePlan.cs"
-                },
-                "region": {
-                  "startLine": 38,
-                  "startColumn": 22,
-                  "endLine": 38,
-                  "endColumn": 36,
-                  "charOffset": 1499,
-                  "charLength": 14
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "d8bda001f3341616c5aa908a12c72801",
-            "skala/v2": "a773fb0d752c23e24ea43583a88155e2"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Release"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 17, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "build/Rikarin.Skala.Release/SemanticVersion.cs"
-                },
-                "region": {
-                  "startLine": 132,
-                  "startColumn": 16,
-                  "endLine": 132,
-                  "endColumn": 33,
-                  "charOffset": 5079,
-                  "charLength": 17
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "f2f029e0678687d63dd7c945e0d1f2ba",
-            "skala/v2": "93db83cef71bf092dce5901faf4541d4"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Release.SemanticVersion"
-          }
-        },
-        {
-          "ruleId": "SK3002",
-          "level": "error",
-          "message": {
-            "text": "Blocking on an async call with `.Result`; use `await output`"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "build/Rikarin.Skala.Release/SkalaTool.cs"
-                },
-                "region": {
-                  "startLine": 69,
-                  "startColumn": 46,
-                  "endLine": 69,
-                  "endColumn": 59,
-                  "charOffset": 2730,
-                  "charLength": 13
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "9d6e82235c22a62e2a89aeebf269762e",
-            "skala/v2": "89f1239611ef1279335617adb045310b"
-          },
-          "properties": {
-            "skalaSeverity": "error",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Release.SkalaTool.Run(string, params string[])"
-          }
-        },
-        {
-          "ruleId": "SK3002",
-          "level": "error",
-          "message": {
-            "text": "Blocking on an async call with `.Result`; use `await error`"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "build/Rikarin.Skala.Release/SkalaTool.cs"
-                },
-                "region": {
-                  "startLine": 69,
-                  "startColumn": 61,
-                  "endLine": 69,
-                  "endColumn": 73,
-                  "charOffset": 2745,
-                  "charLength": 12
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "484a72c8e599d6aadb3e60bad7a1aed7",
-            "skala/v2": "0e445ad8742db9929f811028aafbc826"
-          },
-          "properties": {
-            "skalaSeverity": "error",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Release.SkalaTool.Run(string, params string[])"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 29, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "build/Rikarin.Skala.Release/Surfaces/OptionSurface.cs"
-                },
-                "region": {
-                  "startLine": 48,
-                  "startColumn": 34,
-                  "endLine": 48,
-                  "endColumn": 37,
-                  "charOffset": 2589,
-                  "charLength": 3
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "ceb59f05b7f4cc96f2692af3cbb5f097",
-            "skala/v2": "44f327e4c015a34d8fb80bff475c89e3"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Release.Surfaces.OptionSurface"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 20, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "build/Rikarin.Skala.Release/Surfaces/RuleSurface.cs"
-                },
-                "region": {
-                  "startLine": 48,
-                  "startColumn": 34,
-                  "endLine": 48,
-                  "endColumn": 37,
-                  "charOffset": 2587,
-                  "charLength": 3
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "652e2c9423266ab11569ecf8a633445d",
-            "skala/v2": "2dbd0e97086914c744c0284934a66479"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Release.Surfaces.RuleSurface"
-          }
-        },
-        {
           "ruleId": "SK7001",
           "level": "note",
           "message": {
@@ -4107,72 +3645,6 @@
           }
         },
         {
-          "ruleId": "SK7001",
-          "level": "note",
-          "message": {
-            "text": "Cyclomatic complexity is 39, over the threshold of 25"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/CSharpDocumentBuilder.BlankLines.cs"
-                },
-                "region": {
-                  "startLine": 302,
-                  "startColumn": 9,
-                  "endLine": 302,
-                  "endColumn": 27,
-                  "charOffset": 16668,
-                  "charLength": 18
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "8a3e13180f5b6f10b9a0b58128ab93b2",
-            "skala/v2": "9c448e60ec32409592ff61df56e3f1a9"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.CSharpDocumentBuilder"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 46, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/CSharpDocumentBuilder.BlankLines.cs"
-                },
-                "region": {
-                  "startLine": 302,
-                  "startColumn": 9,
-                  "endLine": 302,
-                  "endColumn": 27,
-                  "charOffset": 16668,
-                  "charLength": 18
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "f00181d269f6ad4d8d3ff811a37feef0",
-            "skala/v2": "726099a798b5765cd281837c6da75a7f"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.CSharpDocumentBuilder"
-          }
-        },
-        {
           "ruleId": "SK7002",
           "level": "note",
           "message": {
@@ -4231,6 +3703,72 @@
           "partialFingerprints": {
             "skala/v1": "54c319f7cea021350247ac565429dfb0",
             "skala/v2": "57e501c93e541249e44c2605eccadbc1"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.CSharpDocumentBuilder"
+          }
+        },
+        {
+          "ruleId": "SK7001",
+          "level": "note",
+          "message": {
+            "text": "Cyclomatic complexity is 39, over the threshold of 25"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/CSharpDocumentBuilder.BlankLines.cs"
+                },
+                "region": {
+                  "startLine": 302,
+                  "startColumn": 9,
+                  "endLine": 302,
+                  "endColumn": 27,
+                  "charOffset": 16668,
+                  "charLength": 18
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "8a3e13180f5b6f10b9a0b58128ab93b2",
+            "skala/v2": "9c448e60ec32409592ff61df56e3f1a9"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.CSharpDocumentBuilder"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 46, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/CSharpDocumentBuilder.BlankLines.cs"
+                },
+                "region": {
+                  "startLine": 302,
+                  "startColumn": 9,
+                  "endLine": 302,
+                  "endColumn": 27,
+                  "charOffset": 16668,
+                  "charLength": 18
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "f00181d269f6ad4d8d3ff811a37feef0",
+            "skala/v2": "726099a798b5765cd281837c6da75a7f"
           },
           "properties": {
             "skalaSeverity": "suggestion",
@@ -4737,39 +4275,6 @@
           "ruleId": "SK7002",
           "level": "note",
           "message": {
-            "text": "Cognitive complexity is 19, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/IntAlign.cs"
-                },
-                "region": {
-                  "startLine": 61,
-                  "startColumn": 26,
-                  "endLine": 61,
-                  "endColumn": 31,
-                  "charOffset": 3390,
-                  "charLength": 5
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "93f8a0ca72bc9ab4d8a93bb3159dff81",
-            "skala/v2": "400830670e4828fa7fdf8cdaea87a4a8"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.IntAlign"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
             "text": "Cognitive complexity is 16, over the threshold of 15"
           },
           "locations": [
@@ -4792,6 +4297,39 @@
           "partialFingerprints": {
             "skala/v1": "7ef44283ff61ccf0dce324b68422bb3c",
             "skala/v2": "70ffe439ffc9d6993bb7ee391adf7346"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.IntAlign"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 19, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/IntAlign.cs"
+                },
+                "region": {
+                  "startLine": 61,
+                  "startColumn": 26,
+                  "endLine": 61,
+                  "endColumn": 31,
+                  "charOffset": 3390,
+                  "charLength": 5
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "93f8a0ca72bc9ab4d8a93bb3159dff81",
+            "skala/v2": "400830670e4828fa7fdf8cdaea87a4a8"
           },
           "properties": {
             "skalaSeverity": "suggestion",
@@ -5067,72 +4605,6 @@
           "ruleId": "SK7001",
           "level": "note",
           "message": {
-            "text": "Cyclomatic complexity is 32, over the threshold of 25"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/SpaceRules.cs"
-                },
-                "region": {
-                  "startLine": 402,
-                  "startColumn": 17,
-                  "endLine": 402,
-                  "endColumn": 32,
-                  "charOffset": 19429,
-                  "charLength": 15
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "072aa47a6d649424596d5dbfba33e143",
-            "skala/v2": "9d04b8999470e07a7225a0eb63d34932"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.SpaceRules"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 19, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/SpaceRules.cs"
-                },
-                "region": {
-                  "startLine": 402,
-                  "startColumn": 17,
-                  "endLine": 402,
-                  "endColumn": 32,
-                  "charOffset": 19429,
-                  "charLength": 15
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "1b525d0b0b12abaf1f2a4204746d803a",
-            "skala/v2": "a51d4fa75fb1bae8282e207a925767c7"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.SpaceRules"
-          }
-        },
-        {
-          "ruleId": "SK7001",
-          "level": "note",
-          "message": {
             "text": "Cyclomatic complexity is 94, over the threshold of 25"
           },
           "locations": [
@@ -5188,6 +4660,72 @@
           "partialFingerprints": {
             "skala/v1": "29dfc6ba542b62a0d830dc85fd9ea723",
             "skala/v2": "31a3ca03875421e167fed161997edcf7"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.SpaceRules"
+          }
+        },
+        {
+          "ruleId": "SK7001",
+          "level": "note",
+          "message": {
+            "text": "Cyclomatic complexity is 32, over the threshold of 25"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/SpaceRules.cs"
+                },
+                "region": {
+                  "startLine": 402,
+                  "startColumn": 17,
+                  "endLine": 402,
+                  "endColumn": 32,
+                  "charOffset": 19429,
+                  "charLength": 15
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "072aa47a6d649424596d5dbfba33e143",
+            "skala/v2": "9d04b8999470e07a7225a0eb63d34932"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.SpaceRules"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 19, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/SpaceRules.cs"
+                },
+                "region": {
+                  "startLine": 402,
+                  "startColumn": 17,
+                  "endLine": 402,
+                  "endColumn": 32,
+                  "charOffset": 19429,
+                  "charLength": 15
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "1b525d0b0b12abaf1f2a4204746d803a",
+            "skala/v2": "a51d4fa75fb1bae8282e207a925767c7"
           },
           "properties": {
             "skalaSeverity": "suggestion",
@@ -5391,171 +4929,6 @@
             "skalaSeverity": "suggestion",
             "tfms": ["net10.0"],
             "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.XmlDocModel"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 16, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules.Generator/RulesGenerator.cs"
-                },
-                "region": {
-                  "startLine": 125,
-                  "startColumn": 19,
-                  "endLine": 125,
-                  "endColumn": 30,
-                  "charOffset": 4725,
-                  "charLength": 11
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "9316c774adba7474ba8783e45aa3817a",
-            "skala/v2": "cbb9d118d871db175c8d356d2d601f68"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Generator.RulesGenerator"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 27, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Reporting/Rikarin.Skala.Reporting/Gate.cs"
-                },
-                "region": {
-                  "startLine": 316,
-                  "startColumn": 27,
-                  "endLine": 316,
-                  "endColumn": 32,
-                  "charOffset": 14262,
-                  "charLength": 5
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "316a8e13a9c136eb53579e7ef1b40ba2",
-            "skala/v2": "6c71d167bd1b07e62260ee5c6253ba19"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Reporting.Gate"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 17, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Reporting/Rikarin.Skala.Reporting/MetricsSummary.cs"
-                },
-                "region": {
-                  "startLine": 64,
-                  "startColumn": 20,
-                  "endLine": 64,
-                  "endColumn": 24,
-                  "charOffset": 2569,
-                  "charLength": 4
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "8bed0e31ebe959aad4743f5037d79673",
-            "skala/v2": "0136a82d0a029915f9a831f0f54192c3"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Reporting.MetricsSummary"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 21, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Reporting/Rikarin.Skala.Reporting/Renderers.cs"
-                },
-                "region": {
-                  "startLine": 321,
-                  "startColumn": 26,
-                  "endLine": 321,
-                  "endColumn": 32,
-                  "charOffset": 14370,
-                  "charLength": 6
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "a9ca809a4ea7420d048e536f4fb1ee35",
-            "skala/v2": "333588da39042ceb9dc65b9fc37c9a34"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Reporting.AgentRenderer"
-          }
-        },
-        {
-          "ruleId": "SK7001",
-          "level": "note",
-          "message": {
-            "text": "Cyclomatic complexity is 30, over the threshold of 25"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Reporting/Rikarin.Skala.Reporting/SarifReader.cs"
-                },
-                "region": {
-                  "startLine": 67,
-                  "startColumn": 20,
-                  "endLine": 67,
-                  "endColumn": 27,
-                  "charOffset": 3101,
-                  "charLength": 7
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "040318cb8411f729ae38f93c227917c0",
-            "skala/v2": "a95f722b35af20bf5e5ff5f11960ff31"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Reporting.SarifReader"
           }
         },
         {
@@ -5958,66 +5331,660 @@
           "ruleId": "SK7002",
           "level": "note",
           "message": {
-            "text": "Cognitive complexity is 21, over the threshold of 15"
+            "text": "Cognitive complexity is 19, over the threshold of 15"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "Testing/Rikarin.Skala.Conformance.Tests/OptionValueValidationTests.cs"
+                  "uri": "Analysis/Rikarin.Skala.Analysis.Tests/DocsSiteTests.cs"
                 },
                 "region": {
-                  "startLine": 103,
+                  "startLine": 156,
                   "startColumn": 17,
-                  "endLine": 103,
-                  "endColumn": 68,
-                  "charOffset": 4606,
-                  "charLength": 51
+                  "endLine": 156,
+                  "endColumn": 61,
+                  "charOffset": 7542,
+                  "charLength": 44
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "0b8a9806ca993e04b420a0900664ecef",
-            "skala/v2": "4aa89efbe6d8d69a6dba256400f4ca95"
+            "skala/v1": "d68a2a118e72b2df572fe712e39fea1f",
+            "skala/v2": "718a5ae03abd70fa77ee9d9259bb8957"
           },
           "properties": {
             "skalaSeverity": "suggestion",
             "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Conformance.Tests.OptionValueValidationTests"
+            "enclosingSymbol": "Rikarin.Skala.Analysis.Tests.DocsSiteTests"
+          }
+        },
+        {
+          "ruleId": "SK7005",
+          "level": "note",
+          "message": {
+            "text": "The primary constructor takes 21 parameters, over the threshold of 8"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules.Metadata/RuleInfo.cs"
+                },
+                "region": {
+                  "startLine": 61,
+                  "startColumn": 22,
+                  "endLine": 61,
+                  "endColumn": 30,
+                  "charOffset": 2420,
+                  "charLength": 8
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "9f5c461d043ea7a4ac83fdc0d400ce23",
+            "skala/v2": "c35883761dddcd37477475be10e9b876"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Metadata"
           }
         },
         {
           "ruleId": "SK7002",
           "level": "note",
           "message": {
-            "text": "Cognitive complexity is 23, over the threshold of 15"
+            "text": "Cognitive complexity is 16, over the threshold of 15"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "Testing/Rikarin.Skala.Conformance.Tests/PropertyTests.cs"
+                  "uri": "Rules/Rikarin.Skala.Rules.Generator/RulesGenerator.cs"
                 },
                 "region": {
-                  "startLine": 195,
+                  "startLine": 125,
                   "startColumn": 19,
-                  "endLine": 195,
-                  "endColumn": 40,
-                  "charOffset": 8139,
-                  "charLength": 21
+                  "endLine": 125,
+                  "endColumn": 30,
+                  "charOffset": 4725,
+                  "charLength": 11
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "1d5f8715e50301b0a33fc4c2e406ffde",
-            "skala/v2": "865e3fda5ade2fe6d59c36df7115cfa5"
+            "skala/v1": "9316c774adba7474ba8783e45aa3817a",
+            "skala/v2": "cbb9d118d871db175c8d356d2d601f68"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Generator.RulesGenerator"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 27, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Reporting/Rikarin.Skala.Reporting/Gate.cs"
+                },
+                "region": {
+                  "startLine": 316,
+                  "startColumn": 27,
+                  "endLine": 316,
+                  "endColumn": 32,
+                  "charOffset": 14262,
+                  "charLength": 5
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "316a8e13a9c136eb53579e7ef1b40ba2",
+            "skala/v2": "6c71d167bd1b07e62260ee5c6253ba19"
           },
           "properties": {
             "skalaSeverity": "suggestion",
             "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Conformance.Tests.PropertyTests"
+            "enclosingSymbol": "Rikarin.Skala.Reporting.Gate"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 17, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Reporting/Rikarin.Skala.Reporting/MetricsSummary.cs"
+                },
+                "region": {
+                  "startLine": 64,
+                  "startColumn": 20,
+                  "endLine": 64,
+                  "endColumn": 24,
+                  "charOffset": 2569,
+                  "charLength": 4
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "8bed0e31ebe959aad4743f5037d79673",
+            "skala/v2": "0136a82d0a029915f9a831f0f54192c3"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Reporting.MetricsSummary"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 21, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Reporting/Rikarin.Skala.Reporting/Renderers.cs"
+                },
+                "region": {
+                  "startLine": 321,
+                  "startColumn": 26,
+                  "endLine": 321,
+                  "endColumn": 32,
+                  "charOffset": 14370,
+                  "charLength": 6
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "a9ca809a4ea7420d048e536f4fb1ee35",
+            "skala/v2": "333588da39042ceb9dc65b9fc37c9a34"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Reporting.AgentRenderer"
+          }
+        },
+        {
+          "ruleId": "SK7001",
+          "level": "note",
+          "message": {
+            "text": "Cyclomatic complexity is 30, over the threshold of 25"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Reporting/Rikarin.Skala.Reporting/SarifReader.cs"
+                },
+                "region": {
+                  "startLine": 67,
+                  "startColumn": 20,
+                  "endLine": 67,
+                  "endColumn": 27,
+                  "charOffset": 3101,
+                  "charLength": 7
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "040318cb8411f729ae38f93c227917c0",
+            "skala/v2": "a95f722b35af20bf5e5ff5f11960ff31"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Reporting.SarifReader"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 16, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Async/AsyncContext.cs"
+                },
+                "region": {
+                  "startLine": 134,
+                  "startColumn": 24,
+                  "endLine": 134,
+                  "endColumn": 36,
+                  "charOffset": 5931,
+                  "charLength": 12
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "bd14b67e185593733f82dc127c8bf1c6",
+            "skala/v2": "252caafc840d2c38df302b54c8ddb772"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Async.AsyncContext"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 25, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Async/BlockingOnAsyncAnalyzer.cs"
+                },
+                "region": {
+                  "startLine": 152,
+                  "startColumn": 9,
+                  "endLine": 152,
+                  "endColumn": 14,
+                  "charOffset": 6786,
+                  "charLength": 5
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "a7a536d1a6b9244ad2eb525824fe03fe",
+            "skala/v2": "0cbec63d55301422076b8d9c1c519829"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Async.BlockingOnAsyncAnalyzer"
+          }
+        },
+        {
+          "ruleId": "SK7001",
+          "level": "note",
+          "message": {
+            "text": "Cyclomatic complexity is 26, over the threshold of 25"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Async/TaskReturnedFromUsingAnalyzer.cs"
+                },
+                "region": {
+                  "startLine": 157,
+                  "startColumn": 17,
+                  "endLine": 157,
+                  "endColumn": 29,
+                  "charOffset": 7113,
+                  "charLength": 12
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "d402dd45d65a55795166a085bdf47841",
+            "skala/v2": "f492137ae465e3e7a1afe0843bc40be1"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Async.TaskReturnedFromUsingAnalyzer"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 24, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Async/TaskReturnedFromUsingAnalyzer.cs"
+                },
+                "region": {
+                  "startLine": 157,
+                  "startColumn": 17,
+                  "endLine": 157,
+                  "endColumn": 29,
+                  "charOffset": 7113,
+                  "charLength": 12
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "ed9724c4f9efe007e4f846ec127c163f",
+            "skala/v2": "f72a6964c268747426802a56a0d561c1"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Async.TaskReturnedFromUsingAnalyzer"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 36, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Async/TaskReturnedFromUsingAnalyzer.cs"
+                },
+                "region": {
+                  "startLine": 263,
+                  "startColumn": 20,
+                  "endLine": 263,
+                  "endColumn": 43,
+                  "charOffset": 11403,
+                  "charLength": 23
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "927dfb454c9fadb8ff0c2b60b1e2e6ff",
+            "skala/v2": "60699c718c462a56772a70c7271d4abb"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Async.TaskReturnedFromUsingAnalyzer"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 31, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Async/UndisposedLocalAnalyzer.cs"
+                },
+                "region": {
+                  "startLine": 140,
+                  "startColumn": 17,
+                  "endLine": 140,
+                  "endColumn": 31,
+                  "charOffset": 6075,
+                  "charLength": 14
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "6c62948ee358f716307f8811c534182b",
+            "skala/v2": "484047a387f444c6c9e8d851a52ed9b3"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Async.UndisposedLocalAnalyzer"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 21, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Maintainability/MemberMetrics.cs"
+                },
+                "region": {
+                  "startLine": 378,
+                  "startColumn": 36,
+                  "endLine": 378,
+                  "endColumn": 45,
+                  "charOffset": 17528,
+                  "charLength": 9
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "d56b0a9845f3e3ea31271fe11255f1ae",
+            "skala/v2": "e9f20c11817f09bff5144ec095dbe72a"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Maintainability.MemberMetrics"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 24, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Modernization/CountPropertyAnalyzer.cs"
+                },
+                "region": {
+                  "startLine": 156,
+                  "startColumn": 20,
+                  "endLine": 156,
+                  "endColumn": 33,
+                  "charOffset": 5844,
+                  "charLength": 13
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "1706bddb8fbe460e9f07210d4e22f410",
+            "skala/v2": "a415d203514feebcb558a5c1e2636bba"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Modernization.CountPropertyAnalyzer"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 17, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Modernization/CountPropertyAnalyzer.cs"
+                },
+                "region": {
+                  "startLine": 54,
+                  "startColumn": 17,
+                  "endLine": 54,
+                  "endColumn": 24,
+                  "charOffset": 2422,
+                  "charLength": 7
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "a7d79cbb895c873aa9b0af60e7feb969",
+            "skala/v2": "da4997bc2103f810650e1ac05c61fd53"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Modernization.CountPropertyAnalyzer"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 19, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Modernization/TypePatternAnalyzer.cs"
+                },
+                "region": {
+                  "startLine": 47,
+                  "startColumn": 17,
+                  "endLine": 47,
+                  "endColumn": 24,
+                  "charOffset": 2317,
+                  "charLength": 7
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "28fa9b4ef98cf8e0d76f3c6ccaa7cb9c",
+            "skala/v2": "66a79600ab52deb502612146ad4e4987"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Modernization.TypePatternAnalyzer"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 18, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Security/TaintAnalysis.cs"
+                },
+                "region": {
+                  "startLine": 63,
+                  "startColumn": 47,
+                  "endLine": 63,
+                  "endColumn": 50,
+                  "charOffset": 3864,
+                  "charLength": 3
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "341efb05c9db2acac1ce5a137ca415f7",
+            "skala/v2": "07ab6dfffe95e92b7a37a84cf4e2c506"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Security.TaintAnalysis"
+          }
+        },
+        {
+          "ruleId": "SK7001",
+          "level": "note",
+          "message": {
+            "text": "Cyclomatic complexity is 27, over the threshold of 25"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Security/TaintAnalysis.cs"
+                },
+                "region": {
+                  "startLine": 378,
+                  "startColumn": 14,
+                  "endLine": 378,
+                  "endColumn": 23,
+                  "charOffset": 15957,
+                  "charLength": 9
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "bb9da4a4a4f892b868ae6ad36eefa36d",
+            "skala/v2": "a46cef0424abb2699e5fc30e0b32b94a"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Security.TaintAnalysis.Walker"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 16, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules/Security/TaintAnalysis.cs"
+                },
+                "region": {
+                  "startLine": 378,
+                  "startColumn": 14,
+                  "endLine": 378,
+                  "endColumn": 23,
+                  "charOffset": 15957,
+                  "charLength": 9
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "5d4c82e0196750c33febf9376d238808",
+            "skala/v2": "1367388d0d4b946933e9ebd0b51428e5"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["netstandard"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Security.TaintAnalysis.Walker"
           }
         },
         {
@@ -6189,39 +6156,6 @@
           "ruleId": "SK7002",
           "level": "note",
           "message": {
-            "text": "Cognitive complexity is 38, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Testing/Rikarin.Skala.Conformance.Sweep/KeyFlipSweep.cs"
-                },
-                "region": {
-                  "startLine": 157,
-                  "startColumn": 21,
-                  "endLine": 157,
-                  "endColumn": 24,
-                  "charOffset": 9625,
-                  "charLength": 3
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "90ec9ece39be25328bac35437a2b740d",
-            "skala/v2": "7d2bc338e90e4a5bcfe6d03fe882a723"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Conformance.Sweep.KeyFlipSweep"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
             "text": "Cognitive complexity is 18, over the threshold of 15"
           },
           "locations": [
@@ -6244,6 +6178,39 @@
           "partialFingerprints": {
             "skala/v1": "345bca2e253cae294db84004c3a733d2",
             "skala/v2": "89a34dae456ab7069be5a1319b31c528"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Conformance.Sweep.KeyFlipSweep"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 38, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Conformance.Sweep/KeyFlipSweep.cs"
+                },
+                "region": {
+                  "startLine": 157,
+                  "startColumn": 21,
+                  "endLine": 157,
+                  "endColumn": 24,
+                  "charOffset": 9625,
+                  "charLength": 3
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "90ec9ece39be25328bac35437a2b740d",
+            "skala/v2": "7d2bc338e90e4a5bcfe6d03fe882a723"
           },
           "properties": {
             "skalaSeverity": "suggestion",
@@ -6549,6 +6516,270 @@
           }
         },
         {
+          "ruleId": "SK3002",
+          "level": "error",
+          "message": {
+            "text": "Blocking on an async call with `.GetAwaiter().GetResult()`; use `await compilation\n            .WithAnalyzers(\n                [new MetricsAnalyzer()],\n                new CompilationWithAnalyzersOptions(\n                    new AnalyzerOptions([], new FixedOptionsProvider(options)),\n                    onAnalyzerException: null,\n                    concurrentAnalysis: false,\n                    logAnalyzerExecutionTime: false,\n                    reportSuppressedDiagnostics: true\n                )\n            )\n            .GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken)`"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules.Tests/MetricsAnalyzerTests.cs"
+                },
+                "region": {
+                  "startLine": 148,
+                  "startColumn": 24,
+                  "endLine": 161,
+                  "endColumn": 25,
+                  "charOffset": 6207,
+                  "charLength": 577
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "2eea736360436608f5cc58f1b63323e1",
+            "skala/v2": "52a74d174c602d3eeb62b82265b244cb"
+          },
+          "properties": {
+            "skalaSeverity": "error",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Tests.MetricsAnalyzerTests.Diagnostics(string, string?, params (string Key, string Value)[])"
+          }
+        },
+        {
+          "ruleId": "SK3002",
+          "level": "error",
+          "message": {
+            "text": "Blocking on an async call with `.GetAwaiter().GetResult()`; use `await compilation\n            .WithAnalyzers(\n                analyzers,\n                new CompilationWithAnalyzersOptions(\n                    new AnalyzerOptions([]),\n                    onAnalyzerException: null,\n                    concurrentAnalysis: false,\n                    logAnalyzerExecutionTime: false,\n                    reportSuppressedDiagnostics: true\n                )\n            )\n            .GetAnalyzerDiagnosticsAsync(cancellation)`"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Rules/Rikarin.Skala.Rules.Tests/RuleFixtures.cs"
+                },
+                "region": {
+                  "startLine": 139,
+                  "startColumn": 9,
+                  "endLine": 152,
+                  "endColumn": 25,
+                  "charOffset": 5643,
+                  "charLength": 503
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "12b8ce37aa612b43fad231ec68a2b82c",
+            "skala/v2": "8503dcc54b04248772c49b14a6f8bda3"
+          },
+          "properties": {
+            "skalaSeverity": "error",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Rules.Tests.RuleFixtures.Analyze(Microsoft.CodeAnalysis.CSharp.CSharpCompilation, System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer>, System.Threading.CancellationToken)"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 21, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Conformance.Tests/OptionValueValidationTests.cs"
+                },
+                "region": {
+                  "startLine": 103,
+                  "startColumn": 17,
+                  "endLine": 103,
+                  "endColumn": 68,
+                  "charOffset": 4606,
+                  "charLength": 51
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "0b8a9806ca993e04b420a0900664ecef",
+            "skala/v2": "4aa89efbe6d8d69a6dba256400f4ca95"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Conformance.Tests.OptionValueValidationTests"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 23, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Conformance.Tests/PropertyTests.cs"
+                },
+                "region": {
+                  "startLine": 195,
+                  "startColumn": 19,
+                  "endLine": 195,
+                  "endColumn": 40,
+                  "charOffset": 8139,
+                  "charLength": 21
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "1d5f8715e50301b0a33fc4c2e406ffde",
+            "skala/v2": "865e3fda5ade2fe6d59c36df7115cfa5"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Conformance.Tests.PropertyTests"
+          }
+        },
+        {
+          "ruleId": "SK3002",
+          "level": "error",
+          "message": {
+            "text": "Blocking on an async call with `.GetAwaiter().GetResult()`; use `await McpServer.RunAsync(Root(parse.GetValue(path)!), CancellationToken.None)`"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Tools/Rikarin.Skala.Cli/AnalysisCommands.cs"
+                },
+                "region": {
+                  "startLine": 495,
+                  "startColumn": 17,
+                  "endLine": 495,
+                  "endColumn": 113,
+                  "charOffset": 23241,
+                  "charLength": 96
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "e0f710d0c684cc1f30664e8bb8fdc763",
+            "skala/v2": "2ad8142bf6a6f093ed2727462c89d717"
+          },
+          "properties": {
+            "skalaSeverity": "error",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Cli.SkalaCommandLine.CreateMcpCommand()"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 28, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Tools/Rikarin.Skala.Cli/SkalaCommandLine.cs"
+                },
+                "region": {
+                  "startLine": 96,
+                  "startColumn": 17,
+                  "endLine": 96,
+                  "endColumn": 39,
+                  "charOffset": 4871,
+                  "charLength": 22
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "f77b6b661ff8dcafa2e8fc2f9c9e9eb1",
+            "skala/v2": "281383d0d0082a4670cbd0ecebc5f775"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Cli.SkalaCommandLine"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 24, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Tools/Rikarin.Skala.Cli/SkalaCommandLine.cs"
+                },
+                "region": {
+                  "startLine": 163,
+                  "startColumn": 20,
+                  "endLine": 163,
+                  "endColumn": 39,
+                  "charOffset": 8211,
+                  "charLength": 19
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "ab336f9fb566145be4b86a647fccf108",
+            "skala/v2": "ff0273b30829804959966e374685ae98"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Cli.SkalaCommandLine"
+          }
+        },
+        {
+          "ruleId": "SK3002",
+          "level": "error",
+          "message": {
+            "text": "Blocking on an async call with `.GetAwaiter().GetResult()`; use `await server.RunAsync(CancellationToken.None)`"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Tools/Rikarin.Skala.Cli/SkalaCommandLine.cs"
+                },
+                "region": {
+                  "startLine": 483,
+                  "startColumn": 17,
+                  "endLine": 483,
+                  "endColumn": 81,
+                  "charOffset": 24356,
+                  "charLength": 64
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "203e5e25b48a0bd5ce990c16ef9f0e34",
+            "skala/v2": "ae85ed344e820b52df6bb6fb3a001bff"
+          },
+          "properties": {
+            "skalaSeverity": "error",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Cli.SkalaCommandLine.CreateLspCommand()"
+          }
+        },
+        {
           "ruleId": "SK7002",
           "level": "note",
           "message": {
@@ -6684,39 +6915,6 @@
           "ruleId": "SK7002",
           "level": "note",
           "message": {
-            "text": "Cognitive complexity is 20, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Testing/Rikarin.Skala.Testing/Fidelity.cs"
-                },
-                "region": {
-                  "startLine": 330,
-                  "startColumn": 17,
-                  "endLine": 330,
-                  "endColumn": 23,
-                  "charOffset": 13759,
-                  "charLength": 6
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "9be4410da813a8ecbbc4e0bb84e9aae2",
-            "skala/v2": "2ed6f2b5dfb1dbd75a43576080cd4aaa"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Testing.LineDiff"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
             "text": "Cognitive complexity is 18, over the threshold of 15"
           },
           "locations": [
@@ -6744,6 +6942,39 @@
             "skalaSeverity": "suggestion",
             "tfms": ["net10.0"],
             "enclosingSymbol": "Rikarin.Skala.Testing.Fidelity"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 20, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/Fidelity.cs"
+                },
+                "region": {
+                  "startLine": 330,
+                  "startColumn": 17,
+                  "endLine": 330,
+                  "endColumn": 23,
+                  "charOffset": 13759,
+                  "charLength": 6
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "9be4410da813a8ecbbc4e0bb84e9aae2",
+            "skala/v2": "2ed6f2b5dfb1dbd75a43576080cd4aaa"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Testing.LineDiff"
           }
         },
         {
@@ -6816,39 +7047,6 @@
           "ruleId": "SK7005",
           "level": "note",
           "message": {
-            "text": "The primary constructor takes 16 parameters, over the threshold of 8"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Testing/Rikarin.Skala.Testing/Fuzzer.cs"
-                },
-                "region": {
-                  "startLine": 94,
-                  "startColumn": 22,
-                  "endLine": 94,
-                  "endColumn": 32,
-                  "charOffset": 3640,
-                  "charLength": 10
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "cb933d60ccde3a2c75282ce14bab13e5",
-            "skala/v2": "0834cbc83d677d67b6c050a709ad02a7"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Testing"
-          }
-        },
-        {
-          "ruleId": "SK7005",
-          "level": "note",
-          "message": {
             "text": "The primary constructor takes 9 parameters, over the threshold of 8"
           },
           "locations": [
@@ -6871,6 +7069,39 @@
           "partialFingerprints": {
             "skala/v1": "26f7aafa4e6e6848766a3963d64192df",
             "skala/v2": "edab3b3fb913194702a2d95f570ec9d8"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Testing"
+          }
+        },
+        {
+          "ruleId": "SK7005",
+          "level": "note",
+          "message": {
+            "text": "The primary constructor takes 16 parameters, over the threshold of 8"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/Fuzzer.cs"
+                },
+                "region": {
+                  "startLine": 94,
+                  "startColumn": 22,
+                  "endLine": 94,
+                  "endColumn": 32,
+                  "charOffset": 3640,
+                  "charLength": 10
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "cb933d60ccde3a2c75282ce14bab13e5",
+            "skala/v2": "0834cbc83d677d67b6c050a709ad02a7"
           },
           "properties": {
             "skalaSeverity": "hint",
@@ -7443,39 +7674,6 @@
           "ruleId": "SK7002",
           "level": "note",
           "message": {
-            "text": "Cognitive complexity is 21, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Testing/Rikarin.Skala.Testing/MarginSweep.cs"
-                },
-                "region": {
-                  "startLine": 271,
-                  "startColumn": 43,
-                  "endLine": 271,
-                  "endColumn": 51,
-                  "charOffset": 13032,
-                  "charLength": 8
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "8f58733356ee6a1a661a4749ced0aaf2",
-            "skala/v2": "2d09f1fc760d6885bb0766137a55dcb8"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Testing.MarginSweep"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
             "text": "Cognitive complexity is 30, over the threshold of 15"
           },
           "locations": [
@@ -7498,6 +7696,39 @@
           "partialFingerprints": {
             "skala/v1": "e97f18fe25c26f9e7c3cd069e77e296e",
             "skala/v2": "bb9d782ac54e3b0208204432ed61d24b"
+          },
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Testing.MarginSweep"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 21, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/MarginSweep.cs"
+                },
+                "region": {
+                  "startLine": 271,
+                  "startColumn": 43,
+                  "endLine": 271,
+                  "endColumn": 51,
+                  "charOffset": 13032,
+                  "charLength": 8
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "8f58733356ee6a1a661a4749ced0aaf2",
+            "skala/v2": "2d09f1fc760d6885bb0766137a55dcb8"
           },
           "properties": {
             "skalaSeverity": "suggestion",
@@ -7617,11 +7848,11 @@
                   "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
                 },
                 "region": {
-                  "startLine": 134,
+                  "startLine": 160,
                   "startColumn": 19,
-                  "endLine": 134,
+                  "endLine": 160,
                   "endColumn": 24,
-                  "charOffset": 7704,
+                  "charOffset": 9290,
                   "charLength": 5
                 }
               }
@@ -7630,105 +7861,6 @@
           "partialFingerprints": {
             "skala/v1": "4b325cc1464e22506b15a6839d660daa",
             "skala/v2": "cef9bae7d1785070ffaa51472c4f866d"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Testing.PreferenceSweep"
-          }
-        },
-        {
-          "ruleId": "SK7005",
-          "level": "note",
-          "message": {
-            "text": "The primary constructor takes 10 parameters, over the threshold of 8"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
-                },
-                "region": {
-                  "startLine": 218,
-                  "startColumn": 26,
-                  "endLine": 218,
-                  "endColumn": 30,
-                  "charOffset": 12291,
-                  "charLength": 4
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "c5b4d843fad566a98fbf7784be30728b",
-            "skala/v2": "74f7a627d3b01d0883af9997344c4dc7"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Testing.PreferenceSweep"
-          }
-        },
-        {
-          "ruleId": "SK7005",
-          "level": "note",
-          "message": {
-            "text": "The primary constructor takes 15 parameters, over the threshold of 8"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
-                },
-                "region": {
-                  "startLine": 231,
-                  "startColumn": 26,
-                  "endLine": 231,
-                  "endColumn": 34,
-                  "charOffset": 12602,
-                  "charLength": 8
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "b77282d42c8fa654ae77b6a74217aa32",
-            "skala/v2": "3a9941a1e905420f3a05d64b531a5036"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Testing.PreferenceSweep"
-          }
-        },
-        {
-          "ruleId": "SK7005",
-          "level": "note",
-          "message": {
-            "text": "The primary constructor takes 10 parameters, over the threshold of 8"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
-                },
-                "region": {
-                  "startLine": 174,
-                  "startColumn": 19,
-                  "endLine": 174,
-                  "endColumn": 28,
-                  "charOffset": 10082,
-                  "charLength": 9
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "c5b4d843fad566a98fbf7784be30728b",
-            "skala/v2": "ff480ec5a0adf59b0741042d77f9701b"
           },
           "properties": {
             "skalaSeverity": "hint",
@@ -7749,11 +7881,11 @@
                   "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
                 },
                 "region": {
-                  "startLine": 1417,
+                  "startLine": 1876,
                   "startColumn": 19,
-                  "endLine": 1417,
+                  "endLine": 1876,
                   "endColumn": 26,
-                  "charOffset": 63065,
+                  "charOffset": 85044,
                   "charLength": 7
                 }
               }
@@ -7770,10 +7902,10 @@
           }
         },
         {
-          "ruleId": "SK7002",
+          "ruleId": "SK7005",
           "level": "note",
           "message": {
-            "text": "Cognitive complexity is 28, over the threshold of 15"
+            "text": "The primary constructor takes 12 parameters, over the threshold of 8"
           },
           "locations": [
             {
@@ -7782,22 +7914,187 @@
                   "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
                 },
                 "region": {
-                  "startLine": 728,
+                  "startLine": 200,
+                  "startColumn": 19,
+                  "endLine": 200,
+                  "endColumn": 28,
+                  "charOffset": 11668,
+                  "charLength": 9
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "02ec0de4afa77d49953579b49f84f8cf",
+            "skala/v2": "ff480ec5a0adf59b0741042d77f9701b"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Testing.PreferenceSweep"
+          }
+        },
+        {
+          "ruleId": "SK7005",
+          "level": "note",
+          "message": {
+            "text": "The primary constructor takes 10 parameters, over the threshold of 8"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
+                },
+                "region": {
+                  "startLine": 269,
+                  "startColumn": 26,
+                  "endLine": 269,
+                  "endColumn": 30,
+                  "charOffset": 15284,
+                  "charLength": 4
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "c5b4d843fad566a98fbf7784be30728b",
+            "skala/v2": "74f7a627d3b01d0883af9997344c4dc7"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Testing.PreferenceSweep"
+          }
+        },
+        {
+          "ruleId": "SK7005",
+          "level": "note",
+          "message": {
+            "text": "The primary constructor takes 10 parameters, over the threshold of 8"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
+                },
+                "region": {
+                  "startLine": 345,
+                  "startColumn": 26,
+                  "endLine": 345,
+                  "endColumn": 39,
+                  "charOffset": 18280,
+                  "charLength": 13
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "c5b4d843fad566a98fbf7784be30728b",
+            "skala/v2": "b940eb5823c920902e7300890a840ba9"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Testing.PreferenceSweep"
+          }
+        },
+        {
+          "ruleId": "SK7005",
+          "level": "note",
+          "message": {
+            "text": "The primary constructor takes 16 parameters, over the threshold of 8"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
+                },
+                "region": {
+                  "startLine": 282,
+                  "startColumn": 26,
+                  "endLine": 282,
+                  "endColumn": 34,
+                  "charOffset": 15595,
+                  "charLength": 8
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "10a61223a6ba31b68edc6dd60eb4cf99",
+            "skala/v2": "3a9941a1e905420f3a05d64b531a5036"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Testing.PreferenceSweep"
+          }
+        },
+        {
+          "ruleId": "SK7002",
+          "level": "note",
+          "message": {
+            "text": "Cognitive complexity is 32, over the threshold of 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
+                },
+                "region": {
+                  "startLine": 1132,
                   "startColumn": 28,
-                  "endLine": 728,
+                  "endLine": 1132,
                   "endColumn": 31,
-                  "charOffset": 32554,
+                  "charOffset": 51404,
                   "charLength": 3
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "fae663be83aaa51a6851a857eb830ff3",
+            "skala/v1": "98b28999330dd35e15541e7bcf08fc4c",
             "skala/v2": "4f4b4e484efa3292777ddf2074e91063"
           },
           "properties": {
             "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Testing.PreferenceSweep"
+          }
+        },
+        {
+          "ruleId": "SK7001",
+          "level": "note",
+          "message": {
+            "text": "Cyclomatic complexity is 32, over the threshold of 25"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
+                },
+                "region": {
+                  "startLine": 1433,
+                  "startColumn": 19,
+                  "endLine": 1433,
+                  "endColumn": 24,
+                  "charOffset": 65792,
+                  "charLength": 5
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "afbd4cefb169e0fefd6edf6215ab7701",
+            "skala/v2": "aff8ef30aac01f067a94f29bf3c774a7"
+          },
+          "properties": {
+            "skalaSeverity": "hint",
             "tfms": ["net10.0"],
             "enclosingSymbol": "Rikarin.Skala.Testing.PreferenceSweep"
           }
@@ -7815,11 +8112,11 @@
                   "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
                 },
                 "region": {
-                  "startLine": 1488,
+                  "startLine": 1947,
                   "startColumn": 19,
-                  "endLine": 1488,
+                  "endLine": 1947,
                   "endColumn": 27,
-                  "charOffset": 65375,
+                  "charOffset": 87354,
                   "charLength": 8
                 }
               }
@@ -7839,7 +8136,7 @@
           "ruleId": "SK7002",
           "level": "note",
           "message": {
-            "text": "Cognitive complexity is 19, over the threshold of 15"
+            "text": "Cognitive complexity is 23, over the threshold of 15"
           },
           "locations": [
             {
@@ -7848,24 +8145,24 @@
                   "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
                 },
                 "region": {
-                  "startLine": 1803,
-                  "startColumn": 27,
-                  "endLine": 1803,
-                  "endColumn": 29,
-                  "charOffset": 82188,
-                  "charLength": 2
+                  "startLine": 2637,
+                  "startColumn": 17,
+                  "endLine": 2637,
+                  "endColumn": 22,
+                  "charOffset": 123135,
+                  "charLength": 5
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "5de42ad0137a9c488e81258ac71a2309",
-            "skala/v2": "64bacae6d08d9069da3b5a0f406177ef"
+            "skala/v1": "18ec64d121571ca1f183666c52029519",
+            "skala/v2": "5692be37cdebee4616c9022fa24e4443"
           },
           "properties": {
             "skalaSeverity": "suggestion",
             "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Testing.PreferenceSweep.Fit"
+            "enclosingSymbol": "Rikarin.Skala.Testing.PreferenceSweep"
           }
         },
         {
@@ -7881,11 +8178,11 @@
                   "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
                 },
                 "region": {
-                  "startLine": 2217,
+                  "startLine": 3017,
                   "startColumn": 17,
-                  "endLine": 2217,
+                  "endLine": 3017,
                   "endColumn": 24,
-                  "charOffset": 103770,
+                  "charOffset": 144271,
                   "charLength": 7
                 }
               }
@@ -7914,11 +8211,11 @@
                   "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
                 },
                 "region": {
-                  "startLine": 2369,
+                  "startLine": 3169,
                   "startColumn": 17,
-                  "endLine": 2369,
+                  "endLine": 3169,
                   "endColumn": 29,
-                  "charOffset": 110816,
+                  "charOffset": 151317,
                   "charLength": 12
                 }
               }
@@ -8097,237 +8394,6 @@
             "skalaSeverity": "suggestion",
             "tfms": ["net10.0"],
             "enclosingSymbol": "Rikarin.Skala.Testing.Unformat"
-          }
-        },
-        {
-          "ruleId": "SK3002",
-          "level": "error",
-          "message": {
-            "text": "Blocking on an async call with `.GetAwaiter().GetResult()`; use `await compilation\n            .WithAnalyzers(\n                [new MetricsAnalyzer()],\n                new CompilationWithAnalyzersOptions(\n                    new AnalyzerOptions([], new FixedOptionsProvider(options)),\n                    onAnalyzerException: null,\n                    concurrentAnalysis: false,\n                    logAnalyzerExecutionTime: false,\n                    reportSuppressedDiagnostics: true\n                )\n            )\n            .GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken)`"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules.Tests/MetricsAnalyzerTests.cs"
-                },
-                "region": {
-                  "startLine": 148,
-                  "startColumn": 24,
-                  "endLine": 161,
-                  "endColumn": 25,
-                  "charOffset": 6207,
-                  "charLength": 577
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "2eea736360436608f5cc58f1b63323e1",
-            "skala/v2": "52a74d174c602d3eeb62b82265b244cb"
-          },
-          "properties": {
-            "skalaSeverity": "error",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Tests.MetricsAnalyzerTests.Diagnostics(string, string?, params (string Key, string Value)[])"
-          }
-        },
-        {
-          "ruleId": "SK3002",
-          "level": "error",
-          "message": {
-            "text": "Blocking on an async call with `.GetAwaiter().GetResult()`; use `await compilation\n            .WithAnalyzers(\n                analyzers,\n                new CompilationWithAnalyzersOptions(\n                    new AnalyzerOptions([]),\n                    onAnalyzerException: null,\n                    concurrentAnalysis: false,\n                    logAnalyzerExecutionTime: false,\n                    reportSuppressedDiagnostics: true\n                )\n            )\n            .GetAnalyzerDiagnosticsAsync(cancellation)`"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules.Tests/RuleFixtures.cs"
-                },
-                "region": {
-                  "startLine": 139,
-                  "startColumn": 9,
-                  "endLine": 152,
-                  "endColumn": 25,
-                  "charOffset": 5643,
-                  "charLength": 503
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "12b8ce37aa612b43fad231ec68a2b82c",
-            "skala/v2": "8503dcc54b04248772c49b14a6f8bda3"
-          },
-          "properties": {
-            "skalaSeverity": "error",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Tests.RuleFixtures.Analyze(Microsoft.CodeAnalysis.CSharp.CSharpCompilation, System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer>, System.Threading.CancellationToken)"
-          }
-        },
-        {
-          "ruleId": "SK3002",
-          "level": "error",
-          "message": {
-            "text": "Blocking on an async call with `.GetAwaiter().GetResult()`; use `await McpServer.RunAsync(Root(parse.GetValue(path)!), CancellationToken.None)`"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Tools/Rikarin.Skala.Cli/AnalysisCommands.cs"
-                },
-                "region": {
-                  "startLine": 495,
-                  "startColumn": 17,
-                  "endLine": 495,
-                  "endColumn": 113,
-                  "charOffset": 23241,
-                  "charLength": 96
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "e0f710d0c684cc1f30664e8bb8fdc763",
-            "skala/v2": "2ad8142bf6a6f093ed2727462c89d717"
-          },
-          "properties": {
-            "skalaSeverity": "error",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Cli.SkalaCommandLine.CreateMcpCommand()"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 28, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Tools/Rikarin.Skala.Cli/SkalaCommandLine.cs"
-                },
-                "region": {
-                  "startLine": 96,
-                  "startColumn": 17,
-                  "endLine": 96,
-                  "endColumn": 39,
-                  "charOffset": 4871,
-                  "charLength": 22
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "f77b6b661ff8dcafa2e8fc2f9c9e9eb1",
-            "skala/v2": "281383d0d0082a4670cbd0ecebc5f775"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Cli.SkalaCommandLine"
-          }
-        },
-        {
-          "ruleId": "SK7002",
-          "level": "note",
-          "message": {
-            "text": "Cognitive complexity is 24, over the threshold of 15"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Tools/Rikarin.Skala.Cli/SkalaCommandLine.cs"
-                },
-                "region": {
-                  "startLine": 163,
-                  "startColumn": 20,
-                  "endLine": 163,
-                  "endColumn": 39,
-                  "charOffset": 8211,
-                  "charLength": 19
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "ab336f9fb566145be4b86a647fccf108",
-            "skala/v2": "ff0273b30829804959966e374685ae98"
-          },
-          "properties": {
-            "skalaSeverity": "suggestion",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Cli.SkalaCommandLine"
-          }
-        },
-        {
-          "ruleId": "SK3002",
-          "level": "error",
-          "message": {
-            "text": "Blocking on an async call with `.GetAwaiter().GetResult()`; use `await server.RunAsync(CancellationToken.None)`"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Tools/Rikarin.Skala.Cli/SkalaCommandLine.cs"
-                },
-                "region": {
-                  "startLine": 483,
-                  "startColumn": 17,
-                  "endLine": 483,
-                  "endColumn": 81,
-                  "charOffset": 24356,
-                  "charLength": 64
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "203e5e25b48a0bd5ce990c16ef9f0e34",
-            "skala/v2": "ae85ed344e820b52df6bb6fb3a001bff"
-          },
-          "properties": {
-            "skalaSeverity": "error",
-            "tfms": ["net10.0"],
-            "enclosingSymbol": "Rikarin.Skala.Cli.SkalaCommandLine.CreateLspCommand()"
-          }
-        },
-        {
-          "ruleId": "SK7005",
-          "level": "note",
-          "message": {
-            "text": "The primary constructor takes 21 parameters, over the threshold of 8"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "Rules/Rikarin.Skala.Rules.Metadata/RuleInfo.cs"
-                },
-                "region": {
-                  "startLine": 61,
-                  "startColumn": 22,
-                  "endLine": 61,
-                  "endColumn": 30,
-                  "charOffset": 2420,
-                  "charLength": 8
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "skala/v1": "9f5c461d043ea7a4ac83fdc0d400ce23",
-            "skala/v2": "c35883761dddcd37477475be10e9b876"
-          },
-          "properties": {
-            "skalaSeverity": "hint",
-            "tfms": ["netstandard"],
-            "enclosingSymbol": "Rikarin.Skala.Rules.Metadata"
           }
         },
         {
@@ -13589,11 +13655,11 @@
                   "uri": "Testing/Rikarin.Skala.Testing/Program.cs"
                 },
                 "region": {
-                  "startLine": 447,
+                  "startLine": 473,
                   "startColumn": 1,
-                  "endLine": 447,
+                  "endLine": 473,
                   "endColumn": 1,
-                  "charOffset": 24050
+                  "charOffset": 25809
                 }
               }
             }
@@ -13620,11 +13686,11 @@
                   "uri": "Testing/Rikarin.Skala.Testing/Program.cs"
                 },
                 "region": {
-                  "startLine": 747,
+                  "startLine": 773,
                   "startColumn": 1,
-                  "endLine": 747,
+                  "endLine": 773,
                   "endColumn": 1,
-                  "charOffset": 38690
+                  "charOffset": 40449
                 }
               }
             }
@@ -13650,11 +13716,11 @@
                   "uri": "Testing/Rikarin.Skala.Testing/Program.cs"
                 },
                 "region": {
-                  "startLine": 865,
+                  "startLine": 891,
                   "startColumn": 1,
-                  "endLine": 865,
+                  "endLine": 891,
                   "endColumn": 1,
-                  "charOffset": 43745
+                  "charOffset": 45504
                 }
               }
             }
@@ -13681,11 +13747,11 @@
                   "uri": "Testing/Rikarin.Skala.Testing/Program.cs"
                 },
                 "region": {
-                  "startLine": 1097,
+                  "startLine": 1123,
                   "startColumn": 1,
-                  "endLine": 1097,
+                  "endLine": 1123,
                   "endColumn": 1,
-                  "charOffset": 54699
+                  "charOffset": 56458
                 }
               }
             }
@@ -13712,11 +13778,11 @@
                   "uri": "Testing/Rikarin.Skala.Testing/Program.cs"
                 },
                 "region": {
-                  "startLine": 1114,
+                  "startLine": 1140,
                   "startColumn": 1,
-                  "endLine": 1114,
+                  "endLine": 1140,
                   "endColumn": 1,
-                  "charOffset": 55249
+                  "charOffset": 57008
                 }
               }
             }
@@ -13743,11 +13809,11 @@
                   "uri": "Testing/Rikarin.Skala.Testing/Program.cs"
                 },
                 "region": {
-                  "startLine": 1214,
+                  "startLine": 1240,
                   "startColumn": 1,
-                  "endLine": 1214,
+                  "endLine": 1240,
                   "endColumn": 1,
-                  "charOffset": 59700
+                  "charOffset": 61459
                 }
               }
             }
@@ -14596,7 +14662,7 @@
           "ruleId": "SK7020",
           "level": "warning",
           "message": {
-            "text": "duplicated block of 110 tokens (21 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:1893-1911"
+            "text": "duplicated block of 103 tokens (20 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:2378-2397, Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:2813-2844"
           },
           "locations": [
             {
@@ -14607,17 +14673,17 @@
                 "region": {
                   "startLine": 462,
                   "startColumn": 1,
-                  "endLine": 482,
+                  "endLine": 481,
                   "endColumn": 1,
                   "charOffset": 20409,
-                  "charLength": 1207
+                  "charLength": 1154
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "30a00eb6a51c9923a36217b7fde8cd80",
-            "skala/v2": "2da7d843dbb4d1327a41d95121e78702"
+            "skala/v1": "17ea514526432b6dd394adbe618ffe1e",
+            "skala/v2": "5ec35acb4191b8745889dec0bef8b5c4"
           },
           "properties": {
             "skalaSeverity": "warning"
@@ -15464,7 +15530,7 @@
           "ruleId": "SK7020",
           "level": "warning",
           "message": {
-            "text": "duplicated block of 110 tokens (21 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:2053-2077"
+            "text": "duplicated block of 110 tokens (21 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:2853-2877"
           },
           "locations": [
             {
@@ -15484,8 +15550,8 @@
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "212b65f23a2ca0cc99e96c98170fc34c",
-            "skala/v2": "3373e0e1b3f891ad4e52b808b93a13fc"
+            "skala/v1": "9d98c2995e9232643d07488a17561f32",
+            "skala/v2": "99f1021ad7d2a56350dee4cca774774e"
           },
           "properties": {
             "skalaSeverity": "warning"
@@ -15898,7 +15964,7 @@
           "ruleId": "SK7020",
           "level": "warning",
           "message": {
-            "text": "duplicated block of 163 tokens (44 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:550-589"
+            "text": "duplicated block of 101 tokens (22 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:477-498, Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:505-526, Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:527-548"
           },
           "locations": [
             {
@@ -15907,19 +15973,19 @@
                   "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
                 },
                 "region": {
-                  "startLine": 392,
+                  "startLine": 448,
                   "startColumn": 1,
-                  "endLine": 435,
+                  "endLine": 469,
                   "endColumn": 1,
-                  "charOffset": 17964,
-                  "charLength": 2116
+                  "charOffset": 21619,
+                  "charLength": 720
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "7eecc9d76cb662457813b9102b24fade",
-            "skala/v2": "fdefe62f6c298a11391b956a4629dec7"
+            "skala/v1": "540088697b4dd7ab5fa43e9d111543e3",
+            "skala/v2": "daa0def397f885f86f96492f95b02336"
           },
           "properties": {
             "skalaSeverity": "warning"
@@ -15929,7 +15995,193 @@
           "ruleId": "SK7020",
           "level": "warning",
           "message": {
-            "text": "duplicated block of 128 tokens (40 lines), also at Testing/Rikarin.Skala.Testing/Program.cs:951-983"
+            "text": "duplicated block of 107 tokens (22 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:593-614, Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:615-642"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
+                },
+                "region": {
+                  "startLine": 571,
+                  "startColumn": 1,
+                  "endLine": 592,
+                  "endColumn": 1,
+                  "charOffset": 27110,
+                  "charLength": 837
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "967661fa75e096dc3a7bd9f8542ce7a0",
+            "skala/v2": "3762737a6a3eb8b5e3583d8ddf6b58f7"
+          },
+          "properties": {
+            "skalaSeverity": "warning"
+          }
+        },
+        {
+          "ruleId": "SK7020",
+          "level": "warning",
+          "message": {
+            "text": "duplicated block of 120 tokens (37 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:701-725"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
+                },
+                "region": {
+                  "startLine": 665,
+                  "startColumn": 1,
+                  "endLine": 701,
+                  "endColumn": 1,
+                  "charOffset": 31178,
+                  "charLength": 1915
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "f29d7ddf40bc5434265d1aa8b9d39b8c",
+            "skala/v2": "bd0d45915f414fb52bb500b468e51363"
+          },
+          "properties": {
+            "skalaSeverity": "warning"
+          }
+        },
+        {
+          "ruleId": "SK7020",
+          "level": "warning",
+          "message": {
+            "text": "duplicated block of 117 tokens (25 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:806-834"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
+                },
+                "region": {
+                  "startLine": 782,
+                  "startColumn": 1,
+                  "endLine": 806,
+                  "endColumn": 1,
+                  "charOffset": 36555,
+                  "charLength": 947
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "110598a704d3c1778c1f66fd61f41260",
+            "skala/v2": "78ca018e6569c8b89fe6eaca4f35a0d9"
+          },
+          "properties": {
+            "skalaSeverity": "warning"
+          }
+        },
+        {
+          "ruleId": "SK7020",
+          "level": "warning",
+          "message": {
+            "text": "duplicated block of 105 tokens (23 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:944-969"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
+                },
+                "region": {
+                  "startLine": 921,
+                  "startColumn": 1,
+                  "endLine": 943,
+                  "endColumn": 1,
+                  "charOffset": 42887,
+                  "charLength": 836
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "f7cac43fc5f554b3a4abd06b0b475b67",
+            "skala/v2": "ac1aa4b37593703196ba2c9edcbc3225"
+          },
+          "properties": {
+            "skalaSeverity": "warning"
+          }
+        },
+        {
+          "ruleId": "SK7020",
+          "level": "warning",
+          "message": {
+            "text": "duplicated block of 100 tokens (26 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:1049-1070"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
+                },
+                "region": {
+                  "startLine": 1023,
+                  "startColumn": 1,
+                  "endLine": 1048,
+                  "endColumn": 1,
+                  "charOffset": 46962,
+                  "charLength": 1094
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "f9b6a8868a448ba85f18ef7dfbfd38ff",
+            "skala/v2": "baa05ad5862264cae0d234dc4fbe1a7e"
+          },
+          "properties": {
+            "skalaSeverity": "warning"
+          }
+        },
+        {
+          "ruleId": "SK7020",
+          "level": "warning",
+          "message": {
+            "text": "duplicated block of 104 tokens (8 lines), also at Testing/Rikarin.Skala.Testing/PreferenceSweep.cs:1443-1450"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Testing/Rikarin.Skala.Testing/PreferenceSweep.cs"
+                },
+                "region": {
+                  "startLine": 1435,
+                  "startColumn": 1,
+                  "endLine": 1442,
+                  "endColumn": 1,
+                  "charOffset": 65941,
+                  "charLength": 501
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "31b19c916e900933336b87d316986759",
+            "skala/v2": "7898e2e961dee3252cc09d8b27fc6c36"
+          },
+          "properties": {
+            "skalaSeverity": "warning"
+          }
+        },
+        {
+          "ruleId": "SK7020",
+          "level": "warning",
+          "message": {
+            "text": "duplicated block of 128 tokens (40 lines), also at Testing/Rikarin.Skala.Testing/Program.cs:977-1009"
           },
           "locations": [
             {
@@ -15938,19 +16190,19 @@
                   "uri": "Testing/Rikarin.Skala.Testing/Program.cs"
                 },
                 "region": {
-                  "startLine": 875,
+                  "startLine": 901,
                   "startColumn": 1,
-                  "endLine": 914,
+                  "endLine": 940,
                   "endColumn": 1,
-                  "charOffset": 44291,
+                  "charOffset": 46050,
                   "charLength": 2098
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "aa6e52bfc4efeb6581155f1f06ff4e7b",
-            "skala/v2": "24ca13be17bc4eaa24604c9d1a87e3ce"
+            "skala/v1": "c68b96e172739bb250d4aca068552eea",
+            "skala/v2": "4f4ae42dce1898dbec3e03396c00de07"
           },
           "properties": {
             "skalaSeverity": "warning"
