@@ -1382,8 +1382,7 @@ public static class PreferenceSweep {
         // drift from the probe is worse than no description, and after the oracle is uninstalled
         // `--render` is the only way either of them can be corrected at all.
         return artefact with {
-            Version = Version,
-            Constructs = Notes([.. artefact.Constructs.Select(static note => note.Id)])
+            Version = Version, Constructs = Notes([.. artefact.Constructs.Select(static note => note.Id)])
         };
     }
 
@@ -2390,7 +2389,9 @@ public static class PreferenceSweep {
         builder.AppendLine("⚠ **`F` is not one constant per shape, and it is not one constant per content either.**");
         builder.AppendLine("Version 1 of this file called it the first and version 2 called it the second. Version 2");
         builder.AppendLine("had fourteen shapes, ten of which break at column 12, and the four it compared to");
-        builder.AppendLine("establish \"nothing to the left of the inner construct moves `F`\" were four of those ten.");
+        builder.AppendLine(
+            "establish \"nothing to the left of the inner construct moves `F`\" were four of those ten."
+        );
         builder.AppendLine("That half of the claim survives intact and is worth keeping: a bare callee, a qualifier,");
         builder.AppendLine("a cast and a type argument list *between* the outer break and the inner construct are");
         builder.AppendLine("inert, and so is a lambda's parameter list. What those four shapes could not show is that");
@@ -2588,20 +2589,27 @@ public static class PreferenceSweep {
         foreach (var family in families.OrderBy(static group => group.Key, StringComparer.Ordinal)) {
             builder.Append("### `F` against the outer break's column — ").AppendLine(family.Key);
             builder.AppendLine();
-            builder.AppendLine("| shape | outer | " + string.Join(
-                " | ",
-                artefact.Fillers.Select(static filler => "`" + filler.Id + "`")
-            ) + " |");
+            builder.AppendLine(
+                "| shape | outer | "
+                + string.Join(
+                    " | ",
+                    artefact.Fillers.Select(static filler => "`" + filler.Id + "`")
+                )
+                + " |"
+            );
             builder.AppendLine("|---|---:|" + string.Concat(artefact.Fillers.Select(static _ => "---:|")));
             foreach (var construct in family.OrderBy(static c => c.OuterColumn)) {
-                builder.Append("| `").Append(construct.Id).Append("` | ")
+                builder.Append("| `")
+                    .Append(construct.Id)
+                    .Append("` | ")
                     .Append(construct.OuterColumn.ToString(CultureInfo.InvariantCulture))
                     .Append(" | ");
                 builder.AppendLine(
                     string.Join(
                         " | ",
                         artefact.Fillers.Select(filler => Cell(artefact, construct.Id, filler.Id))
-                    ) + " |"
+                    )
+                    + " |"
                 );
             }
 
@@ -2611,9 +2619,7 @@ public static class PreferenceSweep {
 
     /// <summary>The fitted floor for one shape under one filler, or `—` where that pair has no cells.</summary>
     static string Cell(Artefact artefact, string construct, string filler) {
-        var fit = Fit.Of(
-            [.. artefact.Grid.Where(row => row.Construct == construct && row.Filler == filler)]
-        );
+        var fit = Fit.Of([.. artefact.Grid.Where(row => row.Construct == construct && row.Filler == filler)]);
 
         return fit.Chose == 0 ? "—" : fit.Floor.ToString(CultureInfo.InvariantCulture);
     }
@@ -2639,8 +2645,12 @@ public static class PreferenceSweep {
         builder.AppendLine("## The arrow, subtracted");
         builder.AppendLine();
         builder.AppendLine("Each row is one shape whose outer break is a lambda's `=>` beside the `=` shape built to");
-        builder.AppendLine("match it — same inner construct, same head width, same filler, so that the only thing left");
-        builder.AppendLine("between them is the arrow. **Δ** is the `=` shape's floor subtracted from the arrow's, and");
+        builder.AppendLine(
+            "match it — same inner construct, same head width, same filler, so that the only thing left"
+        );
+        builder.AppendLine(
+            "between them is the arrow. **Δ** is the `=` shape's floor subtracted from the arrow's, and"
+        );
         builder.AppendLine("it is the only quantity in this artefact that is about the arrow rather than about the");
         builder.AppendLine("line it sits in.");
         builder.AppendLine();
@@ -2679,12 +2689,21 @@ public static class PreferenceSweep {
                 theirs.Floor + constant
             );
 
-            builder.Append("| `").Append(construct.Id).Append("` | `").Append(construct.Pair)
-                .Append("` | ").Append(construct.OuterColumn.ToString(CultureInfo.InvariantCulture))
-                .Append(" | `").Append(filler.Id).Append("` | ")
-                .Append(mine.Floor.ToString(CultureInfo.InvariantCulture)).Append(" | ")
-                .Append(theirs.Floor.ToString(CultureInfo.InvariantCulture)).Append(" | ")
-                .Append((mine.Floor - theirs.Floor).ToString(CultureInfo.InvariantCulture)).Append(" | ")
+            builder.Append("| `")
+                .Append(construct.Id)
+                .Append("` | `")
+                .Append(construct.Pair)
+                .Append("` | ")
+                .Append(construct.OuterColumn.ToString(CultureInfo.InvariantCulture))
+                .Append(" | `")
+                .Append(filler.Id)
+                .Append("` | ")
+                .Append(mine.Floor.ToString(CultureInfo.InvariantCulture))
+                .Append(" | ")
+                .Append(theirs.Floor.ToString(CultureInfo.InvariantCulture))
+                .Append(" | ")
+                .Append((mine.Floor - theirs.Floor).ToString(CultureInfo.InvariantCulture))
+                .Append(" | ")
                 .Append((100.0 * forced / mine.Chose).ToString("0.00", CultureInfo.InvariantCulture))
                 .Append(" % | ")
                 .Append(mine.FloorPercent.ToString("0.00", CultureInfo.InvariantCulture))
@@ -2694,10 +2713,14 @@ public static class PreferenceSweep {
         builder.AppendLine();
         if (live.Count > 0) {
             var deltas = live.Select(static row => row.Mine.Floor - row.Theirs.Floor).ToList();
-            var loss = live.Max(row => row.Mine.FloorPercent - (100.0 * Fit.Score(
-                [.. artefact.Grid.Where(r => r.Construct == row.Construct.Id && r.Filler == row.Filler.Id)],
-                row.Theirs.Floor + constant
-            ) / row.Mine.Chose));
+            var loss = live.Max(row => row.Mine.FloorPercent
+                - (100.0
+                    * Fit.Score(
+                        [.. artefact.Grid.Where(r => r.Construct == row.Construct.Id && r.Filler == row.Filler.Id)],
+                        row.Theirs.Floor + constant
+                    )
+                    / row.Mine.Chose)
+            );
 
             builder.Append("**Δ is one constant, and it is ")
                 .Append(constant.ToString(CultureInfo.InvariantCulture))
@@ -2713,8 +2736,12 @@ public static class PreferenceSweep {
                 .Append(" — the **at Δ** column against **best** — costs at most ")
                 .Append(loss.ToString("0.00", CultureInfo.InvariantCulture))
                 .AppendLine(" percentage points of");
-            builder.AppendLine("agreement on any shape, any filler. **So a lambda's arrow is an `=` whose floor is that");
-            builder.AppendLine("much higher, and nothing else.** Every other term SK-DIV-0050 needs — the law, and the");
+            builder.AppendLine(
+                "agreement on any shape, any filler. **So a lambda's arrow is an `=` whose floor is that"
+            );
+            builder.AppendLine(
+                "much higher, and nothing else.** Every other term SK-DIV-0050 needs — the law, and the"
+            );
             builder.AppendLine("floor's dependence on the head width and the content — it shares with SK-DIV-0005 and");
             builder.AppendLine("reads out of the table above this one.");
             builder.AppendLine();
@@ -2746,12 +2773,16 @@ public static class PreferenceSweep {
                     [.. artefact.Grid.Where(row => row.Construct == construct.Pair && row.Filler == filler.Id)]
                 );
 
-                builder.Append("- `").Append(construct.Id).Append("` × `").Append(filler.Id)
+                builder.Append("- `")
+                    .Append(construct.Id)
+                    .Append("` × `")
+                    .Append(filler.Id)
                     .Append("` breaks the inner construct in ")
                     .Append(mineCells.Count(static cell => cell.Measured).ToString(CultureInfo.InvariantCulture))
                     .Append(" of ")
                     .Append(mineCells.Count.ToString(CultureInfo.InvariantCulture))
-                    .Append(" cells, where `").Append(construct.Pair)
+                    .Append(" cells, where `")
+                    .Append(construct.Pair)
                     .Append("` at the same head width breaks it in ")
                     .Append(theirCells.Count(static cell => cell.Measured).ToString(CultureInfo.InvariantCulture))
                     .Append(" of ")
@@ -2760,9 +2791,15 @@ public static class PreferenceSweep {
             }
 
             builder.AppendLine();
-            builder.AppendLine("**The arrow always wins over an operand chain.** That is a sentence, not a constant, and");
-            builder.AppendLine("it is the one thing in SK-DIV-0050's preference half that a floor cannot express — which");
-            builder.AppendLine("also means it is the one thing that can be implemented and tested with no oracle at all.");
+            builder.AppendLine(
+                "**The arrow always wins over an operand chain.** That is a sentence, not a constant, and"
+            );
+            builder.AppendLine(
+                "it is the one thing in SK-DIV-0050's preference half that a floor cannot express — which"
+            );
+            builder.AppendLine(
+                "also means it is the one thing that can be implemented and tested with no oracle at all."
+            );
             builder.AppendLine();
         }
 
@@ -2775,18 +2812,34 @@ public static class PreferenceSweep {
             builder.AppendLine("### The key that does not move it");
             builder.AppendLine();
             builder.AppendLine("`wrap_before_arrow_with_expressions` decides which side of the `=>` a continuation");
-            builder.AppendLine("resumes on, and the margin sweep records it moving that table by 2 to 4 columns. It moves");
+            builder.AppendLine(
+                "resumes on, and the margin sweep records it moving that table by 2 to 4 columns. It moves"
+            );
             builder.AppendLine("**this** one by almost nothing:");
-            builder.AppendLine("[`sk-div-preference-sweep-wrap-before-arrow.md`](sk-div-preference-sweep-wrap-before-arrow.md)");
-            builder.AppendLine("is the same seven arrow shapes over the same grid at `true`, and **61 of 152 913 cells");
+            builder.AppendLine(
+                "[`sk-div-preference-sweep-wrap-before-arrow.md`](sk-div-preference-sweep-wrap-before-arrow.md)"
+            );
+            builder.AppendLine(
+                "is the same seven arrow shapes over the same grid at `true`, and **61 of 152 913 cells"
+            );
             builder.AppendLine("differ — 0.04 %**. Every fitted `F` above is unchanged but one, `arrow-param-one` ×");
             builder.AppendLine("`single-literal`, which moves by a single column.");
             builder.AppendLine();
-            builder.AppendLine("Two controls make that a measurement rather than a run that silently did nothing. `eq-wide`");
-            builder.AppendLine("is swept alongside and differs in **0** cells, which is what a key that cannot touch an `=`");
-            builder.AppendLine("must do; and the rendering demonstrably changed, from `Action value = () =>` breaking after");
-            builder.AppendLine("the arrow to `Action value = ()` breaking before it. The two are not in tension — the margin");
-            builder.AppendLine("sweep measures *where the continuation starts*, which the key moves by the width of the");
+            builder.AppendLine(
+                "Two controls make that a measurement rather than a run that silently did nothing. `eq-wide`"
+            );
+            builder.AppendLine(
+                "is swept alongside and differs in **0** cells, which is what a key that cannot touch an `=`"
+            );
+            builder.AppendLine(
+                "must do; and the rendering demonstrably changed, from `Action value = () =>` breaking after"
+            );
+            builder.AppendLine(
+                "the arrow to `Action value = ()` breaking before it. The two are not in tension — the margin"
+            );
+            builder.AppendLine(
+                "sweep measures *where the continuation starts*, which the key moves by the width of the"
+            );
             builder.AppendLine("arrow, and this file measures *which construct gives*, which it does not move at all.");
             builder.AppendLine();
         }
