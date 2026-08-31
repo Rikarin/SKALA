@@ -163,6 +163,46 @@ public sealed class AnalysisTests {
         Assert.Equal(before, File.ReadAllText(path));
     }
 
+    [Fact]
+    public void Fix_IDE1006RequiresAnExplicitWorkspaceLoad() {
+        using var scratch = new Scratch();
+        scratch.Write("bad_name.cs", "public sealed class bad_name;\n");
+
+        var result = FixCommand.Run(
+            new FixRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Loose,
+                SafeOnly = false,
+                Include = [RoslynCodeStyle.NamingDiagnosticId]
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.ConfigurationError, result.ExitCode);
+        Assert.Contains("--load workspace", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Fix_IDE1006IsNeverIncludedInSafeMode() {
+        using var scratch = new Scratch();
+        scratch.Write("bad_name.cs", "public sealed class bad_name;\n");
+
+        var result = FixCommand.Run(
+            new FixRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                SafeOnly = true,
+                Include = [RoslynCodeStyle.NamingDiagnosticId]
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.ConfigurationError, result.ExitCode);
+        Assert.Contains("never part of --safe", result.Output, StringComparison.Ordinal);
+    }
+
     /// <summary>
     ///     The cache's whole reason for existing, and its whole risk.
     /// </summary>

@@ -70,8 +70,9 @@
     <!--
       The repository's own .editorconfig is the Rider export (ADR-015). It carries 253
       dotnet_diagnostic severities and ~40 csharp_style_* keys with inline severities. Those
-      configure the IDE; letting them also drive the build would make `dotnet build` a code-style
-      gate before `skala format` exists to satisfy it. M3 turns this on (docs/plan/15 § M3).
+      configure the IDE; letting them also drive the build would make `dotnet build` a second
+      code-style gate beside `skala check`. Skala hosts the one external code-style rule it promises,
+      IDE1006, directly; ordinary builds intentionally leave the SDK's full IDE rule set disabled.
     -->
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
   </PropertyGroup>

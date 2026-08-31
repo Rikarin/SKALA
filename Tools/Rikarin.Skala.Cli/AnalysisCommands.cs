@@ -36,6 +36,7 @@ public static partial class SkalaCommandLine {
         var binlog = new Option<string?>("--binlog") {
             Description = "The binary log to read, instead of the conventional locations."
         };
+
         var project = new Option<string?>("--project") { Description = "The .slnx/.sln/.csproj for --load=workspace." };
         var requireFresh = new Option<bool>("--require-fresh-binlog") {
             Description = "Fail rather than analyse against a binlog older than the sources. CI sets it."
@@ -263,7 +264,7 @@ public static partial class SkalaCommandLine {
         };
 
         var include = new Option<string[]>("--include") {
-            Description = "⚠ Required without --safe: the rules whose unsafe fixes to apply, named explicitly.",
+            Description = "⚠ Required without --safe: unsafe rules to apply. IDE1006 also requires --load workspace.",
             Arity = ArgumentArity.ZeroOrMore
         };
 
@@ -276,13 +277,15 @@ public static partial class SkalaCommandLine {
             Description = "The binary log to read, instead of the conventional locations."
         };
 
+        var project = new Option<string?>("--project") { Description = "The .slnx/.sln/.csproj for --load=workspace." };
+
         var define = new Option<string[]>("--define", "-d") {
             Description = "Preprocessor symbols.", Arity = ArgumentArity.ZeroOrMore
         };
 
         var command = new Command("fix", "Apply the fixes the findings carry, verify each one, and re-format.");
         command.Arguments.Add(paths);
-        foreach (var option in new Option[] { safe, include, dryRun, load, binlog, define }) {
+        foreach (var option in new Option[] { safe, include, dryRun, load, binlog, project, define }) {
             command.Options.Add(option);
         }
 
@@ -293,6 +296,7 @@ public static partial class SkalaCommandLine {
                     Paths = parse.GetValue(paths) ?? [],
                     Mode = mode,
                     BinlogPath = parse.GetValue(binlog),
+                    ProjectPath = parse.GetValue(project),
                     SafeOnly = parse.GetValue(safe) || included.Length == 0,
                     Include = included,
                     DryRun = parse.GetValue(dryRun),

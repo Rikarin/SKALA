@@ -86,7 +86,7 @@ public enum KeyNamespace {
     InspectionSeverity,
     /// <summary><c>dotnet_diagnostic.*.severity</c> — a Roslyn analyzer severity. Milestone 5.</summary>
     DiagnosticSeverity,
-    /// <summary><c>dotnet_naming_*</c> — Roslyn's own naming engine. Never reimplemented (doc 03).</summary>
+    /// <summary><c>dotnet_naming_*</c> — passed to Roslyn's hosted IDE1006 analyzer (doc 03).</summary>
     NamingRule,
     /// <summary><c>root</c>, and anything else structural.</summary>
     Structural

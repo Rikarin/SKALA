@@ -93,6 +93,12 @@ public static class AnalyzerHost {
         }
 
         var builder = ImmutableArray.CreateBuilder<SkippedRule>();
+        builder.Add(
+            new SkippedRule(
+                RoslynCodeStyle.NamingDiagnosticId,
+                "requires a semantic model; --load=loose has no project (docs/plan/07 § loose)"
+            )
+        );
         foreach (var rule in RuleCatalog.All) {
             if (!rule.Retired && rule.RequiresSemantics) {
                 builder.Add(

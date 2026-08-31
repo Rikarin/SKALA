@@ -15,6 +15,15 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <!--
+      The supported distribution of Roslyn's IDE code-style analyzers and fixes. It has analyzer
+      assets only, so Skala copies those assemblies beside the host and loads just IDE1006 itself;
+      referencing it as an analyzer here would run the entire IDE rule set while building Skala.
+    -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeStyle"
+                      GeneratePathProperty="true"
+                      PrivateAssets="all"
+                      ExcludeAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="MSBuild.StructuredLogger" />
     <PackageReference Include="System.IO.Hashing" />
@@ -48,6 +57,13 @@
     <ProjectReference Include="../../Reporting/Rikarin.Skala.Reporting/Rikarin.Skala.Reporting.csproj" />
     <ProjectReference Include="../../Rules/Rikarin.Skala.Rules/Rikarin.Skala.Rules.csproj" />
     <ProjectReference Include="../../Rules/Rikarin.Skala.Rules.Metadata/Rikarin.Skala.Rules.Metadata.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(PkgMicrosoft_CodeAnalysis_CSharp_CodeStyle)/analyzers/dotnet/cs/*.dll"
+          Link="RoslynCodeStyle/%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

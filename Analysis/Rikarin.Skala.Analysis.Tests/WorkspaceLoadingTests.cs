@@ -50,6 +50,18 @@ public sealed class WorkspaceLoadingTests {
                            </Project>
                            """;
 
+    const string NamingConfig = """
+                                root = true
+
+                                [*.cs]
+                                dotnet_naming_rule.types.symbols = types
+                                dotnet_naming_rule.types.style = pascal
+                                dotnet_naming_rule.types.severity = warning
+                                dotnet_naming_symbols.types.applicable_kinds = class
+                                dotnet_naming_symbols.types.applicable_accessibilities = *
+                                dotnet_naming_style.pascal.capitalization = pascal_case
+                                """;
+
     /// <summary>
     ///     ⚠ A .csproj naming an SDK that does not exist. <c>MSBuildWorkspace</c> does not throw on
     ///     this: it records a <c>WorkspaceDiagnosticKind.Failure</c> and hands back a placeholder
@@ -117,6 +129,138 @@ public sealed class WorkspaceLoadingTests {
         Assert.NotEqual(ExitCodes.LoadFailure, result.ExitCode);
         Assert.NotEmpty(report.Findings);
         Assert.Contains(report.Findings, static finding => finding.RuleId == "CS0219");
+    }
+
+    /// <summary>
+    ///     The <c>dotnet_naming_*</c> graph is consumed by Roslyn's analyzer, not interpreted by
+    ///     Skala. This fixture therefore pins both halves of the integration: the analyzer assembly
+    ///     ships beside the host, and the exact EditorConfig options resolved for the source reach it.
+    /// </summary>
+    [Fact]
+    public void Workspace_RunsRoslynsIDE1006NamingAnalyzer() {
+        using var scratch = new Scratch();
+        scratch.Write(".editorconfig", NamingConfig);
+        scratch.Write("bad_name.cs", "namespace Scratch;\n\npublic sealed class bad_name;\n");
+        var project = scratch.Write("Scratch.csproj", Project);
+
+        var (_, report) = CheckCommand.Run(
+            new CheckRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                Output = string.Empty,
+                NoCache = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        var naming = Assert.Single(report.Findings, static finding => finding.RuleId == "IDE1006");
+        Assert.Equal(SkalaSeverity.Warning, naming.Severity);
+        Assert.Contains("Naming rule violation", naming.Message, StringComparison.Ordinal);
+        Assert.False(naming.HasFix);
+    }
+
+    /// <summary>
+    ///     IDE1006 is not a local spelling replacement. The second file is the load-bearing part of
+    ///     this test: Roslyn's rename action must update a reference outside the declaration document.
+    /// </summary>
+    [Fact]
+    public void Fix_IDE1006RenamesTheSymbolAndItsReferences() {
+        using var scratch = new Scratch();
+        scratch.Write(".editorconfig", NamingConfig);
+        var declaration = scratch.Write(
+            "bad_name.cs",
+            "namespace Scratch;\n\npublic sealed class bad_name { }\n"
+        );
+        var reference = scratch.Write(
+            "Consumer.cs",
+            "namespace Scratch;\n\npublic sealed class Consumer { public bad_name Value { get; } = new(); }\n"
+        );
+        var project = scratch.Write("Scratch.csproj", Project);
+
+        var result = FixCommand.Run(
+            new FixRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                SafeOnly = false,
+                Include = [Hosting.RoslynCodeStyle.NamingDiagnosticId]
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.True(result.ExitCode == ExitCodes.Ok, result.Output);
+        Assert.Contains("applied 1 fix", result.Output, StringComparison.Ordinal);
+        // Roslyn treats capitalization and separators independently: this rule asks for Pascal
+        // capitalization, so it fixes `bad_name` to `Bad_name` without inventing a separator rule.
+        Assert.Contains("class Bad_name", File.ReadAllText(declaration), StringComparison.Ordinal);
+        Assert.Contains("Bad_name Value", File.ReadAllText(reference), StringComparison.Ordinal);
+        Assert.DoesNotContain("bad_name", File.ReadAllText(reference), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Fix_IDE1006DryRunReportsTheRenameWithoutWritingIt() {
+        using var scratch = new Scratch();
+        scratch.Write(".editorconfig", NamingConfig);
+        var declaration = scratch.Write(
+            "bad_name.cs",
+            "namespace Scratch;\n\npublic sealed class bad_name;\n"
+        );
+        var project = scratch.Write("Scratch.csproj", Project);
+        var before = File.ReadAllText(declaration);
+
+        var result = FixCommand.Run(
+            new FixRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                SafeOnly = false,
+                Include = [Hosting.RoslynCodeStyle.NamingDiagnosticId],
+                DryRun = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.True(result.ExitCode == ExitCodes.Ok, result.Output);
+        Assert.Contains("applied 1 fix (dry run, nothing written)", result.Output, StringComparison.Ordinal);
+        Assert.Equal(before, File.ReadAllText(declaration));
+    }
+
+    [Fact]
+    public void Fix_IDE1006RefusesAnAtomicRenameThatTouchesFormatterOff() {
+        using var scratch = new Scratch();
+        scratch.Write(".editorconfig", NamingConfig);
+        var declaration = scratch.Write(
+            "bad_name.cs",
+            "namespace Scratch;\n\npublic sealed class bad_name;\n"
+        );
+        var reference = scratch.Write(
+            "Consumer.cs",
+            "namespace Scratch;\n\n// @formatter:off\npublic sealed class Consumer { public bad_name Value { get; } = new(); }\n// @formatter:on\n"
+        );
+        var project = scratch.Write("Scratch.csproj", Project);
+        var declarationBefore = File.ReadAllText(declaration);
+        var referenceBefore = File.ReadAllText(reference);
+
+        var result = FixCommand.Run(
+            new FixRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                SafeOnly = false,
+                Include = [Hosting.RoslynCodeStyle.NamingDiagnosticId]
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.ConfigurationError, result.ExitCode);
+        Assert.Contains("protected formatter-off region", result.Output, StringComparison.Ordinal);
+        Assert.Equal(declarationBefore, File.ReadAllText(declaration));
+        Assert.Equal(referenceBefore, File.ReadAllText(reference));
     }
 
     /// <summary>

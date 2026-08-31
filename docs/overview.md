@@ -41,9 +41,9 @@ daemon behind it ([`plan/11`](plan/11-cli-and-integrations.md) § "The daemon, a
 |---|---|---|
 | `format <paths>` | Spaces, blank lines, braces, indentation, break presence and position, and wrapping. Writes, checks, diffs, or formats the git index | ✅ |
 | `arrange <paths>` | Rewrites the tree: body styles, `var`, target-typed `new`, qualifiers, usings. Needs a project for the semantic half | ✅ |
-| `check <paths>` | Loads a compilation three ways, runs the analyzers, writes SARIF, evaluates a named gate | ✅ |
+| `check <paths>` | Loads a compilation three ways, runs Skala's analyzers plus Roslyn's IDE1006 naming analyzer, writes SARIF, evaluates a named gate | ✅ |
 | `verify <paths>` | `format --check` + `check --gate=local` in one pass, shaped for an agent. Exit 0 means nothing to do | ✅ |
-| `fix <paths>` | Applies the fixes findings carry, re-parses to verify each, re-formats what it touched | ✅ |
+| `fix <paths>` | Applies finding edits; explicit `IDE1006` uses Roslyn's solution-wide rename action; verifies and re-formats what it touched | ✅ |
 | `explain <rule>` | A rule's rationale, examples and known false positives | ✅ |
 | `rules list` · `rules docs` | The catalogue as a table; regenerates `docs/rules/` from `rules.json` | ✅ |
 | `docs site` | Regenerates `docs/site/` from `rules.json` **and** `options.json` — **143 files**: 108 option pages, 32 rule pages, two indexes and a stylesheet | ✅ |
@@ -79,7 +79,7 @@ and this one is the parser's.** Taken from `skala <command> --help` for all sixt
 | `-d, --define` | ✅ | ✅ | ✅ | ✅ | | Preprocessor symbols, repeatable and comma-separated |
 | `--load` | ✅ | ✅ | ✅ | ✅ | | ⚠ Three different defaults: `none` on `format`, `binlog` on `check`, `loose` on `verify` and `fix` |
 | `--binlog` | | ✅ | | ✅ | | |
-| `--project` | | ✅ | | | | For `--load=workspace` |
+| `--project` | | ✅ | | ✅ | | For `--load=workspace` |
 | `--require-fresh-binlog` | | ✅ | | | | CI sets it |
 | `--gate <name>` | | ✅ | | | | Default `local` |
 | `--format` | | ✅ | ✅ | | ✅ | `check`/`report`: seven renderers. `verify`: three |
@@ -98,7 +98,7 @@ and this one is the parser's.** Taken from `skala <command> --help` for all sixt
 | `--duplication` | | ✅ | | | | ⚠ Off by default: a whole-repository pass |
 | `--fix` | | | ✅ | | | |
 | `--safe` | | | | ✅ | | The default and the only unqualified mode |
-| `--include <ids>` | | | | ✅ | | ⚠ Required without `--safe` |
+| `--include <ids>` | | | | ✅ | | ⚠ Required without `--safe`; `IDE1006` also requires `--load workspace` |
 | `--dry-run` | | | | ✅ | | |
 | `-n, --limit` | | | | | | `trend` only |
 

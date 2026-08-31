@@ -224,7 +224,7 @@ public static class WorkspaceLoader {
         };
     }
 
-    static string? Resolve(LoadRequest request) {
+    internal static string? Resolve(LoadRequest request) {
         if (request.ProjectPath is { Length: > 0 } named) {
             return File.Exists(named) ? Path.GetFullPath(named) : null;
         }

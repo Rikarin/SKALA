@@ -182,7 +182,7 @@ public static class ConfigCommands {
                         KeyNamespace.Option => "  reported as SK9001",
                         KeyNamespace.InspectionSeverity => "  ReSharper inspection severities — Milestone 5",
                         KeyNamespace.DiagnosticSeverity => "  Roslyn analyzer severities — Milestone 5",
-                        KeyNamespace.NamingRule => "  Roslyn's own naming engine; Skala never reimplements it",
+                        KeyNamespace.NamingRule => "  passed to Roslyn's IDE1006 analyzer; Skala never reimplements it",
                         _ => string.Empty
                     }
                 );

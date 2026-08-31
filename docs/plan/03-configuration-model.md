@@ -460,19 +460,26 @@ repository that wants its style to be a document rather than a dump; the round t
 ## Naming rules
 
 The 215 `dotnet_naming_*` keys form 20 rules using Microsoft's three-part scheme (symbols → style →
-rule with severity). This is standard editorconfig and Roslyn already parses and enforces it —
-`IDE1006` is the compiler's naming rule engine.
+rule with severity). This is standard editorconfig and Roslyn already parses and enforces it through
+the IDE code-style diagnostic `IDE1006`; it is not a C# compiler diagnostic.
 
-Skala does **not** reimplement naming. It runs Roslyn's own naming analyzer as part of the analysis
-pass and reports `IDE1006` under its own ID, so `dotnet_naming_rule.private_instance_fields_rule.*`
-means exactly what it means in the IDE. The one Skala addition is `SK0110`, which reports a naming
-*configuration* problem — two rules matching the same symbol group with conflicting styles, a
-`required_prefix` that no rule can satisfy — because the Microsoft engine silently applies the first
-match and the export has 20 rules whose order nobody has checked.
+Skala does **not** reimplement naming. `Microsoft.CodeAnalysis.CSharp.CodeStyle` is pinned to the
+same version as the rest of Roslyn, its four implementation assemblies ship under
+`RoslynCodeStyle/`, and the analysis host selects only the analyzer that owns `IDE1006`. It runs in
+`binlog` and `workspace` modes and is listed as skipped in `loose`, where there is no semantic model.
+Consequently `dotnet_naming_rule.private_instance_fields_rule.*` means exactly what it means in the
+Roslyn IDE. The analyzer's own specificity ordering resolves overlapping rules; Skala neither uses
+file order nor invents a second precedence model.
 
-The export's rules, for the record: interfaces `IPascal`, type parameters `TPascal`, everything
-public `PascalCase`, locals/parameters `camelCase`, and a Unity serialized-field rule that will
-never fire outside Unity.
+There is no `SK0110`. The earlier plan promised one for conflicting overlaps, based on the obsolete
+premise that modern Roslyn silently used the first rule in file order. A configuration diagnostic
+must not disagree with the engine it claims to validate. The two exported groups with an empty
+`applicable_kinds` value (`enum_member_symbols` and `unity_serialized_field_symbols`) remain inert;
+the standard symbol vocabulary cannot express those Rider-specific concepts as written.
+
+The export's effective rules, for the record: interfaces `IPascal`, type parameters `TPascal`, everything
+public `PascalCase`, and locals/parameters `camelCase`. The requested enum-member and Unity
+serialized-field rules have empty standard symbol groups and therefore never fire.
 
 ## Canonical distribution across repositories
 

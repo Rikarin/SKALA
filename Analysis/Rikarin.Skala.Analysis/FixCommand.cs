@@ -21,6 +21,8 @@ public sealed record FixRequest {
 
     public string? BinlogPath { get; init; }
 
+    public string? ProjectPath { get; init; }
+
     /// <summary>
     ///     ⚠ Only fixes the catalogue marks <c>fixIsSafe</c>. The default, and the only unqualified mode.
     /// </summary>
@@ -76,12 +78,37 @@ public static class FixCommand {
             );
         }
 
+        if (request.SafeOnly
+            && request.Include.Contains(
+                Hosting.RoslynCodeStyle.NamingDiagnosticId,
+                StringComparer.OrdinalIgnoreCase
+            )) {
+            return new CommandResult(
+                ExitCodes.ConfigurationError,
+                "skala fix: IDE1006 is a solution-wide rename and is never part of --safe; "
+                + "use `--include IDE1006 --load workspace` explicitly.\n"
+            );
+        }
+
+        var namingRequested = request.Include.Contains(
+            Hosting.RoslynCodeStyle.NamingDiagnosticId,
+            StringComparer.OrdinalIgnoreCase
+        );
+        if (namingRequested && request.Mode != LoadMode.Workspace) {
+            return new CommandResult(
+                ExitCodes.ConfigurationError,
+                "skala fix: IDE1006 fixes require --load workspace so Roslyn can rename references "
+                + "across the solution.\n"
+            );
+        }
+
         var (_, report) = CheckCommand.Run(
             new CheckRequest {
                 Paths = request.Paths,
                 RepositoryRoot = root,
                 Mode = request.Mode,
                 BinlogPath = request.BinlogPath,
+                ProjectPath = request.ProjectPath,
                 IncludeFormatting = false,
                 NoCache = true,
                 Define = request.Define,
@@ -90,14 +117,50 @@ public static class FixCommand {
             cancellation
         );
 
+        var naming = new NamingFixOutcome(0, []);
+        if (namingRequested) {
+            var namingPaths = report.Reportable
+                .Where(static finding => finding.RuleId == Hosting.RoslynCodeStyle.NamingDiagnosticId)
+                .Select(static finding => finding.Path)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            if (namingPaths.Length > 0) {
+                naming = NamingFixCommand.Run(request, root, namingPaths, cancellation);
+            }
+
+            if (naming.Error is { } error) {
+                return new CommandResult(ExitCodes.ConfigurationError, $"skala fix: {error}.\n");
+            }
+
+            // Every ordinary fix below carries offsets into the pre-rename text. Re-run the check
+            // after a written rename rather than applying a perfectly valid edit at a stale span.
+            if (naming.Applied > 0 && !request.DryRun) {
+                (_, report) = CheckCommand.Run(
+                    new CheckRequest {
+                        Paths = request.Paths,
+                        RepositoryRoot = root,
+                        Mode = request.Mode,
+                        BinlogPath = request.BinlogPath,
+                        ProjectPath = request.ProjectPath,
+                        IncludeFormatting = false,
+                        NoCache = true,
+                        Define = request.Define,
+                        Output = string.Empty
+                    },
+                    cancellation
+                );
+            }
+        }
+
         var applicable = report.Reportable.Where(finding => IsApplicable(finding, request)).ToList();
-        if (applicable.Count == 0) {
+        if (applicable.Count == 0 && naming.Applied == 0) {
             return new CommandResult(ExitCodes.Ok, "skala fix: nothing to apply.\n");
         }
 
         var output = new StringBuilder();
-        var applied = 0;
+        var applied = naming.Applied;
         var reverted = 0;
+        var changedFiles = naming.ChangedPaths.ToHashSet(StringComparer.Ordinal);
 
         foreach (var group in applicable
                      .SelectMany(static finding => finding.Fix.Select(edit => (finding, edit)))
@@ -105,6 +168,10 @@ public static class FixCommand {
                      .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
             var (count, wasReverted, message) = ApplyToFile(group.Key, [.. group], request, root);
             applied += count;
+            if (count > 0 && !wasReverted) {
+                changedFiles.Add(group.Key);
+            }
+
             reverted += wasReverted ? 1 : 0;
             if (message.Length > 0) {
                 output.Append(message);
@@ -113,12 +180,13 @@ public static class FixCommand {
 
         if (applied > 0 && !request.DryRun) {
             // ⚠ Formatting last, over the files that changed. See the type's remarks.
-            var files = applicable.SelectMany(static finding => finding.Fix.Select(static edit => edit.Path))
-                .Distinct(StringComparer.Ordinal)
-                .ToList();
-
             FormatCommand.Run(
-                new FormatRequest { Paths = files, RepositoryRoot = root, Quiet = true, Define = request.Define }
+                new FormatRequest {
+                    Paths = changedFiles.Order(StringComparer.Ordinal).ToList(),
+                    RepositoryRoot = root,
+                    Quiet = true,
+                    Define = request.Define
+                }
             );
         }
 
@@ -226,7 +294,7 @@ public static class FixCommand {
     ///     memoises the resolution on the sections that matched, so the cost is a dictionary hit for
     ///     every file after the first in a directory.
     /// </remarks>
-    static FormatterTagGuard TagGuard(string path, string text) {
+    internal static FormatterTagGuard TagGuard(string path, string text) {
         FormattingOptions options;
         try {
             options = ConfigurationCache.Options(EditorConfigChain.For(path), null);

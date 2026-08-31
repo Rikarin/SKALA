@@ -16,6 +16,7 @@ skala check    [paths…]  [--gate <name>] [--since <ref>] [--baseline <file>]
                          [--show-suppressions] [--no-formatting] [--define A,B]
                          [--resharper-severities] [--profile]
 skala fix      [paths…]  [--safe] [--include <ids>] [--dry-run] [--load …] [--binlog <file>]
+                         [--project <file>]
 skala verify   [paths…]  [--fix] [--format agent|json|plain] [--load …] [--define A,B]
                          [--since <ref>] [--baseline [<file>]]
 skala explain  <ruleId | optionKey>
@@ -32,6 +33,14 @@ skala hooks    install
 
 Global: `--format`, `--output`, `--no-color`, `--verbose`, `--config <file>`, `--option k=v`,
 `--jobs n`, `--no-cache`.
+
+`IDE1006` is the one hosted Roslyn code-style diagnostic with a Skala fix path. It is deliberately
+outside `--safe`: `skala fix --include IDE1006 --load workspace` opens the MSBuild solution and
+applies Roslyn's own rename action one symbol at a time, so references in other files and projects
+move with the declaration. The pass refuses `loose` and `binlog`, refuses a partially failed
+workspace, previews without writing under `--dry-run`, rebinds the changed solution, and formats
+only the documents the rename touched. The rename is atomic and is refused if a declaration or
+reference change would touch a formatter-off region. `format` and `arrange` never rename symbols.
 
 ⚠ **`skala daemon`, `--no-daemon` and `SKALA_NO_DAEMON` are removed, not deprecated.** The daemon is
 deleted (§ "The daemon, and why it is gone"), so the flag would have had nothing to turn off. A flag

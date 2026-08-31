@@ -179,11 +179,14 @@ public static class CheckCommand {
 
         var toolConfig = Path.Combine(root, ToolConfiguration.FileName);
         var hosted = HostedAnalyzers.Load(HostedAnalyzers.Read(toolConfig));
+        var codeStyle = RoslynCodeStyle.Load();
         var resharperSeverities =
             request.ReadReSharperSeverities
             || HostedAnalyzers.ReadsReSharperSeverities(toolConfig);
 
         diagnostics.AddRange(hosted.Diagnostics);
+        diagnostics.AddRange(codeStyle.Diagnostics);
+        var analyzers = codeStyle.Analyzers.AddRange(hosted.Analyzers);
 
         var findings = new List<Finding>();
         var costs = new List<AnalyzerCost>();
@@ -211,7 +214,7 @@ public static class CheckCommand {
             var outcome = IncrementalAnalysis.Run(
                 configured,
                 options,
-                hosted.Analyzers,
+                analyzers,
                 loaded.Mode,
                 root,
                 fingerprint,
