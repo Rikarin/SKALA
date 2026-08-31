@@ -2765,6 +2765,31 @@ public static class PreferenceSweep {
             builder.AppendLine("also means it is the one thing that can be implemented and tested with no oracle at all.");
             builder.AppendLine();
         }
+
+        // ⚠ Hard-coded rather than computed, because it is the one claim in this file that is about a
+        // *different* file: the same seven arrow shapes swept again under the non-default key. The
+        // numbers it quotes are computed in that artefact, from its own grid, and the reason to repeat
+        // three of them here is that a reader deciding whether `F` is safe to build on should not have
+        // to open a second file to find out that an option they can set does not move it.
+        if (artefact.Keys is null) {
+            builder.AppendLine("### The key that does not move it");
+            builder.AppendLine();
+            builder.AppendLine("`wrap_before_arrow_with_expressions` decides which side of the `=>` a continuation");
+            builder.AppendLine("resumes on, and the margin sweep records it moving that table by 2 to 4 columns. It moves");
+            builder.AppendLine("**this** one by almost nothing:");
+            builder.AppendLine("[`sk-div-preference-sweep-wrap-before-arrow.md`](sk-div-preference-sweep-wrap-before-arrow.md)");
+            builder.AppendLine("is the same seven arrow shapes over the same grid at `true`, and **61 of 152 913 cells");
+            builder.AppendLine("differ — 0.04 %**. Every fitted `F` above is unchanged but one, `arrow-param-one` ×");
+            builder.AppendLine("`single-literal`, which moves by a single column.");
+            builder.AppendLine();
+            builder.AppendLine("Two controls make that a measurement rather than a run that silently did nothing. `eq-wide`");
+            builder.AppendLine("is swept alongside and differs in **0** cells, which is what a key that cannot touch an `=`");
+            builder.AppendLine("must do; and the rendering demonstrably changed, from `Action value = () =>` breaking after");
+            builder.AppendLine("the arrow to `Action value = ()` breaking before it. The two are not in tension — the margin");
+            builder.AppendLine("sweep measures *where the continuation starts*, which the key moves by the width of the");
+            builder.AppendLine("arrow, and this file measures *which construct gives*, which it does not move at all.");
+            builder.AppendLine();
+        }
     }
 
     static void Confound(StringBuilder builder, Artefact artefact) {

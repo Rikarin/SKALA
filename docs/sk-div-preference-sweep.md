@@ -270,6 +270,23 @@ not need one:
 it is the one thing in SK-DIV-0050's preference half that a floor cannot express — which
 also means it is the one thing that can be implemented and tested with no oracle at all.
 
+### The key that does not move it
+
+`wrap_before_arrow_with_expressions` decides which side of the `=>` a continuation
+resumes on, and the margin sweep records it moving that table by 2 to 4 columns. It moves
+**this** one by almost nothing:
+[`sk-div-preference-sweep-wrap-before-arrow.md`](sk-div-preference-sweep-wrap-before-arrow.md)
+is the same seven arrow shapes over the same grid at `true`, and **61 of 152 913 cells
+differ — 0.04 %**. Every fitted `F` above is unchanged but one, `arrow-param-one` ×
+`single-literal`, which moves by a single column.
+
+Two controls make that a measurement rather than a run that silently did nothing. `eq-wide`
+is swept alongside and differs in **0** cells, which is what a key that cannot touch an `=`
+must do; and the rendering demonstrably changed, from `Action value = () =>` breaking after
+the arrow to `Action value = ()` breaking before it. The two are not in tension — the margin
+sweep measures *where the continuation starts*, which the key moves by the width of the
+arrow, and this file measures *which construct gives*, which it does not move at all.
+
 ## The filler profiles
 
 - **`uniform-5`** — identifier lengths `[5]`. Every identifier five characters — the control. This is the shape that made a wrap budget of 113 indistinguishable from 118 in a refuted finding, so it is swept deliberately: a threshold that appears only here is a fact about the probe.
