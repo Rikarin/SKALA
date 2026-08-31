@@ -81,7 +81,7 @@ found were modern C#, and none of them was visible to the kind census:**
 
 ## What was added
 
-Nineteen fixtures: `constructs/syntax/` (18) and `constructs/xmldoc/cref-member-forms.cs`.
+Nineteen fixtures, all in `constructs/syntax/`.
 
 | fixture | the kinds and shapes it introduces |
 |---|---|
@@ -103,13 +103,31 @@ Nineteen fixtures: `constructs/syntax/` (18) and `constructs/xmldoc/cref-member-
 | `syntax/query-joins.cs` | `JoinClause`, `JoinIntoClause` beyond one instance each |
 | `syntax/varargs-and-typed-references.cs` | `ArgListExpression`, `MakeRefExpression`, `RefTypeExpression`, `RefValueExpression` |
 | `syntax/line-directives.cs` | `LineSpanDirectiveTrivia`, `LineDirectivePosition` |
-| `xmldoc/cref-member-forms.cs` | `IndexerMemberCref`, `OperatorMemberCref`, `ConversionOperatorMemberCref`, `ExtensionMemberCref`, `CrefBracketedParameterList` |
+| `syntax/cref-member-forms.cs` | `IndexerMemberCref`, `OperatorMemberCref`, `ConversionOperatorMemberCref`, `ExtensionMemberCref`, `CrefBracketedParameterList` |
 
 ⚠ **Six of the nineteen diverge**, recorded as SK-DIV-0095 through SK-DIV-0099 in
 [`divergences.md`](divergences.md). That is the result the audit was for; a coverage pass that added
 only fixtures Skala already passes would have been a pass that selected for comfort. The other
 thirteen are pins rather than findings — after retirement they are the only thing that would notice a
 regression in those constructs — and they are worth having on that ground alone.
+
+### The cref forms are pinned under one profile of two
+
+⚠ **A gap this audit could not close, named rather than left implicit.** `cref-member-forms.cs` sits
+in `constructs/syntax/`, so the fixture beside it is the **format-only** answer. The doc-comment
+profile is the one that actually walks a cref, and it is only ever run over `constructs/xmldoc/` —
+which `XmlDocOracleTests` asserts is **one file per option key**, because the doc-comment verdict is
+attributed by file name. A fixture named after a construct cannot live there without attributing its
+measurement to nothing, and `TheSplit_IsTwentyTwoAgainstNone` pins the subtree's size besides.
+
+What the doc-comment profile does to these forms *was* measured by hand while the oracle was
+installed, on a deliberately mis-spaced probe:
+`<see    cref="Ext.extension(string).IsBlank"   />` comes back
+`<see cref="Ext.extension(string).IsBlank" />` at the standard indent, identically to an ordinary
+`<see cref="Ext.Ordinary(int)" />`. So the sub-formatter treats an extension cref exactly as it
+treats a name cref. **That measurement is written down here and pinned nowhere**, and pinning it needs
+`XmlDocOracle`'s row model to admit a file that is not named after a key — a design change, not an
+addition, and out of scope for a coverage pass.
 
 ## The eight that were not filled, and why
 
@@ -127,6 +145,38 @@ regression in those constructs — and they are worth having on that ground alon
 ⚠ The last three are **permanently unfillable**, not deferred: the oracle formats projects, and these
 three kinds exist only outside one. That is worth stating rather than leaving as an empty row, because
 the next reader would otherwise spend an afternoon rediscovering it.
+
+## ⚠ One thing this pass could not leave green: `skala check --gate=ci`
+
+Adding the `coverage` command to `Testing/Rikarin.Skala.Testing/Program.cs` inserted 26 lines above
+line 901, and that turns the `ci` gate red on **exactly one pre-existing finding**:
+
+```
+Testing/Rikarin.Skala.Testing/Program.cs:901:1: warning SK7020: duplicated block of 128 tokens
+  (40 lines), also at Testing/Rikarin.Skala.Testing/Program.cs:977-1009      ← master
+Testing/Rikarin.Skala.Testing/Program.cs:927:1: warning SK7020: duplicated block of 128 tokens
+  (40 lines), also at Testing/Rikarin.Skala.Testing/Program.cs:1003-1035     ← here
+```
+
+⚠ **Measured against master rather than assumed.** A clean `git archive master` checkout, built and
+gated the same way, exits 0 with 234 findings; this branch exits 1 with the same 234, and `diff` over
+the two outputs is the single line above. `--gate=pr --since master` — the branch-scoped question —
+exits **0**.
+
+⚠ **The cause is a defect in SK7020, not in this branch.** `Fingerprints` is documented as carrying
+"**no line numbers, and no file path** … a fingerprint that moves when a line moves is a baseline that
+expires every commit". SK7020 defeats that: it puts the *paired* location, line numbers and all, into
+its **message**, and the message is one of the fingerprint's four terms. So every SK7020 entry's
+fingerprint moves whenever anything above either half of the clone moves, and no edit to a file
+containing a clone can leave the `ci` gate green.
+
+⚠ **Not re-recorded here, deliberately.** `skala baseline update --apply` accepts the moved entry —
+"477 accepted before · 477 firing now · 1 newly accepted" is exactly the one-entry delta — but it
+re-serialises the whole file: **2 618 insertions, 2 588 deletions**, and it rewrites
+`configurationFingerprint` (`2d506f1f…` → `5b91d1bd…`) because it was recorded from a different
+checkout. Committing a 2 600-line artefact rewrite from an agent worktree to launder a one-line
+relocation is the trade this repository refuses everywhere else, so the red gate is reported instead
+of hidden. Master's own baseline commit is the right place to absorb it.
 
 ## What is still thin, ranked
 

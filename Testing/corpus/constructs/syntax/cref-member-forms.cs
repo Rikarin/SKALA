@@ -1,4 +1,3 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaFormatOnly generated=2026-08-31
 using System;
 using System.Collections.Generic;
 
@@ -9,6 +8,16 @@ using System.Collections.Generic;
 ///     walks it — which means every one of these forms is a shape it can move, and none of them had a
 ///     fixture.
 /// </summary>
+/// <remarks>
+///     ⚠ In <c>constructs/syntax/</c> rather than <c>constructs/xmldoc/</c>, and the fixture beside it
+///     is therefore the <b>format-only</b> answer alone. <c>constructs/xmldoc/</c> is one file per
+///     option key by an invariant <c>XmlDocOracleTests</c> asserts — the doc-comment verdict keys off
+///     the file name — so a fixture named after a *construct* cannot live there without attributing
+///     its measurement to nothing. What this pins is that the format-only profile returns every cref
+///     form untouched and formats the code around them, which is a real pin and a weaker one than the
+///     doc-comment profile would give. See docs/construct-coverage.md § "The cref forms are pinned
+///     under one profile of two" for what is still unmeasured and what it would take.
+/// </remarks>
 class CrefMemberForms {
     /// <summary>The plain forms, for the pair the others are read against.</summary>
     /// <seealso cref="CrefMemberForms" />

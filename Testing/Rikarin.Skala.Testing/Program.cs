@@ -390,12 +390,12 @@ switch (args[0]) {
         Console.WriteLine(ConstructReport.Locate(args[1], args[2], Symbols()));
         return 0;
     case "coverage":
-        // ⚠ The complement of `constructs`, and the one with a deadline on it. `constructs` ranks the
-        // constructs the corpus *contains*; this enumerates every SyntaxKind the pinned Roslyn declares
-        // and reports which of them the corpus does not contain at all, or contains once. A construct
-        // absent from the corpus has no fidelity number and no fixture, and after ReSharper is
-        // uninstalled no authoritative fixture for it can ever be authored — so absence is the measure
-        // that has to be taken while `jb` is still here. Needs no oracle.
+    // ⚠ The complement of `constructs`, and the one with a deadline on it. `constructs` ranks the
+    // constructs the corpus *contains*; this enumerates every SyntaxKind the pinned Roslyn declares
+    // and reports which of them the corpus does not contain at all, or contains once. A construct
+    // absent from the corpus has no fidelity number and no fixture, and after ReSharper is
+    // uninstalled no authoritative fixture for it can ever be authored — so absence is the measure
+    // that has to be taken while `jb` is still here. Needs no oracle.
     {
         var chosenSets = args[1..].Where(static a => !a.StartsWith('-')).ToArray();
         var built = SyntaxCoverage.Build(chosenSets.Length > 0 ? chosenSets : null);

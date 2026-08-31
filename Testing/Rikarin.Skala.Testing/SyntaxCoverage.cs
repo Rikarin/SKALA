@@ -22,8 +22,11 @@ public sealed record KindCoverage(
 ///     The complement of <see cref="ConstructReport" />.
 /// </summary>
 /// <remarks>
-///     ⚠ <see cref="ConstructReport" /> answers <em>of the constructs the corpus contains, which
-///     diverge</em>. It cannot answer the other half, and the other half is the one with a deadline on
+///     ⚠ <see cref="ConstructReport" /> answers
+///     <em>
+///         of the constructs the corpus contains, which
+///         diverge
+///     </em>. It cannot answer the other half, and the other half is the one with a deadline on
 ///     it: a construct that appears nowhere in <c>Testing/corpus/</c> has no fidelity number, no
 ///     fixture and no divergence entry, and once <c>jb</c> is uninstalled no authoritative fixture for
 ///     it can ever be authored. Absence is invisible to every other instrument this repository has.
@@ -175,7 +178,10 @@ public static class SyntaxCoverage {
             }
 
             var root = CSharpSyntaxTree
-                .ParseText(text, Rikarin.Skala.Formatting.CSharp.CSharpFormatter.ParseOptionsFor(Corpus.PropertySymbols))
+                .ParseText(
+                    text,
+                    Rikarin.Skala.Formatting.CSharp.CSharpFormatter.ParseOptionsFor(Corpus.PropertySymbols)
+                )
                 .GetRoot();
 
             foreach (var (name, count) in ProbeCounts(root)) {
@@ -268,9 +274,9 @@ public static class SyntaxCoverage {
                 .Count(static member => member is Microsoft.CodeAnalysis.CSharp.Syntax.OperatorDeclarationSyntax {
                         CheckedKeyword.RawKind: not 0
                     }
-                    or Microsoft.CodeAnalysis.CSharp.Syntax.ConversionOperatorDeclarationSyntax {
-                        CheckedKeyword.RawKind: not 0
-                    }
+                        or Microsoft.CodeAnalysis.CSharp.Syntax.ConversionOperatorDeclarationSyntax {
+                            CheckedKeyword.RawKind: not 0
+                        }
                 ));
 
         yield return ("static abstract interface member",
@@ -285,14 +291,13 @@ public static class SyntaxCoverage {
         yield return ("collection expression as an argument",
             nodes.OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()
                 .Count(static collection => collection.Parent
-                    is Microsoft.CodeAnalysis.CSharp.Syntax.ArgumentSyntax
-                ));
+                    is Microsoft.CodeAnalysis.CSharp.Syntax.ArgumentSyntax));
 
         yield return ("nested collection expression",
             nodes.OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()
                 .Count(static collection => collection.Ancestors()
-                    .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()
-                    .Any()
+                        .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.CollectionExpressionSyntax>()
+                        .Any()
                 ));
     }
 
