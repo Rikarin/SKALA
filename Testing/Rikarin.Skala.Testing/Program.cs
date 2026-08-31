@@ -31,6 +31,11 @@ using Rikarin.Skala.Testing;
 //                     under — docs/plan/05's four-way keep_existing_* table.
 //   constructs [set]  every divergent line attributed to the construct that owns it, beside how
 //                     often that construct occurs — docs/plan/16 § R1's actual question.
+//   coverage [set…]   ⚠ the opposite question, and the one with a deadline: every SyntaxKind the
+//                     pinned Roslyn declares, banded by how often the corpus contains it, so that
+//                     the kinds it contains *never* are visible. A construct absent from the corpus
+//                     has no fidelity number, no fixture and no divergence entry, and once `jb` is
+//                     uninstalled no authoritative fixture for it can be authored. Needs no oracle.
 //   ask <dir>         run the oracle over a scratch directory, in place. The tool the milestone-3
 //                     wrapping rules were established with: an option name does not say what
 //                     happens to a 121-column array initializer, and asking does.
@@ -384,6 +389,27 @@ switch (args[0]) {
 
         Console.WriteLine(ConstructReport.Locate(args[1], args[2], Symbols()));
         return 0;
+    case "coverage":
+        // ⚠ The complement of `constructs`, and the one with a deadline on it. `constructs` ranks the
+        // constructs the corpus *contains*; this enumerates every SyntaxKind the pinned Roslyn declares
+        // and reports which of them the corpus does not contain at all, or contains once. A construct
+        // absent from the corpus has no fidelity number and no fixture, and after ReSharper is
+        // uninstalled no authoritative fixture for it can ever be authored — so absence is the measure
+        // that has to be taken while `jb` is still here. Needs no oracle.
+    {
+        var chosenSets = args[1..].Where(static a => !a.StartsWith('-')).ToArray();
+        var built = SyntaxCoverage.Build(chosenSets.Length > 0 ? chosenSets : null);
+
+        // `--table=<path>` writes the full per-kind table, so that the committed artefact's numbers are
+        // machine-written and "is X in the corpus" is answerable from the file rather than by re-running.
+        if (args.FirstOrDefault(static a => a.StartsWith("--table=", StringComparison.Ordinal)) is { } table) {
+            File.WriteAllText(table["--table=".Length..], SyntaxCoverage.RenderMarkdown(built));
+            Console.Error.WriteLine($"table written to {table["--table=".Length..]}");
+        }
+
+        Console.Write(SyntaxCoverage.Render(built));
+        return 0;
+    }
     case "constructs":
         // docs/plan/16 § R1: any construct occurring more than 50 times must be at 100 %. A single
         // fidelity number cannot answer that; this attributes every divergent line to the construct
