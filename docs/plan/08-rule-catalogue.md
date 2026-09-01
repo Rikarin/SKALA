@@ -278,6 +278,22 @@ it cannot rewrite the whole method, neither rule reports.
 ⚠ **Both ship on fixture evidence alone.** The reference trees contain none of either shape — not a
 clean zero, an absent one.
 
+### Disposal contracts and async shape — the ids this batch allocated
+
+⚠ **The prose pass is owed for this block.** What follows is the register doing the one job ADR-012
+needs it to do — the number is taken, and it is written down where the next milestone will read it.
+It is not yet the considered account the sections above carry.
+
+- `SK3530` `disposable-field-not-disposed` — the type implements `IDisposable`, constructs a
+  disposable field, and nothing in it ever disposes the field. ⚠ **This is the half of the ownership
+  question that looks finished**, where `SK3502`'s is the half that looks unfinished: `SK3502`
+  reports an owner that is *not* disposable, this one an owner that **is**. The two are disjoint by
+  construction — this rule requires `Implements(owner, IDisposable)` and `SK3502` requires its
+  negation, so no `supersedes` is involved and neither can suppress the other. ⚠ Disposal is looked
+  for across the **whole type**, not in `Dispose`'s body, because the documented pattern puts the
+  work in `Dispose(bool)` and reading only the entry point would report every correct implementation
+  of it.
+
 ## SK4000 — Performance
 
 `SK4001` LINQ in a per-frame or per-request path (path-scoped, off by default) · `SK4002` closure
@@ -477,8 +493,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **151** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **121** | **80.7 %** |
+| Rules this document names | **152** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **122** | **80.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
