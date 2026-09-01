@@ -85,7 +85,7 @@ public static class AnalyzerHost {
         new FireAndForgetTaskAnalyzer(), new TaskReturnedFromUsingAnalyzer(), new UndisposedLocalAnalyzer(),
         new OwnedDisposableFieldAnalyzer(),
         new SynchronousAsyncDisposalAnalyzer(), new RedundantDisposeAnalyzer(), new UsingResourceInitializerAnalyzer(),
-        new MetricsAnalyzer(),
+        new UsingVariableReturnedAnalyzer(), new MetricsAnalyzer(),
         new WhereBeforeOperatorAnalyzer(), new AbstractTypeConstructorAnalyzer(),
         new ExtensionMethodOnObjectAnalyzer(), new ThreadSleepInTestAnalyzer(),
         new TodoWithoutIssueAnalyzer(), new PragmaWithoutJustificationAnalyzer(),

@@ -82,3 +82,4 @@ SK2005 | Skala.Correctness | Warning | Do not mutate a copy of a readonly struct
 SK4003 | Skala.Performance | Hidden | Review a temporary params array with a span overload.
 SK3510 | Skala.Lifetime | Warning | A variable already owned by `using` is disposed again.
 SK3511 | Skala.Lifetime | Warning | The `using` resource is built with an object initializer.
+SK3512 | Skala.Lifetime | Warning | A variable captured by `using` is returned.

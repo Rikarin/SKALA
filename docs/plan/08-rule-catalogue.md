@@ -181,8 +181,19 @@ with no `await` · `SK3007` `Task` returned from a `using` block that disposes w
 state · `SK3501` `IDisposable` created and not disposed on all paths · `SK3502` field of a disposable
 type in a type that is not disposable · `SK3503` `IAsyncDisposable` disposed synchronously.
 
-What a `using` owns, and what else happens to it: `SK3510` a variable already owned by `using` is
-disposed again · `SK3511` the `using` resource is built with an object initializer.
+### ⚠ Registered, prose pass owed — `SK3500` disposal and lifetime
+
+⚠ These ids ship and are listed here only so the register names them. The paragraph above has not
+been extended to describe them properly; that pass is owed.
+
+- `SK3510` — `using-variable-disposed-again`
+- `SK3511` — `using-resource-object-initializer`
+- `SK3512` — `using-variable-returned`
+
+### ⚠ Registered, prose pass owed — `SK3000` async and concurrency
+
+⚠ Same: shipped, listed so the register names them, prose owed.
+
 
 ## SK4000 — Performance
 
@@ -324,8 +335,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **128** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **98** | **77.2 %** |
+| Rules this document names | **129** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **99** | **77.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

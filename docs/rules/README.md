@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 106 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 107 ids are allocated.
 
 ## Async
 
@@ -77,6 +77,7 @@
 | [SK3503](SK3503.md) | An `IAsyncDisposable` is disposed synchronously | warning | review | no |
 | [SK3510](SK3510.md) | A variable already owned by `using` is disposed again | warning | safe | no |
 | [SK3511](SK3511.md) | The `using` resource is built with an object initializer | warning | safe | no |
+| [SK3512](SK3512.md) | A variable captured by `using` is returned | warning | — | no |
 
 ## Maintainability
 
