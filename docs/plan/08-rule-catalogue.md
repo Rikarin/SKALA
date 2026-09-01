@@ -278,6 +278,22 @@ it cannot rewrite the whole method, neither rule reports.
 ⚠ **Both ship on fixture evidence alone.** The reference trees contain none of either shape — not a
 clean zero, an absent one.
 
+### `SK3040`– — the locking band
+
+⚠ **The prose pass for this block is owed.** These entries are the register doing its minimum job —
+recording that the number is spent and on what — and not the written-through account the rest of this
+document gives. Whoever writes it should read the analyzers, not this list.
+
+- `SK3040` `lock-over-synchronization-primitive` — a `lock` statement taken over a `SemaphoreSlim`, a
+  `ReaderWriterLockSlim`, or anything below `WaitHandle`. Every reference type carries a monitor, so
+  it compiles; it gives the author a monitor they did not mean, over an object whose own waiting is
+  somewhere else. **Fixless**: the repair is to choose which mechanism the code meant, and no edit
+  chooses. ⚠ **Not `SK1023`, and disjoint from it by construction** — `SK1023` modernizes a *correct*
+  lock over a `readonly object` field, and this rule never fires on `object`.
+  ⚠ **`System.Threading.Lock` is excluded explicitly**: it is a synchronization primitive and it is
+  also the type a C# 13 `lock` is meant to be taken over, so reporting it would contradict `SK1023`'s
+  own fix.
+
 ## SK4000 — Performance
 
 `SK4001` LINQ in a per-frame or per-request path (path-scoped, off by default) · `SK4002` closure
@@ -477,8 +493,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **151** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **121** | **80.7 %** |
+| Rules this document names | **152** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **122** | **80.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
