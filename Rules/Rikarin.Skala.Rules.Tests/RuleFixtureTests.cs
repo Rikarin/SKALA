@@ -107,6 +107,11 @@ public sealed class RuleFixtureTests {
         new CaughtNullReferenceAnalyzer(), new DiscardedCaughtExceptionAnalyzer(),
         new IneffectiveThreadStaticAnalyzer(), new PureAttributeOnVoidAnalyzer(),
         new DebuggerDisplayMissingMemberAnalyzer(), new DuplicatedAttributeAnalyzer(),
+        new UnintendedReferenceComparisonAnalyzer(),
+        new BaseEqualityCallAnalyzer(),
+        new UncomparedHashMemberAnalyzer(),
+        new MutableHashMemberAnalyzer(),
+        new InconsistentEqualityMembersAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

@@ -202,5 +202,9 @@
   "ShiftExpressionRightOperandNotEqualRealCount": "SK2052",
   "ShiftExpressionZeroLeftOperand": "SK2052",
   "ThreadStaticAtInstanceField": "SK2100",
-  "ThreadStaticFieldHasInitializer": "SK2100"
+  "ThreadStaticFieldHasInitializer": "SK2100",
+  "PossibleUnintendedReferenceComparison": "SK2040",
+  "BaseObjectEqualsIsObjectEquals": "SK2041",
+  "BaseObjectGetHashCodeCallInGetHashCode": "SK2041",
+  "NonReadonlyMemberInGetHashCode": "SK2043"
 }

@@ -173,3 +173,8 @@ SK2100 | Skala.Correctness | Warning | `[ThreadStatic]` is applied where it cann
 SK2101 | Skala.Correctness | Warning | `[Pure]` is applied to a method that returns nothing.
 SK2102 | Skala.Correctness | Warning | The `[DebuggerDisplay]` string names a member that does not exist.
 SK2103 | Skala.Correctness | Warning | The attribute is applied twice with the same arguments.
+SK2040 | Skala.Correctness | Warning | The comparison is by reference where value equality was meant.
+SK2041 | Skala.Correctness | Warning | `base.Equals` or `base.GetHashCode` resolves to `object`'s.
+SK2042 | Skala.Correctness | Warning | The hash code reads state that equality ignores.
+SK2043 | Skala.Correctness | Warning | The hash code depends on state that can change.
+SK2044 | Skala.Correctness | Warning | The equality members are inconsistent with each other.

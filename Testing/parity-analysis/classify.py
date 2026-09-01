@@ -143,6 +143,11 @@ HOSTED = {
     # raise exceptions in unexpected locations" and says nothing about a hash code that
     # depends on mutable state, so the entry credited a Roslyn analyzer that does not
     # exist. Removed; see doc 17 § "Two corrections to how this document measured".
+    # `ReferenceEqualsWithValueType` was on its way into catalogued.json as part of SK2040
+    # when a probe compiled against a real project showed CA2013 already reporting it, with
+    # the same advice and enabled by default. Measured, not assumed: the shape was compiled
+    # and the warning read off the build. ADR-008 hosts it.
+    "ReferenceEqualsWithValueType": "CA2013",
     "VirtualMemberCallInConstructor": "CA2214",
     "StaticMemberInGenericType": "CA1000",
     "EmptyGeneralCatchClause": "CA1031",
