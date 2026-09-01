@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 105 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 106 ids are allocated.
 
 ## Async
 
@@ -43,6 +43,7 @@
 | [SK6003](SK6003.md) | An abstract type has a public constructor | suggestion | safe | yes |
 | [SK6008](SK6008.md) | An extension method extends `object` | suggestion | — | no |
 | [SK6020](SK6020.md) | An `Enum` constraint has no `struct` beside it | warning | review | no |
+| [SK6021](SK6021.md) | A type is named like an exception and is not one | warning | — | no |
 
 ## Formatting
 

@@ -81,3 +81,4 @@ SK1025 | Skala.Modernization | Hidden | Freeze a private lookup-only dictionary.
 SK2005 | Skala.Correctness | Warning | Do not mutate a copy of a readonly struct field.
 SK4003 | Skala.Performance | Hidden | Review a temporary params array with a span overload.
 SK6020 | Skala.Design | Warning | An `Enum` constraint has no `struct` beside it.
+SK6021 | Skala.Design | Warning | A type is named like an exception and is not one.
