@@ -44,17 +44,22 @@ public sealed class InconsistentEqualityMembersAnalyzer : DiagnosticAnalyzer {
         }
     }
 
-    static string? Message(INamedTypeSymbol type, Compilation compilation) {
-        var equality = EqualityMembers.Operator(type, "op_Equality");
-        if (equality is not null && !EqualityMembers.InheritsObjectEquals(type)) {
-            return "`"
-                + type.Name
-                + "` declares `operator ==` and overrides no Equals(object), so `==` and `.Equals` disagree";
-        }
-
-        return TypedEqualsWithoutContract(type, compilation)
-            ?? (equality is null ? null : OrderedWithoutRelationalOperators(type, compilation));
-    }
+    /// <summary>
+    ///     ⚠ <b>Two inconsistencies, not the three the issue proposed.</b>
+    /// </summary>
+    /// <remarks>
+    ///     "`operator ==` with no `Equals(object)` override" was built and then withdrawn: a probe
+    ///     compiled against a real project reports it as <c>CS0660</c> and <c>CS0661</c>, which are
+    ///     compiler warnings, always on, needing no analyzer package and no configuration. Restating
+    ///     a diagnostic the compiler already emits is the double-count doc 17 excludes on sight.
+    ///     <c>CA1036</c> was checked the same way for the ordering half and does <em>not</em> fire at
+    ///     the SDK's recommended level, so that one stands.
+    /// </remarks>
+    static string? Message(INamedTypeSymbol type, Compilation compilation) =>
+        TypedEqualsWithoutContract(type, compilation)
+        ?? (EqualityMembers.Operator(type, "op_Equality") is null
+            ? null
+            : OrderedWithoutRelationalOperators(type, compilation));
 
     static string? TypedEqualsWithoutContract(INamedTypeSymbol type, Compilation compilation) =>
         EqualityMembers.TypedEquals(type).Any() && !EqualityMembers.ImplementsEquatable(type, compilation)

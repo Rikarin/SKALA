@@ -15,6 +15,13 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     resolves to a user-defined <c>operator ==</c> is doing what it says, whatever the type is
 ///     called. That is what keeps records, <c>string</c>, <c>Uri</c> and every type with its own
 ///     operator out without an exclusion list to maintain.
+///     <para>
+///         ⚠ <b><c>ReferenceEquals</c> on a value type is deliberately not here.</b> It was built,
+///         and then a probe compiled against a real project showed <c>CA2013</c> reporting it with
+///         the same message and the same advice, on by default. ADR-008 says Skala hosts those rather
+///         than restating them, so the half was withdrawn and
+///         <c>ReferenceEqualsWithValueType</c> moved to the hosted map in <c>classify.py</c>.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UnintendedReferenceComparisonAnalyzer : DiagnosticAnalyzer {
@@ -26,7 +33,6 @@ public sealed class UnintendedReferenceComparisonAnalyzer : DiagnosticAnalyzer {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterOperationAction(AnalyzeComparison, OperationKind.Binary);
-        context.RegisterOperationAction(AnalyzeReferenceEquals, OperationKind.Invocation);
     }
 
     static void AnalyzeComparison(OperationAnalysisContext context) {
@@ -68,41 +74,6 @@ public sealed class UnintendedReferenceComparisonAnalyzer : DiagnosticAnalyzer {
             )
         );
     }
-
-    static void AnalyzeReferenceEquals(OperationAnalysisContext context) {
-        var operation = (IInvocationOperation)context.Operation;
-        if (operation.TargetMethod is not { Name: "ReferenceEquals", IsStatic: true, Parameters.Length: 2 } target
-            || target.ContainingType?.SpecialType != SpecialType.System_Object
-            || operation.Arguments.Length != 2
-            || operation.Syntax is not InvocationExpressionSyntax syntax) {
-            return;
-        }
-
-        var first = Unwrap(operation.Arguments[0].Value);
-        var second = Unwrap(operation.Arguments[1].Value);
-        if (!IsDefinitelyAValueType(first.Type) && !IsDefinitelyAValueType(second.Type)) {
-            return;
-        }
-
-        var replacement = "Equals(" + first.Syntax + ", " + second.Syntax + ")";
-        context.ReportDiagnostic(
-            Diagnostic.Create(
-                Descriptor,
-                syntax.GetLocation(),
-                FixEdits.Pack((syntax.Span, replacement)),
-                "ReferenceEquals boxes a value type into a fresh object, so this is false for every "
-                + "input including a value compared with itself"
-            )
-        );
-    }
-
-    /// <summary>
-    ///     ⚠ Only a value type the compiler is <em>certain</em> about. An unconstrained type parameter
-    ///     answers <c>false</c> here and is left alone, because it is a reference type at half its
-    ///     instantiations and the call is correct at those.
-    /// </summary>
-    static bool IsDefinitelyAValueType(ITypeSymbol? type) =>
-        type is { IsValueType: true, TypeKind: not TypeKind.Error };
 
     static bool DefinesValueEquality(INamedTypeSymbol type) =>
         type is { TypeKind: TypeKind.Class, IsRecord: false, IsAnonymousType: false, SpecialType: SpecialType.None }

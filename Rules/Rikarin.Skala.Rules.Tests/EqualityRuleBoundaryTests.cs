@@ -76,8 +76,8 @@ public sealed class EqualityRuleBoundaryTests {
         );
 
     /// <summary>
-    ///     ⚠ <c>SK2004</c>'s own shape. <c>SK2044</c> asks that rule's precondition before any of its
-    ///     three, so the two cannot both report a type that is missing its object equality.
+    ///     ⚠ <c>SK2004</c>'s own shape. <c>SK2044</c> asks that rule's precondition before either of
+    ///     its two, so the two cannot both report a type that is missing its object equality.
     /// </summary>
     [Fact]
     public void ATypedContractWithNoObjectEquality_IsLeftToTheOlderRule() =>
@@ -99,28 +99,28 @@ public sealed class EqualityRuleBoundaryTests {
     ///     it.
     /// </summary>
     /// <remarks>
-    ///     With <c>IEquatable&lt;Self&gt;</c> present, <c>SK2044</c>'s typed-<c>Equals</c> sub-case is
-    ///     mutually exclusive with <c>SK2004</c> by its own condition, so
-    ///     <see cref="ATypedContractWithNoObjectEquality_IsLeftToTheOlderRule" /> passes whether or
-    ///     not the gate exists. Only an <c>operator ==</c> <em>and</em> <c>IEquatable&lt;Self&gt;</c>
-    ///     <em>and</em> no <c>Equals(object)</c> puts one declaration in front of both rules. A
-    ///     sabotage removing the gate turned nothing red until this case was written, which is the
-    ///     whole argument for sabotaging.
+    ///     <c>SK2044</c>'s typed-<c>Equals</c> half is mutually exclusive with <c>SK2004</c> by its
+    ///     own condition, so <see cref="ATypedContractWithNoObjectEquality_IsLeftToTheOlderRule" />
+    ///     passes whether or not the gate exists. Only the ordering half can reach a type
+    ///     <c>SK2004</c> also reports. A sabotage removing the gate turned nothing red until this
+    ///     case was written, which is the whole argument for sabotaging.
     /// </remarks>
     [Fact]
-    public void AnEquatableOperatorWithNoObjectEquality_IsStillLeftToTheOlderRule() =>
+    public void AnEquatableOrderingWithNoObjectEquality_IsStillLeftToTheOlderRule() =>
         AssertExactly(
             """
             using System;
 
-            sealed class Handle : IEquatable<Handle> {
-                public int Id { get; init; }
+            sealed class Revision : IComparable<Revision>, IEquatable<Revision> {
+                public int Number { get; init; }
 
-                public static bool operator ==(Handle? left, Handle? right) => left?.Id == right?.Id;
+                public static bool operator ==(Revision? left, Revision? right) => Equals(left, right);
 
-                public static bool operator !=(Handle? left, Handle? right) => !(left == right);
+                public static bool operator !=(Revision? left, Revision? right) => !(left == right);
 
-                public bool Equals(Handle? other) => other is not null && other.Id == Id;
+                public int CompareTo(Revision? other) => other is null ? 1 : Number.CompareTo(other.Number);
+
+                public bool Equals(Revision? other) => other is not null && other.Number == Number;
             }
             """,
             RuleIds.IncompleteEqualityContract
@@ -146,45 +146,29 @@ public sealed class EqualityRuleBoundaryTests {
         );
 
     /// <summary>
-    ///     ⚠ The comparison site and the declaration are two rules' shapes and only one is a finding:
-    ///     the type declares <c>operator ==</c>, so <c>SK2040</c>'s bound-operator test excludes the
-    ///     comparison, and what is left is the missing <c>Equals(object)</c>.
-    /// </summary>
-    [Fact]
-    public void AnOperatorWithoutObjectEquality_IsReportedAtTheDeclarationOnly() =>
-        AssertExactly(
-            """
-            sealed class Money {
-                public decimal Amount { get; init; }
-
-                public static bool operator ==(Money? left, Money? right) => left?.Amount == right?.Amount;
-
-                public static bool operator !=(Money? left, Money? right) => !(left == right);
-            }
-
-            class C {
-                bool Same(Money left, Money right) => left == right;
-            }
-            """,
-            RuleIds.InconsistentEqualityMembers
-        );
-
-    /// <summary>
-    ///     ⚠ Two of <c>SK2044</c>'s three inconsistencies at once. One omission, one finding — the
-    ///     sub-cases are ordered rather than accumulated.
+    ///     ⚠ Both of <c>SK2044</c>'s inconsistencies at once. One omission, one finding — the halves
+    ///     are ordered rather than accumulated.
     /// </summary>
     [Fact]
     public void TwoInconsistenciesInOneType_AreOneFinding() =>
         AssertExactly(
             """
-            sealed class Key {
-                public int Id { get; init; }
+            using System;
 
-                public static bool operator ==(Key? left, Key? right) => left?.Id == right?.Id;
+            sealed class Revision : IComparable<Revision> {
+                public int Number { get; init; }
 
-                public static bool operator !=(Key? left, Key? right) => !(left == right);
+                public static bool operator ==(Revision? left, Revision? right) => Equals(left, right);
 
-                public bool Equals(Key? other) => other is not null && other.Id == Id;
+                public static bool operator !=(Revision? left, Revision? right) => !(left == right);
+
+                public int CompareTo(Revision? other) => other is null ? 1 : Number.CompareTo(other.Number);
+
+                public bool Equals(Revision? other) => other is not null && other.Number == Number;
+
+                public override bool Equals(object? other) => other is Revision revision && Equals(revision);
+
+                public override int GetHashCode() => Number;
             }
             """,
             RuleIds.InconsistentEqualityMembers

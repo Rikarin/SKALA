@@ -366,11 +366,11 @@ Every hashed member is in exactly one half, both rules read the same split, and 
 other's output.
 
 - `SK2040` `unintended-reference-comparison` — `==` on a source class that defines value equality and
-  declares no `operator ==`, or `ReferenceEquals` on a value type. ⚠ The test is on the **bound
-  operator**, never on a list of type names, which is what keeps records, `string`, `Uri` and every
-  type with its own operator out with no exclusion list to maintain. The type must be declared in the
-  compilation: `encoding == Encoding.UTF8` reads as identity against a cached singleton, and calling
-  that wrong needs knowledge of what the library guarantees.
+  declares no `operator ==`. ⚠ The test is on the **bound operator**, never on a list of type names,
+  which is what keeps records, `string`, `Uri` and every type with its own operator out with no
+  exclusion list to maintain. The type must be declared in the compilation: `encoding ==
+  Encoding.UTF8` reads as identity against a cached singleton, and calling that wrong needs
+  knowledge of what the library guarantees.
 - `SK2041` `base-equality-call-is-identity` — `base.Equals` or `base.GetHashCode` inside an equality
   member, where the call binds to `System.Object`. A base that overrides equality is doing real work
   and is never reported; a struct's `base.GetHashCode()` binds to `ValueType.GetHashCode`, which does
@@ -379,9 +379,8 @@ other's output.
   two instances the type calls equal hash differently.
 - `SK2043` `mutable-hash-code-member` — `GetHashCode` on a class reads an equality-relevant member
   that can still be assigned after construction.
-- `SK2044` `inconsistent-equality-members` — `operator ==` with no `Equals(object)` override,
-  `Equals(Self)` with no `IEquatable<Self>`, or `==` and `IComparable` with no relational operators.
-  One finding per type, in that order.
+- `SK2044` `inconsistent-equality-members` — `Equals(Self)` with no `IEquatable<Self>`, or `==` and
+  `IComparable` with no relational operators. One finding per type, in that order.
 
 ⚠ **`SK2042` reports the opposite direction from the one its issue named, and the issue's direction
 was refuted.** Issue #6 asked for "the hash code does not include the members equality compares".
@@ -405,6 +404,17 @@ And `S4035`, "classes implementing `IEquatable<T>` should be sealed": unsealed i
 defect is an `Equals` that admits a derived instance through an `is T` test so that a base and a
 derived instance compare equal in one direction only — a different analysis, with a different
 false-positive story, that would need its own number and its own measurement.
+
+⚠ **Two halves were built and then withdrawn, because a probe compiled against a real project
+showed they were already reported.** `ReferenceEquals` on a value type is `CA2013`, on by default
+with the same advice, so `ReferenceEqualsWithValueType` moved to the hosted map in `classify.py`
+rather than into `catalogued.json`. `operator ==` with no `Equals(object)` override is `CS0660` and
+`CS0661` — *compiler* warnings, always on, needing no analyzer package and no configuration — which
+is the whole of what `SK2044`'s first sub-case reported. ⚠ **Both would have shipped had the probe
+not been compiled**, because neither is in the hosted map and nothing in the fixture harness or in
+the parity pipeline looks at what `csc` already says. `CA1036` was checked the same way for the
+ordering half and does **not** fire at the SDK's recommended analysis level, which is the only
+reason that one stands; a repository at `AnalysisMode=All` would host it too.
 
 ⚠ **Four of the five ship fixless**, which is four more than doc 08's bar contemplates and the same
 decision `SK3040`–`SK3044` took. In each the repair is a choice between two edits that mean opposite
