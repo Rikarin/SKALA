@@ -2772,6 +2772,33 @@
       "configuration": [
         "dotnet_diagnostic.SK7073.severity"
       ]
+    },
+    {
+      "id": "SK7074",
+      "concept": "unstructured-goto",
+      "title": "Review a goto to a label",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "A `goto` names a label, so control leaves the statement nesting. `goto case` and `goto default` are not reported.",
+      "rationale": "⚠ The position, because `goto` is legal and occasionally right. `goto case` and `goto default` are the only way C# expresses switch fall-through, they cannot leave the switch they are written in, and the flow they describe is already in front of the reader — reporting them would make this a style opinion about `switch` and get the whole rule turned off. A `goto` to a label is the other thing: its target is anywhere in the enclosing member, so what runs next can no longer be read off the nesting. Neither can it be computed: `SK7001` and `SK7002` derive complexity from the structure of the statements, and a label jump is an edge those numbers do not contain, which is why the rule sits in the same range as the metrics it distorts.",
+      "examples": {
+        "bad": "foreach (var row in rows) {\n    foreach (var cell in row) {\n        if (cell.Bad) { goto broken; }\n    }\n}\nbroken:",
+        "good": "// Extract the search, return early, or use a flag — whichever says what the loop means."
+      },
+      "falsePositives": "⚠ Report-only, and this is one of the two rules the catalogue's shipping bar allows no fix for. Breaking out of nested loops is a real use with no mechanical rewrite: a flag, an extracted method and an early return are all correct and choosing between them is a design decision about what the loop means, so an edit that guessed would be worse than the `goto`. Every `goto` to a label is reported, including one inside a `switch` section, because the label is not confined to the switch. `goto case` and `goto default` are never reported. Generated code is excluded, which is where nearly all remaining `goto` lives — parser and state-machine generators emit it by design.",
+      "resharperId": null,
+      "supersedes": [
+        "S907"
+      ],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK7074.severity"
+      ]
     }
   ]
 }

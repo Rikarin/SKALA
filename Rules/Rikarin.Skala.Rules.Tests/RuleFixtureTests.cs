@@ -51,7 +51,7 @@ public sealed class RuleFixtureTests {
         new TodoWithoutIssueAnalyzer(), new PragmaWithoutJustificationAnalyzer(),
         new SuppressMessageWithoutJustificationAnalyzer(), new ObsoleteWithoutMessageAnalyzer(),
         new ExcludeFromCodeCoverageWithoutJustificationAnalyzer(), new EmptySuppressionRegionAnalyzer(),
-        new EmptyRegionAnalyzer(),
+        new EmptyRegionAnalyzer(), new UnstructuredGotoAnalyzer(),
         new SkippedTestWithoutReasonAnalyzer(),
         new SqlInjectionAnalyzer(), new ProcessArgumentInjectionAnalyzer(), new WeakCipherAnalyzer(),
         new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(),
