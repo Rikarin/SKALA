@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 129 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 130 ids are allocated.
 
 ## Async
 
@@ -174,6 +174,7 @@
 | [SK8005](SK8005.md) | `Thread.Sleep` in a test | suggestion | — | no |
 | [SK8006](SK8006.md) | A skipped test has no reason | warning | — | no |
 | [SK8007](SK8007.md) | Use controlled assertion input | suggestion | — | no |
+| [SK8020](SK8020.md) | A class with `[TestMethod]` members carries no `[TestClass]` | warning | review | no |
 
 ## Tool
 

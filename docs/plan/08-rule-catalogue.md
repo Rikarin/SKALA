@@ -401,6 +401,13 @@ not reported).
 `SK8005` `Thread.Sleep` in a test · `SK8006` test that is `[Skip]`ped without a reason ·
 `SK8007` non-deterministic input (`DateTime.Now`, `Guid.NewGuid`, `Random`) in an assertion path.
 
+⚠ **`SK8020`–`SK8022` are appended here with the prose pass owed.** The rows below are the register
+entry ADR-012 requires and no more; the paragraph that explains what the three add to this range, and
+how they relate to the `SK8001`–`SK8004` cuts above, has not been written.
+
+`SK8020` a class with `[TestMethod]` members and no `[TestClass]` — MSTest only, because xUnit has no
+class attribute to be missing and NUnit 3 made `[TestFixture]` optional.
+
 Scoped to test projects by convention (`*.Tests`) and by `.editorconfig` section. ⚠ This used to read
 "matching how Vixen already segments `[**/*.Tests/**/*.cs]`", and that clause is withdrawn for the
 reason § "SK1000 — Modernization" gives: `*.Tests` is a .NET-wide convention and stands on its own,
@@ -477,11 +484,11 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **151** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **121** | **80.7 %** |
+| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **122** | **80.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

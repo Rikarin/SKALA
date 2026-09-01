@@ -3316,6 +3316,31 @@
       "configuration": [
         "dotnet_diagnostic.SK3021.severity"
       ]
+    },
+    {
+      "id": "SK8020",
+      "concept": "test-class-attribute-missing",
+      "title": "A class with `[TestMethod]` members carries no `[TestClass]`",
+      "category": "Tests",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A class declares MSTest `[TestMethod]` members and is not itself marked `[TestClass]`, so MSTest discovers none of them and the suite is green because nothing ran.",
+      "rationale": "This is the worst failure a test can have, because it does not look like a failure. MSTest's discoverer enumerates types carrying `[TestClass]` and only then looks at their methods; a class without the attribute is never opened, so every `[TestMethod]` in it is silently skipped. Nothing is reported as ignored, no runner prints a warning, and the count of executed tests simply does not include them — a suite that was never run and a suite that passed are the same colour. The signal is decidable from attributes alone, which is what separates it from `SK8001`: no call has to be followed and no assertion has to be recognised, so there is no undecidable middle for the rule to guess at.",
+      "examples": {
+        "bad": "using Microsoft.VisualStudio.TestTools.UnitTesting;\n\npublic sealed class ArchetypeTests {\n    [TestMethod]\n    public void Counts() {\n        Assert.AreEqual(1, 1);\n    }\n}",
+        "good": "using Microsoft.VisualStudio.TestTools.UnitTesting;\n\n[TestClass]\npublic sealed class ArchetypeTests {\n    [TestMethod]\n    public void Counts() {\n        Assert.AreEqual(1, 1);\n    }\n}"
+      },
+      "falsePositives": "⚠ **MSTest only, deliberately, and the other two frameworks are silence rather than coverage.** xUnit discovers a `[Fact]` in any public class and has no class-level attribute to be missing; NUnit has made `[TestFixture]` optional since NUnit 3 for a non-generic, non-parameterised class, so its absence is not a defect. A rule that fired on those would be reporting a convention, not a bug. The whole analyzer withdraws unless `Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute` resolves in the compilation, so a repository with no MSTest reference never sees it. ⚠ **The attribute is matched by symbol through its base chain, never by written name**, so `[DataTestMethod]` and a repository's own `[TestMethod]`-derived attribute are both recognised and somebody else's type called `TestMethodAttribute` is not. ⚠ `[TestClass]` is looked for on the *symbol* and on every base type, so a `partial` class carrying it in another file and a base class carrying it for its derived fixtures are both silence. ⚠ **`abstract` and `static` classes never fire.** An abstract class holding `[TestMethod]` members is the shared-base pattern MSTest supports — the attribute belongs on the concrete class that inherits them — and a static class cannot be a test class at all. ⚠ **One finding per type, not per partial part**, anchored at the first declaring reference in file order, because two findings would each carry an insertion of an attribute that `AllowMultiple` forbids twice. ⚠ **The other direction the upstream idea pairs with this one is not implemented and that is a decision, not an omission.** \"A public method in a `[TestClass]` has no test attribute\" is not decidable from attributes: a public helper, a public fixture property, a public constructor and a `[TestInitialize]` spelled through somebody's own attribute are all legitimate, and the rule would fire on the ordinary shape of every test file. ⚠ **`fixIsSafe` is false, and not because the edit is uncertain.** There is exactly one repair and it is one token. Its *effect* is that tests which have never executed begin executing, and the first run after it is applied may be red — which is the rule finishing its sentence and is still a thing a person reads before pushing.",
+      "configuration": [
+        "dotnet_diagnostic.SK8020.severity"
+      ]
     }
   ]
 }

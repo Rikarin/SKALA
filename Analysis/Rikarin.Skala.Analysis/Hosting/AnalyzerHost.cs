@@ -104,7 +104,8 @@ public static class AnalyzerHost {
         new RedundantSuppressFinalizeAnalyzer(), new StackAllocInLoopAnalyzer(),
         new EscapedKeywordAnalyzer(),
         new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
-        new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer()
+        new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
+        new MissingTestClassAttributeAnalyzer(),
     ];
 
     /// <summary>
