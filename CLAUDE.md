@@ -52,12 +52,25 @@ Native Lint Conformance Oracle Sweep Freeze Pairwise Fidelity Unformat Canonical
 ReleaseDryRun`.
 
 ⚠ **`./build.sh` does not currently run on this machine, at any commit, including a clean `master`.**
-`build/_build.csproj` fails with a flood of `CS0246` for `Parameter`, `Solution` and `AbsolutePath`.
-`global.json` pins SDK `10.0.301` with `rollForward: latestFeature` and only `10.0.400` is installed,
-so local builds resolve to 400; NUKE 10.1.0 supplies its global usings from `Nuke.SourceGenerators.dll`,
-which `csc` is handed and which emits nothing under that Roslyn. Clearing `build/obj` does not help.
-**CI is unaffected** — every workflow uses `actions/setup-dotnet` with `global-json-file: global.json`,
-which installs 10.0.301 exactly. Installing that SDK locally would restore the target.
+`build/_build.csproj` fails with a flood of `CS0246` for `Parameter`, `Solution`, `AbsolutePath` and
+even `NukeBuild` itself. **The cause is not established.** What is measured:
+
+- It reproduces on a pristine `master` with an empty diff, so it is not any change in flight.
+- ⚠ **It is not the SDK pin.** The first diagnosis was that `global.json` pinning `10.0.301` against an
+  installed `10.0.400` starved NUKE's source generator. Editing the pin to `10.0.400` changes nothing —
+  the build fails identically. That diagnosis was published in three places before it was tested, which
+  is the whole of § "How this codebase decides something is proved" being ignored by the person who
+  wrote it.
+- `Nuke.Common.dll` *is* referenced and its namespaces *do* resolve: `Build.cs` line 1 is
+  `using static Nuke.Common.Tools.DotNet.DotNetTasks;` and it compiles. Every other NUKE name in the
+  file comes from a `global using`, and none of those exist.
+- `Nuke.SourceGenerators.dll` is passed to `csc`, and with `EmitCompilerGeneratedFiles=true` it writes
+  no files at all. So the generator loads and emits nothing, with no `CS8785` or `CS8034` to say why.
+- Clearing `build/obj` and `build/bin` does not help; the package under `~/.nuget/packages` is intact.
+
+**CI is very likely unaffected** — the workflows install the SDK from `global.json` via
+`actions/setup-dotnet` and this is a local toolchain problem — but that is an inference, not a
+measurement. Do not report a red CI on the strength of it.
 
 Until then, go around it — `dotnet test` bypasses the NUKE bootstrap entirely:
 
