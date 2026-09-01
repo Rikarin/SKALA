@@ -3341,6 +3341,31 @@
       "configuration": [
         "dotnet_diagnostic.SK6040.severity"
       ]
+    },
+    {
+      "id": "SK6041",
+      "concept": "wider-foreach-variable-type",
+      "title": "A `foreach` variable is declared wider than the element it receives",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "MoreSpecificForeachVariableTypeAvailable",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`foreach (object item in names)` over a `List<string>` throws the element type away at the top of the loop and makes the body ask for it back.",
+      "rationale": "The collection already knows what it holds. Declaring the loop variable as a base type discards that at the one point in the method where it was free, and everything downstream pays: the body cannot call the element's own members without a cast or a pattern, the reader cannot tell what is in the collection without following the collection back to its declaration, and where the element is a value type every iteration boxes. Naming the element type is not extra precision — it is the precision the collection was carrying anyway, written down.",
+      "examples": {
+        "bad": "foreach (object name in names) {\n    Console.WriteLine(((string)name).Length);\n}",
+        "good": "foreach (string name in names) {\n    Console.WriteLine(name.Length);\n}"
+      },
+      "falsePositives": "**Only a widening the compiler would have performed implicitly, and only two kinds of it.** The conversion from the element type to the declared type must be an implicit *reference* conversion or a *boxing* conversion — a base class, an implemented interface, or `object`. An identity conversion is nothing to report; an implicit *numeric* one (`foreach (long value in ints)`) is not a lost type but a deliberate arithmetic width, and narrowing it would change what the body computes; an implicit *nullable* one (`foreach (int? value in ints)`) is the author saying the loop deals in absence; a *user-defined* one is somebody's operator and not a widening at all. An **explicit** conversion — `foreach (string text in objects)`, which `foreach` uniquely permits — is a downcast the author wrote on purpose and is the opposite of this finding.\n\n**`var` is never reported.** It already is the element type, and the whole rule is the request to write that type down.\n\n**The iteration variable cannot be assigned**, so the shape that would make this dangerous does not exist: CS1656 forbids `item = …` inside the loop. That is why there is no dataflow guard here and no fixture for one.\n\n**Three shapes are skipped because the fix could not be written.** An anonymous element type has no name to write; a `dynamic` element type is not a type this question applies to; and an element type the containing assembly cannot see (`Compilation.IsSymbolAccessibleWithin` answers it) would produce a name that does not bind. The suggested type is rendered with `ToMinimalDisplayString` against the position of the loop, so it uses the file's own `using` directives and never introduces one.\n\n⚠ **The interface case is the one most likely to be deliberate.** `foreach (IShape shape in circles)` is reported, and \"program to the interface\" is a real reason to have written it. So is a base class chosen to say that the loop body only needs the base. The rule ships at `suggestion` for this reason: it is an observation about what the collection knows, not a claim about what the author meant.\n\n⚠ **The fix is `fixIsSafe: false` and the reason is overload resolution.** `Write(item)` binding to `Write(string)` instead of `Write(object)` is a different program, and a `switch` arm inside the body may become CS8121 — a pattern the narrower type can no longer match. Both are visible on review and the second is a compiler error rather than a silent change, but neither is an edit to apply unread. Where the element type is nullable the narrowed declaration also inherits the annotation, which is correct and may surface a CS8602 the wider type was hiding.",
+      "configuration": [
+        "dotnet_diagnostic.SK6041.severity"
+      ]
     }
   ]
 }

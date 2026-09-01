@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 130 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 131 ids are allocated.
 
 ## Async
 
@@ -55,6 +55,7 @@
 | [SK6022](SK6022.md) | A type name repeats the keyword the declaration already carries | suggestion | — | yes |
 | [SK6023](SK6023.md) | A type has no members, no base and no attributes | suggestion | — | yes |
 | [SK6040](SK6040.md) | An `out` variable is declared and never read | warning | safe | no |
+| [SK6041](SK6041.md) | A `foreach` variable is declared wider than the element it receives | suggestion | review | no |
 
 ## Formatting
 

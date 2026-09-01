@@ -18,13 +18,14 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class UnusedAndWideDeclarationBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
-        new UnusedOutVariableAnalyzer()
+        new UnusedOutVariableAnalyzer(), new WiderForeachVariableTypeAnalyzer()
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
             var data = new TheoryData<RuleFixture>();
-            foreach (var fixture in RuleFixtures.All().Where(static fixture => fixture.RuleId is "SK6040")) {
+            foreach (var fixture in RuleFixtures.All()
+                         .Where(static fixture => fixture.RuleId is "SK6040" or "SK6041")) {
                 data.Add(fixture);
             }
 
@@ -39,6 +40,46 @@ public sealed class UnusedAndWideDeclarationBatchTests {
     }
 
     /// <summary>
+    ///     ⚠ <c>SK6041</c> narrows a declaration, so the type it writes has to be the element's own.
+    /// </summary>
+    /// <remarks>
+    ///     The round-trip tests prove the result compiles and that the rule falls silent, which a fix
+    ///     that widened the type further would also satisfy. This asserts the direction: the replacement
+    ///     is exactly what <c>GetForEachStatementInfo</c> reports as the element type, spelled minimally
+    ///     at the loop's own position so no <c>using</c> is needed.
+    /// </remarks>
+    [Fact]
+    public void TheForeachFix_WritesTheElementTypeAndNothingElse() {
+        const string source = """
+                              using System.Collections.Generic;
+                              using System.Text;
+
+                              public static class Loop {
+                                  public static string Join(List<string> names) {
+                                      var builder = new StringBuilder();
+                                      foreach (object name in names) {
+                                          builder.Append(name);
+                                      }
+
+                                      return builder.ToString();
+                                  }
+                              }
+                              """;
+
+        var finding = Assert.Single(
+            RuleFixtures
+                .Analyze(RuleFixtures.Compile(source, "loop.cs"), Analyzers, TestContext.Current.CancellationToken)
+                .Where(static diagnostic => diagnostic.Id == RuleIds.WiderForeachVariableType)
+        );
+
+        Assert.Equal("string", finding.Properties[FixEdits.TextKey(0)]);
+
+        var start = int.Parse(finding.Properties[FixEdits.StartKey(0)]!);
+        var length = int.Parse(finding.Properties[FixEdits.LengthKey(0)]!);
+        Assert.Equal("object", source.Substring(start, length));
+    }
+
+    /// <summary>
     ///     ⚠ The edit is a replacement of the declaration, never of the whole argument.
     /// </summary>
     /// <remarks>
@@ -50,6 +91,10 @@ public sealed class UnusedAndWideDeclarationBatchTests {
     [Theory]
     [MemberData(nameof(Fixtures))]
     public void EveryFinding_ReplacesOnlyTheDeclaration(RuleFixture fixture) {
+        if (fixture.RuleId != RuleIds.UnusedOutVariable) {
+            return;
+        }
+
         var source = File.ReadAllText(fixture.Path);
         foreach (var diagnostic in Analyze(fixture)) {
             Assert.Equal("1", diagnostic.Properties[FixEdits.CountKey]);

@@ -368,10 +368,22 @@ they still count.
 
 - `SK6040` `unused-out-variable` — an `out` argument declares a variable nothing reads; write `out _`.
 
-⚠ **`SK6041`–`SK6049` are unallocated and free.** Issues #114 (a member more accessible than its use
-requires), #115 (storage never written after initialization), #119 (a class with only static members)
-and #120 (a `foreach` variable that could have a more specific type) were read in the same pass and
-**no id was taken for any of them**. #114 and #115 are the family
+⚠ **`SK6041` needs no safety guard against the body reassigning the loop variable, because C# has
+one.** CS1656 forbids assigning to an iteration variable, so a declared type that is only ever read is
+the only shape there is, and narrowing it can never invalidate a write. The guard that *is* needed is on
+the conversion: only an implicit **reference** or **boxing** widening is reported. An implicit numeric
+one (`foreach (long value in ints)`) is an arithmetic width the body depends on, a nullable one says the
+loop deals in absence, a user-defined one is somebody's operator, and an **explicit** one —
+`foreach (string text in objects)`, which `foreach` uniquely permits — is a downcast written on purpose
+and the opposite of this finding.
+
+- `SK6041` `wider-foreach-variable-type` — a `foreach` variable declared as a base type, an interface
+  or `object` when the collection already knows the element type.
+
+⚠ **`SK6042`–`SK6049` are unallocated and free.** Issues #114 (a member more accessible than its use
+requires), #115 (storage never written after initialization) and #119 (a class with only static
+members) were read in the same pass and **no id was taken for any of them**. #114 and #115 are the
+family
 [17](17-inspection-parity.md) § "Two ways a zero can lie" names: ReSharper splits both into `.Global`
 and `.Local`, every `.Global` scored zero in the recorded sweep because solution-wide analysis was off,
 and Skala analyses one compilation — so only the `.Local` halves are answerable, and the `.Local` half
@@ -507,8 +519,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **122** | **79.7 %** |
+| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **123** | **79.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **19** | includes the twelve declared cut with no reason recorded |

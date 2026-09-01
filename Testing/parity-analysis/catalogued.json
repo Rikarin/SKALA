@@ -139,5 +139,6 @@
  "UsingStatementResourceInitializationExpression": "SK3511",
  "ReturnOfUsingVariable": "SK3512",
  "SpinLockInReadonlyField": "SK3021",
- "NotAccessedOutParameterVariable": "SK6040"
+ "NotAccessedOutParameterVariable": "SK6040",
+ "MoreSpecificForeachVariableTypeAvailable": "SK6041"
 }
