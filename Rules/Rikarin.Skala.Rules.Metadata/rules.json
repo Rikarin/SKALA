@@ -4819,6 +4819,31 @@
       "configuration": [
         "dotnet_diagnostic.SK1061.severity"
       ]
+    },
+    {
+      "id": "SK1062",
+      "concept": "escape-free-string-literal",
+      "title": "Use the string literal form that needs no escapes",
+      "category": "Modernization",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseRawString",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "An escaped or verbatim literal a raw string would write without escapes, a raw string whose delimiter is longer than it needs to be, or an escape sequence that is simply a character.",
+      "rationale": "Escape-dense literals — Windows paths, embedded JSON, regexes — are where a stray backslash changes the meaning of the string and nothing says so. `\"\\\\d+\\\\.\\\\d+\"` and `\"{\\\"id\\\":1}\"` have to be decoded by the reader before they can be checked against whatever they are supposed to match, and the decoding is where the mistake gets made. A raw string removes the escaping entirely, and the shortest correct delimiter is the one that says the content has no quotes to worry about.",
+      "examples": {
+        "bad": "var pattern = \"\\\\d+\\\\.\\\\d+\";\nvar body = @\"{\"\"id\"\":1}\";\nvar tag = \"\\x41\";",
+        "good": "var pattern = \"\"\"\\d+\\.\\d+\"\"\";\nvar body = \"\"\"{\"id\":1}\"\"\";\nvar tag = \"A\";"
+      },
+      "falsePositives": "⚠ **The delimiter is the rule and getting it wrong emits code that does not compile.** A single-line raw string's fence is the longest run of quotes in the content plus one, never fewer than three, and its content may not begin or end with a quote at all. Rather than trusting that arithmetic, every replacement this rule proposes is **re-parsed as an expression and its value compared against the original's** before the finding is reported — a wrong fence cannot become a diagnostic, let alone a fix. ⚠ **Only single-line forms are touched.** A value containing a newline, a tab, or any other control character has no single-line raw spelling, and a multi-line raw string carries indentation rules that make the rewrite a formatting decision rather than a mechanical one. ⚠ **Version-gated per shape, not per rule.** The three raw-string shapes are silent below C# 11; simplifying an escape sequence to the character it denotes has no floor at all, and a single rule-level floor would have silenced it on every older project. ⚠ `\\x` is variable-length and greedy — `\"\\x41B\"` is one escape denoting U+041B, not `\\x41` followed by `B` — so the scan consumes it the way the lexer does and then declines it, because the character is outside the printable ASCII range the shape admits. `\\\\`, `\\\"`, `\\n`, `\\r`, `\\t`, `\\0` and `\\U` are never simplified. ⚠ A literal inside an interpolation hole is left alone: `SK1063` has its own opinion about those, and two rules rewriting one span is one of them being wrong. ⚠ **`UseVerbatimString` is not covered** — this rule goes to the raw form and never produces a verbatim one, and crediting an inspection whose output it does not reproduce would overstate the parity.",
+      "configuration": [
+        "dotnet_diagnostic.SK1062.severity"
+      ]
     }
   ]
 }

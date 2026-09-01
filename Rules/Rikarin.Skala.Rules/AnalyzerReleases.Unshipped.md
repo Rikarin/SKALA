@@ -162,3 +162,4 @@ SK7082 | Skala.Maintainability | Info | The conditional expressions are nested.
 SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
 SK1060 | Skala.Modernization | Info | Use an index-from-end expression.
 SK1061 | Skala.Modernization | Info | Use `nameof`.
+SK1062 | Skala.Modernization | Hidden | Use the string literal form that needs no escapes.

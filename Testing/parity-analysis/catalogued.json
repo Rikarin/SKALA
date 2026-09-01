@@ -198,5 +198,8 @@
   "ArrangeNullCheckingPattern": "SK1010",
   "UseIndexFromEndExpression": "SK1060",
   "UseNameOfInsteadOfToString": "SK1061",
-  "UseNameOfInsteadOfTypeOf": "SK1061"
+  "UseNameOfInsteadOfTypeOf": "SK1061",
+  "UseRawString": "SK1062",
+  "RawStringCanBeSimplified": "SK1062",
+  "CanSimplifyStringEscapeSequence": "SK1062"
 }

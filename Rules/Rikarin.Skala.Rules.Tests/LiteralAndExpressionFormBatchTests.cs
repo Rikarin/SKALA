@@ -22,7 +22,7 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class LiteralAndExpressionFormBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
-        new IndexFromEndAnalyzer(), new NameofExpressionAnalyzer()
+        new IndexFromEndAnalyzer(), new NameofExpressionAnalyzer(), new EscapeFreeStringLiteralAnalyzer()
     ];
 
     [Theory]
@@ -160,6 +160,98 @@ public sealed class LiteralAndExpressionFormBatchTests {
 
         Assert.Empty(Below(source, LanguageVersion.CSharp5).Where(static d => d.Id == "SK1061"));
         Assert.NotEmpty(Below(source, LanguageVersion.CSharp6).Where(static d => d.Id == "SK1061"));
+    }
+
+    /// <summary>
+    ///     ⚠ Each case states the value the literal must still have after the fix, and the assertion
+    ///     applies the edit and re-reads the constant rather than comparing strings. A fence one quote
+    ///     short does not produce a subtly different literal — it produces a different program.
+    /// </summary>
+    [Theory]
+    // A JSON body: every quote escaped today, none of them escaped after.
+    [InlineData("class C { string M() => \"{\\\"id\\\":1}\"; }", "{\"id\":1}")]
+    // A regex: the backslashes are the content.
+    [InlineData("class C { string M() => \"\\\\d+\\\\.\\\\d+\"; }", "\\d+\\.\\d+")]
+    // The verbatim spelling of the same JSON body.
+    [InlineData("class C { string M() => @\"{\"\"id\"\":1}\"; }", "{\"id\":1}")]
+    // ⚠ Two quotes in a row force a four-quote fence, which is the arithmetic most likely to be wrong.
+    [InlineData("class C { string M() => \"a\\\"\\\"b\"; }", "a\"\"b")]
+    // A fence longer than the content needs.
+    [InlineData("class C { string M() => \"\"\"\"abc\"\"\"\"; }", "abc")]
+    // No floor at all on this one: an escape that is simply a character.
+    [InlineData("class C { string M() => \"\\x41\"; }", "A")]
+    public void EscapeFreeLiteral_FiresAndKeepsTheValue(string source, string value) {
+        var finding = Assert.Single(Analyze(source, LanguageVersion.CSharp12));
+        Assert.Equal("SK1062", finding.Id);
+
+        var fixedSource = ApplyEdits(source, finding);
+        var literal = CSharpSyntaxTree
+            .ParseText(
+                fixedSource,
+                new CSharpParseOptions(LanguageVersion.Preview),
+                cancellationToken: TestContext.Current.CancellationToken
+            )
+            .GetRoot(TestContext.Current.CancellationToken)
+            .DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.LiteralExpressionSyntax>()
+            .Single();
+
+        Assert.Equal(value, literal.Token.ValueText);
+        Assert.Empty(Analyze(fixedSource, LanguageVersion.CSharp12));
+    }
+
+    [Theory]
+    // Already as plain as it gets.
+    [InlineData("class C { string M() => \"hello\"; }")]
+    // Verbatim, and no quote to double.
+    [InlineData("class C { string M() => @\"C:\\Users\\app\"; }")]
+    // ⚠ The fence is greedy, so a content ending in a quote has no single-line raw spelling.
+    [InlineData("class C { string M() => \"say \\\"hi\\\"\"; }")]
+    // …nor one starting with one.
+    [InlineData("class C { string M() => \"\\\"hi\\\" he said\"; }")]
+    // A tab cannot be written literally on one line, and `\\t` is not simplified.
+    [InlineData("class C { string M() => \"a\\\\b\\tc\"; }")]
+    // Nor a newline.
+    [InlineData("class C { string M() => \"a\\\\b\\nc\"; }")]
+    // The fence is already minimal.
+    [InlineData("class C { string M() => \"\"\"a\"b\"\"\"; }")]
+    // ⚠ `\\x` is greedy: this is U+041B, not `\\x41` followed by `B`.
+    [InlineData("class C { string M() => \"\\x41B\"; }")]
+    // The denoted character is a newline, which cannot be written literally.
+    [InlineData("class C { string M() => \"\\u000a\"; }")]
+    // SK1063's span, not this rule's.
+    [InlineData("class C { string M() => $\"{\"a\\\\b\"}\"; }")]
+    // An empty value has no raw spelling.
+    [InlineData("class C { string M() => \"\"; }")]
+    public void EscapeFreeLiteral_DeclinesTheNearestMiss(string source) =>
+        Assert.Empty(Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1062"));
+
+    /// <summary>
+    ///     ⚠ The gate is per shape, and this is the assertion that says so. The raw shapes are silent
+    ///     on C# 10; the escape-simplification shape has no floor and fires on both.
+    /// </summary>
+    [Fact]
+    public void EscapeFreeLiteral_GatesTheRawShapesAndNotTheEscapeShape() {
+        const string rawShape = "class C { string M() => \"{\\\"id\\\":1}\"; }";
+        const string escapeShape = "class C { string M() => \"\\x41\"; }";
+
+        Assert.Empty(Analyze(rawShape, LanguageVersion.CSharp10).Where(static d => d.Id == "SK1062"));
+        Assert.Single(Analyze(rawShape, LanguageVersion.CSharp11).Where(static d => d.Id == "SK1062"));
+
+        Assert.Single(Analyze(escapeShape, LanguageVersion.CSharp10).Where(static d => d.Id == "SK1062"));
+        Assert.Single(Below(escapeShape, LanguageVersion.CSharp7_3).Where(static d => d.Id == "SK1062"));
+    }
+
+    static string ApplyEdits(string source, Diagnostic diagnostic) {
+        var count = int.Parse(diagnostic.Properties[FixEdits.CountKey]!);
+        var text = source;
+        for (var i = count - 1; i >= 0; i--) {
+            var start = int.Parse(diagnostic.Properties[FixEdits.StartKey(i)]!);
+            var length = int.Parse(diagnostic.Properties[FixEdits.LengthKey(i)]!);
+            text = text[..start] + diagnostic.Properties[FixEdits.TextKey(i)] + text[(start + length)..];
+        }
+
+        return text;
     }
 
     static ImmutableArray<Diagnostic> Analyze(string source, LanguageVersion version) {
