@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 187 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 188 ids are allocated.
 
 ## Async
 
@@ -68,6 +68,7 @@
 | [SK2080](SK2080.md) | The set or dictionary initializer repeats a key | warning | — | no |
 | [SK2081](SK2081.md) | The collection is passed to its own method as the other collection | warning | — | no |
 | [SK2082](SK2082.md) | The collection element is written twice with nothing reading it in between | warning | — | no |
+| [SK2083](SK2083.md) | The collection iterated here is provably empty | warning | — | no |
 
 ## Design
 

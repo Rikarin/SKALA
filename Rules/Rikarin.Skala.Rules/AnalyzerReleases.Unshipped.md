@@ -163,3 +163,4 @@ SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
 SK2080 | Skala.Correctness | Warning | The set or dictionary initializer repeats a key.
 SK2081 | Skala.Correctness | Warning | The collection is passed to its own method as the other collection.
 SK2082 | Skala.Correctness | Warning | The collection element is written twice with nothing reading it in between.
+SK2083 | Skala.Correctness | Warning | The collection iterated here is provably empty.

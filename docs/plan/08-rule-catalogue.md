@@ -386,6 +386,15 @@ been written yet.
   "the keys are not the same" and only two constants answer it, so an undecidable pair ends the run
   rather than being stepped over. ⚠ `ConcurrentDictionary` is out of the receiver table on purpose:
   another thread may read between the writes, so "nothing read it" is not a claim to make there.
+- `SK2083` `provably-empty-collection` — a `foreach` over a local created empty that nothing in the
+  member ever touches again. ⚠ **Proved by exhaustion, not by dataflow**: `AnalyzeDataFlow` answers
+  questions about variables and not about a collection's contents, so the rule asks a question it
+  can answer — *every* reference to the local inside its declaring member must be the subject of a
+  `foreach`. A collection can only be filled through a member call, an assignment, or by being
+  handed somewhere, and each of those is a reference of another kind, so one such reference
+  withdraws the finding and the analyzer never has to decide what it does. The scan covers the whole
+  member rather than running forward from the declaration, so the answer does not depend on
+  ordering. Locals only: a field can be filled by anything holding the instance.
 
 ⚠ **The linear-search-in-a-set rule (#36) was refuted by measurement, and no id was allocated for
 it.** The issue's premise — that `Enumerable.Contains` on a `HashSet<T>` reached through
@@ -1163,8 +1172,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **213** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **179** | **84.4 %** |
+| Rules this document names | **214** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **180** | **84.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
