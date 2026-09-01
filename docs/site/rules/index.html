@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 193 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 197 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -89,6 +89,10 @@
 <tr><td><a href="SK2091.html">SK2091</a></td><td>An exception is thrown from a <code>finally</code> block</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2092.html">SK2092</a></td><td><code>NullReferenceException</code> is caught</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2093.html">SK2093</a></td><td>The handler discards the exception it caught</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2100.html">SK2100</a></td><td><code>[ThreadStatic]</code> is applied where it cannot take effect</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2101.html">SK2101</a></td><td><code>[Pure]</code> is applied to a method that returns nothing</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK2102.html">SK2102</a></td><td>The <code>[DebuggerDisplay]</code> string names a member that does not exist</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2103.html">SK2103</a></td><td>The attribute is applied twice with the same arguments</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
