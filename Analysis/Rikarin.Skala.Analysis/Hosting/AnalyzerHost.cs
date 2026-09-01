@@ -93,7 +93,8 @@ public static class AnalyzerHost {
         new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(),
         new CollectionExpressionAnalyzer(), new UsingDeclarationAnalyzer(), new TypePatternAnalyzer(),
         new NullConditionalAssignmentAnalyzer(), new DictionaryLookupAnalyzer(),
-        new NanComparisonAnalyzer(), new UnusedValueParameterAnalyzer()
+        new NanComparisonAnalyzer(), new UnusedValueParameterAnalyzer(),
+        new RedundantSuppressFinalizeAnalyzer()
     ];
 
     /// <summary>

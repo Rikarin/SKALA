@@ -175,6 +175,7 @@ not contiguous with the sixteen above:
 
 - `SK2030` `==` or `!=` against a constant `NaN`.
 - `SK2031` a setter that does work and never reads `value`.
+- `SK2032` `GC.SuppressFinalize` in a sealed type with no finalizer.
 
 ## SK3000 — Async, concurrency, lifetime
 
@@ -327,8 +328,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **128** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **98** | **77.2 %** |
+| Rules this document names | **129** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **99** | **77.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

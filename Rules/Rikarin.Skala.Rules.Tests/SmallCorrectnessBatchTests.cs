@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Rikarin.Skala.Rules.Tests;
 
@@ -16,10 +17,11 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class SmallCorrectnessBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
-        new NanComparisonAnalyzer(), new FloatingPointEqualityAnalyzer(), new UnusedValueParameterAnalyzer()
+        new NanComparisonAnalyzer(), new FloatingPointEqualityAnalyzer(), new UnusedValueParameterAnalyzer(),
+        new RedundantSuppressFinalizeAnalyzer()
     ];
 
-    static readonly string[] Ids = ["SK2030", "SK2031"];
+    static readonly string[] Ids = ["SK2030", "SK2031", "SK2032"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
@@ -71,6 +73,34 @@ public sealed class SmallCorrectnessBatchTests {
         const string source = "class C { bool M(double a, double b) => a / b == double.NaN; }";
         Assert.Single(Findings(source, "test.cs", "SK2030"));
         Assert.Empty(Findings(source, "test.cs", "SK2003"));
+    }
+
+    /// <summary>
+    ///     ⚠ SK2032's deletion takes the line break in front of the statement with it, so applying it
+    ///     does not leave an indented blank line behind — unless something is written in that leading
+    ///     trivia, in which case only the statement goes and the comment stays.
+    /// </summary>
+    [Theory]
+    [InlineData("        Close();\n        System.GC.SuppressFinalize(this);\n", "        Close();\n")]
+    [InlineData(
+        "        // Documented elsewhere.\n        System.GC.SuppressFinalize(this);\n",
+        "        // Documented elsewhere.\n        \n"
+    )]
+    public void SK2032_DeletesTheStatementAndKeepsWhatWasWrittenAboveIt(string body, string expected) {
+        var source = "sealed class C : System.IDisposable {\n    public void Dispose() {\n"
+            + body
+            + "    }\n\n    void Close() { }\n}\n";
+        var finding = Assert.Single(Findings(source, "test.cs", "SK2032"));
+        var start = int.Parse(finding.Properties[FixEdits.StartKey(0)]!, CultureInfo.InvariantCulture);
+        var length = int.Parse(finding.Properties[FixEdits.LengthKey(0)]!, CultureInfo.InvariantCulture);
+        var after = source[..start] + finding.Properties[FixEdits.TextKey(0)] + source[(start + length)..];
+
+        Assert.Equal(
+            "sealed class C : System.IDisposable {\n    public void Dispose() {\n"
+            + expected
+            + "    }\n\n    void Close() { }\n}\n",
+            after
+        );
     }
 
     static Diagnostic[] Findings(string source, string path, string ruleId) =>
