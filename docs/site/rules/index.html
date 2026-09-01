@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 155 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 165 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -28,6 +28,19 @@
 <tr><td><a href="SK3021.html">SK3021</a></td><td>A <code>SpinLock</code> is stored in a <code>readonly</code> field</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3030.html">SK3030</a></td><td>The async iterator is enumerated without <code>await foreach</code></td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3031.html">SK3031</a></td><td>The method is <code>async</code> only to return an awaited task</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="cleanup">Cleanup</h2>
+<div class="scroll">
+<table>
+<thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
+<tbody>
+<tr><td><a href="SK0230.html">SK0230</a></td><td>The <code>with</code> expression or object initializer is empty</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>yes</td></tr>
+<tr><td><a href="SK0231.html">SK0231</a></td><td>The string call produces the string it was given</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK0232.html">SK0232</a></td><td>The argument or signature element is redundant</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK0233.html">SK0233</a></td><td>The syntax is redundant</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK0234.html">SK0234</a></td><td>The cast or type argument is redundant</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -153,6 +166,8 @@
 <tr><td><a href="SK7091.html">SK7091</a></td><td>The process is terminated outside the entry point</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK7092.html">SK7092</a></td><td>The exception is both logged and rethrown</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK7093.html">SK7093</a></td><td>The console is written to where a logger was meant</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK7100.html">SK7100</a></td><td>The documentation duplicates the base member's</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK7101.html">SK7101</a></td><td>A non-public member has no documentation comment</td><td><span class="tag sev-none">none</span></td><td>—</td><td>yes</td></tr>
 </tbody>
 </table>
 </div>
@@ -236,6 +251,9 @@
 <tr><td><a href="SK8005.html">SK8005</a></td><td><code>Thread.Sleep</code> in a test</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK8006.html">SK8006</a></td><td>A skipped test has no reason</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK8007.html">SK8007</a></td><td>Use controlled assertion input</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK8020.html">SK8020</a></td><td>A class with <code>[TestMethod]</code> members carries no <code>[TestClass]</code></td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK8021.html">SK8021</a></td><td>The test class declares no test</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK8022.html">SK8022</a></td><td>The assertion's expected and actual arguments are swapped</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
