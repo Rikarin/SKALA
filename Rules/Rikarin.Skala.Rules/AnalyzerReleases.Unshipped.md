@@ -109,3 +109,4 @@ SK4020 | Skala.Performance | Info | The lambda captures nothing and is not `stat
 SK4021 | Skala.Performance | Hidden | The private method does not use instance state.
 SK4022 | Skala.Performance | Info | The struct is never mutated and is not `readonly`.
 SK4023 | Skala.Performance | Warning | The capacity argument matches the default.
+SK4024 | Skala.Performance | Warning | `GC.Collect` is called from application code.

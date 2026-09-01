@@ -141,6 +141,7 @@ SK4020 noncapturing-lambda
 SK4021 stateless-private-method
 SK4022 immutable-struct-not-readonly
 SK4023 redundant-capacity-argument
+SK4024 forced-garbage-collection
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because
