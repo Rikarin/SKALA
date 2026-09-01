@@ -21,12 +21,14 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class DisposalContractBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new UndisposedOwnedFieldAnalyzer(), new OwnedDisposableFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
+        new RefStructOwnedDisposableAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
             var data = new TheoryData<RuleFixture>();
-            foreach (var fixture in RuleFixtures.All().Where(static f => f.RuleId is "SK3530" or "SK3531")) {
+            foreach (var fixture in RuleFixtures.All()
+                         .Where(static f => f.RuleId is "SK3530" or "SK3531" or "SK3532")) {
                 data.Add(fixture);
             }
 
@@ -48,31 +50,39 @@ public sealed class DisposalContractBatchTests {
     }
 
     /// <summary>
-    ///     ⚠ Neither rule ever speaks where the other does, and it is arithmetic rather than luck.
+    ///     ⚠ No field is ever reported twice, and it is arithmetic rather than luck.
     /// </summary>
     /// <remarks>
-    ///     <c>SK3530</c> requires the owner to implement <c>IDisposable</c>; <c>SK3502</c> reports only
-    ///     where the owner implements neither contract its field offers. One predicate is the other's
-    ///     negation, so no <c>supersedes</c> is involved — which matters, because
-    ///     <c>Supersession.Apply</c> suppresses the *superseded* finding and here that would be the one
-    ///     carrying the fix.
+    ///     <c>SK3530</c> requires the owner to implement <c>IDisposable</c> and <c>SK3502</c> requires
+    ///     that it implement neither contract its field offers, so one predicate is the other's
+    ///     negation. <c>SK3532</c> is disjoint the other way round: it requires the field's type to
+    ///     implement <em>no</em> disposal interface, which is precisely where <c>SK3502</c> has no
+    ///     contract to ask about. Neither pair uses <c>supersedes</c>, and that matters — it dedupes on
+    ///     a shared span and suppresses the *superseded* finding, which here would be the one with the
+    ///     remedy.
     /// </remarks>
     [Theory]
     [MemberData(nameof(BothFamilies))]
-    public void AFieldIsNeverReportedByBothOwnershipRules(RuleFixture fixture) {
+    public void AFieldIsNeverReportedByTwoOwnershipRules(RuleFixture fixture) {
         var findings = Analyze(RuleFixtures.Compile(File.ReadAllText(fixture.Path), fixture.Path));
+        var owned = findings.Where(static d => d.Id is "SK3502" or "SK3530" or "SK3532")
+            .Select(static d => d.Id)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
 
-        Assert.False(
-            findings.Any(static d => d.Id == "SK3530") && findings.Any(static d => d.Id == "SK3502"),
-            $"{fixture}: SK3530 and SK3502 both reported. Their predicates are each other's negation; "
-            + "if both can speak, one of the two owner tests has been widened."
+        Assert.True(
+            owned.Length <= 1,
+            $"{fixture}: {string.Join(" and ", owned)} all reported. The three predicates are built to be "
+            + "mutually exclusive; if two can speak, one of the owner or field tests has been widened."
         );
     }
 
     public static TheoryData<RuleFixture> BothFamilies {
         get {
             var data = new TheoryData<RuleFixture>();
-            foreach (var fixture in RuleFixtures.All().Where(static f => f.RuleId is "SK3530" or "SK3502")) {
+            foreach (var fixture in RuleFixtures.All()
+                         .Where(static f => f.RuleId is "SK3530" or "SK3532" or "SK3502")) {
                 data.Add(fixture);
             }
 

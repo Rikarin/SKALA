@@ -301,6 +301,16 @@ It is not yet the considered account the sections above carry.
   cleanup is an ordering decision no edit can read. ⚠ **Every finding is provable and the guards are
   what make that true**: the base must be declared in this compilation and its body must invoke
   something. The stated cost is that a framework base in another assembly is not covered at all.
+- `SK3532` `ref-struct-owns-undisposed-resource` — ⚠ **the one ownership shape nothing else in this
+  family can reach.** A `ref struct` whose only disposal contract is a public parameterless
+  `Dispose()` is disposable through the language's pattern rule and through nothing else, so
+  `SK3502` — which asks whether the owner implements the contract the field offers — has no contract
+  to ask about and is silent by construction. The owner constructs the resource, holds it, and gives
+  its callers no `using` to write. ⚠ The field's type must implement **neither** `IDisposable` nor
+  `IAsyncDisposable`, which is the disjointness guard rather than a limitation: C# 13 lets a `ref
+  struct` implement an interface, and there the ownership is `SK3502`'s to report. **Fixless**: a
+  correct `Dispose()` decides which fields it releases and in what order, and the repair may instead
+  be that the type should not own the resource.
 
 ## SK4000 — Performance
 
@@ -501,8 +511,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **123** | **80.9 %** |
+| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **124** | **81.0 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

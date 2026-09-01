@@ -107,3 +107,4 @@ SK3020 | Skala.Async | Warning | The non-`async` `Task` method returns null.
 SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
 SK3530 | Skala.Lifetime | Warning | The disposable field is not disposed by `Dispose`.
 SK3531 | Skala.Lifetime | Warning | The `DisposeAsync` override never calls the base implementation.
+SK3532 | Skala.Lifetime | Warning | The `ref struct` owns a disposable and cannot declare it.
