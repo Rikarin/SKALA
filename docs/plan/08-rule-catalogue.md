@@ -422,6 +422,26 @@ member, return `default`, change the exception type) turns a loud failure into a
 
 `SK7090` a thrown `NotImplementedException` with no issue reference.
 
+⚠ **"The block adds nesting and nothing else" ([#225](https://github.com/Rikarin/SKALA/issues/225),
+Sonar `S1199`) is refuted, no id was allocated, and the reason is measured rather than argued.** The
+proposal's premise was that `SK0208` owns *control-statement* braces and that the free-standing block
+is a residue the arrangement option does not reach. It reaches it.
+`RedundantBracesRule.Rewriter.VisitBlock` in
+`Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/RedundancyRules.cs` walks the statements of
+every block and lifts any statement that is itself a `BlockSyntax` — a free-standing `{ … }` nested in
+a method body is exactly that shape, and `skala arrange --check` over one reports `SK0208 redundant
+braces` and would remove it. What `SK0208` declines to lift is a block holding a local declaration, a
+local function, a label, or a preprocessor directive, because lifting those widens a scope or moves a
+directive. ⚠ **That residue is the wrong half to build a rule on**: a block that scopes a declaration
+is a block that adds something besides nesting, which is the one case the proposed rule's own title
+excludes. A new `SK7xxx` rule here would either duplicate `SK0208` or report precisely the blocks that
+are not redundant, so it is not built and the number stays free. ⚠ Note for whoever revisits this:
+`resharper_csharp_braces_redundant` is **tier D**, which here does *not* mean unimplemented —
+`ArrangementOptions.Ids` collects the key and the rewriter runs. The conformance sweep records it as
+`❌ SPURIOUS`, "Skala moved and the oracle did not", so the tier is about fidelity to `jb cleanupcode`
+rather than about whether the shape is reached. It is reached, which is all this refutation needs; the
+divergence against the oracle is a separate question and is not disturbed here.
+
 ## SK8000 — Tests
 
 `SK8001` test method with no assertion · `SK8002` `Assert.True(x == y)` instead of `Assert.Equal` ·
