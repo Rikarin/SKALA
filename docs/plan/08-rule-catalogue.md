@@ -219,7 +219,8 @@ rather than guessing — [00](00-vision-and-principles.md)'s false-positive bar 
 mutable array or `List<T>` · `SK6003` `abstract` type with a public constructor ·
 `SK6004` interface with one implementation and no test double (hint) · `SK6005` optional parameter
 in a public virtual method · `SK6006` `enum` without an explicit zero value · `SK6007` `struct`
-without `IEquatable<T>` · `SK6008` extension method on `object`.
+without `IEquatable<T>` · `SK6008` extension method on `object` ·
+`SK6020` `where T : Enum` with no `struct` beside it.
 
 ## SK7000 — Maintainability
 
@@ -321,8 +322,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **126** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **96** | **76.8 %** |
+| Rules this document names | **127** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **97** | **77.0 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

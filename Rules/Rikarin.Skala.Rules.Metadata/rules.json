@@ -2668,6 +2668,31 @@
       "configuration": [
         "dotnet_diagnostic.SK7060.severity"
       ]
+    },
+    {
+      "id": "SK6020",
+      "concept": "enum-constraint-without-struct",
+      "title": "An `Enum` constraint has no `struct` beside it",
+      "category": "Design",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`where T : Enum` admits `System.Enum` itself, so `T` is a reference type whose `default` is `null` and which no enum API accepts.",
+      "rationale": "`where T : struct, Enum` is what the author of `where T : Enum` meant, and the difference is one type argument: `System.Enum`, the abstract base class. It satisfies the bare constraint by identity, so inside the method `T` is not known to be a value type — `default(T)` is `null`, every use boxes, and the type argument names a class that is not an enum and has no values. The BCL agrees: `Enum.GetValues<TEnum>()`, `Enum.TryParse<TEnum>`, `Enum.IsDefined<TEnum>` and `Enum.GetName<TEnum>` are all declared `where TEnum : struct, Enum`, so a method constrained the weaker way cannot call any of them and has to fall back on the boxing, reflective overloads it was written to avoid. Adding `struct` costs one keyword and makes the signature say what the body already assumes.",
+      "examples": {
+        "bad": "public static string[] Names<T>() where T : Enum =>\n    Enum.GetNames(typeof(T));",
+        "good": "public static string[] Names<T>() where T : struct, Enum =>\n    Enum.GetNames<T>();"
+      },
+      "falsePositives": "⚠ **The reason this rule exists is not the reason the proposal gave.** Issue #261 says `where T : Enum` permits `Nullable<TEnum>`; it does not. The compiler rejects `Name<Colour?>(…)` against a bare `Enum` constraint with CS0312, \"the nullable type does not satisfy the constraint of 'System.Enum'\", which was measured before the rule was written rather than reasoned about. The one type argument `struct` actually excludes is `System.Enum` itself (CS0453 once `struct` is there), and that is the whole of the finding — a reference type, `default(T)` of `null`, no values, and rejected by every generic `Enum` API in the BCL.\n\nThe rule fires only on a constraint clause whose `Enum` resolves to `System.Enum` and which carries no `struct`. Four clause shapes are skipped because adding `struct` to them does not compile, and a fix that does not compile is worse than a miss: `unmanaged` (already a stricter value-type constraint), `notnull` (CS8716 forbids the combination), `class` (`where T : class, Enum` is a deliberate, if narrow, statement about reference types), and `new()` (CS0451 forbids `struct` with `new()` — `struct` implies it, but repairing that needs a second edit and this rule makes one). `where T : Enum?` is left alone: the annotation says the author considered nullability and answered. A user type named `Enum` is not `System.Enum` and is not reported, which is why the rule is semantic. A clause containing a preprocessor directive is skipped, the same reason `SK6003` skips one, and so is one where the `Enum` is not the first constraint — CS0406 says it always is in legal code, so requiring it keeps the insertion point provable from the one node the rule looked at.\n\n⚠ **The fix is `fixIsSafe: false`, against the proposal's `true`.** Narrowing a constraint on a generic signature is a source-breaking change whose breakage lands in files this edit does not touch: a caller passing `System.Enum` stops compiling (CS0453), and a method that implements an interface member may no longer match its declared constraints (CS0425). Every one of those is a compiler error rather than a silent behaviour change, so the edit is never dangerous — but \"apply without review\" is a promise about somebody else's build, and Skala cannot see the rest of the solution from one syntax tree. Review is the honest requirement.",
+      "configuration": [
+        "dotnet_diagnostic.SK6020.severity"
+      ]
     }
   ]
 }

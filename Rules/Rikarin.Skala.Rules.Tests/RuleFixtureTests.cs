@@ -53,7 +53,8 @@ public sealed class RuleFixtureTests {
         new SqlInjectionAnalyzer(), new ProcessArgumentInjectionAnalyzer(), new WeakCipherAnalyzer(),
         new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(),
         new CollectionExpressionAnalyzer(), new UsingDeclarationAnalyzer(), new TypePatternAnalyzer(),
-        new NullConditionalAssignmentAnalyzer(), new DictionaryLookupAnalyzer()
+        new NullConditionalAssignmentAnalyzer(), new DictionaryLookupAnalyzer(),
+        new EnumConstraintAnalyzer()
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

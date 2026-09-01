@@ -86,7 +86,7 @@ public static class AnalyzerHost {
         new OwnedDisposableFieldAnalyzer(),
         new SynchronousAsyncDisposalAnalyzer(), new MetricsAnalyzer(),
         new WhereBeforeOperatorAnalyzer(), new AbstractTypeConstructorAnalyzer(),
-        new ExtensionMethodOnObjectAnalyzer(), new ThreadSleepInTestAnalyzer(),
+        new ExtensionMethodOnObjectAnalyzer(), new EnumConstraintAnalyzer(), new ThreadSleepInTestAnalyzer(),
         new TodoWithoutIssueAnalyzer(), new PragmaWithoutJustificationAnalyzer(),
         new SuppressMessageWithoutJustificationAnalyzer(), new SkippedTestWithoutReasonAnalyzer(),
         new SqlInjectionAnalyzer(), new ProcessArgumentInjectionAnalyzer(), new WeakCipherAnalyzer(),
