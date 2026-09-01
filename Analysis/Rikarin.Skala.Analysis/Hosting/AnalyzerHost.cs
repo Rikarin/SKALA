@@ -150,6 +150,8 @@ public static class AnalyzerHost {
         new UncomparedHashMemberAnalyzer(),
         new MutableHashMemberAnalyzer(),
         new InconsistentEqualityMembersAnalyzer(),
+        new AssignmentInConditionAnalyzer(), new IdenticalOperandsAnalyzer(), new RepeatedConditionAnalyzer(),
+        new MisleadingOperatorSequenceAnalyzer(), new NonShortCircuitBooleanAnalyzer(),
     ];
 
     /// <summary>

@@ -505,6 +505,59 @@ things — drop the member from the hash or add it to `Equals`; freeze the state
 as a key — and no signal in the code says which was intended. `SK2040` carries the one fix in the
 batch, rewriting the comparison to `Equals(a, b)`, and it is `fixIsSafe: false` because it changes
 the answer.
+⚠ **The prose pass for `SK2060`–`SK2064` is owed.** What follows is the allocation register entry —
+enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+**`SK2060`–`SK2064` are the family of expressions that read as something they are not**, and every
+one of them has a legitimate form that is textually identical to the defect. That is what makes the
+batch a batch, and it is why four of the five ship without a fix: in each case the repair is a
+decision about which of two plausible programs the author meant, and a tool that guesses is worse
+than one that reports.
+
+`SK2060` `assignment-in-condition` — a simple `=` that is the *entire* condition of an `if`,
+`while`, `do`, `for` or `?:`. ⚠ The discriminator is "entire": `while ((line = reader.ReadLine())
+!= null)` assigns inside a condition and is correct, and `if ((ok = TryLoad()))` uses the
+forty-year-old double-parenthesis convention to say the assignment was meant. Both are declined. ·
+`SK2061` `identical-operands` — the same side-effect-free path on both sides of `&&`, `||`, `&`,
+`|`, `^`, `-`, `/` or `%`. ⚠ The six comparison operators were dropped after measurement: `CS1718`
+covers every comparison shape this rule could report, and § "The compiler already says it" now
+records why the sentence that said otherwise was wrong. Floating-point operands are excluded
+outright, because `x - x` is a NaN-preserving zero; properties are excluded because a getter is a
+call and because `SK2012` owns the automatic-property case. · `SK2062` `repeated-condition` —
+a later `else if` condition structurally equal to an earlier one in the same chain. ⚠ Sequential
+`if`s are **not** compared: the first body usually changed the answer, so a repeat there is not a
+defect. · `SK2063` `misleading-operator-sequence` — `x =- 1`, where an `=` is hard against a unary
+`-`, `+` or `!` that is then spaced away from its operand. ⚠ Whitespace is the entire signal, which
+is the one place in this catalogue where trivia, not structure, decides a correctness finding. ·
+`SK2064` `non-short-circuit-boolean` — `&` or `|` between two non-nullable `bool` operands whose
+right side has no side effect. ⚠ The only rule of the five that carries a fix, and the only one
+whose worst failure would be catastrophic rather than noisy: `flags & Mask` on an integer or a
+`[Flags]` enum must never be reported, so the rule reads the operand types and is `Semantic` for
+that reason alone.
+
+⚠ **Four fixless rules in one batch is more than doc 08's bar contemplates, and it is deliberate.**
+For `SK2060` the two repairs — `==`, or parentheses around the assignment — are different programs.
+For `SK2061` and `SK2062` the repair is *what the other side should have said*, which is the whole
+content of the bug. For `SK2063` both `x -= 1` and `x = -1` are plausible readings. A fix in any of
+these would be the tool choosing which bug it found.
+
+⚠ **The batch was measured, and three of the five could be.** `SK2060`, `SK2062` and `SK2063` are
+syntactic, so they run under `--load=loose` and the 4 459-file corpus is available to them; all
+five ran over Skala's own tree under `--load=workspace`, which produced **0 CS diagnostics** here
+and 590 findings across the catalogue. Every rule reports **zero** on both. ⚠ **Three of those
+zeros are shape-absent and one is not.** Widening each rule to its bare shape and re-running finds
+nothing at all for `SK2060`, `SK2061`, `SK2062` and `SK2064` on either tree — and **17**
+occurrences for `SK2063`, every one of them in `Testing/corpus/unformatted/collapse/`, where
+whitespace has been stripped on purpose and `GoalIndex = -1;` is stored as `GoalIndex=-1;`. The
+shipped rule declines all 17 because the operand is not spaced away from the sign. ⚠ **A rule that
+reads whitespace for meaning meets machine-mangled whitespace sooner than most**, and that guard is
+the whole of the difference between a clean corpus and seventeen false positives on it.
+
+⚠ **`SK2061` and `SK2062` compare expressions structurally with `SyntaxFactory.AreEquivalent`, not
+textually.** Roslyn's comparison already ignores trivia and compares tokens and structure, so no
+hand-written comparer was needed; a text comparison would call `if (a && b)` and `if (a  &&  b)`
+different and would call two conditions sharing a sub-expression the same.
 
 ## SK3000 — Async, concurrency, lifetime
 
@@ -1265,6 +1318,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **228** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **194** | **85.5 %** |
+| Rules this document names | **215** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **181** | **84.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
@@ -1418,8 +1473,17 @@ that duplicates one of them does not duplicate a diagnostic the user already see
 `SK3501` shipped because of that measurement; `SK2016` and `SK3502` now cover the conservative
 CA2254 and CA1001 cases as well.
 
-⚠ **`CS1717`/`CS1718` reach the identifier spellings only.** `Prop = Prop`, `other.Prop =
-other.Prop` and `other.Prop == other.Prop` produce nothing. `SK2012` now covers non-virtual
+⚠ **`CS1717`/`CS1718` reach every storage path, and this sentence used to say "the identifier
+spellings only", which is wrong.** The example it was built from is a *property*: `Prop = Prop`,
+`other.Prop = other.Prop` and `other.Prop == other.Prop` do produce nothing, because a property
+access is an accessor call. A **field** reached through a member access is a different matter and
+is covered — `this.g == this.g`, `b.v == b.v`, `Box.Which == Box.Which`, `a == a` on a `string`
+and `b == b` on a reference are all `CS1718`, measured at `net10.0` by
+`ExpressionMisreadingBatchTests.TheCompilerCoversEveryComparisonSK2061CouldHaveMade`. ⚠ **That
+cost `SK2061` its comparison half.** The rule was drafted over all six comparison operators on
+the strength of the old sentence; since it reports storage paths and never properties, the
+compiler covered every comparison it could have made and nothing was left over. It ships over
+`&&`, `||`, `&`, `|`, `^`, `-`, `/` and `%`, where the compiler says nothing at all. `SK2012` now covers non-virtual
 auto-properties declared in the same file, without assuming arbitrary accessors are side-effect-free.
 `SK2001` covers comparisons decided by integral type endpoints that the compiler leaves silent;
 neither rule duplicates the compiler-covered cases. The compiler also leaves an `IEquatable<T>` implemented without

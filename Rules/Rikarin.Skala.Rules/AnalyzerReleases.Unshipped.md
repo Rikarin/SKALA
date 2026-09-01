@@ -178,3 +178,8 @@ SK2041 | Skala.Correctness | Warning | `base.Equals` or `base.GetHashCode` resol
 SK2042 | Skala.Correctness | Warning | The hash code reads state that equality ignores.
 SK2043 | Skala.Correctness | Warning | The hash code depends on state that can change.
 SK2044 | Skala.Correctness | Warning | The equality members are inconsistent with each other.
+SK2060 | Skala.Correctness | Warning | The condition is an assignment, not a comparison.
+SK2061 | Skala.Correctness | Warning | Both operands of the operator are the same expression.
+SK2062 | Skala.Correctness | Warning | A later condition in the chain repeats an earlier one.
+SK2063 | Skala.Correctness | Warning | The operator sequence reads as a different operator.
+SK2064 | Skala.Correctness | Warning | A non-short-circuiting bitwise operator joins two booleans.

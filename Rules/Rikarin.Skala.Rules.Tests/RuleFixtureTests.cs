@@ -112,6 +112,8 @@ public sealed class RuleFixtureTests {
         new UncomparedHashMemberAnalyzer(),
         new MutableHashMemberAnalyzer(),
         new InconsistentEqualityMembersAnalyzer(),
+        new AssignmentInConditionAnalyzer(), new IdenticalOperandsAnalyzer(), new RepeatedConditionAnalyzer(),
+        new MisleadingOperatorSequenceAnalyzer(), new NonShortCircuitBooleanAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
