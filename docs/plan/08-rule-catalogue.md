@@ -168,7 +168,13 @@ loop variable captured in a closure · `SK2009` `switch` over an enum missing me
 a value type without an override, boxing · `SK2012` self-assignment, self-comparison ·
 `SK2013` exception constructed but not thrown · `SK2014` `catch` that swallows without logging or
 rethrow · `SK2015` `throw ex` losing the stack trace · `SK2016` interpolated string in a logger call
-that takes a template (the `CA2254` case, which the export sets to `suggestion`).
+that takes a template (the `CA2254` case, which the export sets to `suggestion`) · `SK2017` an
+`ArgumentException`-family `paramName` literal naming no parameter in scope.
+
+⚠ `SK2017` is outside the `SK2001`–`SK2016` block only in the sense that it was allocated later; it
+is the next free number in the band and not the nearest tidy one. It is **not** `SK2006`, which
+§ "Cut, with the reason" disposed of and which ADR-012 keeps taken for ever whether or not it ever
+shipped.
 
 ## SK3000 — Async, concurrency, lifetime
 
@@ -321,8 +327,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **126** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **96** | **76.8 %** |
+| Rules this document names | **127** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **97** | **77.0 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

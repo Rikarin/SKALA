@@ -15,6 +15,7 @@
  "ObjectCreationAsStatement": "SK2013",
  "PossibleIntendedRethrow": "SK2015",
  "PossibleInvalidOperationExceptionCollectionWasModified": "SK2007",
+ "SuspiciousParameterNameInArgumentNullException": "SK2017",
  "AsyncVoidMethod": "SK3001",
  "AsyncVoidLambda": "SK3001",
  "AsyncVoidMethodWithoutAwait": "SK3001",

@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 104 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 105 ids are allocated.
 
 ## Async
 
@@ -35,6 +35,7 @@
 | [SK2014](SK2014.md) | An empty catch silently discards an exception | warning | — | yes |
 | [SK2015](SK2015.md) | `throw ex;` resets the stack trace | warning | safe | yes |
 | [SK2016](SK2016.md) | A logger message is interpolated before it is logged | suggestion | — | no |
+| [SK2017](SK2017.md) | The exception names a parameter that does not exist | warning | safe | no |
 
 ## Design
 

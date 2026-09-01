@@ -81,6 +81,7 @@ public static class AnalyzerHost {
         new DiscardedPureResultAnalyzer(), new IncompleteEqualityContractAnalyzer(), new CapturedLoopVariableAnalyzer(),
         new ImplicitStringCultureAnalyzer(), new InheritedValueTypeEqualsAnalyzer(),
         new EmptyCatchAnalyzer(), new InterpolatedLoggerMessageAnalyzer(),
+        new WrongArgumentNameAnalyzer(),
         new AsyncVoidAnalyzer(), new BlockingOnAsyncAnalyzer(), new CancellationTokenForwardingAnalyzer(),
         new FireAndForgetTaskAnalyzer(), new TaskReturnedFromUsingAnalyzer(), new UndisposedLocalAnalyzer(),
         new OwnedDisposableFieldAnalyzer(),
