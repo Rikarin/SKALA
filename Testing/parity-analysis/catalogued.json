@@ -195,5 +195,10 @@
   "PublicConstructorInAbstractClass": "SK6003",
   "ChangeFieldTypeToSystemThreadingLock": "SK1023",
   "RedundantDictionaryContainsKeyBeforeAdding": "SK1033",
-  "ArrangeNullCheckingPattern": "SK1010"
+  "ArrangeNullCheckingPattern": "SK1010",
+  "PossibleLossOfFraction": "SK2050",
+  "UselessBinaryOperation": "SK2051",
+  "ShiftExpressionRealShiftCountIsZero": "SK2052",
+  "ShiftExpressionRightOperandNotEqualRealCount": "SK2052",
+  "ShiftExpressionZeroLeftOperand": "SK2052"
 }

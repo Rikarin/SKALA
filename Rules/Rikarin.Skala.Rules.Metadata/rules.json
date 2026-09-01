@@ -4769,6 +4769,135 @@
         "dotnet_code_quality.SK7083.minimum_length",
         "dotnet_diagnostic.SK7083.severity"
       ]
+    },
+    {
+      "id": "SK2050",
+      "concept": "integer-division-fraction",
+      "title": "Integer division feeds a fractional result",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "PossibleLossOfFraction",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A division evaluated in an integral type is converted to float, double or decimal, so the fractional part is discarded before the conversion that asks for it.",
+      "rationale": "Asking for a fractional type is the author saying the fraction matters, and integral division has already thrown it away by the time the conversion runs. The truncation happens inside the operator, not at the assignment, so nothing in the surrounding code shows it. ⚠ The finding is independent of the checked context: no overflow is involved and the result is the same whether the project sets CheckForOverflowUnderflow or not. The fix casts the dividend to the fractional type, which changes the computed value — that is the point, and it is why the fix is not safe to apply unreviewed.",
+      "examples": {
+        "bad": "double ratio = hits / total;",
+        "good": "double ratio = (double)hits / total;"
+      },
+      "falsePositives": "Only built-in, non-lifted division whose result type is a fixed-width integral type is considered, and only where the result reaches float, double or decimal — either by conversion or through a cast written immediately around the division. ⚠ Roslyn does not report a cast's target as the operand's converted type, so `(double)(a / b)` is invisible to the conversion test and is matched by reading the enclosing cast instead; a rule that checked only the conversion would miss the commonest wrong repair for this defect while looking complete. ⚠ An explicit cast of the division to an *integral* type — `(long)(a / b)` in a double context — is read as the author saying truncation is intended, and is not reported; it is the documented way to keep the shape and silence the rule. Division by a constant 1 or -1, and a constant zero dividend, are exact and are not reported: the shape is present and no fraction is lost. Native integers, nullable operands, user-defined operators, dynamic and generic type parameters are excluded. The rule does not decide whether truncation was wrong, only that it happened before a fractional type was asked for.",
+      "configuration": [
+        "dotnet_diagnostic.SK2050.severity"
+      ]
+    },
+    {
+      "id": "SK2051",
+      "concept": "fixed-result-arithmetic",
+      "title": "The arithmetic has a result its constant operand already fixes",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UselessBinaryOperation",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A built-in integral arithmetic or bitwise operation has a constant operand that makes the operation either the identity or a constant.",
+      "rationale": "`x * 1`, `x | 0` and `x & 0` compute nothing. Written by hand they are usually the residue of an edit that removed the interesting operand, and written by a model they are usually a placeholder that was never filled in — which is why the range matters more for generated code than for code somebody typed. ⚠ Every case reported here holds identically in a checked and an unchecked context: an identity cannot overflow and a constant result cannot either, so the project's CheckForOverflowUnderflow setting never changes the answer.",
+      "examples": {
+        "bad": "var scaled = weight * 1;",
+        "good": "var scaled = weight;"
+      },
+      "falsePositives": "Only built-in, non-lifted `+ - * / % & | ^` whose result type is a fixed-width integral type is considered, and the non-constant operand's type must equal that result type — so `someByte * 1` is left alone, because removing the operator would change the expression's static type and a `var` target with it. ⚠ Floating point is excluded on purpose: `x + 0.0` is not the identity, because it turns negative zero into positive zero. `0 - x` is negation, not an identity, and is not reported. Where the operation has a constant result rather than an identity — `x & 0`, `x % 1`, `x | -1` — the other operand must be a plain local, parameter or non-volatile field reference, so that discarding its evaluation cannot discard a side effect; anything else is left alone rather than reported without a fix. Compound assignment (`x *= 1`), shifts (which SK2052 owns), enums, pointers, decimal, `Math.Clamp` with an inverted range and cross-file constant dependencies are all outside this initial scope.",
+      "configuration": [
+        "dotnet_diagnostic.SK2051.severity"
+      ]
+    },
+    {
+      "id": "SK2052",
+      "concept": "masked-shift-count",
+      "title": "The shift count is masked to a different count",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "ShiftExpressionRealShiftCountIsZero",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A shift's constant count is outside the range of its promoted left operand's width, so C# masks it and the expression shifts by a different amount.",
+      "rationale": "⚠ C# masks a shift count, it does not clamp it: `x << 32` on an `int` shifts by `32 & 31`, which is zero, so the expression is the identity rather than the zero almost everybody expects. On a `long` the mask is 63, so the same text is a genuine 32-bit shift. The rule therefore has to know the promoted width of the left operand and cannot be decided from syntax — a `byte` left operand promotes to `int` and masks with 31. There is no fix: rewriting `x << 33` to `x << 1` preserves the defect while making it look deliberate, and widening the operand guesses an intent the rule cannot read.",
+      "examples": {
+        "bad": "int mask = value << 32;",
+        "good": "long mask = (long)value << 32;"
+      },
+      "falsePositives": "Only built-in, non-lifted `<<`, `>>` and `>>>` whose result type is exactly `int`, `uint`, `long` or `ulong` are considered. ⚠ `nint` and `nuint` are excluded because their shift mask is 31 or 63 depending on the process, so the same source is correct on one platform and not the other and no single answer is right. A count already inside the width — including a literal `<< 0`, which is redundant but not masked — is not reported; only a count that the mask actually changes is. A constant zero left operand is reported separately as a result that is always zero, and only when the count is not itself constant, so that a fully constant expression the compiler already folded is not reported twice. Range-derived findings — a shift whose result is zero because the left operand's known values are too small — are outside this initial scope, and so are user-defined shift operators.",
+      "configuration": [
+        "dotnet_diagnostic.SK2052.severity"
+      ]
+    },
+    {
+      "id": "SK2053",
+      "concept": "nonnegative-size-comparison",
+      "title": "The size comparison is decided by a count never being negative",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3981"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A collection count or a length is compared against a constant that the count's own non-negativity already decides, so the comparison is always true or always false.",
+      "rationale": "`items.Count >= 0` is true for every value the framework can produce and `items.Count < 0` is true for none, so a guard written that way admits everything or nothing — and it is almost always a `> 0` that was typed wrong. ⚠ This is not SK2001. SK2001 folds a comparison the operand *type's* range decides, and a count is an `int`, whose range decides nothing at all about zero; the extra fact here is the framework contract that a count is never negative, which narrows the lower bound from `int.MinValue` to `0`. There is no fix, for the same reason SK2001 has none: the rule can prove the comparison is decided and cannot know whether the intended bound was `0` or `1`.",
+      "examples": {
+        "bad": "if (items.Count >= 0) { Process(items); }",
+        "good": "if (items.Count > 0) { Process(items); }"
+      },
+      "falsePositives": "The non-negative operand must be `Length` on an array, a `string`, a `Span`, a `ReadOnlySpan`, a `Memory` or a `ReadOnlyMemory`, `LongLength` on an array, a `Count` property whose declaring type implements `ICollection`, `ICollection<T>` or `IReadOnlyCollection<T>`, or `Enumerable.Count`/`Enumerable.LongCount`. A `Count` on a type outside those contracts is not assumed to be non-negative. ⚠ A lifted comparison is excluded and that exclusion is load-bearing: `list?.Count >= 0` is `false` when `list` is null, so it is not always true and reporting it would be wrong. `IndexOf` and other members whose negative result is meaningful are not covered. Comparisons the operand type's range already decides are left to SK2001 rather than reported twice, and two constant operands are not reported at all.",
+      "configuration": [
+        "dotnet_diagnostic.SK2053.severity"
+      ]
+    },
+    {
+      "id": "SK2054",
+      "concept": "signed-modulus-equality",
+      "title": "A signed modulus result is compared for equality with a non-zero value",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2197"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A `%` on a possibly-negative signed operand is compared with `==` or `!=` against a non-zero constant, so the test fails for every value of the wrong sign.",
+      "rationale": "⚠ C# gives `%` the sign of the dividend: `-5 % 2` is `-1`, not `1`. So `x % 2 == 1` is false for every negative odd `x`, and the parity check that reads as obviously correct is wrong on half its domain. ⚠ `x % 2 == 0` is **not** reported and must never be: zero has no sign, so comparing against it is correct for both signs — a rule that reported it would be wrong about the one spelling that is right. There is no fix, because the repair depends on what was meant: `!= 0` for a parity test, `Math.Abs(x % n) == k` for a magnitude test, and `x % n == k || x % n == -k` where both signs are wanted.",
+      "examples": {
+        "bad": "bool IsOdd(int value) => value % 2 == 1;",
+        "good": "bool IsOdd(int value) => value % 2 != 0;"
+      },
+      "falsePositives": "Reported only when the `%` result type is a signed fixed-width integral type, the comparison constant is not zero, and the dividend is not already proven non-negative. ⚠ The dividend is taken as non-negative when its own type is unsigned (`byte`, `ushort`, `uint`, `ulong`, `char` — so `someByte % 2 == 1` is correct and not reported even though the operation promotes to `int`), when it is a non-negative constant, when it is a collection count or a length, or when it is `Math.Abs`/`MathF.Abs`. Floating-point `%`, user-defined operators, lifted comparisons, native integers and `is` patterns over a modulus are outside this initial scope. Where a caller genuinely only ever passes non-negative values the finding is a true statement about the expression and a false alarm about the program; the repair is the same either way.",
+      "configuration": [
+        "dotnet_diagnostic.SK2054.severity"
+      ]
     }
   ]
 }
