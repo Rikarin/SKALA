@@ -140,5 +140,6 @@
  "ReturnOfUsingVariable": "SK3512",
  "SpinLockInReadonlyField": "SK3021",
  "RedundantJumpStatement": "SK0240",
- "RedundantAbstractModifier": "SK0241"
+ "RedundantAbstractModifier": "SK0241",
+ "RedundantNullableDirective": "SK0242"
 }

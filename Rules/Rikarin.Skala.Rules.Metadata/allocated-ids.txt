@@ -139,6 +139,7 @@ SK3020 null-returned-from-task-method
 SK3021 spin-lock-in-readonly-field
 SK0240 redundant-control-flow
 SK0241 ineffective-modifier
+SK0242 redundant-nullable-directive
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

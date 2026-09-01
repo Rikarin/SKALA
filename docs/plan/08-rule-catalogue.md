@@ -108,6 +108,7 @@ the primary inspection only; `supersedes` names the rest.
 |---|---|---|---|
 | `SK0240` | The control flow does nothing | Syntax | safe |
 | `SK0241` | The modifier has no effect | Syntax | safe |
+| `SK0242` | The `#nullable` directive changes nothing | Syntax | safe |
 
 `SK0240` covers three shapes of [#131](https://github.com/Rikarin/SKALA/issues/131)'s thirteen: a
 `continue;` ending a loop body or a `return;` ending a void body (`RedundantJumpStatement`), a
@@ -128,6 +129,18 @@ so deleting the keyword there produces a declaration that no longer compiles. Th
 inspections in that issue, `PartialTypeWithSinglePart` and `PartialMethodWithSinglePart`, are **not**
 covered: both need to count a symbol's declarations across the whole compilation, and a source
 generator can add a part that a loose load has never seen.
+
+`SK0242` is deliberately **narrower than [#135](https://github.com/Rikarin/SKALA/issues/135)'s title**
+and its own title says so: it covers the two directive inspections
+(`RedundantNullableDirective`, `UnusedNullableDirective`) and none of the four annotation-on-a-constraint
+ones, which need to know what a constraint's type argument is. ADR-012 forbids an id's meaning
+widening later, so the annotation half is a separate id when somebody specifies it. The rule models the
+file's nullable state as two settings — annotations and warnings — each enabled, disabled or
+*inherited*, and reports a directive that moves neither. ⚠ The opening state is inherited rather than
+enabled: the first `#nullable enable` is therefore never reported, and a `#nullable restore` before any
+other directive always is. Comparing against the project's own `NullableContextOptions` is not done,
+because in `--load=loose` that value is the loader's rather than the project's, and a rule whose
+findings depend on how a file was loaded is not one finding.
 
 ## SK1000 — Modernization
 
@@ -519,8 +532,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **123** | **80.4 %** |
+| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **124** | **80.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |

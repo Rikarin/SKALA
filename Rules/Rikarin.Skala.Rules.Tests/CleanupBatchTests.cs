@@ -17,9 +17,10 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class CleanupBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
+        new RedundantNullableDirectiveAnalyzer(),
     ];
 
-    static readonly string[] Ids = ["SK0240", "SK0241"];
+    static readonly string[] Ids = ["SK0240", "SK0241", "SK0242"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
@@ -152,6 +153,38 @@ public sealed class CleanupBatchTests {
         Assert.Contains("<summary>Flushes nothing, on purpose.</summary>", after, StringComparison.Ordinal);
         Assert.Contains("[System.Obsolete(\"use Close\")]", after, StringComparison.Ordinal);
         Assert.Contains("public override void Flush()", after, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     <c>SK0242</c>'s two sentences: a restatement, and a <c>restore</c> that restores nothing.
+    /// </summary>
+    [Theory]
+    [InlineData("restore_at_file_start", "restores the project default the file already had")]
+    [InlineData("restore_after_restore", "restores the project default the file already had")]
+    [InlineData("enable_twice", "the one already in effect")]
+    [InlineData("disable_twice", "the one already in effect")]
+    [InlineData("enable_then_enable_annotations", "the one already in effect")]
+    [InlineData("disable_warnings_twice", "the one already in effect")]
+    public void SK0242_ReportsWhichKindOfNoOpItFound(string name, string sentence) {
+        var finding = Assert.Single(
+            Findings(Path.Combine(RuleFixtures.Root, "SK0242", "positive", name + ".cs"), "SK0242")
+        );
+
+        Assert.Contains(sentence, finding.GetMessage(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The fix takes the whole line, leaving no blank <c>#</c> and no stray indentation.
+    /// </summary>
+    [Fact]
+    public void SK0242_DeletesTheEntireDirectiveLine() {
+        var path = Path.Combine(RuleFixtures.Root, "SK0242", "positive", "enable_twice.cs");
+        var source = File.ReadAllText(path);
+        var after = Apply(source, Findings(path, "SK0242"));
+
+        Assert.Equal(2, source.Split("#nullable enable").Length - 1);
+        Assert.Equal(1, after.Split("#nullable enable").Length - 1);
+        Assert.DoesNotContain("#\n", after, StringComparison.Ordinal);
     }
 
     static Diagnostic[] Findings(string path, string id) {

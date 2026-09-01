@@ -3374,6 +3374,33 @@
       "configuration": [
         "dotnet_diagnostic.SK0241.severity"
       ]
+    },
+    {
+      "id": "SK0242",
+      "concept": "redundant-nullable-directive",
+      "title": "The `#nullable` directive changes nothing",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantNullableDirective",
+      "supersedes": [
+        "UnusedNullableDirective"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `#nullable` directive that sets the annotation and warning state the file is already in.",
+      "rationale": "`#nullable` directives accumulate during a migration and then stay, at which point they silently override the project-level setting for a file nobody remembers exempting. The state they move is two independent settings — annotations and warnings — each of which is enabled, disabled, or inherited from the project, so a directive is redundant exactly when it moves neither. Deleting one that moves neither is the whole of the edit: the file's nullable state before it and after it are the same state.",
+      "examples": {
+        "bad": "#nullable enable\n\n#nullable enable\n\nsealed class Reader {\n    public string? Path { get; init; }\n}",
+        "good": "#nullable enable\n\nsealed class Reader {\n    public string? Path { get; init; }\n}"
+      },
+      "falsePositives": "⚠ **The file's opening state is *inherited*, not enabled, which is what makes this rule exact without a project.** The first `#nullable enable` in a file is never reported: whether the project already enables annotations is not written in the file, and this rule does not guess at it. What the opening state does settle is the other direction — a `#nullable restore` before any other directive restores the project default the file already had, and that is a no-op under every project setting there is. ⚠ **A conditional directive anywhere in the file withdraws every finding in it.** Which `#nullable` directives are live inside `#if` depends on the preprocessor symbols the compilation was given, so a file that is clean under one `#define` set and redundant under another has no single answer, and a fix applied under the wrong one deletes a directive the other configuration needs. An *inactive* directive is likewise never read as moving the state, because it does not. ⚠ **A comment on the directive withdraws the finding**, because the fix deletes the whole line and `#nullable disable // the generated half is not annotated yet` is the author explaining a migration — a directive that is redundant today is exactly the kind whose note says why it is there. ⚠ **The four constraint inspections in [#135](https://github.com/Rikarin/SKALA/issues/135) are not covered**: `RedundantNotNullConstraint`, `RedundantNullableAnnotationOnReferenceTypeConstraint`, `RedundantNullableAnnotationOnTypeConstraintHasNonNullableBaseType` and `RedundantNullableAnnotationOnTypeConstraintHasNonNullableTypeKind` each need to know what a constraint's type argument is before the annotation on it can be called redundant, which is a semantic question and a different rule. Nor is the comparison against the project's own `NullableContextOptions`, which is the other half of `UnusedNullableDirective`: in `--load=loose` that value is whatever the loader chose rather than what the project says, so reading it would make the rule report a different set of findings depending on how the file was loaded.",
+      "configuration": [
+        "dotnet_diagnostic.SK0242.severity"
+      ]
     }
   ]
 }

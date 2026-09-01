@@ -107,6 +107,7 @@ public static class AnalyzerHost {
         new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
+        new RedundantNullableDirectiveAnalyzer(),
     ];
 
     /// <summary>
