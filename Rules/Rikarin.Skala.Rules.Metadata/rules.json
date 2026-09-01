@@ -2419,6 +2419,131 @@
       ]
     },
     {
+      "id": "SK1003",
+      "concept": "field-backed-property",
+      "title": "Use a field-backed property",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": "14.0",
+      "summary": "A private backing field is used exclusively inside one property's get and set accessors.",
+      "rationale": "C# 14's field keyword preserves custom accessor logic while letting the compiler own backing storage. The fix removes the private declaration and replaces only references proven to belong to this property.",
+      "examples": {
+        "bad": "private int count; public int Count { get => count; set => count = System.Math.Max(0, value); }",
+        "good": "public int Count { get => field; set => field = System.Math.Max(0, value); }"
+      },
+      "falsePositives": "Only non-virtual class properties with explicit get and set bodies and a same-type private, non-readonly, non-volatile, uninitialized field are supported. Partial containing types, directives, field comments/attributes, property attributes, initializers, generic type-parameter storage, non-nullable reference storage, other consumers, other-instance accesses, nameof, ref escapes, caller-expression capture, nested functions and existing field identifiers are excluded. C# 14 is required. Both accessors must use the field; types with explicit layout or Serializable attributes are excluded. Reflection and serializers depending on the private field's name/layout are outside the proof.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK1003.severity"
+      ]
+    },
+    {
+      "id": "SK1022",
+      "concept": "search-values",
+      "title": "Precompute a constant character search set",
+      "category": "Modernization",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": "7.2",
+      "summary": "A private static readonly character array is used only by framework span search operations.",
+      "rationale": "SearchValues precomputes a reusable search strategy. The fix changes existing cached storage rather than allocating SearchValues at each call, and requires available framework factory and search overloads.",
+      "examples": {
+        "bad": "static readonly char[] Separators = \" ,;|\\t\".ToCharArray(); // span.IndexOfAny(Separators)",
+        "good": "static readonly System.Buffers.SearchValues<char> Separators = System.Buffers.SearchValues.Create(\" ,;|\\t\");"
+      },
+      "falsePositives": "Initial coverage is char arrays with 4 or more distinct constant characters and at most 256 characters, used exclusively as the values argument of framework span IndexOfAny, IndexOfAnyExcept, ContainsAny or ContainsAnyExcept. Array/collection initializers and constant-string ToCharArray are supported. String.IndexOfAny, byte sets, mutable/escaping storage, partial types, directives, comments, expression trees and other-file source constants are excluded. Other static initializers and static constructors are excluded to avoid reentrant initialization differences. Requires metadata SearchValues and compatible search overloads; small sets are left alone. Measure performance for the target workload. Reflection on the private field is outside the proof.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK1022.severity"
+      ]
+    },
+    {
+      "id": "SK1025",
+      "concept": "frozen-dictionary",
+      "title": "Freeze a private lookup-only dictionary",
+      "category": "Modernization",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A private static readonly Dictionary with constant entries is used only for lookups.",
+      "rationale": "FrozenDictionary optimizes immutable lookup tables. The fix retains the original Dictionary construction and its duplicate-key checks, then freezes it. Every source reference must remain compatible with read-only lookup semantics.",
+      "examples": {
+        "bad": "static readonly System.Collections.Generic.Dictionary<string, int> Codes = new() { { \"ok\", 200 } };",
+        "good": "static readonly System.Collections.Frozen.FrozenDictionary<string, int> Codes = System.Collections.Frozen.FrozenDictionary.ToFrozenDictionary(new System.Collections.Generic.Dictionary<string, int>() { { \"ok\", 200 } });"
+      },
+      "falsePositives": "Only private static readonly fields in non-partial classes, constructed with the parameterless framework Dictionary constructor and constant key/value collection entries, are supported. Keys must be non-nullable integral/char or string; nullable value annotations are preserved. All uses must be indexer reads, Count, ContainsKey or TryGetValue. Mutation, enumeration, Keys/Values, aliases, escapes, custom comparers, nonconstant entries, other-file constants, directives, field comments/attributes and expression trees are excluded. Requires the framework FrozenDictionary factory. Startup work increases and runtime gains require measurement. Reflection and private-field serialization are outside the proof.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK1025.severity"
+      ]
+    },
+    {
+      "id": "SK2005",
+      "concept": "readonly-struct-mutation",
+      "title": "Do not mutate a copy of a readonly struct field",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "A void struct method that directly writes an instance field is called through readonly field storage.",
+      "rationale": "Calling a mutating struct method through a readonly field can modify a defensive copy and discard that change. The rule requires same-file evidence of a direct instance-field assignment or increment, rather than treating every non-readonly method as mutating.",
+      "examples": {
+        "bad": "readonly Counter counter; void M() { counter.Increment(); } // Increment directly writes Counter's instance state.",
+        "good": "// Choose mutable storage, an immutable replacement API, or an explicit local copy according to intent."
+      },
+      "falsePositives": "The catalogue's ambiguous mutable-struct/readonly-field entry is implemented as lost mutation through readonly storage, not a ban on readonly fields inside mutable structs. Only direct readonly field receivers and non-readonly void source struct methods with a top-level assignment/increment/decrement of an instance field are supported. Constructors and init accessors of the field's declaring type, readonly members/types, read-only methods, reference types, extensions, metadata/other-file method bodies, conditional methods, expression trees, nested/conditional writes, properties and in parameters are excluded. This is report-only: removing readonly or changing an API needs author intent.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2005.severity"
+      ]
+    },
+    {
+      "id": "SK4003",
+      "concept": "params-span-overload",
+      "title": "Review a temporary params array with a span overload",
+      "category": "Performance",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": "12.0",
+      "summary": "An explicit temporary array passed to a params parameter has an accessible ReadOnlySpan overload.",
+      "rationale": "A span-based call may avoid the temporary array. The analyzer speculatively binds an explicit ReadOnlySpan collection expression and verifies an accessible matching overload; it does not assume two overload bodies have identical semantics.",
+      "examples": {
+        "bad": "Consume(new int[] { 1, 2, 3 }); // Both params int[] and ReadOnlySpan<int> overloads exist.",
+        "good": "Consume((System.ReadOnlySpan<int>)[1, 2, 3]); // After reviewing the overload's behavior."
+      },
+      "falsePositives": "Only nonempty explicit/implicit array creations with initializers passed as the last argument to a params array parameter are reported. Requires C# 12 and an accessible same-type overload with matching preceding parameter types/ref kinds, return type and a ReadOnlySpan of the same element type. Existing arrays, empty allocations, named/omitted arguments, dynamic calls, expression trees, await elements, pointer element types and missing or inaccessible alternatives are excluded. Expanded params calls and declaration changes belong outside this initial call-site rule. Report-only because overload semantics and actual allocation elimination require review.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK4003.severity"
+      ]
+    },
+    {
       "id": "SK1023",
       "concept": "dedicated-lock",
       "title": "Use a dedicated System.Threading.Lock",

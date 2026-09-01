@@ -1,0 +1,1 @@
+using System.Collections.Generic; class C { static readonly Dictionary<string,int> map = new Dictionary<string,int>() { {"a",1}, {"b",2} }; bool M(string key, out int value) => map.TryGetValue(key, out value); }

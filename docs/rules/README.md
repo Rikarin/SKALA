@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 99 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 104 ids are allocated.
 
 ## Async
 
@@ -24,6 +24,7 @@
 | [SK2002](SK2002.md) | A pure method's result is discarded | warning | — | no |
 | [SK2003](SK2003.md) | Review exact equality of floating-point arithmetic | warning | — | no |
 | [SK2004](SK2004.md) | Typed equality has no matching object equality | warning | — | no |
+| [SK2005](SK2005.md) | Do not mutate a copy of a readonly struct field | warning | — | no |
 | [SK2007](SK2007.md) | The collection being enumerated is modified inside the loop | warning | review | no |
 | [SK2008](SK2008.md) | A stored delegate captures a changing loop variable | warning | — | no |
 | [SK2009](SK2009.md) | An enum switch omits declared members | warning | — | no |
@@ -98,6 +99,7 @@
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
 | [SK1001](SK1001.md) | Use a collection expression | suggestion | safe | no |
+| [SK1003](SK1003.md) | Use a field-backed property | suggestion | safe | no |
 | [SK1005](SK1005.md) | Use a file-scoped namespace | suggestion | safe | yes |
 | [SK1006](SK1006.md) | Use a `using` declaration | suggestion | safe | yes |
 | [SK1010](SK1010.md) | Use `is null` / `is not null` instead of `==` / `!=` | suggestion | safe | no |
@@ -107,7 +109,9 @@
 | [SK1014](SK1014.md) | Use relational and logical patterns | suggestion | safe | no |
 | [SK1015](SK1015.md) | Use `is T t` instead of `is T` and a cast | suggestion | safe | no |
 | [SK1020](SK1020.md) | Use `ArgumentNullException.ThrowIfNull` | suggestion | safe | no |
+| [SK1022](SK1022.md) | Precompute a constant character search set | hint | safe | no |
 | [SK1023](SK1023.md) | Use a dedicated System.Threading.Lock | suggestion | safe | no |
+| [SK1025](SK1025.md) | Freeze a private lookup-only dictionary | hint | safe | no |
 | [SK1026](SK1026.md) | Use a UTF-8 literal for constant ASCII bytes | suggestion | safe | no |
 | [SK1028](SK1028.md) | Decode a byte span without an array copy | suggestion | safe | no |
 | [SK1030](SK1030.md) | Use `??=` | suggestion | safe | yes |
@@ -122,6 +126,7 @@
 |---|---|---|---|---|
 | [SK4001](SK4001.md) | Review LINQ in a configured hot path | none | — | no |
 | [SK4002](SK4002.md) | Review iteration-local delegate captures | hint | — | no |
+| [SK4003](SK4003.md) | Review a temporary params array with a span overload | hint | — | no |
 | [SK4004](SK4004.md) | Review boxing despite an existing generic constraint | hint | — | no |
 | [SK4006](SK4006.md) | Review a materialization used only by foreach | hint | — | no |
 | [SK4007](SK4007.md) | Review large struct arguments in loops | hint | — | no |

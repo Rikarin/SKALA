@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 99 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 104 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -36,6 +36,7 @@
 <tr><td><a href="SK2002.html">SK2002</a></td><td>A pure method's result is discarded</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2003.html">SK2003</a></td><td>Review exact equality of floating-point arithmetic</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2004.html">SK2004</a></td><td>Typed equality has no matching object equality</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2005.html">SK2005</a></td><td>Do not mutate a copy of a readonly struct field</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2007.html">SK2007</a></td><td>The collection being enumerated is modified inside the loop</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2008.html">SK2008</a></td><td>A stored delegate captures a changing loop variable</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2009.html">SK2009</a></td><td>An enum switch omits declared members</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
@@ -125,6 +126,7 @@
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
 <tr><td><a href="SK1001.html">SK1001</a></td><td>Use a collection expression</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1003.html">SK1003</a></td><td>Use a field-backed property</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1005.html">SK1005</a></td><td>Use a file-scoped namespace</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1006.html">SK1006</a></td><td>Use a <code>using</code> declaration</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1010.html">SK1010</a></td><td>Use <code>is null</code> / <code>is not null</code> instead of <code>==</code> / <code>!=</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
@@ -134,7 +136,9 @@
 <tr><td><a href="SK1014.html">SK1014</a></td><td>Use relational and logical patterns</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1015.html">SK1015</a></td><td>Use <code>is T t</code> instead of <code>is T</code> and a cast</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1020.html">SK1020</a></td><td>Use <code>ArgumentNullException.ThrowIfNull</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1022.html">SK1022</a></td><td>Precompute a constant character search set</td><td><span class="tag sev-hint">hint</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1023.html">SK1023</a></td><td>Use a dedicated System.Threading.Lock</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1025.html">SK1025</a></td><td>Freeze a private lookup-only dictionary</td><td><span class="tag sev-hint">hint</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1026.html">SK1026</a></td><td>Use a UTF-8 literal for constant ASCII bytes</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1028.html">SK1028</a></td><td>Decode a byte span without an array copy</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1030.html">SK1030</a></td><td>Use <code>??=</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
@@ -152,6 +156,7 @@
 <tbody>
 <tr><td><a href="SK4001.html">SK4001</a></td><td>Review LINQ in a configured hot path</td><td><span class="tag sev-none">none</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK4002.html">SK4002</a></td><td>Review iteration-local delegate captures</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK4003.html">SK4003</a></td><td>Review a temporary params array with a span overload</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK4004.html">SK4004</a></td><td>Review boxing despite an existing generic constraint</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK4006.html">SK4006</a></td><td>Review a materialization used only by foreach</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK4007.html">SK4007</a></td><td>Review large struct arguments in loops</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>no</td></tr>

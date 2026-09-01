@@ -161,7 +161,7 @@ false positive*, not coverage:
 
 `SK2001` comparison always true/false by nullability or range · `SK2002` result of a pure method
 discarded · `SK2003` `==` on floating point · `SK2004` `GetHashCode` inconsistent with `Equals` ·
-`SK2005` mutable struct with a readonly field · `SK2006` `ref`/`out` parameter never assigned on a
+`SK2005` mutation lost through a readonly struct field · `SK2006` `ref`/`out` parameter never assigned on a
 path · `SK2007` collection modified during enumeration (syntactic patterns only) · `SK2008` shadowed
 loop variable captured in a closure · `SK2009` `switch` over an enum missing members with no
 `default` · `SK2010` `string.Compare`/`ToLower` culture-sensitive by accident · `SK2011` `Equals` on
@@ -322,10 +322,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **126** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **91** | **72.8 %** |
+| **Shipped** — present in `rules.json` | **96** | **76.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
@@ -470,8 +470,8 @@ value · `SK4008` async state machine for a synchronous method · `SK6001` (reti
 `SK6004` interface with one implementation · `SK6008` extension method on `object` ·
 `SK8006` `[Skip]` without a reason · `SK8007` non-deterministic input in an assertion path.
 
-Saying "no reason was recorded" is the point. `SK6008`, `SK8006`, `SK4001`, `SK4002`, `SK4004`,
-`SK4006`, `SK4007` and `SK8007` now ship; `SK6001` is retired as a duplicate allocation. The other three remain
+Saying "no reason was recorded" is the point. `SK6008`, `SK8006`, `SK4001`, `SK4002`, `SK4003`, `SK4004`,
+`SK4006`, `SK4007` and `SK8007` now ship; `SK6001` is retired as a duplicate allocation. The other two remain
 outstanding. These shipped rules are report-only: choosing a contract, justification, performance
 tradeoff or controlled test input requires author intent.
 
@@ -483,9 +483,8 @@ reason is kept; it is a description of remaining work, not a disposal.
 | Group | IDs | Waiting on |
 |---|---|---|
 | Declaration-shape rewrites | `SK1002`, `SK1008` | The unsafe-fix path and an `--include` story. Each is a good rule and neither is a *safe* fix (M5) |
-| ⚠ Hot-path rules | `SK1022`, `SK1025`, `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
-| The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1021`, `SK1024`, `SK1029`, `SK1036` | Nothing recorded. Not started |
-| Correctness | `SK2005` | Nothing recorded beyond the shipping bar. Not started |
+| ⚠ Hot-path rules | `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
+| The rest of the modernization set | `SK1004`, `SK1007`, `SK1009`, `SK1021`, `SK1024`, `SK1029`, `SK1036` | Nothing recorded. Not started |
 | Security | `SK5003`, `SK5004`, `SK5006`, `SK5008` | The remaining M8 rules; a wrong security rule is worse than a missing one |
 
 ### Priority 1 hygiene rules
@@ -695,6 +694,57 @@ monitors and lock examples inside test-source strings do not satisfy the field p
 counts are not positive corpus coverage: fixtures and workspace integration remain the evidence
 for firing behavior. Summed analyzer time for the five rules was about 1.45 s in that profiled
 run, not a performance guarantee. No unrelated production or test source was rewritten.
+
+### Backing storage, precomputed lookups and span call sites
+
+`SK1003`, `SK1022`, `SK1025`, `SK2005` and `SK4003` now ship:
+
+| ID | Initial scope | Fix / default |
+|---|---|---|
+| `SK1003` | An uninitialized private backing field used only by one property's get/set accessors | safe / suggestion |
+| `SK1022` | A constant cached character array used exclusively by framework span searches | safe / hint |
+| `SK1025` | A constant private static dictionary used exclusively for lookups | safe / hint |
+| `SK2005` | A mutating source struct method invoked on a readonly field | none / warning |
+| `SK4003` | A temporary params array with an accessible corresponding ReadOnlySpan overload | none / hint |
+
+The three storage rewrites share a file-local private-field reference proof, including constructed
+generic types and documentation references. Partial containing types, directives and attributed or
+commented field declarations are excluded. `SK1003` requires C# 14, explicit get/set bodies and
+matching field/property types, leaves accessor logic intact, and rejects initializers, escaped
+storage, other consumers, caller-expression capture, nested functions, layout/serialization
+attributes and non-nullable reference storage. Reflection on private backing storage is outside
+the proof.
+
+`SK1022` requires a real SearchValues factory and matching span overloads. It supports character
+sets of 4 or more distinct constant characters (at most 256), rejects mutation and escaping uses,
+and excludes other static initializers/constructors to avoid reentrant initialization differences.
+String search calls and byte sets remain outside this initial scope. `SK1025` accepts only default
+Dictionary construction with constant collection entries and integral/char/string keys. It keeps
+that construction, including duplicate-key validation, before freezing; only indexer reads, Count,
+ContainsKey and TryGetValue are allowed. Neither hint promises a speedup: creation costs and the
+target workload still matter, and both support ordinary path-scoped severity settings.
+
+`SK2005` resolves the old ambiguous wording "mutable struct with a readonly field" as **mutation
+lost through readonly struct storage**, not a prohibition on readonly members inside mutable
+structs. Its proof requires a same-file non-readonly void method directly assigning or incrementing
+its own instance field. Constructors/init accessors, conditional methods, expression trees,
+reference types and bodies in another file are excluded. `SK4003` speculatively binds a C# 12
+ReadOnlySpan collection expression and checks the overload signature; it does not assume equal
+behavior between overload implementations. These two rules cannot choose an automatic fix.
+
+Validation includes positive/negative fixtures, exact counts, language/API guards, generated code,
+cross-file dependency guards, runtime equivalence for property validation, Unicode searches, frozen
+lookups and duplicate-key failures, and a runtime demonstration of the lost struct mutation.
+Workspace integration covers check, verify, all three safe fixes, severity overrides and warm/cold
+cache agreement.
+
+A cold, profiled Skala workspace audit with hints included reported one `SK4003` candidate:
+`MetricsAnalyzer.SupportedDiagnostics` passes a fresh array to `ImmutableArray.Create`, for which
+an accessible ReadOnlySpan overload was verified. It is a real call-site opportunity, not evidence
+of a hot-path bottleneck. The other four rules reported zero occurrences; their positive evidence
+remains the fixtures and workspace integration test. No audit finding was auto-fixed. Eligibility
+checks run before whole-file field-reference scans; summed time for these five analyzers in the
+final audit was about 1.35 s, not a performance guarantee.
 
 ### ⚠ Decisions that rest on a reference-tree count, and are awaiting revisit
 

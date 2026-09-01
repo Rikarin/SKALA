@@ -75,3 +75,8 @@ SK2003 | Skala.Correctness | Warning | Review exact equality of floating-point a
 SK4004 | Skala.Performance | Hidden | Review boxing despite an existing generic constraint.
 SK4007 | Skala.Performance | Hidden | Review large struct arguments in loops.
 SK7060 | Skala.Maintainability | Hidden | Review commented-out statements.
+SK1003 | Skala.Modernization | Info | Use a field-backed property.
+SK1022 | Skala.Modernization | Hidden | Precompute a constant character search set.
+SK1025 | Skala.Modernization | Hidden | Freeze a private lookup-only dictionary.
+SK2005 | Skala.Correctness | Warning | Do not mutate a copy of a readonly struct field.
+SK4003 | Skala.Performance | Hidden | Review a temporary params array with a span overload.

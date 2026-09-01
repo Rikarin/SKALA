@@ -64,6 +64,8 @@ public sealed record AnalysisOutcome(
 public static class AnalyzerHost {
     /// <summary>Skala's own analyzers. One instance set, reused across compilations (ADR-006).</summary>
     public static ImmutableArray<DiagnosticAnalyzer> Own { get; } = [
+        new FieldBackedPropertyAnalyzer(), new SearchValuesAnalyzer(), new FrozenDictionaryAnalyzer(),
+        new ReadonlyStructMutationAnalyzer(), new ParamsSpanOverloadAnalyzer(),
         new DedicatedLockAnalyzer(), new FloatingPointEqualityAnalyzer(), new ConstrainedBoxingAnalyzer(),
         new LargeStructArgumentAnalyzer(), new CommentedCodeAnalyzer(),
         new SharedLazyAnalyzer(), new HotPathLinqAnalyzer(), new LoopClosureAnalyzer(),

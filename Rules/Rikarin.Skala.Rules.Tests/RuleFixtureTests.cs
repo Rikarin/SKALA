@@ -25,6 +25,8 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class RuleFixtureTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
+        new FieldBackedPropertyAnalyzer(), new SearchValuesAnalyzer(), new FrozenDictionaryAnalyzer(),
+        new ReadonlyStructMutationAnalyzer(), new ParamsSpanOverloadAnalyzer(),
         new DedicatedLockAnalyzer(), new FloatingPointEqualityAnalyzer(), new ConstrainedBoxingAnalyzer(),
         new LargeStructArgumentAnalyzer(), new CommentedCodeAnalyzer(),
         new SharedLazyAnalyzer(), new HotPathLinqAnalyzer(), new LoopClosureAnalyzer(),
