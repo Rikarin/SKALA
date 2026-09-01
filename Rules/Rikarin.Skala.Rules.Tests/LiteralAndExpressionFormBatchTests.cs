@@ -22,7 +22,8 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class LiteralAndExpressionFormBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
-        new IndexFromEndAnalyzer(), new NameofExpressionAnalyzer(), new EscapeFreeStringLiteralAnalyzer()
+        new IndexFromEndAnalyzer(), new NameofExpressionAnalyzer(), new EscapeFreeStringLiteralAnalyzer(),
+        new InterpolatedStringFormAnalyzer()
     ];
 
     [Theory]
@@ -244,6 +245,97 @@ public sealed class LiteralAndExpressionFormBatchTests {
 
         Assert.Single(Analyze(escapeShape, LanguageVersion.CSharp10).Where(static d => d.Id == "SK1062"));
         Assert.Single(Below(escapeShape, LanguageVersion.CSharp7_3).Where(static d => d.Id == "SK1062"));
+    }
+
+    [Theory]
+    [InlineData(
+        "class C { string M(int d, int t) => string.Format(\"{0} of {1}\", d, t); }",
+        "$\"{d} of {t}\""
+    )]
+    // Alignment and format clauses ride across unchanged.
+    [InlineData("class C { string M(decimal a) => string.Format(\"{0,10:N2}\", a); }", "$\"{a,10:N2}\"")]
+    // ⚠ A doubled brace means a literal brace in both grammars and must survive as one.
+    [InlineData("class C { string M(int d) => string.Format(\"{{{0}}}\", d); }", "$\"{{{d}}}\"")]
+    // A colon inside the format clause is not the clause separator.
+    [InlineData(
+        "using System; class C { string M(DateTime d) => string.Format(\"{0:HH:mm}\", d); }",
+        "$\"{d:HH:mm}\""
+    )]
+    [InlineData("class C { string M(int n) => $\"{n.ToString()} left\"; }", "n")]
+    [InlineData("class C { string M(string r, string n) => $\"{r}{\"/\"}{n}\"; }", "/")]
+    public void InterpolatedForm_Fires(string source, string replacement) {
+        var finding = Assert.Single(Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1063"));
+        Assert.Contains(replacement, finding.GetMessage(), StringComparison.Ordinal);
+
+        var fixedSource = ApplyEdits(source, finding);
+        var reparsed = CSharpSyntaxTree.ParseText(
+            fixedSource,
+            new CSharpParseOptions(LanguageVersion.Preview),
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        Assert.DoesNotContain(
+            reparsed.GetDiagnostics(TestContext.Current.CancellationToken),
+            static d => d.Severity == DiagnosticSeverity.Error
+        );
+    }
+
+    [Theory]
+    // Evaluated twice after the rewrite, once before it.
+    [InlineData("class C { string M(string n) => string.Format(\"{0} and {0}\", n); }")]
+    // Evaluated in the order they are printed, not the order they are written.
+    [InlineData("class C { string M(string a, string b) => string.Format(\"{1} {0}\", a, b); }")]
+    // The provider is the point of the overload.
+    [InlineData(
+        "using System.Globalization; class C { string M(decimal a) => "
+        + "string.Format(CultureInfo.InvariantCulture, \"{0:N2}\", a); }"
+    )]
+    // ⚠ One argument, not two: `{0}` means `v[0]`.
+    [InlineData("class C { string M(object[] v) => string.Format(\"{0} {1}\", v); }")]
+    // A colon inside a hole is grammar.
+    [InlineData("class C { string M(bool f, string a, string b) => string.Format(\"{0}\", f ? a : b); }")]
+    // A gap leaves an argument with nowhere to go.
+    [InlineData("class C { string M(string a, string b) => string.Format(\"{0}\", a, b); }")]
+    // A verbatim format string escapes its text differently.
+    [InlineData("class C { string M(string n) => string.Format(@\"C:\\logs\\{0}\", n); }")]
+    // The format string is not a literal at all.
+    [InlineData("class C { const string F = \"{0}\"; string M(string n) => string.Format(F, n); }")]
+    // ⚠ `null.ToString()` throws where `$\"{null}\"` renders empty.
+    [InlineData("class C { string M(object v) => $\"{v.ToString()} left\"; }")]
+    // Not covered: the instance method and `IFormattable` agree only for the BCL types.
+    [InlineData("class C { string M(decimal a) => $\"{a.ToString(\"N2\")}\"; }")]
+    // Nothing to remove.
+    [InlineData("class C { string M(decimal a) => $\"{a:N2}\"; }")]
+    public void InterpolatedForm_DeclinesTheNearestMiss(string source) =>
+        Assert.Empty(Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1063"));
+
+    /// <summary>
+    ///     ⚠ The two interactions that would make the rewrite wrong rather than merely noisy.
+    /// </summary>
+    /// <remarks>
+    ///     A <c>FormattableString</c> overload beside the <c>string</c> one can rebind after the
+    ///     rewrite, and in EF Core's <c>FromSql</c> family that is the difference between a
+    ///     parameterised query and a concatenated one. The stand-in here declares both overloads
+    ///     itself, so the assertion does not depend on a package being referenced.
+    /// </remarks>
+    [Fact]
+    public void InterpolatedForm_DeclinesWhereAnInterpolationWouldRebind() {
+        const string ambiguous = "using System; class Db { public static void Run(string s) { } "
+            + "public static void Run(FormattableString s) { } } "
+            + "class C { void M(string n) => Db.Run(string.Format(\"{0}\", n)); }";
+        const string unambiguous = "using System; class Db { public static void Run(string s) { } } "
+            + "class C { void M(string n) => Db.Run(string.Format(\"{0}\", n)); }";
+
+        Assert.Empty(Analyze(ambiguous, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1063"));
+        Assert.Single(Analyze(unambiguous, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1063"));
+    }
+
+    [Fact]
+    public void InterpolatedForm_RequiresCSharp6() {
+        const string source = "class C { string M(int d, int t) => string.Format(\"{0} of {1}\", d, t); }";
+
+        Assert.Empty(Below(source, LanguageVersion.CSharp5).Where(static d => d.Id == "SK1063"));
+        Assert.NotEmpty(Below(source, LanguageVersion.CSharp6).Where(static d => d.Id == "SK1063"));
     }
 
     static string ApplyEdits(string source, Diagnostic diagnostic) {

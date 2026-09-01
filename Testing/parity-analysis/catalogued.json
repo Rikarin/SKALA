@@ -201,5 +201,8 @@
   "UseNameOfInsteadOfTypeOf": "SK1061",
   "UseRawString": "SK1062",
   "RawStringCanBeSimplified": "SK1062",
-  "CanSimplifyStringEscapeSequence": "SK1062"
+  "CanSimplifyStringEscapeSequence": "SK1062",
+  "UseStringInterpolationWhenPossible": "SK1063",
+  "SimplifyStringInterpolation": "SK1063",
+  "StringLiteralAsInterpolationArgument": "SK1063"
 }

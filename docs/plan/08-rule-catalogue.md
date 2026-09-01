@@ -315,6 +315,7 @@ voice the rest of this section is written in, have not been written yet.
 | `SK1060` | `index-from-end` | `items[items.Count - 1]` | `items[^1]` |
 | `SK1061` | `nameof-expression` | `typeof(Widget).Name`, `"count"` as `paramName` | `nameof(Widget)`, `nameof(count)` |
 | `SK1062` | `escape-free-string-literal` | `"{\"id\":1}"`, `"\x41"` | `"""{"id":1}"""`, `"A"` |
+| `SK1063` | `interpolated-string-form` | `string.Format("{0}", x)`, `$"{x.ToString()}"` | `$"{x}"` |
 
 ## SK2000 — Correctness
 
@@ -1118,8 +1119,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **214** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **179** | **84.0 %** |
+| Rules this document names | **215** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **180** | **84.1 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |

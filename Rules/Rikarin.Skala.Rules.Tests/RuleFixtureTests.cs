@@ -102,6 +102,7 @@ public sealed class RuleFixtureTests {
         new InheritanceDepthAnalyzer(), new TypeCouplingAnalyzer(), new NestedConditionalAnalyzer(),
         new RepeatedStringLiteralAnalyzer(),
         new IndexFromEndAnalyzer(), new NameofExpressionAnalyzer(), new EscapeFreeStringLiteralAnalyzer(),
+        new InterpolatedStringFormAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
