@@ -116,6 +116,44 @@ else:
     warn.append("sonar.json is absent -- SonarQube completeness NOT checked. "
                 "Run: python3 fetch_sonar.py")
 
+# ------------------------------------------- SonarQube: open, unimplemented rule ideas
+# These are upstream GitHub issues rather than published rules, so there is no file to
+# cross-check against -- `gh issue list` is the only source and it moves. The checks are
+# therefore internal: an idea must be claimed by exactly one concept or resolved once.
+ideas = sn.get("ideas")
+if ideas:
+    seen, claimed = {}, {}
+    for c in ideas["concepts"]:
+        if not c["upstreamIssues"]:
+            fail.append(f"ledger-sonar.ideas: concept {c['slug']!r} names no upstream issue")
+        if c["slug"] in sn_slugs or c["slug"] in rs_slugs:
+            fail.append(f"ledger-sonar.ideas: slug {c['slug']!r} collides with an existing concept")
+        for n in c["upstreamIssues"]:
+            if n in claimed:
+                fail.append(f"ledger-sonar.ideas: upstream #{n} is claimed by both "
+                            f"{claimed[n]!r} and {c['slug']!r}")
+            claimed[n] = c["slug"]
+    for e in ideas["resolved"]:
+        n = e["upstreamIssue"]
+        if n in claimed:
+            fail.append(f"ledger-sonar.ideas: upstream #{n} is both claimed by {claimed[n]!r} "
+                        f"and resolved")
+        if n in seen:
+            fail.append(f"ledger-sonar.ideas: upstream #{n} is resolved twice")
+        seen[n] = e
+        if e["resolution"] == "already-tracked" and e.get("concept") not in set(rs_slugs) | set(sn_slugs):
+            fail.append(f"ledger-sonar.ideas: #{n} is tracked by concept {e.get('concept')!r}, "
+                        f"which is in neither ledger")
+    total = len(claimed) + len(seen)
+    if total != ideas["auditedAgainst"]["count"]:
+        fail.append(f"ledger-sonar.ideas: {total} ideas accounted for, but the audit recorded "
+                    f"{ideas['auditedAgainst']['count']} open -- one was dropped")
+    print(f"sonar ideas: {len(ideas['concepts'])} concepts covering {len(claimed)} upstream "
+          f"issues, {len(seen)} resolved, of {ideas['auditedAgainst']['count']} audited")
+    warn.append("the open-idea audit is a snapshot of "
+                f"{ideas['auditedAgainst']['date']}; upstream issues move and nothing here "
+                "re-checks them. Re-run the `gh issue list` in `auditedAgainst.query` to refresh.")
+
 # --------------------------------------------------------------- verdict
 for w in warn:
     print("WARN  " + w)

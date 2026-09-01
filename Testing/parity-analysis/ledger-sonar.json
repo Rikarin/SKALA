@@ -3128,5 +3128,836 @@
    "resolution": "out-of-scope",
    "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   }
- ]
+ ],
+ "ideas": {
+  "$comment": [
+   "Open `Rule Idea` issues on SonarSource/sonar-dotnet -- proposals upstream has NOT specified or",
+   "implemented, so they are in no published rule list and the `concepts`/`resolved` audit above",
+   "could not see them. Audited 2026-09-01, 111 open at that date, each appearing exactly once.",
+   "Recorded by issue number and this repository's own judgement; no upstream prose is carried."
+  ],
+  "auditedAgainst": {
+   "query": "gh issue list -R SonarSource/sonar-dotnet --state open --label 'Rule Idea'",
+   "count": 111,
+   "date": "2026-09-01"
+  },
+  "concepts": [
+   {
+    "slug": "operator-precedence-unclear",
+    "title": "The expression relies on non-obvious operator precedence",
+    "issue": 248,
+    "proposedRange": "SK7000-SK7999",
+    "proposedSeverity": "suggestion",
+    "proposedScope": "Syntax",
+    "proposedFix": "safe",
+    "upstreamIssues": [
+     807
+    ]
+   },
+   {
+    "slug": "concurrent-dictionary-expensive-members",
+    "title": "The `ConcurrentDictionary` member taken is the expensive one",
+    "issue": 249,
+    "proposedRange": "SK4000-SK4999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "safe",
+    "upstreamIssues": [
+     1306
+    ]
+   },
+   {
+    "slug": "constructor-side-effects",
+    "title": "The constructor does more than construct",
+    "issue": 250,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "none",
+    "upstreamIssues": [
+     2231
+    ]
+   },
+   {
+    "slug": "sort-without-comparable",
+    "title": "The sort has no ordering to use",
+    "issue": 251,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "none",
+    "upstreamIssues": [
+     2395
+    ]
+   },
+   {
+    "slug": "invariant-culture-where-ordinal-meant",
+    "title": "The string operation asks for invariant culture where ordinal was meant",
+    "issue": 252,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "safe",
+    "upstreamIssues": [
+     2959
+    ]
+   },
+   {
+    "slug": "ref-struct-disposal",
+    "title": "The `ref struct` owns a disposable and cannot declare it",
+    "issue": 253,
+    "proposedRange": "SK3500-SK3999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "none",
+    "upstreamIssues": [
+     2999
+    ]
+   },
+   {
+    "slug": "type-name-restates-its-kind",
+    "title": "The type name repeats what the type already is",
+    "issue": 254,
+    "proposedRange": "SK6000-SK6999",
+    "proposedSeverity": "suggestion",
+    "proposedScope": "Syntax",
+    "proposedFix": "unsafe",
+    "upstreamIssues": [
+     3460
+    ]
+   },
+   {
+    "slug": "dispose-async-pattern",
+    "title": "`DisposeAsync` is not implemented correctly",
+    "issue": 255,
+    "proposedRange": "SK3500-SK3999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "none",
+    "upstreamIssues": [
+     3853
+    ]
+   },
+   {
+    "slug": "async-method-without-cancellation-token",
+    "title": "The async method cannot be cancelled",
+    "issue": 256,
+    "proposedRange": "SK3000-SK3499",
+    "proposedSeverity": "suggestion",
+    "proposedScope": "Semantic",
+    "proposedFix": "unsafe",
+    "upstreamIssues": [
+     4449
+    ]
+   },
+   {
+    "slug": "test-attribute-missing",
+    "title": "The test attribute is missing and the test silently never runs",
+    "issue": 257,
+    "proposedRange": "SK8000-SK8999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "safe",
+    "upstreamIssues": [
+     5067,
+     5068
+    ]
+   },
+   {
+    "slug": "sql-parameter-count-mismatch",
+    "title": "The command's parameters do not match its SQL",
+    "issue": 258,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "none",
+    "upstreamIssues": [
+     5116
+    ]
+   },
+   {
+    "slug": "private-auto-property",
+    "title": "The private auto-property is a field",
+    "issue": 259,
+    "proposedRange": "SK1000-SK1999",
+    "proposedSeverity": "suggestion",
+    "proposedScope": "Semantic",
+    "proposedFix": "safe",
+    "upstreamIssues": [
+     5254
+    ]
+   },
+   {
+    "slug": "path-comparison-is-os-specific",
+    "title": "The path comparison assumes the file system's case rules",
+    "issue": 260,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "unsafe",
+    "upstreamIssues": [
+     5452
+    ]
+   },
+   {
+    "slug": "enum-constraint-needs-struct",
+    "title": "The `Enum` constraint still admits a nullable",
+    "issue": 261,
+    "proposedRange": "SK6000-SK6999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "safe",
+    "upstreamIssues": [
+     6959
+    ]
+   },
+   {
+    "slug": "tuple-literal",
+    "title": "Use a tuple literal instead of constructing a `Tuple`",
+    "issue": 262,
+    "proposedRange": "SK1000-SK1999",
+    "proposedSeverity": "suggestion",
+    "proposedScope": "Semantic",
+    "proposedFix": "unsafe",
+    "upstreamIssues": [
+     7370
+    ]
+   },
+   {
+    "slug": "void-method-without-effect",
+    "title": "The method returns nothing and does nothing",
+    "issue": 263,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "none",
+    "upstreamIssues": [
+     7376
+    ]
+   },
+   {
+    "slug": "type-compared-by-name",
+    "title": "The type is compared by name",
+    "issue": 264,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "unsafe",
+    "upstreamIssues": [
+     7383
+    ]
+   },
+   {
+    "slug": "method-named-like-its-type",
+    "title": "The method has the same name as its type",
+    "issue": 265,
+    "proposedRange": "SK6000-SK6999",
+    "proposedSeverity": "suggestion",
+    "proposedScope": "Syntax",
+    "proposedFix": "unsafe",
+    "upstreamIssues": [
+     7384
+    ]
+   },
+   {
+    "slug": "exception-loses-original",
+    "title": "The handler discards the exception it caught",
+    "issue": 266,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "unsafe",
+    "upstreamIssues": [
+     7392
+    ]
+   },
+   {
+    "slug": "multiple-enumeration",
+    "title": "The sequence is enumerated more than once",
+    "issue": 267,
+    "proposedRange": "SK4000-SK4999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "unsafe",
+    "upstreamIssues": [
+     7396
+    ]
+   },
+   {
+    "slug": "conditional-attribute-double-guarded",
+    "title": "The `[Conditional]` call is also inside a `#if` for the same symbol",
+    "issue": 268,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "suggestion",
+    "proposedScope": "Semantic",
+    "proposedFix": "safe",
+    "upstreamIssues": [
+     7626
+    ]
+   },
+   {
+    "slug": "attribute-usage-validity",
+    "title": "The attribute cannot be satisfied as applied",
+    "issue": 269,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "none",
+    "upstreamIssues": [
+     7888
+    ]
+   },
+   {
+    "slug": "dictionary-indexer-in-foreach",
+    "title": "The loop looks up a key it is already holding",
+    "issue": 270,
+    "proposedRange": "SK4000-SK4999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "safe",
+    "upstreamIssues": [
+     7926
+    ]
+   },
+   {
+    "slug": "unsafe-accessor-contract",
+    "title": "The `[UnsafeAccessor]` declaration does not match its target",
+    "issue": 271,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "error",
+    "proposedScope": "Semantic",
+    "proposedFix": "none",
+    "upstreamIssues": [
+     8151,
+     8154,
+     8155,
+     8258
+    ]
+   },
+   {
+    "slug": "async-lambda-as-action",
+    "title": "The `async` lambda is passed where a `void` delegate is expected",
+    "issue": 272,
+    "proposedRange": "SK3000-SK3499",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "unsafe",
+    "upstreamIssues": [
+     8619
+    ]
+   },
+   {
+    "slug": "nested-collection-initializer-appends",
+    "title": "The nested collection initializer adds to what is already there",
+    "issue": 273,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Semantic",
+    "proposedFix": "none",
+    "upstreamIssues": [
+     9680
+    ]
+   },
+   {
+    "slug": "is-not-empty-pattern",
+    "title": "`is not { }` is a null check written backwards",
+    "issue": 274,
+    "proposedRange": "SK2000-SK2999",
+    "proposedSeverity": "warning",
+    "proposedScope": "Syntax",
+    "proposedFix": "safe",
+    "upstreamIssues": [
+     9755
+    ]
+   },
+   {
+    "slug": "get-required-service",
+    "title": "The service resolution is null-forgiven instead of required",
+    "issue": 275,
+    "proposedRange": "SK1000-SK1999",
+    "proposedSeverity": "suggestion",
+    "proposedScope": "Semantic",
+    "proposedFix": "safe",
+    "upstreamIssues": [
+     9759
+    ]
+   }
+  ],
+  "resolved": [
+   {
+    "resolution": "out-of-scope",
+    "detail": "Project and repository layout, not a defect in code, and no mechanical fix \u2014 moving files between projects.",
+    "upstreamIssue": 614,
+    "upstreamTitle": "NET-2005 New Rule Idea: Tests should be contained in a separate project (S3414)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "never-instantiated-or-used-type",
+    "upstreamIssue": 806,
+    "upstreamTitle": "NET-2004 New Rule Idea: Collection and array contents should be used (S4030)"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Legacy serialization surface, obsolete in modern .NET.",
+    "upstreamIssue": 1211,
+    "upstreamTitle": "NET-2002 Add rule issuing warning for non-serializable fields for types marked with [Serializable]"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "A configurable comment tracker. `SK7040` covers the `TODO`/`FIXME` case, and a general regex-over-comments rule is a linting hook rather than a concept.",
+    "upstreamIssue": 1320,
+    "upstreamTitle": "NET-2000 New Rule Idea: Track comments matching a regular expression (S124)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "bitwise-on-non-flags-enum",
+    "upstreamIssue": 1500,
+    "upstreamTitle": "NET-1997 New rule for checking an enum flag is set verifies enum value"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Taste, with no decidable defect behind it.",
+    "upstreamIssue": 2040,
+    "upstreamTitle": "NET-2013 New Rule Idea: Avoid indexers with specific parameter types (S3876)"
+   },
+   {
+    "resolution": "shipped",
+    "detail": "Shipped as `SK7060`.",
+    "upstreamIssue": 2052,
+    "upstreamTitle": "NET-2012 New Rule Idea: Rule: Sections of code should not be \"commented out\" (S125)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "unused-member",
+    "upstreamIssue": 2245,
+    "upstreamTitle": "NET-1967 New Rule Idea: Unused private types or members should be removed (S1144)"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "`Microsoft.VisualBasic` compatibility surface; not general C#.",
+    "upstreamIssue": 2399,
+    "upstreamTitle": "NET-1991 Feature request: Don't use code that exists for VB6 compatibility reasons"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "event-subscription-mistakes",
+    "upstreamIssue": 2589,
+    "upstreamTitle": "NET-1986 New Rule Idea: Do not use virtual for field events"
+   },
+   {
+    "resolution": "shipped",
+    "detail": "Shipped as `SK0210`.",
+    "upstreamIssue": 2642,
+    "upstreamTitle": "NET-1982 New Rule Idea: Useless usings should be removed (S1128)"
+   },
+   {
+    "resolution": "shipped",
+    "detail": "Shipped as `SK7004` \u2014 the type-size-in-members threshold counts methods and fields.",
+    "upstreamIssue": 2935,
+    "upstreamTitle": "NET-1966 New Rule Idea: Classes should not have too many methods (S1448)"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "\u26a0 Undecidable as stated, and the upstream author says so: whether a string is user-facing cannot be read off the code, so the rule has no zero-false-positive form. Doc 08's shipping bar excludes it.",
+    "upstreamIssue": 2960,
+    "upstreamTitle": "NET-1963 New Rule Idea: detect misuse when wrapping interpolated strings with FormattableString.Invariant"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "lambda-can-be-static",
+    "upstreamIssue": 3461,
+    "upstreamTitle": "NET-1954 New Rule Idea: Lambdas and local functions that don't access context should be static"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "redundant-cast-and-type-arguments",
+    "upstreamIssue": 3462,
+    "upstreamTitle": "NET-1953 New Rule Idea: Remove this unneeded type cast"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "if-statement-is-an-expression",
+    "upstreamIssue": 3813,
+    "upstreamTitle": "NET-1935 New Rule Idea: Replace this logic with a switch expression"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Taste, with no decidable defect behind it.",
+    "upstreamIssue": 4674,
+    "upstreamTitle": "NET-1902 New Rule Idea: complex properties should be refactored to methods"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Taste, with no decidable defect behind it.",
+    "upstreamIssue": 4868,
+    "upstreamTitle": "NET-1890 New Rule Idea: remove properties which just return a method call result"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Sonar-specific suppression marker. Skala's equivalent surface is `SK7050` / `SK7051`.",
+    "upstreamIssue": 5065,
+    "upstreamTitle": "NET-1880 New Rule Idea: Track uses of \"NOSONAR\" comments (S1291)"
+   },
+   {
+    "resolution": "shipped",
+    "detail": "Shipped as `SK2010`.",
+    "upstreamIssue": 5453,
+    "upstreamTitle": "NET-1862 New Rule Idea: When comparing strings, always provide an explicit StringComparison argument"
+   },
+   {
+    "resolution": "hosted",
+    "detail": "ADR-008: `CA1862` reports case-insensitive comparison done by changing case.",
+    "upstreamIssue": 5454,
+    "upstreamTitle": "NET-1861 New Rule Idea: To not use To{Lower,Upper}() to do case insensitive string comparison"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "A preference about where `global using` declarations are written, argued as a personal one upstream. The one decidable part \u2014 a file-level using duplicating a global one \u2014 is already tracked.",
+    "upstreamIssue": 6285,
+    "upstreamTitle": "NET-1811 New Rule Ideas: deal with global global using statements"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "optional-and-params-hazards",
+    "upstreamIssue": 6444,
+    "upstreamTitle": "NET-1799 New Rule Idea: Params should not be hidden for interfaces (similar to S3262)"
+   },
+   {
+    "resolution": "shipped",
+    "detail": "Shipped as `SK1005`.",
+    "upstreamIssue": 6651,
+    "upstreamTitle": "NET-1789 New Rule Idea: Files with exactly one namespace should be using file-scoped namespaces"
+   },
+   {
+    "resolution": "shipped",
+    "detail": "Shipped as `SK2004`.",
+    "upstreamIssue": 6671,
+    "upstreamTitle": "NET-1787 New Rule Idea: Override Equals(object) and GetHashCode() if IEquatable.Equals is implemented."
+   },
+   {
+    "resolution": "shipped",
+    "detail": "Shipped as `SK3004`.",
+    "upstreamIssue": 6740,
+    "upstreamTitle": "NET-1781  New Rule Idea: Propagate cancellation tokens "
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "lock-object-is-not-private-and-stable",
+    "upstreamIssue": 6804,
+    "upstreamTitle": "NET-1844 New Rule Idea: locked field should not be public nor internal nor protected internal"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "A policy choice, and the same one Sonar's own `S3900` states. Skala's position is `SK1020`: report the hand-written guard that a helper already is, not the absence of a guard.",
+    "upstreamIssue": 7035,
+    "upstreamTitle": "NET-1834 New Rule Idea: Non-nullable parameters of public methods should be validated against null"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "local-function-placement",
+    "upstreamIssue": 7101,
+    "upstreamTitle": "NET-1830 New Rule Ideas: Do not put statements between local functions"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "raw-and-verbatim-strings",
+    "upstreamIssue": 7167,
+    "upstreamTitle": "NET-1779 New Rule Idea: Use verbatim strings instead of escaping backslash"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "redundant-modifier",
+    "upstreamIssue": 7186,
+    "upstreamTitle": "NET-1778 New Rule Idea: Do not mark members as virtual in non-derived file classes/records"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "short-lived-httpclient",
+    "upstreamIssue": 7371,
+    "upstreamTitle": "NET-1768 New Rule Idea: \"HttpClient\" should be re-used (S4470)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "declaration-scope",
+    "upstreamIssue": 7372,
+    "upstreamTitle": "NET-1767 New Rule Idea: Variables should not be declared before they are relevant (S1941)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "dead-assignment",
+    "upstreamIssue": 7373,
+    "upstreamTitle": "NET-1766 New Rule Idea: Assignments should not be redundant (S4165)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "constant-arithmetic-result",
+    "upstreamIssue": 7378,
+    "upstreamTitle": "NET-1764 New Rule Idea: Min and max used in combination should not always return the same value (S3065)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "constant-type-check",
+    "upstreamIssue": 7379,
+    "upstreamTitle": "NET-1763 New Rule Idea: Compared operands should be comparable (S1968)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "exception-type-naming",
+    "upstreamIssue": 7380,
+    "upstreamTitle": "NET-1762 New Rule Idea: Exceptions should follow a naming convention (S2490)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "extract-common-branch-code",
+    "upstreamIssue": 7381,
+    "upstreamTitle": "NET-1761 New Rule Idea: The ternary operator should not always return the same value (S2752)"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Taste, with no decidable defect behind it.",
+    "upstreamIssue": 7382,
+    "upstreamTitle": "NET-1760 New Rule Idea: Single line comments should start with \"//\" (S2544)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "closure-to-method-group",
+    "upstreamIssue": 7385,
+    "upstreamTitle": "NET-1757 New Rule Idea: Gratuitous lambdas should not be defined (S2833)"
+   },
+   {
+    "resolution": "hosted",
+    "detail": "ADR-008: `IDE1006`, which `skala check` already runs.",
+    "upstreamIssue": 7387,
+    "upstreamTitle": "NET-1755 New Rule Idea: Local variable names should comply with a naming convention (S117)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "index-out-of-range",
+    "upstreamIssue": 7388,
+    "upstreamTitle": "NET-1754 New Rule Idea: Arrays should not be accessed beyond their boundaries (S3041)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "suspicious-type-conversion",
+    "upstreamIssue": 7394,
+    "upstreamTitle": "NET-1748 New Rule Idea: Bad stores should not be made to covariant arrays (S3062)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "method-returns-a-constant",
+    "upstreamIssue": 7395,
+    "upstreamTitle": "NET-1747 New Rule Idea: Functions returns should not be invariant (S3516)"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Taste, with no decidable defect behind it.",
+    "upstreamIssue": 7397,
+    "upstreamTitle": "NET-1745 New Rule Idea: Only the elements of control have to be in the test block of the instruction for (S1247)"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Taste, with no decidable defect behind it.",
+    "upstreamIssue": 7398,
+    "upstreamTitle": "NET-1744 New Rule Idea: Comments should not be located at the end of lines of code (S139)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "general-exception-thrown",
+    "upstreamIssue": 7399,
+    "upstreamTitle": "NET-1743 New Rule Idea: \"NullReferenceException\" should not be explicitly thrown (S1695)"
+   },
+   {
+    "resolution": "shipped",
+    "detail": "Shipped as `SK7004` \u2014 the type-size-in-members threshold counts methods and fields.",
+    "upstreamIssue": 7400,
+    "upstreamTitle": "NET-1742 New Rule Idea: Classes should not have too many fields (S1820)"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Taste, with no decidable defect behind it.",
+    "upstreamIssue": 7401,
+    "upstreamTitle": "NET-1741 New Rule Idea: \"main\" should not \"throw\" anything (S2096)"
+   },
+   {
+    "resolution": "hosted",
+    "detail": "The compiler already reports it \u2014 `CS0162`, unreachable code detected.",
+    "upstreamIssue": 7402,
+    "upstreamTitle": "NET-1740 New Rule Idea: All code should be reachable (S1763)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "escaped-keyword-identifier",
+    "upstreamIssue": 7403,
+    "upstreamTitle": "NET-1739 New Rule Idea: Keywords should not be used as names (S1669)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "exception-thrown-in-finally",
+    "upstreamIssue": 7405,
+    "upstreamTitle": "NET-1737 New Rule Idea: Jump statements should not occur in \"finally\" blocks (S1143)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "mutability-can-be-narrowed",
+    "upstreamIssue": 7408,
+    "upstreamTitle": "NET-1735 New Rule Idea: Fields that are never updated should be readonly (S2108)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "if-statement-is-an-expression",
+    "upstreamIssue": 7409,
+    "upstreamTitle": "NET-1734 New Rule Idea: Switches should be used for sequences of simple tests (S2145)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "extract-common-branch-code",
+    "upstreamIssue": 7410,
+    "upstreamTitle": "NET-1733 New Rule Idea: Catches should be combined (S2147)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "constant-type-check",
+    "upstreamIssue": 7412,
+    "upstreamTitle": "NET-1732 New Rule Idea: Unnecessary equality checks should not be made (S2159)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "index-out-of-range",
+    "upstreamIssue": 7529,
+    "upstreamTitle": "NET-1721 New Rule Idea: Do not index with the hat(^) operator at zero or negative indexes"
+   },
+   {
+    "resolution": "hosted",
+    "detail": "ADR-008: `IDE1006`, which `skala check` already runs.",
+    "upstreamIssue": 7576,
+    "upstreamTitle": "NET-1719 New Rule Idea: Generic type parameter names should comply with a naming convention (S119)"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "primary-constructor-capture",
+    "upstreamIssue": 7740,
+    "upstreamTitle": "NET-1705 New Rule Idea: Primary constructor parameters should not be mutated"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "upstreamIssue": 7762,
+    "upstreamTitle": "NET-1702 New Rule Idea: Use Data Transfer Objects instead of Database Entities in Web Services"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "upstreamIssue": 7804,
+    "upstreamTitle": "NET-1701 New Rule Idea: Don't use ConfigureAwait in ASP.NET Core applications"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "upstreamIssue": 7820,
+    "upstreamTitle": "NET-1700 New Rule Idea: Don't declare both OnXXX() and OnXXXAsync() handler methods for the same HTTP verb"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "upstreamIssue": 7827,
+    "upstreamTitle": "NET-1699 New Rule Idea: Properties decorated with the BindProperty attribute should have SupportsGet=true when used in HTTP GET handler method"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "upstreamIssue": 7854,
+    "upstreamTitle": "NET-1698 New Rule Idea: Don't use custom logic in the getter/setter of a Dependency Property"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "upstreamIssue": 7870,
+    "upstreamTitle": "NET-1697 New Rule Idea: Don't use synchronous long-running operations on the UI thread"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "primary-constructor-capture",
+    "upstreamIssue": 8076,
+    "upstreamTitle": "NET-1682 New Rule Idea: Primary constructor parameters only used as local variables in methods should become local variables"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "simplify-pattern",
+    "upstreamIssue": 8195,
+    "upstreamTitle": "NET-1661 New Rule Idea: Property var-pattern(s) should appear at the end of is-pattern"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "bitwise-on-non-flags-enum",
+    "upstreamIssue": 8197,
+    "upstreamTitle": "NET-1660 New Rule Idea: Enums not marked with `FlagsAttribute` should not use `Enum.HasFlag` method "
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Build and packaging metadata, not source.",
+    "upstreamIssue": 8351,
+    "upstreamTitle": "NET-1647 New Rule Idea: Mark pre-release nuget package as non compliant"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "redundant-string-call",
+    "upstreamIssue": 8419,
+    "upstreamTitle": "NET-1639 Rule idea: Remove unused interpolation"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "A language feature request, not an analysis rule.",
+    "upstreamIssue": 8641,
+    "upstreamTitle": "NET-1623 New Rule Idea: Checked exceptions"
+   },
+   {
+    "resolution": "out-of-scope",
+    "detail": "Taste, with no decidable defect behind it.",
+    "upstreamIssue": 8796,
+    "upstreamTitle": "NET-1617 New Rule Idea: Replace protected parameterless empty constructor with abstract class"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "flags-enum-contract",
+    "upstreamIssue": 8862,
+    "upstreamTitle": "NET-1611 New Rule Idea: All and None in Flags enum should be respectively 0 and bitwise OR of all individual values"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "structured-log-template",
+    "upstreamIssue": 9292,
+    "upstreamTitle": "NET-1584 New Rule Idea: Do not convert collections to strings when using Microsoft.Extensions.Logging"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "redundant-cast-and-type-arguments",
+    "upstreamIssue": 9488,
+    "upstreamTitle": "NET-1576 Rule idea: Extract repetitive casts into a variable"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "immutable-array-collection-initializer",
+    "upstreamIssue": 9681,
+    "upstreamTitle": "NET-1539 New Rule Idea: Do not use collection initializers with `ImmutableArray`"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "redundant-null-forgiving",
+    "upstreamIssue": 9691,
+    "upstreamTitle": "NET-1536 New Rule Idea: You should not use the null forgiving operator  when nullable context is disabled"
+   },
+   {
+    "resolution": "shipped",
+    "detail": "Shipped as `SK3001` \u2014 an `async void` implementation of a `void` member is still `async void`.",
+    "upstreamIssue": 9711,
+    "upstreamTitle": "NET-1534 Rule Idea: `void` method implementations should not be `async`"
+   },
+   {
+    "resolution": "already-tracked",
+    "concept": "lock-not-released-on-every-path",
+    "upstreamIssue": 9769,
+    "upstreamTitle": "NET-2626 New Rule Idea: Synchronization objects should be released in a finally block"
+   }
+  ]
+ }
 }

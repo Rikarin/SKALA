@@ -10,7 +10,17 @@ standard [`README.md`](README.md) sets for the rest of this directory.
 |---|---|
 | `ledger-resharper.json` | 137 proposed concepts covering 494 inspections, and 94 inspections excluded with a written reason each |
 | `ledger-sonar.json` | 110 proposed concepts covering 156 rules, and 325 rules resolved as shipped, tracked, hosted, decided or out of scope |
+| `ledger-sonar.json` § `ideas` | 28 proposed concepts covering 32 of upstream's **open, unimplemented** rule ideas, and 79 resolved |
 | `verify_ledger.py` | Asserts that neither ledger can lose a rule |
+
+⚠ **The `ideas` section has a different source and a different half-life.** Its 111 entries are open
+`Rule Idea` issues on `SonarSource/sonar-dotnet` — proposals upstream has *not* specified or
+implemented, so they appear in no published rule list and the audit of `analyzers/rspec/cs` could not
+see them. That also means there is no reference implementation to compare against and no
+false-positive experience to inherit: the idea is the contribution and the specification is entirely
+ours. It is a **snapshot**, dated in `auditedAgainst`, and nothing re-checks it; the verifier says so
+on every run rather than letting the date go quietly stale. Refresh it by re-running the `gh issue
+list` recorded in `auditedAgainst.query`.
 
 Each concept carries the GitHub issue that tracks it, so the queue is navigable in both directions:
 from an inspection id to the issue arguing for it, and from an issue back to every rule it retires.
