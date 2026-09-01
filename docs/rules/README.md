@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 104 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 105 ids are allocated.
 
 ## Async
 
@@ -75,6 +75,7 @@
 | [SK3501](SK3501.md) | A disposable is created in a local and never disposed | warning | safe | no |
 | [SK3502](SK3502.md) | A type owns a disposable field but is not disposable | warning | — | no |
 | [SK3503](SK3503.md) | An `IAsyncDisposable` is disposed synchronously | warning | review | no |
+| [SK3510](SK3510.md) | A variable already owned by `using` is disposed again | warning | safe | no |
 
 ## Maintainability
 

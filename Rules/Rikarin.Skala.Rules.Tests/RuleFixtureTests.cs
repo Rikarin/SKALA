@@ -45,7 +45,7 @@ public sealed class RuleFixtureTests {
         new AsyncVoidAnalyzer(), new BlockingOnAsyncAnalyzer(), new CancellationTokenForwardingAnalyzer(),
         new FireAndForgetTaskAnalyzer(), new TaskReturnedFromUsingAnalyzer(), new UndisposedLocalAnalyzer(),
         new OwnedDisposableFieldAnalyzer(),
-        new SynchronousAsyncDisposalAnalyzer(), new MetricsAnalyzer(),
+        new SynchronousAsyncDisposalAnalyzer(), new RedundantDisposeAnalyzer(), new MetricsAnalyzer(),
         new WhereBeforeOperatorAnalyzer(), new AbstractTypeConstructorAnalyzer(),
         new ExtensionMethodOnObjectAnalyzer(), new ThreadSleepInTestAnalyzer(),
         new TodoWithoutIssueAnalyzer(), new PragmaWithoutJustificationAnalyzer(),
