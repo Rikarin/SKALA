@@ -4794,6 +4794,31 @@
       "configuration": [
         "dotnet_diagnostic.SK1060.severity"
       ]
+    },
+    {
+      "id": "SK1061",
+      "concept": "nameof-expression",
+      "title": "Use `nameof`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseNameOfInsteadOfToString",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "6.0",
+      "summary": "A name produced at run time — `typeof(T).Name`, an enum member's `ToString()` — or written as a literal in a position that is defined to hold an identifier.",
+      "rationale": "`nameof` is the only spelling of a name that a rename touches. `typeof(Widget).Name` and `Colour.Red.ToString()` compute at run time what the compiler already knows, and a literal `\"count\"` handed to `ArgumentOutOfRangeException`'s `paramName` is a name the compiler was never asked about at all — so it survives the rename that makes it wrong, and the first person to see the mistake is whoever reads the exception. This is disproportionately a generated-code problem: a model writes the string because the pre-C# 6 dialect it learned had nothing else to write.",
+      "examples": {
+        "bad": "throw new ArgumentOutOfRangeException(\"count\", count, null);\nvar name = typeof(Widget).Name;\nvar label = Colour.Red.ToString();",
+        "good": "throw new ArgumentOutOfRangeException(nameof(count), count, null);\nvar name = nameof(Widget);\nvar label = nameof(Colour.Red);"
+      },
+      "falsePositives": "⚠ **A string that happens to equal a member name is not a `nameof` candidate, and this rule never guesses.** Serialization keys, JSON property names, SQL column names, HTTP headers and `.editorconfig` keys are all literals that look exactly like identifiers and mean something a rename must *not* follow — rewriting one silently changes the wire format. There is no test that separates them from the intended ones, so the rule fires only in positions whose meaning is defined: a `paramName` parameter of the `ArgumentException` family, and a `PropertyChangedEventArgs`/`PropertyChangingEventArgs` constructor. ⚠ **`UseNameofExpressionForPartOfTheString` is deliberately not covered** for that reason; it is also the one of the three inspections that ships at `none`. ⚠ **`typeof(T).Name` is `nameof(T)` only for a non-generic named type spelled by its own name.** `typeof(List<int>).Name` is `` `List`1` `` and `nameof(List<int>)` is `List`; `typeof(int).Name` is `Int32` and `nameof(int)` does not compile; `typeof(T).Name` on a type parameter is the *argument's* name at run time; and a `using` alias makes `nameof` produce the alias where `Name` produces the type — so the last identifier of the written type must equal the symbol's own name. Arrays, nullable spellings and `dynamic` are all refused. ⚠ **An enum member's `ToString()` is its name only when the value is unique.** `enum E { A = 1, B = 1 }` makes `E.B.ToString()` return `\"A\"`, so the rule reads every field of the enum and declines a shared value. ⚠ `SK2017` reports the `paramName` literal that names *no* parameter and this rule reports the one that does, so the two never both fire. Every shape is silent inside an expression tree and below C# 6, and the four shapes share that one floor, so the gate is per-rule.",
+      "configuration": [
+        "dotnet_diagnostic.SK1061.severity"
+      ]
     }
   ]
 }

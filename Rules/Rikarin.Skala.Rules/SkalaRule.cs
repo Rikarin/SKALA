@@ -90,6 +90,9 @@ public static class SkalaRule {
 
     static LanguageVersion Parse(string floor) =>
         floor switch {
+            // ⚠ The table's fallback is `Preview`, so a floor this switch does not name silences its
+            // rule on every real project rather than on none. `nameof` is C# 6 and SK1061 declares it.
+            "6.0" => LanguageVersion.CSharp6,
             "7.0" => LanguageVersion.CSharp7,
             "7.1" => LanguageVersion.CSharp7_1,
             "7.2" => LanguageVersion.CSharp7_2,

@@ -196,5 +196,7 @@
   "ChangeFieldTypeToSystemThreadingLock": "SK1023",
   "RedundantDictionaryContainsKeyBeforeAdding": "SK1033",
   "ArrangeNullCheckingPattern": "SK1010",
-  "UseIndexFromEndExpression": "SK1060"
+  "UseIndexFromEndExpression": "SK1060",
+  "UseNameOfInsteadOfToString": "SK1061",
+  "UseNameOfInsteadOfTypeOf": "SK1061"
 }
