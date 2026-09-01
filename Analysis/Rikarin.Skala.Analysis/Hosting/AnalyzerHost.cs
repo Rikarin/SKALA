@@ -128,6 +128,9 @@ public static class AnalyzerHost {
         new MissingTestClassAttributeAnalyzer(), new EmptyTestClassAnalyzer(),
         new SwappedAssertionArgumentsAnalyzer(),
         new DuplicatedBaseDocumentationAnalyzer(), new UndocumentedNonPublicMemberAnalyzer(),
+        new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
+        new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
+        new RedundantDeclarationAnalyzer(),
     ];
 
     /// <summary>

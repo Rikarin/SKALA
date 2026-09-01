@@ -4258,6 +4258,149 @@
       "configuration": [
         "dotnet_diagnostic.SK7101.severity (`none` by default; set it per path to enable)"
       ]
+    },
+    {
+      "id": "SK0240",
+      "concept": "redundant-control-flow",
+      "title": "The control flow does nothing",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantJumpStatement",
+      "supersedes": [
+        "RedundantEmptySwitchSection",
+        "RedundantCatchClause"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A jump, a `default:` section or a `catch` that transfers control to where control was already going.",
+      "rationale": "⚠ **`catch (X) { throw; }` is the member that matters and the other two are housekeeping beside it.** A rethrowing catch reads as error handling: it is where a reader goes looking for the recovery, the wrapping, the logging — and there is none. `throw;` preserves the stack trace, so unlike `SK2015`'s `throw ex;` there is not even a defect underneath it; the clause is inert, and every question it raises has the answer \"nothing happens here\", which is what the code would say with no `catch` at all. The other two shapes are the same sentence about ordinary control flow: a `continue;` at the end of a loop body jumps to the next iteration that was one statement away, a `return;` at the end of a void body leaves a method that was about to end, and a `default:` section that only breaks describes what a `switch` with no matching section already does.",
+      "examples": {
+        "bad": "try {\n    Write(path, payload);\n} catch (IOException) {\n    throw;\n}",
+        "good": "Write(path, payload);"
+      },
+      "falsePositives": "⚠ **Only the last `catch` of a `try` is ever reported, and that is correctness rather than caution.** Deleting an earlier one changes which handler an exception reaches: in `try { … } catch (IOException) { throw; } catch (Exception e) { Log(e); }` the first clause is what stops an `IOException` being logged, so removing it is a behaviour change wearing a redundancy's clothes. Removing the *last* clause can only leave the exception propagating, which is what the rethrow already did. A `catch` carrying a `when` filter is never reported: the filter runs code, and a filter that returns false leaves the exception to a later clause. ⚠ **Where the rethrowing `catch` is the only one and there is no `finally`, the fix has to replace the whole `try` by its block's contents** — `try { … }` alone is CS1524 — and that is offered only when the block declares nothing, because unwrapping a scope moves every local, local function and label it holds into the enclosing scope where a name that was never in conflict can now collide. A try block that declares a local is left alone rather than fixed badly, and so the finding is withheld. The same is true when the `try` is an embedded statement rather than a statement in a block, because the splice would have more than one statement and nowhere to put it. ⚠ **`goto default;` anywhere in the switch withdraws the `default:` finding**, because the section is the jump's target and deleting it turns a redundancy into CS0159. A `default:` sharing its section with a `case` label is a different shape and is not matched. ⚠ **The `return;` half reads the written return type and never a symbol**, so it matches the `void` keyword, constructors, destructors and `set`/`init`/`add`/`remove` accessors. `async Task` is the same redundancy and is deliberately not matched: `Task` is a name that can be aliased, and answering it needs a semantic model this rule does not ask for. ⚠ **There is no iterator guard, and the belief that one was needed is refuted.** A bare `return;` inside an iterator is not legal C# and does not mean `yield break`: the compiler rejects it with CS1622. The guard was written, committed with a negative fixture, and the fixture failed to compile — an iterator cannot contain the shape this rule matches, so nothing has to exclude it. ⚠ **A comment or a preprocessor directive inside the span withdraws the finding.** The fix deletes the span, `default: break; // nothing to do for the rest` is the author answering the question the reader was about to ask, and a cleanup that silently deletes prose has made the file worse than it found it. ⚠ The boolean-expression members of this family — `RedundantBoolCompare`, `DoubleNegationOperator`, `NegativeEqualityExpression`, `RedundantTernaryExpression`, `RedundantLogicalConditionalExpressionOperand` — are **not** covered. Each needs to know an operand's type before it is redundant rather than meaningful (`x == true` is not redundant for a `bool?`, and `!` may be overloaded), which would make this rule semantic and stop it running on a loose file. `RedundantIfElseBlock`, `RedundantCaseLabel` and `RedundantEnumCaseLabelForDefaultSection` are not covered either.",
+      "configuration": [
+        "dotnet_diagnostic.SK0240.severity"
+      ]
+    },
+    {
+      "id": "SK0241",
+      "concept": "ineffective-modifier",
+      "title": "The modifier has no effect",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantAbstractModifier",
+      "supersedes": [
+        "SealedMemberInSealedClass",
+        "RedundantRecordClassKeyword",
+        "EnumUnderlyingTypeIsInt",
+        "RedundantReadonlyModifier"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A keyword that restates what the enclosing declaration has already said: `abstract` on an interface member, `sealed` inside a `sealed` type, `class` after `record`, `: int` on an enum, `readonly` inside a `readonly struct`.",
+      "rationale": "A modifier that does nothing is worse than noise, because a reader cannot tell it from one that does. `sealed` on a member of a `sealed` class invites the question of which derived type was going to override it, and there is none; `abstract` on an interface member suggests the interface has members that are not; `readonly` on one member of a `readonly struct` suggests the others are mutable. Each one is answered by a keyword written a few lines above it, and deleting it makes the declaration say exactly what it meant.",
+      "examples": {
+        "bad": "public sealed class Writer : Stream {\n    public sealed override void Flush() { }\n}",
+        "good": "public sealed class Writer : Stream {\n    public override void Flush() { }\n}"
+      },
+      "falsePositives": "⚠ **`static` withdraws the interface half entirely, and getting it wrong would have been this rule's worst false positive.** A static interface member is *not* implicitly abstract: C# 11's `static abstract T operator +(T, T)` is an abstract static member, and the same declaration without the keyword is a static member that must have a body. Deleting `abstract` there does not tidy anything — it produces a declaration that no longer compiles. ⚠ **A nested type is never the subject.** A type declared inside an interface is not implicitly abstract, and a type nested in a `sealed` class is not implicitly sealed, so the modifier there is the author's; no type declaration is registered as a candidate. ⚠ **A field inside a `readonly struct` is excluded and that is not an oversight.** CS8340 requires every instance field of one to be `readonly`, so the keyword is the language's rather than the author's and deleting it is an error. ⚠ **`enum E : Int32` is left alone.** The rule matches the `int` keyword only, because it has no semantic model to ask what an identifier resolves to and `Int32` is an ordinary identifier that a using directive or a user type can point somewhere else; the keyword cannot be aliased or shadowed, which is what makes matching it exact. ⚠ **A comment or a directive in the keyword's trailing trivia withdraws the finding.** The fix deletes from the keyword to the next token so that a leading documentation comment and attribute list survive, and that span carries the trailing trivia with it — `public /* still virtual in the base */ sealed override` would lose the note under a fix marked safe. ⚠ Six of [#129](https://github.com/Rikarin/SKALA/issues/129)'s eleven inspections are **not** covered. `PartialTypeWithSinglePart` and `PartialMethodWithSinglePart` are the high-volume pair and both need to count a symbol's declarations across the whole compilation — which a source generator can add to after the fact, so a repository whose generated part is missing from a loose load would be told to delete a `partial` it needs. `RedundantVirtualModifier`, `RedundantScopedParameterModifier`, `RedundantUnsafeContext` and `RedundantOverflowCheckingContext` each need to know something about a body or a type that is not written in the declaration.",
+      "configuration": [
+        "dotnet_diagnostic.SK0241.severity"
+      ]
+    },
+    {
+      "id": "SK0242",
+      "concept": "redundant-nullable-directive",
+      "title": "The `#nullable` directive changes nothing",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantNullableDirective",
+      "supersedes": [
+        "UnusedNullableDirective"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `#nullable` directive that sets the annotation and warning state the file is already in.",
+      "rationale": "`#nullable` directives accumulate during a migration and then stay, at which point they silently override the project-level setting for a file nobody remembers exempting. The state they move is two independent settings — annotations and warnings — each of which is enabled, disabled, or inherited from the project, so a directive is redundant exactly when it moves neither. Deleting one that moves neither is the whole of the edit: the file's nullable state before it and after it are the same state.",
+      "examples": {
+        "bad": "#nullable enable\n\n#nullable enable\n\nsealed class Reader {\n    public string? Path { get; init; }\n}",
+        "good": "#nullable enable\n\nsealed class Reader {\n    public string? Path { get; init; }\n}"
+      },
+      "falsePositives": "⚠ **The file's opening state is *inherited*, not enabled, which is what makes this rule exact without a project.** The first `#nullable enable` in a file is never reported: whether the project already enables annotations is not written in the file, and this rule does not guess at it. What the opening state does settle is the other direction — a `#nullable restore` before any other directive restores the project default the file already had, and that is a no-op under every project setting there is. ⚠ **A conditional directive anywhere in the file withdraws every finding in it.** Which `#nullable` directives are live inside `#if` depends on the preprocessor symbols the compilation was given, so a file that is clean under one `#define` set and redundant under another has no single answer, and a fix applied under the wrong one deletes a directive the other configuration needs. An *inactive* directive is likewise never read as moving the state, because it does not. ⚠ **A comment on the directive withdraws the finding**, because the fix deletes the whole line and `#nullable disable // the generated half is not annotated yet` is the author explaining a migration — a directive that is redundant today is exactly the kind whose note says why it is there. ⚠ **The four constraint inspections in [#135](https://github.com/Rikarin/SKALA/issues/135) are not covered**: `RedundantNotNullConstraint`, `RedundantNullableAnnotationOnReferenceTypeConstraint`, `RedundantNullableAnnotationOnTypeConstraintHasNonNullableBaseType` and `RedundantNullableAnnotationOnTypeConstraintHasNonNullableTypeKind` each need to know what a constraint's type argument is before the annotation on it can be called redundant, which is a semantic question and a different rule. Nor is the comparison against the project's own `NullableContextOptions`, which is the other half of `UnusedNullableDirective`: in `--load=loose` that value is whatever the loader chose rather than what the project says, so reading it would make the rule report a different set of findings depending on how the file was loaded.",
+      "configuration": [
+        "dotnet_diagnostic.SK0242.severity"
+      ]
+    },
+    {
+      "id": "SK0243",
+      "concept": "redundant-qualifier",
+      "title": "The qualifier is redundant",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantQualifier",
+      "supersedes": [
+        "RedundantBaseQualifier"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A namespace- or type-qualified type name the simple name already binds to, or a `base.` that reaches the same member as no qualifier.",
+      "rationale": "A qualifier is how a reader is told that the short name would have meant something else, so one that changes nothing is a false signal: `System.Text.StringBuilder` beside a `using System.Text;` says there is an ambiguity to resolve, and there is not. `base.` says louder still — it says the containing type has its own member of that name and this call deliberately goes past it. `SK0207` owns the `this.` qualifier and `SK0215` the static one; these are the two shapes the arrangement rules leave.",
+      "examples": {
+        "bad": "using System.Text;\n\nsealed class Formatter {\n    System.Text.StringBuilder builder = new();\n}",
+        "good": "using System.Text;\n\nsealed class Formatter {\n    StringBuilder builder = new();\n}"
+      },
+      "falsePositives": "⚠ **Neither half is decided by comparing text.** The type half asks the semantic model to bind the short name *at the same position* and reports only when it produces the same symbol with no candidates, which is what makes a shadowing type, a missing using directive and a genuine ambiguity each answer for themselves. Deciding it by looking for a matching using directive would be a different rule, and it would be wrong every time two imported namespaces offer the same name. ⚠ **The `base.` half is not \"the containing type does not override it\", and believing that is how this rule would report a behaviour change as a redundancy.** Given `class A { public virtual void M() { } }`, a `class B : A` calling `base.M()`, and a `class C : B` that overrides `M` — dropping the qualifier in `B` turns a non-virtual call to `A.M` into a virtual one that reaches `C.M`. So the member must be one nothing can override further (not virtual, not abstract, not an unsealed override) or the containing type must be `sealed`. Two further conditions: the containing type must declare nothing of that name, and nothing in scope at that position may be a local, a parameter or a local function of that name, because an unqualified use would find it first. ⚠ **An attribute name is left out.** `[System.Obsolete]` binds to a *constructor* rather than to a type, so the symbol comparison the rest of the rule performs would be comparing the wrong things; the shape is real and it is declined rather than answered with a check that does not mean what it says. ⚠ `global::` is a deliberate disambiguator and is never removed — a short name that binds to the same symbol today is exactly what somebody wrote `global::` to stop depending on. A qualified name inside another one's type arguments is skipped too, because the outer finding and the inner one would be two overlapping edits, and two overlapping edits are not a fix. Using directives, namespace declarations and documentation `cref`s are all positions where the written name *is* the meaning. ⚠ **`UnusedImportClause` belongs to `SK0210`, not here**, and so does `RedundantUsingDirective.Global` — see the note against `SK0210` in docs/plan/08: its removal set is Roslyn's CS8019, and the global-duplication shape reports CS8933, which that filter does not read. Shipping it here would have been a second rule for one concept.",
+      "configuration": [
+        "dotnet_diagnostic.SK0243.severity"
+      ]
+    },
+    {
+      "id": "SK0244",
+      "concept": "redundant-declaration",
+      "title": "The declaration adds nothing",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantOverriddenMember",
+      "supersedes": [
+        "EmptyDestructor",
+        "EmptyConstructor",
+        "EmptyNamespace",
+        "RedundantBaseConstructorCall",
+        "RedundantDefaultMemberInitializer"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An empty finalizer, an empty sole constructor, an empty namespace, a `: base()` with no arguments, a member initialized to the value it already has, or an `override` that only calls the base.",
+      "rationale": "⚠ **The empty finalizer is not merely redundant, and it stays in this rule at `warning` rather than moving to the performance range.** An empty `~Foo() { }` opts the type into finalization: every instance goes on the finalizer queue, survives the collection that would otherwise have taken it, and is freed a generation later — for a body that does nothing. It is kept here because the finding and the edit are the same as the other five, a declaration that adds nothing being deleted; splitting it out would have made one concept two ids for the sake of a severity, and the cost is instead in the message, where a reader will actually see it. The other five are deletions with no effect at all: the compiler generates exactly the constructor that was written, supplies exactly that constructor initializer, zero-initializes exactly that field, and dispatches to exactly the base method the override forwards to.",
+      "examples": {
+        "bad": "sealed class Buffer {\n    byte[] data = new byte[1024];\n\n    ~Buffer() { }\n}",
+        "good": "sealed class Buffer {\n    byte[] data = new byte[1024];\n}"
+      },
+      "falsePositives": "⚠ **A `static` constructor is never this shape and an empty one is not redundant.** Declaring one — even empty — clears `beforefieldinit` on the type, which changes when the runtime is allowed to run the type's initialization; deleting it is a timing change and not a cleanup. ⚠ The constructor shape is classes only, never a `partial` one and never one with a primary constructor: in a partial type the other part may hold the constructor that makes this one meaningful, and it is not visible from here. It must also be the only instance constructor, and its accessibility must be the one the compiler would have generated — `protected` on an abstract class and `public` on every other — because an accessibility that differs is doing something. ⚠ **`= null` is accepted only on a type written with a `?`, and `= default` on the same set plus the value-type keywords.** Under an enabled nullable context `string name = null;` warns at the initializer (CS8625), and deleting it moves the warning to CS8618 at the constructor — a *different* warning, which a fix marked safe may not introduce. `string`, `object` and every user-written type are therefore out, because whether one is a struct is not visible in the declaration. `0f`, `0m` and `'\\0'` are the same value written differently and are not matched; an enum member and a struct's own `Empty` are not decidable here at all. Automatically implemented properties only — an accessor with a body stores wherever its code says. ⚠ **The `override` shape is `void`-only, and that is the covariant-return guard.** C# 9 lets an override narrow its return type, and such an override is the declaration carrying the narrower type, so deleting it changes what every caller sees; comparing the two return types needs the base symbol, which this rule does not ask for, so the question is excluded by matching the `void` keyword instead. `sealed`, an attribute, a type parameter list and a parameter with a default value each withdraw it as well. ⚠ **The fix deletes a declaration's *full* span, which begins at its leading trivia**, so a documentation comment, an ordinary comment, a `#region` or an attribute list withdraws the finding rather than being carried away by a fix marked safe. ⚠ Eight of [#130](https://github.com/Rikarin/SKALA/issues/130)'s fourteen inspections are not covered. `RedundantTypeDeclarationBody` is the notable one and it is **declined rather than pending**: it asks for `class Foo { }` to become `class Foo;`, and `SK6023` reports the same braces as an unfinished declaration — two rules would disagree about one span. `RedundantExtendsListEntry`, `RedundantAttributeSuffix` and `RedundantExplicitPositionalPropertyDeclaration` each need a symbol; `RedundantPartialMethodEmptyImplementation` needs the other part; `RedundantSetterValueParameterDeclaration`, `RedundantSetsRequiredMembersAttribute` and `RedundantAttributeUsageProperty` are each a distinct edit that this rule does not attempt.",
+      "configuration": [
+        "dotnet_diagnostic.SK0244.severity"
+      ]
     }
   ]
 }

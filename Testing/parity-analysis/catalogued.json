@@ -173,5 +173,10 @@
   "RedundantExplicitArraySize": "SK0234",
   "RedundantExplicitTupleComponentName": "SK0234",
   "InheritdocConsiderUsage": "SK7100",
-  "InternalOrPrivateMemberNotDocumented": "SK7101"
+  "InternalOrPrivateMemberNotDocumented": "SK7101",
+  "RedundantJumpStatement": "SK0240",
+  "RedundantAbstractModifier": "SK0241",
+  "RedundantNullableDirective": "SK0242",
+  "RedundantQualifier": "SK0243",
+  "RedundantOverriddenMember": "SK0244"
 }

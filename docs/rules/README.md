@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 165 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 134 ids are allocated.
 
 ## Async
 
@@ -29,6 +29,16 @@
 | [SK0232](SK0232.md) | The argument or signature element is redundant | warning | safe | no |
 | [SK0233](SK0233.md) | The syntax is redundant | suggestion | safe | yes |
 | [SK0234](SK0234.md) | The cast or type argument is redundant | warning | safe | no |
+
+## Cleanup
+
+| Id | Rule | Severity | Fix | Loose mode |
+|---|---|---|---|---|
+| [SK0240](SK0240.md) | The control flow does nothing | warning | safe | yes |
+| [SK0241](SK0241.md) | The modifier has no effect | warning | safe | yes |
+| [SK0242](SK0242.md) | The `#nullable` directive changes nothing | warning | safe | yes |
+| [SK0243](SK0243.md) | The qualifier is redundant | warning | safe | no |
+| [SK0244](SK0244.md) | The declaration adds nothing | warning | safe | yes |
 
 ## Correctness
 

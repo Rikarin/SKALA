@@ -173,6 +173,11 @@ SK8021 test-class-without-tests
 SK8022 swapped-assertion-arguments
 SK7100 documentation-duplicates-base-member
 SK7101 non-public-member-not-documented
+SK0240 redundant-control-flow
+SK0241 ineffective-modifier
+SK0242 redundant-nullable-directive
+SK0243 redundant-qualifier
+SK0244 redundant-declaration
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

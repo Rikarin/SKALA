@@ -108,6 +108,96 @@ issue; what was declined and why is in each rule's `falsePositives` in `rules.js
 | `SK0232` | The argument or signature element is redundant | Semantic | [#134](https://github.com/Rikarin/SKALA/issues/134) | 3 of 7 |
 | `SK0233` | The syntax is redundant | Syntax | [#133](https://github.com/Rikarin/SKALA/issues/133) | 9 of 13 |
 | `SK0234` | The cast or type argument is redundant | Semantic | [#128](https://github.com/Rikarin/SKALA/issues/128) | 4 of 8 |
+### Cleanup — `SK0240`–`SK0249`
+
+⚠ **The prose pass on this block is owed.** It is written rule by rule as each one lands, so it
+records what shipped and what was left rather than reading as a considered section; the section
+above is what it should eventually look like.
+
+These are *not* arrangement rules. Arrangement is a formatter pipeline whose findings carry no
+generic `skala fix` edit because several rules contribute to one document rewrite; each of these is
+an ordinary `DiagnosticAnalyzer` with its own edit list, lives under
+`Rules/Rikarin.Skala.Rules/Cleanup/`, and reports under the category `Cleanup`. They are in the
+`SK0001`–`SK0999` band because the band is defined by what the finding *is* — a redundancy a reader
+has to step over — and not by which component finds it.
+
+⚠ Each id is one Skala concept covering several ReSharper inspections, per
+[`docs/plan/17`](17-inspection-parity.md) § "Inspection ids are not concepts". `resharperId` names
+the primary inspection only; `supersedes` names the rest.
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK0240` | The control flow does nothing | Syntax | safe |
+| `SK0241` | The modifier has no effect | Syntax | safe |
+| `SK0242` | The `#nullable` directive changes nothing | Syntax | safe |
+| `SK0243` | The qualifier is redundant | Semantic | safe |
+| `SK0244` | The declaration adds nothing | Syntax | safe |
+
+`SK0240` covers three shapes of [#131](https://github.com/Rikarin/SKALA/issues/131)'s thirteen: a
+`continue;` ending a loop body or a `return;` ending a void body (`RedundantJumpStatement`), a
+`default:` section whose only statement is `break;` (`RedundantEmptySwitchSection`), and — the
+member the issue calls the valuable one — a `catch` whose body is exactly `throw;`
+(`RedundantCatchClause`). Only the *last* `catch` of a `try` is reported: deleting an earlier one
+changes which handler an exception reaches, which is a behaviour change wearing a redundancy's
+clothes. The eight remaining inspections in that issue are boolean-expression shapes
+(`RedundantBoolCompare`, `DoubleNegationOperator` and their siblings) and are **not** covered —
+each needs an operand's type before it can be called redundant, which would make the rule semantic
+and stop it running on a loose file.
+
+`SK0241` covers five of [#129](https://github.com/Rikarin/SKALA/issues/129)'s eleven: `abstract` on an
+interface member, `sealed` on a member of a `sealed` type, `class` after `record`, `: int` on an enum,
+and `readonly` on a member of a `readonly struct`. ⚠ `static` withdraws the interface half — a static
+interface member is *not* implicitly abstract, and `static abstract` is C# 11's abstract static member,
+so deleting the keyword there produces a declaration that no longer compiles. The two high-volume
+inspections in that issue, `PartialTypeWithSinglePart` and `PartialMethodWithSinglePart`, are **not**
+covered: both need to count a symbol's declarations across the whole compilation, and a source
+generator can add a part that a loose load has never seen.
+
+`SK0242` is deliberately **narrower than [#135](https://github.com/Rikarin/SKALA/issues/135)'s title**
+and its own title says so: it covers the two directive inspections
+(`RedundantNullableDirective`, `UnusedNullableDirective`) and none of the four annotation-on-a-constraint
+ones, which need to know what a constraint's type argument is. ADR-012 forbids an id's meaning
+widening later, so the annotation half is a separate id when somebody specifies it. The rule models the
+file's nullable state as two settings — annotations and warnings — each enabled, disabled or
+*inherited*, and reports a directive that moves neither. ⚠ The opening state is inherited rather than
+enabled: the first `#nullable enable` is therefore never reported, and a `#nullable restore` before any
+other directive always is. Comparing against the project's own `NullableContextOptions` is not done,
+because in `--load=loose` that value is the loader's rather than the project's, and a rule whose
+findings depend on how a file was loaded is not one finding.
+
+`SK0243` is the only semantic rule in this block and covers two of
+[#136](https://github.com/Rikarin/SKALA/issues/136)'s four: a qualified type name whose simple name
+binds to the same symbol at the same position, and a `base.` that reaches the same member as no
+qualifier. ⚠ The `base.` half is **not** "the containing type does not override it": given
+`class A { public virtual void M() { } }`, a `class B : A` calling `base.M()` and a `class C : B` that
+overrides `M`, dropping the qualifier in `B` turns a non-virtual call to `A.M` into a virtual one that
+reaches `C.M`. The member must be one nothing can override further, or the containing type must be
+`sealed`.
+
+⚠ **`SK0210` has a measured gap, and it is a bug report rather than a rule.** `UnusedImportClause` is
+`SK0210`'s remit and it ships; `RedundantUsingDirective.Global` is `SK0210`'s remit and it does not
+fire. `UsingsRule.Unused` builds its removal set from Roslyn's **CS8019** alone
+(`Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/UsingsRule.cs`), and a file-level `using X;`
+duplicated by a `global using X;` is reported by the compiler as **CS8933** — measured on a probe
+project, where the using is genuinely redundant and CS8019 is silent. Nothing in `SK0243` claims that
+inspection: shipping it here would be a second id for one concept.
+
+`SK0244` covers six of [#130](https://github.com/Rikarin/SKALA/issues/130)'s fourteen: an empty
+finalizer, an empty sole constructor, an empty namespace, a `: base()` with no arguments, a member
+initialized to the value it already holds, and an `override` whose body is a call to the member it
+overrides.
+
+⚠ **`EmptyDestructor` stays here at `warning` rather than moving to the performance range** — the
+decision the issue asked for. An empty finalizer costs every instance a second GC generation, and that
+is real; but the finding and the edit are identical to the other five, so splitting it out would have
+made one concept two ids for the sake of a severity. The cost is carried in the message and the
+rationale, where a reader sees it. ⚠ A `static` constructor is the mirror image and is never reported:
+declaring one, even empty, clears `beforefieldinit`, so deleting it is a timing change.
+
+⚠ `RedundantTypeDeclarationBody` is **declined rather than outstanding**, and the reason is a conflict
+inside this catalogue: it asks for `class Foo { }` to become `class Foo;`, and `SK6023` reports those
+same braces as an unfinished declaration. Two shipped rules disagreeing about one span is worse than
+neither covering it.
 
 ## SK1000 — Modernization
 
@@ -878,6 +968,11 @@ registry disagree. Regenerate with `skala rules docs`.
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **19** | includes the twelve declared cut with no reason recorded |
+| Rules this document names | **157** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **126** | **80.8 %** |
+| **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
+| **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
+| **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

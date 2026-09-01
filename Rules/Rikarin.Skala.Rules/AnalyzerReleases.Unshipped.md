@@ -141,3 +141,8 @@ SK8021 | Skala.Tests | Warning | The test class declares no test.
 SK8022 | Skala.Tests | Warning | The assertion's expected and actual arguments are swapped.
 SK7100 | Skala.Maintainability | Info | The documentation duplicates the base member's.
 SK7101 | Skala.Maintainability | Disabled | A non-public member has no documentation comment.
+SK0240 | Skala.Cleanup | Warning | The control flow does nothing.
+SK0241 | Skala.Cleanup | Warning | The modifier has no effect.
+SK0242 | Skala.Cleanup | Warning | The `#nullable` directive changes nothing.
+SK0243 | Skala.Cleanup | Warning | The qualifier is redundant.
+SK0244 | Skala.Cleanup | Warning | The declaration adds nothing.

@@ -90,6 +90,9 @@ public sealed class RuleFixtureTests {
         new MissingTestClassAttributeAnalyzer(), new EmptyTestClassAnalyzer(),
         new SwappedAssertionArgumentsAnalyzer(),
         new DuplicatedBaseDocumentationAnalyzer(), new UndocumentedNonPublicMemberAnalyzer(),
+        new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
+        new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
+        new RedundantDeclarationAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
