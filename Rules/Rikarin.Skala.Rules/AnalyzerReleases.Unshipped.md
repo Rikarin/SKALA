@@ -91,3 +91,7 @@ SK2031 | Skala.Correctness | Warning | Do not discard a setter's value parameter
 SK2032 | Skala.Correctness | Info | Remove GC.SuppressFinalize from a type with no finalizer.
 SK2033 | Skala.Correctness | Warning | Do not stackalloc inside a loop.
 SK2034 | Skala.Correctness | Info | Do not name a declaration after a reserved keyword.
+SK6020 | Skala.Design | Warning | An `Enum` constraint has no `struct` beside it.
+SK6021 | Skala.Design | Warning | A type is named like an exception and is not one.
+SK6022 | Skala.Design | Info | A type name repeats the keyword the declaration already carries.
+SK6023 | Skala.Design | Info | A type has no members, no base and no attributes.

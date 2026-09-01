@@ -237,6 +237,17 @@ mutable array or `List<T>` · `SK6003` `abstract` type with a public constructor
 in a public virtual method · `SK6006` `enum` without an explicit zero value · `SK6007` `struct`
 without `IEquatable<T>` · `SK6008` extension method on `object`.
 
+⚠ **Register entries only — the prose pass for the four below is owed.** They ship, so
+`RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister` requires them to be named here; nothing
+about their place in the band's argument has been written yet.
+
+- `SK6020` `enum-constraint-without-struct` — `where T : Enum` with no `struct` beside it.
+- `SK6021` `exception-name-without-exception-base` — a type named `…Exception` that does not derive
+  from one.
+- `SK6022` `type-name-restates-its-kind` — a type name that repeats its own kind keyword
+  (`OrderClass`, `PointStruct`).
+- `SK6023` `empty-type` — a type with no members, no base and no attributes.
+
 ## SK7000 — Maintainability
 
 The metrics from [07](07-analysis-host.md) § "Metrics" — `SK7001` cyclomatic complexity ·
@@ -347,8 +358,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **137** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **107** | **78.7 %** |
+| Rules this document names | **141** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **111** | **79.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
