@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
+using System;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Design;
@@ -94,6 +95,14 @@ public sealed class AbstractTypeWithoutAbstractionAnalyzer : DiagnosticAnalyzer 
             if (HasDerivationSurface(member.Modifiers)) {
                 return;
             }
+
+            // ⚠ Found by the sweep, not by reasoning. `abstract class Shape { private Shape() { }
+            // public sealed class Circle : Shape { … } }` is how C# spells a closed hierarchy, and it
+            // has no `abstract`, no `virtual` and nothing `protected` — the derived types are right
+            // there in the body, which is the derivation surface stated as directly as it can be.
+            if (member is TypeDeclarationSyntax nested && DerivesFrom(nested, declaration.Identifier.ValueText)) {
+                return;
+            }
         }
 
         context.ReportDiagnostic(
@@ -107,6 +116,33 @@ public sealed class AbstractTypeWithoutAbstractionAnalyzer : DiagnosticAnalyzer 
                 + "interface was meant"
             )
         );
+    }
+
+    /// <summary>Whether a nested declaration names the containing type in its base list.</summary>
+    /// <remarks>
+    ///     ⚠ Matched on the written name rather than on a symbol, and that is the price of the rule
+    ///     staying syntactic. A nested type deriving from something *else* that happens to share the
+    ///     container's simple name would exempt the container wrongly — a miss, in the safe direction.
+    /// </remarks>
+    static bool DerivesFrom(TypeDeclarationSyntax nested, string name) {
+        if (nested.BaseList is null) {
+            return false;
+        }
+
+        foreach (var baseType in nested.BaseList.Types) {
+            var written = baseType.Type switch {
+                SimpleNameSyntax simple => simple.Identifier.ValueText,
+                QualifiedNameSyntax qualified => qualified.Right.Identifier.ValueText,
+                AliasQualifiedNameSyntax aliased => aliased.Name.Identifier.ValueText,
+                _ => null
+            };
+
+            if (string.Equals(written, name, StringComparison.Ordinal)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Whether a member is arranged for a derived type to use or to complete.</summary>
