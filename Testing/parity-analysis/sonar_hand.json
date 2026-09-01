@@ -38,7 +38,7 @@
  "S3247": ["Catalogued", "SK1015 is-T-then-cast covers the duplicate cast shape"],
  "S5542": ["Catalogued", "SK5005 weak cipher/ECB"],
  "S3329": ["Catalogued", "SK5005 family, CBC IV predictability"],
- "S112": ["Uncovered", "throwing System.Exception directly"],
+ "S112": ["Hosted", "CA2201 do not raise reserved exception types; measured, not assumed -- see issue #176"],
  "S4036": ["Uncovered", "OS command PATH resolution; SK5002 is injection, not resolution"],
  "S2674": ["Uncovered", "unchecked stream read length"],
  "S4041": ["Hosted", "CA1724 type names should not match namespaces"],
