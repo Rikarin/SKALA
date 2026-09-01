@@ -18,10 +18,10 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class SmallCorrectnessBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new NanComparisonAnalyzer(), new FloatingPointEqualityAnalyzer(), new UnusedValueParameterAnalyzer(),
-        new RedundantSuppressFinalizeAnalyzer()
+        new RedundantSuppressFinalizeAnalyzer(), new StackAllocInLoopAnalyzer()
     ];
 
-    static readonly string[] Ids = ["SK2030", "SK2031", "SK2032"];
+    static readonly string[] Ids = ["SK2030", "SK2031", "SK2032", "SK2033"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {

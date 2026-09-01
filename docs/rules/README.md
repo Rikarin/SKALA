@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 107 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 108 ids are allocated.
 
 ## Async
 
@@ -38,6 +38,7 @@
 | [SK2030](SK2030.md) | Detect NaN with IsNaN rather than equality | warning | safe | no |
 | [SK2031](SK2031.md) | Do not discard a setter's value parameter | warning | — | yes |
 | [SK2032](SK2032.md) | Remove GC.SuppressFinalize from a type with no finalizer | suggestion | safe | no |
+| [SK2033](SK2033.md) | Do not stackalloc inside a loop | warning | — | yes |
 
 ## Design
 

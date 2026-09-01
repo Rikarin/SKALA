@@ -83,3 +83,4 @@ SK4003 | Skala.Performance | Hidden | Review a temporary params array with a spa
 SK2030 | Skala.Correctness | Warning | Detect NaN with IsNaN rather than equality.
 SK2031 | Skala.Correctness | Warning | Do not discard a setter's value parameter.
 SK2032 | Skala.Correctness | Info | Remove GC.SuppressFinalize from a type with no finalizer.
+SK2033 | Skala.Correctness | Warning | Do not stackalloc inside a loop.

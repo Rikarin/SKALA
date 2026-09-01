@@ -127,5 +127,6 @@
  "RedundantBlankLines": "SK0001",
  "IncorrectBlankLinesNearBraces": "SK0001",
  "ValueParameterNotUsed": "SK2031",
- "GCSuppressFinalizeForTypeWithoutDestructor": "SK2032"
+ "GCSuppressFinalizeForTypeWithoutDestructor": "SK2032",
+ "StackAllocInsideLoop": "SK2033"
 }

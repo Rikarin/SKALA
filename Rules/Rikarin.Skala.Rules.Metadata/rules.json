@@ -2746,6 +2746,31 @@
       "configuration": [
         "dotnet_diagnostic.SK2032.severity"
       ]
+    },
+    {
+      "id": "SK2033",
+      "concept": "stackalloc-in-loop",
+      "title": "Do not stackalloc inside a loop",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "A `stackalloc` sits in a loop body, condition or incrementor, so the frame grows by one buffer per iteration and none of them is released until the method returns.",
+      "rationale": "Stack memory allocated in a method is reclaimed when that method returns, not when the block ends. A `stackalloc` a loop repeats therefore grows the frame by an amount the loop bound decides, and the overflow it eventually causes is a process kill with no catchable exception and no diagnostic naming this line. No fix is offered: hoisting the buffer out of the loop changes its lifetime and whether iterations share it, which is a decision about the program rather than a rewrite of it.",
+      "examples": {
+        "bad": "for (var i = 0; i < count; i++) {\n    Span<byte> buffer = stackalloc byte[64];\n    Fill(buffer, i);\n}",
+        "good": "Span<byte> buffer = stackalloc byte[64];\nfor (var i = 0; i < count; i++) {\n    Fill(buffer, i); // after deciding the iterations may share one buffer\n}"
+      },
+      "falsePositives": "Purely syntactic: the enclosing `for`, `foreach`, `while` or `do` is found by walking outward and stopping at a lambda, an anonymous method, a local function or a member body, because a separate frame releases its own stack on return. Positions a loop evaluates only once are excluded — a `for` initializer or declaration, and a `foreach` source expression — while conditions and incrementors are reported, since a loop re-evaluates those. ⚠ A loop that cannot reach a second iteration is excluded and this is the judgement the rule makes deliberately: `do { … } while (false)`, `while (false)`, and a body whose direct statements include an unconditional `break`, `return` or `throw`. That last exclusion is withdrawn when the body contains a `continue` or a `goto` of its own, because either can reach the `stackalloc` again and the `break` then proves nothing. Conditional exits, loop bounds and recursion are not analysed; a loop whose body always exits through an `if` is still reported, because proving that needs the dataflow this rule does not do.",
+      "resharperId": "StackAllocInsideLoop",
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2033.severity"
+      ]
     }
   ]
 }
