@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 224 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 229 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -95,6 +95,10 @@
 <tr><td><a href="SK2062.html">SK2062</a></td><td>A later condition in the chain repeats an earlier one</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2063.html">SK2063</a></td><td>The operator sequence reads as a different operator</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2064.html">SK2064</a></td><td>Use &amp;&amp; or || rather than &amp; or | on booleans</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK2070.html">SK2070</a></td><td>The Serilog message template has a different number of holes than the call supplies values</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2071.html">SK2071</a></td><td>The structured log template names the same property twice</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2072.html">SK2072</a></td><td>The literal contains an unescaped invisible character</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK2073.html">SK2073</a></td><td>The caught exception is not passed to the logger's exception parameter</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2080.html">SK2080</a></td><td>The set or dictionary initializer repeats a key</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2081.html">SK2081</a></td><td>The collection is passed to its own method as the other collection</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2082.html">SK2082</a></td><td>The collection element is written twice with nothing reading it in between</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
@@ -213,6 +217,7 @@
 <tr><td><a href="SK7093.html">SK7093</a></td><td>The console is written to where a logger was meant</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK7100.html">SK7100</a></td><td>The documentation duplicates the base member's</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK7101.html">SK7101</a></td><td>A non-public member has no documentation comment</td><td><span class="tag sev-none">none</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK7110.html">SK7110</a></td><td>The logger is declared for a different type than the one that declares it</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
