@@ -3370,6 +3370,33 @@
       "configuration": [
         "dotnet_diagnostic.SK7091.severity"
       ]
+    },
+    {
+      "id": "SK7092",
+      "concept": "logged-and-rethrown",
+      "title": "The exception is both logged and rethrown",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2139"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A `catch` hands the caught exception to a logging call and then rethrows it.",
+      "rationale": "Every layer that does this multiplies the log. One failure arrives as five entries with five different stack depths, nothing in any of them says they are the same event, and the layer that finally handled it is indistinguishable from the four that only watched it go past. Either handle the exception — and then it is not the caller's problem — or propagate it and let whoever handles it record it once.",
+      "examples": {
+        "bad": "catch (IOException error) {\n    logger.LogError(error, \"the import failed\");\n    throw;\n}",
+        "good": "catch (IOException error) {\n    throw new ImportException($\"the import of {path} failed\", error);\n}"
+      },
+      "falsePositives": "⚠ **The rule ships the half it can prove and the omitted half is named.** A finding requires the logging call to be handed *the caught exception itself*. Deciding that an arbitrary call \"is logging\" is name-matching, and name-matching a bare `logger.LogError(\"failed\")` beside a `throw;` would report every method in the tree called `Error`; passing the caught exception to something in the logging vocabulary is not a guess, because nothing else does that. A `catch` with no exception variable therefore never fires, and neither does one that logs a message without the exception — under-reporting in the direction that keeps the rule usable. ⚠ **Wrapping is not rethrowing and is deliberately not reported.** `throw new ImportException(message, error)` translates the failure at a boundary and produces one record rather than two, and logging the original before translating it is how detail that the translation drops survives at all. Only a bare `throw;` and `throw error;` count — the two forms that send on the same exception the same layer just recorded. A nested `try`'s own `catch` is not this one: the walk is scoped to the clause that owns the node. Report-only: \"handle it or propagate it\" names two repairs, choosing between them is a decision about what this layer is for, and an edit that deleted the log would lose the context the log adds while one that deleted the `throw` would swallow a failure.",
+      "configuration": [
+        "dotnet_diagnostic.SK7092.severity"
+      ]
     }
   ]
 }

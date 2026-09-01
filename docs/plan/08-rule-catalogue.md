@@ -440,8 +440,19 @@ than laziness: a loose compilation has no entry point to ask for. ⚠ `Environme
 deliberately never reported — skipping cleanup is the whole point of it, so reporting it would be
 reporting a decision rather than an accident.
 
+⚠ **`SK7092` ships the provable half of `S2139` and names the half it omits.** A finding requires the
+logging call to be handed *the caught exception itself*. Deciding that an arbitrary call "is logging"
+is name-matching, and name-matching a bare `logger.LogError("failed")` beside a `throw;` would report
+every method in the tree called `Error`; passing the caught exception to something in the logging
+vocabulary is not a guess, because nothing else does that. So a `catch` with no exception variable
+never fires, and neither does one that logs a message without the exception — under-reporting in the
+direction that keeps the rule usable, which is the same trade `SK7072` made. ⚠ **Wrapping is not
+rethrowing and is not reported**: `throw new ImportException(message, error)` translates the failure at
+a boundary and produces one record rather than two, and logging the original before translating is how
+detail the translation drops survives at all. Only bare `throw;` and `throw error;` count.
+
 `SK7090` a thrown `NotImplementedException` with no issue reference · `SK7091` `Environment.Exit`
-outside the entry point.
+outside the entry point · `SK7092` the exception is both logged and rethrown.
 
 ⚠ **"The block adds nesting and nothing else" ([#225](https://github.com/Rikarin/SKALA/issues/225),
 Sonar `S1199`) is refuted, no id was allocated, and the reason is measured rather than argued.** The
@@ -546,8 +557,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **123** | **80.4 %** |
+| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **124** | **80.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
