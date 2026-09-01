@@ -315,6 +315,23 @@ document gives. Whoever writes it should read the analyzers, not this list.
   telling `f = new Foo(); f.Init();` apart from `var t = new Foo(); t.Init(); f = t;`, and separating
   either from a harmless `return f;` in the same branch needs a rule about *which* reads publish.
   Stated rather than approximated, and the residue stays counted uncovered in `docs/plan/17`.
+- `SK3043` `inconsistent-lock-order` — one type nests the same two lock fields inside each other in
+  both orders. The textbook deadlock, and it survives review because the two halves are almost never
+  on the same screen. **Fixless**: choosing the hierarchy is the design decision the type failed to
+  make, and swapping the order in whichever method the tool saw second is as likely to be the wrong
+  half as the right one. ⚠ **The first `scope: Compilation` rule to ship**, and it is not a
+  convenience: issue #56's whole argument is that the two halves live in different files, so the unit
+  of analysis has to be the symbol. It is excluded from per-file caching for exactly the reason the
+  scope exists — its answer for one file depends on files the cache key does not name.
+  ⚠ Only a bare identifier and `this.field` are accepted as lock targets, and **that is recall, not
+  soundness** — the draft that shipped first said the opposite. A cycle over two fields reached
+  through two *different instances* is a real deadlock, the bank-transfer one, and this rule misses
+  it; the obstacle is the message, which names fields and not objects, so "`history` while holding
+  `balance`" would not say which account. The fixture recording that is filed as a miss.
+  ⚠ Its first draft also carried a containing-type guard against a nested type's locks reaching the
+  outer type's accumulator. Deleting the guard left the fixture green: Roslyn already scopes a
+  symbol-start syntax action to the symbol's own members. The guard was dead code no sabotage could
+  kill and is gone; the fixture stays as the pin on the Roslyn behaviour.
 
 ## SK4000 — Performance
 
@@ -515,8 +532,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **124** | **81.0 %** |
+| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **125** | **81.2 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

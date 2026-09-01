@@ -3391,6 +3391,31 @@
       "configuration": [
         "dotnet_diagnostic.SK3042.severity"
       ]
+    },
+    {
+      "id": "SK3043",
+      "concept": "inconsistent-lock-order",
+      "title": "Locks are taken in inconsistent orders",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "InconsistentOrderOfLocks",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "One type nests the same two lock fields inside each other in both orders, which is the textbook deadlock.",
+      "rationale": "Two paths that take the same pair of locks in opposite orders deadlock the moment both run. It survives review because the two halves are almost never on the same screen: each method reads as a perfectly ordinary pair of nested locks, and only the two together are wrong. Nothing in Roslyn or the `CA*` set reports it. The analysis is a lock *order* and nothing more — every `lock` whose target is a field of the type contributes an ordered pair for each lock it is nested inside, and a pair present in both directions is the finding.",
+      "examples": {
+        "bad": "public void Post() {\n    lock (accounts) {\n        lock (journal) {\n            balance++;\n        }\n    }\n}\n\npublic void Reconcile() {\n    lock (journal) {\n        lock (accounts) {\n            balance--;\n        }\n    }\n}",
+        "good": "public void Post() {\n    lock (accounts) {\n        lock (journal) {\n            balance++;\n        }\n    }\n}\n\npublic void Reconcile() {\n    lock (accounts) {\n        lock (journal) {\n            balance--;\n        }\n    }\n}"
+      },
+      "falsePositives": "⚠ **Fixless, and unusually clearly so.** No edit decides which lock should be taken first: choosing the hierarchy is the design decision the type failed to make, and swapping the order in the method the tool happened to see second is as likely to be the wrong half as the right one. ⚠ **Only two lock-target spellings are accepted: a bare identifier and `this.field`, both resolving to a field of the type under analysis.** Everything else — a local, a parameter, `peer.gate` — is opaque, and ⚠ **that is a recall decision and not a soundness one**, which is easy to mistake and was mistaken in this rule's first draft. A cycle over two fields reached through two different instances is a real deadlock, the classic bank-transfer one, and this rule does not report it. The reason is the message rather than the analysis: a finding names fields and not objects, so \"`history` while holding `balance`\" would be an ambiguous sentence about which account each name meant. Widening the rule needs an answer to that, and the negative fixture set records the miss under that name rather than filing it as a false positive avoided. An opaque target is not fatal to the locks around it: it contributes no pair and does not break pairs recorded across it, because `lock (a) { lock (opaque) { lock (b) } }` still takes `a` before `b`. ⚠ **The nesting walk stops at a lambda or a local function.** A delegate written inside a `lock` body does not run inside it, so treating the enclosing lock as held would invent an order the program does not have — and the invented pair is what would produce the finding. ⚠ **A re-entrant `lock (a) { lock (a) }` is not a pair**: a monitor is recursive for the thread that holds it. ⚠ **The unit is the symbol, not the file**, which is why the rule is `scope: Compilation` and uncached: issue #56's whole argument is that the two halves are rarely in the same file. ⚠ **Instance fields make the finding conditional on the instance.** Two threads on *different* objects take `a` and `b` of their own object and do not deadlock; the finding is a claim about the type's lock hierarchy, and a type that means two instances never interact has said so nowhere. A static pair has no such caveat. ⚠ `Monitor.Enter` is not a `lock` statement and contributes nothing, so a type that mixes the two can hide half of a pair.",
+      "configuration": [
+        "dotnet_diagnostic.SK3043.severity"
+      ]
     }
   ]
 }
