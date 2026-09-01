@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 129 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 155 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -26,6 +26,8 @@
 <tr><td><a href="SK3009.html">SK3009</a></td><td>Review explicitly unsynchronized Lazy in static state</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3020.html">SK3020</a></td><td>The non-<code>async</code> <code>Task</code> method returns null</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3021.html">SK3021</a></td><td>A <code>SpinLock</code> is stored in a <code>readonly</code> field</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3030.html">SK3030</a></td><td>The async iterator is enumerated without <code>await foreach</code></td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3031.html">SK3031</a></td><td>The method is <code>async</code> only to return an awaited task</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -69,6 +71,13 @@
 <tr><td><a href="SK6021.html">SK6021</a></td><td>A type is named like an exception and is not one</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK6022.html">SK6022</a></td><td>A type name repeats the keyword the declaration already carries</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK6023.html">SK6023</a></td><td>A type has no members, no base and no attributes</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK6030.html">SK6030</a></td><td>A type is declared in the global namespace</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK6031.html">SK6031</a></td><td><code>readonly</code> does not protect a mutable field's contents</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK6032.html">SK6032</a></td><td>An abstract type declares nothing to implement</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK6033.html">SK6033</a></td><td>A type has only private constructors and is not static</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK6034.html">SK6034</a></td><td>A public constant is baked into every caller</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK6040.html">SK6040</a></td><td>An <code>out</code> variable is declared and never read</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK6041.html">SK6041</a></td><td>A <code>foreach</code> variable is declared wider than the element it receives</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -111,6 +120,9 @@
 <tr><td><a href="SK3510.html">SK3510</a></td><td>A variable already owned by <code>using</code> is disposed again</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK3511.html">SK3511</a></td><td>The <code>using</code> resource is built with an object initializer</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK3512.html">SK3512</a></td><td>A variable captured by <code>using</code> is returned</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3530.html">SK3530</a></td><td>The disposable field is not disposed by <code>Dispose</code></td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3531.html">SK3531</a></td><td>The <code>DisposeAsync</code> override never calls the base implementation</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3532.html">SK3532</a></td><td>The <code>ref struct</code> owns a disposable and cannot declare it</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -137,6 +149,10 @@
 <tr><td><a href="SK7072.html">SK7072</a></td><td>A warning suppression covers nothing</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK7073.html">SK7073</a></td><td>A region is empty</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK7074.html">SK7074</a></td><td>Review a goto to a label</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK7090.html">SK7090</a></td><td>A thrown <code>NotImplementedException</code> has no issue reference</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK7091.html">SK7091</a></td><td>The process is terminated outside the entry point</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK7092.html">SK7092</a></td><td>The exception is both logged and rethrown</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK7093.html">SK7093</a></td><td>The console is written to where a logger was meant</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -186,6 +202,16 @@
 <tr><td><a href="SK4006.html">SK4006</a></td><td>Review a materialization used only by foreach</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK4007.html">SK4007</a></td><td>Review large struct arguments in loops</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK4010.html">SK4010</a></td><td>A <code>Where</code> the next operator could have taken as its predicate</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK4020.html">SK4020</a></td><td>The lambda captures nothing and is not <code>static</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK4021.html">SK4021</a></td><td>The private method does not use instance state</td><td><span class="tag sev-hint">hint</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK4022.html">SK4022</a></td><td>The struct is never mutated and is not <code>readonly</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK4023.html">SK4023</a></td><td>The capacity argument matches the default</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK4024.html">SK4024</a></td><td><code>GC.Collect</code> is called from application code</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK4030.html">SK4030</a></td><td>The collection's own method answers this faster than the LINQ extension</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK4031.html">SK4031</a></td><td>The loop looks up a key it is already holding</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK4032.html">SK4032</a></td><td><code>Substring</code> is called to feed a search that takes a start index</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK4033.html">SK4033</a></td><td>The <code>ConcurrentDictionary</code> member taken is the expensive one</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK4034.html">SK4034</a></td><td>The collection is sorted before it is filtered</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
