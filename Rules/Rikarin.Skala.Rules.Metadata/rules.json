@@ -864,6 +864,31 @@
       ]
     },
     {
+      "id": "SK2009",
+      "concept": "enum-switch-missing-members",
+      "title": "An enum switch omits declared members",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A switch over a non-flags enum has neither every declared value nor a catch-all arm.",
+      "rationale": "A switch that silently falls through when a new enum member is added turns a closed decision into an accidental default. Listing every value makes the compiler-visible decision explicit and makes future additions show up at the switch that needs a policy.",
+      "examples": {
+        "bad": "return color switch { Color.Red => 1, Color.Green => 2 };",
+        "good": "return color switch { Color.Red => 1, Color.Green => 2, Color.Blue => 3 };"
+      },
+      "falsePositives": "The rule excludes `[Flags]` enums, whose combinations are intentionally open, and any switch with `default`, discard, `var` or declaration catch-all handling. It also skips pattern forms other than constants and `or` combinations rather than guessing which values a relational, negated or recursive pattern covers. Enum aliases are compared by constant value, so handling one alias handles all aliases with that value. No fix is offered because the correct behavior for a missing value is a domain decision.",
+      "configuration": [
+        "dotnet_diagnostic.SK2009.severity"
+      ]
+    },
+    {
       "id": "SK2013",
       "concept": "exception-constructed-not-thrown",
       "title": "An exception is constructed and then discarded",
@@ -889,6 +914,31 @@
       ]
     },
     {
+      "id": "SK2014",
+      "concept": "empty-catch-swallows-exception",
+      "title": "An empty catch silently discards an exception",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A filterless catch block contains no statement or explanation.",
+      "rationale": "An empty catch converts an exceptional path into apparent success and erases the only evidence of the failure. If ignoring an exception is deliberate, the code should say why; otherwise it should handle, log or propagate it.",
+      "examples": {
+        "bad": "try { Save(); } catch (IOException) { }",
+        "good": "try { Save(); } catch (IOException ex) { Log(ex); throw; }"
+      },
+      "falsePositives": "Only a truly empty, uncommented, filterless catch is reported. A comment is accepted as an explicit justification, a filter documents which exceptional condition is intentionally accepted, and any statement means the exception is not silently swallowed. No automatic fix can infer the intended recovery policy.",
+      "configuration": [
+        "dotnet_diagnostic.SK2014.severity"
+      ]
+    },
+    {
       "id": "SK2015",
       "concept": "rethrow-loses-stack-trace",
       "title": "`throw ex;` resets the stack trace",
@@ -911,6 +961,33 @@
       "falsePositives": "The rule fires only when the thrown expression is a bare identifier whose name is the identifier the *nearest enclosing* catch clause declares, and that name is never assigned anywhere inside the clause. Throwing a different exception, a wrapped exception, an exception belonging to an outer catch clause, a field, a parameter, or a variable the clause reassigned is not this pattern and is not reported. `throw ex;` inside a lambda, a local function or a nested catch clause within the block is excluded, because a bare `throw;` is either illegal or means something else there. ⚠ **The fix drops the catch variable's name when the rewrite leaves it with no readers**, so `catch (FormatException ex) { throw ex; }` becomes `catch (FormatException) { throw; }`. Without that second edit the repair introduces CS0168 — an unused variable — which a `fixIsSafe: true` rule may not do and which fails a build with `TreatWarningsAsErrors`. Where the clause still reads the name, in a `when` filter or before the throw, the name stays; where a clause holds two rewritable throws the deletion is carried by the last of them, so it happens once rather than twice over the same span.",
       "configuration": [
         "dotnet_diagnostic.SK2015.severity"
+      ]
+    },
+    {
+      "id": "SK2016",
+      "concept": "interpolated-logger-message",
+      "title": "A logger message is interpolated before it is logged",
+      "category": "Correctness",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "CA2254"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A Microsoft.Extensions.Logging call receives an interpolated message instead of a stable message template.",
+      "rationale": "Interpolating before the logger sees the message eagerly renders values and discards their property names. A stable template preserves structured fields for filtering and aggregation and avoids rendering work when the log level is disabled.",
+      "examples": {
+        "bad": "logger.LogInformation($\"Loaded {count} items\");",
+        "good": "logger.LogInformation(\"Loaded {Count} items\", count);"
+      },
+      "falsePositives": "The rule binds only calls to `Microsoft.Extensions.Logging.LoggerExtensions` and only the argument bound to its `message` parameter. It does not guess from method names, custom logger types or unrelated interpolated arguments. No fix is offered because choosing useful property names and preserving format/alignment semantics requires author intent.",
+      "configuration": [
+        "dotnet_diagnostic.SK2016.severity"
       ]
     },
     {
@@ -991,6 +1068,31 @@
       "resharperNote": "⚠ The export sets `resharper_method_supports_cancellation_highlighting = suggestion` and this rule defaults to `warning`. ReSharper's inspection fires on every call with an unsupplied `CancellationToken` parameter, including the ones this rule excludes — cleanup in a `finally`, a call that already passes `None` deliberately, a body with two tokens in scope — so a low severity is how it stays usable. This rule reaches those cases by analysis instead, and takes its band's default. Reading the ReSharper key (off by default, doc 03 § \"Severities\") would demote it to `suggestion`."
     },
     {
+      "id": "SK3005",
+      "concept": "fire-and-forget-task",
+      "title": "A task is discarded in synchronous code",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A task-producing invocation is used as a bare statement in a synchronous body.",
+      "rationale": "Discarding a task means the caller observes neither completion nor failure. An exception can surface later as an unobserved fault while the synchronous method has already reported success.",
+      "examples": {
+        "bad": "void Start() { SaveAsync(); }",
+        "good": "Task StartAsync() => SaveAsync();"
+      },
+      "falsePositives": "The rule reports only a bare invocation whose resolved return type derives from `Task`, inside a synchronous method, local function, lambda or constructor. Async bodies are left to compiler diagnostic CS4014. Assigning to a discard, storing, returning, awaiting or otherwise composing the task is treated as an explicit lifetime decision. No fix is offered because changing the containing API to async is a caller-wide refactor.",
+      "configuration": [
+        "dotnet_diagnostic.SK3005.severity"
+      ]
+    },
+    {
       "id": "SK3007",
       "concept": "task-returned-from-using",
       "title": "A `Task` that uses a `using` resource is returned instead of awaited",
@@ -1038,6 +1140,31 @@
       "falsePositives": "⚠ **Ownership is the whole difficulty, so the rule reports only locals that provably keep it.** The declaration must be a single declarator whose initializer is literally a `new` of a type implementing `IDisposable` — never a factory method, because `Stream.Null` and `TextWriter.Synchronized` return objects the caller does not own and nothing in the call tells them apart from a fresh one, and the local must never be returned, assigned to anything, passed as an argument or a `ref`/`out`, placed in an initializer or a collection expression, captured by a lambda or a local function, or `yield`ed — every one of which is a way the object might outlive the method. It must also be *read* at least once, so that a declaration whose object is registered by its own constructor is not mistaken for a local nobody uses. ⚠ **Ownership also travels outward, through what the object hands back.** A read whose *result* is itself disposable withdraws the finding: `device = backend.OpenDevice(options)` never passes the backend anywhere and the device it produced is kept in a field, so disposing the backend at the end of the scope closes the device with it. So does a read inside a `return` expression, because `return Task.Delay(10, source.Token)` is not `return stream.ReadByte()` and nothing in the syntax tells them apart. ⚠ **A constructor argument that is itself disposable disqualifies the finding**, because `new StreamReader(stream)` takes ownership of `stream` and a `using` on the reader would close a stream the caller still owns — this is the guard that decides whether the rule is safe to apply, and it is the reason `fixIsSafe` can be true for the rest. ⚠ `Task`, `Task<T>`, `System.Threading.Timer` and `System.Timers.Timer` are excluded by name: a task is disposable and is never disposed by anyone, and a timer that is disposed at the end of the method that started it never fires. Methods that are iterators are skipped, and so is anything below C# 8, where the `using` declaration does not exist and the fix would have to re-indent a block.",
       "configuration": [
         "dotnet_diagnostic.SK3501.severity"
+      ]
+    },
+    {
+      "id": "SK3502",
+      "concept": "owned-disposable-field",
+      "title": "A type owns a disposable field but is not disposable",
+      "category": "Lifetime",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An instance field is constructed by its owner, but the containing type exposes no matching disposal contract.",
+      "rationale": "A type that constructs and retains a disposable resource owns its lifetime. If the owner cannot itself be disposed, callers have no reliable point at which to release the retained handle or asynchronously flush it.",
+      "examples": {
+        "bad": "sealed class Store { readonly FileStream stream = new(\"data\", FileMode.Open); }",
+        "good": "sealed class Store : IDisposable { readonly FileStream stream = new(\"data\", FileMode.Open); public void Dispose() => stream.Dispose(); }"
+      },
+      "falsePositives": "Ownership is inferred only from a direct object creation in an instance field initializer. Constructor-injected, factory-returned and static fields are ignored because their ownership policy is not knowable locally. A containing type that implements either disposal contract offered by the field — `IDisposable` or `IAsyncDisposable` — is accepted; it need not expose both merely because the resource does. No fix is offered because a correct implementation may need ordering, idempotence, base-class participation and additional owned fields.",
+      "configuration": [
+        "dotnet_diagnostic.SK3502.severity"
       ]
     },
     {

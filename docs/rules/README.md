@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 69 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 74 ids are allocated.
 
 ## Async
 
@@ -11,6 +11,7 @@
 | [SK3001](SK3001.md) | `async void` outside an event handler | none | review | no |
 | [SK3002](SK3002.md) | Blocking on an async call | warning | review | no |
 | [SK3004](SK3004.md) | A `CancellationToken` is accepted and not passed on | warning | review | no |
+| [SK3005](SK3005.md) | A task is discarded in synchronous code | warning | — | no |
 | [SK3007](SK3007.md) | A `Task` that uses a `using` resource is returned instead of awaited | warning | review | no |
 
 ## Correctness
@@ -18,8 +19,11 @@
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
 | [SK2007](SK2007.md) | The collection being enumerated is modified inside the loop | warning | review | no |
+| [SK2009](SK2009.md) | An enum switch omits declared members | warning | — | no |
 | [SK2013](SK2013.md) | An exception is constructed and then discarded | warning | safe | no |
+| [SK2014](SK2014.md) | An empty catch silently discards an exception | warning | — | yes |
 | [SK2015](SK2015.md) | `throw ex;` resets the stack trace | warning | safe | yes |
+| [SK2016](SK2016.md) | A logger message is interpolated before it is logged | suggestion | — | no |
 
 ## Design
 
@@ -58,6 +62,7 @@
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
 | [SK3501](SK3501.md) | A disposable is created in a local and never disposed | warning | safe | no |
+| [SK3502](SK3502.md) | A type owns a disposable field but is not disposable | warning | — | no |
 | [SK3503](SK3503.md) | An `IAsyncDisposable` is disposed synchronously | warning | review | no |
 
 ## Maintainability

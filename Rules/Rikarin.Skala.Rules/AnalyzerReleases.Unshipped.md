@@ -36,9 +36,14 @@ SK1015  | Skala.Modernization | Info | Use `is T t` instead of `is T` and a cast
 SK1031  | Skala.Modernization | Info | Use a null-conditional assignment.
 SK1033  | Skala.Modernization | Info | Use `TryGetValue` / `TryAdd` instead of `ContainsKey` and a second lookup.
 SK2007  | Skala.Correctness | Warning | The collection being enumerated is modified inside the loop.
+SK2009  | Skala.Correctness | Warning | A non-flags enum switch omits declared values and has no catch-all.
+SK2014  | Skala.Correctness | Warning | An empty catch silently discards an exception.
+SK2016  | Skala.Correctness | Info | A logger message is interpolated before it is logged.
 SK3004  | Skala.Async | Warning | A `CancellationToken` is accepted and not passed on.
+SK3005  | Skala.Async | Warning | A task is discarded in synchronous code.
 SK3007  | Skala.Async | Warning | A `Task` built from a `using` resource is returned instead of awaited.
 SK3501  | Skala.Lifetime | Warning | A disposable is created in a local and never disposed.
+SK3502  | Skala.Lifetime | Warning | A type owns a disposable field but is not disposable.
 SK3503  | Skala.Lifetime | Warning | An `IAsyncDisposable` is disposed synchronously.
 SK6008  | Skala.Design | Info | An extension method extends `object`.
 SK7040  | Skala.Maintainability | Info | A TODO or FIXME has no issue reference.

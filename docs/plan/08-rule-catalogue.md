@@ -322,10 +322,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **126** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **61** | **48.8 %** |
+| **Shipped** — present in `rules.json` | **66** | **52.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **52** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **47** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
@@ -446,7 +446,8 @@ cut on a guess. `CA2016` (forward the `CancellationToken`), `CA2254` (logger tem
 `CA2000` (dispose objects before losing scope) and `CA1001` (own disposable fields) **did not fire**
 in that project. They are shipped in the SDK and they are not in the default analysis set, so a rule
 that duplicates one of them does not duplicate a diagnostic the user already sees. `SK3004` and
-`SK3501` ship because of that measurement.
+`SK3501` shipped because of that measurement; `SK2016` and `SK3502` now cover the conservative
+CA2254 and CA1001 cases as well.
 
 ⚠ **`CS1717`/`CS1718` reach the identifier spellings only.** `Prop = Prop`, `other.Prop =
 other.Prop` and `other.Prop == other.Prop` produce nothing, so `SK2012` is not fully disposed of and
@@ -474,7 +475,7 @@ has.
 
 ### Outstanding, with what each is waiting on
 
-The sixty-three that were never declared cut. Where a milestone recorded why it did not ship, the
+The remaining rules that were never declared cut. Where a milestone recorded why one did not ship, the
 reason is kept; it is a description of remaining work, not a disposal.
 
 | Group | IDs | Waiting on |
@@ -483,10 +484,9 @@ reason is kept; it is a description of remaining work, not a disposal.
 | Evaluation-changing rewrites | `SK1012` | The guard that makes it provably behaviour-preserving is most of the rule (M5) |
 | ⚠ Hot-path rules | `SK1022`, `SK1025`, `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
 | The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1011`, `SK1013`, `SK1014`, `SK1021`, `SK1023`, `SK1024`, `SK1026`, `SK1028`, `SK1029`, `SK1036` | Nothing recorded. Not started |
-| Correctness | `SK2002`, `SK2003`, `SK2005`, `SK2008`–`SK2011`, `SK2014`, `SK2016` | Nothing recorded beyond the shipping bar. Not started |
+| Correctness | `SK2002`, `SK2003`, `SK2005`, `SK2008`, `SK2010`–`SK2011` | Nothing recorded beyond the shipping bar. Not started |
 | ⚠ Correctness, partly disposed of by a compiler warning | `SK2001`, `SK2004`, `SK2012` | § "The compiler already says it" measures which spellings `csc` reports. What is left of each is the shape it does *not*: an always-true comparison that is not to an integral constant; an `IEquatable<T>` with no `GetHashCode`; `Prop = Prop` and `a.P == a.P`, where a property accessor may have a side effect and the fix is therefore not mechanical |
-| Async and lifetime | `SK3003`, `SK3009`, `SK3502` | Nothing recorded. Not started |
-| ⚠ Async, partly disposed of by a compiler warning | `SK3005` | `CS4014` covers the fire-and-forget inside an `async` method. What is left is the same call in a *synchronous* method, where the compiler says nothing — and where the repair is to make the caller `async`, which changes its signature. A fixless form is not disposed of |
+| Async and lifetime | `SK3003`, `SK3009` | Nothing recorded. Not started |
 | Security | `SK5003`, `SK5004`, `SK5006`, `SK5008` | The remaining M8 rules; a wrong security rule is worse than a missing one |
 | Maintainability, non-metric | `SK7030`, `SK7060` | Nothing recorded. Not started |
 
@@ -498,6 +498,16 @@ rule accepts URLs, hash-number issues and project keys; a pragma accepts an adja
 comment; and the skipped-test rule reports only a constant empty or placeholder xUnit `Skip` value.
 All five are report-only because no honest mechanical edit can choose a receiver contract, create an
 issue, or write the author's justification.
+
+### Priority 2 correctness and lifetime rules
+
+`SK2009`, `SK2014`, `SK2016`, `SK3005` and `SK3502` now ship. Their boundaries are intentionally
+narrow: enum switches exclude flags and catch-all arms; empty catches accept a comment or filter as
+an explicit decision; logger interpolation binds only Microsoft.Extensions.Logging's `message`
+parameter; fire-and-forget reports only bare Task calls in synchronous bodies, leaving async bodies
+to `CS4014`; and disposable-field ownership requires a direct instance-field construction. All five
+are report-only because adding enum behavior, exception recovery, logging property names, an async
+API boundary or a disposal implementation requires author intent.
 
 ### ⚠ Decisions that rest on a reference-tree count, and are awaiting revisit
 

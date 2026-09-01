@@ -51,9 +51,14 @@ SK1015 type-pattern-over-cast
 SK1031 null-conditional-assignment
 SK1033 dictionary-double-lookup
 SK2007 collection-modified-during-enumeration
+SK2009 enum-switch-missing-members
+SK2014 empty-catch-swallows-exception
+SK2016 interpolated-logger-message
 SK3004 cancellation-token-not-forwarded
+SK3005 fire-and-forget-task
 SK3007 task-returned-from-using
 SK3501 disposable-not-disposed
+SK3502 owned-disposable-field
 SK3503 async-disposable-disposed-synchronously
 SK0201 arrange-body-style
 SK0202 arrange-var

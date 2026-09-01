@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 69 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 74 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -20,6 +20,7 @@
 <tr><td><a href="SK3001.html">SK3001</a></td><td><code>async void</code> outside an event handler</td><td><span class="tag sev-none">none</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3002.html">SK3002</a></td><td>Blocking on an async call</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3004.html">SK3004</a></td><td>A <code>CancellationToken</code> is accepted and not passed on</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3005.html">SK3005</a></td><td>A task is discarded in synchronous code</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3007.html">SK3007</a></td><td>A <code>Task</code> that uses a <code>using</code> resource is returned instead of awaited</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 </tbody>
 </table>
@@ -30,8 +31,11 @@
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
 <tr><td><a href="SK2007.html">SK2007</a></td><td>The collection being enumerated is modified inside the loop</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2009.html">SK2009</a></td><td>An enum switch omits declared members</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2013.html">SK2013</a></td><td>An exception is constructed and then discarded</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK2014.html">SK2014</a></td><td>An empty catch silently discards an exception</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2015.html">SK2015</a></td><td><code>throw ex;</code> resets the stack trace</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK2016.html">SK2016</a></td><td>A logger message is interpolated before it is logged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -79,6 +83,7 @@
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
 <tr><td><a href="SK3501.html">SK3501</a></td><td>A disposable is created in a local and never disposed</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK3502.html">SK3502</a></td><td>A type owns a disposable field but is not disposable</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3503.html">SK3503</a></td><td>An <code>IAsyncDisposable</code> is disposed synchronously</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 </tbody>
 </table>

@@ -13,6 +13,16 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Added — five conservative correctness and lifetime analyzers
+
+The second post-audit rule set now ships: `SK2009` finds incomplete non-flags enum switches;
+`SK2014` finds truly empty, unexplained catches; `SK2016` finds eager interpolation in
+Microsoft.Extensions.Logging calls; `SK3005` finds bare Task calls in synchronous bodies; and
+`SK3502` finds directly constructed disposable fields whose owner exposes no matching disposal
+contract. They are report-only because every plausible repair requires a domain or API decision.
+Flags, catch-all arms, commented or filtered catches, custom loggers, explicitly detached tasks,
+borrowed fields and static fields are deliberately outside their scopes.
+
 ### Added — five conservative hygiene analyzers
 
 The first post-audit rule set now ships: `SK6008` flags extension methods on `object`; `SK7040`
