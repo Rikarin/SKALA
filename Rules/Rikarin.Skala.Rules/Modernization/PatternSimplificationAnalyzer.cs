@@ -16,9 +16,12 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     <em>introduce</em> patterns and nothing tidies them afterwards, which is how a modernization
 ///     rule creates its own debt: patterns compose, so they also accumulate.
 ///     <para>
-///         ⚠ <b><c>not (&gt; 5)</c> is <c>&lt;= 5</c> only where the order is total, and that is a
-///         semantic question, so this rule is <c>Semantic</c> and not the <c>Syntax</c> its proposal
-///         assumed.</b> On <c>double</c>, <c>NaN &gt; 5</c> is false, so <c>not (&gt; 5)</c> matches
+///         ⚠
+///         <b>
+///             <c>not (&gt; 5)</c> is <c>&lt;= 5</c> only where the order is total, and that is a
+///             semantic question, so this rule is <c>Semantic</c> and not the <c>Syntax</c> its proposal
+///             assumed.
+///         </b> On <c>double</c>, <c>NaN &gt; 5</c> is false, so <c>not (&gt; 5)</c> matches
 ///         <c>NaN</c> and <c>&lt;= 5</c> does not. The same trap with a different shape on
 ///         <c>int?</c>: <c>not (&gt; 5)</c> matches <c>null</c> and <c>&lt;= 5</c> does not. Both
 ///         rewrites look like De Morgan and neither is, so the inversion is admitted only for a

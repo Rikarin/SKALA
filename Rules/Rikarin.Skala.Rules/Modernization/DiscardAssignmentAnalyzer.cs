@@ -130,7 +130,12 @@ public sealed class DiscardAssignmentAnalyzer : DiagnosticAnalyzer {
     ///     two buys nothing here, because a local that is written twice and read never is a shape this
     ///     rule has no fix for anyway.
     /// </remarks>
-    static bool IsRead(SemanticModel model, ILocalSymbol local, SyntaxNode declaration, CancellationToken cancellation) {
+    static bool IsRead(
+        SemanticModel model,
+        ILocalSymbol local,
+        SyntaxNode declaration,
+        CancellationToken cancellation
+    ) {
         foreach (var node in RewriteGuards.ScopeRoot(declaration).DescendantNodes()) {
             cancellation.ThrowIfCancellationRequested();
             if (node is not IdentifierNameSyntax identifier

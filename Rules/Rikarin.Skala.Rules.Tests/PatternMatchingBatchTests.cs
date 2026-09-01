@@ -17,8 +17,7 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     to produce a fix that both compiles and silences it.
 /// </remarks>
 public sealed class PatternMatchingBatchTests {
-    static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers =
-    [
+    static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(), new MergedConditionalAccessAnalyzer(),
         new DiscardAssignmentAnalyzer(), new InlineOutVariableAnalyzer()
     ];
@@ -44,7 +43,9 @@ public sealed class PatternMatchingBatchTests {
     // The local escapes the `if`, so a pattern variable would not be definitely assigned.
     [InlineData("class N { } class C { object? M(object o) { var n = o as N; if (n != null) { } return n; } }")]
     // The conversion operand is an invocation, so the rewrite would move a side effect.
-    [InlineData("class N { } class C { N? G() => null; N? M() { var n = G() as N; if (n != null) { return n; } return null; } }")]
+    [InlineData(
+        "class N { } class C { N? G() => null; N? M() { var n = G() as N; if (n != null) { return n; } return null; } }"
+    )]
     // `object` does not convert to `string`: the test can genuinely fail.
     [InlineData("class C { bool M(object o) => o is string; }")]
     // A value type is never null, so `is not null` is a different claim.
@@ -146,7 +147,9 @@ public sealed class PatternMatchingBatchTests {
     // The member is a value type, so `?.` produces `int?` by a different route.
     [InlineData("class D { public int N; } class C { int? M(D? d) => d != null ? d.N : null; }")]
     // Two evaluations of a call are not one.
-    [InlineData("class D { public string? N; } class C { D? G() => null; string? M() => G() != null ? G()!.N : null; }")]
+    [InlineData(
+        "class D { public string? N; } class C { D? G() => null; string? M() => G() != null ? G()!.N : null; }"
+    )]
     // The guard and the access are about different objects.
     [InlineData("class E { } class D { public E? R; } class C { E? M(D? a, D b) => a != null ? b.R : null; }")]
     // Already a conditional access: appending the suffix would splice `d??.R`.
@@ -165,7 +168,10 @@ public sealed class PatternMatchingBatchTests {
     [InlineData("class C { bool R() => true; string M(string _) { var x = R(); return _; } }", false)]
     // An explicitly typed out-variable carries type information into overload resolution.
     [InlineData("class C { bool R(out int v) { v = 1; return true; } void M() { R(out int v); } }", false)]
-    [InlineData("using System; class H : IDisposable { public void Dispose() { } } class C { void M() { using var h = new H(); } }", false)]
+    [InlineData(
+        "using System; class H : IDisposable { public void Dispose() { } } class C { void M() { using var h = new H(); } }",
+        false
+    )]
     public void Discard_ReplacesOnlyAnUnreadName(string source, bool fires) =>
         Assert.Equal(fires, Analyze(source, LanguageVersion.CSharp12).Any(static d => d.Id == "SK1053"));
 
@@ -194,13 +200,22 @@ public sealed class PatternMatchingBatchTests {
     // The read is below the statement that writes it, where the expression variable may not reach.
     [InlineData("class C { bool T(out int v) { v = 0; return true; } int M() { int a; T(out a); return a; } }", false)]
     // A nested block scopes the inline declaration somewhere the local was not.
-    [InlineData("class C { bool T(out int v) { v = 0; return true; } void M(bool e) { int a; if (e) { T(out a); } } }", false)]
+    [InlineData(
+        "class C { bool T(out int v) { v = 0; return true; } void M(bool e) { int a; if (e) { T(out a); } } }",
+        false
+    )]
     // An initializer is a value somebody chose.
-    [InlineData("class C { bool T(out int v) { v = 0; return true; } bool M() { int a = 1; return T(out a); } }", false)]
+    [InlineData(
+        "class C { bool T(out int v) { v = 0; return true; } bool M() { int a = 1; return T(out a); } }",
+        false
+    )]
     // `ref` reads as well as writes.
     [InlineData("class C { void B(ref int v) { v++; } int M() { int a = 0; B(ref a); return a; } }", false)]
     // One name in two `out` positions would be two declarations.
-    [InlineData("class C { void S(out int x, out int y) { x = 0; y = 0; } void M() { int a; S(out a, out a); } }", false)]
+    [InlineData(
+        "class C { void S(out int x, out int y) { x = 0; y = 0; } void M() { int a; S(out a, out a); } }",
+        false
+    )]
     public void InlineOutVariable_MovesOnlyWhereTheScopeSurvives(string source, bool fires) =>
         Assert.Equal(fires, Analyze(source, LanguageVersion.CSharp12).Any(static d => d.Id == "SK1054"));
 

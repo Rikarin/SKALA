@@ -12,8 +12,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     <c>SK1052</c> — <c>x != null ? x.Y : null</c> is <c>x?.Y</c>.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>This rewrite evaluates the receiver once where the original evaluated it twice, and that
-///     is the whole of its risk.</b> It is stated rather than hidden: on a property with a
+///     ⚠
+///     <b>
+///         This rewrite evaluates the receiver once where the original evaluated it twice, and that
+///         is the whole of its risk.
+///     </b> It is stated rather than hidden: on a property with a
 ///     non-idempotent getter the two programs differ, and the rule admits property paths anyway for
 ///     the reason <see cref="RewriteGuards.IsPlainNamePath" /> gives — excluding them would silence it
 ///     on <c>this.Items</c> and <c>Options.Map</c>, which is most of its value, and the two reads it

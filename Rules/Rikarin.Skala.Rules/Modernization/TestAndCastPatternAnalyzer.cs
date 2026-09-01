@@ -300,7 +300,8 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
 
         if (current is IsPatternExpressionSyntax {
                 Expression: IdentifierNameSyntax subject,
-                Pattern: UnaryPatternSyntax {
+                Pattern:
+                UnaryPatternSyntax {
                     RawKind: (int)SyntaxKind.NotPattern,
                     Pattern: ConstantPatternSyntax { Expression.RawKind: (int)SyntaxKind.NullLiteralExpression }
                 }
