@@ -87,6 +87,38 @@ the correctness range and already contains allocated rules. The mapping is mecha
 `SK02nn`), but an old baseline must not replace those strings blindly: `SK2007`, `SK2013` and
 `SK2015` also name live correctness rules. Regenerate arrangement findings with `verify` instead.
 
+### Cleanup — `SK0240`–`SK0249`
+
+⚠ **The prose pass on this block is owed.** It is written rule by rule as each one lands, so it
+records what shipped and what was left rather than reading as a considered section; the section
+above is what it should eventually look like.
+
+These are *not* arrangement rules. Arrangement is a formatter pipeline whose findings carry no
+generic `skala fix` edit because several rules contribute to one document rewrite; each of these is
+an ordinary `DiagnosticAnalyzer` with its own edit list, lives under
+`Rules/Rikarin.Skala.Rules/Cleanup/`, and reports under the category `Cleanup`. They are in the
+`SK0001`–`SK0999` band because the band is defined by what the finding *is* — a redundancy a reader
+has to step over — and not by which component finds it.
+
+⚠ Each id is one Skala concept covering several ReSharper inspections, per
+[`docs/plan/17`](17-inspection-parity.md) § "Inspection ids are not concepts". `resharperId` names
+the primary inspection only; `supersedes` names the rest.
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK0240` | The control flow does nothing | Syntax | safe |
+
+`SK0240` covers three shapes of [#131](https://github.com/Rikarin/SKALA/issues/131)'s thirteen: a
+`continue;` ending a loop body or a `return;` ending a void body (`RedundantJumpStatement`), a
+`default:` section whose only statement is `break;` (`RedundantEmptySwitchSection`), and — the
+member the issue calls the valuable one — a `catch` whose body is exactly `throw;`
+(`RedundantCatchClause`). Only the *last* `catch` of a `try` is reported: deleting an earlier one
+changes which handler an exception reaches, which is a behaviour change wearing a redundancy's
+clothes. The eight remaining inspections in that issue are boolean-expression shapes
+(`RedundantBoolCompare`, `DoubleNegationOperator` and their siblings) and are **not** covered —
+each needs an operand's type before it can be called redundant, which would make the rule semantic
+and stop it running on a loose file.
+
 ## SK1000 — Modernization
 
 The reason the tool exists in an AI-heavy workflow. These are not bugs; they are code written in an
@@ -477,11 +509,11 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **151** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **121** | **80.7 %** |
+| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **122** | **80.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

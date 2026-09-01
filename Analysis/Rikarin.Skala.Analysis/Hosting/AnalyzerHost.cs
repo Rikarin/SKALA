@@ -6,6 +6,7 @@ using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules;
 using Rikarin.Skala.Rules.Async;
+using Rikarin.Skala.Rules.Cleanup;
 using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Design;
 using Rikarin.Skala.Rules.Maintainability;
@@ -104,7 +105,8 @@ public static class AnalyzerHost {
         new RedundantSuppressFinalizeAnalyzer(), new StackAllocInLoopAnalyzer(),
         new EscapedKeywordAnalyzer(),
         new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
-        new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer()
+        new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
+        new RedundantControlFlowAnalyzer(),
     ];
 
     /// <summary>

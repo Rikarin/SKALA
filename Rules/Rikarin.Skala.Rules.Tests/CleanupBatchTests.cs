@@ -1,0 +1,134 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Rikarin.Skala.Rules.Cleanup;
+using System.Collections.Immutable;
+
+namespace Rikarin.Skala.Rules.Tests;
+
+/// <summary>
+///     The <c>SK024x</c> cleanup family, one assertion per <em>reported message</em>.
+/// </summary>
+/// <remarks>
+///     ⚠ <see cref="RuleFixtureTests" /> asks only whether the rule fired, which for a rule covering
+///     several ReSharper inspections under one id is not enough: a rule matching four shapes and tested
+///     for one has three shapes nothing is holding. Every shape here names the sentence it produces, so
+///     breaking one branch fails the assertion that describes it rather than an anonymous count.
+/// </remarks>
+public sealed class CleanupBatchTests {
+    static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
+        new RedundantControlFlowAnalyzer(),
+    ];
+
+    static readonly string[] Ids = ["SK0240"];
+
+    public static TheoryData<RuleFixture> Fixtures {
+        get {
+            var data = new TheoryData<RuleFixture>();
+            foreach (var fixture in RuleFixtures.All()
+                         .Where(static fixture => Ids.Contains(fixture.RuleId, StringComparer.Ordinal))) {
+                data.Add(fixture);
+            }
+
+            return data;
+        }
+    }
+
+    /// <summary>
+    ///     ⚠ Exactly one finding on a positive fixture and exactly none on a negative one.
+    /// </summary>
+    /// <remarks>
+    ///     The fixture harness asserts "at least one" for a positive, which a rule that reports the same
+    ///     redundancy twice — once for the clause and once for the statement inside it — satisfies while
+    ///     producing a duplicate in every report and two overlapping edits for <c>skala fix</c>.
+    /// </remarks>
+    [Theory]
+    [MemberData(nameof(Fixtures))]
+    public void EveryFixture_ProducesTheExactCount(RuleFixture fixture) {
+        var findings = Findings(fixture.Path, fixture.RuleId);
+        Assert.Equal(fixture.ShouldFire ? 1 : 0, findings.Length);
+        Assert.All(findings, static diagnostic => Assert.True(diagnostic.Properties.ContainsKey(FixEdits.CountKey)));
+    }
+
+    /// <summary>Each of <c>SK0240</c>'s three shapes, named by the sentence it reports.</summary>
+    [Theory]
+    [InlineData("catch_sole", "only rethrows")]
+    [InlineData("catch_after_another", "only rethrows")]
+    [InlineData("catch_with_finally", "only rethrows")]
+    [InlineData("catch_general", "only rethrows")]
+    [InlineData("continue_for", "control reaches the next iteration")]
+    [InlineData("continue_foreach", "control reaches the next iteration")]
+    [InlineData("return_void_method", "returns nothing")]
+    [InlineData("return_setter", "returns nothing")]
+    [InlineData("return_constructor", "returns nothing")]
+    [InlineData("default_only_breaks", "`default:` section only breaks")]
+    public void SK0240_ReportsTheShapeItMatched(string name, string sentence) {
+        var finding = Assert.Single(
+            Findings(Path.Combine(RuleFixtures.Root, "SK0240", "positive", name + ".cs"), "SK0240")
+        );
+
+        Assert.Contains(sentence, finding.GetMessage(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The two fixes are different edits and the choice between them is what the rule decides.
+    /// </summary>
+    /// <remarks>
+    ///     Where a <c>finally</c> or another <c>catch</c> survives, the clause alone is deleted. Where
+    ///     the rethrowing clause is the only one, <c>try { … }</c> would be CS1524, so the whole
+    ///     statement is replaced by its block's contents — and asserting only "a fix exists" would let
+    ///     the wrong one through, which is text that does not compile rather than a worse suggestion.
+    /// </remarks>
+    [Theory]
+    [InlineData("catch_sole", "Write(path, payload);")]
+    [InlineData("catch_general", "Run();")]
+    public void SK0240_UnwrapsTheTryWhenTheRethrowIsTheOnlyClause(string name, string kept) {
+        var path = Path.Combine(RuleFixtures.Root, "SK0240", "positive", name + ".cs");
+        var after = Apply(File.ReadAllText(path), Findings(path, "SK0240"));
+
+        Assert.DoesNotContain("try", after, StringComparison.Ordinal);
+        Assert.DoesNotContain("catch", after, StringComparison.Ordinal);
+        Assert.Contains(kept, after, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("catch_after_another")]
+    [InlineData("catch_with_finally")]
+    public void SK0240_KeepsTheTryWhenSomethingElseSurvives(string name) {
+        var path = Path.Combine(RuleFixtures.Root, "SK0240", "positive", name + ".cs");
+        var after = Apply(File.ReadAllText(path), Findings(path, "SK0240"));
+
+        Assert.Contains("try {", after, StringComparison.Ordinal);
+        Assert.DoesNotContain("throw;", after, StringComparison.Ordinal);
+    }
+
+    static Diagnostic[] Findings(string path, string id) {
+        var source = File.ReadAllText(path);
+        return RuleFixtures
+            .Analyze(RuleFixtures.Compile(source, path), Analyzers, TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Id == id)
+            .ToArray();
+    }
+
+    static string Apply(string source, IEnumerable<Diagnostic> findings) {
+        var text = source;
+        foreach (var diagnostic in findings.OrderByDescending(static d => d.Location.SourceSpan.Start)) {
+            var count = int.Parse(
+                diagnostic.Properties[FixEdits.CountKey]!,
+                System.Globalization.CultureInfo.InvariantCulture
+            );
+            for (var i = count - 1; i >= 0; i--) {
+                var start = int.Parse(
+                    diagnostic.Properties[FixEdits.StartKey(i)]!,
+                    System.Globalization.CultureInfo.InvariantCulture
+                );
+                var length = int.Parse(
+                    diagnostic.Properties[FixEdits.LengthKey(i)]!,
+                    System.Globalization.CultureInfo.InvariantCulture
+                );
+                text = text[..start] + diagnostic.Properties[FixEdits.TextKey(i)] + text[(start + length)..];
+            }
+        }
+
+        return text;
+    }
+}

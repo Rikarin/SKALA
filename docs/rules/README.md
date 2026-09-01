@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 129 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 130 ids are allocated.
 
 ## Async
 
@@ -17,6 +17,12 @@
 | [SK3009](SK3009.md) | Review explicitly unsynchronized Lazy in static state | warning | — | no |
 | [SK3020](SK3020.md) | The non-`async` `Task` method returns null | warning | review | no |
 | [SK3021](SK3021.md) | A `SpinLock` is stored in a `readonly` field | warning | review | no |
+
+## Cleanup
+
+| Id | Rule | Severity | Fix | Loose mode |
+|---|---|---|---|---|
+| [SK0240](SK0240.md) | The control flow does nothing | warning | safe | yes |
 
 ## Correctness
 
