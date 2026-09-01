@@ -164,3 +164,4 @@ SK2040 | Skala.Correctness | Warning | The comparison is by reference where valu
 SK2041 | Skala.Correctness | Warning | `base.Equals` or `base.GetHashCode` resolves to `object`'s.
 SK2042 | Skala.Correctness | Warning | The hash code reads state that equality ignores.
 SK2043 | Skala.Correctness | Warning | The hash code depends on state that can change.
+SK2044 | Skala.Correctness | Warning | The equality members are inconsistent with each other.

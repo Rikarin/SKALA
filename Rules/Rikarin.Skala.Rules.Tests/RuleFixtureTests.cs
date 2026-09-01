@@ -105,6 +105,7 @@ public sealed class RuleFixtureTests {
         new BaseEqualityCallAnalyzer(),
         new UncomparedHashMemberAnalyzer(),
         new MutableHashMemberAnalyzer(),
+        new InconsistentEqualityMembersAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

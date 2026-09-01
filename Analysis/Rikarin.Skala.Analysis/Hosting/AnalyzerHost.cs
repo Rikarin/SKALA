@@ -143,6 +143,7 @@ public static class AnalyzerHost {
         new BaseEqualityCallAnalyzer(),
         new UncomparedHashMemberAnalyzer(),
         new MutableHashMemberAnalyzer(),
+        new InconsistentEqualityMembersAnalyzer(),
     ];
 
     /// <summary>

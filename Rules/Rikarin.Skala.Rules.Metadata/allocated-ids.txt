@@ -196,6 +196,7 @@ SK2040 unintended-reference-comparison
 SK2041 base-equality-call-is-identity
 SK2042 hash-code-over-uncompared-member
 SK2043 mutable-hash-code-member
+SK2044 inconsistent-equality-members
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because
