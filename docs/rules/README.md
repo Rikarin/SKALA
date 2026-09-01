@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 134 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 150 ids are allocated.
 
 ## Async
 
@@ -59,6 +59,8 @@
 | [SK6032](SK6032.md) | An abstract type declares nothing to implement | suggestion | — | yes |
 | [SK6033](SK6033.md) | A type has only private constructors and is not static | warning | — | no |
 | [SK6034](SK6034.md) | A public constant is baked into every caller | suggestion | review | no |
+| [SK6040](SK6040.md) | An `out` variable is declared and never read | warning | safe | no |
+| [SK6041](SK6041.md) | A `foreach` variable is declared wider than the element it receives | suggestion | review | no |
 
 ## Formatting
 
