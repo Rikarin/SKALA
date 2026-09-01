@@ -359,6 +359,8 @@ section.
 
 - `SK2070` `log-template-argument-count` — a Serilog template with a different number of holes than
   the call supplies values. ([#20](https://github.com/Rikarin/SKALA/issues/20))
+- `SK2071` `log-template-duplicate-property` — a structured log template naming one property twice,
+  for Serilog *and* for `Microsoft.Extensions.Logging`. ([#20](https://github.com/Rikarin/SKALA/issues/20))
 
 ⚠ **Two of this batch's concepts were closed as hosted rather than shipped, and the measurement is
 the finding.** A probe project built at *default* analysis level — no `AnalysisMode`, no
@@ -1139,8 +1141,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **211** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **177** | **84.3 %** |
+| Rules this document names | **212** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **178** | **84.4 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |

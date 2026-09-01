@@ -132,6 +132,10 @@ static class MessageTemplate {
     internal static ImmutableArray<INamedTypeSymbol> ResolveSerilog(Compilation compilation) =>
         Resolve(compilation, SerilogTypes);
 
+    /// <summary>Every logging entry point this analysis knows: Serilog's, plus MEL's extensions.</summary>
+    internal static ImmutableArray<INamedTypeSymbol> ResolveLoggers(Compilation compilation) =>
+        Resolve(compilation, ["Serilog.ILogger", "Serilog.Log", ExtensionsLoggingType]);
+
     internal static ImmutableArray<INamedTypeSymbol> Resolve(Compilation compilation, string[] metadataNames) {
         var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>(metadataNames.Length);
         foreach (var name in metadataNames) {

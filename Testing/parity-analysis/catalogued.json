@@ -94,6 +94,7 @@
   "OutParameterValueIsAlwaysDiscarded.Local": "SK2006",
   "TemplateIsNotCompileTimeConstantProblem": "SK2016",
   "StructuredMessageTemplateProblem": "SK2016",
+  "DuplicateItemInLoggerTemplate": "SK2071",
   "ClosureAllocation": "SK4002",
   "ImplicitlyCapturedClosure": "SK4002",
   "LoopCanBeConvertedToQuery": "SK4010",
