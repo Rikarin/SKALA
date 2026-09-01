@@ -23,8 +23,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         legal.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Roslyn's <c>AnalyzeDataFlow</c> answers questions about variables, not about indexed
-///         elements</b>, so there is no dataflow to lean on and this rule does not pretend to have
+///         ⚠
+///         <b>
+///             Roslyn's <c>AnalyzeDataFlow</c> answers questions about variables, not about indexed
+///             elements
+///         </b>, so there is no dataflow to lean on and this rule does not pretend to have
 ///         any. It reports only a <em>contiguous run of element writes to one collection</em>: the
 ///         moment a statement that is not such a write appears between the two, the finding is
 ///         withdrawn. That is not the whole of the defect and it is the part that can be proved
@@ -109,7 +112,12 @@ public sealed class OverwrittenElementAnalyzer : DiagnosticAnalyzer {
 
             for (var j = i + 1; j < writes.Length; j++) {
                 if (writes[j] is not { } next
-                    || !CollectionShape.SameStorage(model, first.Access.Expression, next.Access.Expression, cancellation)
+                    || !CollectionShape.SameStorage(
+                        model,
+                        first.Access.Expression,
+                        next.Access.Expression,
+                        cancellation
+                    )
                     || !IsOpaqueFree(next.Value)
                     || !IsOpaqueFree(next.Key)
                     || Mentions(model, next.Value, first.Access.Expression, cancellation)) {
@@ -146,13 +154,15 @@ public sealed class OverwrittenElementAnalyzer : DiagnosticAnalyzer {
     /// <summary>A statement of the form <c>c[k] = v;</c>, or null.</summary>
     static Write? Read(StatementSyntax statement) {
         if (statement is not ExpressionStatementSyntax {
-                Expression: AssignmentExpressionSyntax {
+                Expression:
+                AssignmentExpressionSyntax {
                     RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
                     Left: ElementAccessExpressionSyntax { ArgumentList.Arguments.Count: 1 } access
                 } assignment
             }
             || access.ArgumentList.Arguments[0] is not {
-                NameColon: null, RefKindKeyword.RawKind: (int)SyntaxKind.None
+                NameColon: null,
+                RefKindKeyword.RawKind: (int)SyntaxKind.None
             } argument
             || !CallShape.IsPlainNamePath(access.Expression)) {
             return null;

@@ -47,7 +47,8 @@ internal static class CollectionShape {
             char character => "n:" + ((long)character).ToString(CultureInfo.InvariantCulture),
             ulong unsigned => "n:" + unsigned.ToString(CultureInfo.InvariantCulture),
             sbyte or byte or short or ushort or int or uint or long =>
-                "n:" + Convert.ToInt64(constant.Value, CultureInfo.InvariantCulture)
+                "n:"
+                + Convert.ToInt64(constant.Value, CultureInfo.InvariantCulture)
                     .ToString(CultureInfo.InvariantCulture),
             _ => null
         };

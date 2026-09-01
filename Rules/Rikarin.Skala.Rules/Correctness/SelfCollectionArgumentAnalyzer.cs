@@ -21,8 +21,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         identifier: the second collection was meant to be a different one.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The two sides have to be the same <em>storage</em>, which is a symbol comparison and
-///         not a text one.</b> Two spellings that read alike — <c>a.items</c> and <c>b.items</c> —
+///         ⚠
+///         <b>
+///             The two sides have to be the same <em>storage</em>, which is a symbol comparison and
+///             not a text one.
+///         </b> Two spellings that read alike — <c>a.items</c> and <c>b.items</c> —
 ///         resolve to one field symbol through two different receivers, so the walk compares the
 ///         receivers too and stops at the first symbol that differs. And every symbol along the path
 ///         must be a local, a parameter or a field: a property is an accessor call, and two reads of

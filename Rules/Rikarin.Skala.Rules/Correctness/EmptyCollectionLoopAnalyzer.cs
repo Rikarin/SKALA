@@ -190,7 +190,8 @@ public sealed class EmptyCollectionLoopAnalyzer : DiagnosticAnalyzer {
     ) {
         if (invocation.ArgumentList.Arguments.Count != 0
             || model.GetSymbolInfo(invocation, cancellation).Symbol is not IMethodSymbol {
-                IsStatic: true, Name: "Empty"
+                IsStatic: true,
+                Name: "Empty"
             } method) {
             return false;
         }

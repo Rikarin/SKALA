@@ -366,7 +366,20 @@ been written yet.
   on a comparer argument on purpose — it costs a capacity-only initializer a true finding, and the
   rule never has to decide which parameter a comparer arrived through. Constant keys only, a closed
   receiver table, and a key type whose default equality is decidable: `string`, `bool`, `char`, the
-  integral types and any `enum`.
+  integral types and any `enum`. ⚠ **Both spellings**: `new HashSet<T> { "a", "a" }` is a collection
+  initializer and `HashSet<T> s = ["a", "a"]` is a collection expression, a different node kind, and
+  a rule registered only on the first says nothing about the second — which is what a probe file
+  dropped into a real project found after the fixtures were green. A spread anywhere in a collection
+  expression withdraws the finding.
+
+⚠ **`CA2244` overlaps `SK2080`'s indexer form, and only the indexer form — and it is not in the
+default .NET analysis set.** Measured the way § "The compiler already says it" measures: an ordinary
+`net10.0` SDK project with nothing configured reports `CA2200` on a control shape and says nothing
+about any of the three duplicate-key forms. It fires in *this* repository only because
+`Directory.Build.props` raises `AnalysisMode`. So a repository that has not raised it sees no
+duplicate finding, which is the standard that let `SK3004` and `SK3501` ship past `CA2016` and
+`CA2000`. `CA2244` also says nothing at all about the `Add` form — the one that throws
+`ArgumentException` at construction — or about a set that silently drops an element.
 - `SK2081` `collection-passed-to-itself` — a set, list or array given to one of its own members as
   the *other* collection: `set.UnionWith(set)` does nothing, `set.ExceptWith(set)` is `Clear()`
   written so nobody reads it as `Clear()`, `set.SetEquals(set)` is `true` with a hash walk in front

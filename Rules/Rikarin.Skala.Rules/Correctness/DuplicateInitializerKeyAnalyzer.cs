@@ -22,8 +22,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         share is that the object at the end of the initializer is not the object on the page.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The comparer is not resolved. The rule declines whenever the constructor is given any
-///         argument at all.</b> Key equality belongs to the collection's comparer and not to the key
+///         ⚠
+///         <b>
+///             The comparer is not resolved. The rule declines whenever the constructor is given any
+///             argument at all.
+///         </b> Key equality belongs to the collection's comparer and not to the key
 ///         type — <c>new Dictionary&lt;string, int&gt;(StringComparer.OrdinalIgnoreCase)</c> throws on
 ///         <c>["a"]</c> and <c>["A"]</c>, which are distinct ordinally — and a comparer can equally
 ///         make two keys this rule believes equal into two entries. Declining on <em>any</em> argument
@@ -80,28 +83,42 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
                 start.RegisterSyntaxNodeAction(
                     context => Analyze(context, lookups),
                     SyntaxKind.ObjectCreationExpression,
-                    SyntaxKind.ImplicitObjectCreationExpression
+                    SyntaxKind.ImplicitObjectCreationExpression,
+                    SyntaxKind.CollectionExpression
                 );
             }
         );
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context, List<INamedTypeSymbol> lookups) {
-        var creation = (BaseObjectCreationExpressionSyntax)context.Node;
-        if (creation.Initializer is not { } initializer || initializer.Expressions.Count < 2) {
-            return;
-        }
-
+        // ⚠ Two spellings of one thing, and the second one is the idiom now. `new HashSet<T> { … }`
+        // is a collection initializer whose entries are expressions; `HashSet<T> s = [ … ]` is a
+        // collection expression, a different node kind entirely, and a rule registered only on the
+        // first quietly says nothing about the second.
         // ⚠ The comparer question, answered by declining rather than by resolving. See the type
-        // remarks: any argument at all withdraws the finding.
-        if (creation.ArgumentList is { Arguments.Count: > 0 }) {
+        // remarks: any constructor argument at all withdraws the finding. A collection expression
+        // has none, so the question does not arise there.
+        var entries = context.Node switch {
+            CollectionExpressionSyntax expression => Elements(expression),
+            BaseObjectCreationExpressionSyntax {
+                ArgumentList: null or { Arguments.Count: 0 },
+                Initializer: { } initializer
+            } => Elements(initializer),
+            _ => null
+        };
+
+        if (entries is null || entries.Count < 2) {
             return;
         }
 
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
 
-        if (model.GetTypeInfo(creation, cancellation).Type is not INamedTypeSymbol collection
+        // ⚠ A collection expression has no natural type, so its only answer is the converted one; an
+        // object creation's own type is the right answer, because a `new Dictionary<…>` assigned to
+        // an `IDictionary<…>` converts to the interface and would fall out of the table.
+        var typeInfo = model.GetTypeInfo(context.Node, cancellation);
+        if ((typeInfo.Type ?? typeInfo.ConvertedType) is not INamedTypeSymbol collection
             || collection.TypeKind == TypeKind.Error
             || !Contains(lookups, collection)
             || collection.TypeArguments.Length is not (1 or 2)) {
@@ -115,7 +132,7 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
         }
 
         var seen = new Dictionary<string, ExpressionSyntax>(System.StringComparer.Ordinal);
-        foreach (var element in initializer.Expressions) {
+        foreach (var element in entries) {
             var (key, form) = KeyOf(element, isSet);
             if (key is null || CollectionShape.ConstantKey(model, key, cancellation) is not { } normalized) {
                 continue;
@@ -140,6 +157,42 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
                 )
             );
         }
+    }
+
+    /// <summary>
+    ///     The entries of a collection expression, or null when it holds a spread.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A spread element contributes elements the analyzer cannot see, so one anywhere in the
+    ///     expression withdraws the whole finding rather than being skipped over: a duplicate the
+    ///     spread supplies is not this rule's to report, and one it hides is not this rule's to claim.
+    ///     <para>
+    ///         ⚠ The original nodes are handed back, never a rebuilt list. A
+    ///         <c>SyntaxFactory.SeparatedList</c> over them produces a detached fragment, and the
+    ///         semantic model answers nothing about a node that is not in its tree — a rule that did
+    ///         that would go silent rather than wrong, which is the harder failure to notice.
+    ///     </para>
+    /// </remarks>
+    static List<ExpressionSyntax>? Elements(CollectionExpressionSyntax expression) {
+        var entries = new List<ExpressionSyntax>(expression.Elements.Count);
+        foreach (var element in expression.Elements) {
+            if (element is not ExpressionElementSyntax item) {
+                return null;
+            }
+
+            entries.Add(item.Expression);
+        }
+
+        return entries;
+    }
+
+    static List<ExpressionSyntax> Elements(InitializerExpressionSyntax initializer) {
+        var entries = new List<ExpressionSyntax>(initializer.Expressions.Count);
+        foreach (var expression in initializer.Expressions) {
+            entries.Add(expression);
+        }
+
+        return entries;
     }
 
     /// <summary>How the duplicate entry loses.</summary>
@@ -175,7 +228,8 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
     static (ExpressionSyntax? Key, Form Form) KeyOf(ExpressionSyntax element, bool isSet) =>
         element switch {
             InitializerExpressionSyntax {
-                RawKind: (int)SyntaxKind.ComplexElementInitializerExpression, Expressions.Count: 2
+                RawKind: (int)SyntaxKind.ComplexElementInitializerExpression,
+                Expressions.Count: 2
             } complex => (complex.Expressions[0], Form.Add),
             AssignmentExpressionSyntax {
                 RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
