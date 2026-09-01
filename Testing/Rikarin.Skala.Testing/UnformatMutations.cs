@@ -147,7 +147,7 @@ public static class Unformat {
     /// </remarks>
     static string Normalise(string source) {
         var text = source.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
-        return text.StartsWith('﻿') ? text[1..] : text;
+        return text.StartsWith('\uFEFF') ? text[1..] : text;
     }
 
     /// <summary>
@@ -218,9 +218,9 @@ public static class Unformat {
             }
 
             builder.Append(token.RawKind.ToString(CultureInfo.InvariantCulture))
-                .Append('')
+                .Append('\u0001')
                 .Append(token.Text)
-                .Append('');
+                .Append('\u0002');
         }
 
         foreach (var trivia in root.DescendantTrivia(descendIntoTrivia: true)) {
@@ -232,13 +232,13 @@ public static class Unformat {
 
             builder.Append('T')
                 .Append(trivia.RawKind.ToString(CultureInfo.InvariantCulture))
-                .Append('')
+                .Append('\u0001')
                 .Append(
                     trivia.IsKind(SyntaxKind.DisabledTextTrivia)
                         ? Squash(trivia.ToFullString())
                         : TrimTrailingWhitespace(trivia.ToFullString())
                 )
-                .Append('');
+                .Append('\u0002');
         }
 
         return builder.ToString();
@@ -630,7 +630,7 @@ static class TokenGlue {
     public static bool NeedsSpace(string left, string right) {
         var a = left.Length <= Window ? left : left[^Window..];
         var b = right.Length <= Window ? right : right[..Window];
-        var key = a + " " + b;
+        var key = a + "\u0000" + b;
         if (Cache.TryGetValue(key, out var cached)) {
             return cached;
         }

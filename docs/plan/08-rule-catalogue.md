@@ -664,6 +664,48 @@ take 300 ms. But passing a comparer is an explicit statement that *this* compari
 than the set's, there is no `HashSet<T>.Contains(value, comparer)` to redirect it to, and a rule
 that reports something nobody can write differently is the failure mode `SK2034`'s note already
 names. There is no rule here to build.
+### Format strings, log templates and invisible characters
+
+⚠ **The prose pass on this block is owed.** The rows below are the allocation register doing its one
+job — recording that a number is taken — written as each rule landed rather than as a considered
+section.
+
+- `SK2070` `log-template-argument-count` — a Serilog template with a different number of holes than
+  the call supplies values. ([#20](https://github.com/Rikarin/SKALA/issues/20))
+- `SK2071` `log-template-duplicate-property` — a structured log template naming one property twice,
+  for Serilog *and* for `Microsoft.Extensions.Logging`. ([#20](https://github.com/Rikarin/SKALA/issues/20))
+- `SK2072` `invisible-character-in-literal` — a zero-width, bidirectional or control character
+  written as itself inside a literal that could have escaped it.
+  ([#183](https://github.com/Rikarin/SKALA/issues/183))
+- `SK2073` `caught-exception-not-logged` — an error-level log inside a `catch` that never gives the
+  logger the exception it caught. ([#238](https://github.com/Rikarin/SKALA/issues/238))
+
+⚠ **`SK2073` is `SK7xxx` on its issue and `SK2xxx` here.** An entry that cannot be diagnosed from is
+a defect in what the program observably does rather than a maintenance cost, and the argument that
+puts `SK2014` — a `catch` that swallows without logging or rethrow — in the correctness band puts
+this next to it.
+
+⚠ **Two of this batch's concepts were closed as hosted rather than shipped, and the measurement is
+the finding.** A probe project built at *default* analysis level — no `AnalysisMode`, no
+`AnalysisLevel`, nothing but `dotnet build` — answers which `CA*` rules a repository actually gets:
+
+| Concept | Host | On at default? |
+|---|---|---|
+| `string.Format` holes versus arguments ([#19](https://github.com/Rikarin/SKALA/issues/19)) | `CA2241` | **no** — needs `AnalysisMode` |
+| `ILogger` template holes versus arguments | `CA2017` | **yes** |
+| A logger placeholder that is only digits | `CA2253` | no |
+| A logger template that is not constant | `CA2254` | no |
+
+⚠ **`CA2017` was not in this repository's hosted map and is the strongest host in it.** It covers
+`LoggerExtensions`, `ILogger.BeginScope` *and* `LoggerMessage.Define`, handles `{{` escapes and
+`{X,10:N2}` alignment, and correctly declines a `params` array the call did not synthesise — all
+verified against a probe rather than read from documentation. It is why `SK2070` is Serilog-only:
+ADR-008 hosts `CA*` rather than rebuilding them, and the half of [#20](https://github.com/Rikarin/SKALA/issues/20)
+worth an id is the half `CA2017` has never heard of.
+
+⚠ **`CA2017` counts holes, not names.** `logger.LogInformation("{X} then {X}", a, b)` is silent under
+every `CA` rule measured, in every analysis mode — which is what leaves the duplicate-property
+concept unowned for `Microsoft.Extensions.Logging` as well as for Serilog.
 
 ## SK3000 — Async, concurrency, lifetime
 
@@ -1294,6 +1336,31 @@ would make the rule dangerous. · `SK7101` a declaration that is not publicly vi
 documentation comment — `SK7010`'s predicates with the accessibility test negated, shipped at
 `none` and enabled per path, because it is the highest-firing uncovered inspection in the parity
 measurement and that is an argument for caution rather than for volume.
+
+### Logging declarations — `SK7110`–`SK7119`
+
+⚠ **The prose pass on this block is owed.** The row below is the allocation register doing its one
+job, written as the rule landed rather than as a considered section.
+
+- `SK7110` `logger-declared-for-another-type` — a type declaring an `ILogger<T>` field, property or
+  constructor parameter whose `T` is neither itself nor one of its base types, so every message it
+  writes is filed under another class's category.
+  ([#237](https://github.com/Rikarin/SKALA/issues/237))
+
+⚠ **`SK7110` is one of the four ids on its issue, and the other three are declined rather than
+outstanding.** `S6669` — what the logger *field* is named — and `S1312` — whether it is
+`private static readonly` — are naming and declaration conventions, and § "Reasons that justify a
+cut" already holds that a preference with no consequence to show is not a finding. Serilog's
+`Log.ForContext<T>()` is out for a different reason: naming a context other than the enclosing type
+is what that method is *for*, so the same shape that is a defect in a declared `ILogger<T>` is
+ordinary use there.
+
+⚠ **It ships at `suggestion`, and the measurement that would have argued for `none` does not
+exist.** Skala's own tree contains no `ILogger<T>` declaration at all — the shape is absent, verified
+by grep and by a probe file that made the rule fire the moment it was inserted — so no Skala count can
+show the rule is noisy in either direction. What settles the severity is that the finding is not a
+preference: `SK7010` and `SK7101` are at `none` because a reader may reasonably disagree with them,
+and nobody reasonably wants their messages filed under another class's name.
 ⚠ **The prose pass for `SK7080`–`SK7084` is owed.** What follows is the allocation register entry —
 enough that the id is written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
 can see it — not the worked-through account the rest of this section carries.
@@ -1454,9 +1521,11 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **250** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **216** | **86.7 %** |
+| Rules this document names | **216** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **181** | **84.2 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

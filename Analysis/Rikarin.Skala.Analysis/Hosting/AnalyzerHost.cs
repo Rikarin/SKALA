@@ -160,6 +160,9 @@ public static class AnalyzerHost {
         new InterpolatedStringFormAnalyzer(), new UnsignedRightShiftAnalyzer(),
         new TupleDeconstructionAnalyzer(), new WithExpressionCopyAnalyzer(),
         new RedundantSpreadElementAnalyzer(), new CachedEmptyInstanceAnalyzer(),
+        new LogTemplateArgumentCountAnalyzer(), new LogTemplateDuplicatePropertyAnalyzer(),
+        new InvisibleCharacterAnalyzer(), new CaughtExceptionNotLoggedAnalyzer(),
+        new LoggerForAnotherTypeAnalyzer(),
     ];
 
     /// <summary>

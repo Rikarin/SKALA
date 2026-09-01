@@ -5814,6 +5814,139 @@
       "configuration": [
         "dotnet_diagnostic.SK1073.severity"
       ]
+    },
+    {
+      "id": "SK2070",
+      "concept": "log-template-argument-count",
+      "title": "The Serilog message template has a different number of holes than the call supplies values",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A Serilog logging call's constant message template declares a number of holes that is not the number of values the call passes.",
+      "rationale": "The rendered event is wrong in both directions and neither direction throws. A hole with no value is emitted as the literal text `{OrderId}`, so the field a dashboard queries is never populated and the message reads as a bug report about itself; a value with no hole is attached under a fabricated positional key nobody queries, so the data is present, unfindable and paid for. ⚠ **The rule is deliberately Serilog-only.** `CA2017` already covers `Microsoft.Extensions.Logging` — measured against `LoggerExtensions`, `ILogger.BeginScope` and `LoggerMessage.Define`, handling `{{` escapes, `{X,10:N2}` alignment and declining a non-implicit `params` array — and unlike `CA2241`, `CA2253` and `CA2254` it is **on by default**, with no `AnalysisMode` required. ADR-008 hosts `CA*` rather than rebuilding them, so what Skala implements is the half with no host at all. Serilog is where the concept is unowned, and it is also where the shape is commonest, because Serilog's own API encourages templates far richer than `ILogger`'s.",
+      "examples": {
+        "bad": "logger.Information(\"Loaded {Count} of {Total}\", count);",
+        "good": "logger.Information(\"Loaded {Count} of {Total}\", count, total);"
+      },
+      "falsePositives": "⚠ **`resharperId` is deliberately null.** ReSharper dumps one issue type for this whole family, `StructuredMessageTemplateProblem`, and `Testing/parity-analysis/catalogued.json` already credits it to `SK2016`. Moving another rule's credit is a decision about a hand-written map rather than a fact about this rule, and the map is the artefact doc 17 § \"Two corrections\" was written about. The concept is recorded against issue #20 in `ledger-resharper.json` instead. ⚠ **Arity is counted in holes, not in distinct names.** `\"{X} then {X}\"` with two arguments is correct — Serilog binds values to holes in order — and reporting it here would be a false positive on exactly the shape `SK2071` exists to describe properly. ⚠ **A positional template withdraws the analysis entirely.** `\"{0} {1}\"` is Serilog's `string.Format` mode, where arity is max-index-plus-one rather than a count, and a template mixing indices with names has semantics no rule should guess at; `CA2253` is the rule that says not to write one. ⚠ **A `params` array the call did not synthesise withdraws the count**: `logger.Information(template, args)` passes an array whose length is not visible here, and counting the array itself as one value would report every such call as a mismatch. Roslyn marks the array it synthesises for a genuine `params` expansion as implicit, which is the only signal that separates the two. ⚠ **The values are counted by parameter ordinal**, never by filtering out arguments whose type does not look like a value: a reduced extension-method invocation carries its own `this ILogger` receiver as `Arguments[0]` with a real parameter symbol, and a type-name filter counts the logger as a supplied value and reports every correct call as one argument too many. Everything that is not a value — the receiver, the `Exception`, the `LogEventLevel` — precedes the template in every one of these signatures, so \"after the template\" is a definition rather than a heuristic. A non-constant template is not analysed, because there is no template to count; `CA2254` is the rule for that. Binding is by containing type (`Serilog.ILogger`, `Serilog.Log`) and by the parameter Serilog names `messageTemplate`, never by method name, so a domain method called `Information` is not a logging call. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2070.severity"
+      ]
+    },
+    {
+      "id": "SK2071",
+      "concept": "log-template-duplicate-property",
+      "title": "The structured log template names the same property twice",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "DuplicateItemInLoggerTemplate",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A logging call's constant message template uses one property name for more than one hole, so the structured event cannot carry both values.",
+      "rationale": "The rendered line looks right, which is what makes this one survive review. The structured event is the part that is wrong: one key cannot hold two values, so a sink keeps one of them and the other is gone, and which one survives is the sink's business rather than the author's. The field a dashboard filters on is then silently either the first value or the last. ⚠ **Nothing hosts this, for any logging framework.** `CA2017` counts *holes* against arguments, so `logger.LogInformation(\"{X} then {X}\", a, b)` is arity-correct and it stays silent — measured in a probe project, at default analysis level and at `AnalysisMode=All`, rather than read from documentation. That is why this rule covers `Microsoft.Extensions.Logging` as well as Serilog, where `SK2070` deliberately does not: the concept has no host anywhere, so ADR-008 has nothing to defer to. There is no fix, because the second property's name is the thing the author has to choose and no edit can choose it.",
+      "examples": {
+        "bad": "logger.LogInformation(\"Moved {Path} to {Path}\", from, to);",
+        "good": "logger.LogInformation(\"Moved {From} to {To}\", from, to);"
+      },
+      "falsePositives": "⚠ **`{@Order}` and `{Order}` are the same property and are reported.** Serilog's `@` (destructure) and `$` (stringify) sigils select how a value is captured, not what it is called; a parser that keeps the sigil sees two names where the logger sees one and misses the duplicate this rule exists to find. ⚠ **Comparison is ordinal, so `{Count}` and `{count}` are two properties and neither is reported.** They are two properties to every sink there is, so no value is lost and calling them a duplicate would be an opinion about naming dressed as a defect. ⚠ **The finding is reported on the whole template argument rather than on the repeated name.** A hole's offset is known within the template's *value*, and the value and the source spelling diverge at the first escape sequence — one `\\n` earlier in the literal and a span computed from the value points one character short. A slightly coarse span that is always right beats a precise one that is quietly wrong inside a baseline fingerprint. ⚠ **One finding per repeated name, not one per extra occurrence**: a name written three times is one decision, and reporting it twice would report the same decision as many times as it was made. `{{` and `}}` are escapes and are not holes. A positional template (`\"{0} {0}\"`) withdraws the analysis, because indices are `string.Format` semantics rather than property names; `CA2253` is the rule that says not to write one. A non-constant template is not analysed. Binding is by containing type (`Serilog.ILogger`, `Serilog.Log`, `Microsoft.Extensions.Logging.LoggerExtensions`) and by the parameter each spells `messageTemplate`, `message` or `messageFormat`, never by method name, so a domain method called `Information` is not a logging call. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2071.severity"
+      ]
+    },
+    {
+      "id": "SK2072",
+      "concept": "invisible-character-in-literal",
+      "title": "The literal contains an unescaped invisible character",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "S2479"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A string or character literal holds a zero-width, bidirectional or control character written as itself rather than as an escape sequence.",
+      "rationale": "A zero-width space, a non-breaking space or a right-to-left override pasted into a literal is invisible in the editor, in the diff and in the review, and it changes what the program does — a key that never matches, a header that never parses, a path that is not the path anybody read. The escape sequence is the same value written so a person can see it, which is why the fix is mechanical and safe. ⚠ **Two classes of character, one severity, and that is a decision rather than an oversight.** A right-to-left override is the \"Trojan Source\" class — source that reads as one program and compiles as another — and a stray non-breaking space is a typo. The message says which one it found; the severity does not, because splitting them would spend a second permanent id (ADR-012) to encode a ranking, and a repository that wants the harder line writes `dotnet_diagnostic.SK2072.severity = error` without needing one.",
+      "examples": {
+        "bad": "public const string Tenant = \"tenant\\u200Bid\";   // written with the character itself",
+        "good": "public const string Tenant = \"tenant\\\\u200Bid\";  // written as an escape"
+      },
+      "falsePositives": "⚠ **Reported only where an escape is expressible.** A verbatim (`@\"…\"`) or raw (`\"\"\"…\"\"\"`) literal has no escape sequences at all — that is what those literals are for — and a UTF-8 literal is a separate token kind for the same reason, so all three are silent. ⚠ **That is a real hole rather than a tidy boundary**: a bidirectional override inside a raw string literal is exactly as dangerous and is not reported, and the honest form of that is to say so rather than to emit a finding with no repair. ⚠ **The scan reads the token's source spelling, never its value**, which is what makes an already-escaped character silent: in the raw text it is six ASCII characters. Reading the value would report the repair as the problem and the rule would never go quiet. ⚠ **Confusable-*width* spaces are deliberately absent from the set** — U+2000 to U+200A and U+3000 — because a thin space in typography and an ideographic space in Japanese text are visible, intentional and correct, and reporting them would make the rule an opinion about typesetting. U+00A0 and U+202F stay, because they are indistinguishable from an ordinary space rather than merely narrower than one. Comments and identifiers are not literals and are not scanned; a soft hyphen in an identifier is a naming question that `IDE1006` is nearer to. `\\n` and `\\r` are absent from the control set because the language will not carry them: a raw newline in a regular string literal does not compile. The fix always writes `\\uXXXX` and never `\\xNN`, because `\\x` is variable length and consumes greedily — `\\x9` followed by `G` is a different character in one case and a compile error in another. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2072.severity"
+      ]
+    },
+    {
+      "id": "SK2073",
+      "concept": "caught-exception-not-logged",
+      "title": "The caught exception is not passed to the logger's exception parameter",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "S6667",
+        "S6668"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An error-level logging call inside a catch clause does not give the logger the exception the clause caught, although the overload that takes one exists.",
+      "rationale": "Every one of these APIs takes the exception in its own parameter, and that parameter is what a sink treats as an exception: it is where the stack trace, the inner chain and the type end up as structure rather than as a sentence in a message. Left empty, the entry says something went wrong and carries nothing anybody can act on, which is the whole reason the line was written. ⚠ **This is `SK7xxx` on the issue and `SK2xxx` here.** An entry that cannot be diagnosed from is a defect in the program's observable behaviour rather than a maintenance cost, and the same argument that puts `SK2014` — a `catch` that swallows without logging or rethrow — in the correctness band puts this next to it.",
+      "examples": {
+        "bad": "catch (IOException ex) {\n    logger.LogError(\"could not read {Path}\", path);\n}",
+        "good": "catch (IOException ex) {\n    logger.LogError(ex, \"could not read {Path}\", path);\n}"
+      },
+      "falsePositives": "⚠ **Error and critical levels only** (`LogError`, `LogCritical`, `Error`, `Fatal`). An information- or debug-level line inside a `catch` is very often deliberate — an expected exception, handled, noted in passing — and reporting those is how a rule about logging becomes noise about control flow. ⚠ **Nothing is reported unless the repair exists**: the analysis looks up an overload with an `exception` parameter on the logging type first, so a logger that has none has no defect this rule can name and the fix cannot assume an overload into being. ⚠ **Only the `Log*(template, values…)` shape is reported, and that is a correctness constraint rather than caution.** `Microsoft.Extensions.Logging` orders its event-id overload `(EventId, Exception, string)`, so an exception prepended in front of an event id does not bind — `skala fix` would have broken the build on the tool's own advice. A call that writes anything before the template is declined outright rather than reported with a fix that cannot be applied. ⚠ **A call that already passes the exception as a *template argument* still fires**, because the `exception` parameter is still empty and a sink still gets a string where it expected an exception; the fix attaches the exception and does **not** also delete the now-redundant hole, because removing text from inside a literal needs a value-to-source offset map that escape sequences break, and a fix that is right except after a `\\n` is worse than one that leaves a tidy-up for the author. A `catch` with no declared variable (`catch { }`, `catch (IOException)`) has no exception to pass and is silent. The nearest enclosing `catch` is the one used, and the walk stops at the member declaration rather than at the first `try`, so a lambda or local function written inside a `catch` — which really does close over the variable — is still reported. Binding is by containing type (`Serilog.ILogger`, `Serilog.Log`, `Microsoft.Extensions.Logging.LoggerExtensions`), never by method name. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2073.severity"
+      ]
+    },
+    {
+      "id": "SK7110",
+      "concept": "logger-declared-for-another-type",
+      "title": "The logger is declared for a different type than the one that declares it",
+      "category": "Maintainability",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "S3416",
+        "S6672"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A type declares an ILogger<T> field, property or constructor parameter whose T is neither itself nor one of its base types.",
+      "rationale": "The type argument is the log *category*. A class holding an `ILogger<Other>` files every message it ever writes under another class's name, so a filter that selects this class misses them and a filter that selects the other one collects messages it never sent. Nothing fails, nothing is slow, and every log query about either class is quietly wrong — which is worse than noise, because noise is visible. The fix is mechanical: the category the declaration meant is the type the declaration is in. ⚠ **This is the objective quarter of issue #237, and the other three members are declined on purpose.** `S6669` (what the field is *named*) and `S1312` (whether it is `private static readonly`) are naming and declaration conventions, which are the most opinionated thing a linter can hold and a repository's to settle rather than a defect anybody can be shown. `S3416`'s `LogManager.GetLogger(typeof(Other))` shape is covered here only where the category is a declared `ILogger<T>`; Serilog's `Log.ForContext<T>()` is deliberately out, because choosing a context other than the enclosing type is a normal and intended use of that method rather than a mistake.",
+      "examples": {
+        "bad": "sealed class OrderService {\n    readonly ILogger<PaymentService> logger;\n}",
+        "good": "sealed class OrderService {\n    readonly ILogger<OrderService> logger;\n}"
+      },
+      "falsePositives": "⚠ **A base type of the declaring type is accepted.** A hierarchy that files its whole family under the base class's category is a deliberate grouping, and the type argument still names something whose declaration the reader can find. Only an unrelated type is reported. ⚠ **Fields, properties and constructor parameters only** — the places a type *keeps* a logger. A `typeof(ILogger<Other>)`, a local in a composition root, a factory's return type and a method parameter that forwards one all name another class's logger on purpose, and reporting them would turn a rule about one type's own category into a rule against dependency injection. ⚠ **A type parameter is never reported**: `ILogger<T>` inside a generic helper is a category decided at the use site, not a wrong one, and there is no name a fix could write in its place. Comparison is on original definitions, so `Repository<T>` holding an `ILogger<Repository<T>>` is correct and the fix writes the type parameter list back. ⚠ **`defaultSeverity` is `suggestion` rather than `none`, and the measured count that would have argued for `none` does not exist**: Skala's own tree contains no `ILogger<T>` declaration at all — the shape is absent, verified by grep and by a probe file that made the rule fire once inserted — so a Skala count cannot show the rule is noisy. What settles it is that the finding is not a preference: `SK7010` and `SK7101` ship at `none` because a reader may reasonably disagree with them, and nobody reasonably wants their messages filed under another class's name. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK7110.severity"
+      ]
     }
   ]
 }

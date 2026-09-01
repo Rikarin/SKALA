@@ -122,6 +122,9 @@ public sealed class RuleFixtureTests {
         new InterpolatedStringFormAnalyzer(), new UnsignedRightShiftAnalyzer(),
         new TupleDeconstructionAnalyzer(), new WithExpressionCopyAnalyzer(),
         new RedundantSpreadElementAnalyzer(), new CachedEmptyInstanceAnalyzer(),
+        new LogTemplateArgumentCountAnalyzer(), new LogTemplateDuplicatePropertyAnalyzer(),
+        new InvisibleCharacterAnalyzer(), new CaughtExceptionNotLoggedAnalyzer(),
+        new LoggerForAnotherTypeAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
