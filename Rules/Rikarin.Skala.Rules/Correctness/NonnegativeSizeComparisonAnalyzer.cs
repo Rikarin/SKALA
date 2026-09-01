@@ -42,8 +42,11 @@ public sealed class NonnegativeSizeComparisonAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
 
-        // ⚠ IsLifted is load-bearing rather than tidy. `list?.Count >= 0` is `false` when the
-        // receiver is null, so it is not always true and reporting it would be a wrong answer.
+        // ⚠ `list?.Count >= 0` is `false` when the receiver is null, so it is not always true and
+        // reporting it would be a wrong answer. The `IsLifted` clause says that, and a sabotage
+        // proved it is *not* what stops it: two guards below decide first — the size proof does not
+        // see through a conditional access, and `int?` is not a fixed-width integral type. It is
+        // kept as the statement of intent, not credited as the thing that works.
         if (model.GetOperation(binary, cancellation) is not IBinaryOperation {
                 OperatorMethod: null,
                 IsLifted: false

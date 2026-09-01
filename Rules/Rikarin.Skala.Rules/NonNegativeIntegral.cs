@@ -59,6 +59,11 @@ internal static class NonNegativeIntegral {
     ///     numeric conversion in C# preserves sign, so the proof survives one; an explicit conversion
     ///     does not — <c>(int)someUlong</c> is very much able to be negative.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ A conditional access is deliberately <em>not</em> stripped. <c>items?.Count</c> is
+    ///     <c>int?</c> and can be absent rather than non-negative, so unwrapping it would hand a
+    ///     caller a range the value does not have.
+    /// </remarks>
     static IOperation? Unwrap(IOperation? operation) {
         while (true) {
             switch (operation) {
