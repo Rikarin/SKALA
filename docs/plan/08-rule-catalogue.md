@@ -394,6 +394,26 @@ trees are the argument for it — across all three there is exactly **one** `got
 `SK7073` an empty `#region` · `SK7074` a `goto` to a label (`goto case` and `goto default` are
 not reported).
 
+⚠ **The prose pass for `SK7080`–`SK7084` is owed.** What follows is the allocation register entry —
+enough that the id is written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see it — not the worked-through account the rest of this section carries.
+
+**`SK7080`–`SK7084` extend the threshold family `SK7001`–`SK7006` and `SK7030` established**, and
+they extend the same machinery: one `MetricThresholds` record read once per file from
+`dotnet_code_quality.SK70xx.threshold`, the measured value carried on the diagnostic under
+`skala.metric.value`, and no fix, which is what a measurement has instead of a repair.
+
+⚠ **`SK7080` counts only the part of the chain this compilation declares.** Raw inheritance depth
+penalises using a framework — `MyControl : Button` is one decision somebody made and the eight
+types above `Button` are not — so the walk counts the first non-source base once and stops. The
+consequence is that a base class in a referenced project also ends the chain, which under-reports;
+that is the safe direction. ⚠ **An error type anywhere on the chain withdraws the measurement
+entirely**, because a chain that cannot be walked reads as depth 1 and reporting the smaller number
+would be silently wrong. That is why the rule finds nothing on the corpus slices (#277): the shape
+is there and the analysis correctly declines.
+
+`SK7080` a class with more source-declared base classes than the threshold (default 4).
+
 ## SK8000 — Tests
 
 `SK8001` test method with no assertion · `SK8002` `Assert.True(x == y)` instead of `Assert.Equal` ·
@@ -477,11 +497,11 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **151** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **121** | **80.7 %** |
+| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **122** | **80.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

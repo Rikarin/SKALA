@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 129 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 130 ids are allocated.
 
 ## Async
 
@@ -113,6 +113,7 @@
 | [SK7072](SK7072.md) | A warning suppression covers nothing | warning | safe | yes |
 | [SK7073](SK7073.md) | A region is empty | suggestion | safe | yes |
 | [SK7074](SK7074.md) | Review a goto to a label | warning | — | yes |
+| [SK7080](SK7080.md) | The inheritance chain is deeper than the threshold | hint | — | no |
 
 ## Modernization
 

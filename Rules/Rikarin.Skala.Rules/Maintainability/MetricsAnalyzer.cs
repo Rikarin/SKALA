@@ -343,8 +343,14 @@ sealed class MetricThresholds {
 
     public int FileLines { get; private set; } = 1000;
 
+    /// <summary>
+    ///     <c>SK7080</c>: base classes above a class, counting only the ones this compilation declares.
+    /// </summary>
+    public int InheritanceDepth { get; private set; } = 4;
+
     public static MetricThresholds Read(AnalyzerConfigOptions options) =>
         new() {
+            InheritanceDepth = Value(options, RuleIds.InheritanceDepth, Default.InheritanceDepth),
             Cyclomatic = Value(options, RuleIds.CyclomaticComplexity, Default.Cyclomatic),
             Cognitive = Value(options, RuleIds.CognitiveComplexity, Default.Cognitive),
             Statements = Value(options, RuleIds.MethodLengthInStatements, Default.Statements),
