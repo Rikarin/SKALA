@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 129 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 130 ids are allocated.
 
 ## Async
 
@@ -54,6 +54,7 @@
 | [SK6021](SK6021.md) | A type is named like an exception and is not one | warning | — | no |
 | [SK6022](SK6022.md) | A type name repeats the keyword the declaration already carries | suggestion | — | yes |
 | [SK6023](SK6023.md) | A type has no members, no base and no attributes | suggestion | — | yes |
+| [SK6030](SK6030.md) | A type is declared in the global namespace | warning | — | yes |
 
 ## Formatting
 

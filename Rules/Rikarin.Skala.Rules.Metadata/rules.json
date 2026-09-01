@@ -3316,6 +3316,33 @@
       "configuration": [
         "dotnet_diagnostic.SK3021.severity"
       ]
+    },
+    {
+      "id": "SK6030",
+      "concept": "type-in-global-namespace",
+      "title": "A type is declared in the global namespace",
+      "category": "Design",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3903"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The global namespace is one flat name table shared with every referencing assembly, and it is the one namespace a `using` cannot name.",
+      "rationale": "A namespace is how a type says which program it belongs to, and the global namespace says nothing. Every assembly in a consumer's dependency closure contributes to the same flat table, so two libraries that each declare a global `Settings` cannot both be referenced — and the error arrives in the consumer's build, naming two types the consumer did not write. The usual escapes do not apply: `using Configuration = Contoso.Configuration;` needs a namespace to alias, and `global::Settings` names the ambiguity rather than resolving it, so the only repair available downstream is an `extern alias` on the whole assembly. The namespace costs one line here; omitting it moves the cost to somebody who cannot pay it without a source change to a package they do not own.",
+      "examples": {
+        "bad": "public sealed class Settings {\n    public string Path { get; init; } = string.Empty;\n}",
+        "good": "namespace Contoso.Configuration;\n\npublic sealed class Settings {\n    public string Path { get; init; } = string.Empty;\n}"
+      },
+      "falsePositives": "**Only a declaration whose direct parent is the compilation unit.** A nested type takes its container's namespace, so it is never reported — the finding belongs to the outer type and reporting it again per member would multiply one mistake by the size of the file. A declaration inside a `namespace` block or a file-scoped namespace has a namespace node above it and is out of scope by construction.\n\n**A `file` type is never reported.** `file sealed class Helper { }` is visible only inside the file that declares it, so it is in the global namespace and in nobody's way — which is exactly what the modifier is for. It is the one shape where \"no namespace\" is the correct answer rather than an omission.\n\n⚠ **A type named `Program` is exempt, and that is not a courtesy.** A file with top-level statements gets a compiler-generated `Program` in the global namespace, and `public partial class Program { }` — the documented way to make an entry point visible to `WebApplicationFactory<Program>` — has to be in the global namespace too, or it declares a *different* type and the test host cannot find the program. There is no namespace that declaration could be moved to, so a finding on it would name no available repair. The cost is that a genuinely stray type called `Program` goes unreported.\n\n**Every type kind is reported, including `enum` and `delegate`.** They occupy the same name table as a class and collide in exactly the same way; excluding them would make the rule's silence mean two different things.\n\n**Generated code is excluded**, the same as every rule in this range: a global type written by a source generator is the generator's decision and not the author's.\n\n**The finding is real and harmless in an application that ships no reference surface.** An executable nobody references cannot collide with anything, and a console program with one global helper class is a shape the rule reports and a reviewer may reasonably baseline. The rule cannot tell an application from a library — the output kind is an MSBuild property and not a fact about a syntax tree — and the general case is a library, so the rule reports and says so here.\n\n⚠ **No fix, and the reason is that the edit needs a name nobody has written down.** Wrapping the file in a namespace is a mechanical two-span edit *once the namespace is known*, and it is not: deriving it from the folder path requires the project's root namespace and the path the project treats as its root, neither of which an analyzer can see, and inventing one would put a name into a public API on a guess. `hasFix: false` is a decision, not an omission.",
+      "configuration": [
+        "dotnet_diagnostic.SK6030.severity"
+      ]
     }
   ]
 }
