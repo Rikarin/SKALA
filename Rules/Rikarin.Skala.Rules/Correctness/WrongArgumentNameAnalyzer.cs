@@ -19,10 +19,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     the same string with the compiler checking it, and it cannot go stale under a rename.
 ///     <para>
 ///         ⚠ The argument is found through the *constructor symbol's* parameter named <c>paramName</c>,
-///         never by position. The family overloads the same slot: <c>ArgumentException(message,
-///         paramName)</c> puts it second, <c>ArgumentNullException(paramName, message)</c> first, and
-///         <c>ArgumentNullException(message, innerException)</c> has no <c>paramName</c> at all. Counting
-///         arguments would report the message of that last one on every call.
+///         never by position. The family overloads the same slot three ways: on
+///         <c>ArgumentException</c> it is second, after the message; on <c>ArgumentNullException</c> it
+///         is first, before the message; and on the <c>(message, innerException)</c> constructor of
+///         both it is absent. Counting arguments would report the message of that last one on every
+///         call.
 ///     </para>
 ///     <para>
 ///         ⚠ The rule reports only where it can name the replacement — exactly one parameter in scope a
@@ -288,8 +289,8 @@ public sealed class WrongArgumentNameAnalyzer : DiagnosticAnalyzer {
 
         var end = 0;
         while (end < left.Length - start
-            && end < right.Length - start
-            && left[left.Length - 1 - end] == right[right.Length - 1 - end]) {
+               && end < right.Length - start
+               && left[left.Length - 1 - end] == right[right.Length - 1 - end]) {
             end++;
         }
 
