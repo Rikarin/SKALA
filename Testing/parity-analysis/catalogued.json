@@ -146,5 +146,6 @@
  "DoubleNegationInPattern": "SK1051",
  "NegationOfRelationalPattern": "SK1051",
  "MergeConditionalExpression": "SK1052",
- "UseDiscardAssignment": "SK1053"
+ "UseDiscardAssignment": "SK1053",
+ "InlineOutVariableDeclaration": "SK1054"
 }

@@ -109,3 +109,4 @@ SK1050 | Skala.Modernization | Info | Use pattern matching instead of a test-and
 SK1051 | Skala.Modernization | Info | Simplify the pattern.
 SK1052 | Skala.Modernization | Info | Merge the `?:` into a conditional access.
 SK1053 | Skala.Modernization | Info | Use a discard.
+SK1054 | Skala.Modernization | Info | Inline the `out` variable declaration.

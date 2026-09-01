@@ -20,7 +20,7 @@ public sealed class PatternMatchingBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers =
     [
         new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(), new MergedConditionalAccessAnalyzer(),
-        new DiscardAssignmentAnalyzer()
+        new DiscardAssignmentAnalyzer(), new InlineOutVariableAnalyzer()
     ];
 
     [Theory]
@@ -174,6 +174,43 @@ public sealed class PatternMatchingBatchTests {
         const string source = "class C { bool R() => true; void M() { var x = R(); } }";
         Assert.Empty(Analyze(source, LanguageVersion.CSharp6).Where(static d => d.Id == "SK1053"));
         Assert.NotEmpty(Analyze(source, LanguageVersion.CSharp7).Where(static d => d.Id == "SK1053"));
+    }
+
+    /// <summary>
+    ///     <c>SK1054</c>: the declared type travels verbatim, and scope decides everything else.
+    /// </summary>
+    [Fact]
+    public void InlineOutVariable_CarriesTheWrittenTypeRatherThanVar() {
+        const string source = "class C { bool T(out int v) { v = 0; return true; } "
+            + "bool M() { int value; return T(out value); } }";
+
+        var finding = Assert.Single(Analyze(source, LanguageVersion.CSharp12));
+        Assert.Equal("SK1054", finding.Id);
+        Assert.Contains("out int value", finding.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("class C { bool T(out int v) { v = 0; return true; } bool M() { int a; return T(out a); } }", true)]
+    // The read is below the statement that writes it, where the expression variable may not reach.
+    [InlineData("class C { bool T(out int v) { v = 0; return true; } int M() { int a; T(out a); return a; } }", false)]
+    // A nested block scopes the inline declaration somewhere the local was not.
+    [InlineData("class C { bool T(out int v) { v = 0; return true; } void M(bool e) { int a; if (e) { T(out a); } } }", false)]
+    // An initializer is a value somebody chose.
+    [InlineData("class C { bool T(out int v) { v = 0; return true; } bool M() { int a = 1; return T(out a); } }", false)]
+    // `ref` reads as well as writes.
+    [InlineData("class C { void B(ref int v) { v++; } int M() { int a = 0; B(ref a); return a; } }", false)]
+    // One name in two `out` positions would be two declarations.
+    [InlineData("class C { void S(out int x, out int y) { x = 0; y = 0; } void M() { int a; S(out a, out a); } }", false)]
+    public void InlineOutVariable_MovesOnlyWhereTheScopeSurvives(string source, bool fires) =>
+        Assert.Equal(fires, Analyze(source, LanguageVersion.CSharp12).Any(static d => d.Id == "SK1054"));
+
+    [Fact]
+    public void InlineOutVariable_RequiresCSharp7() {
+        const string source = "class C { bool T(out int v) { v = 0; return true; } "
+            + "bool M() { int value; return T(out value); } }";
+
+        Assert.Empty(Analyze(source, LanguageVersion.CSharp6).Where(static d => d.Id == "SK1054"));
+        Assert.NotEmpty(Analyze(source, LanguageVersion.CSharp7).Where(static d => d.Id == "SK1054"));
     }
 
     static ImmutableArray<Diagnostic> Analyze(string source, LanguageVersion version) =>

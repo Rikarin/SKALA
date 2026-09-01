@@ -192,6 +192,7 @@ the rest of this section is written in, have not been written yet.
 | `SK1051` | `simplified-pattern` | `x is not not P`, `x is not (> 5)` | `x is P`, `x is <= 5` |
 | `SK1052` | `merged-conditional-access` | `x != null ? x.Y : null` | `x?.Y` |
 | `SK1053` | `discard-over-unread-local` | `var ignored = M(out var unused);` | `_ = M(out _);` |
+| `SK1054` | `inline-out-variable` | `int v; if (M(out v))` | `if (M(out int v))` |
 
 ## SK2000 — Correctness
 
@@ -489,10 +490,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **125** | **80.6 %** |
+| **Shipped** — present in `rules.json` | **126** | **81.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

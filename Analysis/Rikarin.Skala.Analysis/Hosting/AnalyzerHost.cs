@@ -107,6 +107,7 @@ public static class AnalyzerHost {
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(),
         new MergedConditionalAccessAnalyzer(), new DiscardAssignmentAnalyzer(),
+        new InlineOutVariableAnalyzer(),
     ];
 
     /// <summary>
