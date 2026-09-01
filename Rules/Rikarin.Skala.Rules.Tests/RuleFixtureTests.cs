@@ -70,6 +70,7 @@ public sealed class RuleFixtureTests {
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new EmptyInitializerAnalyzer(), new RedundantStringCallAnalyzer(),
         new RedundantArgumentAnalyzer(), new RedundantSyntaxAnalyzer(),
+        new RedundantCastAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

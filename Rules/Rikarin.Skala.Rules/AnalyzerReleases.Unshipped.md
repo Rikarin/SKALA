@@ -109,3 +109,4 @@ SK0230 | Skala.Cleanup | Warning | An initializer or `with` expression is empty.
 SK0231 | Skala.Cleanup | Warning | A call on a string returns the string it was given.
 SK0232 | Skala.Cleanup | Warning | An argument or signature element restates the declaration.
 SK0233 | Skala.Cleanup | Info | Nine token-level redundant syntax deletions.
+SK0234 | Skala.Cleanup | Warning | A conversion that converts nothing.

@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 133 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 134 ids are allocated.
 
 ## Async
 
@@ -26,6 +26,7 @@
 | [SK0231](SK0231.md) | The string call produces the string it was given | warning | safe | no |
 | [SK0232](SK0232.md) | The argument or signature element is redundant | warning | safe | no |
 | [SK0233](SK0233.md) | The syntax is redundant | suggestion | safe | yes |
+| [SK0234](SK0234.md) | The cast or type argument is redundant | warning | safe | no |
 
 ## Correctness
 

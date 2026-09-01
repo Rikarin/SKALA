@@ -158,5 +158,9 @@
  "RedundantAnonymousTypePropertyName": "SK0233",
  "RedundantQueryOrderByAscendingKeyword": "SK0233",
  "RedundantRangeBound": "SK0233",
- "RedundantPropertyPatternClause": "SK0233"
+ "RedundantPropertyPatternClause": "SK0233",
+ "RedundantCast": "SK0234",
+ "RedundantTypeArgumentsOfMethod": "SK0234",
+ "RedundantExplicitArraySize": "SK0234",
+ "RedundantExplicitTupleComponentName": "SK0234"
 }

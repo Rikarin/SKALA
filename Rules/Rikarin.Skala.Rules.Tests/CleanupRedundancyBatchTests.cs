@@ -24,6 +24,7 @@ public sealed class CleanupRedundancyBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new EmptyInitializerAnalyzer(), new RedundantStringCallAnalyzer(),
         new RedundantArgumentAnalyzer(), new RedundantSyntaxAnalyzer(),
+        new RedundantCastAnalyzer(),
     ];
 
     [Theory]
@@ -165,6 +166,30 @@ public sealed class CleanupRedundancyBatchTests {
         "SK0233",
         "static class C { static bool M(object? v) => v is string { }; }",
         "static class C { static bool M(object? v) => v is string; }"
+    )]
+    // SK0234 — the identity cast, which is the only cast shape this rule covers.
+    [InlineData(
+        "SK0234",
+        "static class C { static string M(string t) { var c = (string)t; return c; } }",
+        "static class C { static string M(string t) { var c = t; return c; } }"
+    )]
+    // SK0234 — explicit type arguments inference reaches on its own.
+    [InlineData(
+        "SK0234",
+        "static class C { static T E<T>(T v) => v; static int M(int v) => E<int>(v); }",
+        "static class C { static T E<T>(T v) => v; static int M(int v) => E(v); }"
+    )]
+    // SK0234 — the array size, not the brackets.
+    [InlineData(
+        "SK0234",
+        "static class C { static string[] M() => new string[2] { \"a\", \"b\" }; }",
+        "static class C { static string[] M() => new string[] { \"a\", \"b\" }; }"
+    )]
+    // SK0234 — every component name in one finding, because a tuple can restate any subset of them.
+    [InlineData(
+        "SK0234",
+        "static class C { static (string Name, int Age) M(string n, int a) { (string Name, int Age) p = (Name: n, Age: a); return p; } }",
+        "static class C { static (string Name, int Age) M(string n, int a) { (string Name, int Age) p = (n, a); return p; } }"
     )]
     public void TheFix_ProducesExactlyThisText(string rule, string before, string after) =>
         Assert.Equal(after, Fix(rule, before));

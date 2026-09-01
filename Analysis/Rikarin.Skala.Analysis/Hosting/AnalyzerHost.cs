@@ -108,6 +108,7 @@ public static class AnalyzerHost {
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new EmptyInitializerAnalyzer(), new RedundantStringCallAnalyzer(),
         new RedundantArgumentAnalyzer(), new RedundantSyntaxAnalyzer(),
+        new RedundantCastAnalyzer(),
     ];
 
     /// <summary>
