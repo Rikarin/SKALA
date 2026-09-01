@@ -106,3 +106,4 @@ SK3512 | Skala.Lifetime | Warning | A variable captured by `using` is returned.
 SK3020 | Skala.Async | Warning | The non-`async` `Task` method returns null.
 SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
 SK3040  | Skala.Async | Warning | The `lock` is taken over a synchronization primitive.
+SK3041  | Skala.Async | Warning | The compound operation on a `volatile` field is not atomic.

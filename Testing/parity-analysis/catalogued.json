@@ -139,5 +139,6 @@
  "UsingStatementResourceInitializationExpression": "SK3511",
  "ReturnOfUsingVariable": "SK3512",
  "SpinLockInReadonlyField": "SK3021",
- "SuspiciousLockOverSynchronizationPrimitive": "SK3040"
+ "SuspiciousLockOverSynchronizationPrimitive": "SK3040",
+ "NonAtomicCompoundOperator": "SK3041"
 }

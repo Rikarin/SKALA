@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 130 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 131 ids are allocated.
 
 ## Async
 
@@ -18,6 +18,7 @@
 | [SK3020](SK3020.md) | The non-`async` `Task` method returns null | warning | review | no |
 | [SK3021](SK3021.md) | A `SpinLock` is stored in a `readonly` field | warning | review | no |
 | [SK3040](SK3040.md) | The `lock` is taken over a synchronization primitive | warning | — | no |
+| [SK3041](SK3041.md) | The compound operation on a `volatile` field is not atomic | warning | — | no |
 
 ## Correctness
 

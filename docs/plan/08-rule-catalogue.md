@@ -293,6 +293,17 @@ document gives. Whoever writes it should read the analyzers, not this list.
   ⚠ **`System.Threading.Lock` is excluded explicitly**: it is a synchronization primitive and it is
   also the type a C# 13 `lock` is meant to be taken over, so reporting it would contradict `SK1023`'s
   own fix.
+- `SK3041` `non-atomic-volatile-update` — `++`, `--` or a compound assignment on a `volatile` field.
+  `volatile` buys visibility and orders nothing else, so the read-modify-write still loses updates;
+  the keyword is what makes it worth a warning, because it is the mark of an author who thought about
+  threading and concluded wrongly. Withdraws inside a `lock` and inside a constructor — but **not**
+  through a lambda written in one. ⚠ **Fixless, against the proposing issue, which asked for a fix.**
+  Four obstacles and any one is enough: `Interlocked.Increment(ref f)` on a `volatile` field is
+  **CS0420**; `f++` as an expression yields the value *before* and `Interlocked.Increment` the value
+  *after*; `^=`, `*=`, `/=` and `<<=` have no interlocked form at all; and the honest repair — drop
+  `volatile`, route every access through `Interlocked`/`Volatile` — changes the field's contract and
+  touches accesses in other files. The decision is recorded here rather than in a commit message
+  because ADR-012 makes the shipped shape permanent.
 
 ## SK4000 — Performance
 
@@ -493,8 +504,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **152** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **122** | **80.8 %** |
+| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **123** | **80.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
