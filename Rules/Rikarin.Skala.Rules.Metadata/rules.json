@@ -3342,6 +3342,31 @@
         "dotnet_diagnostic.SK4020.severity"
       ],
       "resharperNote": "The export sets `resharper_lambda_expression_can_be_made_static_highlighting = none`, so a repository that reads ReSharper's key gets this rule switched off. Skala ships it at `suggestion`: the inspection is quiet in the export because JetBrains treats it as a style opportunity, and the parity measurement makes it the highest-volume quiet inspection in the whole survey."
+    },
+    {
+      "id": "SK4021",
+      "concept": "stateless-private-method",
+      "title": "The private method does not use instance state",
+      "category": "Performance",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "MemberCanBeMadeStatic.Local",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A private instance method whose body never touches `this` can be `static`, which drops the hidden argument and the null check.",
+      "rationale": "An instance call passes a `this` argument the method does not read and, through a reference, carries a null check the callee cannot avoid. Making the method `static` removes both, and the declaration then states the fact the body already established: this code depends on its arguments and on nothing else. That is the larger half of the value — a reader no longer has to read the body to learn whether the method participates in the object's state, and a later edit that starts using a field is rejected at the point it is written. The rule is deliberately restricted to `private` methods, where the change is invisible outside the type; `static` on a visible member is an API change and a different decision.",
+      "examples": {
+        "bad": "sealed class Report {\n    readonly string title;\n\n    string Format(int count) => count + \" rows\";\n}",
+        "good": "sealed class Report {\n    readonly string title;\n\n    static string Format(int count) => count + \" rows\";\n}"
+      },
+      "falsePositives": "Only an ordinary `private` method with a body, in a non-partial class, struct or record declared once in one file, is considered. `static`, `abstract`, `virtual`, `override`, `partial`, `extern` and `new` declarations are excluded, as is anything carrying an attribute — a serialization callback, a marked event handler and a framework-invoked method are all shapes where the signature is a contract rather than a choice. The body is walked with the same proof `SK4020` uses, so any `this`, `base`, instance member or unresolved name withholds the finding; a recursive call to the method itself is admitted, because the fix makes that call static too. ⚠ Every call site in the file is then checked, and a single `this.Method()` or `instance.Method()` withholds the finding, because that spelling does not compile against a static method. ⚠ **What the rule cannot see is reflection**: a private method found by name through `MethodInfo` and invoked with an instance target breaks when it becomes static, and no analyzer can prove the absence of that. It also cannot see another file, which is why a partial containing type is excluded rather than analysed.",
+      "configuration": [
+        "dotnet_diagnostic.SK4021.severity"
+      ]
     }
   ]
 }

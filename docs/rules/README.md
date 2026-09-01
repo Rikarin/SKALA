@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 130 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 131 ids are allocated.
 
 ## Async
 
@@ -157,6 +157,7 @@
 | [SK4007](SK4007.md) | Review large struct arguments in loops | hint | — | no |
 | [SK4010](SK4010.md) | A `Where` the next operator could have taken as its predicate | suggestion | safe | no |
 | [SK4020](SK4020.md) | The lambda captures nothing and is not `static` | suggestion | safe | no |
+| [SK4021](SK4021.md) | The private method does not use instance state | hint | safe | no |
 
 ## Security
 

@@ -108,11 +108,20 @@ public sealed record RuleInfo(
                 // `convert_to_a_s_c_i_i`. ReSharper's own keys are written that way.
                 var startsWord = i > 0
                     && (!char.IsUpper(pascal[i - 1]) || i + 1 < pascal.Length && char.IsLower(pascal[i + 1]));
-                if (startsWord) {
+                if (startsWord && builder.Length > 0 && builder[builder.Length - 1] != '_') {
                     builder.Append('_');
                 }
 
                 builder.Append(char.ToLowerInvariant(c));
+            } else if (c == '.') {
+                // ⚠ ReSharper's severity-scoped inspections are spelled `MemberCanBeMadeStatic.Global`
+                // and `.Local`, and the exported key separates the two halves with an underscore like
+                // any other word boundary. Without this the id derives to a key ending `._global`,
+                // which JetBrains never emits — a mapping that looks like a feature and behaves like a
+                // comment. EveryDeclaredReSharperKey_ExistsInTheExport is what catches that.
+                if (builder.Length > 0 && builder[builder.Length - 1] != '_') {
+                    builder.Append('_');
+                }
             } else {
                 builder.Append(c);
             }
