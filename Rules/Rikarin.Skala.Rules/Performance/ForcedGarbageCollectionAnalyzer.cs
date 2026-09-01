@@ -27,9 +27,19 @@ public sealed class ForcedGarbageCollectionAnalyzer : DiagnosticAnalyzer {
     ///     point rather than the defect.
     /// </summary>
     static readonly HashSet<string> Measurement = new(System.StringComparer.Ordinal) {
-        "FactAttribute", "TheoryAttribute", "TestAttribute", "TestCaseAttribute", "TestMethodAttribute",
-        "BenchmarkAttribute", "GlobalSetupAttribute", "GlobalCleanupAttribute", "IterationSetupAttribute",
-        "IterationCleanupAttribute", "SetUpAttribute", "TearDownAttribute", "TestInitializeAttribute",
+        "FactAttribute",
+        "TheoryAttribute",
+        "TestAttribute",
+        "TestCaseAttribute",
+        "TestMethodAttribute",
+        "BenchmarkAttribute",
+        "GlobalSetupAttribute",
+        "GlobalCleanupAttribute",
+        "IterationSetupAttribute",
+        "IterationCleanupAttribute",
+        "SetUpAttribute",
+        "TearDownAttribute",
+        "TestInitializeAttribute",
         "TestCleanupAttribute"
     };
 
@@ -45,7 +55,9 @@ public sealed class ForcedGarbageCollectionAnalyzer : DiagnosticAnalyzer {
         var invocation = (InvocationExpressionSyntax)context.Node;
         var cancellation = context.CancellationToken;
         if (context.SemanticModel.GetSymbolInfo(invocation, cancellation).Symbol is not IMethodSymbol {
-                Name: "Collect", IsStatic: true, ContainingType: { Name: "GC" } container
+                Name: "Collect",
+                IsStatic: true,
+                ContainingType: { Name: "GC" } container
             }
             || container.ContainingNamespace?.ToDisplayString() != "System"
             || container.ContainingType is not null
@@ -71,7 +83,8 @@ public sealed class ForcedGarbageCollectionAnalyzer : DiagnosticAnalyzer {
 
             if (model.GetDeclaredSymbol(declaration, cancellation) is { } symbol
                 && symbol.GetAttributes()
-                    .Any(attribute => attribute.AttributeClass is { } type && Measurement.Contains(type.MetadataName))) {
+                    .Any(attribute => attribute.AttributeClass is { } type && Measurement.Contains(type.MetadataName)
+                    )) {
                 return true;
             }
         }

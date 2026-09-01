@@ -54,7 +54,8 @@ public sealed class StatelessPrivateMethodAnalyzer : DiagnosticAnalyzer {
             } method
             || method.ExplicitInterfaceImplementations.Length != 0
             || method.ContainingType is not {
-                TypeKind: TypeKind.Class or TypeKind.Struct, DeclaringSyntaxReferences.Length: 1
+                TypeKind: TypeKind.Class or TypeKind.Struct,
+                DeclaringSyntaxReferences.Length: 1
             }) {
             return;
         }
@@ -91,7 +92,9 @@ public sealed class StatelessPrivateMethodAnalyzer : DiagnosticAnalyzer {
         IMethodSymbol method,
         CancellationToken cancellation
     ) {
-        foreach (var name in declaration.SyntaxTree.GetRoot(cancellation).DescendantNodes().OfType<SimpleNameSyntax>()) {
+        foreach (var name in declaration.SyntaxTree.GetRoot(cancellation)
+                     .DescendantNodes()
+                     .OfType<SimpleNameSyntax>()) {
             cancellation.ThrowIfCancellationRequested();
             if (name.Identifier.ValueText != method.Name) {
                 continue;

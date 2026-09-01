@@ -53,7 +53,8 @@ public sealed class NoncapturingLambdaAnalyzer : DiagnosticAnalyzer {
         }
 
         if (node is AnonymousFunctionExpressionSyntax function
-            && (!IsDelegateConversion(model, function, cancellation) || InsideExpressionTree(model, node, cancellation))) {
+            && (!IsDelegateConversion(model, function, cancellation)
+                || InsideExpressionTree(model, node, cancellation))) {
             return;
         }
 

@@ -160,7 +160,8 @@ public sealed class DeclarationPerformanceBatchTests {
     /// <summary>A <c>GC</c> of somebody's own is not <c>System.GC</c>, in this file or another.</summary>
     [Fact]
     public void ASourceDeclaredGarbageCollector_IsNotTheFrameworkOne() {
-        var compilation = RuleFixtures.Compile("static class Caller { public static void Purge() => GC.Collect(); }",
+        var compilation = RuleFixtures.Compile(
+            "static class Caller { public static void Purge() => GC.Collect(); }",
             "first.cs"
         );
         Assert.DoesNotContain(
@@ -169,7 +170,8 @@ public sealed class DeclarationPerformanceBatchTests {
         );
         Assert.Single(
             Analyze(
-                RuleFixtures.Compile("static class Caller { public static void Purge() => System.GC.Collect(); }",
+                RuleFixtures.Compile(
+                    "static class Caller { public static void Purge() => System.GC.Collect(); }",
                     "test.cs"
                 )
             ),

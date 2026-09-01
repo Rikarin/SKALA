@@ -105,7 +105,8 @@ public static class AnalyzerHost {
         new EscapedKeywordAnalyzer(),
         new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
-        new NoncapturingLambdaAnalyzer(), new StatelessPrivateMethodAnalyzer(), new ImmutableStructAnalyzer(), new RedundantCapacityArgumentAnalyzer(), new ForcedGarbageCollectionAnalyzer(),
+        new NoncapturingLambdaAnalyzer(), new StatelessPrivateMethodAnalyzer(), new ImmutableStructAnalyzer(),
+        new RedundantCapacityArgumentAnalyzer(), new ForcedGarbageCollectionAnalyzer(),
     ];
 
     /// <summary>

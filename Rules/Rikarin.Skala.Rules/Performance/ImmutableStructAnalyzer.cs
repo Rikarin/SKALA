@@ -86,7 +86,7 @@ public sealed class ImmutableStructAnalyzer : DiagnosticAnalyzer {
         return member switch {
             // ⚠ A `fixed` buffer's declarator carries a size, and its storage cannot be readonly.
             FieldDeclarationSyntax field => (field.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)
-                    || field.Modifiers.Any(SyntaxKind.ConstKeyword))
+                || field.Modifiers.Any(SyntaxKind.ConstKeyword))
                 && field.Declaration.Variables.All(static variable => variable.ArgumentList is null),
 
             // ⚠ A field-like event's backing delegate field is written by its own accessors.
@@ -104,7 +104,7 @@ public sealed class ImmutableStructAnalyzer : DiagnosticAnalyzer {
         node is PointerTypeSyntax
             or FunctionPointerTypeSyntax
             or FixedStatementSyntax
-            || node.IsKind(SyntaxKind.AddressOfExpression);
+        || node.IsKind(SyntaxKind.AddressOfExpression);
 
     /// <summary>
     ///     <c>this = default</c>, <c>this++</c> and <c>Swap(ref this)</c> all compile in a struct that is
