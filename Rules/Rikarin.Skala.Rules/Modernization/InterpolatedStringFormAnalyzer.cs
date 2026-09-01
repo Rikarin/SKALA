@@ -243,6 +243,15 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
     ///     index would evaluate the arguments in a different order; a gap leaves an argument unused.
     ///     Alignment and format clauses are carried across verbatim — <c>{0,10:N2}</c> becomes
     ///     <c>{done,10:N2}</c> — and <c>{{</c>/<c>}}</c> mean a literal brace in both grammars.
+    ///     <para>
+    ///         ⚠ <b>That index bookkeeping is a fast path, not the guard.</b> A sabotage removing the
+    ///         ascending-order test turned nothing red:
+    ///         <see cref="ParsesToTheSameHoles" /> already rejects every ordering, repeat and gap it
+    ///         rejects, because it compares the holes it parsed back against the arguments in order.
+    ///         Removing *both* is what turns the out-of-order fixture red. The test stays because it
+    ///         names the three reasons a composite format is not an interpolation, which a hole-by-hole
+    ///         comparison does not.
+    ///     </para>
     /// </remarks>
     static string? Interpolate(string inner, IReadOnlyList<string> arguments) {
         var builder = new StringBuilder(inner.Length);
