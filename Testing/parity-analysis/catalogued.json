@@ -208,5 +208,15 @@
   "BaseObjectGetHashCodeCallInGetHashCode": "SK2041",
   "NonReadonlyMemberInGetHashCode": "SK2043",
   "AssignmentInConditionalExpression": "SK2060",
-  "DuplicateKeyCollectionInitialization": "SK2080"
+  "DuplicateKeyCollectionInitialization": "SK2080",
+  "UseIndexFromEndExpression": "SK1060",
+  "UseNameOfInsteadOfToString": "SK1061",
+  "UseNameOfInsteadOfTypeOf": "SK1061",
+  "UseRawString": "SK1062",
+  "RawStringCanBeSimplified": "SK1062",
+  "CanSimplifyStringEscapeSequence": "SK1062",
+  "UseStringInterpolationWhenPossible": "SK1063",
+  "SimplifyStringInterpolation": "SK1063",
+  "StringLiteralAsInterpolationArgument": "SK1063",
+  "UseUnsignedRightShiftOperator": "SK1064"
 }

@@ -306,6 +306,18 @@ the rest of this section is written in, have not been written yet.
 | `SK1053` | `discard-over-unread-local` | `var ignored = M(out var unused);` | `_ = M(out _);` |
 | `SK1054` | `inline-out-variable` | `int v; if (M(out v))` | `if (M(out int v))` |
 
+⚠ **`SK1060`–`SK1064` are registered here and the prose pass is owed.** The rows below take the
+numbers and say what each rule rewrites; the paragraphs explaining why each is worth a rule, in the
+voice the rest of this section is written in, have not been written yet.
+
+| ID | Concept | Instead of | Use |
+|---|---|---|---|
+| `SK1060` | `index-from-end` | `items[items.Count - 1]` | `items[^1]` |
+| `SK1061` | `nameof-expression` | `typeof(Widget).Name`, `"count"` as `paramName` | `nameof(Widget)`, `nameof(count)` |
+| `SK1062` | `escape-free-string-literal` | `"{\"id\":1}"`, `"\x41"` | `"""{"id":1}"""`, `"A"` |
+| `SK1063` | `interpolated-string-form` | `string.Format("{0}", x)`, `$"{x.ToString()}"` | `$"{x}"` |
+| `SK1064` | `unsigned-right-shift` | `(int)((uint)x >> n)` | `x >>> n` |
+
 ## SK2000 — Correctness
 
 Where the tool replaces the part of SonarQube people actually care about. Selected for *findings per
@@ -1424,6 +1436,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **241** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **207** | **86.3 %** |
+| Rules this document names | **215** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **181** | **84.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |

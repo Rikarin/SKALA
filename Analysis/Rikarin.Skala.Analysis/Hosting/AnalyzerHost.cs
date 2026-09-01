@@ -156,6 +156,8 @@ public static class AnalyzerHost {
         new NullSequenceReturnAnalyzer(), new AsyncSuffixAnalyzer(),
         new DuplicateInitializerKeyAnalyzer(), new SelfCollectionArgumentAnalyzer(),
         new OverwrittenElementAnalyzer(), new EmptyCollectionLoopAnalyzer(),
+        new IndexFromEndAnalyzer(), new NameofExpressionAnalyzer(), new EscapeFreeStringLiteralAnalyzer(),
+        new InterpolatedStringFormAnalyzer(), new UnsignedRightShiftAnalyzer(),
     ];
 
     /// <summary>

@@ -118,6 +118,8 @@ public sealed class RuleFixtureTests {
         new NullSequenceReturnAnalyzer(), new AsyncSuffixAnalyzer(),
         new DuplicateInitializerKeyAnalyzer(), new SelfCollectionArgumentAnalyzer(),
         new OverwrittenElementAnalyzer(), new EmptyCollectionLoopAnalyzer(),
+        new IndexFromEndAnalyzer(), new NameofExpressionAnalyzer(), new EscapeFreeStringLiteralAnalyzer(),
+        new InterpolatedStringFormAnalyzer(), new UnsignedRightShiftAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

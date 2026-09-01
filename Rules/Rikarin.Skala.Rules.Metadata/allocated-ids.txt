@@ -219,6 +219,11 @@ SK2080 duplicate-initializer-key
 SK2081 collection-passed-to-itself
 SK2082 overwritten-collection-element
 SK2083 provably-empty-collection
+SK1060 index-from-end
+SK1061 nameof-expression
+SK1062 escape-free-string-literal
+SK1063 interpolated-string-form
+SK1064 unsigned-right-shift
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

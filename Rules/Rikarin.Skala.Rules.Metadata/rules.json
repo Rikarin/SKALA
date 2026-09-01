@@ -5587,6 +5587,132 @@
       "configuration": [
         "dotnet_diagnostic.SK2083.severity"
       ]
+    },
+    {
+      "id": "SK1060",
+      "concept": "index-from-end",
+      "title": "Use an index-from-end expression",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseIndexFromEndExpression",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "8.0",
+      "summary": "An element access whose index counts back from the collection's own `Count` or `Length` is an index-from-end expression.",
+      "rationale": "`items[items.Count - 1]` names the collection twice and subtracts, and the reader has to check that both names are the same collection before believing the expression means \"the last one\". `items[^1]` says it, names the receiver once, and cannot be written with the wrong collection on one side — the copy-paste defect this shape produces is exactly `a[b.Count - 1]`, which compiles and is wrong. The subtraction is also the arithmetic the compiler was going to emit anyway: `^1` lowers to `Count - 1`, so the rewrite costs nothing and removes the only place a person can get it wrong.",
+      "examples": {
+        "bad": "var last = items[items.Count - 1];\nvar previous = buffer[buffer.Length - offset];",
+        "good": "var last = items[^1];\nvar previous = buffer[^offset];"
+      },
+      "falsePositives": "⚠ **`^` is not available on everything that has a `Count`.** The language's implicit index support needs a countable type *and* an `int` indexer, and `IEnumerable<T>` has neither — so the rule reads the indexed type rather than the shape of the expression, and admits only an array, a `string`, a type with a real `System.Index` indexer (`Span<T>`, `ReadOnlySpan<T>`), or a type implementing `IList<T>`/`IReadOnlyList<T>`. ⚠ **`Dictionary<int, V>` is countable and has an `int` indexer, so `d[^1]` compiles** and means the entry keyed `Count - 1` — the same program, spelled as if it were the last element. The `IList<T>` restriction is what keeps that out, and it is the reason the rule is not simply \"the type is countable\". ⚠ The receiver of the element access and the receiver of `.Count`/`.Length` must be the same chain of plain names, so `a[b.Count - 1]` is never rewritten and nothing that could have a side effect is evaluated a different number of times. ⚠ **The subtrahend is admitted only as a positive integer literal or a plain `int`-typed name path.** `^0` is `Count`, which throws where `Count - 0` also throws but is a different sentence, and a negative constant reaches `Index`'s constructor, which throws `ArgumentOutOfRangeException` where the subtraction would have thrown `IndexOutOfRangeException`. ⚠ Silent below C# 8, silent inside an expression tree where the indexer pattern is not expressible, and silent where `System.Index` is not **accessible** — which is not the same question as whether it exists. `System.Memory` ships an *internal* `System.Index` for `netstandard2.0`, so a presence check alone reported sixteen findings on Skala's own `netstandard2.0` projects, every one of whose fixes failed to compile with `CS0518`. The gate is the compiler's own accessibility test. The rule is one shape with one floor, so the gate is per-rule.",
+      "configuration": [
+        "dotnet_diagnostic.SK1060.severity"
+      ]
+    },
+    {
+      "id": "SK1061",
+      "concept": "nameof-expression",
+      "title": "Use `nameof`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseNameOfInsteadOfToString",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "6.0",
+      "summary": "A name produced at run time — `typeof(T).Name`, an enum member's `ToString()` — or written as a literal in a position that is defined to hold an identifier.",
+      "rationale": "`nameof` is the only spelling of a name that a rename touches. `typeof(Widget).Name` and `Colour.Red.ToString()` compute at run time what the compiler already knows, and a literal `\"count\"` handed to `ArgumentOutOfRangeException`'s `paramName` is a name the compiler was never asked about at all — so it survives the rename that makes it wrong, and the first person to see the mistake is whoever reads the exception. This is disproportionately a generated-code problem: a model writes the string because the pre-C# 6 dialect it learned had nothing else to write.",
+      "examples": {
+        "bad": "throw new ArgumentOutOfRangeException(\"count\", count, null);\nvar name = typeof(Widget).Name;\nvar label = Colour.Red.ToString();",
+        "good": "throw new ArgumentOutOfRangeException(nameof(count), count, null);\nvar name = nameof(Widget);\nvar label = nameof(Colour.Red);"
+      },
+      "falsePositives": "⚠ **A string that happens to equal a member name is not a `nameof` candidate, and this rule never guesses.** Serialization keys, JSON property names, SQL column names, HTTP headers and `.editorconfig` keys are all literals that look exactly like identifiers and mean something a rename must *not* follow — rewriting one silently changes the wire format. There is no test that separates them from the intended ones, so the rule fires only in positions whose meaning is defined: a `paramName` parameter of the `ArgumentException` family, and a `PropertyChangedEventArgs`/`PropertyChangingEventArgs` constructor. ⚠ **`UseNameofExpressionForPartOfTheString` is deliberately not covered** for that reason; it is also the one of the three inspections that ships at `none`. ⚠ **`typeof(T).Name` is `nameof(T)` only for a non-generic named type spelled by its own name.** `typeof(List<int>).Name` is `` `List`1` `` and `nameof(List<int>)` is `List`; `typeof(int).Name` is `Int32` and `nameof(int)` does not compile; `typeof(T).Name` on a type parameter is the *argument's* name at run time; and a `using` alias makes `nameof` produce the alias where `Name` produces the type — so the last identifier of the written type must equal the symbol's own name. Arrays, nullable spellings and `dynamic` are all refused. ⚠ **An enum member's `ToString()` is its name only when the value is unique.** `enum E { A = 1, B = 1 }` makes `E.B.ToString()` return `\"A\"`, so the rule reads every field of the enum and declines a shared value. ⚠ `SK2017` reports the `paramName` literal that names *no* parameter and this rule reports the one that does, so the two never both fire. Every shape is silent inside an expression tree and below C# 6, and the four shapes share that one floor, so the gate is per-rule.",
+      "configuration": [
+        "dotnet_diagnostic.SK1061.severity"
+      ]
+    },
+    {
+      "id": "SK1062",
+      "concept": "escape-free-string-literal",
+      "title": "Use the string literal form that needs no escapes",
+      "category": "Modernization",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseRawString",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "An escaped or verbatim literal a raw string would write without escapes, a raw string whose delimiter is longer than it needs to be, or an escape sequence that is simply a character.",
+      "rationale": "Escape-dense literals — Windows paths, embedded JSON, regexes — are where a stray backslash changes the meaning of the string and nothing says so. `\"\\\\d+\\\\.\\\\d+\"` and `\"{\\\"id\\\":1}\"` have to be decoded by the reader before they can be checked against whatever they are supposed to match, and the decoding is where the mistake gets made. A raw string removes the escaping entirely, and the shortest correct delimiter is the one that says the content has no quotes to worry about.",
+      "examples": {
+        "bad": "var pattern = \"\\\\d+\\\\.\\\\d+\";\nvar body = @\"{\"\"id\"\":1}\";\nvar tag = \"\\x41\";",
+        "good": "var pattern = \"\"\"\\d+\\.\\d+\"\"\";\nvar body = \"\"\"{\"id\":1}\"\"\";\nvar tag = \"A\";"
+      },
+      "falsePositives": "⚠ **The delimiter is the rule and getting it wrong emits code that does not compile.** A single-line raw string's fence is the longest run of quotes in the content plus one, never fewer than three, and its content may not begin or end with a quote at all. Rather than trusting that arithmetic, every replacement this rule proposes is **re-parsed as an expression and its value compared against the original's** before the finding is reported — a wrong fence cannot become a diagnostic, let alone a fix. ⚠ **Only single-line forms are touched.** A value containing a newline, a tab, or any other control character has no single-line raw spelling, and a multi-line raw string carries indentation rules that make the rewrite a formatting decision rather than a mechanical one. ⚠ **Version-gated per shape, not per rule.** The three raw-string shapes are silent below C# 11; simplifying an escape sequence to the character it denotes has no floor at all, and a single rule-level floor would have silenced it on every older project. ⚠ `\\x` is variable-length and greedy — `\"\\x41B\"` is one escape denoting U+041B, not `\\x41` followed by `B` — so the scan consumes it the way the lexer does and then declines it, because the character is outside the printable ASCII range the shape admits. `\\\\`, `\\\"`, `\\n`, `\\r`, `\\t`, `\\0` and `\\U` are never simplified. ⚠ A literal inside an interpolation hole is left alone: `SK1063` has its own opinion about those, and two rules rewriting one span is one of them being wrong. ⚠ **`UseVerbatimString` is not covered** — this rule goes to the raw form and never produces a verbatim one, and crediting an inspection whose output it does not reproduce would overstate the parity.",
+      "configuration": [
+        "dotnet_diagnostic.SK1062.severity"
+      ]
+    },
+    {
+      "id": "SK1063",
+      "concept": "interpolated-string-form",
+      "title": "Use the interpolation form that says what it means",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseStringInterpolationWhenPossible",
+      "resharperNote": "⚠ The export sets `resharper_use_string_interpolation_when_possible_highlighting` to `hint` and this rule defaults to `suggestion`. ReSharper's inspection covers the whole `string.Format` surface, including the argument shapes whose rewrite is not sound, so a low severity is how it stays usable; this rule declines those shapes by analysis instead and can afford to be seen. Reading the ReSharper key would lower it. docs/plan/16 § Q5.",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "6.0",
+      "summary": "A `string.Format` whose holes are numbered, a `ToString()` inside an interpolation hole, or a string literal sitting in a hole instead of in the text.",
+      "rationale": "`string.Format(\"{0} of {1}\", done, total)` makes the reader carry two numbers across a comma to find out what goes where, and the compiler will not tell them when the arguments are swapped. The interpolated form puts the value where it is printed. The two smaller shapes are the same argument applied to interpolation itself: `$\"{count.ToString()}\"` renders through a string nobody keeps, and `$\"a{\"b\"}c\"` is a hole holding something that was never a variable.",
+      "examples": {
+        "bad": "var line = string.Format(\"{0} of {1}\", done, total);\nvar label = $\"{count.ToString()} left\";\nvar path = $\"{root}{\"/\"}{name}\";",
+        "good": "var line = $\"{done} of {total}\";\nvar label = $\"{count} left\";\nvar path = $\"{root}/{name}\";"
+      },
+      "falsePositives": "⚠ **`SK2016` reports the one place interpolation must not be used**, and this rule must not create that finding: a `string.Format` whose result is handed to a `Microsoft.Extensions.Logging` `message` parameter is left alone, because rewriting it would eagerly render the message the logger was going to render lazily. ⚠ **Overload resolution is the trap that makes the rewrite unsound where it bites.** An interpolated string converts to `string`, to `FormattableString` and to `IFormattable`, so a call site with a `FormattableString` overload beside the `string` one — EF Core's `FromSql` family is the well-known case — can bind somewhere else after the rewrite, and there the difference is whether the SQL is parameterised. The rule reads the member group at the call site and declines if any candidate takes `FormattableString` or `IFormattable` in that position. ⚠ **The placeholders must be `{0}`…`{n-1}`, each used exactly once and in ascending order.** A repeated index would evaluate its argument twice; an out-of-order one would evaluate the arguments in a different order; a gap means an argument is unused. Every argument must be a chain of plain names, so nothing with a comma or a colon in it lands inside a hole, where both are grammar. The `IFormatProvider` overloads are refused outright — the culture is the point of them — as are a non-literal or verbatim format string and an explicitly passed `object[]`. ⚠ **`x.ToString()` inside a hole is removable only for a value type.** On a reference type `null.ToString()` throws where `$\"{null}\"` renders empty, which is not a modernization but a behaviour change; `Nullable<T>` is admitted because both spellings render the empty string. A hole carrying a format clause is left alone. ⚠ **Not covered, deliberately:** `NestedStringInterpolation`, `PassStringInterpolation`, and `UseFormatSpecifierInFormatString` — the last because `x.ToString(\"N2\")` and `$\"{x:N2}\"` agree only where the instance method delegates to `IFormattable`, which the BCL numeric types do and a user type need not.",
+      "configuration": [
+        "dotnet_diagnostic.SK1063.severity"
+      ]
+    },
+    {
+      "id": "SK1064",
+      "concept": "unsigned-right-shift",
+      "title": "Use `>>>`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseUnsignedRightShiftOperator",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "11.0",
+      "summary": "A cast to the unsigned type, a right shift, and a cast back is the unsigned right shift operator.",
+      "rationale": "`(int)((uint)x >> n)` is three operations spelling one, and two of the three are the casts that sign extension bugs come out of — a reader has to check that the widths match before believing the round trip is lossless, and the compiler will not check it for them. `x >>> n` is the operation, at the operand's own width, with nothing to get wrong.",
+      "examples": {
+        "bad": "var high = (int)((uint)hash >> 16);",
+        "good": "var high = hash >>> 16;"
+      },
+      "falsePositives": "⚠ **The equivalence holds only where the two types are the same width, and `>>` does not preserve width below 32 bits.** `(short)((ushort)x >> n)` looks identical and is a different program: `ushort` promotes to `int` before the shift, so the value shifted is zero-extended, while `x >>> n` on a `short` promotes the *signed* value first. For `x = -1` and `n = 4` the first gives 4095 and the second gives -1. Only `int`/`uint` and `long`/`ulong` are admitted, where `>>` is defined at the declared width; `byte`, `sbyte`, `short`, `ushort` and the native integer types are refused. The operand's own static type must be the signed one, so `(int)(u >> n)` on an already-unsigned `u` is not this shape. ⚠ **A `checked` context breaks the equivalence in both casts.** `(uint)x` throws for a negative `x` and `(int)u` throws for a `u` above `int.MaxValue`, where `>>>` never throws — so the rule is silent inside `checked` and silent entirely when the compilation sets `CheckForOverflowUnderflow`. ⚠ **`>>>` binds far more loosely than a cast**, so `(int)((uint)x >> n) + 1` rewritten bare would become `x >>> (n + 1)`. Rather than inventing parentheses the author did not write, the rule declines every position where the surrounding expression could rebind and fires only where a shift may stand unparenthesised. One shape with one floor, so the gate is per-rule.",
+      "configuration": [
+        "dotnet_diagnostic.SK1064.severity"
+      ]
     }
   ]
 }

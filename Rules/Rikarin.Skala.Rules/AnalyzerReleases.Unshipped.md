@@ -191,3 +191,8 @@ SK2080 | Skala.Correctness | Warning | The set or dictionary initializer repeats
 SK2081 | Skala.Correctness | Warning | The collection is passed to its own method as the other collection.
 SK2082 | Skala.Correctness | Warning | The collection element is written twice with nothing reading it in between.
 SK2083 | Skala.Correctness | Warning | The collection iterated here is provably empty.
+SK1060 | Skala.Modernization | Info | Use an index-from-end expression.
+SK1061 | Skala.Modernization | Info | Use `nameof`.
+SK1062 | Skala.Modernization | Hidden | Use the string literal form that needs no escapes.
+SK1063 | Skala.Modernization | Info | Use the interpolation form that says what it means.
+SK1064 | Skala.Modernization | Info | Use `>>>`.
