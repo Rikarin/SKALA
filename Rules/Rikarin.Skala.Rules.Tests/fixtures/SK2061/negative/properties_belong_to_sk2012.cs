@@ -1,7 +1,11 @@
-// ⚠ SK2012 already reports the automatic-property case, with a proof about the accessor bodies
-// that this rule does not have. Reporting both would be one defect counted twice.
+// A property getter is a method, so two evaluations are two calls and this rule proves nothing
+// about them. It is also the one comparison shape the compiler leaves silent, and SK2012 owns it.
 class C {
-    int Value { get; set; }
+    bool Ready { get; set; }
 
-    bool M() => Value == Value;
+    int Count { get; set; }
+
+    bool M() => Ready && Ready;
+
+    int N() => Count - Count;
 }

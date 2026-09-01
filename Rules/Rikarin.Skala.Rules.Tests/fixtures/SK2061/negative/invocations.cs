@@ -1,8 +1,8 @@
-// ⚠ Two draws, not one expression twice. Structural equality alone would report this.
+// ⚠ Two reads, not one expression twice. Structural equality alone would report this.
 using System;
 
 class C {
-    bool M(Random rng) => rng.Next() == rng.Next();
+    int M(System.IO.TextReader reader) => reader.Read() - reader.Read();
 
-    int N(System.IO.TextReader reader) => reader.Read() - reader.Read();
+    bool N(Random rng) => rng.NextDouble() > 0.5 && rng.NextDouble() > 0.5;
 }

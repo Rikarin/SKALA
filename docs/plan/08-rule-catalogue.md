@@ -365,10 +365,12 @@ than one that reports.
 `while`, `do`, `for` or `?:`. ⚠ The discriminator is "entire": `while ((line = reader.ReadLine())
 != null)` assigns inside a condition and is correct, and `if ((ok = TryLoad()))` uses the
 forty-year-old double-parenthesis convention to say the assignment was meant. Both are declined. ·
-`SK2061` `identical-operands` — the same side-effect-free path on both sides of `==`, `!=`, `<`,
-`<=`, `>`, `>=`, `&&`, `||`, `&`, `|`, `^`, `-`, `/` or `%`. ⚠ Floating-point operands are excluded
-outright, because `x == x` is the NaN test; properties are excluded because `SK2012` already owns
-the automatic-property case with a proof this rule does not have. · `SK2062` `repeated-condition` —
+`SK2061` `identical-operands` — the same side-effect-free path on both sides of `&&`, `||`, `&`,
+`|`, `^`, `-`, `/` or `%`. ⚠ The six comparison operators were dropped after measurement: `CS1718`
+covers every comparison shape this rule could report, and § "The compiler already says it" now
+records why the sentence that said otherwise was wrong. Floating-point operands are excluded
+outright, because `x - x` is a NaN-preserving zero; properties are excluded because a getter is a
+call and because `SK2012` owns the automatic-property case. · `SK2062` `repeated-condition` —
 a later `else if` condition structurally equal to an earlier one in the same chain. ⚠ Sequential
 `if`s are **not** compared: the first body usually changed the answer, so a repeat there is not a
 defect. · `SK2063` `misleading-operator-sequence` — `x =- 1`, where an `=` is hard against a unary
@@ -1303,8 +1305,17 @@ that duplicates one of them does not duplicate a diagnostic the user already see
 `SK3501` shipped because of that measurement; `SK2016` and `SK3502` now cover the conservative
 CA2254 and CA1001 cases as well.
 
-⚠ **`CS1717`/`CS1718` reach the identifier spellings only.** `Prop = Prop`, `other.Prop =
-other.Prop` and `other.Prop == other.Prop` produce nothing. `SK2012` now covers non-virtual
+⚠ **`CS1717`/`CS1718` reach every storage path, and this sentence used to say "the identifier
+spellings only", which is wrong.** The example it was built from is a *property*: `Prop = Prop`,
+`other.Prop = other.Prop` and `other.Prop == other.Prop` do produce nothing, because a property
+access is an accessor call. A **field** reached through a member access is a different matter and
+is covered — `this.g == this.g`, `b.v == b.v`, `Box.Which == Box.Which`, `a == a` on a `string`
+and `b == b` on a reference are all `CS1718`, measured at `net10.0` by
+`ExpressionMisreadingBatchTests.TheCompilerCoversEveryComparisonSK2061CouldHaveMade`. ⚠ **That
+cost `SK2061` its comparison half.** The rule was drafted over all six comparison operators on
+the strength of the old sentence; since it reports storage paths and never properties, the
+compiler covered every comparison it could have made and nothing was left over. It ships over
+`&&`, `||`, `&`, `|`, `^`, `-`, `/` and `%`, where the compiler says nothing at all. `SK2012` now covers non-virtual
 auto-properties declared in the same file, without assuming arbitrary accessors are side-effect-free.
 `SK2001` covers comparisons decided by integral type endpoints that the compiler leaves silent;
 neither rule duplicates the compiler-covered cases. The compiler also leaves an `IEquatable<T>` implemented without

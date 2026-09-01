@@ -1,10 +1,12 @@
-class Candidate {
+class Range {
     public int start;
     public int end;
 }
 
 class C {
-    bool M(Candidate candidate) => candidate.start == candidate.end;
+    int M(Range r) => r.end - r.start;
 
-    bool N(int a, int b) => a > b && b > 0;
+    bool N(bool a, bool b) => a && b;
+
+    int P(int bits, int mask) => bits ^ mask;
 }

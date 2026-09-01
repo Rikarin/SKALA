@@ -13,22 +13,31 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     question about nothing.
 /// </summary>
 /// <remarks>
-///     <c>left == left</c>, <c>a &amp;&amp; a</c>, <c>offset - offset</c>. One side was meant to name
+///     <c>a &amp;&amp; a</c>, <c>offset - offset</c>, <c>bits ^ bits</c>. One side was meant to name
 ///     something else, the compiler folds the result to a constant, and the check that was written to
 ///     catch a case cannot catch it.
 ///     <para>
-///         ⚠ <b>Floating point is excluded outright, and that exclusion is why the rule is semantic.</b>
-///         <c>x == x</c> is the idiomatic NaN test written without a call, <c>x != x</c> is the same
-///         test negated, and <c>x - x</c> is a NaN-preserving zero. All three are deliberate and all
-///         three are textually identical to the defect, so nothing but the operand's type separates
-///         them. <c>double</c>, <c>float</c> and <c>decimal</c> therefore never reach the report.
+///         ⚠ <b>The six comparison operators are NOT examined, because <c>csc</c> already reports
+///         every one of them.</b> The rule's first draft did examine them, and measuring
+///         <c>CS1718</c> rather than remembering doc 08's sentence about it disposed of that half
+///         entirely: <c>q == q</c>, <c>q &lt; q</c>, <c>this.g == this.g</c>, <c>b.v == b.v</c>,
+///         <c>Box.Which == Box.Which</c>, <c>a == a</c> on a string and <c>b == b</c> on a reference
+///         all produce <c>CS1718</c>, on by default. The only comparison shape the compiler leaves
+///         silent is a property access — and <c>SK2012</c> already owns that with a proof about the
+///         accessors. There was nothing left over.
+///         <see cref="Tests.ExpressionMisreadingBatchTests" /> pins the boundary.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Only storage paths, never accessors or calls.</b> <c>rng.Next() == rng.Next()</c> is two
-///         draws, not one expression twice. And a property is a call whose two reads this rule cannot
-///         prove equal — which is also how it stays disjoint from <c>SK2012</c>, the rule that already
-///         reports the automatic-property case with a proof about the accessor bodies that this one
-///         does not have. Reporting both would be one defect counted twice.
+///         ⚠ <b>Floating point is excluded outright, and that exclusion is why the rule is semantic.</b>
+///         <c>x - x</c> on a <c>double</c> is a NaN-preserving zero rather than a constant nothing:
+///         it is <c>0</c> for every finite value and NaN for NaN and the infinities, which is a real
+///         technique and is textually identical to the defect. <c>double</c>, <c>float</c> and
+///         <c>decimal</c> therefore never reach the report.
+///     </para>
+///     <para>
+///         ⚠ <b>Only storage paths, never accessors or calls.</b> <c>reader.Read() - reader.Read()</c>
+///         is two reads, not one expression twice. And a property is a call whose two evaluations this
+///         rule cannot prove equal.
 ///     </para>
 ///     <para>
 ///         ⚠ <b><c>+</c>, <c>*</c>, <c>&lt;&lt;</c> and <c>&gt;&gt;</c> are not examined.</b> Doubling,
@@ -48,12 +57,6 @@ public sealed class IdenticalOperandsAnalyzer : DiagnosticAnalyzer {
         context.EnableConcurrentExecution();
         context.RegisterSyntaxNodeAction(
             Analyze,
-            SyntaxKind.EqualsExpression,
-            SyntaxKind.NotEqualsExpression,
-            SyntaxKind.LessThanExpression,
-            SyntaxKind.LessThanOrEqualExpression,
-            SyntaxKind.GreaterThanExpression,
-            SyntaxKind.GreaterThanOrEqualExpression,
             SyntaxKind.LogicalAndExpression,
             SyntaxKind.LogicalOrExpression,
             SyntaxKind.BitwiseAndExpression,
@@ -78,9 +81,10 @@ public sealed class IdenticalOperandsAnalyzer : DiagnosticAnalyzer {
         // something useful, for two equal operands. A lifted operation over nullable operands has
         // its own three-valued answer. Neither is the operation this rule reasons about.
         //
-        // ⚠ `string == string` is NOT one of them, and this rule's first draft assumed it was.
-        // Roslyn models string equality as a *built-in* operator with a null OperatorMethod, so
-        // `a == a` on a string reaches the report — correctly, since it is always true.
+        // ⚠ `string == string` is NOT user-defined in Roslyn's model — `OperatorMethod` is null for
+        // it — which the first draft got wrong and a fixture caught. It no longer matters here,
+        // because the comparison operators went to `CS1718`; the note stays because the next rule
+        // that reaches for `OperatorMethod` to mean "not a built-in operation" will get it wrong too.
         if (model.GetOperation(binary, cancel) is not IBinaryOperation {
                 OperatorMethod: null,
                 IsLifted: false

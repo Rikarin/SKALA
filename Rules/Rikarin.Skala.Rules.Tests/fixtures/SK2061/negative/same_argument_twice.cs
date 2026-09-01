@@ -1,4 +1,4 @@
-// `Math.Max(x, x)` and `a.CompareTo(a)` are invocations, not operators, and are outside the
+// `Math.Max(x, x)` and `CompareOrdinal(a, a)` are invocations, not operators, and are outside the
 // subject entirely. Generated code emits both.
 using System;
 
