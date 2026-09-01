@@ -22,10 +22,11 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class CollectionCallShapeBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new CollectionOwnMethodAnalyzer(), new DictionaryKeyRelookupAnalyzer(),
-        new SubstringBeforeSearchAnalyzer(), new CountPropertyAnalyzer(),
+        new SubstringBeforeSearchAnalyzer(), new ConcurrentDictionaryMemberAnalyzer(),
+        new CountPropertyAnalyzer(),
     ];
 
-    static readonly string[] Ids = ["SK4030", "SK4031", "SK4032"];
+    static readonly string[] Ids = ["SK4030", "SK4031", "SK4032", "SK4033"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
@@ -304,10 +305,94 @@ public sealed class CollectionCallShapeBatchTests {
         Assert.Equal(reported, findings.Any());
     }
 
+    /// <summary>
+    ///     ⚠ The supersession, as the only thing that can actually make it work: the same span.
+    /// </summary>
+    /// <remarks>
+    ///     <c>Supersession.Apply</c> pairs findings by rule, file, line and column. A rule that
+    ///     declared <c>supersedes</c> and reported one character to the left would suppress nothing
+    ///     and nothing would say so — the two findings would simply both appear, which is what this
+    ///     asserts against.
+    /// </remarks>
+    [Theory]
+    [InlineData("entries.Keys.Count()")]
+    [InlineData("entries.Values.Count()")]
+    public void TheSupersededCountFindingLandsOnTheSameSpan(string written) {
+        var source = $$"""
+                       using System.Collections.Concurrent;
+                       using System.Linq;
+                       public sealed class Cache {
+                           public static int Size(ConcurrentDictionary<string, int> entries) => {{written}};
+                       }
+                       """;
+
+        var findings = Analyze(RuleFixtures.Compile(source, "probe.cs"));
+        var mine = Assert.Single(findings.Where(d => d.Id == "SK4033"));
+        var superseded = Assert.Single(findings.Where(d => d.Id == "SK1034"));
+
+        Assert.Equal(
+            superseded.Location.GetLineSpan().StartLinePosition,
+            mine.Location.GetLineSpan().StartLinePosition
+        );
+        Assert.Contains("SK1034", RuleCatalog.Get("SK4033").Supersedes);
+    }
+
+    /// <summary>The same, for the negated form, whose span is the negation's rather than the call's.</summary>
+    [Fact]
+    public void TheNegatedAnyAlsoLandsWhereSK1034Reports() {
+        const string source = """
+                              using System.Collections.Concurrent;
+                              using System.Linq;
+                              public sealed class Cache {
+                                  public static bool Empty(ConcurrentDictionary<string, int> entries) {
+                                      if (!entries.Keys.Any()) {
+                                          return true;
+                                      }
+
+                                      return false;
+                                  }
+                              }
+                              """;
+
+        var findings = Analyze(RuleFixtures.Compile(source, "probe.cs"));
+        var mine = Assert.Single(findings.Where(d => d.Id == "SK4033"));
+        var superseded = Assert.Single(findings.Where(d => d.Id == "SK1034"));
+
+        Assert.Equal(superseded.Location.SourceSpan, mine.Location.SourceSpan);
+        Assert.Contains("entries.IsEmpty", Apply(source, "SK4033"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ One finding carrying the whole rewrite, not two whose fixes have to be applied in order.
+    /// </summary>
+    [Theory]
+    [InlineData("entries.Count == 0", "entries.IsEmpty")]
+    [InlineData("entries.Count <= 0", "entries.IsEmpty")]
+    [InlineData("entries.Count < 1", "entries.IsEmpty")]
+    [InlineData("0 == entries.Count", "entries.IsEmpty")]
+    [InlineData("entries.Count != 0", "!entries.IsEmpty")]
+    [InlineData("entries.Count > 0", "!entries.IsEmpty")]
+    [InlineData("entries.Count >= 1", "!entries.IsEmpty")]
+    [InlineData("0 < entries.Count", "!entries.IsEmpty")]
+    [InlineData("entries.Keys.Count > 0", "!entries.IsEmpty")]
+    [InlineData("entries.Keys.Count() == 0", "entries.IsEmpty")]
+    public void AnEmptinessComparisonBecomesOneIsEmptyRead(string written, string expected) {
+        var source = $$"""
+                       using System.Collections.Concurrent;
+                       using System.Linq;
+                       public sealed class Cache {
+                           public static bool Probe(ConcurrentDictionary<string, int> entries) => {{written}};
+                       }
+                       """;
+
+        Assert.Contains("=> " + expected + ";", Apply(source, "SK4033"), StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("SK4030", "any-becomes-exists")]
     [InlineData("SK4031", "a-dictionary-local")]
     [InlineData("SK4032", "a-char-search")]
+    [InlineData("SK4033", "the-keys-count-property")]
     public void GeneratedCode_IsIgnored(string id, string name) {
         var source = "// <auto-generated/>\n"
             + File.ReadAllText(Path.Combine(RuleFixtures.Root, id, "positive", name + ".cs"));
