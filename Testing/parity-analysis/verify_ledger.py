@@ -238,6 +238,10 @@ def covered(ledger, name):
 
 rs_complete, rs_partial = covered(rs, "ledger-resharper")
 sn_complete, sn_partial = covered(sn, "ledger-sonar")
+# ⚠ `ideas` carries concepts too, and leaving it out would have made every coverage claim written
+# there unasserted -- the precise failure this section exists to prevent, reintroduced one nesting
+# level down.
+id_complete, id_partial = covered(sn["ideas"], "ledger-sonar.ideas") if sn.get("ideas") else (0, 0)
 
 # (3) ⚠ Every key in the parity map must be an inspection that exists. This was found the
 #     hard way: `MemberCanBeInternal.Global` is not a ReSharper id at all -- the real one is
@@ -256,10 +260,11 @@ sn_complete, sn_partial = covered(sn, "ledger-sonar")
 #     new bad entry pass.
 INERT = {
     # id does not exist in ReSharper; the real inspection is named on the right.
-    "AbstractTypeWithPublicConstructor": "invented; the real id is PublicConstructorInAbstractClass",
-    "MemberCanBeInternal.Global": "invented (no .Global suffix exists) AND points at SK6002, which "
-                                  "doc 08 allocates to a different concept; #114 is closed out of "
-                                  "scope, so this should be dropped rather than re-pointed",
+    # `MemberCanBeInternal.Global` was here and has been dropped from the map: the id was invented
+    # (ReSharper has no `.Global` suffix on it) and it pointed at SK6002, which doc 08 allocates to
+    # a different concept. #114 closed out of scope, so nothing will ever ship for it.
+    "AbstractTypeWithPublicConstructor": "invented; the real id is PublicConstructorInAbstractClass, "
+                                         "which is now mapped to SK6003 -- drop this one",
     "CyclomaticComplexity": "invented; ReSharper has no complexity-threshold inspection. "
                             "FunctionComplexityOverflow is 'body too complex to analyse', a "
                             "different thing, so this is a drop and not a re-point",
@@ -317,7 +322,8 @@ else:
 print(f"shipped:   {len(shipped)} rules, {len(declaring)} declaring a resharperId, "
       f"{len(catalogued)} parity-map entries")
 print(f"coverage:  resharper {rs_complete} complete / {rs_partial} partial, "
-      f"sonar {sn_complete} complete / {sn_partial} partial")
+      f"sonar {sn_complete} complete / {sn_partial} partial, "
+      f"sonar-ideas {id_complete} complete / {id_partial} partial")
 
 # --------------------------------------------------------------- verdict
 for w in warn:
