@@ -100,13 +100,20 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
         }
 
         // ⚠ An explicitly passed `object[]` is not two arguments, it is one — and `{0}` then means
-        // its first element. Only the array the compiler synthesised for a `params` call qualifies.
-        if (method.Parameters[method.Parameters.Length - 1].IsParams) {
-            var last = operation.Arguments[operation.Arguments.Length - 1];
-            if (last.ArgumentKind != ArgumentKind.ParamArray
-                || last.Value is not IArrayCreationOperation { IsImplicit: true }) {
-                return;
-            }
+        // its first element. Only the array the compiler synthesised for a `params` call qualifies,
+        // and `ArgumentKind.ParamArray` is exactly that question: Roslyn sets it when it expanded
+        // the call and `Explicit` when the author handed over an array.
+        //
+        // ⚠ Both spellings of "expanded", and the second one is the whole finding. On .NET 9 and
+        // later `string.Format` carries a `params ReadOnlySpan<object?>` overload, which C# 13
+        // prefers for four or more arguments — and Roslyn reports an expanded params *collection* as
+        // `ParamCollection`, not `ParamArray`. Testing only for `ParamArray` silently dropped every
+        // `string.Format` past the last explicitly typed overload, which is most of the ones worth
+        // rewriting. The corpus sweep found it; no fixture did, because none had four arguments.
+        if (method.Parameters[method.Parameters.Length - 1].IsParams
+            && operation.Arguments[operation.Arguments.Length - 1].ArgumentKind
+            is not (ArgumentKind.ParamArray or ArgumentKind.ParamCollection)) {
+            return;
         }
 
         var text = format.Token.Text;

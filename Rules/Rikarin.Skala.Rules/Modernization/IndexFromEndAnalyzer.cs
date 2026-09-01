@@ -36,10 +36,15 @@ public sealed class IndexFromEndAnalyzer : DiagnosticAnalyzer {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start => {
-                // ⚠ Two gates, not one. The language version says the syntax may be written; the
-                // presence of `System.Index` says the target framework can express it at all.
+                // ⚠ Two gates, not one, and the second one is about *accessibility* rather than
+                // existence. `System.Memory` ships an **internal** `System.Index` shim for
+                // netstandard2.0, so `GetTypeByMetadataName` finds a symbol on a target framework
+                // where `x[^1]` is `CS0518: predefined type 'System.Index' is not defined`. Checking
+                // for null alone reported sixteen findings on Skala's own netstandard2.0 projects
+                // whose fix did not compile; `IsSymbolAccessibleWithin` is the compiler's own test.
                 if (!SkalaRule.MeetsLanguageVersion(start.Compilation, Rule.LanguageVersion)
-                    || start.Compilation.GetTypeByMetadataName("System.Index") is null) {
+                    || start.Compilation.GetTypeByMetadataName("System.Index") is not { } index
+                    || !start.Compilation.IsSymbolAccessibleWithin(index, start.Compilation.Assembly)) {
                     return;
                 }
 
@@ -124,10 +129,10 @@ public sealed class IndexFromEndAnalyzer : DiagnosticAnalyzer {
             return true;
         }
 
-        var index = compilation.GetTypeByMetadataName("System.Index");
+        var systemIndex = compilation.GetTypeByMetadataName("System.Index");
         foreach (var candidate in type.GetMembers("this[]")) {
             if (candidate is IPropertySymbol { Parameters.Length: 1 } indexer
-                && SymbolEqualityComparer.Default.Equals(indexer.Parameters[0].Type, index)) {
+                && SymbolEqualityComparer.Default.Equals(indexer.Parameters[0].Type, systemIndex)) {
                 return true;
             }
         }

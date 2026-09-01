@@ -252,6 +252,12 @@ public sealed class LiteralAndExpressionFormBatchTests {
         "class C { string M(int d, int t) => string.Format(\"{0} of {1}\", d, t); }",
         "$\"{d} of {t}\""
     )]
+    // ⚠ Four arguments binds `Format(string, params object[])`, not an explicitly typed overload.
+    // The rule declined every one of those until a corpus sweep found it.
+    [InlineData(
+        "class C { string M(string a, string b, string c, string d) => string.Format(\"{0}{1}{2}{3}\", a, b, c, d); }",
+        "$\"{a}{b}{c}{d}\""
+    )]
     // Alignment and format clauses ride across unchanged.
     [InlineData("class C { string M(decimal a) => string.Format(\"{0,10:N2}\", a); }", "$\"{a,10:N2}\"")]
     // ⚠ A doubled brace means a literal brace in both grammars and must survive as one.
