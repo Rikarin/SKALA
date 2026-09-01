@@ -149,9 +149,7 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
 
         if (hole.Expression is InvocationExpressionSyntax {
                 ArgumentList.Arguments.Count: 0,
-                Expression: MemberAccessExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-                } call
+                Expression: MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } call
             } invocation
             && call.Name.Identifier.ValueText == "ToString") {
             AnalyzeRedundantToString(context, invocation, call, model, cancellation);

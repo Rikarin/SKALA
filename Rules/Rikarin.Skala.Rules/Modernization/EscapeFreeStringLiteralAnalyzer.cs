@@ -81,7 +81,9 @@ public sealed class EscapeFreeStringLiteralAnalyzer : DiagnosticAnalyzer {
             : text.IndexOf("\\\\", StringComparison.Ordinal) >= 0
             || text.IndexOf("\\\"", StringComparison.Ordinal) >= 0;
 
-        if (raw && worthRewriting && RawStringFor(value) is { } rewritten
+        if (raw
+            && worthRewriting
+            && RawStringFor(value) is { } rewritten
             && ParsesBackToTheSameValue(rewritten, value)) {
             Report(
                 context,
@@ -235,8 +237,7 @@ public sealed class EscapeFreeStringLiteralAnalyzer : DiagnosticAnalyzer {
         return changed ? builder.ToString() : null;
     }
 
-    static bool IsHex(char character) =>
-        character is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F';
+    static bool IsHex(char character) => character is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F';
 
     static bool IsPlainlyWritable(char character) =>
         character is >= ' ' and <= '~' && character != '"' && character != '\\';
