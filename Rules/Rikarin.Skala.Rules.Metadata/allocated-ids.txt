@@ -138,6 +138,7 @@ SK3512 using-variable-returned
 SK3020 null-returned-from-task-method
 SK3021 spin-lock-in-readonly-field
 SK7090 not-implemented-member
+SK7091 process-exit-outside-entry-point
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

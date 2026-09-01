@@ -106,3 +106,4 @@ SK3512 | Skala.Lifetime | Warning | A variable captured by `using` is returned.
 SK3020 | Skala.Async | Warning | The non-`async` `Task` method returns null.
 SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
 SK7090 | Skala.Maintainability | Warning | A thrown `NotImplementedException` has no issue reference.
+SK7091 | Skala.Maintainability | Warning | The process is terminated outside the entry point.

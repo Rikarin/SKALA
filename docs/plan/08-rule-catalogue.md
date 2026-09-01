@@ -403,7 +403,7 @@ that are accurate rather than as finished catalogue prose.
 issue that owns it; `SK7090` asks the same of a thrown `NotImplementedException`, and the two accept
 the same vocabulary — a URL, `#123`, a project key such as `SKALA-123` — deliberately character for
 character, because two rules asking for "an issue reference" and disagreeing about what one looks like
-is a rule nobody can obey. ⚠ This one sits **on** the premise in [00](00-vision-and-scope.md) rather
+is a rule nobody can obey. ⚠ This one sits **on** the premise in [00](00-vision-and-principles.md) rather
 than beside it: a model asked for an implementation produces a compiling signature with a
 `NotImplementedException` body far more readily than it admits it cannot do the work, and that body
 type-checks, binds, formats and passes every analyzer in the build. It fails only when it runs, in a
@@ -420,7 +420,28 @@ to hand to a test helper is not a member that compiles and does not work. Report
 strongest case in the catalogue for a rule with no fix — every mechanical guess available (delete the
 member, return `default`, change the exception type) turns a loud failure into a quiet one.
 
-`SK7090` a thrown `NotImplementedException` with no issue reference.
+⚠ **`SK7091` refuses the application/library distinction the proposal was written around, and the
+refusal is a measurement.** [#236](https://github.com/Rikarin/SKALA/issues/236) is titled "the process
+is terminated from library code", and the obvious implementation reads `Compilation.Options.OutputKind`.
+That cannot work here: `LooseLoader` constructs its compilation with
+`OutputKind.DynamicallyLinkedLibrary`, so *"this compilation is a library"* and *"no project file was
+loaded"* are the same observation — and loose is the mode [00](00-vision-and-principles.md) says Skala
+exists for, because a folder of generated `.cs` files has no project. An `OutputKind` rule would report
+every console application analysed without its project file, which is precisely the false-positive
+engine [16](16-risks-and-open-questions.md) § R3 is about.
+
+So the line `SK7091` draws is a different one and it holds under every load mode: **the entry point may
+end the process**, because ending it is the process's own decision and there is nothing above that
+frame to unwind into; everywhere else — a library, a service, and an executable's own helper class
+alike — `Environment.Exit` destroys `finally` blocks, `IDisposable` cleanup and buffered writes that
+somebody else wrote and did not choose to abandon. The entry point is the compilation's own where
+there is one and a `static Main` by name otherwise, and that fallback is load-mode insurance rather
+than laziness: a loose compilation has no entry point to ask for. ⚠ `Environment.FailFast` is
+deliberately never reported — skipping cleanup is the whole point of it, so reporting it would be
+reporting a decision rather than an accident.
+
+`SK7090` a thrown `NotImplementedException` with no issue reference · `SK7091` `Environment.Exit`
+outside the entry point.
 
 ⚠ **"The block adds nesting and nothing else" ([#225](https://github.com/Rikarin/SKALA/issues/225),
 Sonar `S1199`) is refuted, no id was allocated, and the reason is measured rather than argued.** The
@@ -525,8 +546,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **122** | **80.3 %** |
+| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **123** | **80.4 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
