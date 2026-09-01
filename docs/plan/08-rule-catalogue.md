@@ -950,6 +950,68 @@ would make the rule dangerous. · `SK7101` a declaration that is not publicly vi
 documentation comment — `SK7010`'s predicates with the accessibility test negated, shipped at
 `none` and enabled per path, because it is the highest-firing uncovered inspection in the parity
 measurement and that is an argument for caution rather than for volume.
+⚠ **The prose pass for `SK7080`–`SK7084` is owed.** What follows is the allocation register entry —
+enough that the id is written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see it — not the worked-through account the rest of this section carries.
+
+**`SK7080`–`SK7084` extend the threshold family `SK7001`–`SK7006` and `SK7030` established**, and
+they extend the same machinery: one `MetricThresholds` record read once per file from
+`dotnet_code_quality.SK70xx.threshold`, the measured value carried on the diagnostic under
+`skala.metric.value`, and no fix, which is what a measurement has instead of a repair.
+
+⚠ **`SK7080` counts only the part of the chain this compilation declares.** Raw inheritance depth
+penalises using a framework — `MyControl : Button` is one decision somebody made and the eight
+types above `Button` are not — so the walk counts the first non-source base once and stops. The
+consequence is that a base class in a referenced project also ends the chain, which under-reports;
+that is the safe direction. ⚠ **An error type anywhere on the chain withdraws the measurement
+entirely**, because a chain that cannot be walked reads as depth 1 and reporting the smaller number
+would be silently wrong. That is why the rule finds nothing on the corpus slices (#277): the shape
+is there and the analysis correctly declines.
+
+⚠ **`SK7081` is the metric the other seven do not carry.** A type can be short, shallow and simple
+in every one of `SK7001`–`SK7006` and still name forty other types, and each of those forty is a
+reason this file has to be reopened when something else changes. Special types are excluded — the
+language's own vocabulary would add the same handful to every type and separate nothing — and so
+are the type itself, whatever nests it and whatever it nests, because a type that organises itself
+with nested helpers is not coupled to somebody else's design. ⚠ Like `SK7080`, an unresolved
+reference is skipped rather than counted, so its zero on the corpus is a declined measurement.
+
+`SK7080` a class with more source-declared base classes than the threshold (default 4) ·
+⚠ **`SK7082`'s exemption is the rule.** A right-associated ladder — `a ? x : b ? y : z` — costs one
+level, not one per rung: that shape is an `else if` chain written as an expression, it reads top to
+bottom, and charging it per rung would fire on the one nested form that is idiomatic. Parentheses
+around a rung do not change the number. A lambda body restarts the count, as it does for `SK7006`,
+and only the outermost conditional of a nest reports.
+
+`SK7081` a type declaration naming more distinct other types than the threshold (default 80) ·
+`SK7082` conditional expressions nested deeper than the threshold (default 1, ladders exempt) ·
+`SK7083` a string literal written more times in one file than the threshold (default 5), counting
+only literals of at least `minimum_length` characters (default 5) that contain a letter.
+
+⚠ **`SK7083` is the first rule in this family to take two options**, and the second is what makes it
+usable: a repeat count on its own reports `", "` and `"true"` long before it reports anything worth
+extracting. It is also spelled differently on purpose — `dotnet_code_quality.SK7083.minimum_length`
+rather than a second `.threshold`, because a rule with two numbers cannot spell both of them the way
+the family spells one. A `const` initialiser is not counted, because it is the repair; an attribute
+argument is not counted, because a constant is the only extraction available there and the ones that
+repeat are display names and obsolescence messages.
+
+⚠ **The magic-number rule (#228) was built, measured and cut, and no id was allocated for it.**
+ADR-012 makes an id permanent, so a concept that does not ship must not take one. A prototype with
+nine exemptions — `0`, `1`, `2`, attribute arguments, enum member values, parameter defaults, `case`
+labels, constant patterns, element-access indices, and the initialiser of anything with a name —
+reports **727** findings on Skala's own tree across 132 files, 460 of them outside test code. That
+is 1.8 per file, an order of magnitude past `SK7083`, which is the largest of the four that shipped.
+Volume alone would be arguable. What settles it is *what* it reports: a splitmix64 mixer in
+`CloneDetector` (`0x9E3779B97F4A7C15UL`, and the shifts 30, 27 and 31), and the binary header offsets
+in `CloneIndex` (`AsSpan(4)`, `AsSpan(8)`, `AsSpan(12)`, `20 + version.Length`). In both, naming the
+numbers makes the code *less* readable — a transcribed algorithm stops being recognisable and a
+layout stops being visible — and no syntactic signal separates them from a genuine unexplained
+threshold, because the distinction lives in what the author knew. A tenth exemption would not have
+found it and neither would a hundredth. This is doc [16](16-risks-and-open-questions.md) § R3's "a
+hundred rules that are usually right" with the measurement attached, and `defaultSeverity: none`
+does not rescue it: a rule nobody can afford to turn on is a page in this catalogue and an id taken
+for ever in exchange for nothing.
 
 ## SK8000 — Tests
 
@@ -1051,6 +1113,11 @@ registry disagree. Regenerate with `skala rules docs`.
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **20** | includes the twelve declared cut with no reason recorded |
+| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **125** | **80.6 %** |
+| **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
+| **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
+| **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

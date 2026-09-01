@@ -4656,6 +4656,119 @@
       "configuration": [
         "dotnet_diagnostic.SK3044.severity"
       ]
+    },
+    {
+      "id": "SK7080",
+      "concept": "inheritance-depth",
+      "title": "The inheritance chain is deeper than the threshold",
+      "category": "Maintainability",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S110"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A class declares more base classes above it, within this compilation's own source, than dotnet_code_quality.SK7080.threshold (default 4).",
+      "rationale": "Every level above a class is a place a member can come from and a place behaviour can be changed without touching the file in front of the reader. The number is worth reporting only for the part of the chain the repository actually wrote: `MyControl : Button` is one decision somebody made, and the eight framework types above `Button` are not. So the count stops at the first base class this compilation did not declare — which is also why the default is 4 rather than the textbook 5 or 6, since a chain of four source-declared bases is already unusual. Flattening a hierarchy is a design change with no mechanical form, so there is no fix.",
+      "examples": {
+        "bad": "class A { }\n\nclass B : A { }\n\nclass C : B { }\n\nclass D : C { }\n\nclass E : D { }   // five source-declared bases above it",
+        "good": "class E {\n    readonly A a;      // the same reuse by composition\n    readonly B b;\n}"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. What it can be is *useless* — a threshold low enough to fire on ordinary code teaches people to switch the category off — so the default is set above what the reference trees contain and the threshold is an .editorconfig option. ⚠ **The chain stops at the first base class not declared in this compilation's source.** A framework base contributes 1 and its own ancestors contribute nothing: depth from a framework is not a decision anybody in the repository can act on, and counting it would make the rule an opinion about which framework to use. ⚠ The same rule makes the count *under*-report across an assembly boundary — a base class in a referenced project is metadata here — which is the safe direction and is why the number is described as \"within this compilation's own source\". ⚠ **An unresolved base type withdraws the measurement entirely**: a chain that cannot be walked reads as depth 1, and reporting the smaller number would be silent rather than wrong. That is also why the rule produces nothing on a source slice with no dependency closure (issue #277) — the shape is present and the analysis correctly declines. Only classes and record classes are measured; an interface has a graph rather than a chain, and a struct has no base chain to walk. Generated code is excluded. A partial class is reported once, on the part that carries the base list.",
+      "configuration": [
+        "dotnet_code_quality.SK7080.threshold",
+        "dotnet_diagnostic.SK7080.severity"
+      ]
+    },
+    {
+      "id": "SK7081",
+      "concept": "type-coupling",
+      "title": "The type depends on more other types than the threshold",
+      "category": "Maintainability",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1200"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "One type declaration mentions more distinct other named types than dotnet_code_quality.SK7081.threshold (default 80).",
+      "rationale": "This is the metric `SK7001`–`SK7006` do not carry. A type can be short, shallow and simple in every one of them and still know about forty other types, and every one of those forty is a reason this file has to be reopened when something else changes. Counting the distinct named types a declaration mentions — bases, member types, locals, constructions, static receivers, attributes and the arguments of the generics it names — measures how much of the design has to be held in mind at once to change it, which is what people mean when they say a class is entangled. ⚠ The default of 80 is deliberately far above the textbook 30: on Skala's own tree — which is a Roslyn analyzer host, and therefore names one type per syntax-node kind before it does anything — a threshold of 30 fires on 125 type declarations and 80 fires on six, and those six are the god objects a reader would name unprompted. Reporting the shoulder of the distribution rather than its tail is the \"useless\" outcome this family's rationale names. Splitting a type is a design change with no mechanical form, so there is no fix.",
+      "examples": {
+        "bad": "// one class that names forty other types across its fields, parameters and locals",
+        "good": "// the same work behind two or three collaborators, each naming its own handful"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. What it can be is *useless* — a threshold low enough to fire on ordinary code teaches people to switch the category off — so the default is set above what the reference trees contain and the threshold is an .editorconfig option. ⚠ **Special types are not counted.** `int`, `string`, `object`, `void`, `IEnumerable<T>` and the rest of the language's own vocabulary would add the same handful to every type in the repository and separate nothing. ⚠ **The type itself, anything nesting it, and anything it nests are not counted**: a type that organises itself with nested helpers is not coupled to somebody else's design, and the file a reader opens contains both. ⚠ **A nested type is not descended into** — it has its own declaration and its own measurement, and charging the outer type for the inner one's dependencies would report the same union once per level. ⚠ **An unresolved reference is skipped rather than counted**, which under-reports; on a source slice with no dependency closure (issue #277) it under-reports to nothing, so a zero from this rule on such a tree says the analysis declined and not that the types are decoupled. Measured per *declaration*, like `SK7004`, so a partial type is measured once per file — which is the file a person opens. Generated code is excluded.",
+      "configuration": [
+        "dotnet_code_quality.SK7081.threshold",
+        "dotnet_diagnostic.SK7081.severity"
+      ]
+    },
+    {
+      "id": "SK7082",
+      "concept": "nested-conditional",
+      "title": "The conditional expressions are nested",
+      "category": "Maintainability",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3358"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "Conditional expressions nest more deeply than dotnet_code_quality.SK7082.threshold (default 1), counting a right-associated ladder as one level.",
+      "rationale": "Nested `?:` is the one expression form where operator precedence and reader expectation reliably disagree: `a ? b : c ? d : e` groups one way and `a ? b ? c : d : e` another, and neither grouping is visible without counting. ⚠ The measurement makes one distinction that decides whether the rule is usable at all: a right-associated ladder — `a ? x : b ? y : z` — costs **one** level, not one per rung. That shape is an `else if` chain written as an expression; it reads top to bottom, each condition is tested once, and charging it per rung would make the rule fire on the one nested form that is idiomatic. What costs a level is a `?:` anywhere else inside another: in the condition, in the `true` branch, or buried inside the `false` branch rather than being it. Rewriting a nest is a judgement about which branch deserves a name, so there is no fix.",
+      "examples": {
+        "bad": "var label = ready ? (loud ? \"READY\" : \"ready\") : \"waiting\";",
+        "good": "var word = loud ? \"READY\" : \"ready\";\nvar label = ready ? word : \"waiting\";\n\n// and the ladder, which is one level and never reported:\nvar size = n < 10 ? \"small\" : n < 100 ? \"medium\" : \"large\";"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. ⚠ **The right-associated ladder is exempt and that exemption is the rule.** Without it the default threshold would fire on `n < 10 ? \"small\" : n < 100 ? \"medium\" : \"large\"`, which no reader has ever had trouble with, and the category would be switched off within a day. Parentheses around a ladder rung do not change the number, because some house styles write them and some do not. ⚠ A lambda body restarts the count, exactly as `SK7006`'s nesting depth does: `xs.Select(x => x > 0 ? a : b)` written inside a conditional is not a nested conditional in any sense a reader experiences. ⚠ **An interpolation hole restarts it too, and for the rule's own reason.** The rule exists because precedence and reader expectation disagree about `?:`; inside `$\"…{…}…\"` they cannot, because the hole has explicit delimiters and C# *requires* a conditional written in one to be parenthesised — a bare `:` there is the format specifier. There is nothing left to mis-group. ⚠ Only the outermost conditional of a nest reports — every conditional in the compilation reaches the analyzer, and reporting each would produce one finding per level pointing at the same expression, with the innermost carrying the smallest number. A null-conditional `?.` and a null-coalescing `??` are different operators and are not counted. Generated code is excluded. The finding points at the outermost `?` token.",
+      "configuration": [
+        "dotnet_code_quality.SK7082.threshold",
+        "dotnet_diagnostic.SK7082.severity"
+      ]
+    },
+    {
+      "id": "SK7083",
+      "concept": "repeated-string-literal",
+      "title": "The string literal is repeated",
+      "category": "Maintainability",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1192"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "One string literal is written in a file more times than dotnet_code_quality.SK7083.threshold (default 5), counting only literals at least dotnet_code_quality.SK7083.minimum_length characters long (default 5) that contain a letter.",
+      "rationale": "The same literal in several places is the same rename waiting to be done incompletely — the argument `nameof` makes for member names, applied to keys, formats and messages. ⚠ **It takes two options, and the second is what makes it usable.** A repeat count on its own reports `\", \"`, `\"/\"` and `\"true\"` long before it reports anything worth extracting, so a minimum length holds the floor and a literal must also contain a letter: a repeated separator or punctuation run is not a name anybody was going to give. ⚠ The default count is 5 — a literal must be written six times in one file — and that is the conservative end of a measurement with no wrong answer. On Skala's own tree a count of 3 reports 144 literals and a count of 5 reports 64; every one of the 144 is a real repeat, and the ones the higher default drops are the HTML fragments and fixture file names nobody was going to extract. The count is the option a repository lowers rather than raises, so the shipped number is the one that leaves room to. Choosing the name is the whole of the work, so there is no fix.",
+      "examples": {
+        "bad": "logger.LogWarning(\"tenant-id header missing\");\n// … and \"tenant-id\" written again in three other places in the same file",
+        "good": "const string TenantIdHeader = \"tenant-id\";"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. ⚠ **The minimum length and the letter test are the rule**, not decoration: without them the default count reports every separator and every one-word flag in the repository. ⚠ **A `const` initialiser is not counted** — it is the repair, and a rule that still fires after somebody did exactly what it asked is the fastest way to teach people it is noise. ⚠ **An attribute argument is not counted**: it must be a compile-time constant, so the only extraction available is a `const` the attribute then names, and the ones that actually repeat are test display names, obsolescence messages and route templates, where writing the string out at the declaration is the point. ⚠ **Counted per file, and per file deliberately.** The scope where a repeat is visible and a `const` is an obvious repair is the one a reader has open; counting per compilation would report a literal shared by two unrelated files, where the repair is a shared constant nobody has a place for and the finding points at neither site. One finding per literal, at the first occurrence — one per site would report the same decision as many times as it was made. Interpolated strings are not literals and their text is not counted; neither are UTF-8 literals, which are a different expression kind. Comparison is ordinal on the literal's value, so a verbatim and a regular spelling of the same text count together. Generated code is excluded.",
+      "configuration": [
+        "dotnet_code_quality.SK7083.threshold",
+        "dotnet_code_quality.SK7083.minimum_length",
+        "dotnet_diagnostic.SK7083.severity"
+      ]
     }
   ]
 }

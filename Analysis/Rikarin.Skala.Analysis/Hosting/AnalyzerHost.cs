@@ -137,6 +137,8 @@ public static class AnalyzerHost {
         new LockOverSynchronizationPrimitiveAnalyzer(), new NonAtomicVolatileUpdateAnalyzer(),
         new DoubleCheckedLockingAnalyzer(), new LockOrderAnalyzer(),
         new InconsistentlySynchronizedFieldAnalyzer(),
+        new InheritanceDepthAnalyzer(), new TypeCouplingAnalyzer(), new NestedConditionalAnalyzer(),
+        new RepeatedStringLiteralAnalyzer(),
     ];
 
     /// <summary>

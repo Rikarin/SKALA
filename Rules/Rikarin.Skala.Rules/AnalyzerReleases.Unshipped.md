@@ -156,3 +156,7 @@ SK3041  | Skala.Async | Warning | The compound operation on a `volatile` field i
 SK3042  | Skala.Async | Warning | The double-checked locking is not correct.
 SK3043  | Skala.Async | Warning | Locks are taken in inconsistent orders.
 SK3044  | Skala.Async | Warning | The field is guarded on some paths and not others.
+SK7080 | Skala.Maintainability | Hidden | The inheritance chain is deeper than the threshold.
+SK7081 | Skala.Maintainability | Hidden | The type depends on more other types than the threshold.
+SK7082 | Skala.Maintainability | Info | The conditional expressions are nested.
+SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.

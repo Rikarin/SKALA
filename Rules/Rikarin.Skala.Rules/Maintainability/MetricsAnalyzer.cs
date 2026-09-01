@@ -343,8 +343,45 @@ sealed class MetricThresholds {
 
     public int FileLines { get; private set; } = 1000;
 
+    /// <summary>
+    ///     <c>SK7080</c>: base classes above a class, counting only the ones this compilation declares.
+    /// </summary>
+    public int InheritanceDepth { get; private set; } = 4;
+
+    /// <summary><c>SK7081</c>: distinct other named types one type declaration mentions.</summary>
+    public int TypeCoupling { get; private set; } = 80;
+
+    /// <summary>
+    ///     <c>SK7082</c>: conditional-expression nesting, with a right-associated ladder costing one.
+    /// </summary>
+    public int ConditionalNesting { get; private set; } = 1;
+
+    /// <summary><c>SK7083</c>: occurrences of one string literal in a file that are still allowed.</summary>
+    public int LiteralRepeats { get; private set; } = 5;
+
+    /// <summary>
+    ///     <c>SK7083</c>'s second option, and the one that makes it usable: literals shorter than this
+    ///     are never counted.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not a <c>.threshold</c>. A rule with two numbers cannot spell both of them the same way, and
+    ///     the one a repository reaches for first is the count — so the count keeps the family's key and
+    ///     the floor gets its own name, <c>dotnet_code_quality.SK7083.minimum_length</c>.
+    /// </remarks>
+    public int LiteralLength { get; private set; } = 5;
+
     public static MetricThresholds Read(AnalyzerConfigOptions options) =>
         new() {
+            InheritanceDepth = Value(options, RuleIds.InheritanceDepth, Default.InheritanceDepth),
+            TypeCoupling = Value(options, RuleIds.TypeCoupling, Default.TypeCoupling),
+            ConditionalNesting = Value(options, RuleIds.NestedConditional, Default.ConditionalNesting),
+            LiteralRepeats = Value(options, RuleIds.RepeatedStringLiteral, Default.LiteralRepeats),
+            LiteralLength = Value(
+                options,
+                RuleIds.RepeatedStringLiteral,
+                Default.LiteralLength,
+                "minimum_length"
+            ),
             Cyclomatic = Value(options, RuleIds.CyclomaticComplexity, Default.Cyclomatic),
             Cognitive = Value(options, RuleIds.CognitiveComplexity, Default.Cognitive),
             Statements = Value(options, RuleIds.MethodLengthInStatements, Default.Statements),
@@ -354,8 +391,8 @@ sealed class MetricThresholds {
             FileLines = Value(options, RuleIds.FileLength, Default.FileLines)
         };
 
-    static int Value(AnalyzerConfigOptions options, string ruleId, int fallback) {
-        if (!options.TryGetValue("dotnet_code_quality." + ruleId + ".threshold", out var text)) {
+    static int Value(AnalyzerConfigOptions options, string ruleId, int fallback, string key = "threshold") {
+        if (!options.TryGetValue("dotnet_code_quality." + ruleId + "." + key, out var text)) {
             return fallback;
         }
 
