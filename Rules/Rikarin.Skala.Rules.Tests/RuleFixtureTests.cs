@@ -67,7 +67,7 @@ public sealed class RuleFixtureTests {
         new EmptyTypeAnalyzer(),
         new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
-        new MissingTestClassAttributeAnalyzer(),
+        new MissingTestClassAttributeAnalyzer(), new EmptyTestClassAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

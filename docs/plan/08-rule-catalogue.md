@@ -406,7 +406,10 @@ entry ADR-012 requires and no more; the paragraph that explains what the three a
 how they relate to the `SK8001`–`SK8004` cuts above, has not been written.
 
 `SK8020` a class with `[TestMethod]` members and no `[TestClass]` — MSTest only, because xUnit has no
-class attribute to be missing and NUnit 3 made `[TestFixture]` optional.
+class attribute to be missing and NUnit 3 made `[TestFixture]` optional. ·
+`SK8021` a `[TestClass]` or `[TestFixture]` that declares no test, in itself or in any base type —
+report-only, because choosing between writing the missing test and deleting the class is the whole
+of the finding.
 
 Scoped to test projects by convention (`*.Tests`) and by `.editorconfig` section. ⚠ This used to read
 "matching how Vixen already segments `[**/*.Tests/**/*.cs]`", and that clause is withdrawn for the
@@ -484,8 +487,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **122** | **80.3 %** |
+| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **123** | **80.4 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
