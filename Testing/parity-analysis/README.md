@@ -60,6 +60,23 @@ written by hand. They are the soft edge of the whole analysis: **every entry mis
 inflates the uncovered count.** `sonar_hand.json` is the 60-rule sample classified by hand, kept so
 the projection in doc 17 can be checked rather than taken on trust.
 
+⚠ **`catalogued.json` is now pinned in the one direction a test can hold it.**
+`RuleCatalogTests.TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule` asserts
+rules.json ⊆ `catalogued.json`, matched on the `SK` id: an inspection that a *shipped* rule declares
+as its `resharperId` must be credited to that rule. Four shipped rules were missing from the map when
+that test was written. **The reverse is deliberately not asserted** — `Catalogued` means an id in
+doc 08 names the concept, allocated is enough and shipped is not required, so entries pointing at
+ids nothing implements yet are the map working correctly. What is checked instead is that every value
+is well formed and is a number the register knows. `gov.json` has no equivalent pin.
+
+⚠ **The maps used to be looked up by inspection id, and that was a silent failure mode.**
+`universe.py` can only attach an id by joining the export key against the issue-type dump, and that
+join misses every inspection newer than the dumped release — 81 of the 888 rows carry `id: null`.
+Keyed on id alone, all 81 bypassed both maps without a word and landed in `Uncovered`, which is the
+residue and therefore the work queue. `classify.py` now reads both maps through a key-indexed view
+built with the same `snake()` transform, and **the two copies of `snake()` must be kept in step.**
+This inflated doc 17's published figure; the correction is recorded there.
+
 ⚠ **`OracleProfile.Cleanup` belongs on this list too**, and doc 17's first run is the proof. Five
 inspections were classified as arrangement Skala "declares and does not perform" when the oracle
 itself was not performing them either — because the profile was missing two real cleanup tasks that

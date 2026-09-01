@@ -92,11 +92,19 @@ Every C#-relevant inspection lands in exactly one bucket, first match wins:
 | **Catalogued** | An `SK` id in [08](08-rule-catalogue.md) already names the concept |
 | **Uncovered** | None of the above. The real gap, and the only bucket that is a work queue |
 
-⚠ **`Hosted` and `Catalogued` are hand-built maps and are therefore lower bounds.** 126 inspections
-are mapped to 49 distinct `SK` ids, and 76 to Roslyn `CA*`/`IDE*` or to a test framework's own
-analyzer package; both maps were written by reading, not generated, so each will be missing entries.
-**Every entry missing from them inflates `Uncovered`.** The uncovered count below is an *upper* bound
-on the gap, and the honest reading of it is "at most this many", not "exactly this many".
+⚠ **`Hosted` and `Catalogued` are hand-built maps and are therefore lower bounds.** 129 inspections
+are mapped to 52 distinct `SK` ids, and 75 land in `Hosted` — Roslyn `CA*`/`IDE*` or a test
+framework's own analyzer package; both maps were written by reading, not generated, so each will be
+missing entries. **Every entry missing from them inflates `Uncovered`.** The uncovered count below is
+an *upper* bound on the gap, and the honest reading of it is "at most this many", not "exactly this
+many".
+
+⚠ **One half of that judgement is now pinned by a test, and the other half cannot be.**
+`RuleCatalogTests.TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule` asserts
+rules.json ⊆ `catalogued.json`: an inspection a *shipped* rule declares must be credited to that
+rule's own id. That is the direction with a mechanical answer, and it caught four shipped rules the
+map had omitted. The other direction — is every concept doc 08 names actually mapped from every
+inspection that expresses it? — is a reading, and no test can hold it. The bound stays a bound.
 
 ⚠ Only **49 of doc 08's 109 rules have a ReSharper counterpart at all**. The other 60 — the taint
 rules, the metrics, the duplication detector, the `SK9xxx` tool diagnostics — are ground ReSharper
@@ -113,15 +121,71 @@ inspections are counted separately: they are C#, and they are not code Skala is 
 
 | Bucket | Count | of 888 | `error` | `warning` | `suggestion` | `hint` | `none` |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| **Uncovered** | **580** | **65.3 %** | 3 | 322 | 171 | 57 | 27 |
-| Catalogued | 89 | 10.0 % | 0 | 38 | 31 | 12 | 8 |
-| Hosted | 76 | 8.6 % | 0 | 45 | 18 | 10 | 3 |
+| **Uncovered** | **576** | **64.9 %** | 3 | 320 | 169 | 57 | 27 |
+| Catalogued | 94 | 10.6 % | 0 | 41 | 33 | 12 | 8 |
+| Hosted | 75 | 8.4 % | 0 | 44 | 18 | 10 | 3 |
 | Option | 67 | 7.5 % | 0 | 1 | 3 | 15 | 48 |
 | Out of scope | 74 | 8.3 % | 10 | 43 | 5 | 10 | 6 |
 | Compiler | 2 | 0.2 % | 1 | 1 | 0 | 0 | 0 |
 | **Total** | **888** | | 14 | 450 | 228 | 104 | 92 |
 
 A further 65 Unity/Burst inspections are out of scope for the engine rather than for the language.
+
+⚠ **This table read `Uncovered` 580 / `Catalogued` 89 / `Hosted` 76, and both of those numbers were
+produced by an instrument with a defect in it. The measured figures are 576 / 94 / 75.** The
+correction is small and the failure mode it exposes is not, so it is worth stating in full.
+
+`classify.py` looked its two hand-built maps up by **inspection id**. `universe.py` can only attach
+an id to an export key by joining against `jb inspectcode --dumpIssuesTypes`, and that join finds
+nothing for any inspection newer than the dumped release — **81 of the 888 rows carry no id at
+all.** Every one of those 81 therefore missed both maps in silence and fell through to `Uncovered`,
+which is the residue bucket and so the work queue. An omission in a map does not look like an
+omission; it looks like a gap in the product. Reading the maps through a key-indexed view as well,
+built with the same id → export-key transform the join already uses, recovers **six** rows:
+`ConvertToExtensionBlock` and `MoveToExtensionBlock` (`SK1004`), `AsyncVoidMethodWithoutAwait`
+(`SK3001`), `ReplaceWithOfType` (`SK4010`), `TemplateIsNotCompileTimeConstantProblem` (`SK2016`),
+and `UseArgumentExceptionThrowIfMethod`, which is `Hosted` on `CA1511`.
+
+⚠ **Those six are also why the published 580 was not reproducible.** The run that produced it had
+`types.json` — an uncommitted cache from an older `jb` — as a second metadata source, which supplied
+ids for exactly those six. Re-running the committed pipeline on the 2025.2.6 dump alone gave **586**,
+not 580, and nothing in the document said why. The fix makes the six land in their buckets from the
+committed inputs alone, so the number no longer depends on a file that was never in the repository.
+
+Four more left `Uncovered` because the map was missing rules that **already ship**:
+`MergeCastWithTypeCheck` (`SK1015`), `PossibleInvalidOperationExceptionCollectionWasModified`
+(`SK2007`), `ReturnOfTaskProducedByUsingVariable` (`SK3007`) and `UseAwaitUsing` (`SK3503`). Each is
+named as the `resharperId` of a shipped rule in `rules.json` and each was being counted as work
+still to do. This is the direction the new test now asserts.
+
+Two entries were wrong rather than missing, and removing them does not move the total:
+
+- **`ShortLivedHttpClient` was credited to `SK4008`.** [08](08-rule-catalogue.md) defines `SK4008` as
+  the async state machine built for a method that always completes synchronously. `HttpClient` socket
+  exhaustion is a different problem with a different fix. The mapping is deleted and the inspection
+  is genuinely uncovered — it is issue #63. It would have
+  become `Catalogued` for free once the lookup was fixed, which is the reason to state it: the fix
+  makes wrong entries *count*, where before they could hide behind a missing id.
+- **`NonReadonlyMemberInGetHashCode` was `Hosted` as "CA1065-adjacent".** `CA1065` is "do not raise
+  exceptions in unexpected locations" and says nothing about a hash code computed over mutable state.
+  The entry credited a Roslyn analyzer that does not exist. Removed — the row is now `Catalogued` on
+  `SK2004`, which is the map's own reading of it, and the coverage question is
+  issue #161.
+
+⚠ **Two surviving entries over-claim, and are left alone deliberately.**
+`UseArgumentExceptionThrowIfMethod → SK1020` and `ReplaceWithOfType → SK4010` both credit a shipped
+rule with more than it does: `SK1020` covers `ArgumentNullException.ThrowIfNull` only, and `SK4010`
+covers a `Where` fused into the operator that follows it, not `OfType`. The inspections are broader
+than the rules. Narrowing the map would move both back to `Uncovered` and is a decision about the
+*rules*, not the instrument — issue #105 and
+issue #100 carry it.
+
+⚠ **The sections below still quote 580, and are not silently rebased onto 576.** The ranking, the
+fire counts and the concept collapse were measured against the 580-row residue over a SARIF run that
+this correction did not repeat; changing the number without re-running the measurement would be the
+same kind of claim this document exists to replace. None of the ten rows that left the residue
+appears in the ranked queue, so the ordering is unaffected — but `ReplaceWithOfType` is used below as
+the worked example of ReSharper splitting one idea across many ids, and it is now `Catalogued`.
 
 ⚠ **Three corrections during the pass moved 78 inspections out of `Uncovered`, and all three are
 recorded because each was initially got wrong the same way — by classifying on the key's name.** The
@@ -140,8 +204,13 @@ should be trusted before somebody has read it.**
   kin. They were 8 of what this document first reported as "12 uncovered inspections at `error`".
   **The real number is 3**, and the alarming version of that row was an artefact of the filter.
 
-The uncovered set is by category: `CodeSmell` 200, `BestPractice` 144, `CodeRedundancy` 103,
-`LanguageUsage` 57, `DeclarationRedundancy` 38, and a long tail.
+The uncovered set is by category: `CodeSmell` 193, `BestPractice` 143, `CodeRedundancy` 101,
+`LanguageUsage` 54, `DeclarationRedundancy` 38, and a long tail — plus **31 with no category at all**,
+which is the same id-join failure showing through in the one place the fix above does not reach. A
+row whose id the dump does not carry has no category either, and no key-indexed view can invent one.
+The earlier reading of this line (`CodeSmell` 200, `BestPractice` 144, `CodeRedundancy` 103,
+`LanguageUsage` 57) was taken from the run that had the uncommitted `types.json` and so had those 31
+categorised; it is not comparable to the row above it.
 
 ### ⚠ The `Option` bucket covers less than its size suggests, and this is the finding most likely to be argued with
 
@@ -542,3 +611,16 @@ rule metadata, both fetched by script.
 inspections whose keys carry no language prefix are excluded by matching VB-only syntax in their
 descriptions, which caught 8 and may have missed one or two; and the firing measurement is scoped to
 part of Vixen rather than all of it, for the reason given above.
+
+⚠ **A re-run of the committed pipeline does not reproduce the numbers this document first
+published, and the reason is worth carrying forward.** The published `Uncovered` 580 came from a run
+with `types.json` present — an uncommitted metadata cache from an older `jb`. Without it the same
+scripts returned **586**, because `classify.py` looked its maps up by inspection id and 81 of the 888
+rows have none. The lookup now matches on the export key as well, so the maps no longer depend on
+whether the joining dump happens to know the inspection, and the measured figure is **576**. See
+§ "The classification" for the full accounting.
+
+**A re-run is therefore expected to print `Uncovered 576` and nothing else.** If it prints anything
+else, the difference is a real change in the inputs — a newer export, a newer dump, an edit to the
+maps — and not the instrument drifting. That is what the fix bought: the number is now a function of
+the committed inputs alone.
