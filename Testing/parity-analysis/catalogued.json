@@ -195,5 +195,6 @@
   "PublicConstructorInAbstractClass": "SK6003",
   "ChangeFieldTypeToSystemThreadingLock": "SK1023",
   "RedundantDictionaryContainsKeyBeforeAdding": "SK1033",
-  "ArrangeNullCheckingPattern": "SK1010"
+  "ArrangeNullCheckingPattern": "SK1010",
+  "UseDeconstruction": "SK1070"
 }

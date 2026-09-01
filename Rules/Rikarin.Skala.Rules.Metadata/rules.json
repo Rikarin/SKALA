@@ -4769,6 +4769,32 @@
         "dotnet_code_quality.SK7083.minimum_length",
         "dotnet_diagnostic.SK7083.severity"
       ]
+    },
+    {
+      "id": "SK1070",
+      "concept": "tuple-deconstruction",
+      "title": "Deconstruct the tuple instead of reading it element by element",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseDeconstruction",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "7.0",
+      "summary": "Consecutive `var` declarations read every element of one tuple in order, which is a deconstruction written out longhand.",
+      "rationale": "Deconstruction arrived with tuples in C# 7 and is the form the language was given the tuple for; a model writes the `Item1`/`Item2` reads because most of its training data is older than both. The longhand form also loses the one thing the tuple was carrying — that the pieces belong together — and `var a = t.Item1;` names the variable twice while naming what it holds not at all.",
+      "examples": {
+        "bad": "var pair = Split(text);\nvar key = pair.Item1;\nvar value = pair.Item2;",
+        "good": "var pair = Split(text);\nvar (key, value) = pair;"
+      },
+      "falsePositives": "⚠ **Deconstruction evaluates the receiver once and the longhand form evaluates it once per element, so the receiver has to be something re-reading cannot observe.** The rule requires it to be a single identifier naming a *local or a parameter*: reading one N times and reading it once are then the same program by construction, which is a stronger claim than the usual \"no invocation in the path\" and is the reason no property or field receiver is matched. ⚠ **A partial deconstruction is not this rule.** Every element of the tuple must be read, exactly once, in positional order, by consecutive single-declarator statements — `var a = t.Item1;` on its own is one variable with a name, not a deconstruction missing three quarters of itself. ⚠ **Every declaration must be `var`.** `var (a, b) = t;` gives each variable the element's type; a written type on one of the longhand declarations means the author asked for a different type, and reproducing that needs the typed deconstruction form the fix does not emit. ⚠ Only real tuple types — `System.ValueTuple` and its language syntax — are matched. `System.Tuple<T1, T2>` deconstructs only through the `System.TupleExtensions` extension methods, so the rewrite would depend on a `using` the file may not have. ⚠ Declarations carrying modifiers, attributes, `const`, `using`, `await` or `ref` are excluded, as is any run whose span holds a comment or a preprocessor directive, because the fix deletes those lines.",
+      "resharperNote": "⚠ The export sets `resharper_use_deconstruction_highlighting = hint` and this rule defaults to `suggestion`. Reading the ReSharper key therefore *lowers* the rule below its default, and a repository importing an untouched ReSharper export will see it dimmed. The default is deliberate: JetBrains rates it a hint because it is a style nicety in an IDE that offers the rewrite under a keystroke, and Skala's audience is an agent writing the longhand form into a file nobody is going to press a keystroke in. `SwapViaDeconstruction`, `UsePositionalDeconstructionPattern` and `MoveToExistingPositionalDeconstructionPattern` are three further inspections in the same family and none of them is covered here.",
+      "configuration": [
+        "dotnet_diagnostic.SK1070.severity"
+      ]
     }
   ]
 }
