@@ -106,6 +106,7 @@ public static class AnalyzerHost {
         new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new InheritanceDepthAnalyzer(), new TypeCouplingAnalyzer(), new NestedConditionalAnalyzer(),
+        new RepeatedStringLiteralAnalyzer(),
     ];
 
     /// <summary>

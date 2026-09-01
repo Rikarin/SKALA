@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 132 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 133 ids are allocated.
 
 ## Async
 
@@ -116,6 +116,7 @@
 | [SK7080](SK7080.md) | The inheritance chain is deeper than the threshold | hint | — | no |
 | [SK7081](SK7081.md) | The type depends on more other types than the threshold | hint | — | no |
 | [SK7082](SK7082.md) | The conditional expressions are nested | suggestion | — | yes |
+| [SK7083](SK7083.md) | The string literal is repeated | hint | — | yes |
 
 ## Modernization
 

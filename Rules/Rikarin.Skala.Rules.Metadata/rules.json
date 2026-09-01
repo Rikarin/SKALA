@@ -3400,6 +3400,35 @@
         "dotnet_code_quality.SK7082.threshold",
         "dotnet_diagnostic.SK7082.severity"
       ]
+    },
+    {
+      "id": "SK7083",
+      "concept": "repeated-string-literal",
+      "title": "The string literal is repeated",
+      "category": "Maintainability",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1192"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "One string literal is written in a file more times than dotnet_code_quality.SK7083.threshold (default 5), counting only literals at least dotnet_code_quality.SK7083.minimum_length characters long (default 5) that contain a letter.",
+      "rationale": "The same literal in several places is the same rename waiting to be done incompletely — the argument `nameof` makes for member names, applied to keys, formats and messages. ⚠ **It takes two options, and the second is what makes it usable.** A repeat count on its own reports `\", \"`, `\"/\"` and `\"true\"` long before it reports anything worth extracting, so a minimum length holds the floor and a literal must also contain a letter: a repeated separator or punctuation run is not a name anybody was going to give. ⚠ The default count is 5 — a literal must be written six times in one file — and that is the conservative end of a measurement with no wrong answer. On Skala's own tree a count of 3 reports 144 literals and a count of 5 reports 64; every one of the 144 is a real repeat, and the ones the higher default drops are the HTML fragments and fixture file names nobody was going to extract. The count is the option a repository lowers rather than raises, so the shipped number is the one that leaves room to. Choosing the name is the whole of the work, so there is no fix.",
+      "examples": {
+        "bad": "logger.LogWarning(\"tenant-id header missing\");\n// … and \"tenant-id\" written again in three other places in the same file",
+        "good": "const string TenantIdHeader = \"tenant-id\";"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. ⚠ **The minimum length and the letter test are the rule**, not decoration: without them the default count reports every separator and every one-word flag in the repository. ⚠ **A `const` initialiser is not counted** — it is the repair, and a rule that still fires after somebody did exactly what it asked is the fastest way to teach people it is noise. ⚠ **An attribute argument is not counted**: it must be a compile-time constant, so the only extraction available is a `const` the attribute then names, and the ones that actually repeat are test display names, obsolescence messages and route templates, where writing the string out at the declaration is the point. ⚠ **Counted per file, and per file deliberately.** The scope where a repeat is visible and a `const` is an obvious repair is the one a reader has open; counting per compilation would report a literal shared by two unrelated files, where the repair is a shared constant nobody has a place for and the finding points at neither site. One finding per literal, at the first occurrence — one per site would report the same decision as many times as it was made. Interpolated strings are not literals and their text is not counted; neither are UTF-8 literals, which are a different expression kind. Comparison is ordinal on the literal's value, so a verbatim and a regular spelling of the same text count together. Generated code is excluded.",
+      "configuration": [
+        "dotnet_code_quality.SK7083.threshold",
+        "dotnet_code_quality.SK7083.minimum_length",
+        "dotnet_diagnostic.SK7083.severity"
+      ]
     }
   ]
 }

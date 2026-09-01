@@ -428,7 +428,17 @@ around a rung do not change the number. A lambda body restarts the count, as it 
 and only the outermost conditional of a nest reports.
 
 `SK7081` a type declaration naming more distinct other types than the threshold (default 80) ·
-`SK7082` conditional expressions nested deeper than the threshold (default 1, ladders exempt).
+`SK7082` conditional expressions nested deeper than the threshold (default 1, ladders exempt) ·
+`SK7083` a string literal written more times in one file than the threshold (default 5), counting
+only literals of at least `minimum_length` characters (default 5) that contain a letter.
+
+⚠ **`SK7083` is the first rule in this family to take two options**, and the second is what makes it
+usable: a repeat count on its own reports `", "` and `"true"` long before it reports anything worth
+extracting. It is also spelled differently on purpose — `dotnet_code_quality.SK7083.minimum_length`
+rather than a second `.threshold`, because a rule with two numbers cannot spell both of them the way
+the family spells one. A `const` initialiser is not counted, because it is the repair; an attribute
+argument is not counted, because a constant is the only extraction available there and the ones that
+repeat are display names and obsolescence messages.
 
 ## SK8000 — Tests
 
@@ -513,8 +523,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **124** | **80.5 %** |
+| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **125** | **80.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
