@@ -110,7 +110,6 @@
   "SimplifyLinqExpressionUseAny": "SK4010",
   "SimplifyLinqExpressionUseMinByMaxBy": "SK4010",
   "AbstractTypeWithPublicConstructor": "SK6003",
-  "MemberCanBeInternal.Global": "SK6002",
   "VirtualMemberNeverOverridden.Global": "SK6004",
   "CyclomaticComplexity": "SK7001",
   "CognitiveComplexity": "SK7001",
@@ -192,5 +191,9 @@
   "NonAtomicCompoundOperator": "SK3041",
   "NonVolatileFieldInDoubleCheckLocking": "SK3042",
   "InconsistentOrderOfLocks": "SK3043",
-  "InconsistentlySynchronizedField": "SK3044"
+  "InconsistentlySynchronizedField": "SK3044",
+  "PublicConstructorInAbstractClass": "SK6003",
+  "ChangeFieldTypeToSystemThreadingLock": "SK1023",
+  "RedundantDictionaryContainsKeyBeforeAdding": "SK1033",
+  "ArrangeNullCheckingPattern": "SK1010"
 }

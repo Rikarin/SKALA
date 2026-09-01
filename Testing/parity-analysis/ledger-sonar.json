@@ -260,6 +260,10 @@
    "proposedFix": "none",
    "rules": [
     "S1764"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2012"
    ]
   },
   {
@@ -321,6 +325,10 @@
    "proposedFix": "safe",
    "rules": [
     "S2688"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2030"
    ]
   },
   {
@@ -766,6 +774,10 @@
    "proposedFix": "safe",
    "rules": [
     "S4586"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK3020"
    ]
   },
   {
@@ -997,6 +1009,10 @@
    "proposedFix": "none",
    "rules": [
     "S2094"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6023"
    ]
   },
   {
@@ -1009,6 +1025,10 @@
    "proposedFix": "none",
    "rules": [
     "S2166"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6021"
    ]
   },
   {
@@ -1069,6 +1089,10 @@
    "proposedFix": "none",
    "rules": [
     "S1123"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK7070"
    ]
   },
   {
@@ -1154,6 +1178,10 @@
    "proposedFix": "none",
    "rules": [
     "S907"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK7074"
    ]
   },
   {
@@ -1214,6 +1242,10 @@
    "proposedFix": "none",
    "rules": [
     "S6513"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK7071"
    ]
   },
   {
@@ -1278,6 +1310,10 @@
    "proposedFix": "safe",
    "rules": [
     "S1066"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1042"
    ]
   },
   {
@@ -1290,6 +1326,10 @@
    "proposedFix": "safe",
    "rules": [
     "S1264"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1043"
    ]
   },
   {
@@ -1302,6 +1342,10 @@
    "proposedFix": "safe",
    "rules": [
     "S3256"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1044"
    ]
   },
   {
@@ -3224,6 +3268,10 @@
     "proposedFix": "unsafe",
     "upstreamIssues": [
      3460
+    ],
+    "coverage": "partial",
+    "coveredBy": [
+     "SK6022"
     ]
    },
    {
@@ -3309,6 +3357,10 @@
     "proposedFix": "safe",
     "upstreamIssues": [
      6959
+    ],
+    "coverage": "complete",
+    "coveredBy": [
+     "SK6020"
     ]
    },
    {

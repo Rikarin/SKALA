@@ -141,6 +141,10 @@
     "MathAbsMethodIsRedundant",
     "SuspiciousMathSignMethod",
     "MathClampMinGreaterThanMax"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2001"
    ]
   },
   {
@@ -327,6 +331,10 @@
     "resharper_complex_object_destructuring_problem_highlighting",
     "resharper_complex_object_in_context_destructuring_problem_highlighting",
     "resharper_positional_property_used_problem_highlighting"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2016"
    ]
   },
   {
@@ -351,6 +359,10 @@
    "proposedFix": "safe",
    "inspections": [
     "SuspiciousParameterNameInArgumentNullException"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2017"
    ]
   },
   {
@@ -394,6 +406,10 @@
    "inspections": [
     "PossiblyImpureMethodCallOnReadonlyVariable",
     "PossibleStructMemberModificationOfNonVariableStruct"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2005"
    ]
   },
   {
@@ -406,6 +422,10 @@
    "proposedFix": "safe",
    "inspections": [
     "GCSuppressFinalizeForTypeWithoutDestructor"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2032"
    ]
   },
   {
@@ -418,6 +438,10 @@
    "proposedFix": "none",
    "inspections": [
     "StackAllocInsideLoop"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2033"
    ]
   },
   {
@@ -498,6 +522,10 @@
    "proposedFix": "none",
    "inspections": [
     "ValueParameterNotUsed"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2031"
    ]
   },
   {
@@ -647,6 +675,10 @@
    "proposedFix": "none",
    "inspections": [
     "resharper_escaped_keyword_highlighting"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2034"
    ]
   },
   {
@@ -834,6 +866,10 @@
    "proposedFix": "none",
    "inspections": [
     "SpinLockInReadonlyField"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK3021"
    ]
   },
   {
@@ -883,6 +919,10 @@
    "proposedFix": "none",
    "inspections": [
     "ReturnOfUsingVariable"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK3512"
    ]
   },
   {
@@ -895,6 +935,10 @@
    "proposedFix": "safe",
    "inspections": [
     "DisposeOnUsingVariable"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK3510"
    ]
   },
   {
@@ -908,6 +952,10 @@
    "inspections": [
     "UsingStatementResourceInitialization",
     "UsingStatementResourceInitializationExpression"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK3511"
    ]
   },
   {
@@ -1063,6 +1111,10 @@
    "proposedFix": "safe",
    "inspections": [
     "ConvertNullableToShortForm"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1040"
    ]
   },
   {
@@ -1075,6 +1127,10 @@
    "proposedFix": "safe",
    "inspections": [
     "ConvertToCompoundAssignment"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1041"
    ]
   },
   {
@@ -1435,6 +1491,10 @@
     "RedundantWithCancellation",
     "CanSimplifySetAddingWithSingleCall",
     "RedundantDictionaryContainsKeyBeforeAdding"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK1033"
    ]
   },
   {
@@ -1686,6 +1746,10 @@
    "proposedFix": "unsafe",
    "inspections": [
     "MoreSpecificForeachVariableTypeAvailable"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6041"
    ]
   },
   {
@@ -1706,6 +1770,10 @@
     "UnusedTupleComponentInReturnValue",
     "UnusedParameterInPartialMethod",
     "PrivateFieldCanBeConvertedToLocalVariable"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK6040"
    ]
   },
   {
@@ -1792,6 +1860,10 @@
    "proposedFix": "safe",
    "inspections": [
     "RedundantDisableWarningComment"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK7072"
    ]
   },
   {
@@ -1804,6 +1876,10 @@
    "proposedFix": "safe",
    "inspections": [
     "EmptyRegion"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK7073"
    ]
   },
   {

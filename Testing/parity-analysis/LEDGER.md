@@ -8,10 +8,14 @@ standard [`README.md`](README.md) sets for the rest of this directory.
 
 | File | What it records |
 |---|---|
-| `ledger-resharper.json` | 137 proposed concepts covering 494 inspections, and 94 inspections excluded with a written reason each |
+| `ledger-resharper.json` | 136 proposed concepts covering 493 inspections, and 97 inspections excluded with a written reason each |
 | `ledger-sonar.json` | 110 proposed concepts covering 156 rules, and 325 rules resolved as shipped, tracked, hosted, decided or out of scope |
 | `ledger-sonar.json` § `ideas` | 28 proposed concepts covering 32 of upstream's **open, unimplemented** rule ideas, and 79 resolved |
-| `verify_ledger.py` | Asserts that neither ledger can lose a rule |
+| `verify_ledger.py` | Asserts that neither ledger can lose a rule, and that no shipped rule can go unrecorded |
+
+⚠ The three counts above are what `verify_ledger.py` prints today, not what this file said before.
+The previous row read *137 concepts / 494 inspections / 94 excluded* and every one of the three was
+stale. Re-read them from a run rather than from here.
 
 ⚠ **The `ideas` section has a different source and a different half-life.** Its 111 entries are open
 `Rule Idea` issues on `SonarSource/sonar-dotnet` — proposals upstream has *not* specified or
@@ -58,6 +62,27 @@ exception is deliberate: a concept may name an inspection the pipeline buckets `
 `docs/plan/08` allocates ids for concepts it has never shipped (`SK1002`, `SK1004`), and a proposal
 to *implement* one of those is exactly what the ledger should hold.
 
+⚠ **Read `Uncovered` from a run, never from here.** It is the last line of
+`python3 universe.py && python3 classify.py`, and it fell 563 → 508 in the two hours this section
+took to write, entirely because other agents were shipping rules. What follows is a delta, which
+survives; the absolutes are dated examples of why not to quote one.
+
+The four map entries added in this pass are worth **−3**:
+`PublicConstructorInAbstractClass`, `ChangeFieldTypeToSystemThreadingLock` and
+`RedundantDictionaryContainsKeyBeforeAdding` leave the residue, and `ArrangeNullCheckingPattern`
+moves `Option` Tier D → `Catalogued` without touching it.
+
+⚠ **The absolute moves under you and the delta does not.** Those same four entries measured
+563 → 560 at `8d0d8fb3` and 525 → 522 an hour later — same change, same −3, two different
+headlines — because 39 more rules and ~38 more map entries landed in between. **Quote the delta,
+re-run for the absolute.** The 586 in `curatedAgainst` is two pipeline corrections and a
+catalogue's worth of rules out of date.
+
+⚠ **`universe.py` prints a complete-looking universe with zero metadata when `types-2026.xml` is
+absent** — 953 rows, 888 C#-proper, every `id` null — and every downstream map then misses. The file
+is `.gitignore`d, so a fresh worktree has none and the run looks fine. Check the
+`with tool metadata:` line reads **872**, not 0, before trusting anything below it.
+
 ⚠ **`uncoveredCount: 586` in `ledger-resharper.json` was measured before the id-keyed lookup defect
 in `classify.py` was found**, and is therefore inflated. A re-run after that fix moves several
 inspections into `Catalogued`/`Hosted`; expect reconcile warnings on the next run and use them to
@@ -79,13 +104,75 @@ this file stays inside it:
 - **Work from the problem, never from their solution.** Every summary and rationale in the issues is
   written from scratch against the rule title alone.
 
-## Two entries that over-claim, deliberately left alone
+## The second completeness claim: what has *shipped*
 
-`catalogued.json` maps `UseArgumentExceptionThrowIfMethod` → `SK1020` and `ReplaceWithOfType` →
-`SK4010`. The shipped `SK1020` covers `ArgumentNullException.ThrowIfNull` only, and the shipped
-`SK4010` covers a `Where` fused into a following operator, not `OfType`. Both concepts are broader
-than the rule credited with them, so the ledger proposes them anyway. Narrowing the map is a decision
-for whoever specifies those rules, and it is recorded here rather than taken silently.
+Everything above tracks the **proposal queue** — that no inspection or Sonar rule can be dropped
+without a word. Nothing tracked the other direction, and the cost was measured: 84 rules landed in
+`rules.json` while `catalogued.json` went almost entirely un-updated. Joining the map against the
+ledgers reached **13 concepts** for all 84, and every one of the 13 had already been handled by hand.
+
+Two things now record it, and `verify_ledger.py` asserts both.
+
+**Concepts carry `coverage` and `coveredBy`.** `coverage` is `complete` (every inspection or `S####`
+listed on the concept is covered) or `partial`; `coveredBy` names the shipped `SK` ids. Today:
+**13 complete / 6 partial** on ReSharper, **10 / 1** on Sonar, **1 / 1** on the idea list. A
+`complete` claim is what closes a GitHub issue, so the verifier requires it to name at least one id
+that is actually in `rules.json`.
+
+⚠ **Every `complete` concept turned out to be an issue that was already closed.** The reconciliation
+produced **zero** new closures. The expectation going in was that proposals would duplicate shipped
+rules; instead the issue bodies consistently name the neighbouring Skala rule and carve around it
+(#67↔SK4002, #100↔SK4010, #146↔SK5002, #164↔SK5001, #208↔SK6003, #256↔SK3004, #266↔SK2014). The
+curation was careful. What was stale was the *map*, not the queue.
+
+**The map's keys are checked, not just its values.** `RuleCatalogTests` asserts every *value* is an
+id doc 08 knows. Nothing asserted the *keys*, and 16 of them name an inspection that does not
+exist — `MemberCanBeInternal.Global` has no `.Global` suffix in ReSharper, `CyclomaticComplexity` and
+`CognitiveComplexity` have no ReSharper counterpart at all. They matched no universe row, credited
+nothing, and were counted as part of the map's size.
+
+## What the map actually decides
+
+An entry only decides a bucket if its key matches a universe row *and* no higher-precedence bucket
+claims that row first. Three states, and only one of them does anything:
+
+| | effect |
+|---|---|
+| **Load-bearing** — the entry is what puts the row in `Catalogued` | real |
+| **Shadowed** — `hosted()` runs before `catalogued()`, so a `CA*`/`IDE*` claim wins | none |
+| **Inert** — the key matches no universe row | none |
+
+⚠ **No count is written here on purpose.** `verify_ledger.py` prints the split on every run
+(`parity map: N of M entries match a universe row`), and the numbers moved three times in the hour
+this section was being written, as twelve agents shipped rules and appended to the map. When it was
+first measured the map was 142 entries of which **107** were load-bearing, **18** shadowed and **17**
+inert — a quarter of it doing nothing. Read the current split from a run.
+
+⚠ **The 18 shadowed entries are the interesting ones.** `SK1006`, `SK1010`, `SK1012`, `SK1020`,
+`SK1030` and `SK1034` each ship a rule for a concept the hosted map says Roslyn already covers
+(IDE0063, IDE0078, IDE0066, CA1510, IDE0074, CA1860). ADR-008 is *host, never rebuild*. Either those
+hosted entries are wrong or six shipped rules are duplicates. Both readings are load-bearing for the
+parity headline and neither is written down anywhere else.
+
+## Entries that over-claim
+
+`catalogued.json` maps `UseArgumentExceptionThrowIfMethod` → `SK1020`. The shipped `SK1020` covers
+`ArgumentNullException.ThrowIfNull` only, so the concept is broader than the rule credited with it;
+the ledger proposes it anyway and narrowing is a decision for whoever specifies the rest.
+
+⚠ This section previously also named `ReplaceWithOfType` → `SK4010` as a deliberate over-claim.
+**That was moot and nobody had checked**: `ReplaceWithOfType` is not an inspection id — only the
+dotted variants (`ReplaceWithOfType.Any.1`, `.Count.1`, `.Where`, …) exist, and those are already
+members of concept #100. The entry suppressed nothing. A bare `grep -c` returns 18 hits and every one
+is a longer id, which is how it read as real.
+
+Larger over-claims found in the same pass and **reported rather than fixed**, because each needs a
+`jb inspectcode` run or an owner's decision: all eight `SK2001` entries (mapped against doc 08's
+older wording, not the shipped rule — see #8); nine of fifteen `SK2010` entries, which is why #51
+lists three search inspections instead of nine; `StructuredMessageTemplateProblem` → `SK2016`, an
+umbrella id covering the whole of #20; `RedundantSuppressNullableWarningExpression` → `SK7050`, a
+`warning`-severity inspection in neither `concepts[]` nor `excluded[]`; and
+`OutParameterValueIsAlwaysDiscarded.Global`/`.Local` → `SK2006`, an id that has never existed.
 
 ## Regenerating
 

@@ -13,11 +13,17 @@ inputs and are skipped, loudly, when they are absent:
     python3 fetch_sonar.py                       # -> sonar.json
 
 Exit code is 1 if any check fails. Reconcile items are *not* failures -- see below.
+
+A second completeness claim is checked here, about the *shipped* catalogue rather than the
+proposal queue -- see "the shipped catalogue" at the bottom of this file.
 """
 import json, os, sys
 
 W = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(os.path.dirname(W))
 fail, warn = [], []
+
+COVERAGE = {"complete", "partial"}
 
 RANGES = {"SK0001-SK0999", "SK1000-SK1999", "SK2000-SK2999", "SK3000-SK3499", "SK3500-SK3999",
           "SK4000-SK4999", "SK5000-SK5999", "SK6000-SK6999", "SK7000-SK7999", "SK8000-SK8999"}
@@ -153,6 +159,171 @@ if ideas:
     warn.append("the open-idea audit is a snapshot of "
                 f"{ideas['auditedAgainst']['date']}; upstream issues move and nothing here "
                 "re-checks them. Re-run the `gh issue list` in `auditedAgainst.query` to refresh.")
+
+# --------------------------------------------------- the shipped catalogue
+# ⚠ Everything above this line checks the *proposal* queue: that no ReSharper inspection or
+# Sonar rule can be dropped from the ledger without a word. Nothing checked the other
+# direction -- that a rule which has actually **shipped** is recorded as having shipped --
+# and the cost of that was measured: 84 rules landed in `rules.json` while `catalogued.json`
+# went almost entirely un-updated, so every inspection those rules cover kept being counted
+# `Uncovered`. The published parity gap was inflated by work that was already done, and
+# doc 17's residue -- which is the work queue -- was counting it as still owed.
+#
+# A zero from a disabled instrument and a zero from clean code are the same zero. These two
+# assertions are what stop the map from going quiet again.
+#
+# ⚠ The first of them is *also* asserted in C#, by
+# `RuleCatalogTests.TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule`. The
+# duplication is deliberate and not an oversight: this pipeline is outside the solution by
+# design, it is edited and re-run by people who never invoke `dotnet test`, and an assertion
+# that lives only in the test project does not protect the file being hand-edited here.
+RULES = f"{REPO}/Rules/Rikarin.Skala.Rules.Metadata/rules.json"
+shipped = {r["id"]: r for r in json.load(open(RULES))["rules"]}
+catalogued = json.load(open(f"{W}/catalogued.json"))
+
+# Anti-vacuity. Both loops below pass happily against an empty catalogue or an empty map, and
+# an empty file is the exact shape of the failure they exist to report.
+if len(shipped) < 50:
+    fail.append(f"rules.json holds {len(shipped)} rules; that is not the catalogue, and every "
+                f"check below would pass vacuously against it")
+if len(catalogued) < 100:
+    fail.append(f"catalogued.json holds {len(catalogued)} entries; that is not the map, and the "
+                f"parity-map check below would pass vacuously against it")
+
+# (1) rules.json subset of catalogued.json, matched on the SK id. An inspection that a shipped
+#     rule declares as its `resharperId` and the map does not credit to that rule is measured
+#     as an uncovered gap by classify.py -- work already done, back on the queue.
+declaring = [r for r in shipped.values() if r.get("resharperId")]
+if len(declaring) < 10:
+    fail.append(f"only {len(declaring)} shipped rules declare a resharperId; the parity-map "
+                f"check has nothing to assert against")
+for r in declaring:
+    credited = catalogued.get(r["resharperId"])
+    if credited is None:
+        fail.append(f"catalogued.json: {r['id']} ships {r['resharperId']!r} and the parity map "
+                    f"does not mention it -- classify.py will count that inspection Uncovered")
+    elif credited != r["id"]:
+        fail.append(f"catalogued.json: {r['id']} ships {r['resharperId']!r} but the map credits "
+                    f"it to {credited} -- one of the two is wrong and the gap hides either way")
+
+# (2) A concept that claims coverage must name a rule that exists. `coveredBy` is the shipped
+#     SK ids now covering the concept; `coverage` is "complete" (every member id listed on the
+#     concept is covered) or "partial". ⚠ `complete` is the load-bearing one: it is the claim
+#     that closes a GitHub issue, so a typo'd or aspirational id in it retires a tracked piece
+#     of work against a rule that does not exist.
+def covered(ledger, name):
+    complete = partial = 0
+    for c in ledger["concepts"]:
+        cov, by = c.get("coverage"), c.get("coveredBy") or []
+        if cov is None and not by:
+            continue
+        if cov not in COVERAGE:
+            fail.append(f"{name}: concept {c['slug']!r} has coverage={cov!r}, "
+                        f"which is not one of {sorted(COVERAGE)}")
+        for sk in by:
+            if sk not in shipped:
+                fail.append(f"{name}: concept {c['slug']!r} is covered by {sk}, which is not a "
+                            f"rule in rules.json -- the coverage claim names nothing that ships")
+        if cov == "complete":
+            if not by:
+                fail.append(f"{name}: concept {c['slug']!r} is marked complete and names no rule")
+            elif not any(sk in shipped for sk in by):
+                fail.append(f"{name}: concept {c['slug']!r} is marked complete but not one of "
+                            f"{by} ships -- a complete claim must rest on a shipped rule")
+            complete += 1
+        elif cov == "partial":
+            partial += 1
+    return complete, partial
+
+
+rs_complete, rs_partial = covered(rs, "ledger-resharper")
+sn_complete, sn_partial = covered(sn, "ledger-sonar")
+# ⚠ `ideas` carries concepts too, and leaving it out would have made every coverage claim written
+# there unasserted -- the precise failure this section exists to prevent, reintroduced one nesting
+# level down.
+id_complete, id_partial = covered(sn["ideas"], "ledger-sonar.ideas") if sn.get("ideas") else (0, 0)
+
+# (3) ⚠ Every key in the parity map must be an inspection that exists. This was found the
+#     hard way: `MemberCanBeInternal.Global` is not a ReSharper id at all -- the real one is
+#     `MemberCanBeInternal`, with no `.Global` suffix -- so the entry matched no universe row,
+#     credited nothing, and had sat there being counted as one of the map's 142 entries.
+#     Sixteen more were in the same state. An invented key is worse than a missing one: a
+#     missing entry inflates the gap visibly, an invented one inflates the *map* and makes the
+#     coverage look larger than it is, in a file whose whole purpose is to be trusted.
+#
+#     The C# test guards the values (every id is one doc 08 knows) and never guarded the keys.
+#
+#     ⚠ The known-inert entries are named here rather than tolerated silently, each with what
+#     is actually wrong with it. This is the same "excluded with a written reason" discipline
+#     the ledgers use: an entry that simply never appears is indistinguishable from one nobody
+#     looked at. Re-point or drop one and delete its line; do not add to this list to make a
+#     new bad entry pass.
+INERT = {
+    # id does not exist in ReSharper; the real inspection is named on the right.
+    # `MemberCanBeInternal.Global` was here and has been dropped from the map: the id was invented
+    # (ReSharper has no `.Global` suffix on it) and it pointed at SK6002, which doc 08 allocates to
+    # a different concept. #114 closed out of scope, so nothing will ever ship for it.
+    "AbstractTypeWithPublicConstructor": "invented; the real id is PublicConstructorInAbstractClass, "
+                                         "which is now mapped to SK6003 -- drop this one",
+    "CyclomaticComplexity": "invented; ReSharper has no complexity-threshold inspection. "
+                            "FunctionComplexityOverflow is 'body too complex to analyse', a "
+                            "different thing, so this is a drop and not a re-point",
+    "CognitiveComplexity": "invented; same as CyclomaticComplexity",
+    "ClosureAllocation": "invented; not in the 2026 dump under any name",
+    "ImplicitlyCapturedClosure": "real in older ReSharper, absent from this dump and the export",
+    "AsyncApostrophe": "invented",
+    "CommentTypo": "invented",
+    "CommentedOutCode": "invented",
+    "SelfAssignment": "invented; no C# inspection of this name in the dump",
+    "SimplifyLinqExpressionUseMinByMaxBy": "invented; the dump has UseAll and UseAny only",
+    "ThrowingSystemException": "invented",
+    "UnusedPragmaWarningRestore": "invented; RedundantDisableWarningComment is the nearest real "
+                                  "id and is a different concept (ReSharper's own disable comment)",
+    "UseSearchValues": "invented; no SearchValues inspection in the dump",
+    "UseStringComparison": "invented; the real id is SpecifyStringComparison, which classify.py "
+                           "already buckets Hosted (CA1307/CA1310), so this credits nothing",
+    "XunitTestWithConsoleOutput": "invented",
+    # real id, but outside the measured universe, so it credits nothing either.
+    "UseUtf8StringLiteral": "real in types-2026.xml, absent from editor_config_template, so no "
+                            "universe row carries it",
+}
+if os.path.exists(f"{W}/universe.json"):
+    import re as _re
+
+    def _snake(s):
+        s = s.replace(".", "_")
+        s = _re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", s)
+        s = _re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "_", s)
+        return s.lower()
+
+    uni = json.load(open(f"{W}/universe.json"))
+    uni_ids = {v["id"] for v in uni.values() if v["id"]}
+    live = 0
+    for iid in catalogued:
+        b = _snake(iid)
+        if iid in uni_ids or any(f"resharper_{b}_highlighting{s}" in uni
+                                 for s in ("", "_highlighting")):
+            live += 1
+        elif iid not in INERT:
+            fail.append(f"catalogued.json: {iid!r} matches no row in the inspection universe, so "
+                        f"it credits {catalogued[iid]} with nothing. Verify the id against "
+                        f"types-2026.xml -- an invented id is silently inert")
+    for iid in sorted(set(INERT) - set(catalogued)):
+        warn.append(f"reconcile: {iid!r} is on the known-inert list and is no longer in "
+                    f"catalogued.json -- delete its line from INERT")
+    # ⚠ Report inert and excused separately. Printing one number for both let a newly added
+    # bad entry read as one more of the ones already known about.
+    inert_now = len(catalogued) - live
+    print(f"parity map: {live} of {len(catalogued)} entries match a universe row "
+          f"({inert_now} inert, {len(set(INERT) & set(catalogued))} of them on the known list)")
+else:
+    warn.append("universe.json is absent -- parity-map key validity NOT checked. "
+                "Run: python3 universe.py")
+print(f"shipped:   {len(shipped)} rules, {len(declaring)} declaring a resharperId, "
+      f"{len(catalogued)} parity-map entries")
+print(f"coverage:  resharper {rs_complete} complete / {rs_partial} partial, "
+      f"sonar {sn_complete} complete / {sn_partial} partial, "
+      f"sonar-ideas {id_complete} complete / {id_partial} partial")
 
 # --------------------------------------------------------------- verdict
 for w in warn:
