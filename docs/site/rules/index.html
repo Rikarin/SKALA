@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 211 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 215 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -95,6 +95,10 @@
 <tr><td><a href="SK2062.html">SK2062</a></td><td>A later condition in the chain repeats an earlier one</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2063.html">SK2063</a></td><td>The operator sequence reads as a different operator</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2064.html">SK2064</a></td><td>Use &amp;&amp; or || rather than &amp; or | on booleans</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK2080.html">SK2080</a></td><td>The set or dictionary initializer repeats a key</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2081.html">SK2081</a></td><td>The collection is passed to its own method as the other collection</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2082.html">SK2082</a></td><td>The collection element is written twice with nothing reading it in between</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2083.html">SK2083</a></td><td>The collection iterated here is provably empty</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2090.html">SK2090</a></td><td>The finalizer can throw</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2091.html">SK2091</a></td><td>An exception is thrown from a <code>finally</code> block</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2092.html">SK2092</a></td><td><code>NullReferenceException</code> is caught</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>

@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 188 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 215 ids are allocated.
 
 ## Async
 
@@ -65,10 +65,33 @@
 | [SK2032](SK2032.md) | Remove GC.SuppressFinalize from a type with no finalizer | suggestion | safe | no |
 | [SK2033](SK2033.md) | Do not stackalloc inside a loop | warning | — | yes |
 | [SK2034](SK2034.md) | Do not name a declaration after a reserved keyword | suggestion | — | yes |
+| [SK2040](SK2040.md) | The comparison is by reference where value equality was meant | warning | review | no |
+| [SK2041](SK2041.md) | `base.Equals` or `base.GetHashCode` resolves to `object`'s | warning | — | no |
+| [SK2042](SK2042.md) | The hash code reads state that equality ignores | warning | — | no |
+| [SK2043](SK2043.md) | The hash code depends on state that can change | warning | — | no |
+| [SK2044](SK2044.md) | The equality members are inconsistent with each other | warning | — | no |
+| [SK2050](SK2050.md) | Integer division feeds a fractional result | warning | review | no |
+| [SK2051](SK2051.md) | The arithmetic has a result its constant operand already fixes | warning | safe | no |
+| [SK2052](SK2052.md) | The shift count is masked to a different count | warning | — | no |
+| [SK2053](SK2053.md) | The size comparison is decided by a count never being negative | warning | — | no |
+| [SK2054](SK2054.md) | A signed modulus result is compared for equality with a non-zero value | warning | — | no |
+| [SK2060](SK2060.md) | The condition is an assignment, not a comparison | warning | — | yes |
+| [SK2061](SK2061.md) | Both operands of the operator are the same expression | warning | — | no |
+| [SK2062](SK2062.md) | A later condition in the chain repeats an earlier one | warning | — | yes |
+| [SK2063](SK2063.md) | The operator sequence reads as a different operator | warning | — | yes |
+| [SK2064](SK2064.md) | Use && or \|\| rather than & or \| on booleans | warning | safe | no |
 | [SK2080](SK2080.md) | The set or dictionary initializer repeats a key | warning | — | no |
 | [SK2081](SK2081.md) | The collection is passed to its own method as the other collection | warning | — | no |
 | [SK2082](SK2082.md) | The collection element is written twice with nothing reading it in between | warning | — | no |
 | [SK2083](SK2083.md) | The collection iterated here is provably empty | warning | — | no |
+| [SK2090](SK2090.md) | The finalizer can throw | warning | — | no |
+| [SK2091](SK2091.md) | An exception is thrown from a `finally` block | warning | — | yes |
+| [SK2092](SK2092.md) | `NullReferenceException` is caught | warning | — | yes |
+| [SK2093](SK2093.md) | The handler discards the exception it caught | warning | review | no |
+| [SK2100](SK2100.md) | `[ThreadStatic]` is applied where it cannot take effect | warning | review | no |
+| [SK2101](SK2101.md) | `[Pure]` is applied to a method that returns nothing | warning | safe | no |
+| [SK2102](SK2102.md) | The `[DebuggerDisplay]` string names a member that does not exist | warning | — | no |
+| [SK2103](SK2103.md) | The attribute is applied twice with the same arguments | warning | review | no |
 
 ## Design
 
