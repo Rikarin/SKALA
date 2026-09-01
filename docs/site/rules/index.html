@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 170 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 180 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -28,6 +28,11 @@
 <tr><td><a href="SK3021.html">SK3021</a></td><td>A <code>SpinLock</code> is stored in a <code>readonly</code> field</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3030.html">SK3030</a></td><td>The async iterator is enumerated without <code>await foreach</code></td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3031.html">SK3031</a></td><td>The method is <code>async</code> only to return an awaited task</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3040.html">SK3040</a></td><td>The <code>lock</code> is taken over a synchronization primitive</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3041.html">SK3041</a></td><td>The compound operation on a <code>volatile</code> field is not atomic</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3042.html">SK3042</a></td><td>The double-checked locking is not correct</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3043.html">SK3043</a></td><td>Locks are taken in inconsistent orders</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3044.html">SK3044</a></td><td>The field is guarded on some paths and not others</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -207,6 +212,11 @@
 <tr><td><a href="SK1042.html">SK1042</a></td><td>The nested <code>if</code> statements can be combined</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1043.html">SK1043</a></td><td>The <code>for</code> loop is a <code>while</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1044.html">SK1044</a></td><td>Use <code>string.IsNullOrEmpty</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1050.html">SK1050</a></td><td>Use pattern matching instead of a test-and-cast</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1051.html">SK1051</a></td><td>Simplify the pattern</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1052.html">SK1052</a></td><td>Merge the <code>?:</code> into a conditional access</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1053.html">SK1053</a></td><td>Use a discard</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1054.html">SK1054</a></td><td>Inline the <code>out</code> variable declaration</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
