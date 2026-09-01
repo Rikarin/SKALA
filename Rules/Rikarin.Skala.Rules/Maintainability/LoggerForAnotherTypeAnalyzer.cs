@@ -18,8 +18,11 @@ namespace Rikarin.Skala.Rules.Maintainability;
 ///     Nothing fails, nothing is slow, and every log query about either class is quietly wrong — which
 ///     is worse than noise, because noise is visible.
 ///     <para>
-///         ⚠ <b>This is the objective quarter of its issue, and the other three are declined on
-///         purpose.</b> <c>S6669</c> (the field's <em>name</em>) and <c>S1312</c> (whether it is
+///         ⚠
+///         <b>
+///             This is the objective quarter of its issue, and the other three are declined on
+///             purpose.
+///         </b> <c>S6669</c> (the field's <em>name</em>) and <c>S1312</c> (whether it is
 ///         <c>private static readonly</c>) are naming and declaration conventions — the most
 ///         opinionated thing a linter can hold, and a repository's to settle rather than a defect. This
 ///         one has a consequence a person can be shown: the category is wrong, and it is wrong in a way
@@ -78,7 +81,8 @@ public sealed class LoggerForAnotherTypeAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var replacement = declaration.Identifier.ValueText + (declaration.TypeParameterList?.ToString() ?? string.Empty);
+        var replacement = declaration.Identifier.ValueText
+            + (declaration.TypeParameterList?.ToString() ?? string.Empty);
         var span = name.TypeArgumentList.Arguments[0].Span;
 
         context.ReportDiagnostic(
@@ -126,8 +130,7 @@ public sealed class LoggerForAnotherTypeAnalyzer : DiagnosticAnalyzer {
     ///     The type declaration this syntax sits in, which for a primary-constructor parameter is the
     ///     declaration itself rather than a constructor body.
     /// </summary>
-    static TypeDeclarationSyntax? EnclosingType(SyntaxNode node) =>
-        node.FirstAncestorOrSelf<TypeDeclarationSyntax>();
+    static TypeDeclarationSyntax? EnclosingType(SyntaxNode node) => node.FirstAncestorOrSelf<TypeDeclarationSyntax>();
 
     static bool IsSelfOrBase(ISymbol enclosing, INamedTypeSymbol argument) {
         for (var type = enclosing as INamedTypeSymbol; type is not null; type = type.BaseType) {

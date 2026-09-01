@@ -42,8 +42,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         problem, and the rule would never go quiet.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Two classes of character, one severity, and that is a decision rather than an
-///         oversight.</b> A right-to-left override is the "Trojan Source" class — source that reads as
+///         ⚠
+///         <b>
+///             Two classes of character, one severity, and that is a decision rather than an
+///             oversight.
+///         </b> A right-to-left override is the "Trojan Source" class — source that reads as
 ///         one program and compiles as another — and a stray non-breaking space is a typo. The message
 ///         says which one it found; the severity does not, because splitting them would spend a second
 ///         permanent id (ADR-012) to encode a ranking, and a repository that wants the harder line
@@ -171,7 +174,9 @@ public sealed class InvisibleCharacterAnalyzer : DiagnosticAnalyzer {
             '\u205F', // medium mathematical space
             '\u2060', // word joiner
             '\uFEFF', // zero width no-break space, and the byte order mark
-            '\uFFF9', '\uFFFA', '\uFFFB' // interlinear annotation
+            '\uFFF9',
+            '\uFFFA',
+            '\uFFFB' // interlinear annotation
         };
 
         foreach (var c in Bidi) {

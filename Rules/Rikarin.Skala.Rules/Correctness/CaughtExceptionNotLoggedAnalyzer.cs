@@ -28,8 +28,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         when the template is the first argument the call actually writes, which is the
 ///         <c>Log*(template, values…)</c> shape. It is <em>not</em> emitted for
 ///         <c>LogError(eventId, template, …)</c>, and that is a correctness constraint rather than
-///         caution: <c>Microsoft.Extensions.Logging</c> orders that overload <c>(EventId, Exception,
-///         string)</c>, so an exception prepended in front of the event id does not bind and
+///         caution: <c>Microsoft.Extensions.Logging</c> orders that overload
+///         <c>
+/// (EventId, Exception,
+///         string)
+///         </c>, so an exception prepended in front of the event id does not bind and
 ///         <c>skala fix</c> would have broken the build on the tool's own advice. The rule declines
 ///         those calls outright rather than reporting a finding it cannot repair.
 ///     </para>

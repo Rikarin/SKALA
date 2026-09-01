@@ -28,9 +28,17 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class InvisibleCharacterFixtureTests {
     static string FixtureRoot => Path.Combine(RuleFixtures.Root, "SK2072");
 
-    static string AnalyzerPath => Path.GetFullPath(
-        Path.Combine(RuleFixtures.Root, "..", "..", "Rikarin.Skala.Rules", "Correctness", "InvisibleCharacterAnalyzer.cs")
-    );
+    static string AnalyzerPath =>
+        Path.GetFullPath(
+            Path.Combine(
+                RuleFixtures.Root,
+                "..",
+                "..",
+                "Rikarin.Skala.Rules",
+                "Correctness",
+                "InvisibleCharacterAnalyzer.cs"
+            )
+        );
 
     [Fact]
     public void EveryFixture_CarriesExactlyTheCodePointsItDeclares() {
@@ -46,7 +54,12 @@ public sealed class InvisibleCharacterFixtureTests {
             var text = File.ReadAllText(file);
 
             var declared = Regex.Matches(text, @"^// contains: U\+([0-9A-F]{4})$", RegexOptions.Multiline)
-                .Select(static m => (char)int.Parse(m.Groups[1].Value, NumberStyles.HexNumber, CultureInfo.InvariantCulture))
+                .Select(static m => (char)int.Parse(
+                        m.Groups[1].Value,
+                        NumberStyles.HexNumber,
+                        CultureInfo.InvariantCulture
+                    )
+                )
                 .ToHashSet();
 
             var present = text.Where(NotOrdinarySource).ToHashSet();

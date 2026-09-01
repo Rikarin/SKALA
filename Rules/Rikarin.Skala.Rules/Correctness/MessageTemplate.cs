@@ -170,8 +170,7 @@ static class MessageTemplate {
     ///     Serilog spells its template parameter <c>messageTemplate</c>, MEL spells it <c>message</c>,
     ///     and <c>BeginScope</c> spells it <c>messageFormat</c>.
     /// </summary>
-    internal static bool IsTemplateParameter(string? name) =>
-        name is "messageTemplate" or "message" or "messageFormat";
+    internal static bool IsTemplateParameter(string? name) => name is "messageTemplate" or "message" or "messageFormat";
 
     /// <summary>Finds the argument carrying the template, by parameter name.</summary>
     internal static IArgumentOperation? FindTemplate(IInvocationOperation operation) {
