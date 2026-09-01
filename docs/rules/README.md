@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 186 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 187 ids are allocated.
 
 ## Async
 
@@ -67,6 +67,7 @@
 | [SK2034](SK2034.md) | Do not name a declaration after a reserved keyword | suggestion | — | yes |
 | [SK2070](SK2070.md) | The Serilog message template has a different number of holes than the call supplies values | warning | — | no |
 | [SK2071](SK2071.md) | The structured log template names the same property twice | warning | — | no |
+| [SK2072](SK2072.md) | The literal contains an unescaped invisible character | warning | safe | yes |
 
 ## Design
 

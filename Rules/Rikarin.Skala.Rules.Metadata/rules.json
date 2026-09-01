@@ -4819,6 +4819,33 @@
       "configuration": [
         "dotnet_diagnostic.SK2071.severity"
       ]
+    },
+    {
+      "id": "SK2072",
+      "concept": "invisible-character-in-literal",
+      "title": "The literal contains an unescaped invisible character",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "S2479"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A string or character literal holds a zero-width, bidirectional or control character written as itself rather than as an escape sequence.",
+      "rationale": "A zero-width space, a non-breaking space or a right-to-left override pasted into a literal is invisible in the editor, in the diff and in the review, and it changes what the program does — a key that never matches, a header that never parses, a path that is not the path anybody read. The escape sequence is the same value written so a person can see it, which is why the fix is mechanical and safe. ⚠ **Two classes of character, one severity, and that is a decision rather than an oversight.** A right-to-left override is the \"Trojan Source\" class — source that reads as one program and compiles as another — and a stray non-breaking space is a typo. The message says which one it found; the severity does not, because splitting them would spend a second permanent id (ADR-012) to encode a ranking, and a repository that wants the harder line writes `dotnet_diagnostic.SK2072.severity = error` without needing one.",
+      "examples": {
+        "bad": "public const string Tenant = \"tenant\\u200Bid\";   // written with the character itself",
+        "good": "public const string Tenant = \"tenant\\\\u200Bid\";  // written as an escape"
+      },
+      "falsePositives": "⚠ **Reported only where an escape is expressible.** A verbatim (`@\"…\"`) or raw (`\"\"\"…\"\"\"`) literal has no escape sequences at all — that is what those literals are for — and a UTF-8 literal is a separate token kind for the same reason, so all three are silent. ⚠ **That is a real hole rather than a tidy boundary**: a bidirectional override inside a raw string literal is exactly as dangerous and is not reported, and the honest form of that is to say so rather than to emit a finding with no repair. ⚠ **The scan reads the token's source spelling, never its value**, which is what makes an already-escaped character silent: in the raw text it is six ASCII characters. Reading the value would report the repair as the problem and the rule would never go quiet. ⚠ **Confusable-*width* spaces are deliberately absent from the set** — U+2000 to U+200A and U+3000 — because a thin space in typography and an ideographic space in Japanese text are visible, intentional and correct, and reporting them would make the rule an opinion about typesetting. U+00A0 and U+202F stay, because they are indistinguishable from an ordinary space rather than merely narrower than one. Comments and identifiers are not literals and are not scanned; a soft hyphen in an identifier is a naming question that `IDE1006` is nearer to. `\\n` and `\\r` are absent from the control set because the language will not carry them: a raw newline in a regular string literal does not compile. The fix always writes `\\uXXXX` and never `\\xNN`, because `\\x` is variable length and consumes greedily — `\\x9` followed by `G` is a different character in one case and a compile error in another. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2072.severity"
+      ]
     }
   ]
 }

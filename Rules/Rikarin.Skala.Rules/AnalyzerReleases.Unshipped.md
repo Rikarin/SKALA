@@ -162,3 +162,4 @@ SK7082 | Skala.Maintainability | Info | The conditional expressions are nested.
 SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
 SK2070 | Skala.Correctness | Warning | The Serilog message template has a different number of holes than the call supplies values.
 SK2071 | Skala.Correctness | Warning | The structured log template names the same property twice.
+SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
