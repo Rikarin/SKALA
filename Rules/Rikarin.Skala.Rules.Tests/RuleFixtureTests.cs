@@ -69,6 +69,7 @@ public sealed class RuleFixtureTests {
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new LockOverSynchronizationPrimitiveAnalyzer(), new NonAtomicVolatileUpdateAnalyzer(),
         new DoubleCheckedLockingAnalyzer(), new LockOrderAnalyzer(),
+        new InconsistentlySynchronizedFieldAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

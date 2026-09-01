@@ -107,6 +107,7 @@ public static class AnalyzerHost {
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new LockOverSynchronizationPrimitiveAnalyzer(), new NonAtomicVolatileUpdateAnalyzer(),
         new DoubleCheckedLockingAnalyzer(), new LockOrderAnalyzer(),
+        new InconsistentlySynchronizedFieldAnalyzer(),
     ];
 
     /// <summary>

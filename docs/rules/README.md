@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 133 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 134 ids are allocated.
 
 ## Async
 
@@ -21,6 +21,7 @@
 | [SK3041](SK3041.md) | The compound operation on a `volatile` field is not atomic | warning | — | no |
 | [SK3042](SK3042.md) | The double-checked locking is not correct | warning | — | no |
 | [SK3043](SK3043.md) | Locks are taken in inconsistent orders | warning | — | no |
+| [SK3044](SK3044.md) | The field is guarded on some paths and not others | warning | — | no |
 
 ## Correctness
 

@@ -332,6 +332,23 @@ document gives. Whoever writes it should read the analyzers, not this list.
   outer type's accumulator. Deleting the guard left the fixture green: Roslyn already scopes a
   symbol-start syntax action to the symbol's own members. The guard was dead code no sabotage could
   kill and is gone; the fixture stays as the pin on the Roslyn behaviour.
+- `SK3044` `inconsistently-synchronized-field` — a private field written without the type's one lock
+  and accessed under it at least twice elsewhere. The same "which lock is held here" analysis as
+  `SK3043`, run over a whole type. **Fixless**: wrapping the statement is one repair and taking the
+  lock at the caller is another, and which is right depends on what else the caller does in between.
+  ⚠ **Six gates, and the gates are the rule.** Exactly one lock object in the type; no other
+  synchronization anywhere in it; the unguarded access must be a *write*; its member must be callable
+  from outside and never called by the type from inside the lock; any access inside a lambda
+  withdraws the field; and at least two guarded accesses are required. Every one of those buys
+  precision at the cost of recall, knowingly — § R3's most expensive false positive is the one that
+  sends somebody to read threading code that was correct. ⚠ **Silence is not a claim**: a field this
+  rule says nothing about is one it could not decide, not one it believes is synchronized.
+
+⚠ **`SK3040`–`SK3044` all ship fixless, and that is five more than doc 08's bar contemplates.**
+Two of the five issues proposed a fix; neither survived contact. Concurrency findings mostly have no
+mechanical repair, because the edit that would fix them is a decision about what the type's
+contract is — which lock is first, which field is `volatile`, where the boundary of a critical
+section falls. The pattern is now established enough to say so once rather than five times.
 
 ## SK4000 — Performance
 
@@ -532,8 +549,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **125** | **81.2 %** |
+| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **126** | **81.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

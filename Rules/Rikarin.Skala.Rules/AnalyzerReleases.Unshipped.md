@@ -109,3 +109,4 @@ SK3040  | Skala.Async | Warning | The `lock` is taken over a synchronization pri
 SK3041  | Skala.Async | Warning | The compound operation on a `volatile` field is not atomic.
 SK3042  | Skala.Async | Warning | The double-checked locking is not correct.
 SK3043  | Skala.Async | Warning | Locks are taken in inconsistent orders.
+SK3044  | Skala.Async | Warning | The field is guarded on some paths and not others.

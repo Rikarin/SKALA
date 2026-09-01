@@ -142,5 +142,6 @@
  "SuspiciousLockOverSynchronizationPrimitive": "SK3040",
  "NonAtomicCompoundOperator": "SK3041",
  "NonVolatileFieldInDoubleCheckLocking": "SK3042",
- "InconsistentOrderOfLocks": "SK3043"
+ "InconsistentOrderOfLocks": "SK3043",
+ "InconsistentlySynchronizedField": "SK3044"
 }
