@@ -4823,6 +4823,33 @@
       "configuration": [
         "dotnet_diagnostic.SK6051.severity"
       ]
+    },
+    {
+      "id": "SK6052",
+      "concept": "null-returned-instead-of-empty",
+      "title": "Null is returned where an empty sequence was expected",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1168"
+      ],
+      "since": "2.0",
+      "languageVersion": "12.0",
+      "summary": "A method whose return type is an array or a sequence interface returns `null`, so every caller has to null-check before iterating and the ones that forget fail at a `foreach`.",
+      "rationale": "A sequence return type is a promise that the result can be iterated, and `null` breaks it in the one way the type system does not catch. The failure lands at a `foreach` in the caller, not at the `return` that caused it, and the stack names the wrong file. The cost of keeping the promise is nothing: `[]` for a `T[]` is `Array.Empty<T>()`, which is a singleton, and for a `List<T>` it is one empty list against one null check in every caller for ever. \"Empty\" and \"absent\" are also not usually different questions for a sequence — a caller that needs to tell them apart is asking about something other than the elements, and a nullable return type is how to say so.",
+      "examples": {
+        "bad": "public IReadOnlyList<Order> Pending(Customer customer) {\n    if (customer.IsClosed) {\n        return null;\n    }\n\n    return store.Pending(customer.Id);\n}",
+        "good": "public IReadOnlyList<Order> Pending(Customer customer) {\n    if (customer.IsClosed) {\n        return [];\n    }\n\n    return store.Pending(customer.Id);\n}"
+      },
+      "falsePositives": "⚠ **An `IEnumerable<T>?` return type is declined, and that is the intended way to disagree with the rule.** The annotation is the author saying null is a value this method returns; the contract already carries the warning that an unguarded `foreach` would be wrong, and the rule has nothing to add to a decision made on purpose. The check reads the symbol's nullable annotation rather than the syntax, because in the `async` case the annotation sits on the type argument inside the task and there is no `?` on the declaration to look at.\n\n⚠ **Disjoint from `SK3020` by construction, and the `async` half is the reason to say so.** `SK3020` reports a non-`async` method whose declared return type is `Task` returning null — a null *task*, which throws at the `await`. This rule requires the *effective* return type to be a sequence. For a non-`async` `Task<IEnumerable<T>>` the declared type is a task, so this rule declines and `SK3020` reports; for the `async` form `SK3020` declines by its own `async` guard and this rule reports the null sequence inside a real task. The two predicates cannot both hold, so neither declares `supersedes` — which dedupes on a shared span and would suppress one of two findings rather than leaving each a property of its own rule. A fixture asserts both directions.\n\n**The type is matched by declaration, never by assignability, and the list is exactly what `[]` constructs**: any array, `IEnumerable<T>`, `ICollection<T>`, `IList<T>`, `IReadOnlyCollection<T>`, `IReadOnlyList<T>`, `List<T>`. `string` is an `IEnumerable<char>` and is not a sequence in the sense meant here; `IDictionary<K, V>` is deliberately absent because a collection expression does not target-type to it, and a fix that did not compile would be worse than a finding never made. ⚠ **The cost is that a `Dictionary<K, V>` returning null is not reported**, which is a stated gap rather than a judgement that it is fine.\n\n**Methods and local functions only.** A property or an indexer returning a null sequence is the same defect and is not reported; the shape has more forms — an arrow body, a `get` accessor, an auto-property's backing store — and the fixture set for them has not been built. It is a gap, not a decision.\n\n⚠ **The fix is `[]` and the rule is silent below C# 12**, rather than offering an edit that does not compile: `hasFix: true` is a promise about every finding, not most of them. `fixIsSafe: false` because a caller that already tests the result for null keeps compiling and stops taking a branch it was written to take — the edit is right and the review is about whether that branch mattered.",
+      "configuration": [
+        "dotnet_diagnostic.SK6052.severity"
+      ]
     }
   ]
 }

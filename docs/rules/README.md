@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 186 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 187 ids are allocated.
 
 ## Async
 
@@ -85,6 +85,7 @@
 | [SK6041](SK6041.md) | A `foreach` variable is declared wider than the element it receives | suggestion | review | no |
 | [SK6050](SK6050.md) | The method ignores its inputs and returns a constant | suggestion | — | no |
 | [SK6051](SK6051.md) | The base type tests `this` against a derived type | suggestion | — | no |
+| [SK6052](SK6052.md) | Null is returned where an empty sequence was expected | suggestion | review | no |
 
 ## Formatting
 

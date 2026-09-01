@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Rikarin.Skala.Rules.Async;
 using Rikarin.Skala.Rules.Design;
 using System.Collections.Immutable;
 
@@ -27,9 +28,10 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class DesignMemberBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new ConstantReturningMethodAnalyzer(), new DerivedTypeTestOnThisAnalyzer(),
+        new NullSequenceReturnAnalyzer(),
     ];
 
-    static readonly string[] Ids = ["SK6050", "SK6051"];
+    static readonly string[] Ids = ["SK6050", "SK6051", "SK6052"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
@@ -67,6 +69,35 @@ public sealed class DesignMemberBatchTests {
             + "wrong reason:\n"
             + string.Join("\n", crashes.Select(static d => "  " + d.GetMessage()))
         );
+    }
+
+    /// <summary>
+    ///     ⚠ <c>SK6052</c> and <c>SK3020</c> divide one concept, and this asserts the line rather than
+    ///     describing it.
+    /// </summary>
+    /// <remarks>
+    ///     A negative fixture proves only that <c>SK6052</c> stayed quiet, which is equally true if the
+    ///     shape is reported by nobody. The claim written on the fixture is stronger: the other rule
+    ///     takes it. Both halves are checked here, so a change to either rule that opens a gap or starts
+    ///     a double report fails a test instead of changing a number in a report.
+    /// </remarks>
+    [Theory]
+    [InlineData("negative/a-non-async-task-of-a-sequence-is-SK3020s.cs", "SK3020")]
+    [InlineData("positive/an-async-method-returning-a-null-sequence.cs", "SK6052")]
+    public void TheNullSequenceConcept_IsSplitWithSK3020(string relativePath, string expected) {
+        var path = Path.Combine(RuleFixtures.Root, "SK6052", relativePath.Replace('/', Path.DirectorySeparatorChar));
+        var compilation = RuleFixtures.Compile(File.ReadAllText(path), path);
+        var produced = RuleFixtures
+            .Analyze(
+                compilation,
+                [new NullSequenceReturnAnalyzer(), new NullTaskReturnAnalyzer()],
+                TestContext.Current.CancellationToken
+            )
+            .Where(static diagnostic => diagnostic.Id is "SK6052" or "SK3020")
+            .Select(static diagnostic => diagnostic.Id)
+            .ToArray();
+
+        Assert.Equal([expected], produced);
     }
 
     static ImmutableArray<Diagnostic> Analyze(RuleFixture fixture) {

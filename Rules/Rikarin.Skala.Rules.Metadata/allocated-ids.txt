@@ -194,6 +194,7 @@ SK7082 nested-conditional
 SK7083 repeated-string-literal
 SK6050 method-returns-a-constant
 SK6051 is-check-against-this
+SK6052 null-returned-instead-of-empty
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

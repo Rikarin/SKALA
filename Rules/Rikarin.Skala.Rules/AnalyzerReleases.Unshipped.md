@@ -162,3 +162,4 @@ SK7082 | Skala.Maintainability | Info | The conditional expressions are nested.
 SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
 SK6050 | Skala.Design | Info | The method ignores its inputs and returns a constant.
 SK6051 | Skala.Design | Info | The base type tests `this` against a derived type.
+SK6052 | Skala.Design | Info | Null is returned where an empty sequence was expected.
