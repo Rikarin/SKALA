@@ -350,6 +350,53 @@ so that `skala explain` prints it.
   (`OrderClass`, `PointStruct`).
 - `SK6023` `empty-type` — a type with no members, no base and no attributes.
 
+⚠ **The prose pass for `SK6040`–`SK6049` is owed.** What follows is the allocation record only, written
+so that no number below is handed out twice; the paragraphs that explain the batch the way the rest of
+this section is explained have not been written yet.
+
+⚠ **`SK6040` is one ninth of the concept issue #121 named, and the other eight are deliberately not
+shipped.** "The local declaration is never used" groups nine ReSharper inspections. Only
+`NotAccessedOutParameterVariable` has a repair that cannot change what the program does — the callee
+writes the `out` argument either way, so replacing the declaration with `_` removes a name and nothing
+else. Deleting an unread ordinary local cannot promise that: `var response = Send();` is unread and
+deleting it stops the request. `UnusedLocalFunction` is already **CS8321**, a compiler warning, and is
+not re-implemented. The remaining seven — `NotAccessedVariable`, `UnusedLocalFunctionParameter`,
+`UnusedLocalFunctionReturnValue`, `UnusedTypeParameter`, `UnusedTupleComponentInReturnValue`,
+`UnusedParameterInPartialMethod`, `PrivateFieldCanBeConvertedToLocalVariable` — each need either every
+call site or a judgement about intent, and are left in [17](17-inspection-parity.md)'s residue where
+they still count.
+
+- `SK6040` `unused-out-variable` — an `out` argument declares a variable nothing reads; write `out _`.
+
+⚠ **`SK6041` needs no safety guard against the body reassigning the loop variable, because C# has
+one.** CS1656 forbids assigning to an iteration variable, so a declared type that is only ever read is
+the only shape there is, and narrowing it can never invalidate a write. The guard that *is* needed is on
+the conversion: only an implicit **reference** or **boxing** widening is reported. An implicit numeric
+one (`foreach (long value in ints)`) is an arithmetic width the body depends on, a nullable one says the
+loop deals in absence, a user-defined one is somebody's operator, and an **explicit** one —
+`foreach (string text in objects)`, which `foreach` uniquely permits — is a downcast written on purpose
+and the opposite of this finding.
+
+- `SK6041` `wider-foreach-variable-type` — a `foreach` variable declared as a base type, an interface
+  or `object` when the collection already knows the element type.
+
+⚠ **`SK6042`–`SK6049` are unallocated and free.** Issues #114 (a member more accessible than its use
+requires), #115 (storage never written after initialization) and #119 (a class with only static
+members) were read in the same pass and **no id was taken for any of them**. #114 and #115 are the
+family [17](17-inspection-parity.md) § "Two ways a zero can lie" names: ReSharper splits both into
+`.Global` and `.Local`, every `.Global` scored zero in the recorded sweep because solution-wide
+analysis was off, and Skala analyses one compilation — so only the `.Local` halves are answerable, and
+the `.Local` half of #115 is largely `IDE0044` already. The half of #115 that is genuinely uncovered is
+the auto-property one (`{ get; private set; }` assigned only in a constructor), and it was declined for
+a reason no syntax shows: **Newtonsoft.Json writes private setters by default, with no attribute to
+exempt on**, so the finding has a false-positive story the reference trees cannot be used to measure.
+#119 is `CA1052`, which ships in the .NET SDK and is off by default — hosting it is the cheaper answer
+than reimplementing it, and either way "nothing instantiates this type" stops at the assembly boundary
+for a `public` one. ⚠ `catalogued.json` maps `MemberCanBeInternal.Global` to
+`SK6002`, which this document allocates to *"public member exposing a mutable array or `List<T>`"* — a
+different concept. **That mapping is wrong and should be re-pointed at whichever id #114 eventually
+takes**, or dropped; it is left alone here rather than corrected by an agent that is not shipping #114.
+
 ## SK7000 — Maintainability
 
 The metrics from [07](07-analysis-host.md) § "Metrics" — `SK7001` cyclomatic complexity ·
@@ -477,11 +524,11 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **151** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **121** | **80.7 %** |
+| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **123** | **79.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **19** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

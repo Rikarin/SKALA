@@ -3316,6 +3316,56 @@
       "configuration": [
         "dotnet_diagnostic.SK3021.severity"
       ]
+    },
+    {
+      "id": "SK6040",
+      "concept": "unused-out-variable",
+      "title": "An `out` variable is declared and never read",
+      "category": "Design",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "NotAccessedOutParameterVariable",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "7.0",
+      "summary": "`M(out var x)` where nothing ever mentions `x` again declares a name for a value the code has decided not to look at; `out _` says that.",
+      "rationale": "An `out` argument is a second return value, and a declaration expression is how the caller receives it. When the receiving name is never read, the declaration is doing one thing only — satisfying the signature — and it does that while adding a name to the enclosing scope, a definite-assignment obligation, and a line the next reader has to check before concluding it does not matter. `out _` is the language's word for exactly this: the argument is required, the value is not wanted. It also removes the name from scope, so a later edit cannot accidentally read a value nobody meant to keep, and it makes the two `TryGetValue` calls in a file that differ only in whether the value is used visibly different from each other.",
+      "examples": {
+        "bad": "if (!lookup.TryGetValue(key, out var existing)) {\n    lookup.Add(key, value);\n}",
+        "good": "if (!lookup.TryGetValue(key, out _)) {\n    lookup.Add(key, value);\n}"
+      },
+      "falsePositives": "**This is one of the nine inspections issue #121 grouped, and it is the only one shipped.** It is the shape with a mechanical, always-safe repair: the callee writes the argument either way, so replacing the declaration with a discard cannot remove a side effect. Removing an unread *ordinary* local cannot promise that — `var response = Send();` is unread and deleting it stops the request — and the remaining seven shapes each need something a single declaration does not carry. `UnusedLocalFunction` is already **CS8321**, a compiler warning, and is not re-implemented here. `NotAccessedVariable`, `UnusedLocalFunctionParameter`, `UnusedTypeParameter` and `UnusedParameterInPartialMethod` have no safe edit; `UnusedLocalFunctionReturnValue` and `UnusedTupleComponentInReturnValue` need every call site. What is left uncovered is named rather than implied, so [17](17-inspection-parity.md)'s residue keeps counting it.\n\n**Only a declaration expression in an `out` argument position.** A pre-declared local (`int n; M(out n);`) is not reported: the declaration is a statement of its own, the repair is to delete it as well as the reference, and that is two edits in two places rather than one replacement. A discard already written is not a declaration and produces nothing.\n\n**Never read *and* never written.** Any reference to the local at all withdraws the finding, including one that only assigns it and one that passes it to a second `out`. That is stricter than \"never read\" and it is deliberate: `out _` deletes the name, so a finding that only proves the value is unread would produce an edit that does not compile wherever the name is used for anything else.\n\n**A second, redundant guard reads tokens rather than operations.** Before reporting, the enclosing operation blocks are scanned for any identifier token spelling the same name. A match withdraws the finding even when the operation tree showed no reference — the case it is there for is `nameof(x)`, and the cost of being wrong in this direction is one missed finding rather than one broken build. A member or a type with the same name as the variable also silences it; that is the price and it is small.\n\n⚠ **A member containing a preprocessor directive is skipped entirely.** Disabled text is trivia, so a reference inside `#if DEBUG` is invisible to both the operation tree and the token scan, and under another configuration the variable is read. This is the same refusal `SK6003` and `SK6020` make for the same reason.\n\n⚠ **A parameter whose type mentions one of the invoked method's own type parameters is skipped, conservatively.** `out _` is an implicitly typed discard, and CS8183 is what a discard that cannot be typed produces. Whether inference actually fails depends on the rest of the call, and answering that properly means re-running overload resolution; declining is cheaper and only ever costs findings. The related shape the rule cannot see at all is an overload set whose members differ *only* in the `out` parameter's type, where `out _` becomes ambiguous — vanishingly rare, and a compiler error rather than a silent change if it happens.",
+      "configuration": [
+        "dotnet_diagnostic.SK6040.severity"
+      ]
+    },
+    {
+      "id": "SK6041",
+      "concept": "wider-foreach-variable-type",
+      "title": "A `foreach` variable is declared wider than the element it receives",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "MoreSpecificForeachVariableTypeAvailable",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`foreach (object item in names)` over a `List<string>` throws the element type away at the top of the loop and makes the body ask for it back.",
+      "rationale": "The collection already knows what it holds. Declaring the loop variable as a base type discards that at the one point in the method where it was free, and everything downstream pays: the body cannot call the element's own members without a cast or a pattern, the reader cannot tell what is in the collection without following the collection back to its declaration, and where the element is a value type every iteration boxes. Naming the element type is not extra precision — it is the precision the collection was carrying anyway, written down.",
+      "examples": {
+        "bad": "foreach (object name in names) {\n    Console.WriteLine(((string)name).Length);\n}",
+        "good": "foreach (string name in names) {\n    Console.WriteLine(name.Length);\n}"
+      },
+      "falsePositives": "**Only a widening the compiler would have performed implicitly, and only two kinds of it.** The conversion from the element type to the declared type must be an implicit *reference* conversion or a *boxing* conversion — a base class, an implemented interface, or `object`. An identity conversion is nothing to report; an implicit *numeric* one (`foreach (long value in ints)`) is not a lost type but a deliberate arithmetic width, and narrowing it would change what the body computes; an implicit *nullable* one (`foreach (int? value in ints)`) is the author saying the loop deals in absence; a *user-defined* one is somebody's operator and not a widening at all. An **explicit** conversion — `foreach (string text in objects)`, which `foreach` uniquely permits — is a downcast the author wrote on purpose and is the opposite of this finding.\n\n**`var` is never reported.** It already is the element type, and the whole rule is the request to write that type down.\n\n**The iteration variable cannot be assigned**, so the shape that would make this dangerous does not exist: CS1656 forbids `item = …` inside the loop. That is why there is no dataflow guard here and no fixture for one.\n\n**Three shapes are skipped because the fix could not be written.** An anonymous element type has no name to write; a `dynamic` element type is not a type this question applies to; and an element type the containing assembly cannot see (`Compilation.IsSymbolAccessibleWithin` answers it) would produce a name that does not bind. The suggested type is rendered with `ToMinimalDisplayString` against the position of the loop, so it uses the file's own `using` directives and never introduces one.\n\n⚠ **The interface case is the one most likely to be deliberate.** `foreach (IShape shape in circles)` is reported, and \"program to the interface\" is a real reason to have written it. So is a base class chosen to say that the loop body only needs the base. The rule ships at `suggestion` for this reason: it is an observation about what the collection knows, not a claim about what the author meant.\n\n⚠ **The fix is `fixIsSafe: false` and the reason is overload resolution.** `Write(item)` binding to `Write(string)` instead of `Write(object)` is a different program, and a `switch` arm inside the body may become CS8121 — a pattern the narrower type can no longer match. Both are visible on review and the second is a compiler error rather than a silent change, but neither is an edit to apply unread. Where the element type is nullable the narrowed declaration also inherits the annotation, which is correct and may surface a CS8602 the wider type was hiding.",
+      "configuration": [
+        "dotnet_diagnostic.SK6041.severity"
+      ]
     }
   ]
 }
