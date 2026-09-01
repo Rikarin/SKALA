@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 89 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 94 ids are allocated.
 
 ## Async
 
@@ -14,6 +14,7 @@
 | [SK3004](SK3004.md) | A `CancellationToken` is accepted and not passed on | warning | review | no |
 | [SK3005](SK3005.md) | A task is discarded in synchronous code | warning | — | no |
 | [SK3007](SK3007.md) | A `Task` that uses a `using` resource is returned instead of awaited | warning | review | no |
+| [SK3009](SK3009.md) | Review explicitly unsynchronized Lazy in static state | warning | — | no |
 
 ## Correctness
 
@@ -116,6 +117,9 @@
 
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
+| [SK4001](SK4001.md) | Review LINQ in a configured hot path | none | — | no |
+| [SK4002](SK4002.md) | Review iteration-local delegate captures | hint | — | no |
+| [SK4006](SK4006.md) | Review a materialization used only by foreach | hint | — | no |
 | [SK4010](SK4010.md) | A `Where` the next operator could have taken as its predicate | suggestion | safe | no |
 
 ## Security
@@ -134,6 +138,7 @@
 |---|---|---|---|---|
 | [SK8005](SK8005.md) | `Thread.Sleep` in a test | suggestion | — | no |
 | [SK8006](SK8006.md) | A skipped test has no reason | warning | — | no |
+| [SK8007](SK8007.md) | Use controlled assertion input | suggestion | — | no |
 
 ## Tool
 

@@ -1,0 +1,1 @@
+using System; using System.Threading; class C { static Lazy<int> A = new(() => 1, true); static Lazy<int> B = new(() => 1, LazyThreadSafetyMode.PublicationOnly); static Lazy<int> D = new(() => 1, LazyThreadSafetyMode.ExecutionAndPublication); }

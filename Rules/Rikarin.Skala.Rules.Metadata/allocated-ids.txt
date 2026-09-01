@@ -97,6 +97,11 @@ SK1013 list-pattern
 SK1026 utf8-literal
 SK2001 constant-range-comparison
 SK2012 self-assignment-or-comparison
+SK3009 shared-lazy
+SK4001 hot-path-linq
+SK4002 loop-closure
+SK4006 immediate-materialization
+SK8007 nondeterministic-assertion
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

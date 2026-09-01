@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 89 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 94 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -23,6 +23,7 @@
 <tr><td><a href="SK3004.html">SK3004</a></td><td>A <code>CancellationToken</code> is accepted and not passed on</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3005.html">SK3005</a></td><td>A task is discarded in synchronous code</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3007.html">SK3007</a></td><td>A <code>Task</code> that uses a <code>using</code> resource is returned instead of awaited</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3009.html">SK3009</a></td><td>Review explicitly unsynchronized Lazy in static state</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -146,6 +147,9 @@
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
+<tr><td><a href="SK4001.html">SK4001</a></td><td>Review LINQ in a configured hot path</td><td><span class="tag sev-none">none</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK4002.html">SK4002</a></td><td>Review iteration-local delegate captures</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK4006.html">SK4006</a></td><td>Review a materialization used only by foreach</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK4010.html">SK4010</a></td><td>A <code>Where</code> the next operator could have taken as its predicate</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 </tbody>
 </table>
@@ -170,6 +174,7 @@
 <tbody>
 <tr><td><a href="SK8005.html">SK8005</a></td><td><code>Thread.Sleep</code> in a test</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK8006.html">SK8006</a></td><td>A skipped test has no reason</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK8007.html">SK8007</a></td><td>Use controlled assertion input</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>

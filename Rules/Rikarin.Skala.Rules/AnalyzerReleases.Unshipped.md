@@ -65,3 +65,8 @@ SK1013 | Skala.Modernization | Info | Use a list pattern for guarded element che
 SK1026 | Skala.Modernization | Info | Use a UTF-8 literal for constant ASCII bytes.
 SK2001 | Skala.Correctness | Warning | Comparison is fixed by the integral type's range.
 SK2012 | Skala.Correctness | Warning | Review a self-operation on an automatic property.
+SK3009 | Skala.Async | Warning | Review explicitly unsynchronized Lazy in static state.
+SK4001 | Skala.Performance | Disabled | Review LINQ in a configured hot path.
+SK4002 | Skala.Performance | Hidden | Review iteration-local delegate captures.
+SK4006 | Skala.Performance | Hidden | Review a materialization used only by foreach.
+SK8007 | Skala.Tests | Info | Use controlled assertion input.

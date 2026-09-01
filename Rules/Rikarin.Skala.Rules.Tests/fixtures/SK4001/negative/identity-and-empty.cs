@@ -1,0 +1,1 @@
+using System.Linq; using System.Collections.Generic; class C { IEnumerable<int> M(int[] values) => values.AsEnumerable(); IEnumerable<int> Empty() => Enumerable.Empty<int>(); bool Count(int[] values) => Enumerable.TryGetNonEnumeratedCount(values, out _); }

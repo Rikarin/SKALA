@@ -322,10 +322,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **126** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **81** | **64.8 %** |
+| **Shipped** — present in `rules.json` | **86** | **68.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **32** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **27** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
@@ -470,10 +470,10 @@ value · `SK4008` async state machine for a synchronous method · `SK6001` (reti
 `SK6004` interface with one implementation · `SK6008` extension method on `object` ·
 `SK8006` `[Skip]` without a reason · `SK8007` non-deterministic input in an assertion path.
 
-Saying "no reason was recorded" is the point. `SK6008` and `SK8006` now ship; `SK6001` is retired
-as a duplicate allocation. The other nine remain outstanding. Neither shipped rule fabricates a
-fix: choosing an extension receiver or writing a skip reason requires information only the author
-has.
+Saying "no reason was recorded" is the point. `SK6008`, `SK8006`, `SK4001`, `SK4002`, `SK4006`
+and `SK8007` now ship; `SK6001` is retired as a duplicate allocation. The other five remain
+outstanding. These shipped rules are report-only: choosing a contract, justification, performance
+tradeoff or controlled test input requires author intent.
 
 ### Outstanding, with what each is waiting on
 
@@ -486,7 +486,6 @@ reason is kept; it is a description of remaining work, not a disposal.
 | ⚠ Hot-path rules | `SK1022`, `SK1025`, `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
 | The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1021`, `SK1023`, `SK1024`, `SK1029`, `SK1036` | Nothing recorded. Not started |
 | Correctness | `SK2003`, `SK2005` | Nothing recorded beyond the shipping bar. Not started |
-| Async and lifetime | `SK3009` | Nothing recorded. Not started |
 | Security | `SK5003`, `SK5004`, `SK5006`, `SK5008` | The remaining M8 rules; a wrong security rule is worse than a missing one |
 | Maintainability, non-metric | `SK7060` | Nothing recorded. Not started |
 
@@ -589,6 +588,59 @@ constant ASCII payload allocated as a byte array only to feed `CacheKey.For`'s r
 It found no occurrences of the other four rules; their evidence remains the positive and negative
 tests, not those zero counts. The five analyzers together consumed about 727 ms of summed analyzer
 time in that run. The audit did not rewrite unrelated existing code.
+
+### Shared Lazy, hot-path review, loop captures, materialization and test input
+
+`SK3009`, `SK4001`, `SK4002`, `SK4006` and `SK8007` now ship. All five are semantic and
+report-only; none invents a synchronization policy, removes a snapshot, reuses a capture with a
+different lifetime, or chooses test values on the author's behalf.
+
+| ID | Initial scope | Default |
+|---|---|---|
+| `SK3009` | Direct static framework `Lazy<T>` field construction with `false` or `LazyThreadSafetyMode.None` | warning |
+| `SK4001` | Explicit framework `Enumerable` method calls in configured paths, one finding per fluent pipeline | none |
+| `SK4002` | Delegate lambdas capturing loop-body locals or a C# 5+ ordinary `foreach` iteration variable | hint |
+| `SK4006` | Framework `ToList`/`ToArray` of a stable local/parameter immediately consumed by `foreach` | hint |
+| `SK8007` | Live clock, new GUID or unseeded random input directly in an xUnit assertion in a bound test method | suggestion |
+
+`Lazy<T>` is thread-safe by default; an omitted mode is **not** a defect. The rule excludes
+default/safe modes, thread-static and instance fields, indirect construction and nonconstant modes.
+Static storage does not prove concurrent access, so external synchronization or deliberate
+single-threaded use can justify suppression. Constant dependencies are kept in the finding's file
+or in metadata, including transitive initializers, to preserve per-file cache correctness.
+
+Hot paths must be chosen explicitly. For example:
+
+```editorconfig
+[Rendering/**/*.cs]
+dotnet_diagnostic.SK4001.severity = suggestion
+dotnet_diagnostic.SK4002.severity = suggestion
+dotnet_diagnostic.SK4006.severity = suggestion
+```
+
+The performance rules request measurement, not blanket removal of LINQ or closures. Queryable
+providers, custom materializers and expression-tree captures are not treated as the framework
+patterns. `SK4006` suppresses the hint whenever the loop body references the source collection,
+or contains an await/yield, preserving obvious snapshots including the `SK2007` fix. Hidden
+mutation through another method and eager-evaluation timing still require human judgment.
+
+The test rule initially supports semantically bound xUnit assertions and Fact/Theory attributes,
+including derived attributes. Seeded/unknown random instances, assertion messages, `nameof`,
+deferred lambdas, helpers and local functions are excluded. It does not follow earlier values
+through variables or guess custom assertion contracts. Intentional real-clock/randomness tests
+can be scoped out; there is at most one finding per assertion.
+
+Validation covers positive and negative fixtures, exact counts, absence of fixes, generated code,
+the LINQ rule's opt-in default, semantic capture boundaries, legacy foreach behavior and constant
+dependencies. Workspace integration checks per-file policy, `check`, `verify`, no-op safe fixing,
+warm/cold agreement after an unrelated file changes, and invalidation after severity changes.
+
+The workspace audit produced 54 `SK4002` hints. Inspection confirmed loop-local captures in
+assertion predicates, configuration lookups, generated-code helpers and callbacks; it did not
+establish that those paths are hot or need rewriting. The other enabled rules produced no
+findings, and `SK4001` stayed disabled by policy. Positive fixtures supply the evidence for those
+quiet rules. Summed analyzer time for this batch was about 1.0 s in that run, not a performance
+guarantee. No existing production or test code was rewritten to remove the audit hints.
 
 ### ⚠ Decisions that rest on a reference-tree count, and are awaiting revisit
 

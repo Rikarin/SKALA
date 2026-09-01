@@ -1,0 +1,1 @@
+using System; using System.Linq.Expressions; using System.Collections.Generic; class C { void M(int[] values, List<Expression<Func<int>>> callbacks) { foreach (var value in values) callbacks.Add(() => value); } }
