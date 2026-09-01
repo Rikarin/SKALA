@@ -3393,6 +3393,31 @@
       "configuration": [
         "dotnet_diagnostic.SK3532.severity"
       ]
+    },
+    {
+      "id": "SK3030",
+      "concept": "async-iterator-not-enumerated",
+      "title": "The async iterator is enumerated without `await foreach`",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "AsyncIteratorInvocationWithoutAwaitForeach",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "8.0",
+      "summary": "A method returning `IAsyncEnumerable<T>` is called as a whole statement and the result dropped, so the iterator's body never runs.",
+      "rationale": "An `IAsyncEnumerable<T>` handed to a plain `foreach` does not compile, which is why the mistake takes this shape instead: the iterator is invoked and the result discarded. That compiles, warns about nothing, and does nothing — an async iterator does not start until something enumerates it, so not one statement of the method's body executes. The call reads as work being done and no work is done, which is the failure that survives every test that only checks for an exception.",
+      "examples": {
+        "bad": "async Task RunAsync() {\n    ProcessAsync(items);\n}",
+        "good": "async Task RunAsync() {\n    await foreach (var _ in ProcessAsync(items)) {\n    }\n}"
+      },
+      "falsePositives": "⚠ **Only where the repair compiles.** The nearest enclosing method, local function or lambda must already be `async`, and the statement must sit directly in a block, in a position an `await` is legal in — not a `lock` body, a constructor, an operator or an expression tree. In a synchronous method the same call is the same bug and is not reported, because the repair there is to make the method `async`, which changes its signature and every caller with it; that is the line `SK3503` draws and it is drawn here in the same place. ⚠ **The finding is withheld when `_` is already in scope**, because the rewrite names the loop variable and shadowing an existing local is CS0136 — a fix that parses and does not compile is the one failure a fixing tool may not have. ⚠ **Only the invoked-and-dropped shape.** An `IAsyncEnumerable<T>` bound to a variable that is then never enumerated is the same bug and is not matched: proving that a variable is never enumerated needs flow analysis this rule does not do, and a wrong answer there deletes work rather than adding it. An explicit `_ = ProcessAsync(items);` is not reported either — the discard says the author meant to drop it, and if they were wrong the repair is a decision rather than an edit. ⚠ **The fix is unsafe by declaration**, and not because the edit is uncertain: it turns a statement that does nothing into one that runs the iterator to completion. That is the repair, and it is still a behaviour change somebody should read.",
+      "configuration": [
+        "dotnet_diagnostic.SK3030.severity"
+      ]
     }
   ]
 }

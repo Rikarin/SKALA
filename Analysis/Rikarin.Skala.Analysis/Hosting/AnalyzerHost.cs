@@ -106,7 +106,7 @@ public static class AnalyzerHost {
         new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new UndisposedOwnedFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
-        new RefStructOwnedDisposableAnalyzer(),
+        new RefStructOwnedDisposableAnalyzer(), new AsyncIteratorNotEnumeratedAnalyzer(),
     ];
 
     /// <summary>

@@ -311,6 +311,15 @@ It is not yet the considered account the sections above carry.
   struct` implement an interface, and there the ownership is `SK3502`'s to report. **Fixless**: a
   correct `Dispose()` decides which fields it releases and in what order, and the repair may instead
   be that the type should not own the resource.
+- `SK3030` `async-iterator-not-enumerated` — a method returning `IAsyncEnumerable<T>` called as a
+  whole statement, so the iterator's body never starts. A plain `foreach` over one does not compile,
+  which is why the mistake takes this shape instead: it compiles, warns about nothing, and does
+  nothing. ⚠ Only where the repair compiles — an `async` enclosing body, a statement in a block, an
+  awaitable position — which is the line `SK3503` draws, drawn here in the same place. ⚠ The finding
+  is withheld when `_` is already in scope, because the rewrite names the loop variable and
+  shadowing is CS0136. The fix is `fixIsSafe: false` against the issue's proposal: it turns a
+  statement that does nothing into one that runs the iterator, which is the repair and is still a
+  behaviour change somebody should read.
 
 ## SK4000 — Performance
 
@@ -511,8 +520,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **124** | **81.0 %** |
+| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **125** | **81.2 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
