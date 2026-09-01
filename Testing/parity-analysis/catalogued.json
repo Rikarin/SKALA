@@ -141,5 +141,6 @@
  "SpinLockInReadonlyField": "SK3021",
  "RedundantJumpStatement": "SK0240",
  "RedundantAbstractModifier": "SK0241",
- "RedundantNullableDirective": "SK0242"
+ "RedundantNullableDirective": "SK0242",
+ "RedundantQualifier": "SK0243"
 }

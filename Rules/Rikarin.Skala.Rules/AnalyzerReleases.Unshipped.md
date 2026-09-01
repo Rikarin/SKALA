@@ -108,3 +108,4 @@ SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
 SK0240 | Skala.Cleanup | Warning | The control flow does nothing.
 SK0241 | Skala.Cleanup | Warning | The modifier has no effect.
 SK0242 | Skala.Cleanup | Warning | The `#nullable` directive changes nothing.
+SK0243 | Skala.Cleanup | Warning | The qualifier is redundant.

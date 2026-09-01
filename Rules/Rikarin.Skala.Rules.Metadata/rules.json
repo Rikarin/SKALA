@@ -3401,6 +3401,33 @@
       "configuration": [
         "dotnet_diagnostic.SK0242.severity"
       ]
+    },
+    {
+      "id": "SK0243",
+      "concept": "redundant-qualifier",
+      "title": "The qualifier is redundant",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantQualifier",
+      "supersedes": [
+        "RedundantBaseQualifier"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A namespace- or type-qualified type name the simple name already binds to, or a `base.` that reaches the same member as no qualifier.",
+      "rationale": "A qualifier is how a reader is told that the short name would have meant something else, so one that changes nothing is a false signal: `System.Text.StringBuilder` beside a `using System.Text;` says there is an ambiguity to resolve, and there is not. `base.` says louder still — it says the containing type has its own member of that name and this call deliberately goes past it. `SK0207` owns the `this.` qualifier and `SK0215` the static one; these are the two shapes the arrangement rules leave.",
+      "examples": {
+        "bad": "using System.Text;\n\nsealed class Formatter {\n    System.Text.StringBuilder builder = new();\n}",
+        "good": "using System.Text;\n\nsealed class Formatter {\n    StringBuilder builder = new();\n}"
+      },
+      "falsePositives": "⚠ **Neither half is decided by comparing text.** The type half asks the semantic model to bind the short name *at the same position* and reports only when it produces the same symbol with no candidates, which is what makes a shadowing type, a missing using directive and a genuine ambiguity each answer for themselves. Deciding it by looking for a matching using directive would be a different rule, and it would be wrong every time two imported namespaces offer the same name. ⚠ **The `base.` half is not \"the containing type does not override it\", and believing that is how this rule would report a behaviour change as a redundancy.** Given `class A { public virtual void M() { } }`, a `class B : A` calling `base.M()`, and a `class C : B` that overrides `M` — dropping the qualifier in `B` turns a non-virtual call to `A.M` into a virtual one that reaches `C.M`. So the member must be one nothing can override further (not virtual, not abstract, not an unsealed override) or the containing type must be `sealed`. Two further conditions: the containing type must declare nothing of that name, and nothing in scope at that position may be a local, a parameter or a local function of that name, because an unqualified use would find it first. ⚠ **An attribute name is left out.** `[System.Obsolete]` binds to a *constructor* rather than to a type, so the symbol comparison the rest of the rule performs would be comparing the wrong things; the shape is real and it is declined rather than answered with a check that does not mean what it says. ⚠ `global::` is a deliberate disambiguator and is never removed — a short name that binds to the same symbol today is exactly what somebody wrote `global::` to stop depending on. A qualified name inside another one's type arguments is skipped too, because the outer finding and the inner one would be two overlapping edits, and two overlapping edits are not a fix. Using directives, namespace declarations and documentation `cref`s are all positions where the written name *is* the meaning. ⚠ **`UnusedImportClause` belongs to `SK0210`, not here**, and so does `RedundantUsingDirective.Global` — see the note against `SK0210` in docs/plan/08: its removal set is Roslyn's CS8019, and the global-duplication shape reports CS8933, which that filter does not read. Shipping it here would have been a second rule for one concept.",
+      "configuration": [
+        "dotnet_diagnostic.SK0243.severity"
+      ]
     }
   ]
 }

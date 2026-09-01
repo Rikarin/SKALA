@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 132 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 133 ids are allocated.
 
 ## Async
 
@@ -25,6 +25,7 @@
 | [SK0240](SK0240.md) | The control flow does nothing | warning | safe | yes |
 | [SK0241](SK0241.md) | The modifier has no effect | warning | safe | yes |
 | [SK0242](SK0242.md) | The `#nullable` directive changes nothing | warning | safe | yes |
+| [SK0243](SK0243.md) | The qualifier is redundant | warning | safe | no |
 
 ## Correctness
 

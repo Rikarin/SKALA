@@ -17,10 +17,10 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class CleanupBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
-        new RedundantNullableDirectiveAnalyzer(),
+        new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
     ];
 
-    static readonly string[] Ids = ["SK0240", "SK0241", "SK0242"];
+    static readonly string[] Ids = ["SK0240", "SK0241", "SK0242", "SK0243"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
@@ -185,6 +185,24 @@ public sealed class CleanupBatchTests {
         Assert.Equal(2, source.Split("#nullable enable").Length - 1);
         Assert.Equal(1, after.Split("#nullable enable").Length - 1);
         Assert.DoesNotContain("#\n", after, StringComparison.Ordinal);
+    }
+
+    /// <summary><c>SK0243</c>'s two halves, named by the sentence each reports.</summary>
+    [Theory]
+    [InlineData("qualified_field_type", "already binds to this type here")]
+    [InlineData("qualified_return_type", "already binds to this type here")]
+    [InlineData("qualified_base_list", "already binds to this type here")]
+    [InlineData("qualified_nested_type", "already binds to this type here")]
+    [InlineData("qualified_generic_argument", "already binds to this type here")]
+    [InlineData("base_call_to_a_non_virtual_member", "reaches the same member as no qualifier")]
+    [InlineData("base_call_in_a_sealed_type", "reaches the same member as no qualifier")]
+    [InlineData("base_property_access", "reaches the same member as no qualifier")]
+    public void SK0243_ReportsWhichQualifierItMatched(string name, string sentence) {
+        var finding = Assert.Single(
+            Findings(Path.Combine(RuleFixtures.Root, "SK0243", "positive", name + ".cs"), "SK0243")
+        );
+
+        Assert.Contains(sentence, finding.GetMessage(), StringComparison.Ordinal);
     }
 
     static Diagnostic[] Findings(string path, string id) {

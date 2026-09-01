@@ -109,6 +109,7 @@ the primary inspection only; `supersedes` names the rest.
 | `SK0240` | The control flow does nothing | Syntax | safe |
 | `SK0241` | The modifier has no effect | Syntax | safe |
 | `SK0242` | The `#nullable` directive changes nothing | Syntax | safe |
+| `SK0243` | The qualifier is redundant | Semantic | safe |
 
 `SK0240` covers three shapes of [#131](https://github.com/Rikarin/SKALA/issues/131)'s thirteen: a
 `continue;` ending a loop body or a `return;` ending a void body (`RedundantJumpStatement`), a
@@ -141,6 +142,23 @@ enabled: the first `#nullable enable` is therefore never reported, and a `#nulla
 other directive always is. Comparing against the project's own `NullableContextOptions` is not done,
 because in `--load=loose` that value is the loader's rather than the project's, and a rule whose
 findings depend on how a file was loaded is not one finding.
+
+`SK0243` is the only semantic rule in this block and covers two of
+[#136](https://github.com/Rikarin/SKALA/issues/136)'s four: a qualified type name whose simple name
+binds to the same symbol at the same position, and a `base.` that reaches the same member as no
+qualifier. ⚠ The `base.` half is **not** "the containing type does not override it": given
+`class A { public virtual void M() { } }`, a `class B : A` calling `base.M()` and a `class C : B` that
+overrides `M`, dropping the qualifier in `B` turns a non-virtual call to `A.M` into a virtual one that
+reaches `C.M`. The member must be one nothing can override further, or the containing type must be
+`sealed`.
+
+⚠ **`SK0210` has a measured gap, and it is a bug report rather than a rule.** `UnusedImportClause` is
+`SK0210`'s remit and it ships; `RedundantUsingDirective.Global` is `SK0210`'s remit and it does not
+fire. `UsingsRule.Unused` builds its removal set from Roslyn's **CS8019** alone
+(`Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/UsingsRule.cs`), and a file-level `using X;`
+duplicated by a `global using X;` is reported by the compiler as **CS8933** — measured on a probe
+project, where the using is genuinely redundant and CS8019 is silent. Nothing in `SK0243` claims that
+inspection: shipping it here would be a second id for one concept.
 
 ## SK1000 — Modernization
 
@@ -532,8 +550,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **124** | **80.5 %** |
+| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **125** | **80.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
