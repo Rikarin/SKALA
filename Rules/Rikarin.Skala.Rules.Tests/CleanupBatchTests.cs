@@ -16,10 +16,10 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class CleanupBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
-        new RedundantControlFlowAnalyzer(),
+        new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
     ];
 
-    static readonly string[] Ids = ["SK0240"];
+    static readonly string[] Ids = ["SK0240", "SK0241"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
@@ -99,6 +99,59 @@ public sealed class CleanupBatchTests {
 
         Assert.Contains("try {", after, StringComparison.Ordinal);
         Assert.DoesNotContain("throw;", after, StringComparison.Ordinal);
+    }
+
+    /// <summary>Each of <c>SK0241</c>'s five keywords, named by the sentence it reports.</summary>
+    [Theory]
+    [InlineData("abstract_interface_method", "an interface member is abstract")]
+    [InlineData("abstract_interface_property", "an interface member is abstract")]
+    [InlineData("sealed_member_in_sealed_class", "the containing type is `sealed`")]
+    [InlineData("sealed_member_in_sealed_record", "the containing type is `sealed`")]
+    [InlineData("record_class_keyword", "`record` already means `record class`")]
+    [InlineData("enum_underlying_int", "the underlying type an enum has when none is written")]
+    [InlineData("readonly_method_in_readonly_struct", "`readonly struct` is already `readonly`")]
+    [InlineData("readonly_property_in_readonly_struct", "`readonly struct` is already `readonly`")]
+    [InlineData("readonly_accessor_in_readonly_struct", "`readonly struct` is already `readonly`")]
+    public void SK0241_ReportsTheKeywordItMatched(string name, string sentence) {
+        var finding = Assert.Single(
+            Findings(Path.Combine(RuleFixtures.Root, "SK0241", "positive", name + ".cs"), "SK0241")
+        );
+
+        Assert.Contains(sentence, finding.GetMessage(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The fix takes the space after the keyword and never the trivia in front of it.
+    /// </summary>
+    /// <remarks>
+    ///     A documentation comment and an attribute list are leading trivia on the first modifier, so a
+    ///     deletion that started at the token's <em>full</em> span would take them with it — silently,
+    ///     under a fix the catalogue marks safe.
+    /// </remarks>
+    [Fact]
+    public void SK0241_KeepsTheDocumentationCommentAboveTheModifier() {
+        const string source = """
+                              class Base {
+                                  public virtual void Flush() { }
+                              }
+
+                              sealed class Writer : Base {
+                                  /// <summary>Flushes nothing, on purpose.</summary>
+                                  [System.Obsolete("use Close")]
+                                  public sealed override void Flush() { }
+                              }
+                              """;
+
+        var compilation = RuleFixtures.Compile(source, "modifier.cs");
+        var findings = RuleFixtures
+            .Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
+            .Where(static diagnostic => diagnostic.Id == "SK0241")
+            .ToArray();
+
+        var after = Apply(source, findings);
+        Assert.Contains("<summary>Flushes nothing, on purpose.</summary>", after, StringComparison.Ordinal);
+        Assert.Contains("[System.Obsolete(\"use Close\")]", after, StringComparison.Ordinal);
+        Assert.Contains("public override void Flush()", after, StringComparison.Ordinal);
     }
 
     static Diagnostic[] Findings(string path, string id) {

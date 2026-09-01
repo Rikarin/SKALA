@@ -3344,6 +3344,36 @@
       "configuration": [
         "dotnet_diagnostic.SK0240.severity"
       ]
+    },
+    {
+      "id": "SK0241",
+      "concept": "ineffective-modifier",
+      "title": "The modifier has no effect",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantAbstractModifier",
+      "supersedes": [
+        "SealedMemberInSealedClass",
+        "RedundantRecordClassKeyword",
+        "EnumUnderlyingTypeIsInt",
+        "RedundantReadonlyModifier"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A keyword that restates what the enclosing declaration has already said: `abstract` on an interface member, `sealed` inside a `sealed` type, `class` after `record`, `: int` on an enum, `readonly` inside a `readonly struct`.",
+      "rationale": "A modifier that does nothing is worse than noise, because a reader cannot tell it from one that does. `sealed` on a member of a `sealed` class invites the question of which derived type was going to override it, and there is none; `abstract` on an interface member suggests the interface has members that are not; `readonly` on one member of a `readonly struct` suggests the others are mutable. Each one is answered by a keyword written a few lines above it, and deleting it makes the declaration say exactly what it meant.",
+      "examples": {
+        "bad": "public sealed class Writer : Stream {\n    public sealed override void Flush() { }\n}",
+        "good": "public sealed class Writer : Stream {\n    public override void Flush() { }\n}"
+      },
+      "falsePositives": "⚠ **`static` withdraws the interface half entirely, and getting it wrong would have been this rule's worst false positive.** A static interface member is *not* implicitly abstract: C# 11's `static abstract T operator +(T, T)` is an abstract static member, and the same declaration without the keyword is a static member that must have a body. Deleting `abstract` there does not tidy anything — it produces a declaration that no longer compiles. ⚠ **A nested type is never the subject.** A type declared inside an interface is not implicitly abstract, and a type nested in a `sealed` class is not implicitly sealed, so the modifier there is the author's; no type declaration is registered as a candidate. ⚠ **A field inside a `readonly struct` is excluded and that is not an oversight.** CS8340 requires every instance field of one to be `readonly`, so the keyword is the language's rather than the author's and deleting it is an error. ⚠ **`enum E : Int32` is left alone.** The rule matches the `int` keyword only, because it has no semantic model to ask what an identifier resolves to and `Int32` is an ordinary identifier that a using directive or a user type can point somewhere else; the keyword cannot be aliased or shadowed, which is what makes matching it exact. ⚠ **A comment or a directive in the keyword's trailing trivia withdraws the finding.** The fix deletes from the keyword to the next token so that a leading documentation comment and attribute list survive, and that span carries the trailing trivia with it — `public /* still virtual in the base */ sealed override` would lose the note under a fix marked safe. ⚠ Six of [#129](https://github.com/Rikarin/SKALA/issues/129)'s eleven inspections are **not** covered. `PartialTypeWithSinglePart` and `PartialMethodWithSinglePart` are the high-volume pair and both need to count a symbol's declarations across the whole compilation — which a source generator can add to after the fact, so a repository whose generated part is missing from a loose load would be told to delete a `partial` it needs. `RedundantVirtualModifier`, `RedundantScopedParameterModifier`, `RedundantUnsafeContext` and `RedundantOverflowCheckingContext` each need to know something about a body or a type that is not written in the declaration.",
+      "configuration": [
+        "dotnet_diagnostic.SK0241.severity"
+      ]
     }
   ]
 }

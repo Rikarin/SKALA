@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 130 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 131 ids are allocated.
 
 ## Async
 
@@ -23,6 +23,7 @@
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
 | [SK0240](SK0240.md) | The control flow does nothing | warning | safe | yes |
+| [SK0241](SK0241.md) | The modifier has no effect | warning | safe | yes |
 
 ## Correctness
 

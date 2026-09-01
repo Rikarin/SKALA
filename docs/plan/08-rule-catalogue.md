@@ -107,6 +107,7 @@ the primary inspection only; `supersedes` names the rest.
 | ID | Rule | Scope | Fix |
 |---|---|---|---|
 | `SK0240` | The control flow does nothing | Syntax | safe |
+| `SK0241` | The modifier has no effect | Syntax | safe |
 
 `SK0240` covers three shapes of [#131](https://github.com/Rikarin/SKALA/issues/131)'s thirteen: a
 `continue;` ending a loop body or a `return;` ending a void body (`RedundantJumpStatement`), a
@@ -118,6 +119,15 @@ clothes. The eight remaining inspections in that issue are boolean-expression sh
 (`RedundantBoolCompare`, `DoubleNegationOperator` and their siblings) and are **not** covered —
 each needs an operand's type before it can be called redundant, which would make the rule semantic
 and stop it running on a loose file.
+
+`SK0241` covers five of [#129](https://github.com/Rikarin/SKALA/issues/129)'s eleven: `abstract` on an
+interface member, `sealed` on a member of a `sealed` type, `class` after `record`, `: int` on an enum,
+and `readonly` on a member of a `readonly struct`. ⚠ `static` withdraws the interface half — a static
+interface member is *not* implicitly abstract, and `static abstract` is C# 11's abstract static member,
+so deleting the keyword there produces a declaration that no longer compiles. The two high-volume
+inspections in that issue, `PartialTypeWithSinglePart` and `PartialMethodWithSinglePart`, are **not**
+covered: both need to count a symbol's declarations across the whole compilation, and a source
+generator can add a part that a loose load has never seen.
 
 ## SK1000 — Modernization
 
@@ -509,8 +519,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **122** | **80.3 %** |
+| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **123** | **80.4 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
