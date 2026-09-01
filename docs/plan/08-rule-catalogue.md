@@ -793,6 +793,19 @@ returns nothing at all, and a name that does not say whether the caller must awa
 - `SK6053` `async-suffix-convention` — a method returning an awaitable and not named `…Async`, or the
   reverse. Ships `defaultSeverity: none`; the count that decided that is in its `falsePositives`.
 
+⚠ **A fifth concept in this batch — #211, "the field is exposed rather than a property" — took no id,
+because `CA1051` already does it.** ADR-008 hosts rather than rebuilds, and the hosting was measured
+rather than assumed: a probe carrying ten field shapes, built at `AnalysisLevel=latest-recommended`
+(what `Directory.Build.props` sets), reports the `public` and the `protected` instance field and
+correctly exempts a `[StructLayout]` interop struct, a `readonly`-adjacent `static readonly`, a `const`
+and a `public` field on an `internal` type — including the interop exemption that is the load-bearing
+one. The one thing `CA1051` does not reach is `S2357`'s `internal`-instance-field half, and that half
+is declined rather than built: an `internal` field never leaves the assembly, so "it should have been
+a property" is a style opinion about code no consumer can see. Recorded in
+`Testing/parity-analysis/ledger-sonar.json` as `S1104` and `S2357` resolved `hosted`. **No id was
+allocated** — ADR-012 makes one permanent, and a number handed out for a concept that ships nothing is
+a number that can never be reused.
+
 ## SK7000 — Maintainability
 
 The metrics from [07](07-analysis-host.md) § "Metrics" — `SK7001` cyclomatic complexity ·
