@@ -351,6 +351,69 @@ already names in the other direction.
 - `SK2033` `stackalloc-in-loop` — a `stackalloc` a loop re-evaluates.
 - `SK2034` `escaped-keyword` — a declaration named after a reserved keyword and escaped with `@`.
 
+### `SK2040`–`SK2044` — equality and hashing
+
+⚠ **The prose pass for `SK2040`–`SK2044` is owed.** What follows is the allocation register entry —
+enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+**They share one core and stay disjoint by construction rather than by filtering.** `EqualityMembers`
+resolves a type's equality surface once — which equality members it declares, and which of its own
+members each body reads — and `HashCodeContract` splits the members `GetHashCode` reads into two
+halves. A hashed member is either compared by the type's equality, and then the only open question is
+whether it can change, or it is not compared, and then the finding is about the contract itself.
+Every hashed member is in exactly one half, both rules read the same split, and neither looks at the
+other's output.
+
+- `SK2040` `unintended-reference-comparison` — `==` on a source class that defines value equality and
+  declares no `operator ==`, or `ReferenceEquals` on a value type. ⚠ The test is on the **bound
+  operator**, never on a list of type names, which is what keeps records, `string`, `Uri` and every
+  type with its own operator out with no exclusion list to maintain. The type must be declared in the
+  compilation: `encoding == Encoding.UTF8` reads as identity against a cached singleton, and calling
+  that wrong needs knowledge of what the library guarantees.
+- `SK2041` `base-equality-call-is-identity` — `base.Equals` or `base.GetHashCode` inside an equality
+  member, where the call binds to `System.Object`. A base that overrides equality is doing real work
+  and is never reported; a struct's `base.GetHashCode()` binds to `ValueType.GetHashCode`, which does
+  hash the fields, and is not reported either.
+- `SK2042` `hash-code-over-uncompared-member` — `GetHashCode` reads a member no `Equals` compares, so
+  two instances the type calls equal hash differently.
+- `SK2043` `mutable-hash-code-member` — `GetHashCode` on a class reads an equality-relevant member
+  that can still be assigned after construction.
+- `SK2044` `inconsistent-equality-members` — `operator ==` with no `Equals(object)` override,
+  `Equals(Self)` with no `IEquatable<Self>`, or `==` and `IComparable` with no relational operators.
+  One finding per type, in that order.
+
+⚠ **`SK2042` reports the opposite direction from the one its issue named, and the issue's direction
+was refuted.** Issue #6 asked for "the hash code does not include the members equality compares".
+That direction is not a contract violation: a hash over a *subset* of the compared members still
+gives every equal pair the same hash, which is the whole of what the contract asks, so it is a
+collision-quality observation. The direction that does break the contract is the reverse — a hash
+over a member `Equals` ignores — and that is what shipped.
+
+⚠ **`SK2044` is in the correctness band and its issue proposed the design band.** Issue #212 named
+`SK6000`–`SK6999`; the id came from a range reserved for this batch, and the three inconsistencies it
+reports each make two spellings of one question give different answers, which is a wrong answer
+rather than a taste. The disagreement is recorded here rather than resolved by moving the id, because
+ADR-012 makes it permanent either way.
+
+⚠ **Three sub-concepts were declined rather than shipped, and each refusal is worth as much as one of
+the rules.** `CompareNonConstrainedGenericWithNull` — `t == null` on an unconstrained `T` — because
+the repair is a constraint or an `EqualityComparer<T>.Default` call rather than an edit to the
+comparison, and because the export itself ships it at `none`. `CheckForReferenceEqualityInstead`,
+which is the mirror direction and asks what the author meant rather than what the code does.
+And `S4035`, "classes implementing `IEquatable<T>` should be sealed": unsealed is not the defect, the
+defect is an `Equals` that admits a derived instance through an `is T` test so that a base and a
+derived instance compare equal in one direction only — a different analysis, with a different
+false-positive story, that would need its own number and its own measurement.
+
+⚠ **Four of the five ship fixless**, which is four more than doc 08's bar contemplates and the same
+decision `SK3040`–`SK3044` took. In each the repair is a choice between two edits that mean opposite
+things — drop the member from the hash or add it to `Equals`; freeze the state or stop using the type
+as a key — and no signal in the code says which was intended. `SK2040` carries the one fix in the
+batch, rewriting the comparison to `Equals(a, b)`, and it is `fixIsSafe: false` because it changes
+the answer.
+
+
 ## SK3000 — Async, concurrency, lifetime
 
 `SK3001` `async void` outside an event handler · `SK3002` blocking on async (`.Result`, `.Wait()`,
@@ -1108,11 +1171,11 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **210** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **176** | **84.2 %** |
+| Rules this document names | **215** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **177** | **82.7 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **25** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

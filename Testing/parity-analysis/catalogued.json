@@ -195,5 +195,10 @@
   "PublicConstructorInAbstractClass": "SK6003",
   "ChangeFieldTypeToSystemThreadingLock": "SK1023",
   "RedundantDictionaryContainsKeyBeforeAdding": "SK1033",
-  "ArrangeNullCheckingPattern": "SK1010"
+  "ArrangeNullCheckingPattern": "SK1010",
+  "PossibleUnintendedReferenceComparison": "SK2040",
+  "ReferenceEqualsWithValueType": "SK2040",
+  "BaseObjectEqualsIsObjectEquals": "SK2041",
+  "BaseObjectGetHashCodeCallInGetHashCode": "SK2041",
+  "NonReadonlyMemberInGetHashCode": "SK2043"
 }
