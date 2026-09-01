@@ -140,5 +140,6 @@
  "ReturnOfUsingVariable": "SK3512",
  "SpinLockInReadonlyField": "SK3021",
  "SuspiciousLockOverSynchronizationPrimitive": "SK3040",
- "NonAtomicCompoundOperator": "SK3041"
+ "NonAtomicCompoundOperator": "SK3041",
+ "NonVolatileFieldInDoubleCheckLocking": "SK3042"
 }

@@ -107,3 +107,4 @@ SK3020 | Skala.Async | Warning | The non-`async` `Task` method returns null.
 SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
 SK3040  | Skala.Async | Warning | The `lock` is taken over a synchronization primitive.
 SK3041  | Skala.Async | Warning | The compound operation on a `volatile` field is not atomic.
+SK3042  | Skala.Async | Warning | The double-checked locking is not correct.

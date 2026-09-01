@@ -304,6 +304,17 @@ document gives. Whoever writes it should read the analyzers, not this list.
   `volatile`, route every access through `Interlocked`/`Volatile` — changes the field's contract and
   touches accesses in other files. The decision is recorded here rather than in a commit message
   because ADR-012 makes the shipped shape permanent.
+- `SK3042` `incorrect-double-checked-locking` — a check-lock-check initialization whose field is not
+  `volatile`. The read the idiom skips the lock for is the *outer* one, and nothing orders it against
+  the constructor's writes, so a second thread can see the reference before the object. ⚠ It works on
+  x86/x64 by accident of those processors' ordering and is already wrong on ARM64. **Fixless**: adding
+  `volatile` changes the field's contract for every access and is only one of three defensible
+  repairs, the others being `Lazy<T>` (→ `SK3009`) and dropping the outer check.
+  ⚠ **Two of the three inspections the proposing issue names are deliberately not covered.**
+  `PossibleMultipleWriteAccessInDoubleCheckLocking` and `ReadAccessInDoubleCheckLocking` both turn on
+  telling `f = new Foo(); f.Init();` apart from `var t = new Foo(); t.Init(); f = t;`, and separating
+  either from a harmless `return f;` in the same branch needs a rule about *which* reads publish.
+  Stated rather than approximated, and the residue stays counted uncovered in `docs/plan/17`.
 
 ## SK4000 — Performance
 
@@ -504,8 +515,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **123** | **80.9 %** |
+| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **124** | **81.0 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
