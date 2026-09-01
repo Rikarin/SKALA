@@ -4531,6 +4531,131 @@
       "configuration": [
         "dotnet_diagnostic.SK1054.severity"
       ]
+    },
+    {
+      "id": "SK3040",
+      "concept": "lock-over-synchronization-primitive",
+      "title": "The `lock` is taken over a synchronization primitive",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "SuspiciousLockOverSynchronizationPrimitive",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A `lock` statement is taken over an object that is itself a synchronization primitive — a `SemaphoreSlim`, a `ReaderWriterLockSlim`, or anything below `WaitHandle`.",
+      "rationale": "Every reference type carries a monitor, so `lock (semaphore)` compiles. It gives the author a monitor they did not mean, taken over an object whose own waiting happens somewhere else entirely: a thread parked inside `semaphore.Wait()` holds nothing the monitor knows about, and a thread inside `lock (semaphore)` excludes nobody who calls `Wait`. The two mechanisms do not compose, and where the primitive takes its own monitor internally the mistake is a deadlock rather than a no-op. The code above it reads as though the object were guarded, which is the expensive part.",
+      "examples": {
+        "bad": "sealed class Queue {\n    readonly SemaphoreSlim slots = new(4);\n\n    int depth;\n\n    public void Push() {\n        lock (slots) {\n            depth++;\n        }\n    }\n}",
+        "good": "sealed class Queue {\n    readonly SemaphoreSlim slots = new(4);\n\n    int depth;\n\n    public void Push() {\n        slots.Wait();\n        try {\n            depth++;\n        } finally {\n            slots.Release();\n        }\n    }\n}"
+      },
+      "falsePositives": "⚠ **Fixless, and not for want of trying.** The repair is to decide which mechanism the code meant — take the primitive properly, or introduce a separate lock object — and no edit can choose between those without knowing what the other threads do. Rewriting `lock (semaphore) { … }` into `semaphore.Wait()/Release()` changes which threads are excluded, and introducing a new field changes the type's shape; both are design decisions. ⚠ **This is not `SK1023` and never overlaps it.** `SK1023` looks at a private `readonly object` field whose only use is as a lock target and modernizes a lock that is already correct; this rule never fires on `object`, so the two are disjoint by the lock target's type. ⚠ **`System.Threading.Lock` is excluded explicitly** — it is a synchronization primitive and it is also the one type a C# 13 `lock` statement is supposed to be taken over, since the compiler lowers it to `Lock.EnterScope` rather than to `Monitor`; reporting it would contradict `SK1023`'s own fix. ⚠ The type is resolved from the compilation and never matched on the written name: `Semaphore` and `Barrier` are plausible names for somebody's own type. ⚠ **Stated scope limit:** the rule matches the `lock` statement only. `Monitor.Enter(semaphore)` is the same mistake spelled without the keyword and is not reported, because deciding that the matching `Exit` runs on every path is a different analysis; the negative fixture set records that rather than hiding it. `lock (this)` and `lock (someCollection)` are their own arguments and are not this one.",
+      "configuration": [
+        "dotnet_diagnostic.SK3040.severity"
+      ]
+    },
+    {
+      "id": "SK3041",
+      "concept": "non-atomic-volatile-update",
+      "title": "The compound operation on a `volatile` field is not atomic",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "NonAtomicCompoundOperator",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`++`, `--` or a compound assignment is applied to a `volatile` field, which is a read and a write and not one operation.",
+      "rationale": "`volatile` buys visibility and orders nothing else. The read and the write of `counter++` are still two instructions with a window between them, so two threads read the same value and one update is lost — exactly as they would without the keyword. What makes this worth a warning rather than a hint is the keyword itself: it is the mark of an author who thought about threading and concluded wrongly, so the next reader trusts the field and does not look again.",
+      "examples": {
+        "bad": "sealed class Counter {\n    volatile int served;\n\n    public void Serve() {\n        served++;\n    }\n}",
+        "good": "sealed class Counter {\n    int served;\n\n    public void Serve() {\n        Interlocked.Increment(ref served);\n    }\n\n    public int Served => Volatile.Read(ref served);\n}"
+      },
+      "falsePositives": "⚠ **Fixless, and the issue proposing it asked for a fix.** Four separate obstacles, each of which alone is enough: (1) `Interlocked.Increment(ref field)` on a `volatile` field is **CS0420** — a `ref` to a volatile field is not treated as volatile — so the obvious edit puts a compiler warning into code that had none; (2) `f++` as an *expression* yields the value before the increment and `Interlocked.Increment` yields the value after, so only the expression-statement position is rewritable at all; (3) `|=`, `&=` have an `Interlocked` form only on recent frameworks, `^=` has none, and `*=`, `/=`, `<<=` have none anywhere; (4) the honest repair — drop `volatile` and route every access through `Interlocked`/`Volatile` — changes the field's contract and touches every other access to it, including accesses in other files. `hasFix: false` states that rather than guessing. ⚠ **The rule withdraws inside a `lock`.** `volatile` beside a monitor is redundant, not wrong, and the update under the monitor is atomic; a finding there would send a reader to threading code that is correct. ⚠ **It withdraws in a constructor**, where no other thread can hold a reference to the instance yet — but *not* through a lambda written in one, because a delegate runs whenever somebody invokes it. ⚠ **Stated scope limit:** `Monitor.Enter` and a semaphore held across the statement are the same guarantee spelled without the keyword and are not recognised, so a field updated under one of those is reported. Deciding that the matching release runs on every path is a dataflow question this rule does not ask; the miss is a false positive rather than a silence, and the negative fixture set records it. `volatile` cannot be applied to `long`, `double` or `decimal`, so the widest-window cases of this bug cannot carry the keyword and are outside the rule by construction.",
+      "configuration": [
+        "dotnet_diagnostic.SK3041.severity"
+      ]
+    },
+    {
+      "id": "SK3042",
+      "concept": "incorrect-double-checked-locking",
+      "title": "The double-checked locking is not correct",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "NonVolatileFieldInDoubleCheckLocking",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A check-lock-check initialization reads its field outside the lock and the field is not `volatile`.",
+      "rationale": "The idiom exists to skip the lock on the common path, and the read it skips the lock for is the outer one. Without `volatile` nothing orders that read against the writes the constructor performed, so a second thread can see a non-null reference to an object whose fields it cannot see yet, and use it. The lock is real, the inner check is real, and the object is still half-built. ⚠ It works on x86 and x64 by accident of those processors' ordering and stops working on ARM64, which is where a great deal of .NET now runs — so this is not a fragile shape, it is a shape with a platform on which it is already wrong.",
+      "examples": {
+        "bad": "static Settings? instance;\n\npublic static Settings Instance {\n    get {\n        if (instance == null) {\n            lock (Gate) {\n                if (instance == null) {\n                    instance = new Settings();\n                }\n            }\n        }\n\n        return instance;\n    }\n}",
+        "good": "static volatile Settings? instance;\n\npublic static Settings Instance {\n    get {\n        if (instance == null) {\n            lock (Gate) {\n                if (instance == null) {\n                    instance = new Settings();\n                }\n            }\n        }\n\n        return instance;\n    }\n}"
+      },
+      "falsePositives": "⚠ **Fixless.** Adding `volatile` looks like a one-word edit and is not one: it changes the field's memory contract for every access in the program, costs a fence on every read of a field that may be read in a loop, and is only one of three defensible repairs — the others being `Lazy<T>` (see `SK3009`) and dropping the outer check for an unconditional lock. Choosing among those is a design decision. ⚠ **The shape is gated four ways and all four must hold**: the outer condition is the *whole* condition and a plain field reference tested for null (or `!flag` on a `bool` field); its body runs a `lock`; the lock body holds a second check of the *same* field; and that second branch publishes the field with a plain assignment. `Volatile.Read(ref f) == null` fails the first gate and `Interlocked.CompareExchange(ref f, …)` fails the last, which is how code that has already done the ordering by hand stays silent. ⚠ **Reference types and `bool` only.** The finding's advice is \"make it `volatile`\", and CS0677 makes that illegal for `long`, `double`, `decimal` and any user struct, so on those the message would name a repair that does not compile. ⚠ **The field must be declared in source**, because a field from another assembly cannot be made `volatile` by anybody reading the finding. ⚠ **Two of the three ReSharper inspections named in the proposing issue are not covered**: `PossibleMultipleWriteAccessInDoubleCheckLocking` and `ReadAccessInDoubleCheckLocking` both turn on distinguishing `f = new Foo(); f.Init();` from `var t = new Foo(); t.Init(); f = t;`, and separating those from a harmless `return f;` in the same branch needs a rule about *which* reads publish. Stated rather than approximated. ⚠ A single-threaded type that happens to be written this way is reported; the idiom's whole point is threading, so the shape is its own claim about intent.",
+      "configuration": [
+        "dotnet_diagnostic.SK3042.severity"
+      ]
+    },
+    {
+      "id": "SK3043",
+      "concept": "inconsistent-lock-order",
+      "title": "Locks are taken in inconsistent orders",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "InconsistentOrderOfLocks",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "One type nests the same two lock fields inside each other in both orders, which is the textbook deadlock.",
+      "rationale": "Two paths that take the same pair of locks in opposite orders deadlock the moment both run. It survives review because the two halves are almost never on the same screen: each method reads as a perfectly ordinary pair of nested locks, and only the two together are wrong. Nothing in Roslyn or the `CA*` set reports it. The analysis is a lock *order* and nothing more — every `lock` whose target is a field of the type contributes an ordered pair for each lock it is nested inside, and a pair present in both directions is the finding.",
+      "examples": {
+        "bad": "public void Post() {\n    lock (accounts) {\n        lock (journal) {\n            balance++;\n        }\n    }\n}\n\npublic void Reconcile() {\n    lock (journal) {\n        lock (accounts) {\n            balance--;\n        }\n    }\n}",
+        "good": "public void Post() {\n    lock (accounts) {\n        lock (journal) {\n            balance++;\n        }\n    }\n}\n\npublic void Reconcile() {\n    lock (accounts) {\n        lock (journal) {\n            balance--;\n        }\n    }\n}"
+      },
+      "falsePositives": "⚠ **Fixless, and unusually clearly so.** No edit decides which lock should be taken first: choosing the hierarchy is the design decision the type failed to make, and swapping the order in the method the tool happened to see second is as likely to be the wrong half as the right one. ⚠ **Only two lock-target spellings are accepted: a bare identifier and `this.field`, both resolving to a field of the type under analysis.** Everything else — a local, a parameter, `peer.gate` — is opaque, and ⚠ **that is a recall decision and not a soundness one**, which is easy to mistake and was mistaken in this rule's first draft. A cycle over two fields reached through two different instances is a real deadlock, the classic bank-transfer one, and this rule does not report it. The reason is the message rather than the analysis: a finding names fields and not objects, so \"`history` while holding `balance`\" would be an ambiguous sentence about which account each name meant. Widening the rule needs an answer to that, and the negative fixture set records the miss under that name rather than filing it as a false positive avoided. An opaque target is not fatal to the locks around it: it contributes no pair and does not break pairs recorded across it, because `lock (a) { lock (opaque) { lock (b) } }` still takes `a` before `b`. ⚠ **The nesting walk stops at a lambda or a local function.** A delegate written inside a `lock` body does not run inside it, so treating the enclosing lock as held would invent an order the program does not have — and the invented pair is what would produce the finding. ⚠ **A re-entrant `lock (a) { lock (a) }` is not a pair**: a monitor is recursive for the thread that holds it. ⚠ **The unit is the symbol, not the file**, which is why the rule is `scope: Compilation` and uncached: issue #56's whole argument is that the two halves are rarely in the same file. ⚠ **Instance fields make the finding conditional on the instance.** Two threads on *different* objects take `a` and `b` of their own object and do not deadlock; the finding is a claim about the type's lock hierarchy, and a type that means two instances never interact has said so nowhere. A static pair has no such caveat. ⚠ `Monitor.Enter` is not a `lock` statement and contributes nothing, so a type that mixes the two can hide half of a pair.",
+      "configuration": [
+        "dotnet_diagnostic.SK3043.severity"
+      ]
+    },
+    {
+      "id": "SK3044",
+      "concept": "inconsistently-synchronized-field",
+      "title": "The field is guarded on some paths and not others",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "InconsistentlySynchronizedField",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A private field is written without the type's one lock, and is accessed under that lock at least twice elsewhere.",
+      "rationale": "A field taken under a lock in nine places and written bare in the tenth is a race that testing will not find: the tenth path is usually the one added last and the window is usually nanoseconds wide. The analysis is which lock, if any, is held at each access — the same analysis `SK3043` needs, computed across the whole type rather than one file.",
+      "examples": {
+        "bad": "sealed class Registry {\n    readonly object gate = new();\n\n    int count;\n\n    public void Add() {\n        lock (gate) {\n            count++;\n        }\n    }\n\n    public int Read() {\n        lock (gate) {\n            return count;\n        }\n    }\n\n    public void Reset() {\n        count = 0;\n    }\n}",
+        "good": "sealed class Registry {\n    readonly object gate = new();\n\n    int count;\n\n    public void Add() {\n        lock (gate) {\n            count++;\n        }\n    }\n\n    public int Read() {\n        lock (gate) {\n            return count;\n        }\n    }\n\n    public void Reset() {\n        lock (gate) {\n            count = 0;\n        }\n    }\n}"
+      },
+      "falsePositives": "⚠ **Fixless.** Wrapping the offending statement in the lock is one repair and taking the lock at the caller is another, and which one is right depends on what else the caller does between the two — an edit that guesses can introduce a nested lock or a lock held across an I/O call. ⚠ **The rule is deliberately far narrower than its title, and the gates are the rule.** docs/plan/16 § R3: a wrong concurrency finding sends somebody to read threading code that was correct, which is the most expensive reading there is, so every gate below buys precision at the cost of recall knowingly. **(1)** The type must have *exactly one* lock object and every `lock` in it must be taken over that one field; two gates is a hierarchy and which one guards a given field is not decidable from the shape. **(2)** The type must use no other synchronization at all — no `Interlocked`, `Volatile`, `Monitor`, semaphore, reader-writer lock or `Lazy` — because any of those is ordering the rule cannot see and would call an access unguarded. That list is matched on the written name, which is right here for once: it can only silence the rule, so a collision with somebody's own `Monitor` costs a finding and never produces a wrong one. **(3)** The unguarded access must be a *write*. A bare read of an otherwise-guarded field is a real hazard and is also the shape of a deliberate best-effort snapshot — `public int Count => count;` — and the two are not distinguishable here. **(4)** The write must sit in a member that is callable from outside the type and that the type never calls from inside the lock; a private helper, or a public method the type itself only invokes while holding the lock, is the \"caller holds the lock\" contract and is extremely common. `Dispose` is excluded by name, because disposal after the last user has let go is the normal contract. **(5)** Any access to the field inside a lambda or a local function withdraws the field entirely: a delegate runs whenever somebody invokes it, holding whatever they hold. **(6)** At least two guarded accesses are required — one guarded and one bare is as likely to be a lock introduced in the wrong place as one forgotten in the other. ⚠ **Silence is not a claim.** A field this rule says nothing about is a field it could not decide, not a field it believes is synchronized.",
+      "configuration": [
+        "dotnet_diagnostic.SK3044.severity"
+      ]
     }
   ]
 }

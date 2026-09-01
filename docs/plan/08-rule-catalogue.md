@@ -463,6 +463,77 @@ by hand to the `using` shape and asserts `SK3007` then fires on the result.
 machine for a method that always completes synchronously (→ `ValueTask`)", which is a change of
 return type; `SK3031` removes a state machine and keeps the signature. Issue #55 read the two as one
 and they are not.
+### `SK3040`– — the locking band
+
+⚠ **The prose pass for this block is owed.** These entries are the register doing its minimum job —
+recording that the number is spent and on what — and not the written-through account the rest of this
+document gives. Whoever writes it should read the analyzers, not this list.
+
+- `SK3040` `lock-over-synchronization-primitive` — a `lock` statement taken over a `SemaphoreSlim`, a
+  `ReaderWriterLockSlim`, or anything below `WaitHandle`. Every reference type carries a monitor, so
+  it compiles; it gives the author a monitor they did not mean, over an object whose own waiting is
+  somewhere else. **Fixless**: the repair is to choose which mechanism the code meant, and no edit
+  chooses. ⚠ **Not `SK1023`, and disjoint from it by construction** — `SK1023` modernizes a *correct*
+  lock over a `readonly object` field, and this rule never fires on `object`.
+  ⚠ **`System.Threading.Lock` is excluded explicitly**: it is a synchronization primitive and it is
+  also the type a C# 13 `lock` is meant to be taken over, so reporting it would contradict `SK1023`'s
+  own fix.
+- `SK3041` `non-atomic-volatile-update` — `++`, `--` or a compound assignment on a `volatile` field.
+  `volatile` buys visibility and orders nothing else, so the read-modify-write still loses updates;
+  the keyword is what makes it worth a warning, because it is the mark of an author who thought about
+  threading and concluded wrongly. Withdraws inside a `lock` and inside a constructor — but **not**
+  through a lambda written in one. ⚠ **Fixless, against the proposing issue, which asked for a fix.**
+  Four obstacles and any one is enough: `Interlocked.Increment(ref f)` on a `volatile` field is
+  **CS0420**; `f++` as an expression yields the value *before* and `Interlocked.Increment` the value
+  *after*; `^=`, `*=`, `/=` and `<<=` have no interlocked form at all; and the honest repair — drop
+  `volatile`, route every access through `Interlocked`/`Volatile` — changes the field's contract and
+  touches accesses in other files. The decision is recorded here rather than in a commit message
+  because ADR-012 makes the shipped shape permanent.
+- `SK3042` `incorrect-double-checked-locking` — a check-lock-check initialization whose field is not
+  `volatile`. The read the idiom skips the lock for is the *outer* one, and nothing orders it against
+  the constructor's writes, so a second thread can see the reference before the object. ⚠ It works on
+  x86/x64 by accident of those processors' ordering and is already wrong on ARM64. **Fixless**: adding
+  `volatile` changes the field's contract for every access and is only one of three defensible
+  repairs, the others being `Lazy<T>` (→ `SK3009`) and dropping the outer check.
+  ⚠ **Two of the three inspections the proposing issue names are deliberately not covered.**
+  `PossibleMultipleWriteAccessInDoubleCheckLocking` and `ReadAccessInDoubleCheckLocking` both turn on
+  telling `f = new Foo(); f.Init();` apart from `var t = new Foo(); t.Init(); f = t;`, and separating
+  either from a harmless `return f;` in the same branch needs a rule about *which* reads publish.
+  Stated rather than approximated, and the residue stays counted uncovered in `docs/plan/17`.
+- `SK3043` `inconsistent-lock-order` — one type nests the same two lock fields inside each other in
+  both orders. The textbook deadlock, and it survives review because the two halves are almost never
+  on the same screen. **Fixless**: choosing the hierarchy is the design decision the type failed to
+  make, and swapping the order in whichever method the tool saw second is as likely to be the wrong
+  half as the right one. ⚠ **The first `scope: Compilation` rule to ship**, and it is not a
+  convenience: issue #56's whole argument is that the two halves live in different files, so the unit
+  of analysis has to be the symbol. It is excluded from per-file caching for exactly the reason the
+  scope exists — its answer for one file depends on files the cache key does not name.
+  ⚠ Only a bare identifier and `this.field` are accepted as lock targets, and **that is recall, not
+  soundness** — the draft that shipped first said the opposite. A cycle over two fields reached
+  through two *different instances* is a real deadlock, the bank-transfer one, and this rule misses
+  it; the obstacle is the message, which names fields and not objects, so "`history` while holding
+  `balance`" would not say which account. The fixture recording that is filed as a miss.
+  ⚠ Its first draft also carried a containing-type guard against a nested type's locks reaching the
+  outer type's accumulator. Deleting the guard left the fixture green: Roslyn already scopes a
+  symbol-start syntax action to the symbol's own members. The guard was dead code no sabotage could
+  kill and is gone; the fixture stays as the pin on the Roslyn behaviour.
+- `SK3044` `inconsistently-synchronized-field` — a private field written without the type's one lock
+  and accessed under it at least twice elsewhere. The same "which lock is held here" analysis as
+  `SK3043`, run over a whole type. **Fixless**: wrapping the statement is one repair and taking the
+  lock at the caller is another, and which is right depends on what else the caller does in between.
+  ⚠ **Six gates, and the gates are the rule.** Exactly one lock object in the type; no other
+  synchronization anywhere in it; the unguarded access must be a *write*; its member must be callable
+  from outside and never called by the type from inside the lock; any access inside a lambda
+  withdraws the field; and at least two guarded accesses are required. Every one of those buys
+  precision at the cost of recall, knowingly — § R3's most expensive false positive is the one that
+  sends somebody to read threading code that was correct. ⚠ **Silence is not a claim**: a field this
+  rule says nothing about is one it could not decide, not one it believes is synchronized.
+
+⚠ **`SK3040`–`SK3044` all ship fixless, and that is five more than doc 08's bar contemplates.**
+Two of the five issues proposed a fix; neither survived contact. Concurrency findings mostly have no
+mechanical repair, because the edit that would fix them is a decision about what the type's
+contract is — which lock is first, which field is `volatile`, where the boundary of a critical
+section falls. The pattern is now established enough to say so once rather than five times.
 
 ## SK4000 — Performance
 
@@ -977,6 +1048,7 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **195** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **162** | **83.5 %** |
+
 | Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **126** | **81.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |

@@ -96,6 +96,9 @@ public sealed class RuleFixtureTests {
         new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(),
         new MergedConditionalAccessAnalyzer(), new DiscardAssignmentAnalyzer(),
         new InlineOutVariableAnalyzer(),
+        new LockOverSynchronizationPrimitiveAnalyzer(), new NonAtomicVolatileUpdateAnalyzer(),
+        new DoubleCheckedLockingAnalyzer(), new LockOrderAnalyzer(),
+        new InconsistentlySynchronizedFieldAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

@@ -151,3 +151,8 @@ SK1051 | Skala.Modernization | Info | Simplify the pattern.
 SK1052 | Skala.Modernization | Info | Merge the `?:` into a conditional access.
 SK1053 | Skala.Modernization | Info | Use a discard.
 SK1054 | Skala.Modernization | Info | Inline the `out` variable declaration.
+SK3040  | Skala.Async | Warning | The `lock` is taken over a synchronization primitive.
+SK3041  | Skala.Async | Warning | The compound operation on a `volatile` field is not atomic.
+SK3042  | Skala.Async | Warning | The double-checked locking is not correct.
+SK3043  | Skala.Async | Warning | Locks are taken in inconsistent orders.
+SK3044  | Skala.Async | Warning | The field is guarded on some paths and not others.

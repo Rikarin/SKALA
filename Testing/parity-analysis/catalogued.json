@@ -187,5 +187,10 @@
   "NegationOfRelationalPattern": "SK1051",
   "MergeConditionalExpression": "SK1052",
   "UseDiscardAssignment": "SK1053",
-  "InlineOutVariableDeclaration": "SK1054"
+  "InlineOutVariableDeclaration": "SK1054",
+  "SuspiciousLockOverSynchronizationPrimitive": "SK3040",
+  "NonAtomicCompoundOperator": "SK3041",
+  "NonVolatileFieldInDoubleCheckLocking": "SK3042",
+  "InconsistentOrderOfLocks": "SK3043",
+  "InconsistentlySynchronizedField": "SK3044"
 }

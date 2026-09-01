@@ -17,23 +17,11 @@
 | [SK3009](SK3009.md) | Review explicitly unsynchronized Lazy in static state | warning | — | no |
 | [SK3020](SK3020.md) | The non-`async` `Task` method returns null | warning | review | no |
 | [SK3021](SK3021.md) | A `SpinLock` is stored in a `readonly` field | warning | review | no |
-| [SK3030](SK3030.md) | The async iterator is enumerated without `await foreach` | warning | review | no |
-| [SK3031](SK3031.md) | The method is `async` only to return an awaited task | suggestion | review | no |
-
-## Cleanup
-
-| Id | Rule | Severity | Fix | Loose mode |
-|---|---|---|---|---|
-| [SK0230](SK0230.md) | The `with` expression or object initializer is empty | warning | review | yes |
-| [SK0231](SK0231.md) | The string call produces the string it was given | warning | safe | no |
-| [SK0232](SK0232.md) | The argument or signature element is redundant | warning | safe | no |
-| [SK0233](SK0233.md) | The syntax is redundant | suggestion | safe | yes |
-| [SK0234](SK0234.md) | The cast or type argument is redundant | warning | safe | no |
-| [SK0240](SK0240.md) | The control flow does nothing | warning | safe | yes |
-| [SK0241](SK0241.md) | The modifier has no effect | warning | safe | yes |
-| [SK0242](SK0242.md) | The `#nullable` directive changes nothing | warning | safe | yes |
-| [SK0243](SK0243.md) | The qualifier is redundant | warning | safe | no |
-| [SK0244](SK0244.md) | The declaration adds nothing | warning | safe | yes |
+| [SK3040](SK3040.md) | The `lock` is taken over a synchronization primitive | warning | — | no |
+| [SK3041](SK3041.md) | The compound operation on a `volatile` field is not atomic | warning | — | no |
+| [SK3042](SK3042.md) | The double-checked locking is not correct | warning | — | no |
+| [SK3043](SK3043.md) | Locks are taken in inconsistent orders | warning | — | no |
+| [SK3044](SK3044.md) | The field is guarded on some paths and not others | warning | — | no |
 
 ## Correctness
 
