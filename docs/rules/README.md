@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 110 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 115 ids are allocated.
 
 ## Async
 
@@ -36,6 +36,11 @@
 | [SK2015](SK2015.md) | `throw ex;` resets the stack trace | warning | safe | yes |
 | [SK2016](SK2016.md) | A logger message is interpolated before it is logged | suggestion | — | no |
 | [SK2017](SK2017.md) | The exception names a parameter that does not exist | warning | safe | no |
+| [SK2030](SK2030.md) | Detect NaN with IsNaN rather than equality | warning | safe | no |
+| [SK2031](SK2031.md) | Do not discard a setter's value parameter | warning | — | yes |
+| [SK2032](SK2032.md) | Remove GC.SuppressFinalize from a type with no finalizer | suggestion | safe | no |
+| [SK2033](SK2033.md) | Do not stackalloc inside a loop | warning | — | yes |
+| [SK2034](SK2034.md) | Do not name a declaration after a reserved keyword | suggestion | — | yes |
 
 ## Design
 

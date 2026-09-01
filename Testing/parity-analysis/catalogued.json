@@ -15,7 +15,6 @@
  "ObjectCreationAsStatement": "SK2013",
  "PossibleIntendedRethrow": "SK2015",
  "PossibleInvalidOperationExceptionCollectionWasModified": "SK2007",
- "SuspiciousParameterNameInArgumentNullException": "SK2017",
  "AsyncVoidMethod": "SK3001",
  "AsyncVoidLambda": "SK3001",
  "AsyncVoidMethodWithoutAwait": "SK3001",
@@ -127,5 +126,10 @@
  "MissingBlankLines": "SK0001",
  "RedundantBlankLines": "SK0001",
  "IncorrectBlankLinesNearBraces": "SK0001",
- "EmptyRegion": "SK7073"
+ "SuspiciousParameterNameInArgumentNullException": "SK2017",
+ "EmptyRegion": "SK7073",
+ "ValueParameterNotUsed": "SK2031",
+ "GCSuppressFinalizeForTypeWithoutDestructor": "SK2032",
+ "StackAllocInsideLoop": "SK2033",
+ "EscapedKeyword": "SK2034"
 }

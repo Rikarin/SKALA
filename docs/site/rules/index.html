@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 104 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 115 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -47,6 +47,12 @@
 <tr><td><a href="SK2014.html">SK2014</a></td><td>An empty catch silently discards an exception</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2015.html">SK2015</a></td><td><code>throw ex;</code> resets the stack trace</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK2016.html">SK2016</a></td><td>A logger message is interpolated before it is logged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2017.html">SK2017</a></td><td>The exception names a parameter that does not exist</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK2030.html">SK2030</a></td><td>Detect NaN with IsNaN rather than equality</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK2031.html">SK2031</a></td><td>Do not discard a setter's value parameter</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK2032.html">SK2032</a></td><td>Remove GC.SuppressFinalize from a type with no finalizer</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK2033.html">SK2033</a></td><td>Do not stackalloc inside a loop</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK2034.html">SK2034</a></td><td>Do not name a declaration after a reserved keyword</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
 </tbody>
 </table>
 </div>
@@ -117,6 +123,11 @@
 <tr><td><a href="SK7050.html">SK7050</a></td><td>A warning-disable pragma has no justification</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK7051.html">SK7051</a></td><td>A suppression attribute has no justification</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK7060.html">SK7060</a></td><td>Review commented-out statements</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK7070.html">SK7070</a></td><td>An obsolete marker has no message</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK7071.html">SK7071</a></td><td>A coverage exclusion has no justification</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK7072.html">SK7072</a></td><td>A warning suppression covers nothing</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK7073.html">SK7073</a></td><td>A region is empty</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK7074.html">SK7074</a></td><td>Review a goto to a label</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 </tbody>
 </table>
 </div>

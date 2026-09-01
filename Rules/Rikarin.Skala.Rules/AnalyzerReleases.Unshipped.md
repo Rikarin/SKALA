@@ -86,3 +86,8 @@ SK7071 | Skala.Maintainability | Warning | A coverage exclusion has no justifica
 SK7072 | Skala.Maintainability | Warning | A warning suppression covers nothing.
 SK7073 | Skala.Maintainability | Info | A region is empty.
 SK7074 | Skala.Maintainability | Warning | Review a goto to a label.
+SK2030 | Skala.Correctness | Warning | Detect NaN with IsNaN rather than equality.
+SK2031 | Skala.Correctness | Warning | Do not discard a setter's value parameter.
+SK2032 | Skala.Correctness | Info | Remove GC.SuppressFinalize from a type with no finalizer.
+SK2033 | Skala.Correctness | Warning | Do not stackalloc inside a loop.
+SK2034 | Skala.Correctness | Info | Do not name a declaration after a reserved keyword.

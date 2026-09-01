@@ -2824,6 +2824,135 @@
       "configuration": [
         "dotnet_diagnostic.SK7074.severity"
       ]
+    },
+    {
+      "id": "SK2030",
+      "concept": "nan-comparison",
+      "title": "Detect NaN with IsNaN rather than equality",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A floating-point value is compared with == or != against a constant NaN, which is the one comparison guaranteed never to answer the question it was written to ask.",
+      "rationale": "NaN is unordered with everything including itself, so `x == double.NaN` is false even when x is NaN and `x != double.NaN` is true even when it is. The check written to catch the bad case is the shape that cannot catch it. `double.IsNaN` is the operation that was meant, and the rewrite is mechanical.",
+      "examples": {
+        "bad": "if (result == double.NaN) { Report(); }",
+        "good": "if (double.IsNaN(result)) { Report(); }"
+      },
+      "falsePositives": "Only `==` and `!=` between two floating-point operands are examined, and exactly one side must be a compile-time constant NaN: `double.NaN`, `float.NaN`, a `const` initialized from one, or a constant expression that folds to NaN. `!=` is reported alongside `==` because it is always true rather than always false; it carries its own message and a negated fix. NaN reached through a non-constant field, property, method result or parameter is one indirection the rule does not follow, because a `static readonly double` is not decidable from the comparison alone. Lifted comparisons on nullable operands, user-defined equality operators, operands whose own type is not `float` or `double` before conversion, and comparisons with NaN on both sides are excluded; the last names no operand to test. Relational comparisons with NaN are also constant and are deliberately not reported, because the rewrite is not a single `IsNaN` call. SK2003 excludes NaN sentinels, so the two rules do not overlap.",
+      "resharperId": null,
+      "supersedes": [
+        "S2688"
+      ],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2030.severity"
+      ]
+    },
+    {
+      "id": "SK2031",
+      "concept": "unused-value-parameter",
+      "title": "Do not discard a setter's value parameter",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "A property, indexer or init accessor body does work and never mentions `value`, so every assignment through it is discarded while appearing to succeed.",
+      "rationale": "The setter's whole contract is to consume `value`. One that runs statements and never reads it stores something else, or stores nothing, and the caller has no way to see that the write went nowhere. The repair is a decision about what the setter was meant to store, so the rule reports and does not rewrite.",
+      "examples": {
+        "bad": "public int Retries { get => retries; set => retries = DefaultRetries; }",
+        "good": "public int Retries { get => retries; set => retries = value; }"
+      },
+      "falsePositives": "Only accessors with a body are examined; auto-properties, abstract, extern, interface and partial declarations have none. Three shapes earn an exemption because the discard is legible as deliberate rather than accidental: a body with no statements at all (`set { }`), a body that only throws, and an accessor or member carrying `[Obsolete]`. That is the line: an empty setter announces that it ignores the write, and a setter that does work while ignoring it does not. `value` counts as read wherever it is mentioned in the body, including inside a lambda, a local function, a nested accessor and `nameof(value)` — the last is conservative on purpose, since a name mentioned is a name the author had in mind. Statements the file's preprocessor directives disable are not in the body, so a setter emptied by `#if` reads as the empty exemption. The rule does not judge whether the value stored is the right one, only whether one was read.",
+      "resharperId": "ValueParameterNotUsed",
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2031.severity"
+      ]
+    },
+    {
+      "id": "SK2032",
+      "concept": "redundant-suppress-finalize",
+      "title": "Remove GC.SuppressFinalize from a type with no finalizer",
+      "category": "Correctness",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "`GC.SuppressFinalize(this)` is called from a sealed class that declares no finalizer and derives directly from object, so there is no finalizer anywhere to suppress.",
+      "rationale": "The call is copied out of the canonical Dispose pattern into types that never had a finalizer. It costs nothing at runtime and reads as though the type has one, which sends the next reader looking for a finalizer that is not there. Deleting the statement is the whole repair.",
+      "examples": {
+        "bad": "sealed class Reader : IDisposable {\n    public void Dispose() {\n        stream.Dispose();\n        GC.SuppressFinalize(this);\n    }\n}",
+        "good": "sealed class Reader : IDisposable {\n    public void Dispose() => stream.Dispose();\n}"
+      },
+      "falsePositives": "Reported only for `GC.SuppressFinalize(this)` written as a statement directly inside a block, in a sealed class that derives straight from object and declares no finalizer in a single non-partial declaration. Every part of that is load-bearing. ⚠ An unsealed type is excluded because a derived type may declare a finalizer, which makes the base's call the thing that suppresses it; a type with any base class other than object is excluded for the same reason one level up. A partial or multi-file declaration is excluded so the answer stays decidable from the file the finding is in, which is what `scope: Semantic` promises the cache. Structs are excluded: they cannot have finalizers at all, so the call is redundant there too, but it also boxes and that is a different finding. An argument that is not literally `this`, a call in an expression-bodied member, and a call as an embedded statement under an `if` are all excluded, because the fix is a deletion and each of those has no statement to delete or leaves a construct behind that does not compile. Reflection or a runtime-registered finalizer is outside the proof.",
+      "resharperId": "GCSuppressFinalizeForTypeWithoutDestructor",
+      "resharperNote": "The export sets `resharper_gc_suppress_finalize_for_type_without_destructor_highlighting` to `warning` and Skala defaults the rule to `suggestion`, so `--resharper-severities` raises it. The lower default is deliberate: the call is harmless at runtime, so this is source noise rather than a defect, and a gate that fails on it would fail on tidiness.",
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2032.severity"
+      ]
+    },
+    {
+      "id": "SK2033",
+      "concept": "stackalloc-in-loop",
+      "title": "Do not stackalloc inside a loop",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "A `stackalloc` sits in a loop body, condition or incrementor, so the frame grows by one buffer per iteration and none of them is released until the method returns.",
+      "rationale": "Stack memory allocated in a method is reclaimed when that method returns, not when the block ends. A `stackalloc` a loop repeats therefore grows the frame by an amount the loop bound decides, and the overflow it eventually causes is a process kill with no catchable exception and no diagnostic naming this line. No fix is offered: hoisting the buffer out of the loop changes its lifetime and whether iterations share it, which is a decision about the program rather than a rewrite of it.",
+      "examples": {
+        "bad": "for (var i = 0; i < count; i++) {\n    Span<byte> buffer = stackalloc byte[64];\n    Fill(buffer, i);\n}",
+        "good": "Span<byte> buffer = stackalloc byte[64];\nfor (var i = 0; i < count; i++) {\n    Fill(buffer, i); // after deciding the iterations may share one buffer\n}"
+      },
+      "falsePositives": "Purely syntactic: the enclosing `for`, `foreach`, `while` or `do` is found by walking outward and stopping at a lambda, an anonymous method, a local function or a member body, because a separate frame releases its own stack on return. Positions a loop evaluates only once are excluded — a `for` initializer or declaration, and a `foreach` source expression — while conditions and incrementors are reported, since a loop re-evaluates those. ⚠ A loop that cannot reach a second iteration is excluded and this is the judgement the rule makes deliberately: `do { … } while (false)`, `while (false)`, and a body whose direct statements include an unconditional `break`, `return` or `throw`. That last exclusion is withdrawn when the body contains a `continue` or a `goto` of its own, because either can reach the `stackalloc` again and the `break` then proves nothing. Conditional exits, loop bounds and recursion are not analysed; a loop whose body always exits through an `if` is still reported, because proving that needs the dataflow this rule does not do.",
+      "resharperId": "StackAllocInsideLoop",
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2033.severity"
+      ]
+    },
+    {
+      "id": "SK2034",
+      "concept": "escaped-keyword",
+      "title": "Do not name a declaration after a reserved keyword",
+      "category": "Correctness",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "A declaration is named after a reserved C# keyword and can only be written with an `@` escape, so every mention of it reads as a verbatim string, a typo or a keyword until the reader checks.",
+      "rationale": "`@class`, `@new` and `@event` are legal and cost the reader a stop every time. The `@` on a reserved keyword is never a disambiguation the language asked for; it is the only spelling available once the name was chosen, so the finding is about the name. No fix is offered: renaming a declaration means renaming every reference, which is a refactoring rather than a text edit.",
+      "examples": {
+        "bad": "void Register(Type @class, EventInfo @event) { }",
+        "good": "void Register(Type declaredType, EventInfo declaredEvent) { }"
+      },
+      "falsePositives": "⚠ **Reserved keywords only, and that is what keeps the rule off load-bearing escapes.** Every `@` a language feature can *require* is on a contextual keyword — `@field` once `field` became the backing-field keyword, `@value` in an accessor, `@extension`, `@record`, `@var`, `@async`, `@await` — and a contextual keyword is a legal identifier without the escape, so an escape on one is disambiguation rather than a name to change. None of them is reported. Only the declaring identifier is reported, never a reference to it: a name that comes from another assembly must be escaped at every use site and the author cannot rename it, so reporting uses would be reporting something nobody can fix, and it would multiply one finding by its call count. Constructors and destructors are skipped because their identifier repeats the type's, which is already reported once. Namespace name parts and query continuations are not examined. Verbatim strings, interpolated verbatim strings and `@` inside documentation or comments are not identifiers and are never seen.",
+      "resharperId": "EscapedKeyword",
+      "resharperNote": "⚠ ReSharper publishes this one as an `.editorconfig` key with no inspection id in its issue-type dump, so `resharperId` carries the id that derives to the real key — `resharper_escaped_keyword_highlighting`, which the export sets to `warning`. Skala defaults the rule to `suggestion`, so `--resharper-severities` raises it: an escaped keyword compiles and runs correctly, and the cost is entirely to the reader.",
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2034.severity"
+      ]
     }
   ]
 }
