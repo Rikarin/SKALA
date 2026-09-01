@@ -149,5 +149,14 @@
  "RedundantVerbatimStringPrefix": "SK0231",
  "RedundantArgumentDefaultValue": "SK0232",
  "RedundantDelegateCreation": "SK0232",
- "RedundantLambdaParameterType": "SK0232"
+ "RedundantLambdaParameterType": "SK0232",
+ "RedundantAttributeParentheses": "SK0233",
+ "RedundantLambdaSignatureParentheses": "SK0233",
+ "RedundantPatternParentheses": "SK0233",
+ "RedundantDeclarationSemicolon": "SK0233",
+ "RedundantCollectionInitializerElementBraces": "SK0233",
+ "RedundantAnonymousTypePropertyName": "SK0233",
+ "RedundantQueryOrderByAscendingKeyword": "SK0233",
+ "RedundantRangeBound": "SK0233",
+ "RedundantPropertyPatternClause": "SK0233"
 }

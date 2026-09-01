@@ -3392,6 +3392,32 @@
       "configuration": [
         "dotnet_diagnostic.SK0232.severity"
       ]
+    },
+    {
+      "id": "SK0233",
+      "concept": "redundant-syntax",
+      "title": "The syntax is redundant",
+      "category": "Cleanup",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantAttributeParentheses",
+      "resharperNote": "⚠ ReSharper rates `RedundantAttributeParentheses` a *hint* and rates `RedundantAnonymousTypePropertyName`, one of the other eight shapes under this id, a *warning*. Skala reports the concept at `suggestion`, so reading `resharper_redundant_attribute_parentheses_highlighting` raises the whole concept to whatever that one key says.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "Nine token-level deletions: an empty attribute argument list, a single lambda parameter's parentheses, parentheses around a whole pattern, a semicolon after a braced declaration, braces around a one-argument collection element, an anonymous-type property name that restates the expression, `ascending`, a range bound that is already the default, and an empty property pattern under a type.",
+      "rationale": "Each one is a token the grammar allows and the reader has to account for. None of them is a judgement call: the deletion is proved by the shape, there is no semantic component at all, and the fix is the shortest edit in the catalogue. Doc 17 § \"A large share of the 580 is cheap\" is about exactly this family — the mechanical cleanups a Rider user does not notice they rely on until they are gone.",
+      "examples": {
+        "bad": "[Obsolete()]\npublic static int Count(IEnumerable<int> values) =>\n    values.Where((v) => v is (> 0)).ToArray()[0..^0];",
+        "good": "[Obsolete]\npublic static int Count(IEnumerable<int> values) =>\n    values.Where(v => v is > 0).ToArray()[..];"
+      },
+      "falsePositives": "⚠ **`SK0209` is not being duplicated, and the check was made rather than assumed.** That rule removes redundant *expression* parentheses through `resharper_parentheses_redundancy_style`, and it matches `ParenthesizedExpressionSyntax` and nothing else. The three parenthesis shapes here are an attribute argument list, a lambda parameter list and a parenthesized *pattern* — three different nodes, none of which that option reaches. ⚠ **Purely syntactic on purpose**: no branch reads the semantic model, so this is the one rule in the `SK023x` family that still runs, and is therefore still measurable, under `--load=loose` where a dependency-less source slice makes every semantic guard withdraw. ⚠ Pattern parentheses are removed only where the pattern is the *whole* of its position — under an `is`, a switch arm, a `case` label or a subpattern. Inside an `and`/`or` the parentheses can be the precedence, and proving otherwise is a re-parse this rule deliberately does not do. ⚠ A trailing declaration semicolon is reported only where braces are present: `record R(int X);` has no body, and there the semicolon is the terminator. ⚠ A lambda parameter with a type, a modifier, an attribute or a default value keeps its parentheses — the typed case belongs to `SK0232`, which *produces* this shape's output, so the two are disjoint by construction. ⚠ A range bound is matched on the literal `0` read from the source, never on a constant value: a named constant that happens to be zero is a name somebody chose. ⚠ An anonymous-type property name is dropped only for the two spellings C# infers a name from, so `x.Foo<int>` is left alone even where the written name matches. ⚠ **Four of the family's thirteen inspections are not covered.** `RedundantDiscardDesignation` is left out on purpose: `out var _` becomes `out _` only where nothing named `_` is in scope, and answering that needs a symbol lookup that would make the whole rule semantic. `RedundantFixedPointerDeclaration` is unsafe-code-only. `RedundantPropertyParentheses` and `RedundantArrayLowerBoundSpecification` could not be identified from the export with enough confidence to write a guard for them.",
+      "configuration": [
+        "dotnet_diagnostic.SK0233.severity"
+      ]
     }
   ]
 }

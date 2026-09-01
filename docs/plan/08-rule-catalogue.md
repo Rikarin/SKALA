@@ -106,6 +106,7 @@ issue; what was declined and why is in each rule's `falsePositives` in `rules.js
 | `SK0230` | The `with` expression or object initializer is empty | Syntax | [#137](https://github.com/Rikarin/SKALA/issues/137) | 3 of 3 |
 | `SK0231` | The string call produces the string it was given | Semantic | [#132](https://github.com/Rikarin/SKALA/issues/132) | 5 of 8 |
 | `SK0232` | The argument or signature element is redundant | Semantic | [#134](https://github.com/Rikarin/SKALA/issues/134) | 3 of 7 |
+| `SK0233` | The syntax is redundant | Syntax | [#133](https://github.com/Rikarin/SKALA/issues/133) | 9 of 13 |
 
 ## SK1000 — Modernization
 
@@ -497,8 +498,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **124** | **81.0 %** |
+| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **125** | **81.2 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

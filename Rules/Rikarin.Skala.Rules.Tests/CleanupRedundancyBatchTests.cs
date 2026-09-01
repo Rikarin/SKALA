@@ -23,7 +23,7 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class CleanupRedundancyBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new EmptyInitializerAnalyzer(), new RedundantStringCallAnalyzer(),
-        new RedundantArgumentAnalyzer(),
+        new RedundantArgumentAnalyzer(), new RedundantSyntaxAnalyzer(),
     ];
 
     [Theory]
@@ -122,6 +122,49 @@ public sealed class CleanupRedundancyBatchTests {
         "SK0232",
         "using System; static class C { static int M(int a, int b) { Func<int, int, int> f = (int x, int y) => x + y; return f(a, b); } }",
         "using System; static class C { static int M(int a, int b) { Func<int, int, int> f = (x, y) => x + y; return f(a, b); } }"
+    )]
+    // SK0233 — the nine token-level deletions, one per reported shape.
+    [InlineData(
+        "SK0233",
+        "using System; static class C { [Obsolete()] static int M() => 0; }",
+        "using System; static class C { [Obsolete] static int M() => 0; }"
+    )]
+    [InlineData(
+        "SK0233",
+        "using System; static class C { static int M(int v) { Func<int, int> t = (n) => n * 2; return t(v); } }",
+        "using System; static class C { static int M(int v) { Func<int, int> t = n => n * 2; return t(v); } }"
+    )]
+    [InlineData(
+        "SK0233",
+        "static class C { static bool M(int v) => v is (> 0); }",
+        "static class C { static bool M(int v) => v is > 0; }"
+    )]
+    [InlineData("SK0233", "class M { public int Id { get; set; } };", "class M { public int Id { get; set; } }")]
+    [InlineData(
+        "SK0233",
+        "using System.Collections.Generic; static class C { static List<int> M() => new List<int> { { 1 } }; }",
+        "using System.Collections.Generic; static class C { static List<int> M() => new List<int> { 1 }; }"
+    )]
+    [InlineData(
+        "SK0233",
+        "static class C { static object M(string t) => new { Length = t.Length }; }",
+        "static class C { static object M(string t) => new { t.Length }; }"
+    )]
+    [InlineData(
+        "SK0233",
+        "using System.Collections.Generic; using System.Linq; static class C { static IEnumerable<int> M(IEnumerable<int> v) => from x in v orderby x ascending select x; }",
+        "using System.Collections.Generic; using System.Linq; static class C { static IEnumerable<int> M(IEnumerable<int> v) => from x in v orderby x select x; }"
+    )]
+    // Both bounds in one finding, because a range can be redundant at each end independently.
+    [InlineData(
+        "SK0233",
+        "static class C { static string M(string t) => t[0..^0]; }",
+        "static class C { static string M(string t) => t[..]; }"
+    )]
+    [InlineData(
+        "SK0233",
+        "static class C { static bool M(object? v) => v is string { }; }",
+        "static class C { static bool M(object? v) => v is string; }"
     )]
     public void TheFix_ProducesExactlyThisText(string rule, string before, string after) =>
         Assert.Equal(after, Fix(rule, before));
