@@ -348,9 +348,13 @@ sealed class MetricThresholds {
     /// </summary>
     public int InheritanceDepth { get; private set; } = 4;
 
+    /// <summary><c>SK7081</c>: distinct other named types one type declaration mentions.</summary>
+    public int TypeCoupling { get; private set; } = 80;
+
     public static MetricThresholds Read(AnalyzerConfigOptions options) =>
         new() {
             InheritanceDepth = Value(options, RuleIds.InheritanceDepth, Default.InheritanceDepth),
+            TypeCoupling = Value(options, RuleIds.TypeCoupling, Default.TypeCoupling),
             Cyclomatic = Value(options, RuleIds.CyclomaticComplexity, Default.Cyclomatic),
             Cognitive = Value(options, RuleIds.CognitiveComplexity, Default.Cognitive),
             Statements = Value(options, RuleIds.MethodLengthInStatements, Default.Statements),

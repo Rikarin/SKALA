@@ -412,7 +412,16 @@ entirely**, because a chain that cannot be walked reads as depth 1 and reporting
 would be silently wrong. That is why the rule finds nothing on the corpus slices (#277): the shape
 is there and the analysis correctly declines.
 
-`SK7080` a class with more source-declared base classes than the threshold (default 4).
+⚠ **`SK7081` is the metric the other seven do not carry.** A type can be short, shallow and simple
+in every one of `SK7001`–`SK7006` and still name forty other types, and each of those forty is a
+reason this file has to be reopened when something else changes. Special types are excluded — the
+language's own vocabulary would add the same handful to every type and separate nothing — and so
+are the type itself, whatever nests it and whatever it nests, because a type that organises itself
+with nested helpers is not coupled to somebody else's design. ⚠ Like `SK7080`, an unresolved
+reference is skipped rather than counted, so its zero on the corpus is a declined measurement.
+
+`SK7080` a class with more source-declared base classes than the threshold (default 4) ·
+`SK7081` a type declaration naming more distinct other types than the threshold (default 80).
 
 ## SK8000 — Tests
 
@@ -497,8 +506,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **122** | **80.3 %** |
+| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **123** | **80.4 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |

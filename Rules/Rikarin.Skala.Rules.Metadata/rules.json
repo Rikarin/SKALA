@@ -3344,6 +3344,34 @@
         "dotnet_code_quality.SK7080.threshold",
         "dotnet_diagnostic.SK7080.severity"
       ]
+    },
+    {
+      "id": "SK7081",
+      "concept": "type-coupling",
+      "title": "The type depends on more other types than the threshold",
+      "category": "Maintainability",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1200"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "One type declaration mentions more distinct other named types than dotnet_code_quality.SK7081.threshold (default 80).",
+      "rationale": "This is the metric `SK7001`–`SK7006` do not carry. A type can be short, shallow and simple in every one of them and still know about forty other types, and every one of those forty is a reason this file has to be reopened when something else changes. Counting the distinct named types a declaration mentions — bases, member types, locals, constructions, static receivers, attributes and the arguments of the generics it names — measures how much of the design has to be held in mind at once to change it, which is what people mean when they say a class is entangled. ⚠ The default of 80 is deliberately far above the textbook 30: on Skala's own tree — which is a Roslyn analyzer host, and therefore names one type per syntax-node kind before it does anything — a threshold of 30 fires on 125 type declarations and 80 fires on six, and those six are the god objects a reader would name unprompted. Reporting the shoulder of the distribution rather than its tail is the \"useless\" outcome this family's rationale names. Splitting a type is a design change with no mechanical form, so there is no fix.",
+      "examples": {
+        "bad": "// one class that names forty other types across its fields, parameters and locals",
+        "good": "// the same work behind two or three collaborators, each naming its own handful"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. What it can be is *useless* — a threshold low enough to fire on ordinary code teaches people to switch the category off — so the default is set above what the reference trees contain and the threshold is an .editorconfig option. ⚠ **Special types are not counted.** `int`, `string`, `object`, `void`, `IEnumerable<T>` and the rest of the language's own vocabulary would add the same handful to every type in the repository and separate nothing. ⚠ **The type itself, anything nesting it, and anything it nests are not counted**: a type that organises itself with nested helpers is not coupled to somebody else's design, and the file a reader opens contains both. ⚠ **A nested type is not descended into** — it has its own declaration and its own measurement, and charging the outer type for the inner one's dependencies would report the same union once per level. ⚠ **An unresolved reference is skipped rather than counted**, which under-reports; on a source slice with no dependency closure (issue #277) it under-reports to nothing, so a zero from this rule on such a tree says the analysis declined and not that the types are decoupled. Measured per *declaration*, like `SK7004`, so a partial type is measured once per file — which is the file a person opens. Generated code is excluded.",
+      "configuration": [
+        "dotnet_code_quality.SK7081.threshold",
+        "dotnet_diagnostic.SK7081.severity"
+      ]
     }
   ]
 }
