@@ -40,3 +40,8 @@ SK3004  | Skala.Async | Warning | A `CancellationToken` is accepted and not pass
 SK3007  | Skala.Async | Warning | A `Task` built from a `using` resource is returned instead of awaited.
 SK3501  | Skala.Lifetime | Warning | A disposable is created in a local and never disposed.
 SK3503  | Skala.Lifetime | Warning | An `IAsyncDisposable` is disposed synchronously.
+SK6008  | Skala.Design | Info | An extension method extends `object`.
+SK7040  | Skala.Maintainability | Info | A TODO or FIXME has no issue reference.
+SK7050  | Skala.Maintainability | Warning | A warning-disable pragma has no justification.
+SK7051  | Skala.Maintainability | Warning | A suppression attribute has no justification.
+SK8006  | Skala.Tests | Warning | A skipped xUnit test has no reason.

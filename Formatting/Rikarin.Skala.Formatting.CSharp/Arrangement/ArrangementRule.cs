@@ -10,23 +10,23 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///     applies, and conflating the two produces the wall of suggestions doc 06 warns about.
 /// </summary>
 public static class ArrangeIds {
-    public const string BodyStyle = "SK2001";
-    public const string Var = "SK2002";
-    public const string ObjectCreation = "SK2003";
-    public const string DefaultValue = "SK2004";
-    public const string NullCheckingPattern = "SK2005";
-    public const string EmptyString = "SK2006";
-    public const string ThisQualifier = "SK2007";
-    public const string RedundantBraces = "SK2008";
-    public const string RedundantParentheses = "SK2009";
-    public const string Usings = "SK2010";
-    public const string PredefinedType = "SK2011";
-    public const string Accessibility = "SK2012";
-    public const string NamespaceBody = "SK2013";
-    public const string TrailingComma = "SK2014";
-    public const string StaticQualifier = "SK2015";
-    public const string ArgumentStyle = "SK2016";
-    public const string DiscardDeclaration = "SK2017";
+    public const string BodyStyle = "SK0201";
+    public const string Var = "SK0202";
+    public const string ObjectCreation = "SK0203";
+    public const string DefaultValue = "SK0204";
+    public const string NullCheckingPattern = "SK0205";
+    public const string EmptyString = "SK0206";
+    public const string ThisQualifier = "SK0207";
+    public const string RedundantBraces = "SK0208";
+    public const string RedundantParentheses = "SK0209";
+    public const string Usings = "SK0210";
+    public const string PredefinedType = "SK0211";
+    public const string Accessibility = "SK0212";
+    public const string NamespaceBody = "SK0213";
+    public const string TrailingComma = "SK0214";
+    public const string StaticQualifier = "SK0215";
+    public const string ArgumentStyle = "SK0216";
+    public const string DiscardDeclaration = "SK0217";
 
     /// <summary>⚠ A rewrite was reverted because re-binding produced a diagnostic it had not.</summary>
     public const string Reverted = "SK9098";

@@ -55,6 +55,38 @@ the SDK's.
 deterministic choice (`supersedes` wins; the superseded one is recorded in the SARIF as suppressed
 with reason `superseded`).
 
+## Arrangement
+
+These are the structural-cleanup findings emitted by `verify` from the same fixed-point pipeline as
+`arrange --check`. A finding tells the caller which cleanup rules contributed to the file diff; run
+`skala arrange` to apply that diff. It deliberately has no generic `skala fix` edit because several
+overlapping arrangement rules may contribute to one document rewrite.
+
+| ID | Rule | Scope |
+|---|---|---|
+| `SK0201` | Block body versus expression body | Syntax |
+| `SK0202` | `var` versus an explicit local type | Semantic |
+| `SK0203` | Target-typed versus explicit object creation | Semantic |
+| `SK0204` | `default` versus `default(T)` | Semantic |
+| `SK0205` | Null-checking pattern | Semantic |
+| `SK0206` | Empty literal versus `string.Empty` | Semantic |
+| `SK0207` | Instance-member `this.` qualifier | Semantic |
+| `SK0208` | Redundant control-statement braces | Syntax |
+| `SK0209` | Redundant parentheses (`arrange --aggressive`) | Syntax |
+| `SK0210` | Using sorting, placement and removal | Syntax, with semantic removal when loaded |
+| `SK0211` | Predefined keyword versus framework type name | Semantic |
+| `SK0212` | Redundant accessibility modifier | Syntax |
+| `SK0213` | File-scoped versus block-scoped namespace | Syntax |
+| `SK0214` | Trailing comma | Syntax |
+| `SK0215` | Static-member type qualifier | Semantic |
+| `SK0216` | Named versus positional argument | Semantic |
+| `SK0217` | Explicit versus implicit discard declaration | Syntax |
+
+⚠ **ID correction before 2.0.** These rules initially used `SK20nn` for `nn` 01 through 17, which is
+the correctness range and already contains allocated rules. The mapping is mechanical (`SK20nn` →
+`SK02nn`), but an old baseline must not replace those strings blindly: `SK2007`, `SK2013` and
+`SK2015` also name live correctness rules. Regenerate arrangement findings with `verify` instead.
+
 ## SK1000 — Modernization
 
 The reason the tool exists in an AI-heavy workflow. These are not bugs; they are code written in an
@@ -289,11 +321,11 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **109** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **39** | **36.1 %** |
+| Rules this document names | **126** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **61** | **48.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **57** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **52** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
@@ -425,8 +457,8 @@ in a `HashSet` and gets reference equality.
 ### ⚠ Declared cut with no recorded reason — reclassified as outstanding
 
 M7's retrospective says "twenty of the twenty-three were cut" and then gives reasons for eight of
-them. These twelve have no reason recorded anywhere in this document or in the commit that wrote it,
-so they are **outstanding**, not cut:
+them. The following twelve had no reason recorded anywhere in this document or in the commit that
+wrote it, so they were **outstanding**, not cut:
 
 `SK4001` LINQ in a hot path · `SK4002` closure allocation in a hot loop · `SK4003` `params` array at
 a call site that could use a span · `SK4004` boxing in a constraint-satisfiable position ·
@@ -435,8 +467,10 @@ value · `SK4008` async state machine for a synchronous method · `SK6001` (reti
 `SK6004` interface with one implementation · `SK6008` extension method on `object` ·
 `SK8006` `[Skip]` without a reason · `SK8007` non-deterministic input in an assertion path.
 
-Saying "no reason was recorded" is the point. Two of them look cheap and obviously right
-(`SK8006`, `SK6008`) and their absence is a gap rather than a decision.
+Saying "no reason was recorded" is the point. `SK6008` and `SK8006` now ship; `SK6001` is retired
+as a duplicate allocation. The other nine remain outstanding. Neither shipped rule fabricates a
+fix: choosing an extension receiver or writing a skip reason requires information only the author
+has.
 
 ### Outstanding, with what each is waiting on
 
@@ -445,16 +479,25 @@ reason is kept; it is a description of remaining work, not a disposal.
 
 | Group | IDs | Waiting on |
 |---|---|---|
-| Declaration-shape rewrites | `SK1001`, `SK1002`, `SK1008` | The unsafe-fix path and an `--include` story. Each is a good rule and none is a *safe* fix (M5) |
-| Evaluation-changing rewrites | `SK1006`, `SK1012`, `SK1015` | The guard that makes each provably behaviour-preserving is most of the rule (M5) |
+| Declaration-shape rewrites | `SK1002`, `SK1008` | The unsafe-fix path and an `--include` story. Each is a good rule and neither is a *safe* fix (M5) |
+| Evaluation-changing rewrites | `SK1012` | The guard that makes it provably behaviour-preserving is most of the rule (M5) |
 | ⚠ Hot-path rules | `SK1022`, `SK1025`, `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
-| The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1011`, `SK1013`, `SK1014`, `SK1021`, `SK1023`, `SK1024`, `SK1026`, `SK1028`, `SK1029`, `SK1031`, `SK1033`, `SK1036` | Nothing recorded. Not started |
-| Correctness | `SK2003`, `SK2005`, `SK2008`–`SK2011`, `SK2014`, `SK2016` | Nothing recorded beyond the shipping bar. Not started |
+| The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1011`, `SK1013`, `SK1014`, `SK1021`, `SK1023`, `SK1024`, `SK1026`, `SK1028`, `SK1029`, `SK1036` | Nothing recorded. Not started |
+| Correctness | `SK2002`, `SK2003`, `SK2005`, `SK2008`–`SK2011`, `SK2014`, `SK2016` | Nothing recorded beyond the shipping bar. Not started |
 | ⚠ Correctness, partly disposed of by a compiler warning | `SK2001`, `SK2004`, `SK2012` | § "The compiler already says it" measures which spellings `csc` reports. What is left of each is the shape it does *not*: an always-true comparison that is not to an integral constant; an `IEquatable<T>` with no `GetHashCode`; `Prop = Prop` and `a.P == a.P`, where a property accessor may have a side effect and the fix is therefore not mechanical |
 | Async and lifetime | `SK3003`, `SK3009`, `SK3502` | Nothing recorded. Not started |
 | ⚠ Async, partly disposed of by a compiler warning | `SK3005` | `CS4014` covers the fire-and-forget inside an `async` method. What is left is the same call in a *synchronous* method, where the compiler says nothing — and where the repair is to make the caller `async`, which changes its signature. A fixless form is not disposed of |
-| Security | `SK5001`–`SK5009` | **M8**, and deliberately last: a wrong security rule is worse than a missing one |
-| Maintainability, non-metric | `SK7030`, `SK7040`, `SK7050`, `SK7051`, `SK7060` | Nothing recorded. Not started |
+| Security | `SK5003`, `SK5004`, `SK5006`, `SK5008` | The remaining M8 rules; a wrong security rule is worse than a missing one |
+| Maintainability, non-metric | `SK7030`, `SK7060` | Nothing recorded. Not started |
+
+### Priority 1 hygiene rules
+
+`SK6008`, `SK7040`, `SK7050`, `SK7051` and `SK8006` now ship. They are deliberately conservative:
+the object-extension and suppression-attribute rules bind the framework symbols they name; the TODO
+rule accepts URLs, hash-number issues and project keys; a pragma accepts an adjacent meaningful
+comment; and the skipped-test rule reports only a constant empty or placeholder xUnit `Skip` value.
+All five are report-only because no honest mechanical edit can choose a receiver contract, create an
+issue, or write the author's justification.
 
 ### ⚠ Decisions that rest on a reference-tree count, and are awaiting revisit
 

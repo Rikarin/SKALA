@@ -1210,7 +1210,7 @@ through the harness. In full in the register; in one line each:
 | SK-FUZZ-0003 | idempotency | mixed line endings converge in two passes, not one | 22 B |
 | SK-FUZZ-0004 | idempotency | the closing `]` of an array-rank specifier split across lines is indented eight columns on the first pass and four on the second | 33 B |
 | SK-FUZZ-0005 | token equivalence | an interpolated string inside a formatter-off span; found by `./build.sh Lint` refusing to format the fuzzer's own source | 74 B |
-| SK-FUZZ-0006 | pair idempotency | a comment between two usings, one of which carries interior whitespace: SK2010 applies and the second pipeline pass still wants an edit | 45 B |
+| SK-FUZZ-0006 | pair idempotency | a comment between two usings, one of which carries interior whitespace: SK0210 applies and the second pipeline pass still wants an edit | 45 B |
 | SK-FUZZ-0007 | whitespace absorption | a blank line appears between two members because the **input** line was wider than the margin — from two files differing in one gap | 2×60 B |
 
 ⚠ **SK-FUZZ-0004 is the argument for this whole section in one case.** The *converged* answer is the

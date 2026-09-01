@@ -31,6 +31,44 @@ public sealed class RuleCatalogTests {
         Path.Combine(RepositoryRoot, "docs", "plan", "08-rule-catalogue.md");
 
     /// <summary>
+    ///     Arrangement findings belong to the formatting band and every declared id is catalogue-backed.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ These constants once occupied SK2001–SK2017, colliding with the correctness allocation.
+    ///     Reading the declaration source here keeps the dependency graph one-way: the metadata tests do
+    ///     not need a reference to the formatting implementation in order to guard its public ids.
+    /// </remarks>
+    [Fact]
+    public void ArrangementIds_AreUniqueRegisteredFormattingIds() {
+        var path = Path.Combine(
+            RepositoryRoot,
+            "Formatting",
+            "Rikarin.Skala.Formatting.CSharp",
+            "Arrangement",
+            "ArrangementRule.cs"
+        );
+        var source = File.ReadAllText(path);
+        var ids = System.Text.RegularExpressions.Regex.Matches(
+            source,
+            "public const string \\w+ = \\\"(?<id>SK\\d{4})\\\";"
+        )
+            .Cast<System.Text.RegularExpressions.Match>()
+            .Select(static match => match.Groups["id"].Value)
+            .Where(static id => !id.StartsWith("SK9", StringComparison.Ordinal))
+            .ToList();
+
+        Assert.Equal(17, ids.Count);
+        Assert.Equal(ids.Count, ids.Distinct(StringComparer.Ordinal).Count());
+
+        foreach (var id in ids) {
+            Assert.StartsWith("SK0", id, StringComparison.Ordinal);
+            var rule = RuleCatalog.Find(id);
+            Assert.NotNull(rule);
+            Assert.Equal("Formatting", rule!.Category);
+        }
+    }
+
+    /// <summary>
     ///     ⚠ The coverage block in doc 08 is generated, and this is what stops it going stale.
     /// </summary>
     /// <remarks>

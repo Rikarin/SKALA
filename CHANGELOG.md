@@ -13,6 +13,24 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Added — five conservative hygiene analyzers
+
+The first post-audit rule set now ships: `SK6008` flags extension methods on `object`; `SK7040`
+requires TODO/FIXME comments to point to an issue; `SK7050` and `SK7051` require reasons on pragma
+and attribute suppressions; and `SK8006` requires a meaningful xUnit skip reason. They are
+report-only because Skala cannot truthfully invent the missing receiver contract, issue, or prose.
+Every semantic name is resolved before reporting, and each rule has at least as many negative
+fixtures as positive ones.
+
+### Fixed — arrangement findings occupied correctness rule ids
+
+The seventeen `arrange --check` findings now use `SK0201`–`SK0217`, the formatting and arrangement
+range. They previously used `SK2001`–`SK2017`, colliding with the correctness catalogue — including
+the live `SK2007`, `SK2013` and `SK2015` analyzers. The mapping is mechanical (`SK20xx` → `SK02xx`),
+but existing baselines should be regenerated rather than rewritten because an old colliding id may
+represent either rule. The arrangement ids are now in `rules.json`, the permanent allocation
+register and generated rule documentation, with a test enforcing their band and uniqueness.
+
 ### Fixed — the code-scanning page listed 428 accepted findings as open alerts
 
 ⚠ **The SARIF shape changed, which is a major bump under ADR-012.** `SarifSurface` will report the

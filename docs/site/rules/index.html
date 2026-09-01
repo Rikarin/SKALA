@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 47 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 69 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -41,6 +41,7 @@
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
 <tr><td><a href="SK6003.html">SK6003</a></td><td>An abstract type has a public constructor</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK6008.html">SK6008</a></td><td>An extension method extends <code>object</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -52,6 +53,23 @@
 <tr><td><a href="SK0001.html">SK0001</a></td><td>The file is not formatted</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK0002.html">SK0002</a></td><td>The line is over the width and nothing in it can break</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK0003.html">SK0003</a></td><td>The documentation comment is not well-formed XML</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK0201.html">SK0201</a></td><td>The body style is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK0202.html">SK0202</a></td><td>The local variable type is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK0203.html">SK0203</a></td><td>The object creation is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK0204.html">SK0204</a></td><td>The default value expression is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK0205.html">SK0205</a></td><td>The null check is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK0206.html">SK0206</a></td><td>The empty string expression is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK0207.html">SK0207</a></td><td>The instance-member qualifier is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK0208.html">SK0208</a></td><td>The control-statement braces are not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK0209.html">SK0209</a></td><td>The expression parentheses are not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK0210.html">SK0210</a></td><td>The using directives are not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK0211.html">SK0211</a></td><td>The predefined type spelling is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK0212.html">SK0212</a></td><td>The accessibility modifier is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK0213.html">SK0213</a></td><td>The namespace declaration is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK0214.html">SK0214</a></td><td>The trailing comma is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK0215.html">SK0215</a></td><td>The static-member qualifier is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK0216.html">SK0216</a></td><td>The argument naming style is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK0217.html">SK0217</a></td><td>The discard declaration is not arranged</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
 </tbody>
 </table>
 </div>
@@ -78,6 +96,9 @@
 <tr><td><a href="SK7006.html">SK7006</a></td><td>The member nests deeper than the threshold</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK7010.html">SK7010</a></td><td>Public API without a documentation comment</td><td><span class="tag sev-none">none</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK7020.html">SK7020</a></td><td>Duplicated block</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK7040.html">SK7040</a></td><td>TODO or FIXME has no issue reference</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK7050.html">SK7050</a></td><td>A warning-disable pragma has no justification</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK7051.html">SK7051</a></td><td>A suppression attribute has no justification</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -128,6 +149,7 @@
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
 <tr><td><a href="SK8005.html">SK8005</a></td><td><code>Thread.Sleep</code> in a test</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK8006.html">SK8006</a></td><td>A skipped test has no reason</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>

@@ -95,6 +95,457 @@
       "configuration": []
     },
     {
+      "id": "SK0201",
+      "concept": "arrange-body-style",
+      "title": "The body style is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange` would change a block body to an expression body or the reverse.",
+      "rationale": "Body shape is cleanup rather than whitespace: changing `{ return value; }` to `=> value` rewrites syntax even when it preserves behavior. The finding is produced from the arranger's actual fixed-point edit, so `verify` and `arrange` share one implementation and one effective configuration.",
+      "examples": {
+        "bad": "int Value() { return 1; }",
+        "good": "int Value() => 1;"
+      },
+      "falsePositives": "None relative to the effective configuration. Formatter-off regions are excluded and every proposed tree rewrite passes the arrangement safety checks before it is reported.",
+      "configuration": [
+        "resharper_csharp_method_or_operator_body",
+        "resharper_csharp_local_function_body",
+        "resharper_csharp_constructor_or_destructor_body",
+        "resharper_csharp_accessor_owner_body",
+        "resharper_csharp_use_heuristics_for_body_style"
+      ]
+    },
+    {
+      "id": "SK0202",
+      "concept": "arrange-var",
+      "title": "The local variable type is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange` would use `var` or an explicit local type under the configured preference.",
+      "rationale": "Whether `var` preserves the declared type is a semantic question, especially for numeric conversions, interfaces and base types. The rule binds the initializer and rewrites only when the configured direction preserves the type.",
+      "examples": {
+        "bad": "List<int> values = new List<int>();",
+        "good": "var values = new List<int>();"
+      },
+      "falsePositives": "None relative to the effective configuration. The rule is skipped when no trustworthy semantic model is available.",
+      "configuration": [
+        "csharp_style_var_for_built_in_types",
+        "csharp_style_var_when_type_is_apparent",
+        "csharp_style_var_elsewhere"
+      ]
+    },
+    {
+      "id": "SK0203",
+      "concept": "arrange-target-typed-new",
+      "title": "The object creation is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "9.0",
+      "summary": "`skala arrange` would add or remove the type in an object creation expression.",
+      "rationale": "Target-typed `new` removes a repeated type only where the surrounding context supplies exactly that type. Binding is required so a cleanup never changes overload resolution or the constructed type.",
+      "examples": {
+        "bad": "List<int> values = new List<int>();",
+        "good": "List<int> values = new();"
+      },
+      "falsePositives": "None relative to the effective configuration and language version. Unresolved or differently typed constructions are left alone.",
+      "configuration": [
+        "resharper_csharp_object_creation_when_type_evident",
+        "resharper_csharp_object_creation_when_type_not_evident"
+      ]
+    },
+    {
+      "id": "SK0204",
+      "concept": "arrange-default-literal",
+      "title": "The default value expression is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "7.1",
+      "summary": "`skala arrange` would use `default` or `default(T)` under the configured preference.",
+      "rationale": "A default literal is safe only when its target type is known. The semantic rule proves that target before removing a written type, and can restore the explicit form when the configuration asks for it.",
+      "examples": {
+        "bad": "CancellationToken token = default(CancellationToken);",
+        "good": "CancellationToken token = default;"
+      },
+      "falsePositives": "None relative to the effective configuration. Expressions without a stable target type are not rewritten.",
+      "configuration": [
+        "resharper_csharp_default_value_when_type_evident",
+        "resharper_csharp_default_value_when_type_not_evident"
+      ]
+    },
+    {
+      "id": "SK0205",
+      "concept": "arrange-null-pattern",
+      "title": "The null check is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "9.0",
+      "summary": "`skala arrange` would change the configured null-checking pattern.",
+      "rationale": "Equality operators may be overloaded, so changing `x != null` into a pattern is not merely textual. The arranger resolves the operator and runs its diagnostic-delta safety check before keeping the rewrite.",
+      "examples": {
+        "bad": "if (value != null) Use(value);",
+        "good": "if (value is not null) Use(value);"
+      },
+      "falsePositives": "Types whose equality operator could change the meaning are left alone.",
+      "configuration": [
+        "resharper_csharp_null_checking_pattern_style"
+      ]
+    },
+    {
+      "id": "SK0206",
+      "concept": "arrange-empty-string",
+      "title": "The empty string expression is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange` would use the configured empty-string spelling.",
+      "rationale": "The configured cleanup style chooses between the empty literal and `string.Empty`. Binding prevents a same-named member on another type from being mistaken for the framework field.",
+      "examples": {
+        "bad": "var text = \"\";",
+        "good": "var text = string.Empty;"
+      },
+      "falsePositives": "None relative to the effective configuration. Only the framework string type is recognised.",
+      "configuration": [
+        "resharper_empty_string"
+      ]
+    },
+    {
+      "id": "SK0207",
+      "concept": "arrange-this-qualifier",
+      "title": "The instance-member qualifier is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange` would add or remove `this.` for the referenced member kind.",
+      "rationale": "Adding or removing `this.` is safe only when the resulting identifier binds to the same field, property, method or event. The arranger compares symbols and reverts a rewrite that changes binding.",
+      "examples": {
+        "bad": "this._value = value;",
+        "good": "_value = value;"
+      },
+      "falsePositives": "Shadowed names and any rewrite that changes symbol binding are left untouched.",
+      "configuration": [
+        "dotnet_style_qualification_for_field",
+        "dotnet_style_qualification_for_property",
+        "dotnet_style_qualification_for_method",
+        "dotnet_style_qualification_for_event"
+      ]
+    },
+    {
+      "id": "SK0208",
+      "concept": "arrange-redundant-braces",
+      "title": "The control-statement braces are not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange` would add or remove braces under the configured cleanup style.",
+      "rationale": "Brace cleanup rewrites the statement tree rather than whitespace. The rule preserves dangling-else ownership, directives, declarations and formatter-off regions before offering an edit.",
+      "examples": {
+        "bad": "if (ready) { Run(); }",
+        "good": "if (ready) Run();"
+      },
+      "falsePositives": "Branches whose braces carry declarations, directives, comments or control-flow meaning are retained.",
+      "configuration": [
+        "resharper_csharp_braces_redundant"
+      ]
+    },
+    {
+      "id": "SK0209",
+      "concept": "arrange-redundant-parentheses",
+      "title": "The expression parentheses are not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange --aggressive` would remove redundant parentheses.",
+      "rationale": "Parenthesis removal is the arranger's highest-risk syntactic cleanup and is therefore gated by `--aggressive`. It uses Roslyn precedence and refuses directive or trivia shapes whose ownership would change.",
+      "examples": {
+        "bad": "return (value);",
+        "good": "return value;"
+      },
+      "falsePositives": "The rule is off unless `--aggressive` is selected. Parentheses required for precedence or configured readability remain.",
+      "configuration": [
+        "resharper_csharp_parentheses_redundancy_style",
+        "dotnet_style_parentheses_in_arithmetic_binary_operators",
+        "dotnet_style_parentheses_in_relational_binary_operators",
+        "dotnet_style_parentheses_in_other_binary_operators"
+      ]
+    },
+    {
+      "id": "SK0210",
+      "concept": "arrange-usings",
+      "title": "The using directives are not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange` would sort, place or remove using directives.",
+      "rationale": "Sorting and placement are syntactic; removal is conservative and occurs only when the directive is unused in every loaded compilation containing the file. One id represents the fixed-point using block because the edits overlap and must be applied together.",
+      "examples": {
+        "bad": "using System.Text;\nusing System;",
+        "good": "using System;\nusing System.Text;"
+      },
+      "falsePositives": "No using is removed without semantic agreement from every owning compilation. In syntactic mode the directives are only sorted and placed.",
+      "configuration": [
+        "resharper_sort_usings",
+        "dotnet_sort_system_directives_first",
+        "csharp_using_directive_placement",
+        "resharper_csharp_keep_nontrivial_alias",
+        "resharper_remove_only_unused_aliases"
+      ]
+    },
+    {
+      "id": "SK0211",
+      "concept": "arrange-predefined-type",
+      "title": "The predefined type spelling is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange` would use a keyword or framework type name under the configured preference.",
+      "rationale": "The declaration and member-access preferences are independent. Binding distinguishes `System.Int32` from a same-named user type before replacing it with `int`, or performs the reverse cleanup when configured.",
+      "examples": {
+        "bad": "Int32 value = 0;",
+        "good": "int value = 0;"
+      },
+      "falsePositives": "Only predefined framework types are rewritten; user types with similar names are ignored.",
+      "configuration": [
+        "dotnet_style_predefined_type_for_locals_parameters_members",
+        "dotnet_style_predefined_type_for_member_access"
+      ]
+    },
+    {
+      "id": "SK0212",
+      "concept": "arrange-accessibility",
+      "title": "The accessibility modifier is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange` would omit an accessibility modifier that matches the language default.",
+      "rationale": "The rule knows the language-defined default for each declaration kind and removes only an explicitly written modifier equal to it. It does not infer project API policy.",
+      "examples": {
+        "bad": "private int value;",
+        "good": "int value;"
+      },
+      "falsePositives": "Only modifiers identical to the C# default for that declaration are removed.",
+      "configuration": [
+        "dotnet_style_require_accessibility_modifiers"
+      ]
+    },
+    {
+      "id": "SK0213",
+      "concept": "arrange-namespace",
+      "title": "The namespace declaration is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "10.0",
+      "summary": "`skala arrange` would use the configured file-scoped or block-scoped namespace form.",
+      "rationale": "Namespace form is a tree rewrite with trivia and using-directive ownership consequences. The arrangement pipeline performs it together with using placement and verifies the combined result reaches a fixed point.",
+      "examples": {
+        "bad": "namespace Sample {\n    class C { }\n}",
+        "good": "namespace Sample;\n\nclass C { }"
+      },
+      "falsePositives": "Files whose directives, multiple namespaces or language version make the conversion unsafe are left unchanged.",
+      "configuration": [
+        "csharp_style_namespace_declarations"
+      ]
+    },
+    {
+      "id": "SK0214",
+      "concept": "arrange-trailing-comma",
+      "title": "The trailing comma is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange` would add or remove a trailing comma in a supported list.",
+      "rationale": "A trailing comma is a token rather than whitespace, so it belongs to cleanup. The rule distinguishes single-line and multiline lists and follows their separate configuration values.",
+      "examples": {
+        "bad": "var values = new[] {\n    1,\n    2\n};",
+        "good": "var values = new[] {\n    1,\n    2,\n};"
+      },
+      "falsePositives": "Only list forms for which the active language version permits a trailing comma are changed.",
+      "configuration": [
+        "resharper_csharp_trailing_comma_in_multiline_lists",
+        "resharper_csharp_trailing_comma_in_singleline_lists"
+      ]
+    },
+    {
+      "id": "SK0215",
+      "concept": "arrange-static-qualifier",
+      "title": "The static-member qualifier is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange` would add, remove or change a static-member type qualifier.",
+      "rationale": "A qualifier can be removed or replaced only if the resulting reference resolves to the same static member. The rule binds both forms and the pipeline rejects any symbol change.",
+      "examples": {
+        "bad": "Helpers.Create()",
+        "good": "Create()"
+      },
+      "falsePositives": "Ambiguous references and any rewrite that resolves to a different symbol are reverted.",
+      "configuration": [
+        "resharper_csharp_static_members_qualify_members",
+        "resharper_csharp_static_members_qualify_with"
+      ]
+    },
+    {
+      "id": "SK0216",
+      "concept": "arrange-argument-style",
+      "title": "The argument naming style is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`skala arrange` would add or remove argument names under the configured style.",
+      "rationale": "Adding a name requires the resolved parameter; removing one is safe only when the argument already occupies that parameter's position. The rule binds the selected overload and preserves names that carry ordering semantics.",
+      "examples": {
+        "bad": "Move(x: 1, y: 2);",
+        "good": "Move(1, 2);"
+      },
+      "falsePositives": "Unresolved calls, out-of-position arguments and expanded `params` arguments that cannot legally be named are left alone.",
+      "configuration": [
+        "resharper_csharp_arguments_literal",
+        "resharper_csharp_arguments_string_literal",
+        "resharper_csharp_arguments_anonymous_function",
+        "resharper_csharp_arguments_named",
+        "resharper_csharp_arguments_other",
+        "resharper_csharp_arguments_skip_single"
+      ]
+    },
+    {
+      "id": "SK0217",
+      "concept": "arrange-discard-declaration",
+      "title": "The discard declaration is not arranged",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "7.0",
+      "summary": "`skala arrange` would use the configured explicit or implicit discard declaration.",
+      "rationale": "The cleanup preference chooses between `out _` and `out var _`. Both spell the same discard, but the change adds or removes syntax and therefore belongs to arrangement rather than formatting.",
+      "examples": {
+        "bad": "TryRead(out var _);",
+        "good": "TryRead(out _);"
+      },
+      "falsePositives": "Only discard designations are changed; named locals and typed non-discard declarations are preserved.",
+      "configuration": [
+        "resharper_csharp_prefer_explicit_discard_declaration"
+      ]
+    },
+    {
       "id": "SK1001",
       "concept": "collection-expression",
       "title": "Use a collection expression",
@@ -793,6 +1244,31 @@
       ]
     },
     {
+      "id": "SK6008",
+      "concept": "extension-method-on-object",
+      "title": "An extension method extends `object`",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The method appears in completion for every value, even though almost no extension is meaningful for every type.",
+      "rationale": "An extension method is an API surface projected onto its receiver type. Using `object` projects it onto every string, integer, collection, task and domain value in the program, making completion noisier and making accidental calls easy. A narrower receiver also states the contract the implementation already relies on. There is no mechanical fix: selecting that receiver is an API-design decision.",
+      "examples": {
+        "bad": "public static string Dump(this object value) => value.ToString()!;",
+        "good": "public static string Dump(this SyntaxNode value) => value.ToString();"
+      },
+      "falsePositives": "A deliberately universal operation can be valid, especially diagnostics and serialization helpers. The rule reports only a resolved `System.Object` receiver on a real extension method; `dynamic`, a user type named `Object`, ordinary object parameters and narrower receivers are ignored. Suppress or baseline the rare API that is intentionally universal.",
+      "configuration": [
+        "dotnet_diagnostic.SK6008.severity"
+      ]
+    },
+    {
       "id": "SK7001",
       "concept": "cyclomatic-complexity",
       "title": "Cyclomatic complexity is over the threshold",
@@ -1000,6 +1476,81 @@
       ]
     },
     {
+      "id": "SK7040",
+      "concept": "todo-without-issue-reference",
+      "title": "TODO or FIXME has no issue reference",
+      "category": "Maintainability",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An actionable comment has no durable place where its owner, context and completion can be tracked.",
+      "rationale": "A TODO in source is discovered only by someone who happens to open that line. An issue can be assigned, discussed, searched and closed; the comment remains useful as the local pointer to it. The rule accepts a URL, `#123`, or a project key such as `SKALA-123` and does not attempt to invent an issue or remove the comment.",
+      "examples": {
+        "bad": "// TODO: handle cancellation",
+        "good": "// TODO SKALA-123: handle cancellation"
+      },
+      "falsePositives": "Some repositories deliberately use source comments as their backlog. Those projects should disable the rule. Only TODO/FIXME markers at the start of a comment line are actionable, so prose that merely discusses those words and strings containing them are ignored. A marker carrying a URL, hash-number or conventional project issue key is accepted.",
+      "configuration": [
+        "dotnet_diagnostic.SK7040.severity"
+      ]
+    },
+    {
+      "id": "SK7050",
+      "concept": "pragma-without-justification",
+      "title": "A warning-disable pragma has no justification",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The source suppresses one or more diagnostics without telling the next reader why the warning is wrong here.",
+      "rationale": "A local pragma is an explicit exception to a repository rule. Without a reason, nobody can distinguish a deliberate exception from a temporary silencing, decide whether it is still necessary, or safely remove it. The rule accepts a meaningful trailing or immediately preceding comment and never manufactures one, because a generated justification would be worse than none.",
+      "examples": {
+        "bad": "#pragma warning disable CA1822",
+        "good": "#pragma warning disable CA1822 // Called by reflection through the instance."
+      },
+      "falsePositives": "A comment farther away than the immediately preceding nonblank line is not associated with the pragma. The rule checks presence and rejects blank/TODO/FIXME placeholders; it cannot prove that the prose is truthful.",
+      "configuration": [
+        "dotnet_diagnostic.SK7050.severity"
+      ]
+    },
+    {
+      "id": "SK7051",
+      "concept": "suppress-message-without-justification",
+      "title": "A suppression attribute has no justification",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`SuppressMessage` or `UnconditionalSuppressMessage` omits a meaningful `Justification`.",
+      "rationale": "A suppression attribute survives refactoring and is easy to read past, so its reason is part of the code review record. A nonempty `Justification` tells a future reader which analyzer assumption does not hold and whether the exception can be retired. The tool reports the omission but cannot write the explanation on the author's behalf.",
+      "examples": {
+        "bad": "[SuppressMessage(\"Design\", \"CA1024\")]",
+        "good": "[SuppressMessage(\"Design\", \"CA1024\", Justification = \"Reads the filesystem.\")]"
+      },
+      "falsePositives": "Only attributes semantically resolved to the framework suppression types are inspected, so a user attribute with the same short name is ignored. Empty strings and TODO/FIXME/TBD/N/A placeholders are not treated as reasons; the rule cannot assess otherwise substantive-looking prose.",
+      "configuration": [
+        "dotnet_diagnostic.SK7051.severity"
+      ]
+    },
+    {
       "id": "SK8005",
       "concept": "thread-sleep-in-test",
       "title": "`Thread.Sleep` in a test",
@@ -1022,6 +1573,31 @@
       "falsePositives": "The rule fires only where the semantic model resolves the call to `System.Threading.Thread.Sleep`, so a `Sleep` method on a user type of that name is never reported, and neither is anything at all when the symbol did not resolve. It is scoped by attribute rather than by path: the call must sit lexically inside a method carrying a recognised test attribute (`Fact`, `Theory`, `Test`, `TestCase`, `TestMethod`, `Benchmark`), which is the same set `SK3002` uses, so a sleep in a helper method a test calls, in a fixture's constructor, or anywhere in production code is outside the rule. ⚠ A `[Benchmark]` method counts as a test method for this rule because the shared helper says so; a deliberate sleep in a benchmark is the shape most likely to be reported and not wanted. The rule cannot tell a sleep that is a guess from a sleep that is the point of the test — a test of a frame limiter, a debounce, or a file watcher's coalescing window has to advance a real clock, and reports there are true and unwanted. That is what the default severity of `suggestion` and a baseline are for; a repository that wants the rule to bite promotes it in the `[**/*.Tests/**/*.cs]` section its `.editorconfig` already has.",
       "configuration": [
         "dotnet_diagnostic.SK8005.severity"
+      ]
+    },
+    {
+      "id": "SK8006",
+      "concept": "skipped-test-without-reason",
+      "title": "A skipped test has no reason",
+      "category": "Tests",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An xUnit `Fact` or `Theory` is disabled with an empty or placeholder `Skip` value.",
+      "rationale": "A skipped test is removed from the executable specification while the suite remains green. Its reason is the minimum evidence that the skip is deliberate and gives a reviewer somewhere to start when deciding whether it can be restored. No safe fix exists: the tool cannot know why the test was disabled.",
+      "examples": {
+        "bad": "[Fact(Skip = \"TODO\")]",
+        "good": "[Fact(Skip = \"Blocked by #481: test server cannot bind IPv6 in CI.\")]"
+      },
+      "falsePositives": "The rule resolves the attribute to `Xunit.FactAttribute` or `Xunit.TheoryAttribute`, so lookalike user attributes are ignored. A nonconstant Skip expression is also ignored because its runtime value is unknown. Empty strings and TODO/FIXME/TBD placeholders are reported; any other nonblank reason is accepted without judging its quality.",
+      "configuration": [
+        "dotnet_diagnostic.SK8006.severity"
       ]
     },
     {

@@ -1,8 +1,10 @@
+using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Hosting;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Rules;
 using Rikarin.Skala.Rules.Metadata;
 using System.Diagnostics;
 
@@ -32,6 +34,32 @@ public sealed class AnalysisTests {
             Output = string.Empty,
             NoCache = true
         };
+
+    /// <summary>
+    ///     Every analyzer in the package must be instantiated by the built-in host.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The package and fixture harness discover analyzer classes, while <c>skala check</c> keeps
+    ///     an explicit instance list. Without this two lists can disagree and a fully tested analyzer
+    ///     can ship in the package while the CLI silently never runs it.
+    /// </remarks>
+    [Fact]
+    public void AnalyzerHost_OwnsEveryAnalyzerInTheRulesAssembly() {
+        var declared = typeof(SkalaRule).Assembly.GetTypes()
+            .Where(static type => type is { IsAbstract: false, IsPublic: true }
+                && typeof(DiagnosticAnalyzer).IsAssignableFrom(type)
+                && type.GetConstructor(Type.EmptyTypes) is not null
+            )
+            .Select(static type => type.FullName)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        var hosted = AnalyzerHost.Own.Select(static analyzer => analyzer.GetType().FullName)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.NotEmpty(declared);
+        Assert.Equal(declared, hosted);
+    }
 
     /// <summary>
     ///     ⚠ In loose mode there is no project, so half the references are missing and CS0246 is the

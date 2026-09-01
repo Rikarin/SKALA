@@ -55,6 +55,28 @@ SK3004 cancellation-token-not-forwarded
 SK3007 task-returned-from-using
 SK3501 disposable-not-disposed
 SK3503 async-disposable-disposed-synchronously
+SK0201 arrange-body-style
+SK0202 arrange-var
+SK0203 arrange-target-typed-new
+SK0204 arrange-default-literal
+SK0205 arrange-null-pattern
+SK0206 arrange-empty-string
+SK0207 arrange-this-qualifier
+SK0208 arrange-redundant-braces
+SK0209 arrange-redundant-parentheses
+SK0210 arrange-usings
+SK0211 arrange-predefined-type
+SK0212 arrange-accessibility
+SK0213 arrange-namespace
+SK0214 arrange-trailing-comma
+SK0215 arrange-static-qualifier
+SK0216 arrange-argument-style
+SK0217 arrange-discard-declaration
+SK6008 extension-method-on-object
+SK7040 todo-without-issue-reference
+SK7050 pragma-without-justification
+SK7051 suppress-message-without-justification
+SK8006 skipped-test-without-reason
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

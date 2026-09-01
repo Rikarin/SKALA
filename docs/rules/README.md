@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 47 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 69 ids are allocated.
 
 ## Async
 
@@ -26,6 +26,7 @@
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
 | [SK6003](SK6003.md) | An abstract type has a public constructor | suggestion | safe | yes |
+| [SK6008](SK6008.md) | An extension method extends `object` | suggestion | — | no |
 
 ## Formatting
 
@@ -34,6 +35,23 @@
 | [SK0001](SK0001.md) | The file is not formatted | suggestion | safe | yes |
 | [SK0002](SK0002.md) | The line is over the width and nothing in it can break | hint | — | yes |
 | [SK0003](SK0003.md) | The documentation comment is not well-formed XML | hint | — | yes |
+| [SK0201](SK0201.md) | The body style is not arranged | suggestion | — | yes |
+| [SK0202](SK0202.md) | The local variable type is not arranged | suggestion | — | no |
+| [SK0203](SK0203.md) | The object creation is not arranged | suggestion | — | no |
+| [SK0204](SK0204.md) | The default value expression is not arranged | suggestion | — | no |
+| [SK0205](SK0205.md) | The null check is not arranged | suggestion | — | no |
+| [SK0206](SK0206.md) | The empty string expression is not arranged | suggestion | — | no |
+| [SK0207](SK0207.md) | The instance-member qualifier is not arranged | suggestion | — | no |
+| [SK0208](SK0208.md) | The control-statement braces are not arranged | suggestion | — | yes |
+| [SK0209](SK0209.md) | The expression parentheses are not arranged | suggestion | — | yes |
+| [SK0210](SK0210.md) | The using directives are not arranged | suggestion | — | yes |
+| [SK0211](SK0211.md) | The predefined type spelling is not arranged | suggestion | — | no |
+| [SK0212](SK0212.md) | The accessibility modifier is not arranged | suggestion | — | yes |
+| [SK0213](SK0213.md) | The namespace declaration is not arranged | suggestion | — | yes |
+| [SK0214](SK0214.md) | The trailing comma is not arranged | suggestion | — | yes |
+| [SK0215](SK0215.md) | The static-member qualifier is not arranged | suggestion | — | no |
+| [SK0216](SK0216.md) | The argument naming style is not arranged | suggestion | — | no |
+| [SK0217](SK0217.md) | The discard declaration is not arranged | suggestion | — | yes |
 
 ## Lifetime
 
@@ -54,6 +72,9 @@
 | [SK7006](SK7006.md) | The member nests deeper than the threshold | hint | — | yes |
 | [SK7010](SK7010.md) | Public API without a documentation comment | none | — | yes |
 | [SK7020](SK7020.md) | Duplicated block | warning | — | no |
+| [SK7040](SK7040.md) | TODO or FIXME has no issue reference | suggestion | — | yes |
+| [SK7050](SK7050.md) | A warning-disable pragma has no justification | warning | — | yes |
+| [SK7051](SK7051.md) | A suppression attribute has no justification | warning | — | no |
 
 ## Modernization
 
@@ -92,6 +113,7 @@
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
 | [SK8005](SK8005.md) | `Thread.Sleep` in a test | suggestion | — | no |
+| [SK8006](SK8006.md) | A skipped test has no reason | warning | — | no |
 
 ## Tool
 

@@ -347,7 +347,7 @@ public static partial class SkalaCommandLine {
         };
 
         var include = new Option<string[]>("--include") {
-            Description = "Only these rule ids (SK2001…). Repeatable.", Arity = ArgumentArity.ZeroOrMore
+            Description = "Only these rule ids (SK0201…). Repeatable.", Arity = ArgumentArity.ZeroOrMore
         };
         var exclude = new Option<string[]>("--exclude") {
             Description = "Every rule but these. Repeatable.", Arity = ArgumentArity.ZeroOrMore

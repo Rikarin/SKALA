@@ -51,7 +51,7 @@ public sealed class ArrangeCommandTests {
 
         var verified = CliRunner.Run("verify", caller, "--no-cache");
 
-        Assert.DoesNotContain("SK2016", verified.StandardOutput, StringComparison.Ordinal);
+        Assert.DoesNotContain("SK0216", verified.StandardOutput, StringComparison.Ordinal);
     }
 
     sealed class Scratch : IDisposable {
