@@ -440,6 +440,23 @@ the family spells one. A `const` initialiser is not counted, because it is the r
 argument is not counted, because a constant is the only extraction available there and the ones that
 repeat are display names and obsolescence messages.
 
+⚠ **The magic-number rule (#228) was built, measured and cut, and no id was allocated for it.**
+ADR-012 makes an id permanent, so a concept that does not ship must not take one. A prototype with
+nine exemptions — `0`, `1`, `2`, attribute arguments, enum member values, parameter defaults, `case`
+labels, constant patterns, element-access indices, and the initialiser of anything with a name —
+reports **727** findings on Skala's own tree across 132 files, 460 of them outside test code. That
+is 1.8 per file, an order of magnitude past `SK7083`, which is the largest of the four that shipped.
+Volume alone would be arguable. What settles it is *what* it reports: a splitmix64 mixer in
+`CloneDetector` (`0x9E3779B97F4A7C15UL`, and the shifts 30, 27 and 31), and the binary header offsets
+in `CloneIndex` (`AsSpan(4)`, `AsSpan(8)`, `AsSpan(12)`, `20 + version.Length`). In both, naming the
+numbers makes the code *less* readable — a transcribed algorithm stops being recognisable and a
+layout stops being visible — and no syntactic signal separates them from a genuine unexplained
+threshold, because the distinction lives in what the author knew. A tenth exemption would not have
+found it and neither would a hundredth. This is doc [16](16-risks-and-open-questions.md) § R3's "a
+hundred rules that are usually right" with the measurement attached, and `defaultSeverity: none`
+does not rescue it: a rule nobody can afford to turn on is a page in this catalogue and an id taken
+for ever in exchange for nothing.
+
 ## SK8000 — Tests
 
 `SK8001` test method with no assertion · `SK8002` `Assert.True(x == y)` instead of `Assert.Equal` ·
