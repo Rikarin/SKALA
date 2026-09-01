@@ -163,3 +163,4 @@ SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
 SK2040 | Skala.Correctness | Warning | The comparison is by reference where value equality was meant.
 SK2041 | Skala.Correctness | Warning | `base.Equals` or `base.GetHashCode` resolves to `object`'s.
 SK2042 | Skala.Correctness | Warning | The hash code reads state that equality ignores.
+SK2043 | Skala.Correctness | Warning | The hash code depends on state that can change.

@@ -142,6 +142,7 @@ public static class AnalyzerHost {
         new UnintendedReferenceComparisonAnalyzer(),
         new BaseEqualityCallAnalyzer(),
         new UncomparedHashMemberAnalyzer(),
+        new MutableHashMemberAnalyzer(),
     ];
 
     /// <summary>
