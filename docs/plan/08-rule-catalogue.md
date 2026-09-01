@@ -360,7 +360,7 @@ shipped.** "The local declaration is never used" groups nine ReSharper inspectio
 writes the `out` argument either way, so replacing the declaration with `_` removes a name and nothing
 else. Deleting an unread ordinary local cannot promise that: `var response = Send();` is unread and
 deleting it stops the request. `UnusedLocalFunction` is already **CS8321**, a compiler warning, and is
-not re-implemented. The remaining six — `NotAccessedVariable`, `UnusedLocalFunctionParameter`,
+not re-implemented. The remaining seven — `NotAccessedVariable`, `UnusedLocalFunctionParameter`,
 `UnusedLocalFunctionReturnValue`, `UnusedTypeParameter`, `UnusedTupleComponentInReturnValue`,
 `UnusedParameterInPartialMethod`, `PrivateFieldCanBeConvertedToLocalVariable` — each need either every
 call site or a judgement about intent, and are left in [17](17-inspection-parity.md)'s residue where
@@ -383,11 +383,16 @@ and the opposite of this finding.
 ⚠ **`SK6042`–`SK6049` are unallocated and free.** Issues #114 (a member more accessible than its use
 requires), #115 (storage never written after initialization) and #119 (a class with only static
 members) were read in the same pass and **no id was taken for any of them**. #114 and #115 are the
-family
-[17](17-inspection-parity.md) § "Two ways a zero can lie" names: ReSharper splits both into `.Global`
-and `.Local`, every `.Global` scored zero in the recorded sweep because solution-wide analysis was off,
-and Skala analyses one compilation — so only the `.Local` halves are answerable, and the `.Local` half
-of #115 is largely `IDE0044` already. ⚠ `catalogued.json` maps `MemberCanBeInternal.Global` to
+family [17](17-inspection-parity.md) § "Two ways a zero can lie" names: ReSharper splits both into
+`.Global` and `.Local`, every `.Global` scored zero in the recorded sweep because solution-wide
+analysis was off, and Skala analyses one compilation — so only the `.Local` halves are answerable, and
+the `.Local` half of #115 is largely `IDE0044` already. The half of #115 that is genuinely uncovered is
+the auto-property one (`{ get; private set; }` assigned only in a constructor), and it was declined for
+a reason no syntax shows: **Newtonsoft.Json writes private setters by default, with no attribute to
+exempt on**, so the finding has a false-positive story the reference trees cannot be used to measure.
+#119 is `CA1052`, which ships in the .NET SDK and is off by default — hosting it is the cheaper answer
+than reimplementing it, and either way "nothing instantiates this type" stops at the assembly boundary
+for a `public` one. ⚠ `catalogued.json` maps `MemberCanBeInternal.Global` to
 `SK6002`, which this document allocates to *"public member exposing a mutable array or `List<T>`"* — a
 different concept. **That mapping is wrong and should be re-pointed at whichever id #114 eventually
 takes**, or dropped; it is left alone here rather than corrected by an agent that is not shipping #114.
