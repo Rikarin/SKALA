@@ -333,6 +333,38 @@ taking every lock in the table and materialising a whole new collection, and the
 `dict.Count`. Where both fire on the same span the stronger remedy wins and `SK1034` stays in the
 report marked superseded, which is what `Supersession.Apply` is for.
 
+#### What the batch measured
+
+Instrument verified first: the twenty-three positive fixtures were compiled as one project outside
+the repository and swept with `skala check --load=workspace`, and all twenty-three fired. The same
+command was then run over Skala's own tree, which compiles.
+
+| Id | Fixtures (+/−) | Skala's own tree | The zero, or the findings |
+|---|---:|---:|---|
+| `SK4030` | 6 / 11 | **12** | all twelve read; all twelve true |
+| `SK4031` | 4 / 11 | 0 | shape present 4×, correctly declined 4× |
+| `SK4032` | 4 / 11 | 0 | shape absent |
+| `SK4033` | 5 / 11 | 0 | shape present 3×, correctly declined 3× |
+| `SK4034` | 4 / 10 | 0 | shape absent |
+
+⚠ **`SK4031`'s and `SK4033`'s zeros are the kind that is evidence, and one of them is the rule's own
+guard firing.** `IntAlign.cs:541` is `foreach (var offset in insertions.Keys.Order())` with
+`insertions[offset]` in the body — the loop deliberately wants the keys in *sorted* order, so
+iterating the dictionary would reorder it, and the guard that the source be exactly `X.Keys` refuses
+it. The other three `SK4031` candidates put `Concat` or `Union` between `Keys` and the loop and read
+the value with `TryGetValue`. `SK4033`'s three are `live.Count == loaded.Count` (two counts, not an
+emptiness test), `live.Values.ToList()` (the snapshot is what was wanted) and a `Count` returned as a
+number.
+
+⚠ **A corpus number for this batch would have been a third kind of zero — the analysis never ran —
+and for a reason narrower than issue #277 records.** `skala.jsonc` excludes `Testing/corpus/**` from
+analysis outright, so `skala check` over those paths reports `SK9023: no C# files were found` and
+exits before any rule is loaded. That is on top of the dependency-closure problem #277 describes.
+Counted syntactically, the corpus holds 8 `foreach`-over-`.Keys`, 2 mentions of
+`ConcurrentDictionary`, 47 lambda-taking `FirstOrDefault`/`Any`/`All`, and none of either string or
+sort shape — so a corpus run would have had something to say about three of the five and could not
+have said it.
+
 ## SK5000 — Security
 
 Deliberately narrow, deliberately loud. Rules here are `error` by default, so they must be right.
