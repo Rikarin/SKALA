@@ -51,33 +51,37 @@ Standing, for every session, unless the current session says otherwise.
 Native Lint Conformance Oracle Sweep Freeze Pairwise Fidelity Unformat Canonical Docs Pack ReleasePlan
 ReleaseDryRun`.
 
-⚠ **`./build.sh` does not currently run on this machine, at any commit, including a clean `master`.**
-`build/_build.csproj` fails with a flood of `CS0246` for `Parameter`, `Solution`, `AbsolutePath` and
-even `NukeBuild` itself. **The cause is not established.** What is measured:
+⚠ **`./build.sh` was broken for a while and the published cause was wrong in every particular.** The
+symptom was a flood of `CS0246` from `build/_build.csproj` for `Parameter`, `Solution`, `AbsolutePath`
+and `NukeBuild` itself. **The cause was that `7c070772` deleted four `using` directives from
+`build/Build.cs` and one from `build/Configuration.cs`.** Restoring them fixes it; nothing about NUKE,
+the SDK or the package was ever involved. What the record should say:
 
-- It reproduces on a pristine `master` with an empty diff, so it is not any change in flight.
-- ⚠ **It is not the SDK pin.** The first diagnosis was that `global.json` pinning `10.0.301` against an
-  installed `10.0.400` starved NUKE's source generator. Editing the pin to `10.0.400` changes nothing —
-  the build fails identically. That diagnosis was published in three places before it was tested, which
-  is the whole of § "How this codebase decides something is proved" being ignored by the person who
-  wrote it.
-- `Nuke.Common.dll` *is* referenced and its namespaces *do* resolve: `Build.cs` line 1 is
-  `using static Nuke.Common.Tools.DotNet.DotNetTasks;` and it compiles. Every other NUKE name in the
-  file comes from a `global using`, and none of those exist.
-- `Nuke.SourceGenerators.dll` is passed to `csc`, and with `EmitCompilerGeneratedFiles=true` it writes
-  no files at all. So the generator loads and emits nothing, with no `CS8785` or `CS8034` to say why.
-- Clearing `build/obj` and `build/bin` does not help; the package under `~/.nuget/packages` is intact.
+- ⚠ **It was never the SDK pin**, and that much was already tested — `global.json` at `10.0.301`
+  against an installed `10.0.400` failed identically at `10.0.400`.
+- ⚠ **It was never the source generator either, and "the generator emits nothing" was measuring a
+  non-event.** `Nuke.SourceGenerators.dll` contains exactly one generator,
+  `StronglyTypedSolutionGenerator`, which emits a strongly-typed `Solution` class and nothing else.
+  **NUKE 10.1.0 ships no global usings at all** — not from the generator, not from
+  `Nuke.Common.props`, not from `Nuke.Common.targets`. A NUKE build file is expected to carry its own
+  `using Nuke.Common;` and friends, so "the global usings are missing" described the normal state of
+  the package and the search went looking for a mechanism that does not exist.
+- ⚠ **The reason a compile error survived a commit is that `build/_build.csproj` is not in
+  `Skala.slnx`.** `dotnet build Skala.slnx`, every `dotnet test`, and CI's whole test leg all pass
+  with `build/` uncompilable — only `./build.sh` itself compiles it, and it is the thing that broke.
+  Any edit under `build/` needs `dotnet build build/_build.csproj` run against it deliberately.
+- ⚠ **It was the same failure on CI**, on a pristine Ubuntu runner, which is what proved the fault was
+  in the repository rather than in one machine's SDK install or NuGet cache. The instruction that used
+  to stand here — do not infer the local failure and the CI failure from each other — was written when
+  nothing connected them, and it is what kept them from being connected.
 
-⚠ **CI is separately red, and has been for a while.** That is known and deliberately not being worked
-on. **Do not infer either failure from the other**: this local one is a NUKE bootstrap that will not
-compile, and nothing here has established that CI fails for the same reason. Do not report red CI as a
-discovery, and do not start fixing it without being asked.
-
-Until then, go around it — `dotnet test` bypasses the NUKE bootstrap entirely:
+`dotnet` drives everything directly when a single project is what you want, and bypasses the NUKE
+bootstrap:
 
 ```bash
-dotnet test Rules/Rikarin.Skala.Rules.Tests/Rikarin.Skala.Rules.Tests.csproj --nologo   # ~3 100 tests, 15 s
+dotnet test Rules/Rikarin.Skala.Rules.Tests/Rikarin.Skala.Rules.Tests.csproj --nologo
 dotnet test Formatting/Rikarin.Skala.Formatting.CSharp.Tests --filter "FullyQualifiedName~TheNameOfIt"
+dotnet build build/_build.csproj                     # the one thing Skala.slnx does not cover
 dotnet build Tools/Rikarin.Skala.Cli -c Release      # then drive `skala` directly for the Lint checks
 ```
 
