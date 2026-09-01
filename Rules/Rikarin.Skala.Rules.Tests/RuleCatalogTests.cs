@@ -30,6 +30,9 @@ public sealed class RuleCatalogTests {
     static string CataloguePath { get; } =
         Path.Combine(RepositoryRoot, "docs", "plan", "08-rule-catalogue.md");
 
+    static string ParityMapPath { get; } =
+        Path.Combine(RepositoryRoot, "Testing", "parity-analysis", "catalogued.json");
+
     /// <summary>
     ///     Arrangement findings belong to the formatting band and every declared id is catalogue-backed.
     /// </summary>
@@ -373,6 +376,86 @@ public sealed class RuleCatalogTests {
                 + "A mapping nothing can set is a mapping that never applies."
             );
         }
+    }
+
+    /// <summary>
+    ///     ⚠ The parity measurement's inspection → <c>SK</c> map, pinned in the one direction that is
+    ///     assertable: whatever a shipped rule claims from ReSharper, the map must credit to that rule.
+    /// </summary>
+    /// <remarks>
+    ///     <c>Testing/parity-analysis/catalogued.json</c> is hand-written, and its README calls it the
+    ///     soft edge of the whole analysis for a reason: an inspection missing from it falls through to
+    ///     the <c>Uncovered</c> residue, so an omission does not read as a mistake in the map — it reads
+    ///     as a gap in the product. Four rules that ship today were being counted as uncovered for
+    ///     exactly that reason, which is what this direction catches.
+    ///     <para>
+    ///         ⚠ <b>The reverse is deliberately not asserted.</b> The <c>Catalogued</c> bucket means "an
+    ///         <c>SK</c> id in doc 08 already names this concept" — allocated is enough and shipped is
+    ///         not required, so entries pointing at ids doc 08 names but nothing implements yet are the
+    ///         map working correctly. A test demanding map ⊆ <c>rules.json</c> would have to be deleted
+    ///         the day one of those is specified. What is checked instead is the weaker fact that holds
+    ///         either way: every value is well formed and is a number the register knows about.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule() {
+        Assert.True(File.Exists(ParityMapPath), $"{ParityMapPath} does not exist; it is what this test reads.");
+
+        var map = new Dictionary<string, string>(StringComparer.Ordinal);
+        using (var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(ParityMapPath))) {
+            foreach (var entry in document.RootElement.EnumerateObject()) {
+                map[entry.Name] = entry.Value.GetString()!;
+            }
+        }
+
+        // ⚠ Anti-vacuity. Both loops below pass happily against an empty map, and an empty map is
+        // the exact shape of the failure this test exists to report.
+        Assert.True(map.Count > 100, $"{ParityMapPath} holds {map.Count} entries; that is not the map.");
+
+        var mapped = RuleCatalog.All.Where(static rule => rule.ReSharperId is not null).ToList();
+        Assert.True(mapped.Count >= 10, $"Only {mapped.Count} rules declare a ReSharper inspection id.");
+
+        var uncredited = new List<string>();
+        foreach (var rule in mapped) {
+            var credited = map.TryGetValue(rule.ReSharperId!, out var id) ? id : null;
+            if (!string.Equals(credited, rule.Id, StringComparison.Ordinal)) {
+                uncredited.Add($"{rule.ReSharperId} — {rule.Id} ships it, the map says {credited ?? "nothing"}");
+            }
+        }
+
+        Assert.True(
+            uncredited.Count == 0,
+            "These shipped rules declare a ReSharper inspection the parity map does not credit to them:\n  "
+            + string.Join("\n  ", uncredited)
+            + "\n\nDirection asserted: rules.json ⊆ catalogued.json, matched on the SK id. An inspection a "
+            + "shipped rule covers and the map omits is counted uncovered by docs/plan/17, which inflates "
+            + "the residue and puts work already done back on the queue."
+        );
+
+        var register = File.ReadAllText(CataloguePath);
+        Assert.True(
+            register.Contains("## SK5000 — Security", StringComparison.Ordinal),
+            $"{CataloguePath} was read but does not look like the register; the check below proves nothing."
+        );
+
+        var shipped = RuleCatalog.All.Select(static rule => rule.Id).ToHashSet(StringComparer.Ordinal);
+        var unknown = new List<string>();
+        foreach (var (inspection, id) in map) {
+            if (!System.Text.RegularExpressions.Regex.IsMatch(id, "^SK[0-9]{4}$")) {
+                unknown.Add($"{inspection} -> '{id}' is not a well-formed rule id");
+            } else if (!shipped.Contains(id) && !register.Contains(id, StringComparison.Ordinal)) {
+                unknown.Add($"{inspection} -> {id}, which neither ships nor is named in doc 08");
+            }
+        }
+
+        Assert.True(
+            unknown.Count == 0,
+            "The parity map credits inspections to ids the register does not know:\n  "
+            + string.Join("\n  ", unknown)
+            + "\n\nDirection asserted: every value is allocated, NOT that every value ships. An id doc 08 "
+            + "names and nothing implements yet is a legitimate Catalogued mapping — that is what the "
+            + "bucket means — so this is the strongest claim that stays true as the catalogue is built out."
+        );
     }
 
     /// <summary>

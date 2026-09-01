@@ -20,6 +20,33 @@ W = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(W))
 
 universe = json.load(open(f"{W}/universe.json"))
+
+
+# ⚠ 81 of the 888 C#-proper rows carry `id: null`, because `universe.py` can only attach
+# an inspection id by joining the export key against the tool's own issue-type dump, and
+# that join misses every inspection newer than the dumped release. Keying the hand-written
+# maps below on `id` alone therefore made those 81 rows bypass both maps in silence and
+# land in `Uncovered` -- an inflated residue that looked exactly like a real gap. Both
+# maps are read through a key-indexed view as well, built with the same id -> export-key
+# transform `universe.py` uses for the join. Keep the two copies of `snake()` in step.
+def snake(s):
+    s = s.replace(".", "_")
+    s = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", s)
+    s = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "_", s)
+    return s.lower()
+
+
+def bykey(m):
+    """Re-index an id-keyed map onto the export keys those ids produce. First id wins,
+    so an id that is already matched directly is never shadowed by a colliding one."""
+    out = {}
+    for iid, val in m.items():
+        b = snake(iid)
+        for cand in (f"resharper_{b}_highlighting", f"resharper_{b}_highlighting_highlighting"):
+            out.setdefault(cand, val)
+    return out
+
+
 opts = json.load(open(f"{REPO}/Core/Rikarin.Skala.Options/options.json"))["options"]
 optbykey = {}
 for o in opts:
@@ -112,7 +139,10 @@ HOSTED = {
     "SpecifyACultureInStringConversionExplicitly": "CA1304/CA1305",
     "SpecifyStringComparison": "CA1307/CA1310",
     "UseStringComparison": "CA1307",
-    "NonReadonlyMemberInGetHashCode": "CA1065-adjacent",
+    # `NonReadonlyMemberInGetHashCode` was here as "CA1065-adjacent". CA1065 is "do not
+    # raise exceptions in unexpected locations" and says nothing about a hash code that
+    # depends on mutable state, so the entry credited a Roslyn analyzer that does not
+    # exist. Removed; see doc 17 § "Two corrections to how this document measured".
     "VirtualMemberCallInConstructor": "CA2214",
     "StaticMemberInGenericType": "CA1000",
     "EmptyGeneralCatchClause": "CA1031",
@@ -152,6 +182,7 @@ HOSTED = {
     "MergeIntoPattern": "IDE0078",
     "UseSymbolAlias": "IDE0001",
 }
+HOSTED_BYKEY = bykey(HOSTED)
 
 
 def hosted(v):
@@ -165,7 +196,7 @@ def hosted(v):
         return "NUnit.Analyzers ships the equivalent NUnit#### diagnostic"
     if b.startswith("xunit_") or iid.startswith("Xunit"):
         return "xunit.analyzers ships the equivalent xUnit#### diagnostic"
-    return HOSTED.get(iid)
+    return HOSTED.get(iid) or HOSTED_BYKEY.get(v["key"])
 
 
 # ---------------------------------------------------------------- option
@@ -196,10 +227,11 @@ def option(v):
 
 # ---------------------------------------------------------------- catalogued
 CATALOGUED = json.load(open(f"{W}/catalogued.json"))
+CATALOGUED_BYKEY = bykey(CATALOGUED)
 
 
 def catalogued(v):
-    return CATALOGUED.get(v["id"] or "")
+    return CATALOGUED.get(v["id"] or "") or CATALOGUED_BYKEY.get(v["key"])
 
 
 # ---------------------------------------------------------------- run
