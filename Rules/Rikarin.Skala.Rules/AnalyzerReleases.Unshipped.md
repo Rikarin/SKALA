@@ -95,3 +95,8 @@ SK6020 | Skala.Design | Warning | An `Enum` constraint has no `struct` beside it
 SK6021 | Skala.Design | Warning | A type is named like an exception and is not one.
 SK6022 | Skala.Design | Info | A type name repeats the keyword the declaration already carries.
 SK6023 | Skala.Design | Info | A type has no members, no base and no attributes.
+SK1040 | Skala.Modernization | Info | Use `T?` instead of `Nullable<T>`.
+SK1041 | Skala.Modernization | Info | Use a compound assignment.
+SK1042 | Skala.Modernization | Info | The nested `if` statements can be combined.
+SK1043 | Skala.Modernization | Info | The `for` loop is a `while`.
+SK1044 | Skala.Modernization | Info | Use `string.IsNullOrEmpty`.

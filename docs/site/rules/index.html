@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 119 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 124 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -161,6 +161,11 @@
 <tr><td><a href="SK1033.html">SK1033</a></td><td>Use <code>TryGetValue</code> or <code>TryAdd</code> instead of <code>ContainsKey</code> and a second lookup</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1034.html">SK1034</a></td><td>Use the <code>Count</code> property, not <code>Count()</code> or <code>Any()</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1035.html">SK1035</a></td><td>Use <code>Enum.GetValues&lt;T&gt;()</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1040.html">SK1040</a></td><td>Use <code>T?</code> instead of <code>Nullable&lt;T&gt;</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1041.html">SK1041</a></td><td>Use a compound assignment</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK1042.html">SK1042</a></td><td>The nested <code>if</code> statements can be combined</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK1043.html">SK1043</a></td><td>The <code>for</code> loop is a <code>while</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK1044.html">SK1044</a></td><td>Use <code>string.IsNullOrEmpty</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 </tbody>
 </table>
 </div>

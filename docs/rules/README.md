@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 119 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 124 ids are allocated.
 
 ## Async
 
@@ -134,6 +134,11 @@
 | [SK1033](SK1033.md) | Use `TryGetValue` or `TryAdd` instead of `ContainsKey` and a second lookup | suggestion | safe | no |
 | [SK1034](SK1034.md) | Use the `Count` property, not `Count()` or `Any()` | suggestion | safe | no |
 | [SK1035](SK1035.md) | Use `Enum.GetValues<T>()` | suggestion | safe | no |
+| [SK1040](SK1040.md) | Use `T?` instead of `Nullable<T>` | suggestion | safe | no |
+| [SK1041](SK1041.md) | Use a compound assignment | suggestion | safe | yes |
+| [SK1042](SK1042.md) | The nested `if` statements can be combined | suggestion | safe | yes |
+| [SK1043](SK1043.md) | The `for` loop is a `while` | suggestion | safe | yes |
+| [SK1044](SK1044.md) | Use `string.IsNullOrEmpty` | suggestion | safe | no |
 
 ## Performance
 

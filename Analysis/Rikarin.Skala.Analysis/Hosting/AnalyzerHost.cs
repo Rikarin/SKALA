@@ -100,7 +100,9 @@ public static class AnalyzerHost {
         new NullConditionalAssignmentAnalyzer(), new DictionaryLookupAnalyzer(),
         new NanComparisonAnalyzer(), new UnusedValueParameterAnalyzer(),
         new RedundantSuppressFinalizeAnalyzer(), new StackAllocInLoopAnalyzer(),
-        new EscapedKeywordAnalyzer()
+        new EscapedKeywordAnalyzer(),
+        new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
+        new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer()
     ];
 
     /// <summary>

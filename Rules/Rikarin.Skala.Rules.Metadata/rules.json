@@ -3057,6 +3057,138 @@
       "configuration": [
         "dotnet_diagnostic.SK6023.severity"
       ]
+    },
+    {
+      "id": "SK1040",
+      "concept": "nullable-short-form",
+      "title": "Use `T?` instead of `Nullable<T>`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A bound `System.Nullable<T>` is written in long form where `T?` names exactly the same type.",
+      "rationale": "`T?` is the spelling every other nullable in the file already uses, so the long form reads as though it meant something different. It is also the form older samples and generated code produce, which is why an assistant writes it: the training data is full of `Nullable<int>` and the language stopped needing it in C# 2.",
+      "examples": {
+        "bad": "Nullable<int> total = null;",
+        "good": "int? total = null;"
+      },
+      "falsePositives": "The name is bound before anything is reported, so a user-defined `Nullable<T>` is never touched. Positions where the short form is not legal syntax are excluded rather than rewritten: the unbound `typeof(Nullable<>)`, a `cref` or `nameof` argument, a `using` alias, a member-access receiver, a pointer element type, and any pattern or `is` type test, because C# rejects a nullable value type in a pattern. Comments and preprocessor directives inside the type name are excluded because the rewrite deletes the text they live in.",
+      "resharperId": "ConvertNullableToShortForm",
+      "supersedes": [],
+      "since": "2.0",
+      "configuration": [
+        "dotnet_diagnostic.SK1040.severity"
+      ]
+    },
+    {
+      "id": "SK1041",
+      "concept": "compound-assignment",
+      "title": "Use a compound assignment",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "An assignment whose right-hand side is a binary operation on the assignment target itself, where the compound operator says it once.",
+      "rationale": "Naming the target twice is the shape a rename can half-finish: `total = subtotal + 1` compiles and is a different program, and nothing in the long form says which of the two occurrences was meant. The compound form cannot drift, and it is the form C# has had since version 1 — the long one is what a model writes because most of its training data predates the habit.",
+      "examples": {
+        "bad": "count = count + 1;",
+        "good": "count += 1;"
+      },
+      "falsePositives": "The direction is safe and the reverse is not: C# defines `x op= y` as `x = (T)(x op y)` with an explicit conversion back to the target's type, which the long form lacks — `byte b; b = b + 1;` does not compile at all, so the rule never sees the shapes where the conversion differs. A cast on the right-hand side is therefore never unwrapped: `long l; l = (int)(l + 1);` truncates and `l += 1` does not. Only whole expression statements are reported, the target must be a chain of plain names so that the two forms evaluate it the same number of times, and the binary operator's left operand must be that same target textually — which excludes `x = x + a + b`, whose left operand is `x + a`. `&&` and `||` have no compound spelling and are excluded. Comments and preprocessor directives between the target and the operator are excluded because the fix deletes that text.",
+      "resharperId": "ConvertToCompoundAssignment",
+      "supersedes": [],
+      "since": "2.0",
+      "configuration": [
+        "dotnet_diagnostic.SK1041.severity"
+      ],
+      "resharperNote": "The export sets `resharper_convert_to_compound_assignment_highlighting = hint` while this rule defaults to `suggestion`. Reading the ReSharper key with `--resharper-severities` therefore lowers it: ReSharper treats the long form as a cosmetic preference, and Skala treats it as the shape a half-finished rename hides in."
+    },
+    {
+      "id": "SK1042",
+      "concept": "mergeable-if",
+      "title": "The nested `if` statements can be combined",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "An `if` whose entire body is another `if` with no `else` is one condition written as two.",
+      "rationale": "The second `if` adds a level of nesting and no branch: there is no path where the outer condition holds and the inner one does not lead anywhere else. `&&` short-circuits, so the merged form evaluates exactly what the nested one did, in the same order — and it stops the nesting counting against the `SK7006` depth metric for a structure that never had two branches.",
+      "examples": {
+        "bad": "if (order != null) {\n    if (order.IsPaid) {\n        Ship(order);\n    }\n}",
+        "good": "if (order != null && order.IsPaid) {\n    Ship(order);\n}"
+      },
+      "falsePositives": "A whole chain is one finding reported at its top, so the fix never overlaps another and the rule is silent after its own fix. Any `else` anywhere in the chain excludes it, as does an outer body holding anything besides the inner `if`. An operand that `&&` would capture — `||`, `??`, a conditional or an assignment — is parenthesised rather than merged flat. Names a merged condition introduces (a pattern variable, an `out var`) have their scope widened by the rewrite, so the whole member is scanned for a colliding declaration first and the finding is dropped if one exists; the scan deliberately over-bails, counting names that could never conflict. Comments and preprocessor directives anywhere outside the surviving body exclude the chain, and so does a `#` inside a condition's string literal.",
+      "resharperId": null,
+      "supersedes": [
+        "S1066"
+      ],
+      "since": "2.0",
+      "configuration": [
+        "dotnet_diagnostic.SK1042.severity"
+      ]
+    },
+    {
+      "id": "SK1043",
+      "concept": "for-loop-is-while",
+      "title": "The `for` loop is a `while`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A `for` with no initializer and no incrementor is a `while` written with two empty clauses.",
+      "rationale": "`for` promises a bound and then declares none, so a reader has to check both semicolons to find out there is nothing in them. The rewrite is exact rather than merely equivalent: with no incrementors, `continue` jumps to the condition in both forms, and nothing else in a `for` is being used.",
+      "examples": {
+        "bad": "for (; !reader.EndOfStream;) {\n    Consume(reader.ReadLine());\n}",
+        "good": "while (!reader.EndOfStream) {\n    Consume(reader.ReadLine());\n}"
+      },
+      "falsePositives": "`for (;;)` is deliberately not reported: it is the idiomatic infinite loop, and `while (true)` says nothing the original did not. A declaration, an initializer or an incrementor in any clause excludes the loop — converting a `for (int i = 0; c;)` would have to lift the declaration into the enclosing scope, which is a different rewrite with a different risk. Comments and preprocessor directives inside the empty clauses exclude it too, because the fix replaces the whole header.",
+      "resharperId": null,
+      "supersedes": [
+        "S1264"
+      ],
+      "since": "2.0",
+      "configuration": [
+        "dotnet_diagnostic.SK1043.severity"
+      ]
+    },
+    {
+      "id": "SK1044",
+      "concept": "null-or-empty-check",
+      "title": "Use `string.IsNullOrEmpty`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A null test on a string followed by an emptiness test on the same string, or the negation of both.",
+      "rationale": "The hand-written form states the check twice and gets its order wrong easily — `x.Length == 0 || x == null` dereferences null before it tests for it. `string.IsNullOrEmpty` also carries `[NotNullWhen(false)]`, so the compiler's null analysis learns from the call what it cannot learn from the pair.",
+      "examples": {
+        "bad": "if (name == null || name.Length == 0) {\n    return \"anonymous\";\n}",
+        "good": "if (string.IsNullOrEmpty(name)) {\n    return \"anonymous\";\n}"
+      },
+      "falsePositives": "`x.Length == 0` and `x == \"\"` are both reported and are the same check: string `==` is ordinal value equality that compares lengths first. `string.Empty` counts as the literal. ⚠ The rule this one must not become is `IsNullOrWhiteSpace`: `x == null || x.Trim().Length == 0` is a different predicate — true for a single space, where `IsNullOrEmpty` is false — and nothing separates the two shapes except what stands between the receiver and `.Length`. Two guards therefore do two different jobs: the emptiness test must be on the same expression the null test named, which is what excludes `Trim()`, and that expression must be a chain of plain names, which is what excludes the double evaluation a call or an indexer would suffer. The receiver must also bind to `System.String`, so an array's `Length` is never matched, and the null test must come first. A longer `||` chain is only matched where the pair is a single subexpression, which left-associativity makes true for `x == null || x.Length == 0 || y` and false for `y || x == null || x.Length == 0`. Comments and preprocessor directives inside the expression exclude it.",
+      "resharperId": null,
+      "supersedes": [
+        "S3256"
+      ],
+      "since": "2.0",
+      "configuration": [
+        "dotnet_diagnostic.SK1044.severity"
+      ]
     }
   ]
 }
