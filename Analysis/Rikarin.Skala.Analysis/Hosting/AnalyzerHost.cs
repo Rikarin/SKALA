@@ -107,6 +107,7 @@ public static class AnalyzerHost {
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new CollectionOwnMethodAnalyzer(), new DictionaryKeyRelookupAnalyzer(),
         new SubstringBeforeSearchAnalyzer(), new ConcurrentDictionaryMemberAnalyzer(),
+        new SortBeforeFilterAnalyzer(),
     ];
 
     /// <summary>

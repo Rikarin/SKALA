@@ -309,6 +309,23 @@ Five ids, one analysis: take the receiver's static type, look at the operator ca
 whether the type itself already offers the cheaper member. They are grouped here rather than folded
 into `SK4001`–`SK4008` for the reason the note above gives about `SK4010`.
 
+⚠ **Three of the batch's five source issues bundled more than one upstream rule, and the ids shipped
+are narrower than the issues asked for.** Named here rather than silently dropped:
+
+- `SK4030` takes `S6602`, `S6603`, `S6605` and `S6617` from issue #204 and leaves three. `S6608`
+  (index instead of `First()`/`Last()` on an `IList`) changes `InvalidOperationException` into
+  `ArgumentOutOfRangeException` on an empty list. `S6609` (`SortedSet.Min`) returns `default(T)` on
+  an empty set where `Enumerable.Min()` throws for a value type. `S6613` (`LinkedList.First`) returns
+  a `LinkedListNode<T>` rather than a `T`. All three are behaviour changes rather than substitutions.
+- `SK4034` takes `S6607` from issue #205 and leaves three. `S6610` (`StartsWith(char)`) replaces a
+  culture-aware comparison with an ordinal one, which is a behaviour change wearing a performance
+  fix's clothes. `S6612` is a closure rule about `ConcurrentDictionary` factory lambdas and is not a
+  LINQ chain at all. `S6618` (`string.Create` over `FormattableString`) is niche.
+- `SK4033` leaves `dict.Keys.Contains(k)` alone, and the reason is worth reading: `Keys` hands back a
+  plain `List<TKey>` whose `Contains` uses `EqualityComparer<TKey>.Default`, while `ContainsKey` uses
+  the comparer the table was *constructed* with. For an `OrdinalIgnoreCase` table the two disagree,
+  and nothing at the call site says which kind of table it is.
+
 ⚠ `SK4033` declares `supersedes: ["SK1034"]`, and it is the first rule to supersede another Skala
 rule rather than a foreign analyzer id. `SK1034` reads `dict.Keys.Count()` and offers
 `dict.Keys.Count`, which is correct and still wrong: on a `ConcurrentDictionary` the cost is `.Keys`
@@ -501,10 +518,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **125** | **80.6 %** |
+| **Shipped** — present in `rules.json` | **126** | **81.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 133 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 134 ids are allocated.
 
 ## Async
 
@@ -160,6 +160,7 @@
 | [SK4031](SK4031.md) | The loop looks up a key it is already holding | warning | safe | no |
 | [SK4032](SK4032.md) | `Substring` is called to feed a search that takes a start index | suggestion | safe | no |
 | [SK4033](SK4033.md) | The `ConcurrentDictionary` member taken is the expensive one | warning | safe | no |
+| [SK4034](SK4034.md) | The collection is sorted before it is filtered | suggestion | safe | no |
 
 ## Security
 

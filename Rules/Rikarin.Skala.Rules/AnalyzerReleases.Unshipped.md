@@ -109,3 +109,4 @@ SK4030 | Skala.Performance | Info | Use the collection's own `Find`/`Exists`/`Tr
 SK4031 | Skala.Performance | Warning | The loop looks up a key it is already holding.
 SK4032 | Skala.Performance | Info | Pass the start index instead of calling `Substring`.
 SK4033 | Skala.Performance | Warning | Take the cheap `ConcurrentDictionary` member.
+SK4034 | Skala.Performance | Info | Filter before sorting.
