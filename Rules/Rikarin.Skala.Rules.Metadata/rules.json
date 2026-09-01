@@ -3873,6 +3873,134 @@
       "configuration": [
         "dotnet_diagnostic.SK6034.severity"
       ]
+    },
+    {
+      "id": "SK3530",
+      "concept": "disposable-field-not-disposed",
+      "title": "The disposable field is not disposed by `Dispose`",
+      "category": "Lifetime",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2952"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "The type implements `IDisposable`, constructs a disposable field, and nothing in the type ever disposes it.",
+      "rationale": "This is the ownership bug that looks finished. `SK3502` reports a type that owns a disposable and is not disposable, which reads as work somebody has not got to yet; here the interface is declared, the `Dispose` is written, and the handle is still never released — so the type reads as one that cleans up after itself to every caller, every reviewer and every tool that checks only for the declaration. What shows up instead is a file that cannot be reopened or a pool that empties, in a process that disposed everything it was supposed to.",
+      "examples": {
+        "bad": "sealed class Store : IDisposable {\n    readonly FileStream stream = new(\"data\", FileMode.Open);\n\n    public void Dispose() {\n        GC.SuppressFinalize(this);\n    }\n}",
+        "good": "sealed class Store : IDisposable {\n    readonly FileStream stream = new(\"data\", FileMode.Open);\n\n    public void Dispose() {\n        stream.Dispose();\n        GC.SuppressFinalize(this);\n    }\n}"
+      },
+      "falsePositives": "⚠ **Disjoint from `SK3502` by construction rather than by deduplication.** This rule requires the owner to implement `IDisposable`; `SK3502` reports only where the owner does *not* implement the contract its field offers. The two predicates cannot both hold for one field, so neither declares `supersedes` — which dedupes on a shared span and would suppress one of the two reports rather than leaving each rule's finding a property of that rule. ⚠ **\"Never disposed\" is asked of the whole type, not of `Dispose`'s body.** The documented pattern puts the work in `Dispose(bool disposing)`, and a private `Shutdown()` called from `Dispose` is just as correct; reading only the entry point would report every faithful implementation of the pattern. Any `Dispose`, `DisposeAsync` or `Close` on the field, anywhere in the declaration, withdraws the finding. ⚠ **Ownership is inferred exactly the way `SK3502` infers it** — a direct object creation in the field's own initializer. A constructor-injected, factory-returned or static field is not reported, because whether this type owns it is not knowable here. ⚠ **Any reference the rule does not recognise withdraws it.** Passing the field as an argument, assigning it again, returning it or casting it are all ways the resource leaves the type, and the rule cannot follow it; only plain member and element reads keep the finding. ⚠ Private fields only, and non-partial types only: a `protected` field may be disposed by a derived type and the other half of a `partial` is not in this tree. A nullable field is skipped because the repair there is `?.Dispose()` and the null case is a decision rather than an edit. ⚠ **The finding is withheld unless the repair has somewhere to land**: the type's own parameterless `Dispose` must have a block body. An expression-bodied, abstract or inherited `Dispose` is the same bug and is not reported. The fix is unsafe because disposal order between owned resources is a property of the type that no edit can read.",
+      "configuration": [
+        "dotnet_diagnostic.SK3530.severity"
+      ]
+    },
+    {
+      "id": "SK3531",
+      "concept": "dispose-async-without-base-call",
+      "title": "The `DisposeAsync` override never calls the base implementation",
+      "category": "Lifetime",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "8.0",
+      "summary": "An `override` of `DisposeAsync` or `DisposeAsyncCore` never reaches the implementation it replaced, so the base type's asynchronous cleanup stops happening.",
+      "rationale": "Asynchronous disposal is a chain: `DisposeAsync` calls a virtual `DisposeAsyncCore`, and each override finishes by calling the one it overrode. An override that skips the base breaks the chain at that link — the base type's final flush, its graceful close, its return to a pool simply stop running. Nothing says so. There is no compiler diagnostic, no test that fails, and the type still satisfies `IAsyncDisposable`; the resource is released when the process ends, or not at all. `CA1063` pins the synchronous pattern and `CA2215` pins the synchronous base call, and neither has an asynchronous counterpart.",
+      "examples": {
+        "bad": "sealed class Buffered : Writer {\n    protected override async ValueTask DisposeAsyncCore() {\n        await queue.DrainAsync();\n    }\n}",
+        "good": "sealed class Buffered : Writer {\n    protected override async ValueTask DisposeAsyncCore() {\n        await queue.DrainAsync();\n        await base.DisposeAsyncCore();\n    }\n}"
+      },
+      "falsePositives": "⚠ **Every finding is provable, and the guards are what makes that true rather than likely.** The overridden method must be declared in *this* compilation and its body must contain at least one invocation. A base in another assembly is a body the rule never reads, and a base whose body is `ValueTask.CompletedTask`, `default` or an empty block loses nothing by being skipped; both withdraw. ⚠ **The cost is a stated gap rather than a hidden one**: a type deriving from a framework base with a real `DisposeAsyncCore` is exactly the case this rule does not cover, and widening it would mean reporting on code the rule cannot see. ⚠ An abstract base has no implementation to lose and is not reported. ⚠ **Any `base.` call at all withdraws it**, not only a call to this method: an override reaching the base type through a different member is participating in the chain in a way the rule has no business second-guessing. ⚠ An override whose entire body is a `throw` is refusing the operation, not forgetting the base. Only the non-generic `ValueTask` and `Task` shapes are matched, and the containing type must implement `IAsyncDisposable`. ⚠ **No fix, and that is a decision.** The call goes last in an override and first in a wrapper, it must be awaited in some bodies and returned in others, and where it belongs among the override's own cleanup is an ordering decision that no edit can read off the text.",
+      "configuration": [
+        "dotnet_diagnostic.SK3531.severity"
+      ]
+    },
+    {
+      "id": "SK3532",
+      "concept": "ref-struct-owns-undisposed-resource",
+      "title": "The `ref struct` owns a disposable and cannot declare it",
+      "category": "Lifetime",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A `ref struct` constructs a field whose `ref struct` type is disposable through the pattern rule alone, and declares no `Dispose()` of its own.",
+      "rationale": "This is the one ownership shape the rest of the family cannot reach. A `ref struct` whose only disposal contract is a public parameterless `Dispose()` is disposable through the language's pattern rule and through nothing else — it implements no interface, so `SK3502`, which asks whether the owner implements the contract the field offers, has no contract to ask about and stays silent by construction. The owner constructs the resource, holds it, and offers its own callers no `using` to write: the release simply never happens, and no analyzer in the family reports it.",
+      "examples": {
+        "bad": "ref struct Session {\n    Lease lease;\n\n    public Session(int size) {\n        lease = new Lease(size);\n    }\n}",
+        "good": "ref struct Session {\n    Lease lease;\n\n    public Session(int size) {\n        lease = new Lease(size);\n    }\n\n    public void Dispose() {\n        lease.Dispose();\n    }\n}"
+      },
+      "falsePositives": "⚠ **The field's type must implement neither `IDisposable` nor `IAsyncDisposable`, and that is the disjointness guard rather than a limitation.** C# 13 lets a `ref struct` implement an interface, and where the field's type does, the ownership is one `SK3502` can see and report; without the test both rules would speak about one field. `supersedes` is the wrong instrument for that — `Supersession.Apply` suppresses the *superseded* finding on a shared span — so the two are made disjoint by construction and a fixture pins it. ⚠ **Ownership is proved, not assumed**: the field must be assigned from a direct object creation, in its own initializer or in a constructor. A field assigned from a constructor parameter is a borrowed resource whose lifetime belongs to the caller, and disposing it here would close something somebody else is still holding. ⚠ The disposal contract asked for is exactly the one `using` binds to: a public, parameterless, non-static `Dispose()` returning `void`. A type declaring only `Dispose(bool)` is reported, because `using` cannot bind to it. ⚠ Partial types are skipped, because the other half may carry the `Dispose` and is not in this tree. ⚠ **No fix.** A correct `Dispose()` decides which fields it releases, in what order, and whether a second call is safe — and the repair may instead be that this type should not own the resource at all. No edit answers that.",
+      "configuration": [
+        "dotnet_diagnostic.SK3532.severity"
+      ]
+    },
+    {
+      "id": "SK3030",
+      "concept": "async-iterator-not-enumerated",
+      "title": "The async iterator is enumerated without `await foreach`",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "AsyncIteratorInvocationWithoutAwaitForeach",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "8.0",
+      "summary": "A method returning `IAsyncEnumerable<T>` is called as a whole statement and the result dropped, so the iterator's body never runs.",
+      "rationale": "An `IAsyncEnumerable<T>` handed to a plain `foreach` does not compile, which is why the mistake takes this shape instead: the iterator is invoked and the result discarded. That compiles, warns about nothing, and does nothing — an async iterator does not start until something enumerates it, so not one statement of the method's body executes. The call reads as work being done and no work is done, which is the failure that survives every test that only checks for an exception.",
+      "examples": {
+        "bad": "async Task RunAsync() {\n    ProcessAsync(items);\n}",
+        "good": "async Task RunAsync() {\n    await foreach (var _ in ProcessAsync(items)) {\n    }\n}"
+      },
+      "falsePositives": "⚠ **Only where the repair compiles.** The nearest enclosing method, local function or lambda must already be `async`, and the statement must sit directly in a block, in a position an `await` is legal in — not a `lock` body, a constructor, an operator or an expression tree. In a synchronous method the same call is the same bug and is not reported, because the repair there is to make the method `async`, which changes its signature and every caller with it; that is the line `SK3503` draws and it is drawn here in the same place. ⚠ **The finding is withheld when `_` is already in scope**, because the rewrite names the loop variable and shadowing an existing local is CS0136 — a fix that parses and does not compile is the one failure a fixing tool may not have. ⚠ **Only the invoked-and-dropped shape.** An `IAsyncEnumerable<T>` bound to a variable that is then never enumerated is the same bug and is not matched: proving that a variable is never enumerated needs flow analysis this rule does not do, and a wrong answer there deletes work rather than adding it. An explicit `_ = ProcessAsync(items);` is not reported either — the discard says the author meant to drop it, and if they were wrong the repair is a decision rather than an edit. ⚠ **The fix is unsafe by declaration**, and not because the edit is uncertain: it turns a statement that does nothing into one that runs the iterator to completion. That is the repair, and it is still a behaviour change somebody should read.",
+      "configuration": [
+        "dotnet_diagnostic.SK3030.severity"
+      ]
+    },
+    {
+      "id": "SK3031",
+      "concept": "async-only-to-await",
+      "title": "The method is `async` only to return an awaited task",
+      "category": "Async",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "ReplaceAsyncWithTaskReturn",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "The method's whole body is `return await X()`, so the `async` state machine exists only to hand back a task the method already had.",
+      "rationale": "An `async` method compiles to a state machine, an allocation and a resumption path. Where the entire body is one `await` whose result is returned unchanged, all of that exists to give the caller a task the method was holding already. Returning it directly removes the machinery and does the same work.",
+      "examples": {
+        "bad": "async Task<int> ReadAsync(Stream source) {\n    return await source.ReadAsync(buffer);\n}",
+        "good": "Task<int> ReadAsync(Stream source) {\n    return source.ReadAsync(buffer);\n}"
+      },
+      "falsePositives": "⚠ **The fix is unsafe and the reason is not the edit.** Eliding the `await` moves exceptions from the returned task to the call — a method that used to fault its task now throws synchronously, at a place the caller may not be catching — and drops the method from every stack trace the task carries. Both are behaviour, both are usually acceptable, and neither is a decision a tool makes. ⚠ **It is outright wrong inside a `using`, which is what `SK3007` reports, and the two are disjoint by construction.** The body matched here must be a *single* statement that is the `return await`, or a single expression body: a `using` declaration needs a statement before the return, and a `using` statement makes the block's one statement a `using` rather than a `return`, so no shape this rule reports can contain one. `supersedes` would be the wrong instrument regardless — `Supersession.Apply` suppresses the *superseded* finding, which is the one carrying the remedy. ⚠ **The operand's type must be the declared return type, not merely awaitable to it.** `await GetValueTask()` inside an `async Task<int>` is legal and `return GetValueTask()` is not; the same test is what excludes `.ConfigureAwait(false)`, whose type is a configured awaitable rather than a task. ⚠ **A nested `await` in the operand withdraws it**: `return await Read(await Open());` would leave an `await` in a method that is no longer `async`, which is CS4032 — a fix that parses and does not compile. ⚠ Only ordinary methods and local functions; `partial`, `abstract` and `extern` are skipped, and lambdas are not matched at all. ⚠ A comment between `async` and the return type, or between `await` and its operand, withdraws the finding rather than being deleted with the keyword.",
+      "resharperNote": "⚠ The export sets `resharper_replace_async_with_task_return_highlighting = none` and this rule defaults to `suggestion`. ReSharper ships the inspection switched off, which is a reasonable default for a change that moves where exceptions surface; doc 00's ninth non-negotiable says a severity comes from what the rule means rather than from how loud it is, and what this one means is \"there is machinery here doing nothing\" — a suggestion. Reading the ReSharper key (off by default, doc 03 § \"Severities\") would silence it.",
+      "configuration": [
+        "dotnet_diagnostic.SK3031.severity"
+      ]
     }
   ]
 }

@@ -145,5 +145,7 @@
   "LocalFunctionCanBeMadeStatic": "SK4020",
   "MemberCanBeMadeStatic.Local": "SK4021",
   "StructCanBeMadeReadOnly": "SK4022",
-  "RedundantCapacityArgument": "SK4023"
+  "RedundantCapacityArgument": "SK4023",
+  "AsyncIteratorInvocationWithoutAwaitForeach": "SK3030",
+  "ReplaceAsyncWithTaskReturn": "SK3031"
 }

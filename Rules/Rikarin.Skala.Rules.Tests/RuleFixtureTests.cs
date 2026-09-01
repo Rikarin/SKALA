@@ -80,6 +80,9 @@ public sealed class RuleFixtureTests {
         new AbstractTypeWithoutAbstractionAnalyzer(),
         new PrivateConstructorOnlyAnalyzer(),
         new PublicConstantAnalyzer(),
+        new UndisposedOwnedFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
+        new RefStructOwnedDisposableAnalyzer(), new AsyncIteratorNotEnumeratedAnalyzer(),
+        new AsyncOnlyToAwaitAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

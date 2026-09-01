@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 150 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 145 ids are allocated.
 
 ## Async
 
@@ -17,6 +17,8 @@
 | [SK3009](SK3009.md) | Review explicitly unsynchronized Lazy in static state | warning | — | no |
 | [SK3020](SK3020.md) | The non-`async` `Task` method returns null | warning | review | no |
 | [SK3021](SK3021.md) | A `SpinLock` is stored in a `readonly` field | warning | review | no |
+| [SK3030](SK3030.md) | The async iterator is enumerated without `await foreach` | warning | review | no |
+| [SK3031](SK3031.md) | The method is `async` only to return an awaited task | suggestion | review | no |
 
 ## Correctness
 
@@ -97,6 +99,9 @@
 | [SK3510](SK3510.md) | A variable already owned by `using` is disposed again | warning | safe | no |
 | [SK3511](SK3511.md) | The `using` resource is built with an object initializer | warning | safe | no |
 | [SK3512](SK3512.md) | A variable captured by `using` is returned | warning | — | no |
+| [SK3530](SK3530.md) | The disposable field is not disposed by `Dispose` | warning | review | no |
+| [SK3531](SK3531.md) | The `DisposeAsync` override never calls the base implementation | warning | — | no |
+| [SK3532](SK3532.md) | The `ref struct` owns a disposable and cannot declare it | warning | — | no |
 
 ## Maintainability
 

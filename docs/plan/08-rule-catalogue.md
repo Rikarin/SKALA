@@ -278,6 +278,68 @@ it cannot rewrite the whole method, neither rule reports.
 ⚠ **Both ship on fixture evidence alone.** The reference trees contain none of either shape — not a
 clean zero, an absent one.
 
+### Disposal contracts and async shape — the ids this batch allocated
+
+⚠ **The prose pass is owed for this block.** What follows is the register doing the one job ADR-012
+needs it to do — the number is taken, and it is written down where the next milestone will read it.
+It is not yet the considered account the sections above carry.
+
+- `SK3530` `disposable-field-not-disposed` — the type implements `IDisposable`, constructs a
+  disposable field, and nothing in it ever disposes the field. ⚠ **This is the half of the ownership
+  question that looks finished**, where `SK3502`'s is the half that looks unfinished: `SK3502`
+  reports an owner that is *not* disposable, this one an owner that **is**. The two are disjoint by
+  construction — this rule requires `Implements(owner, IDisposable)` and `SK3502` requires its
+  negation, so no `supersedes` is involved and neither can suppress the other. ⚠ Disposal is looked
+  for across the **whole type**, not in `Dispose`'s body, because the documented pattern puts the
+  work in `Dispose(bool)` and reading only the entry point would report every correct implementation
+  of it.
+- `SK3531` `dispose-async-without-base-call` — an `override` of `DisposeAsync` or `DisposeAsyncCore`
+  that never reaches the implementation it replaced, so the base type's flush, graceful close or
+  return to a pool stops happening with nothing to say so. `CA1063` pins the synchronous pattern and
+  `CA2215` the synchronous base call; neither has an asynchronous counterpart. **Fixless**: the call
+  goes last in an override and first in a wrapper, and where it belongs among the override's own
+  cleanup is an ordering decision no edit can read. ⚠ **Every finding is provable and the guards are
+  what make that true**: the base must be declared in this compilation and its body must invoke
+  something. The stated cost is that a framework base in another assembly is not covered at all.
+- `SK3532` `ref-struct-owns-undisposed-resource` — ⚠ **the one ownership shape nothing else in this
+  family can reach.** A `ref struct` whose only disposal contract is a public parameterless
+  `Dispose()` is disposable through the language's pattern rule and through nothing else, so
+  `SK3502` — which asks whether the owner implements the contract the field offers — has no contract
+  to ask about and is silent by construction. The owner constructs the resource, holds it, and gives
+  its callers no `using` to write. ⚠ The field's type must implement **neither** `IDisposable` nor
+  `IAsyncDisposable`, which is the disjointness guard rather than a limitation: C# 13 lets a `ref
+  struct` implement an interface, and there the ownership is `SK3502`'s to report. **Fixless**: a
+  correct `Dispose()` decides which fields it releases and in what order, and the repair may instead
+  be that the type should not own the resource.
+- `SK3030` `async-iterator-not-enumerated` — a method returning `IAsyncEnumerable<T>` called as a
+  whole statement, so the iterator's body never starts. A plain `foreach` over one does not compile,
+  which is why the mistake takes this shape instead: it compiles, warns about nothing, and does
+  nothing. ⚠ Only where the repair compiles — an `async` enclosing body, a statement in a block, an
+  awaitable position — which is the line `SK3503` draws, drawn here in the same place. ⚠ The finding
+  is withheld when `_` is already in scope, because the rewrite names the loop variable and
+  shadowing is CS0136. The fix is `fixIsSafe: false` against the issue's proposal: it turns a
+  statement that does nothing into one that runs the iterator, which is the repair and is still a
+  behaviour change somebody should read.
+- `SK3031` `async-only-to-await` — the whole body is `return await X()`, so the state machine exists
+  to hand back a task the method already had. `suggestion`, and `fixIsSafe: false` because eliding
+  the `await` moves exceptions from the returned task to the call and drops the method from the
+  stack traces the task carries.
+
+⚠ **`SK3031` and `SK3007` are disjoint by construction, and the construction is the body shape.**
+`SK3007` reports a task returned out of a `using` that disposes what it awaits, which is exactly
+what `SK3031`'s fix would create — so `supersedes` is the wrong instrument twice over:
+`Supersession.Apply` suppresses the *superseded* finding, and here that would hide the report
+carrying the remedy. Instead `SK3031` matches only a body that is a **single** statement or a single
+expression: a `using` declaration needs a statement before the return, and a `using` statement makes
+the block's one statement a `using` rather than a `return`, so no shape it reports can contain one.
+`ElidingTheAwaitInsideAUsing_IsTheBugSk3007Reports` pins it from the other end — it applies the edit
+by hand to the `using` shape and asserts `SK3007` then fires on the result.
+
+⚠ **`SK4008` is a different concept and stays where it is.** Doc 08 allocated it for "`async` state
+machine for a method that always completes synchronously (→ `ValueTask`)", which is a change of
+return type; `SK3031` removes a state machine and keeps the signature. Issue #55 read the two as one
+and they are not.
+
 ## SK4000 — Performance
 
 `SK4001` LINQ in a per-frame or per-request path (path-scoped, off by default) · `SK4002` closure
@@ -769,6 +831,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **174** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **142** | **82.1 %** |
+| Rules this document names | **169** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **137** | **81.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **19** | includes the twelve declared cut with no reason recorded |

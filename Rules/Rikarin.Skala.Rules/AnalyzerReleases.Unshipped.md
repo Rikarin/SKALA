@@ -126,3 +126,8 @@ SK6031 | Skala.Design | Warning | `readonly` does not protect a mutable field's 
 SK6032 | Skala.Design | Info | An abstract type declares nothing to implement.
 SK6033 | Skala.Design | Warning | A type has only private constructors and is not static.
 SK6034 | Skala.Design | Info | A public constant is baked into every caller.
+SK3530 | Skala.Lifetime | Warning | The disposable field is not disposed by `Dispose`.
+SK3531 | Skala.Lifetime | Warning | The `DisposeAsync` override never calls the base implementation.
+SK3532 | Skala.Lifetime | Warning | The `ref struct` owns a disposable and cannot declare it.
+SK3030 | Skala.Async | Warning | The async iterator is enumerated without `await foreach`.
+SK3031 | Skala.Async | Info | The method is `async` only to return an awaited task.

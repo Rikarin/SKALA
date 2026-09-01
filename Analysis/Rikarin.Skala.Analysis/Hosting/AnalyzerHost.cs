@@ -118,6 +118,9 @@ public static class AnalyzerHost {
         new AbstractTypeWithoutAbstractionAnalyzer(),
         new PrivateConstructorOnlyAnalyzer(),
         new PublicConstantAnalyzer(),
+        new UndisposedOwnedFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
+        new RefStructOwnedDisposableAnalyzer(), new AsyncIteratorNotEnumeratedAnalyzer(),
+        new AsyncOnlyToAwaitAnalyzer(),
     ];
 
     /// <summary>
