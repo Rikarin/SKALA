@@ -72,9 +72,13 @@ public sealed class RepeatedConditionAnalyzer : DiagnosticAnalyzer {
 
             for (var j = 0; j < i; j++) {
                 var earlier = conditions[j];
-                if (earlier.ContainsDirectives
-                    || !ExpressionIdentity.IsRepeatable(earlier)
-                    || !ExpressionIdentity.Same(earlier, later)) {
+
+                // ⚠ The first draft asked `IsRepeatable(earlier)` here as well, and a sabotage
+                // proved it was dead code: `IsRepeatable` is a pure function of the syntax and
+                // `Same` compares the syntax, so two equal conditions always answer it the same
+                // way. The check above is the load-bearing one, and it is the only one — a second
+                // copy of a guard is a second copy that no sabotage can reach.
+                if (earlier.ContainsDirectives || !ExpressionIdentity.Same(earlier, later)) {
                     continue;
                 }
 

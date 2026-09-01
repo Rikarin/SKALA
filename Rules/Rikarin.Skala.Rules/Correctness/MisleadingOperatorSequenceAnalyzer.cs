@@ -61,13 +61,20 @@ public sealed class MisleadingOperatorSequenceAnalyzer : DiagnosticAnalyzer {
         var equals = assignment.OperatorToken;
         var sign = unary.OperatorToken;
 
-        // `x = -1`: spaced normally. `x =-1` and `x=-1`: the two halves are closed up, which is how
-        // a negative literal gets written in a hurry. Only the asymmetric spelling is reported.
-        var spacedBeforeEquals = equals.HasLeadingTrivia || assignment.Left.GetLastToken().HasTrailingTrivia;
+        // ⚠ Two conditions, and both are load-bearing. The `=` and the sign must be written as one
+        // token, and the operand must be pushed away from the sign: that asymmetry is the whole
+        // signal. `x = -1` and `x = - 1` fail the first; `x =-1` and `x=-1` fail the second, and
+        // they are how a negative literal gets written in a hurry and in a compressed style.
+        //
+        // ⚠ A third condition — "there is space before the `=`" — was in the first draft and is
+        // gone. A sabotage removing it turned nothing red, and the reason was that no fixture
+        // separated it from the other two: `x=- 1` groups the operator characters together and
+        // pushes the operand away exactly as `x =- 1` does, so declining it was an exemption with
+        // no argument behind it.
         var closedUpToSign = !equals.HasTrailingTrivia && !sign.HasLeadingTrivia;
         var spacedFromOperand = sign.HasTrailingTrivia || unary.Operand.GetFirstToken().HasLeadingTrivia;
 
-        if (!spacedBeforeEquals || !closedUpToSign || !spacedFromOperand) {
+        if (!closedUpToSign || !spacedFromOperand) {
             return;
         }
 
