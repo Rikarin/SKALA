@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 145 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 134 ids are allocated.
 
 ## Async
 
@@ -54,8 +54,11 @@
 | [SK6021](SK6021.md) | A type is named like an exception and is not one | warning | — | no |
 | [SK6022](SK6022.md) | A type name repeats the keyword the declaration already carries | suggestion | — | yes |
 | [SK6023](SK6023.md) | A type has no members, no base and no attributes | suggestion | — | yes |
-| [SK6040](SK6040.md) | An `out` variable is declared and never read | warning | safe | no |
-| [SK6041](SK6041.md) | A `foreach` variable is declared wider than the element it receives | suggestion | review | no |
+| [SK6030](SK6030.md) | A type is declared in the global namespace | warning | — | yes |
+| [SK6031](SK6031.md) | `readonly` does not protect a mutable field's contents | warning | — | no |
+| [SK6032](SK6032.md) | An abstract type declares nothing to implement | suggestion | — | yes |
+| [SK6033](SK6033.md) | A type has only private constructors and is not static | warning | — | no |
+| [SK6034](SK6034.md) | A public constant is baked into every caller | suggestion | review | no |
 
 ## Formatting
 

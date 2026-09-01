@@ -492,6 +492,32 @@ for a `public` one. ⚠ `catalogued.json` maps `MemberCanBeInternal.Global` to
 `SK6002`, which this document allocates to *"public member exposing a mutable array or `List<T>`"* — a
 different concept. **That mapping is wrong and should be re-pointed at whichever id #114 eventually
 takes**, or dropped; it is left alone here rather than corrected by an agent that is not shipping #114.
+⚠ **The prose pass for `SK6030`–`SK6034` is owed.** What follows is the allocation record and the
+one-line reason for each; the paragraphs that explain the batch the way `SK6020`'s and `SK6022`'s are
+explained above have not been written. Each rule's `falsePositives` in `rules.json` carries the full
+argument in the meantime, and `skala explain SK6030` prints it.
+
+**`SK6030`–`SK6034` are declarations that promise something they do not deliver.** A modifier, a
+namespace, a keyword or an accessibility that a reader takes as a guarantee and that provides none.
+They are decided from a declaration and its members — no dataflow and no call graph — which is what
+puts them beside `SK6020`–`SK6023` rather than in the semantic bands.
+
+- `SK6030` `type-in-global-namespace` — a type with no namespace around it at all.
+- `SK6031` `readonly-mutable-field` — a non-private `readonly` field holding an array or a mutable
+  collection, where the modifier stops reassignment and nothing else.
+- `SK6032` `abstract-type-without-abstraction` — an `abstract` class with nothing to override,
+  nothing `protected` and no base.
+- `SK6033` `only-private-constructors` — a class nothing can construct and nothing can derive from.
+- `SK6034` `public-constant-field` — an externally visible `const`, copied into every caller at
+  compile time.
+
+⚠ **Four of the five ship `hasFix: false`, and `SK6033` is the one that names why a fix cannot be
+partial.** Its static-holder shape has an obvious two-edit repair and its general shape has none, and
+`RuleFixtureTests.EveryFix_ProducesTextThatStillParses` asserts that *every* finding of a rule
+declaring `hasFix: true` carries edits — so a rule offers a fix for all of its shapes or for none.
+`SK6034` is the exception and carries one: `const` → `static readonly` is a single token, and
+`fixIsSafe: false` because the breakage it can cause — an attribute argument, a parameter default, a
+`case` label — lands in files the edit does not touch.
 
 ## SK7000 — Maintainability
 
@@ -743,6 +769,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **169** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **137** | **81.5 %** |
+| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **126** | **81.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **19** | includes the twelve declared cut with no reason recorded |

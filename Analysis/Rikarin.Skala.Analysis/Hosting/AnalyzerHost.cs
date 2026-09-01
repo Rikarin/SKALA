@@ -113,6 +113,11 @@ public static class AnalyzerHost {
         new CollectionOwnMethodAnalyzer(), new DictionaryKeyRelookupAnalyzer(),
         new SubstringBeforeSearchAnalyzer(), new ConcurrentDictionaryMemberAnalyzer(),
         new SortBeforeFilterAnalyzer(),
+        new GlobalNamespaceTypeAnalyzer(),
+        new ReadonlyMutableFieldAnalyzer(),
+        new AbstractTypeWithoutAbstractionAnalyzer(),
+        new PrivateConstructorOnlyAnalyzer(),
+        new PublicConstantAnalyzer(),
     ];
 
     /// <summary>

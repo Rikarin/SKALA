@@ -3738,6 +3738,141 @@
       "configuration": [
         "dotnet_diagnostic.SK4034.severity"
       ]
+    },
+    {
+      "id": "SK6030",
+      "concept": "type-in-global-namespace",
+      "title": "A type is declared in the global namespace",
+      "category": "Design",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3903"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The global namespace is one flat name table shared with every referencing assembly, and it is the one namespace a `using` cannot name.",
+      "rationale": "A namespace is how a type says which program it belongs to, and the global namespace says nothing. Every assembly in a consumer's dependency closure contributes to the same flat table, so two libraries that each declare a global `Settings` cannot both be referenced — and the error arrives in the consumer's build, naming two types the consumer did not write. The usual escapes do not apply: `using Configuration = Contoso.Configuration;` needs a namespace to alias, and `global::Settings` names the ambiguity rather than resolving it, so the only repair available downstream is an `extern alias` on the whole assembly. The namespace costs one line here; omitting it moves the cost to somebody who cannot pay it without a source change to a package they do not own.",
+      "examples": {
+        "bad": "public sealed class Settings {\n    public string Path { get; init; } = string.Empty;\n}",
+        "good": "namespace Contoso.Configuration;\n\npublic sealed class Settings {\n    public string Path { get; init; } = string.Empty;\n}"
+      },
+      "falsePositives": "**Only a declaration whose direct parent is the compilation unit.** A nested type takes its container's namespace, so it is never reported — the finding belongs to the outer type and reporting it again per member would multiply one mistake by the size of the file. A declaration inside a `namespace` block or a file-scoped namespace has a namespace node above it and is out of scope by construction.\n\n**A `file` type is never reported.** `file sealed class Helper { }` is visible only inside the file that declares it, so it is in the global namespace and in nobody's way — which is exactly what the modifier is for. It is the one shape where \"no namespace\" is the correct answer rather than an omission.\n\n⚠ **A type named `Program` is exempt, and that is not a courtesy.** A file with top-level statements gets a compiler-generated `Program` in the global namespace, and `public partial class Program { }` — the documented way to make an entry point visible to `WebApplicationFactory<Program>` — has to be in the global namespace too, or it declares a *different* type and the test host cannot find the program. There is no namespace that declaration could be moved to, so a finding on it would name no available repair. The cost is that a genuinely stray type called `Program` goes unreported.\n\n**Every type kind is reported, including `enum` and `delegate`.** They occupy the same name table as a class and collide in exactly the same way; excluding them would make the rule's silence mean two different things.\n\n**Generated code is excluded**, the same as every rule in this range: a global type written by a source generator is the generator's decision and not the author's.\n\n**The finding is real and harmless in an application that ships no reference surface.** An executable nobody references cannot collide with anything, and a console program with one global helper class is a shape the rule reports and a reviewer may reasonably baseline. The rule cannot tell an application from a library — the output kind is an MSBuild property and not a fact about a syntax tree — and the general case is a library, so the rule reports and says so here.\n\n⚠ **No fix, and the reason is that the edit needs a name nobody has written down.** Wrapping the file in a namespace is a mechanical two-span edit *once the namespace is known*, and it is not: deriving it from the folder path requires the project's root namespace and the path the project treats as its root, neither of which an analyzer can see, and inventing one would put a name into a public API on a guess. `hasFix: false` is a decision, not an omission.",
+      "configuration": [
+        "dotnet_diagnostic.SK6030.severity"
+      ]
+    },
+    {
+      "id": "SK6031",
+      "concept": "readonly-mutable-field",
+      "title": "`readonly` does not protect a mutable field's contents",
+      "category": "Design",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3887"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`readonly` constrains the field and never the object in it, so a non-private array or mutable collection is writable by every caller that can see it.",
+      "rationale": "`public readonly string[] Names` stops `Names = …` and stops nothing else. Every caller can still write `Names[0] = \"…\"`, and on a `List<T>` can `Clear()` it — from another thread, at any time, with no compiler complaint anywhere. What makes this worse than declaring the field without the modifier is the reader: `readonly` is the keyword C# has for \"this does not change\", so a reviewer who sees it stops looking for the mutation, and static analysis, code review and the type's own documentation all inherit the mistake. A field that must not be written through is either `private` with a `IReadOnlyList<T>` property over it, or typed as something that really is immutable — `ImmutableArray<T>`, `FrozenDictionary<K, V>`, `ReadOnlyCollection<T>`. `readonly` is neither of those and cannot be made into either by adding a keyword.",
+      "examples": {
+        "bad": "public sealed class Palette {\n    public static readonly string[] Names = [\"red\", \"green\"];\n\n    public readonly List<int> Weights = [1, 2];\n}",
+        "good": "public sealed class Palette {\n    public static readonly ImmutableArray<string> Names = [\"red\", \"green\"];\n\n    public IReadOnlyList<int> Weights => weights;\n\n    readonly List<int> weights = [1, 2];\n}"
+      },
+      "falsePositives": "⚠ **The mutable types are an explicit list, and an interface test would have been wrong.** The obvious implementation asks whether the field's type implements `ICollection<T>` — and `ImmutableArray<T>`, `ImmutableList<T>` and `ReadOnlyCollection<T>` all implement `IList<T>`, explicitly, throwing `NotSupportedException` from every mutator. That implementation reports the immutable collections this rule's own advice tells somebody to switch to, which is the worst answer available. So the rule matches a named set — arrays, `List`/`Dictionary`/`HashSet`/`SortedSet`/`SortedList`/`SortedDictionary`/`Queue`/`Stack`/`LinkedList`, `Collection<T>` and `ObservableCollection<T>`, the four mutable generic interfaces, and the non-generic `ArrayList`/`Hashtable`/`IList`/`IDictionary`/`ICollection` — resolved through the semantic model, never by the written name. **The cost is a miss on a user-defined mutable type**, and that is the right direction for a rule whose whole risk is over-firing.\n\n⚠ **Concurrent collections are deliberately absent.** `public readonly ConcurrentDictionary<string, int> Cache` is the *correct* declaration for a shared cache: the type exists to be written through by many callers at once, so the field being non-reassignable is the whole of what anybody expected `readonly` to mean there. Reporting it would be reporting a design for working as designed. The same argument does not extend to `List<T>`, which promises nothing about concurrent writers.\n\n**A private field is never reported, however mutable it is.** The declaring type owns its own state, and `readonly` there is a note to the type's own author rather than a promise made to anybody else. `internal` and `private protected` *are* reported: both hand the object to code the declaration cannot see, and \"the rest of my assembly\" is still somebody else at three in the morning.\n\n**A zero-length array is exempt.** `public static readonly string[] Empty = [];` has no element anyone could write, so `readonly` really is the whole guarantee. The three ways to say it — a `[]` collection expression, `Array.Empty<T>()` and `new T[0]` — are all read out of the initializer, per declarator, so `readonly int[] a = [], b;` reports `b` and leaves `a` alone.\n\n**A read-only declared type is silence, and that is a known hole.** A field typed `IReadOnlyList<T>` is not reported even when it holds a `List<T>` that a caller could cast back to and mutate. The rule reads declarations, and that declaration says read-only; catching the cast is a dataflow question about every holder of the value, which is a different rule in a different band.\n\n**An unresolved type is silence.** If the field's type binds to an error type the rule says nothing, because \"not a mutable collection\" and \"the compilation could not tell\" are the same answer from a naive test and only one of them is a finding. This is why the rule is semantic and does not run under `--load=loose`.\n\n**Only arrays and collections, not mutability in general.** A `public readonly StringBuilder Log` has the same defect and is not reported: widening the rule to every mutable object would need a definition of \"mutable\" that C# does not have, and the collections are where the mistake is both common and unambiguous.\n\n⚠ **No fix.** The three repairs — change the field's type, make it private and add a read-only property, or drop `readonly` and admit the field is mutable — are three different decisions about a public API, and two of them break every caller. Choosing between them is exactly the design judgement the finding is asking somebody to make.",
+      "configuration": [
+        "dotnet_diagnostic.SK6031.severity"
+      ]
+    },
+    {
+      "id": "SK6032",
+      "concept": "abstract-type-without-abstraction",
+      "title": "An abstract type declares nothing to implement",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1694"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`abstract` says both \"do not instantiate this\" and \"a derived type completes it\", and a class with no hooks, nothing `protected` and no base is only saying the first.",
+      "rationale": "A reader who meets `abstract class Report` expects to find the part a subclass has to supply, and goes looking for it. When there is no `abstract` member, no `virtual` member, nothing `protected` and no base type, there is nothing to find: no derived type is required to provide anything, none is offered anything it could not get from an instance, and the keyword's only effect is that `new Report()` does not compile. That is a real intent and there are three better ways to state it — a `static` class if the members are all static, an interface if the members are all contracts, or a concrete class if instantiating it is fine — and each of the three tells the next reader something. `abstract` alone tells them to keep looking for a hook that is not there.",
+      "examples": {
+        "bad": "public abstract class Endpoints {\n    public static string Health => \"/health\";\n\n    public static string Ready => \"/ready\";\n}",
+        "good": "public static class Endpoints {\n    public static string Health => \"/health\";\n\n    public static string Ready => \"/ready\";\n}"
+      },
+      "falsePositives": "⚠ **The `protected` exemption is the one carrying the rule, and a protected constructor is its usual form.** A base class that shares state through a `protected` constructor, a `protected` field or a `protected` helper is arranged for derivation whether or not it declares anything abstract, and reporting it would be reporting the most ordinary base class in C#. `virtual` is exempt for the same reason and counts as much as `abstract`: \"you may override this\" is an extension point somebody put there deliberately, and a visitor base whose every method is an empty `virtual` is the canonical shape of one. What is left after those two exemptions is a class with public and private concrete members, no base and no derived-only surface at all.\n\n⚠ **A nested type deriving from the containing type is an exemption, and the sweep found it rather than the design did.** `abstract class Shape { private Shape() { } public sealed class Circle : Shape { … } }` is how C# spells a closed hierarchy: no `abstract`, no `virtual` and nothing `protected`, because the derived types are right there in the body — the derivation surface stated as directly as it can be. The first version of the rule reported it, which was found by running the rule over its own sibling fixtures. The base list is matched on the written name rather than on a symbol, which keeps the rule syntactic and costs a miss where a nested type derives from something else sharing the container's simple name.\n\n**A base list on the abstract class itself is an exemption on its own, and it is why the rule is syntactic.** An abstract class that derives from something may be inheriting abstract members it deliberately does not implement, or carrying interface members a derived type must supply — both are genuine things to implement, and neither is visible in this declaration. Declining every one of them removes the only question that needed a symbol, so the rule runs under `--load=loose`. The cost is a miss on a middle-of-hierarchy class that really does add nothing.\n\n⚠ **Records are out of scope entirely.** An `abstract record` is overwhelmingly the root of a closed hierarchy, and its generated members — the copy constructor, `EqualsContract`, the printing members — are the derivation surface a hand-written class has to declare for itself. There is no shape there this rule could read as an omission, so `record` and `record struct` are not analysed at all rather than filtered later.\n\n**`partial` is never reported.** The other part may declare the abstract member, or may not exist yet because a generator writes it — the same single exemption that keeps `SK6023` out of every source-generated codebase.\n\n**A type carrying an attribute is exempt.** A framework that requires a base class, a generator, or a serializer reads the attribute, so the declaration's shape is not the whole story.\n\n**An `abstract class Foo { }` with no members at all is not reported here.** That is `SK6023`'s finding, and billing one declaration twice for one omission would double it in every report.\n\n**The shape that stays genuinely arguable** is a base class whose members are all `public` and concrete and whose author wants only to forbid `new Report()` — `abstract class Shape { public string Name { get; init; } }` with subclasses that add nothing abstract. It is reported, the author's intent is real, and a `protected` constructor — which such a class almost always has, because that is how the name gets set — takes it out of scope. The rule ships at `suggestion` because of the ones that do not.\n\n⚠ **The implicit constructor is not a member.** An abstract class gets a compiler-generated `protected` parameterless constructor, and the rule reads *declared* members only. Counting the generated one would exempt every abstract class in the language and leave the rule matching nothing.\n\n⚠ **No fix.** The three repairs — drop `abstract`, make it `static`, make it an interface — are three different answers to \"what was this type for\", each of which changes the public surface in a different direction. Guessing between them would be guessing at intent, and the finding says look at this rather than what to do.",
+      "configuration": [
+        "dotnet_diagnostic.SK6032.severity"
+      ]
+    },
+    {
+      "id": "SK6033",
+      "concept": "only-private-constructors",
+      "title": "A type has only private constructors and is not static",
+      "category": "Design",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3453"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "Nothing outside the type can construct it, and nothing inside the file does either, so no caller can ever obtain an instance.",
+      "rationale": "A private constructor is a normal thing to write: a singleton hands out one instance, a factory validates before constructing, a static holder predates `static class`. Each of those puts something beside the constructor — a `new` of the type inside the type, or a nested type deriving from it. The finding is the same private constructor with none of that: no creation anywhere it could legally appear, no derivation, and no `static` to say the type was never meant to be instantiated. The type compiles, ships, and cannot be reached, and no compiler diagnostic says so — the members read as a public API that no caller can ever call. `SK6003` reports the opposite error on abstract types; this is the same question about instantiability from the other end.",
+      "examples": {
+        "bad": "public sealed class Endpoints {\n    private Endpoints() { }\n\n    public string Health => \"/health\";\n}",
+        "good": "public static class Endpoints {\n    public static string Health => \"/health\";\n}"
+      },
+      "falsePositives": "⚠ **The reachability test is a proof, not a heuristic, and that is why it reads the whole file.** A private constructor is accessible only inside the containing type's body, so for a type that is not `partial` every legal `new` of it and every legal derivation from it is in this one syntax tree. A creation or a base list anywhere in the file withdraws the finding, which covers a singleton's `static readonly Foo Instance = new();`, a `static Foo Create()`, a nested builder, and a `Parse` — none of them needs to be recognised as a pattern, because all of them create the type.\n\n⚠ **Nesting opens access inward, not outward, and the first draft of this rule had it backwards.** A nested type reaches its *container's* private constructor — a nested builder calling `new Pipeline(…)`, a nested case deriving from its container — and that is what makes scanning the file rather than the candidate's own body necessary. The reverse does not hold: a container calling a *nested* type's private constructor is **CS0122**, which was found by compiling it rather than reasoned about, and the fixture that asserted it had to be replaced. `private` limits access to the type that declares the member and to what is nested inside it, in no other direction.\n\n**`partial` is never reported**, and here that is not caution but the proof failing: the other part may declare a public constructor or create the type, and it is exactly where \"the file holds every access to a private member\" stops being true.\n\n⚠ **`abstract` is excluded, and it is the exemption most worth stating.** An abstract class with a private constructor is a hierarchy closed to its own nested types — how C# spells a discriminated union — and is a deliberate, increasingly common design rather than an unreachable type. `record` and `struct` are excluded for a flatter reason: a positional record has a public primary constructor, and a struct always has an implicit parameterless one, so a private constructor never makes either unreachable.\n\n**A type carrying an attribute is exempt, and so is a constructor carrying one.** `[JsonConstructor]` names a private constructor for a serializer to call, and a container, a generator or a `[Serializable]` marker each reaches a type through a caller in no syntax tree at all.\n\n**`typeof(Foo)` in the same file withdraws the finding.** Beside a private constructor, that is what reflection looks like from here — `Activator.CreateInstance(typeof(Foo), nonPublic: true)`, a container registration by type, a test creating an instance the API does not offer. The rule cannot follow it and does not guess.\n\n⚠ **Reflection from another file is the false positive that remains, and nothing here can see it.** `Activator.CreateInstance` on a type obtained by name, a DI registration built from assembly scanning, and `RuntimeHelpers.GetUninitializedObject` all produce instances of a type this rule has just called unreachable. They are rare, they are exactly the code that should carry a comment saying so, and they are the case to baseline.\n\n**At least one *declared* constructor is required.** A class that declares none has an implicit public one and is closed to nothing; matching on \"has no public constructor\" instead would report every ordinary class in the language.\n\n⚠ **No fix, and the reason is not that no edit exists — it is that one exists for only some of the findings.** The static-holder shape, a private parameterless constructor with nothing but static members beside it, has an obvious two-edit repair: add `static`, delete the constructor. The general shape — a private constructor and instance members — has none, because \"make it reachable\" is a choice between a factory, a public constructor and deleting the type. Skala's fixture harness asserts that *every* finding of a rule declaring `hasFix: true` carries edits, so a rule cannot offer a fix for one shape and not the other, and splitting the concept across two ids to get one would be allocating a permanent number for the sake of an edit. The finding names the three repairs and lets a person pick.",
+      "configuration": [
+        "dotnet_diagnostic.SK6033.severity"
+      ]
+    },
+    {
+      "id": "SK6034",
+      "concept": "public-constant-field",
+      "title": "A public constant is baked into every caller",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2339"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The compiler copies a `const` into the consuming assembly, so changing it and shipping only your own assembly leaves every caller on the old value with no error anywhere.",
+      "rationale": "⚠ **This is a property of how the value is distributed, not of how the declaration is written.** The compiler does not emit a field read for `Limits.MaxRetries`; it emits the literal `3`, into the *consumer's* assembly. Ship version 2 of the library with the value changed to `5`, and every assembly that was built against version 1 keeps `3` — the load succeeds, no binding redirect fires, no analyzer complains, and the two halves of the program disagree about a number they both believe they read from one place. It is the one versioning hazard in .NET with no diagnostic at all behind it: a renamed member is a `MissingMethodException`, a changed signature is a `MissingMethodException`, and a changed constant is silence. `static readonly` is read from the field at run time and does not have this property, at the cost of one indirection and a type initializer. The reason to keep a `const` public is that its value is part of the contract and can never change — a protocol magic number, a format version, a mathematical constant — and that is a claim worth making on purpose rather than by default.",
+      "examples": {
+        "bad": "public static class Limits {\n    public const int MaxRetries = 3;\n}",
+        "good": "public static class Limits {\n    public static readonly int MaxRetries = 3;\n}"
+      },
+      "falsePositives": "⚠ **The rule cannot tell a value that will never change from one that is merely constant today, and that is the whole false-positive story.** A protocol magic number, a wire format version, `\"\\r\\n\"`, a mathematical constant and a spec-mandated field width are all correctly `public const`: the value is part of the contract, so a caller holding the old copy holds the right one. A retry count, a buffer size, a timeout, a URL and a display string are the opposite, and nothing in the declaration separates the two. The rule ships at `suggestion` for this reason, and the answer for a value that really is fixed is a suppression with the sentence saying why.\n\n⚠ **The harm needs an assembly boundary, and the rule cannot see whether there is one.** In a solution rebuilt end to end on every commit, `const` is fine — everything is recompiled, so every copy is refreshed at once. The hazard is real for a library that ships independently of its consumers, which is the general case and the one the rule assumes. An application with no reference surface is where a suppression is cheapest.\n\n**`internal` and `private` constants are never reported, and neither is a `public const` inside an `internal` type.** Visibility is computed by walking the field's accessibility *and* every containing type's, because a `public const` that cannot leave the assembly is never copied anywhere compiled separately. That walk is the difference between this rule and one that reports every `public const` in a program. `InternalsVisibleTo` does not change the answer: the friend assembly is in the same solution and rebuilt with it.\n\n**Constants in an interface are excluded.** A `static readonly` field in an interface is legal and is not the same declaration — it changes what implementers see and when the runtime initializes it — so the one-token fix would not be the repair it claims to be.\n\n⚠ **The fix is `fixIsSafe: false`, and the breakage it can cause lands in files the edit does not touch.** A `const` is usable where the language demands a compile-time constant and a `static readonly` field is not: an attribute argument (CS0182), an optional parameter's default value (CS1736), a `case` label or constant pattern (CS0150), another `const`'s initializer (CS0133), and `goto case`. Every one of those is a compiler error rather than a silent behaviour change, so the edit is never dangerous — but each is a caller's build, possibly in another repository, and \"apply without review\" is a promise this rule cannot make. Two smaller consequences go with it: the value stops being folded at compile time, so a comparison against it is no longer a constant expression; and the type gains a static initializer where it may have had none.\n\n⚠ **There is deliberately no local guard against those positions.** The rule could refuse to report a `const` that the same file uses in an attribute argument or a parameter default, and it does not — because the identical breakage across an assembly boundary is precisely what this rule exists to say it cannot see, and a guard that catches only the visible half would make the finding look better checked than it is. `fixIsSafe: false` is the honest statement, and it is one statement rather than two.\n\n**One finding per declaration, not per declarator.** `public const int A = 1, B = 2;` has one `const` token and one edit; two findings would carry the same replacement twice. A declaration whose `const` token carries a preprocessor directive is skipped, for the reason `SK6003` skips one: the token the fix names may not be the token every branch compiles.",
+      "configuration": [
+        "dotnet_diagnostic.SK6034.severity"
+      ]
     }
   ]
 }

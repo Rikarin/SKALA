@@ -75,6 +75,11 @@ public sealed class RuleFixtureTests {
         new CollectionOwnMethodAnalyzer(), new DictionaryKeyRelookupAnalyzer(),
         new SubstringBeforeSearchAnalyzer(), new ConcurrentDictionaryMemberAnalyzer(),
         new SortBeforeFilterAnalyzer(),
+        new GlobalNamespaceTypeAnalyzer(),
+        new ReadonlyMutableFieldAnalyzer(),
+        new AbstractTypeWithoutAbstractionAnalyzer(),
+        new PrivateConstructorOnlyAnalyzer(),
+        new PublicConstantAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

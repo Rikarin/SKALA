@@ -121,3 +121,8 @@ SK4031 | Skala.Performance | Warning | The loop looks up a key it is already hol
 SK4032 | Skala.Performance | Info | Pass the start index instead of calling `Substring`.
 SK4033 | Skala.Performance | Warning | Take the cheap `ConcurrentDictionary` member.
 SK4034 | Skala.Performance | Info | Filter before sorting.
+SK6030 | Skala.Design | Warning | A type is declared in the global namespace.
+SK6031 | Skala.Design | Warning | `readonly` does not protect a mutable field's contents.
+SK6032 | Skala.Design | Info | An abstract type declares nothing to implement.
+SK6033 | Skala.Design | Warning | A type has only private constructors and is not static.
+SK6034 | Skala.Design | Info | A public constant is baked into every caller.

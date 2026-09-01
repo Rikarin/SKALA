@@ -153,6 +153,11 @@ SK4031 dictionary-key-relookup-in-loop
 SK4032 substring-before-index-search
 SK4033 concurrent-dictionary-expensive-member
 SK4034 sort-before-filter
+SK6030 type-in-global-namespace
+SK6031 readonly-mutable-field
+SK6032 abstract-type-without-abstraction
+SK6033 only-private-constructors
+SK6034 public-constant-field
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because
