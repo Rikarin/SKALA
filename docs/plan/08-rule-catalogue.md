@@ -197,7 +197,6 @@ been extended to describe them properly; that pass is owed.
 - `SK3020` — `null-returned-from-task-method`
 - `SK3021` — `spin-lock-in-readonly-field`
 
-
 ## SK4000 — Performance
 
 `SK4001` LINQ in a per-frame or per-request path (path-scoped, off by default) · `SK4002` closure
