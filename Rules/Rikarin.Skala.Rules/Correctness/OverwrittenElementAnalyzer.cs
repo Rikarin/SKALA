@@ -68,13 +68,7 @@ public sealed class OverwrittenElementAnalyzer : DiagnosticAnalyzer {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start => {
-                var collections = new List<INamedTypeSymbol>();
-                foreach (var name in Collections) {
-                    if (start.Compilation.GetTypeByMetadataName(name) is { } type) {
-                        collections.Add(type);
-                    }
-                }
-
+                var collections = CollectionShape.Resolve(start.Compilation, Collections);
                 start.RegisterSyntaxNodeAction(
                     context => Analyze(context, collections),
                     SyntaxKind.Block,
@@ -182,18 +176,9 @@ public sealed class OverwrittenElementAnalyzer : DiagnosticAnalyzer {
             return false;
         }
 
-        if (type.TypeKind == TypeKind.Array) {
-            return true;
-        }
-
-        foreach (var candidate in collections) {
-            if (type is INamedTypeSymbol named
-                && SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, candidate)) {
-                return true;
-            }
-        }
-
-        return false;
+        // ⚠ An array's element write is a store and nothing else, which is the whole premise. A
+        // named type has to be in the table, because an indexer is a method somebody wrote.
+        return type.TypeKind == TypeKind.Array || CollectionShape.Contains(collections, type);
     }
 
     /// <summary>

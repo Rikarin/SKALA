@@ -69,13 +69,7 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start => {
-                var lookups = new List<INamedTypeSymbol>();
-                foreach (var name in Lookups) {
-                    if (start.Compilation.GetTypeByMetadataName(name) is { } type) {
-                        lookups.Add(type);
-                    }
-                }
-
+                var lookups = CollectionShape.Resolve(start.Compilation, Lookups);
                 if (lookups.Count == 0) {
                     return;
                 }
@@ -120,7 +114,7 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
         var typeInfo = model.GetTypeInfo(context.Node, cancellation);
         if ((typeInfo.Type ?? typeInfo.ConvertedType) is not INamedTypeSymbol collection
             || collection.TypeKind == TypeKind.Error
-            || !Contains(lookups, collection)
+            || !CollectionShape.Contains(lookups, collection)
             || collection.TypeArguments.Length is not (1 or 2)) {
             return;
         }
@@ -238,14 +232,4 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
             InitializerExpressionSyntax or AssignmentExpressionSyntax => (null, Form.Add),
             _ => isSet ? (element, Form.Element) : (null, Form.Add)
         };
-
-    static bool Contains(List<INamedTypeSymbol> lookups, INamedTypeSymbol type) {
-        foreach (var candidate in lookups) {
-            if (SymbolEqualityComparer.Default.Equals(type.OriginalDefinition, candidate)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

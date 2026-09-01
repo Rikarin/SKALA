@@ -66,13 +66,7 @@ public sealed class EmptyCollectionLoopAnalyzer : DiagnosticAnalyzer {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start => {
-                var creations = new List<INamedTypeSymbol>();
-                foreach (var name in Creations) {
-                    if (start.Compilation.GetTypeByMetadataName(name) is { } type) {
-                        creations.Add(type);
-                    }
-                }
-
+                var creations = CollectionShape.Resolve(start.Compilation, Creations);
                 start.RegisterSyntaxNodeAction(
                     context => Analyze(context, creations),
                     SyntaxKind.ForEachStatement
@@ -206,20 +200,9 @@ public sealed class EmptyCollectionLoopAnalyzer : DiagnosticAnalyzer {
         BaseObjectCreationExpressionSyntax creation,
         List<INamedTypeSymbol> creations,
         CancellationToken cancellation
-    ) {
-        if (model.GetTypeInfo(creation, cancellation).Type is not INamedTypeSymbol type
-            || type.TypeKind == TypeKind.Error) {
-            return false;
-        }
-
-        foreach (var candidate in creations) {
-            if (SymbolEqualityComparer.Default.Equals(type.OriginalDefinition, candidate)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    ) =>
+        model.GetTypeInfo(creation, cancellation).Type is { TypeKind: not TypeKind.Error } type
+        && CollectionShape.Contains(creations, type);
 
     static SyntaxNode Enclosing(SyntaxNode node) {
         for (var current = node; current is not null; current = current.Parent) {

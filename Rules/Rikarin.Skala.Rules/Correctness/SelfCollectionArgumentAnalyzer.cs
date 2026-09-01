@@ -56,33 +56,7 @@ public sealed class SelfCollectionArgumentAnalyzer : DiagnosticAnalyzer {
     ///     for an instance member and the index after the source for an <c>Enumerable</c> extension.
     /// </remarks>
     static readonly (string Type, string Method, int Index, string Consequence)[] Table = [
-        ("System.Collections.Generic.HashSet`1", "UnionWith", 0, "does nothing"),
-        ("System.Collections.Generic.HashSet`1", "IntersectWith", 0, "does nothing"),
-        ("System.Collections.Generic.HashSet`1", "ExceptWith", 0, "empties the set, which `Clear()` says"),
-        (
-            "System.Collections.Generic.HashSet`1", "SymmetricExceptWith", 0,
-            "empties the set, which `Clear()` says"
-        ),
-        ("System.Collections.Generic.HashSet`1", "IsSubsetOf", 0, "is always true"),
-        ("System.Collections.Generic.HashSet`1", "IsSupersetOf", 0, "is always true"),
-        ("System.Collections.Generic.HashSet`1", "IsProperSubsetOf", 0, "is always false"),
-        ("System.Collections.Generic.HashSet`1", "IsProperSupersetOf", 0, "is always false"),
-        ("System.Collections.Generic.HashSet`1", "SetEquals", 0, "is always true"),
-        ("System.Collections.Generic.HashSet`1", "Overlaps", 0, "is true unless the set is empty"),
-        ("System.Collections.Generic.SortedSet`1", "UnionWith", 0, "does nothing"),
-        ("System.Collections.Generic.SortedSet`1", "IntersectWith", 0, "does nothing"),
-        ("System.Collections.Generic.SortedSet`1", "ExceptWith", 0, "empties the set, which `Clear()` says"),
-        (
-            "System.Collections.Generic.SortedSet`1", "SymmetricExceptWith", 0,
-            "empties the set, which `Clear()` says"
-        ),
-        ("System.Collections.Generic.SortedSet`1", "IsSubsetOf", 0, "is always true"),
-        ("System.Collections.Generic.SortedSet`1", "IsSupersetOf", 0, "is always true"),
-        ("System.Collections.Generic.SortedSet`1", "IsProperSubsetOf", 0, "is always false"),
-        ("System.Collections.Generic.SortedSet`1", "IsProperSupersetOf", 0, "is always false"),
-        ("System.Collections.Generic.SortedSet`1", "SetEquals", 0, "is always true"),
-        ("System.Collections.Generic.SortedSet`1", "Overlaps", 0, "is true unless the set is empty"),
-        ("System.Collections.Generic.List`1", "AddRange", 0, "appends the list to itself and doubles it"),
+        .. Sets(), ("System.Collections.Generic.List`1", "AddRange", 0, "appends the list to itself and doubles it"),
         ("System.Collections.Generic.List`1", "InsertRange", 1, "splices the list into itself and doubles it"),
         ("System.Array", "CopyTo", 0, "copies the array over itself"),
         ("System.Linq.Enumerable", "SequenceEqual", 0, "is always true"),
@@ -90,6 +64,32 @@ public sealed class SelfCollectionArgumentAnalyzer : DiagnosticAnalyzer {
         ("System.Linq.Enumerable", "Intersect", 0, "is `Distinct()`"),
         ("System.Linq.Enumerable", "Union", 0, "is `Distinct()`")
     ];
+
+    /// <summary>
+    ///     The <c>ISet&lt;T&gt;</c> members, crossed with the two concrete sets that declare them.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Written out per receiver this is the same ten rows twice, which is a clone the
+    ///     duplication gate reports and, worse, two places to add the eleventh member to.
+    /// </remarks>
+    static IEnumerable<(string Type, string Method, int Index, string Consequence)> Sets() {
+        (string Method, string Consequence)[] members = [
+            ("UnionWith", "does nothing"), ("IntersectWith", "does nothing"),
+            ("ExceptWith", "empties the set, which `Clear()` says"),
+            ("SymmetricExceptWith", "empties the set, which `Clear()` says"),
+            ("IsSubsetOf", "is always true"), ("IsSupersetOf", "is always true"),
+            ("IsProperSubsetOf", "is always false"), ("IsProperSupersetOf", "is always false"),
+            ("SetEquals", "is always true"), ("Overlaps", "is true unless the set is empty")
+        ];
+
+        foreach (var type in new[] {
+                     "System.Collections.Generic.HashSet`1", "System.Collections.Generic.SortedSet`1"
+                 }) {
+            foreach (var (method, consequence) in members) {
+                yield return (type, method, 0, consequence);
+            }
+        }
+    }
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);
 

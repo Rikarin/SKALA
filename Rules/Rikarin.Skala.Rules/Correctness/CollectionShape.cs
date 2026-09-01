@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Rikarin.Skala.Rules.Performance;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 
@@ -19,6 +20,41 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     without walking the receivers says <c>a.Items</c> and <c>b.Items</c> are one object.
 /// </remarks>
 internal static class CollectionShape {
+    /// <summary>
+    ///     The named types among <paramref name="names" /> that this compilation actually has.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Every rule in this range matches its receiver against a closed table by symbol, and each
+    ///     of them was resolving that table with the same eight lines at compilation start. Written
+    ///     out four times it is a clone the duplication gate reports; written once it is the shape of
+    ///     the decision.
+    /// </remarks>
+    internal static List<INamedTypeSymbol> Resolve(Compilation compilation, string[] names) {
+        var resolved = new List<INamedTypeSymbol>(names.Length);
+        foreach (var name in names) {
+            if (compilation.GetTypeByMetadataName(name) is { } type) {
+                resolved.Add(type);
+            }
+        }
+
+        return resolved;
+    }
+
+    /// <summary>Whether a type is the constructed form of one of the resolved definitions.</summary>
+    internal static bool Contains(List<INamedTypeSymbol> types, ITypeSymbol candidate) {
+        if (candidate is not INamedTypeSymbol named) {
+            return false;
+        }
+
+        foreach (var type in types) {
+            if (SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, type)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>
     ///     A constant key as a comparable string, or null when the expression is not a constant of a
     ///     type whose default equality this range decides.
