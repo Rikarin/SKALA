@@ -238,6 +238,82 @@ def covered(ledger, name):
 
 rs_complete, rs_partial = covered(rs, "ledger-resharper")
 sn_complete, sn_partial = covered(sn, "ledger-sonar")
+
+# (3) ⚠ Every key in the parity map must be an inspection that exists. This was found the
+#     hard way: `MemberCanBeInternal.Global` is not a ReSharper id at all -- the real one is
+#     `MemberCanBeInternal`, with no `.Global` suffix -- so the entry matched no universe row,
+#     credited nothing, and had sat there being counted as one of the map's 142 entries.
+#     Sixteen more were in the same state. An invented key is worse than a missing one: a
+#     missing entry inflates the gap visibly, an invented one inflates the *map* and makes the
+#     coverage look larger than it is, in a file whose whole purpose is to be trusted.
+#
+#     The C# test guards the values (every id is one doc 08 knows) and never guarded the keys.
+#
+#     ⚠ The known-inert entries are named here rather than tolerated silently, each with what
+#     is actually wrong with it. This is the same "excluded with a written reason" discipline
+#     the ledgers use: an entry that simply never appears is indistinguishable from one nobody
+#     looked at. Re-point or drop one and delete its line; do not add to this list to make a
+#     new bad entry pass.
+INERT = {
+    # id does not exist in ReSharper; the real inspection is named on the right.
+    "AbstractTypeWithPublicConstructor": "invented; the real id is PublicConstructorInAbstractClass",
+    "MemberCanBeInternal.Global": "invented (no .Global suffix exists) AND points at SK6002, which "
+                                  "doc 08 allocates to a different concept; #114 is closed out of "
+                                  "scope, so this should be dropped rather than re-pointed",
+    "CyclomaticComplexity": "invented; ReSharper has no complexity-threshold inspection. "
+                            "FunctionComplexityOverflow is 'body too complex to analyse', a "
+                            "different thing, so this is a drop and not a re-point",
+    "CognitiveComplexity": "invented; same as CyclomaticComplexity",
+    "ClosureAllocation": "invented; not in the 2026 dump under any name",
+    "ImplicitlyCapturedClosure": "real in older ReSharper, absent from this dump and the export",
+    "AsyncApostrophe": "invented",
+    "CommentTypo": "invented",
+    "CommentedOutCode": "invented",
+    "SelfAssignment": "invented; no C# inspection of this name in the dump",
+    "SimplifyLinqExpressionUseMinByMaxBy": "invented; the dump has UseAll and UseAny only",
+    "ThrowingSystemException": "invented",
+    "UnusedPragmaWarningRestore": "invented; RedundantDisableWarningComment is the nearest real "
+                                  "id and is a different concept (ReSharper's own disable comment)",
+    "UseSearchValues": "invented; no SearchValues inspection in the dump",
+    "UseStringComparison": "invented; the real id is SpecifyStringComparison, which classify.py "
+                           "already buckets Hosted (CA1307/CA1310), so this credits nothing",
+    "XunitTestWithConsoleOutput": "invented",
+    # real id, but outside the measured universe, so it credits nothing either.
+    "UseUtf8StringLiteral": "real in types-2026.xml, absent from editor_config_template, so no "
+                            "universe row carries it",
+}
+if os.path.exists(f"{W}/universe.json"):
+    import re as _re
+
+    def _snake(s):
+        s = s.replace(".", "_")
+        s = _re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", s)
+        s = _re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "_", s)
+        return s.lower()
+
+    uni = json.load(open(f"{W}/universe.json"))
+    uni_ids = {v["id"] for v in uni.values() if v["id"]}
+    live = 0
+    for iid in catalogued:
+        b = _snake(iid)
+        if iid in uni_ids or any(f"resharper_{b}_highlighting{s}" in uni
+                                 for s in ("", "_highlighting")):
+            live += 1
+        elif iid not in INERT:
+            fail.append(f"catalogued.json: {iid!r} matches no row in the inspection universe, so "
+                        f"it credits {catalogued[iid]} with nothing. Verify the id against "
+                        f"types-2026.xml -- an invented id is silently inert")
+    for iid in sorted(set(INERT) - set(catalogued)):
+        warn.append(f"reconcile: {iid!r} is on the known-inert list and is no longer in "
+                    f"catalogued.json -- delete its line from INERT")
+    # ⚠ Report inert and excused separately. Printing one number for both let a newly added
+    # bad entry read as one more of the ones already known about.
+    inert_now = len(catalogued) - live
+    print(f"parity map: {live} of {len(catalogued)} entries match a universe row "
+          f"({inert_now} inert, {len(set(INERT) & set(catalogued))} of them on the known list)")
+else:
+    warn.append("universe.json is absent -- parity-map key validity NOT checked. "
+                "Run: python3 universe.py")
 print(f"shipped:   {len(shipped)} rules, {len(declaring)} declaring a resharperId, "
       f"{len(catalogued)} parity-map entries")
 print(f"coverage:  resharper {rs_complete} complete / {rs_partial} partial, "
