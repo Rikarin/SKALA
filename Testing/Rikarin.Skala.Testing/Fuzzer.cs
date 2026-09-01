@@ -303,7 +303,7 @@ public sealed record FuzzReport(
     ///     the tool is confused.
     /// </remarks>
     static string Visible(string text) =>
-        text.Replace("﻿", "<BOM>", StringComparison.Ordinal)
+        text.Replace("\uFEFF", "<BOM>", StringComparison.Ordinal)
             .Replace("\r", "<CR>", StringComparison.Ordinal)
             .Replace("\t", "<TAB>", StringComparison.Ordinal)
             .Replace(" \n", "<SP>\n", StringComparison.Ordinal)

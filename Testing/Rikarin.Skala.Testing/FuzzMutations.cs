@@ -387,7 +387,7 @@ public static class FuzzMutations {
         return builder.ToString();
     }
 
-    static string ToggleBom(SourceMap map) => map.Source.StartsWith('﻿') ? map.Source[1..] : "﻿" + map.Source;
+    static string ToggleBom(SourceMap map) => map.Source.StartsWith('\uFEFF') ? map.Source[1..] : "\uFEFF" + map.Source;
 
     /// <summary>
     ///     Renames one identifier everywhere it occurs as a token, to a longer name.

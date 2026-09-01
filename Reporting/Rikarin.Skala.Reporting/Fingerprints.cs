@@ -94,9 +94,9 @@ public static class Fingerprints {
 
     static string V2(string ruleId, string identity, string enclosingSymbol, int ordinalWithinSymbol) {
         var builder = new StringBuilder();
-        builder.Append(ruleId).Append('');
+        builder.Append(ruleId).Append('\u0001');
         builder.Append(identity);
-        builder.Append('').Append(enclosingSymbol).Append('');
+        builder.Append('\u0001').Append(enclosingSymbol).Append('\u0001');
         builder.Append(ordinalWithinSymbol.ToString(CultureInfo.InvariantCulture));
         return Hash(builder);
     }

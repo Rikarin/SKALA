@@ -182,8 +182,8 @@ public sealed class LockOrderAnalyzer : DiagnosticAnalyzer {
             // One finding per unordered pair. The two directions are one deadlock.
             if (!seen.Add(
                     string.CompareOrdinal(key.Outer, key.Inner) < 0
-                        ? key.Outer + " " + key.Inner
-                        : key.Inner + " " + key.Outer
+                        ? key.Outer + "\u0000" + key.Inner
+                        : key.Inner + "\u0000" + key.Outer
                 )) {
                 continue;
             }
