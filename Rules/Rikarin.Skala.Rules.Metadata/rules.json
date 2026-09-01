@@ -4769,6 +4769,31 @@
         "dotnet_code_quality.SK7083.minimum_length",
         "dotnet_diagnostic.SK7083.severity"
       ]
+    },
+    {
+      "id": "SK2070",
+      "concept": "log-template-argument-count",
+      "title": "The Serilog message template has a different number of holes than the call supplies values",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A Serilog logging call's constant message template declares a number of holes that is not the number of values the call passes.",
+      "rationale": "The rendered event is wrong in both directions and neither direction throws. A hole with no value is emitted as the literal text `{OrderId}`, so the field a dashboard queries is never populated and the message reads as a bug report about itself; a value with no hole is attached under a fabricated positional key nobody queries, so the data is present, unfindable and paid for. ⚠ **The rule is deliberately Serilog-only.** `CA2017` already covers `Microsoft.Extensions.Logging` — measured against `LoggerExtensions`, `ILogger.BeginScope` and `LoggerMessage.Define`, handling `{{` escapes, `{X,10:N2}` alignment and declining a non-implicit `params` array — and unlike `CA2241`, `CA2253` and `CA2254` it is **on by default**, with no `AnalysisMode` required. ADR-008 hosts `CA*` rather than rebuilding them, so what Skala implements is the half with no host at all. Serilog is where the concept is unowned, and it is also where the shape is commonest, because Serilog's own API encourages templates far richer than `ILogger`'s.",
+      "examples": {
+        "bad": "logger.Information(\"Loaded {Count} of {Total}\", count);",
+        "good": "logger.Information(\"Loaded {Count} of {Total}\", count, total);"
+      },
+      "falsePositives": "⚠ **`resharperId` is deliberately null.** ReSharper dumps one issue type for this whole family, `StructuredMessageTemplateProblem`, and `Testing/parity-analysis/catalogued.json` already credits it to `SK2016`. Moving another rule's credit is a decision about a hand-written map rather than a fact about this rule, and the map is the artefact doc 17 § \"Two corrections\" was written about. The concept is recorded against issue #20 in `ledger-resharper.json` instead. ⚠ **Arity is counted in holes, not in distinct names.** `\"{X} then {X}\"` with two arguments is correct — Serilog binds values to holes in order — and reporting it here would be a false positive on exactly the shape `SK2071` exists to describe properly. ⚠ **A positional template withdraws the analysis entirely.** `\"{0} {1}\"` is Serilog's `string.Format` mode, where arity is max-index-plus-one rather than a count, and a template mixing indices with names has semantics no rule should guess at; `CA2253` is the rule that says not to write one. ⚠ **A `params` array the call did not synthesise withdraws the count**: `logger.Information(template, args)` passes an array whose length is not visible here, and counting the array itself as one value would report every such call as a mismatch. Roslyn marks the array it synthesises for a genuine `params` expansion as implicit, which is the only signal that separates the two. ⚠ **The values are counted by parameter ordinal**, never by filtering out arguments whose type does not look like a value: a reduced extension-method invocation carries its own `this ILogger` receiver as `Arguments[0]` with a real parameter symbol, and a type-name filter counts the logger as a supplied value and reports every correct call as one argument too many. Everything that is not a value — the receiver, the `Exception`, the `LogEventLevel` — precedes the template in every one of these signatures, so \"after the template\" is a definition rather than a heuristic. A non-constant template is not analysed, because there is no template to count; `CA2254` is the rule for that. Binding is by containing type (`Serilog.ILogger`, `Serilog.Log`) and by the parameter Serilog names `messageTemplate`, never by method name, so a domain method called `Information` is not a logging call. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2070.severity"
+      ]
     }
   ]
 }

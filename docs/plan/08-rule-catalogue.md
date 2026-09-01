@@ -351,6 +351,37 @@ already names in the other direction.
 - `SK2033` `stackalloc-in-loop` — a `stackalloc` a loop re-evaluates.
 - `SK2034` `escaped-keyword` — a declaration named after a reserved keyword and escaped with `@`.
 
+### Format strings, log templates and invisible characters
+
+⚠ **The prose pass on this block is owed.** The rows below are the allocation register doing its one
+job — recording that a number is taken — written as each rule landed rather than as a considered
+section.
+
+- `SK2070` `log-template-argument-count` — a Serilog template with a different number of holes than
+  the call supplies values. ([#20](https://github.com/Rikarin/SKALA/issues/20))
+
+⚠ **Two of this batch's concepts were closed as hosted rather than shipped, and the measurement is
+the finding.** A probe project built at *default* analysis level — no `AnalysisMode`, no
+`AnalysisLevel`, nothing but `dotnet build` — answers which `CA*` rules a repository actually gets:
+
+| Concept | Host | On at default? |
+|---|---|---|
+| `string.Format` holes versus arguments ([#19](https://github.com/Rikarin/SKALA/issues/19)) | `CA2241` | **no** — needs `AnalysisMode` |
+| `ILogger` template holes versus arguments | `CA2017` | **yes** |
+| A logger placeholder that is only digits | `CA2253` | no |
+| A logger template that is not constant | `CA2254` | no |
+
+⚠ **`CA2017` was not in this repository's hosted map and is the strongest host in it.** It covers
+`LoggerExtensions`, `ILogger.BeginScope` *and* `LoggerMessage.Define`, handles `{{` escapes and
+`{X,10:N2}` alignment, and correctly declines a `params` array the call did not synthesise — all
+verified against a probe rather than read from documentation. It is why `SK2070` is Serilog-only:
+ADR-008 hosts `CA*` rather than rebuilding them, and the half of [#20](https://github.com/Rikarin/SKALA/issues/20)
+worth an id is the half `CA2017` has never heard of.
+
+⚠ **`CA2017` counts holes, not names.** `logger.LogInformation("{X} then {X}", a, b)` is silent under
+every `CA` rule measured, in every analysis mode — which is what leaves the duplicate-property
+concept unowned for `Microsoft.Extensions.Logging` as well as for Serilog.
+
 ## SK3000 — Async, concurrency, lifetime
 
 `SK3001` `async void` outside an event handler · `SK3002` blocking on async (`.Result`, `.Wait()`,
@@ -1108,8 +1139,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **210** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **176** | **84.2 %** |
+| Rules this document names | **211** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **177** | **84.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
