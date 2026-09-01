@@ -141,6 +141,7 @@ public static class AnalyzerHost {
         new RepeatedStringLiteralAnalyzer(),
         new LogTemplateArgumentCountAnalyzer(), new LogTemplateDuplicatePropertyAnalyzer(),
         new InvisibleCharacterAnalyzer(), new CaughtExceptionNotLoggedAnalyzer(),
+        new LoggerForAnotherTypeAnalyzer(),
     ];
 
     /// <summary>

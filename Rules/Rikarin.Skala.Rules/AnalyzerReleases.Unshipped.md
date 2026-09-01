@@ -164,3 +164,4 @@ SK2070 | Skala.Correctness | Warning | The Serilog message template has a differ
 SK2071 | Skala.Correctness | Warning | The structured log template names the same property twice.
 SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
 SK2073 | Skala.Correctness | Warning | The caught exception is not passed to the logger's exception parameter.
+SK7110 | Skala.Maintainability | Info | The logger is declared for a different type than the one that declares it.
