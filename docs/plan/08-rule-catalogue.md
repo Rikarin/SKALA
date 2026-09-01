@@ -394,6 +394,34 @@ trees are the argument for it — across all three there is exactly **one** `got
 `SK7073` an empty `#region` · `SK7074` a `goto` to a label (`goto case` and `goto default` are
 not reported).
 
+⚠ **The block below is the register entry for `SK7090`–`SK7093` and the prose pass on it is owed.**
+It records what shipped and the position each rule takes, written by the agent that built them; it has
+not been through the editorial pass the rest of this section has had, and it should be read as notes
+that are accurate rather than as finished catalogue prose.
+
+**`SK7090` is `SK7040`'s requirement on the form that compiles.** `SK7040` asks a `TODO` to name the
+issue that owns it; `SK7090` asks the same of a thrown `NotImplementedException`, and the two accept
+the same vocabulary — a URL, `#123`, a project key such as `SKALA-123` — deliberately character for
+character, because two rules asking for "an issue reference" and disagreeing about what one looks like
+is a rule nobody can obey. ⚠ This one sits **on** the premise in [00](00-vision-and-scope.md) rather
+than beside it: a model asked for an implementation produces a compiling signature with a
+`NotImplementedException` body far more readily than it admits it cannot do the work, and that body
+type-checks, binds, formats and passes every analyzer in the build. It fails only when it runs, in a
+caller that had no way to know.
+
+⚠ **`SK7090` states an exclusion rather than merely detecting.** `NotSupportedException` and
+`UnreachableException` never fire. Both are permanent statements about a contract — an operation this
+type will never offer, a branch the author asserts is unreachable — and they are what an author writes
+when the answer really is "not here". `NotImplementedException` is the one that means "not yet", and
+"not yet" is what needs an owner; reporting the other two would make the rule an opinion about
+exception types and get it turned off with the part that is worth having. Only a construction that is
+*thrown* is reported, which is narrower than Sonar's `S3717`: constructing one to compare against or
+to hand to a test helper is not a member that compiles and does not work. Report-only, and this is the
+strongest case in the catalogue for a rule with no fix — every mechanical guess available (delete the
+member, return `default`, change the exception type) turns a loud failure into a quiet one.
+
+`SK7090` a thrown `NotImplementedException` with no issue reference.
+
 ## SK8000 — Tests
 
 `SK8001` test method with no assertion · `SK8002` `Assert.True(x == y)` instead of `Assert.Equal` ·
@@ -477,11 +505,11 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **151** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **121** | **80.7 %** |
+| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **122** | **80.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
