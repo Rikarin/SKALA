@@ -19,9 +19,10 @@ public sealed class DesignPromiseBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new GlobalNamespaceTypeAnalyzer(), new ReadonlyMutableFieldAnalyzer(),
         new AbstractTypeWithoutAbstractionAnalyzer(),
+        new PrivateConstructorOnlyAnalyzer(),
     ];
 
-    static readonly string[] Ids = ["SK6030", "SK6031", "SK6032"];
+    static readonly string[] Ids = ["SK6030", "SK6031", "SK6032", "SK6033"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {

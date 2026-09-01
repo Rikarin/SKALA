@@ -3397,6 +3397,33 @@
       "configuration": [
         "dotnet_diagnostic.SK6032.severity"
       ]
+    },
+    {
+      "id": "SK6033",
+      "concept": "only-private-constructors",
+      "title": "A type has only private constructors and is not static",
+      "category": "Design",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3453"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "Nothing outside the type can construct it, and nothing inside the file does either, so no caller can ever obtain an instance.",
+      "rationale": "A private constructor is a normal thing to write: a singleton hands out one instance, a factory validates before constructing, a static holder predates `static class`. Each of those puts something beside the constructor — a `new` of the type inside the type, or a nested type deriving from it. The finding is the same private constructor with none of that: no creation anywhere it could legally appear, no derivation, and no `static` to say the type was never meant to be instantiated. The type compiles, ships, and cannot be reached, and no compiler diagnostic says so — the members read as a public API that no caller can ever call. `SK6003` reports the opposite error on abstract types; this is the same question about instantiability from the other end.",
+      "examples": {
+        "bad": "public sealed class Endpoints {\n    private Endpoints() { }\n\n    public string Health => \"/health\";\n}",
+        "good": "public static class Endpoints {\n    public static string Health => \"/health\";\n}"
+      },
+      "falsePositives": "⚠ **The reachability test is a proof, not a heuristic, and that is why it reads the whole file.** A private constructor is accessible only inside the containing type's body, so for a type that is not `partial` every legal `new` of it and every legal derivation from it is in this one syntax tree. A creation or a base list anywhere in the file withdraws the finding, which covers a singleton's `static readonly Foo Instance = new();`, a `static Foo Create()`, a nested builder, and a `Parse` — none of them needs to be recognised as a pattern, because all of them create the type.\n\n\u26a0 **Nesting opens access inward, not outward, and the first draft of this rule had it backwards.** A nested type reaches its *container's* private constructor \u2014 a nested builder calling `new Pipeline(\u2026)`, a nested case deriving from its container \u2014 and that is what makes scanning the file rather than the candidate's own body necessary. The reverse does not hold: a container calling a *nested* type's private constructor is **CS0122**, which was found by compiling it rather than reasoned about, and the fixture that asserted it had to be replaced. `private` limits access to the type that declares the member and to what is nested inside it, in no other direction.\n\n**`partial` is never reported**, and here that is not caution but the proof failing: the other part may declare a public constructor or create the type, and it is exactly where \"the file holds every access to a private member\" stops being true.\n\n⚠ **`abstract` is excluded, and it is the exemption most worth stating.** An abstract class with a private constructor is a hierarchy closed to its own nested types — how C# spells a discriminated union — and is a deliberate, increasingly common design rather than an unreachable type. `record` and `struct` are excluded for a flatter reason: a positional record has a public primary constructor, and a struct always has an implicit parameterless one, so a private constructor never makes either unreachable.\n\n**A type carrying an attribute is exempt, and so is a constructor carrying one.** `[JsonConstructor]` names a private constructor for a serializer to call, and a container, a generator or a `[Serializable]` marker each reaches a type through a caller in no syntax tree at all.\n\n**`typeof(Foo)` in the same file withdraws the finding.** Beside a private constructor, that is what reflection looks like from here — `Activator.CreateInstance(typeof(Foo), nonPublic: true)`, a container registration by type, a test creating an instance the API does not offer. The rule cannot follow it and does not guess.\n\n⚠ **Reflection from another file is the false positive that remains, and nothing here can see it.** `Activator.CreateInstance` on a type obtained by name, a DI registration built from assembly scanning, and `RuntimeHelpers.GetUninitializedObject` all produce instances of a type this rule has just called unreachable. They are rare, they are exactly the code that should carry a comment saying so, and they are the case to baseline.\n\n**At least one *declared* constructor is required.** A class that declares none has an implicit public one and is closed to nothing; matching on \"has no public constructor\" instead would report every ordinary class in the language.\n\n⚠ **No fix, and the reason is not that no edit exists — it is that one exists for only some of the findings.** The static-holder shape, a private parameterless constructor with nothing but static members beside it, has an obvious two-edit repair: add `static`, delete the constructor. The general shape — a private constructor and instance members — has none, because \"make it reachable\" is a choice between a factory, a public constructor and deleting the type. Skala's fixture harness asserts that *every* finding of a rule declaring `hasFix: true` carries edits, so a rule cannot offer a fix for one shape and not the other, and splitting the concept across two ids to get one would be allocating a permanent number for the sake of an edit. The finding names the three repairs and lets a person pick.",
+      "configuration": [
+        "dotnet_diagnostic.SK6033.severity"
+      ]
     }
   ]
 }

@@ -70,6 +70,7 @@ public sealed class RuleFixtureTests {
         new GlobalNamespaceTypeAnalyzer(),
         new ReadonlyMutableFieldAnalyzer(),
         new AbstractTypeWithoutAbstractionAnalyzer(),
+        new PrivateConstructorOnlyAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

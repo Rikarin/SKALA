@@ -108,3 +108,4 @@ SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
 SK6030 | Skala.Design | Warning | A type is declared in the global namespace.
 SK6031 | Skala.Design | Warning | `readonly` does not protect a mutable field's contents.
 SK6032 | Skala.Design | Info | An abstract type declares nothing to implement.
+SK6033 | Skala.Design | Warning | A type has only private constructors and is not static.

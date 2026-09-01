@@ -108,6 +108,7 @@ public static class AnalyzerHost {
         new GlobalNamespaceTypeAnalyzer(),
         new ReadonlyMutableFieldAnalyzer(),
         new AbstractTypeWithoutAbstractionAnalyzer(),
+        new PrivateConstructorOnlyAnalyzer(),
     ];
 
     /// <summary>

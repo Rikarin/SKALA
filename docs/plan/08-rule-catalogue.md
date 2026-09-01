@@ -365,6 +365,7 @@ puts them beside `SK6020`–`SK6023` rather than in the semantic bands.
   collection, where the modifier stops reassignment and nothing else.
 - `SK6032` `abstract-type-without-abstraction` — an `abstract` class with nothing to override,
   nothing `protected` and no base.
+- `SK6033` `only-private-constructors` — a class nothing can construct and nothing can derive from.
 
 ## SK7000 — Maintainability
 
@@ -493,8 +494,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **124** | **80.5 %** |
+| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **125** | **80.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
