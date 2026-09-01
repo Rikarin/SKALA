@@ -107,6 +107,7 @@ public static class AnalyzerHost {
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new MissingTestClassAttributeAnalyzer(), new EmptyTestClassAnalyzer(),
         new SwappedAssertionArgumentsAnalyzer(),
+        new DuplicatedBaseDocumentationAnalyzer(),
     ];
 
     /// <summary>
