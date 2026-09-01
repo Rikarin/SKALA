@@ -204,5 +204,6 @@
   "CanSimplifyStringEscapeSequence": "SK1062",
   "UseStringInterpolationWhenPossible": "SK1063",
   "SimplifyStringInterpolation": "SK1063",
-  "StringLiteralAsInterpolationArgument": "SK1063"
+  "StringLiteralAsInterpolationArgument": "SK1063",
+  "UseUnsignedRightShiftOperator": "SK1064"
 }

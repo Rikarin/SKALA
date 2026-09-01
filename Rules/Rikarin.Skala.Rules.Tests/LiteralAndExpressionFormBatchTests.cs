@@ -23,7 +23,7 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class LiteralAndExpressionFormBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new IndexFromEndAnalyzer(), new NameofExpressionAnalyzer(), new EscapeFreeStringLiteralAnalyzer(),
-        new InterpolatedStringFormAnalyzer()
+        new InterpolatedStringFormAnalyzer(), new UnsignedRightShiftAnalyzer()
     ];
 
     [Theory]
@@ -336,6 +336,52 @@ public sealed class LiteralAndExpressionFormBatchTests {
 
         Assert.Empty(Below(source, LanguageVersion.CSharp5).Where(static d => d.Id == "SK1063"));
         Assert.NotEmpty(Below(source, LanguageVersion.CSharp6).Where(static d => d.Id == "SK1063"));
+    }
+
+    [Theory]
+    [InlineData("class C { int M(int h) => (int)((uint)h >> 16); }", "h >>> 16")]
+    [InlineData("class C { long M(long s, int b) => (long)((ulong)s >> b); }", "s >>> b")]
+    // The cast operand keeps its own parentheses, so it stays the left operand it was.
+    [InlineData("class C { int M(int a, int b) => (int)((uint)(a + b) >> 4); }", "(a + b) >>> 4")]
+    // ⚠ The nearest overflow context wins: an `unchecked` inside a `checked` restores the rule.
+    [InlineData(
+        "class C { int M(int h) { checked { return unchecked((int)((uint)h >> 16)); } } }",
+        "h >>> 16"
+    )]
+    public void UnsignedShift_Fires(string source, string replacement) {
+        var finding = Assert.Single(Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1064"));
+        Assert.Contains(replacement, finding.GetMessage(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The width proof, stated as tests. Everything narrower than <c>int</c> promotes before
+    ///     <c>&gt;&gt;</c> runs, so the identical-looking spelling is a different program.
+    /// </summary>
+    [Theory]
+    // For value = -1 and bits = 4 this gives 4095; `value >>> 4` gives -1.
+    [InlineData("class C { short M(short v, int b) => (short)((ushort)v >> b); }")]
+    [InlineData("class C { sbyte M(sbyte v, int b) => (sbyte)((byte)v >> b); }")]
+    // Not the same width on both sides, so not a round trip.
+    [InlineData("class C { long M(int h) => (long)((uint)h >> 16); }")]
+    // The operand was unsigned already: this converts a result.
+    [InlineData("class C { int M(uint h) => (int)(h >> 16); }")]
+    // Both casts can throw here and `>>>` cannot.
+    [InlineData("class C { int M(int h) { checked { return (int)((uint)h >> 16); } } }")]
+    // ⚠ `>>>` binds below `+`, so the bare rewrite would be `h >>> (16 + 1)`.
+    [InlineData("class C { int M(int h) => (int)((uint)h >> 16) + 1; }")]
+    // …and below `&`.
+    [InlineData("class C { int M(int h) => (int)((uint)h >> 16) & 255; }")]
+    // A left shift does not sign-extend.
+    [InlineData("class C { int M(int h) => (int)((uint)h << 16); }")]
+    public void UnsignedShift_DeclinesTheNearestMiss(string source) =>
+        Assert.Empty(Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1064"));
+
+    [Fact]
+    public void UnsignedShift_RequiresCSharp11() {
+        const string source = "class C { int M(int h) => (int)((uint)h >> 16); }";
+
+        Assert.Empty(Analyze(source, LanguageVersion.CSharp10).Where(static d => d.Id == "SK1064"));
+        Assert.Single(Analyze(source, LanguageVersion.CSharp11).Where(static d => d.Id == "SK1064"));
     }
 
     static string ApplyEdits(string source, Diagnostic diagnostic) {
