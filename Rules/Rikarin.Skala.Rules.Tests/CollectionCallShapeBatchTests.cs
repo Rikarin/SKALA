@@ -21,10 +21,10 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class CollectionCallShapeBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
-        new CollectionOwnMethodAnalyzer(), new CountPropertyAnalyzer(),
+        new CollectionOwnMethodAnalyzer(), new DictionaryKeyRelookupAnalyzer(), new CountPropertyAnalyzer(),
     ];
 
-    static readonly string[] Ids = ["SK4030"];
+    static readonly string[] Ids = ["SK4030", "SK4031"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
@@ -163,8 +163,94 @@ public sealed class CollectionCallShapeBatchTests {
         Assert.Contains("codes.Exists(", Apply(source, "SK4030"), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     ⚠ The whole rewrite, as text. The header and every lookup site move at once, and a fix
+    ///     that repaired the header alone would parse, bind, and leave the loop reading a key that no
+    ///     longer means anything.
+    /// </summary>
+    [Fact]
+    public void TheRelookupFix_DeconstructsAndReplacesEveryLookup() {
+        const string source = """
+                              using System;
+                              using System.Collections.Generic;
+                              public sealed class Report {
+                                  public static void Write(Dictionary<string, int> totals) {
+                                      foreach (var key in totals.Keys) {
+                                          Console.WriteLine(totals[key] + totals[key] + key);
+                                      }
+                                  }
+                              }
+                              """;
+
+        var fixedText = Apply(source, "SK4031");
+        Assert.Contains("foreach (var (key, value) in totals) {", fixedText, StringComparison.Ordinal);
+        Assert.Contains("Console.WriteLine(value + value + key);", fixedText, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ Inside a <c>set</c> accessor <c>value</c> is the implicit parameter, and a local of that
+    ///     name is CS0136 whether or not the accessor mentions it.
+    /// </summary>
+    [Fact]
+    public void TheValueNameStepsAsideForASetterImplicitParameter() {
+        const string source = """
+                              using System;
+                              using System.Collections.Generic;
+                              public sealed class Report {
+                                  readonly Dictionary<string, int> totals = new();
+
+                                  public int Threshold {
+                                      set {
+                                          foreach (var key in this.totals.Keys) {
+                                              Console.WriteLine(this.totals[key]);
+                                          }
+                                      }
+                                  }
+                              }
+                              """;
+
+        Assert.Contains("var (key, entryValue) in", Apply(source, "SK4031"), StringComparison.Ordinal);
+    }
+
+    /// <summary>A name the body already uses is not taken over by the fix.</summary>
+    [Fact]
+    public void AnExistingValueNameIsNotShadowed() {
+        const string source = """
+                              using System;
+                              using System.Collections.Generic;
+                              public sealed class Report {
+                                  public static void Write(Dictionary<string, int> totals, int value) {
+                                      foreach (var key in totals.Keys) {
+                                          Console.WriteLine(totals[key] + value);
+                                      }
+                                  }
+                              }
+                              """;
+
+        Assert.Contains("var (key, entryValue) in", Apply(source, "SK4031"), StringComparison.Ordinal);
+    }
+
+    /// <summary>⚠ A comment inside a replaced span is content the fix would delete.</summary>
+    [Fact]
+    public void ACommentInsideALookupWithholdsTheFinding() {
+        const string source = """
+                              using System;
+                              using System.Collections.Generic;
+                              public sealed class Report {
+                                  public static void Write(Dictionary<string, int> totals) {
+                                      foreach (var key in totals.Keys) {
+                                          Console.WriteLine(totals[/* the running total */ key]);
+                                      }
+                                  }
+                              }
+                              """;
+
+        Assert.Empty(Analyze(RuleFixtures.Compile(source, "probe.cs")).Where(d => d.Id == "SK4031"));
+    }
+
     [Theory]
     [InlineData("SK4030", "any-becomes-exists")]
+    [InlineData("SK4031", "a-dictionary-local")]
     public void GeneratedCode_IsIgnored(string id, string name) {
         var source = "// <auto-generated/>\n"
             + File.ReadAllText(Path.Combine(RuleFixtures.Root, id, "positive", name + ".cs"));

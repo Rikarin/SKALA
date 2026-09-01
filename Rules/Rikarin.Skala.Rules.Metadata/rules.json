@@ -3346,6 +3346,31 @@
       "configuration": [
         "dotnet_diagnostic.SK4030.severity"
       ]
+    },
+    {
+      "id": "SK4031",
+      "concept": "dictionary-key-relookup-in-loop",
+      "title": "The loop looks up a key it is already holding",
+      "category": "Performance",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "7.0",
+      "summary": "`foreach (var key in dict.Keys)` and then `dict[key]` in the body: the entry was already in hand and is hashed and probed for again, once per element.",
+      "rationale": "Enumerating `Keys` walks the same entries the dictionary would have handed over whole, and then throws the value away. Every `dict[key]` in the body hashes the key again, probes the bucket chain again and compares again — work the enumerator already did on the way past, multiplied by the count of the dictionary. Iterating the dictionary itself and deconstructing the pair is one pass with no hashing at all. `SK1033` reports the `ContainsKey`-then-index double lookup; this is the same waste inside a loop, which is where it is worth a `warning` rather than a suggestion.",
+      "examples": {
+        "bad": "foreach (var key in totals.Keys) {\n    Console.WriteLine(key + \": \" + totals[key]);\n}",
+        "good": "foreach (var (key, value) in totals) {\n    Console.WriteLine(key + \": \" + value);\n}"
+      },
+      "falsePositives": "⚠ **The receiver is matched against a closed list of framework dictionaries** — `Dictionary`, `SortedDictionary`, `SortedList`, `ReadOnlyDictionary`, `ImmutableDictionary`, `ImmutableSortedDictionary` and `FrozenDictionary` — because the rewrite depends on `Keys` and the dictionary enumerating the same entries in the same order, and that is a promise those types make and `IDictionary<TKey, TValue>` does not. A user implementation whose `Keys` is a sorted projection would be reordered by the fix, so it is left alone. ⚠ **`ConcurrentDictionary` is excluded, and not only for tidiness**: its `Keys` takes every lock in the table and returns a snapshot, where iterating the table itself is a live, lock-free walk — under concurrent writes the two loops genuinely see different things, so the rewrite is a change to what the program observes rather than to what it costs. `SK4033` is where that receiver's costs are reported. ⚠ **A body that writes `dict[key] = …` withdraws the whole finding**, not just that site: the deconstructed `value` is a copy and assigning to it would silently stop updating the dictionary. So does a body that reassigns the dictionary variable, or passes it by reference. ⚠ The dictionary must be reached through a name path ending in a local, a parameter or a field. A property could hand back a different dictionary on the second read, and the fix leaves the indexer's receiver text in place precisely because it is not supposed to be re-evaluated. ⚠ The loop variable must be `var` or exactly the key type, and the fix needs a name for the value that the enclosing body does not already use; inside a `set` or `init` accessor `value` is taken by the implicit parameter, so a fallback name is chosen there rather than writing CS0136. ⚠ The rule is silent below C# 7.0 and where the framework's `KeyValuePair<TKey, TValue>` has no `Deconstruct`, because the fix would not compile.",
+      "configuration": [
+        "dotnet_diagnostic.SK4031.severity"
+      ]
     }
   ]
 }
