@@ -23,6 +23,7 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class CleanupRedundancyBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new EmptyInitializerAnalyzer(), new RedundantStringCallAnalyzer(),
+        new RedundantArgumentAnalyzer(),
     ];
 
     [Theory]
@@ -85,6 +86,42 @@ public sealed class CleanupRedundancyBatchTests {
         "SK0231",
         "static class C { const string S = @\"plain\"; static string M() => S; }",
         "static class C { const string S = \"plain\"; static string M() => S; }"
+    )]
+    // SK0232 — one trailing argument that restates the default.
+    [InlineData(
+        "SK0232",
+        "static class C { static int R(string p, bool c = true) => c ? p.Length : 0; static int M(string p) => R(p, true); }",
+        "static class C { static int R(string p, bool c = true) => c ? p.Length : 0; static int M(string p) => R(p); }"
+    )]
+    // SK0232 — two of them, removed in one edit rather than one per pass.
+    [InlineData(
+        "SK0232",
+        "static class C { static int W(string t, bool f = false, int r = 0) => t.Length + r; static int M(string t) => W(t, false, 0); }",
+        "static class C { static int W(string t, bool f = false, int r = 0) => t.Length + r; static int M(string t) => W(t); }"
+    )]
+    // SK0232 — every argument is a default, so the edit starts at the open parenthesis.
+    [InlineData(
+        "SK0232",
+        "static class C { static int R(bool c = true) => c ? 1 : 0; static int M() => R(true); }",
+        "static class C { static int R(bool c = true) => c ? 1 : 0; static int M() => R(); }"
+    )]
+    // SK0232 — the delegate creation becomes the method group the conversion would have taken.
+    [InlineData(
+        "SK0232",
+        "using System; static class C { static void H(object? s, EventArgs e) { } static EventHandler M() { EventHandler h = new EventHandler(H); return h; } }",
+        "using System; static class C { static void H(object? s, EventArgs e) { } static EventHandler M() { EventHandler h = H; return h; } }"
+    )]
+    // SK0232 — one lambda parameter loses its type and its parentheses together.
+    [InlineData(
+        "SK0232",
+        "using System; static class C { static int M(int v) { Func<int, int> t = (int n) => n * 2; return t(v); } }",
+        "using System; static class C { static int M(int v) { Func<int, int> t = n => n * 2; return t(v); } }"
+    )]
+    // SK0232 — two of them keep the parentheses, because the shortest legal spelling needs them.
+    [InlineData(
+        "SK0232",
+        "using System; static class C { static int M(int a, int b) { Func<int, int, int> f = (int x, int y) => x + y; return f(a, b); } }",
+        "using System; static class C { static int M(int a, int b) { Func<int, int, int> f = (x, y) => x + y; return f(a, b); } }"
     )]
     public void TheFix_ProducesExactlyThisText(string rule, string before, string after) =>
         Assert.Equal(after, Fix(rule, before));

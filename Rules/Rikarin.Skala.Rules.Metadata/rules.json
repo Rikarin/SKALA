@@ -3367,6 +3367,31 @@
       "configuration": [
         "dotnet_diagnostic.SK0231.severity"
       ]
+    },
+    {
+      "id": "SK0232",
+      "concept": "redundant-argument",
+      "title": "The argument or signature element is redundant",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantArgumentDefaultValue",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A trailing argument that restates the parameter's default, a delegate creation the conversion would have performed, or lambda parameter types the target already declares.",
+      "rationale": "An argument restating a default is a value that silently stops tracking the default the day it changes — the same hazard `optional-and-params-hazards` reports from the declaration side, seen from the call. `new EventHandler(Foo)` is an allocation as well as noise: the method group converts to the delegate on its own, and writing the conversion out produces exactly the same object through more text.",
+      "examples": {
+        "bad": "Parse(text, throwOnFailure: false);\nProcess(text, 0);\nchanged += new EventHandler(OnChanged);\nFunc<int, int> twice = (int n) => n * 2;",
+        "good": "Parse(text, throwOnFailure: false);\nProcess(text);\nchanged += OnChanged;\nFunc<int, int> twice = n => n * 2;"
+      },
+      "falsePositives": "⚠ **Deleting an argument can change which method is called, and the rule asks the compiler rather than reasoning about it.** With `Foo(int a, int b = 0)` beside `Foo(int a)`, `Foo(1, 0)` and `Foo(1)` are calls to two different methods and nothing about the argument says so. Every finding re-binds the shortened call speculatively and withdraws unless the same symbol comes back, which is the guard Roslyn's own `IDE0004` family exists to remind everybody about. ⚠ **A caller-info parameter is excluded and looks exactly like the shape that is not.** Passing `null` to a `[CallerMemberName] string name = null` restates the default in the source and is the only thing keeping the value null: omit it and the compiler substitutes the caller's name. The same applies to `[CallerLineNumber]`, `[CallerFilePath]` and `[CallerArgumentExpression]`. ⚠ Positional arguments only — a named argument need not be last and need not fill the parameter its position names, so \"the trailing argument's parameter\" stops being a fact. A `params` parameter, a `ref`/`out`/`in` argument, and any argument whose value is not a compile-time constant equal to the default are all excluded; `default(SomeStruct)` is not a constant, so a struct default is never matched. Consecutive trailing defaults are removed in **one** edit, longest suffix first, because one at a time would make the rule fire on its own output. ⚠ The two conversion shapes avoid overload resolution instead of answering it: both are reported only where the target type is written down — an explicitly typed variable or an assignment — because as an *argument* a method group or a lambda can be the thing that picks the overload. A method group only, never a delegate value (`new EventHandler(other)` is a copy) and never a lambda. Lambda parameter types are compared **including nullability**: `Func<string?, int> f = (string x) => x.Length;` compiles, and dropping the written type would introduce the `CS8602` the author wrote it to avoid. ⚠ **Four of the family's seven inspections are not covered**: `RedundantExplicitParamsArrayCreation` (`Foo(new object[] { arr })` and `Foo(arr)` pass the array in two different roles), `RedundantCallerArgumentExpressionDefaultValue`, `UnusedAnonymousMethodSignature` and `RedundantImmediateDelegateInvocation`. Constructor arguments and attribute arguments are not matched either; only invocations are.",
+      "configuration": [
+        "dotnet_diagnostic.SK0232.severity"
+      ]
     }
   ]
 }

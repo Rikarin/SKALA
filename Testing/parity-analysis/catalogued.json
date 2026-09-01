@@ -146,5 +146,8 @@
  "RedundantStringToCharArrayCall": "SK0231",
  "RedundantStringFormatCall": "SK0231",
  "RedundantStringInterpolation": "SK0231",
- "RedundantVerbatimStringPrefix": "SK0231"
+ "RedundantVerbatimStringPrefix": "SK0231",
+ "RedundantArgumentDefaultValue": "SK0232",
+ "RedundantDelegateCreation": "SK0232",
+ "RedundantLambdaParameterType": "SK0232"
 }
