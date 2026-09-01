@@ -171,5 +171,7 @@
   "RedundantCast": "SK0234",
   "RedundantTypeArgumentsOfMethod": "SK0234",
   "RedundantExplicitArraySize": "SK0234",
-  "RedundantExplicitTupleComponentName": "SK0234"
+  "RedundantExplicitTupleComponentName": "SK0234",
+  "InheritdocConsiderUsage": "SK7100",
+  "InternalOrPrivateMemberNotDocumented": "SK7101"
 }

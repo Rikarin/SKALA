@@ -767,6 +767,16 @@ are not redundant, so it is not built and the number stays free. ⚠ Note for wh
 `❌ SPURIOUS`, "Skala moved and the oracle did not", so the tier is about fidelity to `jb cleanupcode`
 rather than about whether the shape is reached. It is reached, which is all this refutation needs; the
 divergence against the oracle is a separate question and is not disturbed here.
+⚠ **`SK7100` and `SK7101` are appended here with the prose pass owed.** The rows below are the
+register entry ADR-012 requires and no more; the paragraph placing them beside `SK7010`, and
+recording why the second ships at `none`, has not been written.
+
+`SK7100` a documentation comment that is word for word the one on the member it overrides or
+implements — reported only where the two are *identical*, because a similarity threshold is what
+would make the rule dangerous. · `SK7101` a declaration that is not publicly visible and carries no
+documentation comment — `SK7010`'s predicates with the accessibility test negated, shipped at
+`none` and enabled per path, because it is the highest-firing uncovered inspection in the parity
+measurement and that is an argument for caution rather than for volume.
 
 ## SK8000 — Tests
 
@@ -774,6 +784,18 @@ divergence against the oracle is a separate question and is not disturbed here.
 `SK8003` `[Fact]` on a method with parameters · `SK8004` `async void` test ·
 `SK8005` `Thread.Sleep` in a test · `SK8006` test that is `[Skip]`ped without a reason ·
 `SK8007` non-deterministic input (`DateTime.Now`, `Guid.NewGuid`, `Random`) in an assertion path.
+
+⚠ **`SK8020`–`SK8022` are appended here with the prose pass owed.** The rows below are the register
+entry ADR-012 requires and no more; the paragraph that explains what the three add to this range, and
+how they relate to the `SK8001`–`SK8004` cuts above, has not been written.
+
+`SK8020` a class with `[TestMethod]` members and no `[TestClass]` — MSTest only, because xUnit has no
+class attribute to be missing and NUnit 3 made `[TestFixture]` optional. ·
+`SK8021` a `[TestClass]` or `[TestFixture]` that declares no test, in itself or in any base type —
+report-only, because choosing between writing the missing test and deleting the class is the whole
+of the finding. · `SK8022` an equality assertion called as `(actual, expected)` — reported only where
+the `expected` argument is not a constant and the `actual` argument is, because a constant cannot be
+produced by the code under test.
 
 Scoped to test projects by convention (`*.Tests`) and by `.editorconfig` section. ⚠ This used to read
 "matching how Vixen already segments `[**/*.Tests/**/*.cs]`", and that clause is withdrawn for the
@@ -853,6 +875,7 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **179** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **147** | **82.6 %** |
+
 | Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **126** | **81.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |

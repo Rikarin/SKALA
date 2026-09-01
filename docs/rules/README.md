@@ -135,10 +135,8 @@
 | [SK7072](SK7072.md) | A warning suppression covers nothing | warning | safe | yes |
 | [SK7073](SK7073.md) | A region is empty | suggestion | safe | yes |
 | [SK7074](SK7074.md) | Review a goto to a label | warning | — | yes |
-| [SK7090](SK7090.md) | A thrown `NotImplementedException` has no issue reference | warning | — | no |
-| [SK7091](SK7091.md) | The process is terminated outside the entry point | warning | — | no |
-| [SK7092](SK7092.md) | The exception is both logged and rethrown | warning | — | no |
-| [SK7093](SK7093.md) | The console is written to where a logger was meant | warning | — | no |
+| [SK7100](SK7100.md) | The documentation duplicates the base member's | suggestion | safe | no |
+| [SK7101](SK7101.md) | A non-public member has no documentation comment | none | — | yes |
 
 ## Modernization
 
@@ -210,6 +208,9 @@
 | [SK8005](SK8005.md) | `Thread.Sleep` in a test | suggestion | — | no |
 | [SK8006](SK8006.md) | A skipped test has no reason | warning | — | no |
 | [SK8007](SK8007.md) | Use controlled assertion input | suggestion | — | no |
+| [SK8020](SK8020.md) | A class with `[TestMethod]` members carries no `[TestClass]` | warning | review | no |
+| [SK8021](SK8021.md) | The test class declares no test | warning | — | no |
+| [SK8022](SK8022.md) | The assertion's expected and actual arguments are swapped | warning | safe | no |
 
 ## Tool
 

@@ -125,6 +125,9 @@ public static class AnalyzerHost {
         new EmptyInitializerAnalyzer(), new RedundantStringCallAnalyzer(),
         new RedundantArgumentAnalyzer(), new RedundantSyntaxAnalyzer(),
         new RedundantCastAnalyzer(),
+        new MissingTestClassAttributeAnalyzer(), new EmptyTestClassAnalyzer(),
+        new SwappedAssertionArgumentsAnalyzer(),
+        new DuplicatedBaseDocumentationAnalyzer(), new UndocumentedNonPublicMemberAnalyzer(),
     ];
 
     /// <summary>

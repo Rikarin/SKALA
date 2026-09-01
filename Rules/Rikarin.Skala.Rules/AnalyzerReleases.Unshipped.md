@@ -136,3 +136,8 @@ SK0231 | Skala.Cleanup | Warning | A call on a string returns the string it was 
 SK0232 | Skala.Cleanup | Warning | An argument or signature element restates the declaration.
 SK0233 | Skala.Cleanup | Info | Nine token-level redundant syntax deletions.
 SK0234 | Skala.Cleanup | Warning | A conversion that converts nothing.
+SK8020 | Skala.Tests | Warning | A class with `[TestMethod]` members carries no `[TestClass]`.
+SK8021 | Skala.Tests | Warning | The test class declares no test.
+SK8022 | Skala.Tests | Warning | The assertion's expected and actual arguments are swapped.
+SK7100 | Skala.Maintainability | Info | The documentation duplicates the base member's.
+SK7101 | Skala.Maintainability | Disabled | A non-public member has no documentation comment.
