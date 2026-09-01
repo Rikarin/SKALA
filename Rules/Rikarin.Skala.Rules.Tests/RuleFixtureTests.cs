@@ -101,7 +101,7 @@ public sealed class RuleFixtureTests {
         new InconsistentlySynchronizedFieldAnalyzer(),
         new InheritanceDepthAnalyzer(), new TypeCouplingAnalyzer(), new NestedConditionalAnalyzer(),
         new RepeatedStringLiteralAnalyzer(),
-        new IneffectiveThreadStaticAnalyzer(),
+        new IneffectiveThreadStaticAnalyzer(), new PureAttributeOnVoidAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
