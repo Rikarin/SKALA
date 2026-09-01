@@ -1,0 +1,2397 @@
+{
+ "$comment": [
+  "The curation behind this repository's open `rule-proposal` issues for ReSharper parity.",
+  "One entry per proposed Skala concept, plus one line per inspection deliberately excluded.",
+  "Every C#-relevant inspection that docs/plan/17's pipeline bucketed `Uncovered` appears",
+  "exactly once, in `concepts[].inspections` or in `excluded`. `verify_ledger.py` asserts that.",
+  "This is the record doc 17's README asks for: re-run the pipeline rather than re-argue it."
+ ],
+ "curatedAgainst": {
+  "pipeline": "Testing/parity-analysis/{universe,classify}.py",
+  "issueTypeDump": "jb inspectcode --dumpIssuesTypes, ReSharper 2025.2.6",
+  "export": "editor_config_template",
+  "uncoveredCount": 586,
+  "warning": "586 was measured on the pipeline BEFORE the id-keyed lookup defect was fixed. A re-run after the fix moves inspections out of `Uncovered` into `Catalogued`/`Hosted`; verify_ledger.py reports those as reconcile items, not failures."
+ },
+ "concepts": [
+  {
+   "slug": "constant-type-check",
+   "title": "A type check has a constant result",
+   "issue": 1,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "IsExpressionAlwaysTrue",
+    "IsExpressionAlwaysFalse",
+    "TryCastAlwaysSucceeds",
+    "PatternNeverMatches",
+    "PatternIsRedundant",
+    "RedundantTypeCheckInPattern",
+    "RedundantAlwaysMatchSubpattern",
+    "RedundantNullableTypeMark"
+   ]
+  },
+  {
+   "slug": "suspicious-type-conversion",
+   "title": "The conversion cannot succeed for the values that reach it",
+   "issue": 2,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "SuspiciousTypeConversion.Global",
+    "PossibleInvalidCastException",
+    "PossibleInvalidCastExceptionInForeachLoop",
+    "CoVariantArrayConversion"
+   ]
+  },
+  {
+   "slug": "unintended-reference-comparison",
+   "title": "The comparison is by reference where value equality was meant",
+   "issue": 3,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "PossibleUnintendedReferenceComparison",
+    "ReferenceEqualsWithValueType",
+    "CheckForReferenceEqualityInstead.1",
+    "CheckForReferenceEqualityInstead.2",
+    "CheckForReferenceEqualityInstead.3",
+    "CheckForReferenceEqualityInstead.4",
+    "CompareNonConstrainedGenericWithNull"
+   ]
+  },
+  {
+   "slug": "default-struct-equality-used",
+   "title": "A struct with no equality members is compared",
+   "issue": 4,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "UsageOfDefaultStructEquality",
+    "DefaultStructEqualityIsUsed.Global",
+    "DefaultStructEqualityIsUsed.Local",
+    "StructLacksIEquatable.Global",
+    "StructLacksIEquatable.Local",
+    "TypeWithSuspiciousEqualityIsUsedInRecord.Global",
+    "TypeWithSuspiciousEqualityIsUsedInRecord.Local"
+   ]
+  },
+  {
+   "slug": "base-equality-call-is-identity",
+   "title": "`base.Equals` / `base.GetHashCode` resolves to `object`'s",
+   "issue": 5,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "BaseObjectEqualsIsObjectEquals",
+    "BaseObjectGetHashCodeCallInGetHashCode"
+   ]
+  },
+  {
+   "slug": "hash-code-ignores-members",
+   "title": "The hash code does not include the members equality compares",
+   "issue": 6,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "resharper_value_tuple_hash_code_ignores_elements_highlighting",
+    "resharper_can_use_hash_code_combine_highlighting"
+   ]
+  },
+  {
+   "slug": "integer-overflow-and-division",
+   "title": "The integral expression overflows or divides by zero",
+   "issue": 7,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "IntDivisionByZero",
+    "IntVariableOverflow",
+    "IntVariableOverflowInCheckedContext",
+    "IntVariableOverflowInUncheckedContext",
+    "PossibleLossOfFraction",
+    "EnumerableSumInExplicitUncheckedContext"
+   ]
+  },
+  {
+   "slug": "constant-arithmetic-result",
+   "title": "The arithmetic has a result the operands already fix",
+   "issue": 8,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UselessBinaryOperation",
+    "UselessComparisonToIntegralConstant",
+    "MathAbsMethodIsRedundant",
+    "SuspiciousMathSignMethod",
+    "MathClampMinGreaterThanMax"
+   ]
+  },
+  {
+   "slug": "suspicious-shift-count",
+   "title": "The shift count makes the expression constant or is masked",
+   "issue": 9,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "ShiftExpressionRealShiftCountIsZero",
+    "ShiftExpressionResultEqualsZero",
+    "ShiftExpressionZeroLeftOperand",
+    "ShiftExpressionRightOperandNotEqualRealCount"
+   ]
+  },
+  {
+   "slug": "index-out-of-range",
+   "title": "The index or range cannot be valid",
+   "issue": 10,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "NegativeIndex",
+    "IndexingByInvalidRange",
+    "ZeroIndexFromEnd"
+   ]
+  },
+  {
+   "slug": "assignment-in-condition",
+   "title": "An assignment is used where a comparison was meant",
+   "issue": 11,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Syntax",
+   "proposedFix": "none",
+   "inspections": [
+    "AssignmentInConditionalExpression",
+    "AssignmentInsteadOfDiscard",
+    "AllUnderscoreLocalParameterName"
+   ]
+  },
+  {
+   "slug": "dead-assignment",
+   "title": "The assigned value is never read",
+   "issue": 12,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantAssignment",
+    "AssignmentIsFullyDiscarded",
+    "MemberInitializerValueIgnored",
+    "RedundantCheckBeforeAssignment"
+   ]
+  },
+  {
+   "slug": "static-initializer-order",
+   "title": "A static initializer reads a member declared after it",
+   "issue": 13,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "StaticMemberInitializerReferesToMemberBelow"
+   ]
+  },
+  {
+   "slug": "loop-cannot-terminate",
+   "title": "The loop or recursion has no exit",
+   "issue": 14,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "LoopVariableIsNeverChangedInsideLoop",
+    "FunctionRecursiveOnAllPaths",
+    "IteratorNeverReturns",
+    "ConstructorInitializerLoop",
+    "PossibleInfiniteInheritance",
+    "ForStatementConditionIsTrue",
+    "EmptyForStatement"
+   ]
+  },
+  {
+   "slug": "name-hides-name",
+   "title": "The declaration hides another name in scope",
+   "issue": 15,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "LocalVariableHidesMember",
+    "ParameterHidesMember",
+    "LocalFunctionHidesMethod",
+    "VariableHidesOuterVariable",
+    "MemberHidesStaticFromOuterClass",
+    "LocalVariableHidesPrimaryConstructorParameter",
+    "ParameterHidesPrimaryConstructorParameter",
+    "FieldHidesInterfacePropertyWithDefaultImplementation",
+    "MemberHidesInterfaceMemberWithDefaultImplementation"
+   ]
+  },
+  {
+   "slug": "bitwise-on-non-flags-enum",
+   "title": "A bitwise operation is applied to an enum without `[Flags]`",
+   "issue": 16,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "BitwiseOperatorOnEnumWithoutFlags"
+   ]
+  },
+  {
+   "slug": "duplicate-collection-initializer-key",
+   "title": "The collection initializer has duplicate keys",
+   "issue": 17,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Syntax",
+   "proposedFix": "none",
+   "inspections": [
+    "DuplicateKeyCollectionInitialization",
+    "PossiblyMissingIndexerInitializerComma"
+   ]
+  },
+  {
+   "slug": "event-subscription-mistakes",
+   "title": "The event subscription cannot be undone or is dispatched wrongly",
+   "issue": 18,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "EventUnsubscriptionViaAnonymousDelegate",
+    "PolymorphicFieldLikeEventInvocation"
+   ]
+  },
+  {
+   "slug": "format-string-mismatch",
+   "title": "The format string does not match its arguments",
+   "issue": 19,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "FormatStringPlaceholdersMismatch",
+    "FormatStringProblem",
+    "FormatSpecifierCapturesRightBraces",
+    "PossiblyMistakenUseOfInterpolatedStringInsert",
+    "InterpolatedStringExpressionIsNotIFormattable"
+   ]
+  },
+  {
+   "slug": "structured-log-template",
+   "title": "The structured log template does not match its arguments",
+   "issue": 20,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "resharper_template_format_string_problem_highlighting",
+    "resharper_template_duplicate_property_problem_highlighting",
+    "resharper_template_is_not_compile_time_constant_problem_highlighting",
+    "DuplicateItemInLoggerTemplate",
+    "resharper_log_message_is_sentence_problem_highlighting",
+    "resharper_inconsistent_log_property_naming_highlighting",
+    "resharper_inconsistent_context_log_property_naming_highlighting",
+    "resharper_contextual_logger_problem_highlighting",
+    "resharper_exception_passed_as_template_argument_problem_highlighting",
+    "resharper_anonymous_object_destructuring_problem_highlighting",
+    "resharper_complex_object_destructuring_problem_highlighting",
+    "resharper_complex_object_in_context_destructuring_problem_highlighting",
+    "resharper_positional_property_used_problem_highlighting"
+   ]
+  },
+  {
+   "slug": "stream-read-return-ignored",
+   "title": "The number of bytes actually read is ignored",
+   "issue": 21,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "StreamReadReturnValueIgnored"
+   ]
+  },
+  {
+   "slug": "wrong-argument-name-in-exception",
+   "title": "The exception names a parameter that does not exist",
+   "issue": 22,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "SuspiciousParameterNameInArgumentNullException"
+   ]
+  },
+  {
+   "slug": "mistaken-type-argument",
+   "title": "The `Type` passed is the wrong one",
+   "issue": 23,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "PossibleMistakenCallToGetType",
+    "PossibleMistakenSystemTypeArgument"
+   ]
+  },
+  {
+   "slug": "never-assigned-storage",
+   "title": "The field or property is read but never assigned",
+   "issue": 24,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "UnassignedField.Global",
+    "UnassignedField.Local",
+    "UnassignedReadonlyField",
+    "UnassignedGetOnlyAutoProperty",
+    "NotNullOrRequiredMemberIsNotInitialized",
+    "PropertyFieldKeywordIsNeverAssigned"
+   ]
+  },
+  {
+   "slug": "struct-copy-defeats-mutation",
+   "title": "The struct is copied before the member is touched",
+   "issue": 25,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "PossiblyImpureMethodCallOnReadonlyVariable",
+    "PossibleStructMemberModificationOfNonVariableStruct"
+   ]
+  },
+  {
+   "slug": "suppress-finalize-without-finalizer",
+   "title": "`GC.SuppressFinalize` is called on a type with no finalizer",
+   "issue": 26,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "GCSuppressFinalizeForTypeWithoutDestructor"
+   ]
+  },
+  {
+   "slug": "stackalloc-in-loop",
+   "title": "`stackalloc` is inside a loop",
+   "issue": 27,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Syntax",
+   "proposedFix": "none",
+   "inspections": [
+    "StackAllocInsideLoop"
+   ]
+  },
+  {
+   "slug": "enum-switch-no-default",
+   "title": "The enum `switch` has no default section",
+   "issue": 28,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "SwitchStatementForEnumMissesDefaultSection"
+   ]
+  },
+  {
+   "slug": "unreachable-switch-arm",
+   "title": "The switch arm is unreachable given the value's range",
+   "issue": 29,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "UnreachableSwitchArmDueToIntegerAnalysis",
+    "UnreachableSwitchCaseDueToIntegerAnalysis"
+   ]
+  },
+  {
+   "slug": "optional-and-params-hazards",
+   "title": "The optional or `params` parameter does not behave as written",
+   "issue": 30,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "MethodOverloadWithOptionalParameter",
+    "OptionalParameterHierarchyMismatch",
+    "BaseMethodCallWithDefaultParameter",
+    "DefaultValueAttributeForOptionalParameter",
+    "MeaninglessDefaultParameterValue",
+    "OptionalParameterRefOut",
+    "BaseMemberHasParams",
+    "RedundantParams"
+   ]
+  },
+  {
+   "slug": "partial-declaration-name-mismatch",
+   "title": "The parameter name differs between partial declarations",
+   "issue": 31,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "PartialMethodParameterNameMismatch"
+   ]
+  },
+  {
+   "slug": "explicit-caller-info-argument",
+   "title": "An explicit argument overrides a caller-info parameter",
+   "issue": 32,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "ExplicitCallerInfoArgument"
+   ]
+  },
+  {
+   "slug": "value-parameter-not-used",
+   "title": "The setter ignores `value`",
+   "issue": 33,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Syntax",
+   "proposedFix": "none",
+   "inspections": [
+    "ValueParameterNotUsed"
+   ]
+  },
+  {
+   "slug": "operator-without-checked-counterpart",
+   "title": "The operator has no matching `checked` operator",
+   "issue": 34,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "OperatorWithoutMatchedCheckedOperator"
+   ]
+  },
+  {
+   "slug": "static-member-via-derived-type",
+   "title": "A static member is accessed through a derived type",
+   "issue": 35,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "AccessToStaticMemberViaDerivedType"
+   ]
+  },
+  {
+   "slug": "linear-search-in-set",
+   "title": "A set or dictionary is searched linearly",
+   "issue": 36,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "PossibleUnintendedLinearSearchInSet"
+   ]
+  },
+  {
+   "slug": "queryable-used-as-enumerable",
+   "title": "`IQueryable` is silently degraded to `IEnumerable`",
+   "issue": 37,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "PossibleUnintendedQueryableAsEnumerable"
+   ]
+  },
+  {
+   "slug": "misleading-statement-shape",
+   "title": "The statement does not do what its shape suggests",
+   "issue": 38,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Syntax",
+   "proposedFix": "safe",
+   "inspections": [
+    "MisleadingBodyLikeStatement",
+    "EmptyStatement"
+   ]
+  },
+  {
+   "slug": "confusing-literal",
+   "title": "The literal is easily misread",
+   "issue": 39,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Syntax",
+   "proposedFix": "safe",
+   "inspections": [
+    "LongLiteralEndingLowerL",
+    "VariableLengthStringHexEscapeSequence",
+    "ConfusingCharAsIntegerInConstructor"
+   ]
+  },
+  {
+   "slug": "null-suppression-reads-as-negation",
+   "title": "`!` reads as a negated `is`",
+   "issue": 40,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Syntax",
+   "proposedFix": "none",
+   "inspections": [
+    "SuppressNullableWarningExpressionAsInvertedIsExpression"
+   ]
+  },
+  {
+   "slug": "with-expression-replaces-everything",
+   "title": "The `with` expression rewrites every member",
+   "issue": 41,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "WithExpressionModifiesAllMembers"
+   ]
+  },
+  {
+   "slug": "side-effect-in-conditional-access",
+   "title": "A side effect sits inside a conditionally-evaluated operand",
+   "issue": 42,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "PossiblyUnintendedSideEffectsInsideConditionalInvocation"
+   ]
+  },
+  {
+   "slug": "threadstatic-misuse",
+   "title": "`[ThreadStatic]` is applied where it has no effect",
+   "issue": 43,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "ThreadStaticAtInstanceField",
+    "ThreadStaticFieldHasInitializer"
+   ]
+  },
+  {
+   "slug": "primary-constructor-capture",
+   "title": "The primary constructor parameter is captured",
+   "issue": 44,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "CapturedPrimaryConstructorParameterIsMutable",
+    "PrimaryConstructorParameterCaptureDisallowed"
+   ]
+  },
+  {
+   "slug": "escaped-keyword-identifier",
+   "title": "The identifier is an escaped keyword",
+   "issue": 45,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Syntax",
+   "proposedFix": "none",
+   "inspections": [
+    "resharper_escaped_keyword_highlighting"
+   ]
+  },
+  {
+   "slug": "immutable-array-collection-initializer",
+   "title": "`ImmutableArray<T>` is built with a collection initializer",
+   "issue": 46,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "error",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "resharper_immutable_array_with_collection_initializer_highlighting"
+   ]
+  },
+  {
+   "slug": "nullability-flow-analysis",
+   "title": "The expression is null on a path that dereferences it",
+   "issue": 47,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "PossibleNullReferenceException",
+    "ExpressionIsAlwaysNull",
+    "ConstantConditionalAccessQualifier",
+    "PossibleInvalidOperationException"
+   ]
+  },
+  {
+   "slug": "regex-pattern-problems",
+   "title": "The regular expression pattern is malformed or suspicious",
+   "issue": 48,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "RegExpInspections"
+   ]
+  },
+  {
+   "slug": "interface-member-ambiguity",
+   "title": "The member accessed through the interface is ambiguous",
+   "issue": 49,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "PossibleInterfaceMemberAmbiguity"
+   ]
+  },
+  {
+   "slug": "discarded-object-creation",
+   "title": "The constructed object is discarded",
+   "issue": 50,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "RemoveConstructorInvocation"
+   ]
+  },
+  {
+   "slug": "culture-sensitive-string-search",
+   "title": "The string search has an implicit culture policy",
+   "issue": 51,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "StringLastIndexOfIsCultureSpecific.1",
+    "StringLastIndexOfIsCultureSpecific.2",
+    "StringLastIndexOfIsCultureSpecific.3"
+   ]
+  },
+  {
+   "slug": "span-equality-is-reference-equality",
+   "title": "`==` on spans compares memory locations",
+   "issue": 52,
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "StringSpanComparison"
+   ]
+  },
+  {
+   "slug": "async-iterator-not-awaited",
+   "title": "The async iterator is enumerated without `await foreach`",
+   "issue": 53,
+   "proposedRange": "SK3000-SK3499",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "AsyncIteratorInvocationWithoutAwaitForeach"
+   ]
+  },
+  {
+   "slug": "async-void-rethrow",
+   "title": "An exception is rethrown from an `async void` method",
+   "issue": 54,
+   "proposedRange": "SK3000-SK3499",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "AsyncVoidThrowException"
+   ]
+  },
+  {
+   "slug": "elide-async-state-machine",
+   "title": "The method is `async` only to return an awaited task",
+   "issue": 55,
+   "proposedRange": "SK3000-SK3499",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "ReplaceAsyncWithTaskReturn"
+   ]
+  },
+  {
+   "slug": "inconsistent-lock-order",
+   "title": "Locks are taken in inconsistent orders",
+   "issue": 56,
+   "proposedRange": "SK3000-SK3499",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "InconsistentOrderOfLocks"
+   ]
+  },
+  {
+   "slug": "inconsistently-synchronized-field",
+   "title": "The field is guarded on some paths and not others",
+   "issue": 57,
+   "proposedRange": "SK3000-SK3499",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "InconsistentlySynchronizedField"
+   ]
+  },
+  {
+   "slug": "non-atomic-volatile-compound",
+   "title": "The compound operation on a `volatile` field is not atomic",
+   "issue": 58,
+   "proposedRange": "SK3000-SK3499",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "NonAtomicCompoundOperator"
+   ]
+  },
+  {
+   "slug": "double-checked-locking",
+   "title": "The double-checked locking is not correct",
+   "issue": 59,
+   "proposedRange": "SK3000-SK3499",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "NonVolatileFieldInDoubleCheckLocking",
+    "PossibleMultipleWriteAccessInDoubleCheckLocking",
+    "ReadAccessInDoubleCheckLocking"
+   ]
+  },
+  {
+   "slug": "spinlock-in-readonly-field",
+   "title": "A `SpinLock` is stored in a `readonly` field",
+   "issue": 60,
+   "proposedRange": "SK3000-SK3499",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "SpinLockInReadonlyField"
+   ]
+  },
+  {
+   "slug": "lock-over-synchronization-primitive",
+   "title": "The `lock` is taken over a synchronization primitive",
+   "issue": 61,
+   "proposedRange": "SK3000-SK3499",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "SuspiciousLockOverSynchronizationPrimitive"
+   ]
+  },
+  {
+   "slug": "byref-to-volatile-or-remote",
+   "title": "A reference is taken to storage that cannot be referenced safely",
+   "issue": 62,
+   "proposedRange": "SK3000-SK3499",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "ByRefArgumentIsVolatileField",
+    "AddressOfMarshalByRefObject"
+   ]
+  },
+  {
+   "slug": "short-lived-httpclient",
+   "title": "A short-lived `HttpClient` is created per call",
+   "issue": 63,
+   "proposedRange": "SK3000-SK3499",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "resharper_short_lived_http_client_highlighting"
+   ]
+  },
+  {
+   "slug": "return-of-using-variable",
+   "title": "A variable captured by `using` is returned",
+   "issue": 64,
+   "proposedRange": "SK3500-SK3999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "ReturnOfUsingVariable"
+   ]
+  },
+  {
+   "slug": "dispose-of-using-captured-variable",
+   "title": "A variable already owned by `using` is disposed again",
+   "issue": 65,
+   "proposedRange": "SK3500-SK3999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "DisposeOnUsingVariable"
+   ]
+  },
+  {
+   "slug": "object-initializer-on-using-resource",
+   "title": "The `using` resource is built with an object initializer",
+   "issue": 66,
+   "proposedRange": "SK3500-SK3999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UsingStatementResourceInitialization",
+    "UsingStatementResourceInitializationExpression"
+   ]
+  },
+  {
+   "slug": "lambda-can-be-static",
+   "title": "The lambda captures nothing and is not `static`",
+   "issue": 67,
+   "proposedRange": "SK4000-SK4999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "LambdaExpressionCanBeMadeStatic",
+    "LambdaExpressionMustBeStatic",
+    "LambdaShouldNotCaptureContext",
+    "LocalFunctionCanBeMadeStatic"
+   ]
+  },
+  {
+   "slug": "struct-can-be-readonly",
+   "title": "The struct is never mutated and is not `readonly`",
+   "issue": 68,
+   "proposedRange": "SK4000-SK4999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "StructCanBeMadeReadOnly"
+   ]
+  },
+  {
+   "slug": "class-can-be-sealed",
+   "title": "The class is never inherited and is not `sealed`",
+   "issue": 69,
+   "proposedRange": "SK4000-SK4999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Compilation",
+   "proposedFix": "safe",
+   "inspections": [
+    "ClassCanBeSealed.Global",
+    "ClassCanBeSealed.Local"
+   ]
+  },
+  {
+   "slug": "member-can-be-static",
+   "title": "The instance member does not use instance state",
+   "issue": 70,
+   "proposedRange": "SK4000-SK4999",
+   "proposedSeverity": "hint",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "MemberCanBeMadeStatic.Global",
+    "MemberCanBeMadeStatic.Local"
+   ]
+  },
+  {
+   "slug": "redundant-capacity-argument",
+   "title": "The capacity argument matches the default",
+   "issue": 71,
+   "proposedRange": "SK4000-SK4999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "resharper_redundant_capacity_argument_highlighting"
+   ]
+  },
+  {
+   "slug": "constant-expected-parameter",
+   "title": "The parameter expects a constant and is given one at runtime",
+   "issue": 72,
+   "proposedRange": "SK4000-SK4999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "ConstantExpected",
+    "IncorrectConstantExpectedAnnotation"
+   ]
+  },
+  {
+   "slug": "primary-constructor",
+   "title": "Use a primary constructor",
+   "issue": 73,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "ConvertToPrimaryConstructor",
+    "ReplaceWithPrimaryConstructorParameter"
+   ]
+  },
+  {
+   "slug": "extension-block",
+   "title": "Use an `extension` block",
+   "issue": 74,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "resharper_convert_to_extension_block_highlighting",
+    "resharper_move_to_extension_block_highlighting",
+    "resharper_empty_extension_block_highlighting",
+    "resharper_invoke_as_extension_member_highlighting",
+    "resharper_invoke_as_extension_member_from_same_class_highlighting"
+   ]
+  },
+  {
+   "slug": "closure-to-method-group",
+   "title": "Use a method group instead of a forwarding lambda",
+   "issue": 75,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "ConvertClosureToMethodGroup"
+   ]
+  },
+  {
+   "slug": "if-statement-is-an-expression",
+   "title": "Use an expression instead of an `if` statement",
+   "issue": 76,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Syntax",
+   "proposedFix": "safe",
+   "inspections": [
+    "ConvertIfStatementToConditionalTernaryExpression",
+    "ConvertIfStatementToReturnStatement",
+    "ConvertIfToOrExpression",
+    "ConvertIfDoToWhile",
+    "SimplifyConditionalOperator",
+    "SimplifyConditionalTernaryExpression",
+    "ReplaceWithSimpleAssignment.False",
+    "ReplaceWithSimpleAssignment.True",
+    "ReplaceWithSingleAssignment.False",
+    "ReplaceWithSingleAssignment.True",
+    "RemoveRedundantOrStatement.False",
+    "RemoveRedundantOrStatement.True",
+    "InvertCondition.1"
+   ]
+  },
+  {
+   "slug": "nullable-short-form",
+   "title": "Use `T?` instead of `Nullable<T>`",
+   "issue": 77,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "ConvertNullableToShortForm"
+   ]
+  },
+  {
+   "slug": "compound-assignment",
+   "title": "Use a compound assignment",
+   "issue": 78,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Syntax",
+   "proposedFix": "safe",
+   "inspections": [
+    "ConvertToCompoundAssignment"
+   ]
+  },
+  {
+   "slug": "delegate-variable-to-local-function",
+   "title": "Use a local function instead of a delegate variable",
+   "issue": 79,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "ConvertToLocalFunction"
+   ]
+  },
+  {
+   "slug": "for-can-be-foreach",
+   "title": "Use `foreach` over an indexed `for`",
+   "issue": 80,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "ForCanBeConvertedToForeach"
+   ]
+  },
+  {
+   "slug": "inline-out-variable",
+   "title": "Inline the `out` variable declaration",
+   "issue": 81,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "InlineOutVariableDeclaration"
+   ]
+  },
+  {
+   "slug": "inline-temporary-variable",
+   "title": "Inline a temporary used once",
+   "issue": 82,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "hint",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "InlineTemporaryVariable"
+   ]
+  },
+  {
+   "slug": "declaration-scope",
+   "title": "Narrow or join the local declaration",
+   "issue": 83,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "JoinDeclarationAndInitializer",
+    "JoinNullCheckWithUsage",
+    "MoveVariableDeclarationInsideLoopCondition",
+    "TooWideLocalVariableScope"
+   ]
+  },
+  {
+   "slug": "loop-to-linq",
+   "title": "Use a LINQ operator for part of the loop",
+   "issue": 84,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "hint",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "LoopCanBePartlyConvertedToQuery",
+    "ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator",
+    "ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator"
+   ]
+  },
+  {
+   "slug": "merge-into-conditional-access",
+   "title": "Merge the `?:` into a conditional access",
+   "issue": 85,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "MergeConditionalExpression"
+   ]
+  },
+  {
+   "slug": "object-initializer",
+   "title": "Use an object or collection initializer",
+   "issue": 86,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "UseObjectOrCollectionInitializer",
+    "ConvertConstructorToMemberInitializers",
+    "WithExpressionInsteadOfInitializer"
+   ]
+  },
+  {
+   "slug": "deconstruction",
+   "title": "Use deconstruction",
+   "issue": 87,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseDeconstruction",
+    "SwapViaDeconstruction",
+    "UsePositionalDeconstructionPattern",
+    "MoveToExistingPositionalDeconstructionPattern"
+   ]
+  },
+  {
+   "slug": "discard-assignment",
+   "title": "Use a discard",
+   "issue": 88,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseDiscardAssignment"
+   ]
+  },
+  {
+   "slug": "index-from-end",
+   "title": "Use an index-from-end expression",
+   "issue": 89,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseIndexFromEndExpression"
+   ]
+  },
+  {
+   "slug": "use-nameof",
+   "title": "Use `nameof`",
+   "issue": 90,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseNameOfInsteadOfToString",
+    "UseNameOfInsteadOfTypeOf",
+    "UseNameofExpressionForPartOfTheString"
+   ]
+  },
+  {
+   "slug": "pattern-matching-from-cast",
+   "title": "Use pattern matching instead of a test-and-cast",
+   "issue": 91,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UsePatternMatching",
+    "SafeCastIsUsedAsTypeCheck",
+    "UseSwitchCasePatternVariable",
+    "ConvertTypeCheckPatternToNullCheck",
+    "ConvertTypeCheckToNullCheck",
+    "UseNegatedPatternMatching",
+    "UseNegatedPatternInIsExpression"
+   ]
+  },
+  {
+   "slug": "simplify-pattern",
+   "title": "Simplify the pattern",
+   "issue": 92,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Syntax",
+   "proposedFix": "safe",
+   "inspections": [
+    "DoubleNegationInPattern",
+    "NegationOfRelationalPattern",
+    "RedundantIsBeforeRelationalPattern",
+    "ReplaceObjectPatternWithVarPattern",
+    "ExtractCommonPropertyPattern",
+    "ReplaceSequenceEqualWithConstantPattern"
+   ]
+  },
+  {
+   "slug": "raw-and-verbatim-strings",
+   "title": "Use the string literal form that needs no escapes",
+   "issue": 93,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "hint",
+   "proposedScope": "Syntax",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseRawString",
+    "RawStringCanBeSimplified",
+    "CanSimplifyStringEscapeSequence",
+    "UseVerbatimString"
+   ]
+  },
+  {
+   "slug": "string-interpolation-form",
+   "title": "Use the interpolation form that says what it means",
+   "issue": 94,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseStringInterpolationWhenPossible",
+    "SimplifyStringInterpolation",
+    "NestedStringInterpolation",
+    "StringLiteralAsInterpolationArgument",
+    "PassStringInterpolation",
+    "UseFormatSpecifierInFormatString"
+   ]
+  },
+  {
+   "slug": "unsigned-right-shift",
+   "title": "Use `>>>`",
+   "issue": 95,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseUnsignedRightShiftOperator"
+   ]
+  },
+  {
+   "slug": "with-expression-copy",
+   "title": "Use a `with` expression to copy",
+   "issue": 96,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseWithExpressionToCopyRecord",
+    "UseWithExpressionToCopyStruct",
+    "UseWithExpressionToCopyTuple",
+    "UseWithExpressionToCopyAnonymousObject",
+    "resharper_nested_record_update_can_be_simplified_highlighting"
+   ]
+  },
+  {
+   "slug": "collection-expression-shapes",
+   "title": "Use the collection expression form",
+   "issue": 97,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "AppendToCollectionExpression",
+    "UseArrayCreationExpression.1",
+    "UseArrayCreationExpression.2",
+    "RedundantArrayCreationExpression",
+    "RedundantSpreadElement"
+   ]
+  },
+  {
+   "slug": "computed-property",
+   "title": "Use a computed property instead of an assigned auto-property",
+   "issue": 98,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "hint",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "ReplaceAutoPropertyWithComputedProperty",
+    "RedundantAccessorBody"
+   ]
+  },
+  {
+   "slug": "cached-empty-instances",
+   "title": "Use the cached empty instance",
+   "issue": 99,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseEmptyTypesField",
+    "UseEventArgsEmptyField",
+    "PreferConcreteValueOverDefault"
+   ]
+  },
+  {
+   "slug": "linq-call-shape",
+   "title": "Use the LINQ operator that says what the chain means",
+   "issue": 100,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseMethodAny.0",
+    "UseMethodAny.1",
+    "UseMethodAny.2",
+    "UseMethodAny.3",
+    "UseMethodAny.4",
+    "RemoveToList.1",
+    "RemoveToList.2",
+    "ReplaceWithFirstOrDefault.1",
+    "ReplaceWithFirstOrDefault.2",
+    "ReplaceWithFirstOrDefault.3",
+    "ReplaceWithFirstOrDefault.4",
+    "ReplaceWithLastOrDefault.1",
+    "ReplaceWithLastOrDefault.2",
+    "ReplaceWithLastOrDefault.3",
+    "ReplaceWithLastOrDefault.4",
+    "ReplaceWithSingleOrDefault.1",
+    "ReplaceWithSingleOrDefault.2",
+    "ReplaceWithSingleOrDefault.3",
+    "ReplaceWithSingleOrDefault.4",
+    "ReplaceWithOfType.Any.1",
+    "ReplaceWithOfType.Any.2",
+    "ReplaceWithOfType.Count.1",
+    "ReplaceWithOfType.Count.2",
+    "ReplaceWithOfType.First.1",
+    "ReplaceWithOfType.First.2",
+    "ReplaceWithOfType.FirstOrDefault.1",
+    "ReplaceWithOfType.FirstOrDefault.2",
+    "ReplaceWithOfType.Last.1",
+    "ReplaceWithOfType.Last.2",
+    "ReplaceWithOfType.LastOrDefault.1",
+    "ReplaceWithOfType.LastOrDefault.2",
+    "ReplaceWithOfType.LongCount",
+    "ReplaceWithOfType.Single.1",
+    "ReplaceWithOfType.Single.2",
+    "ReplaceWithOfType.SingleOrDefault.1",
+    "ReplaceWithOfType.SingleOrDefault.2",
+    "ReplaceWithOfType.Where",
+    "resharper_replace_with_of_type_highlighting"
+   ]
+  },
+  {
+   "slug": "redundant-linq-and-collection-calls",
+   "title": "Remove the LINQ or collection call that does nothing",
+   "issue": 101,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantEnumerableCastCall",
+    "MultipleOrderBy",
+    "RedundantCollectionCopyCall",
+    "RedundantWithCancellation",
+    "CanSimplifySetAddingWithSingleCall",
+    "RedundantDictionaryContainsKeyBeforeAdding"
+   ]
+  },
+  {
+   "slug": "simplify-type-test-api",
+   "title": "Use the operator instead of the reflection call",
+   "issue": 102,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "CanSimplifyIsInstanceOfType",
+    "CanSimplifyIsAssignableFrom"
+   ]
+  },
+  {
+   "slug": "cast-expressed-elsewhere",
+   "title": "Express the cast in the declaration instead",
+   "issue": 103,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "hint",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "CanReplaceCastWithLambdaReturnType",
+    "CanReplaceCastWithShorterTypeArgument",
+    "CanReplaceCastWithTypeArgument",
+    "CanReplaceCastWithVariableType"
+   ]
+  },
+  {
+   "slug": "nrt-annotation-migration",
+   "title": "Use nullable reference type syntax instead of an attribute",
+   "issue": 104,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseNullableReferenceTypesAnnotationSyntax",
+    "UseNullableAnnotationInsteadOfAttribute",
+    "UseNullableAttributesSupportedByCompiler",
+    "RedundantNullnessAttributeWithNullableReferenceTypes",
+    "RedundantNullableFlowAttribute"
+   ]
+  },
+  {
+   "slug": "argument-exception-throw-if",
+   "title": "Use the `ArgumentException.ThrowIf*` helpers",
+   "issue": 105,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "resharper_use_argument_exception_throw_if_method_highlighting"
+   ]
+  },
+  {
+   "slug": "tail-recursive-call",
+   "title": "Rewrite the tail-recursive call as a loop",
+   "issue": 106,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "hint",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "TailRecursiveCall"
+   ]
+  },
+  {
+   "slug": "local-function-placement",
+   "title": "Move the local function past the jump statement",
+   "issue": 107,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "hint",
+   "proposedScope": "Syntax",
+   "proposedFix": "safe",
+   "inspections": [
+    "MoveLocalFunctionAfterJumpStatement",
+    "SeparateLocalFunctionsWithJumpStatement"
+   ]
+  },
+  {
+   "slug": "extract-common-branch-code",
+   "title": "Extract the code the branches share",
+   "issue": 108,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "hint",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "ExtractCommonBranchingCode",
+    "DuplicatedChainedIfBodies",
+    "DuplicatedSequentialIfBodies",
+    "DuplicatedSwitchExpressionArms",
+    "DuplicatedSwitchSectionBodies",
+    "DuplicatedStatements",
+    "ConditionalTernaryEqualBranch"
+   ]
+  },
+  {
+   "slug": "merge-try-statements",
+   "title": "Merge the nested `try` statements",
+   "issue": 109,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "hint",
+   "proposedScope": "Syntax",
+   "proposedFix": "safe",
+   "inspections": [
+    "TryStatementsCanBeMerged"
+   ]
+  },
+  {
+   "slug": "indexed-property",
+   "title": "Use the indexer",
+   "issue": 110,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "UseIndexedProperty"
+   ]
+  },
+  {
+   "slug": "similar-anonymous-type",
+   "title": "Reuse the nearby anonymous type",
+   "issue": 111,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "hint",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "SimilarAnonymousTypeNearby"
+   ]
+  },
+  {
+   "slug": "redundant-overload",
+   "title": "Collapse the overload into an optional parameter",
+   "issue": 112,
+   "proposedRange": "SK1000-SK1999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "RedundantOverload.Global",
+    "RedundantOverload.Local",
+    "IntroduceOptionalParameters.Global",
+    "IntroduceOptionalParameters.Local"
+   ]
+  },
+  {
+   "slug": "namespace-matches-folder",
+   "title": "The namespace does not match the file's location",
+   "issue": 113,
+   "proposedRange": "SK6000-SK6999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Compilation",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "CheckNamespace"
+   ]
+  },
+  {
+   "slug": "accessibility-can-be-narrowed",
+   "title": "The member is more accessible than its use requires",
+   "issue": 114,
+   "proposedRange": "SK6000-SK6999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Compilation",
+   "proposedFix": "safe",
+   "inspections": [
+    "MemberCanBePrivate.Global",
+    "MemberCanBePrivate.Local",
+    "MemberCanBeProtected.Global",
+    "MemberCanBeProtected.Local",
+    "MemberCanBeInternal",
+    "MemberCanBeFileLocal"
+   ]
+  },
+  {
+   "slug": "mutability-can-be-narrowed",
+   "title": "The storage is never written after initialization",
+   "issue": 115,
+   "proposedRange": "SK6000-SK6999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Compilation",
+   "proposedFix": "safe",
+   "inspections": [
+    "FieldCanBeMadeReadOnly.Global",
+    "FieldCanBeMadeReadOnly.Local",
+    "AutoPropertyCanBeMadeGetOnly.Global",
+    "AutoPropertyCanBeMadeGetOnly.Local",
+    "PropertyCanBeMadeInitOnly.Global",
+    "PropertyCanBeMadeInitOnly.Local",
+    "ConvertToConstant.Local"
+   ]
+  },
+  {
+   "slug": "parameter-type-can-be-widened",
+   "title": "The parameter or return type is narrower than the code needs",
+   "issue": 116,
+   "proposedRange": "SK6000-SK6999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Compilation",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "SuggestBaseTypeForParameter",
+    "SuggestBaseTypeForParameterInConstructor",
+    "ParameterTypeCanBeEnumerable.Global",
+    "ParameterTypeCanBeEnumerable.Local",
+    "ReturnTypeCanBeEnumerable.Global",
+    "ReturnTypeCanBeEnumerable.Local"
+   ]
+  },
+  {
+   "slug": "type-parameter-variance",
+   "title": "The type parameter could be declared variant",
+   "issue": 117,
+   "proposedRange": "SK6000-SK6999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "TypeParameterCanBeVariant"
+   ]
+  },
+  {
+   "slug": "nullability-can-be-tightened",
+   "title": "The declaration is nullable and never null",
+   "issue": 118,
+   "proposedRange": "SK6000-SK6999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "ReturnTypeCanBeNotNullable",
+    "VariableCanBeNotNullable"
+   ]
+  },
+  {
+   "slug": "convert-to-static-class",
+   "title": "The class has only static members",
+   "issue": 119,
+   "proposedRange": "SK6000-SK6999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "ConvertToStaticClass"
+   ]
+  },
+  {
+   "slug": "more-specific-foreach-type",
+   "title": "The iteration variable could have a more specific type",
+   "issue": 120,
+   "proposedRange": "SK6000-SK6999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "MoreSpecificForeachVariableTypeAvailable"
+   ]
+  },
+  {
+   "slug": "unused-local-declaration",
+   "title": "The local declaration is never used",
+   "issue": 121,
+   "proposedRange": "SK6000-SK6999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "NotAccessedVariable",
+    "NotAccessedOutParameterVariable",
+    "UnusedLocalFunction",
+    "UnusedLocalFunctionParameter",
+    "UnusedLocalFunctionReturnValue",
+    "UnusedTypeParameter",
+    "UnusedTupleComponentInReturnValue",
+    "UnusedParameterInPartialMethod",
+    "PrivateFieldCanBeConvertedToLocalVariable"
+   ]
+  },
+  {
+   "slug": "unused-member",
+   "title": "The member is never accessed",
+   "issue": 122,
+   "proposedRange": "SK6000-SK6999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Compilation",
+   "proposedFix": "unsafe",
+   "inspections": [
+    "NotAccessedField.Global",
+    "NotAccessedField.Local",
+    "NotAccessedPositionalProperty.Global",
+    "NotAccessedPositionalProperty.Local",
+    "UnusedMethodReturnValue.Global",
+    "UnusedMethodReturnValue.Local",
+    "UnusedMemberInSuper.Global",
+    "UnusedMemberInSuper.Local",
+    "UnusedMemberHierarchy.Global",
+    "UnusedMemberHierarchy.Local",
+    "EntityNameCapturedOnly.Global",
+    "EntityNameCapturedOnly.Local",
+    "ParameterOnlyUsedForPreconditionCheck.Global",
+    "ParameterOnlyUsedForPreconditionCheck.Local",
+    "PropertyFieldKeywordIsNeverUsed"
+   ]
+  },
+  {
+   "slug": "never-instantiated-or-used-type",
+   "title": "The type or collection is declared and never really used",
+   "issue": 123,
+   "proposedRange": "SK6000-SK6999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Compilation",
+   "proposedFix": "none",
+   "inspections": [
+    "ClassNeverInstantiated.Global",
+    "ClassNeverInstantiated.Local",
+    "CollectionNeverQueried.Global",
+    "CollectionNeverQueried.Local",
+    "CollectionNeverUpdated.Global",
+    "CollectionNeverUpdated.Local",
+    "EventNeverInvoked.Global",
+    "EventNeverSubscribedTo.Global",
+    "EventNeverSubscribedTo.Local",
+    "ClassWithVirtualMembersNeverInherited.Global",
+    "ClassWithVirtualMembersNeverInherited.Local",
+    "VirtualMemberNeverOverridden.Local",
+    "ClassCannotBeInstantiated"
+   ]
+  },
+  {
+   "slug": "internal-member-not-documented",
+   "title": "A non-public member has no documentation comment",
+   "issue": 124,
+   "proposedRange": "SK7000-SK7999",
+   "proposedSeverity": "none",
+   "proposedScope": "Syntax",
+   "proposedFix": "none",
+   "inspections": [
+    "InternalOrPrivateMemberNotDocumented"
+   ]
+  },
+  {
+   "slug": "inheritdoc-could-be-used",
+   "title": "The documentation duplicates the base member's",
+   "issue": 125,
+   "proposedRange": "SK7000-SK7999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "InheritdocConsiderUsage"
+   ]
+  },
+  {
+   "slug": "redundant-suppression-comment",
+   "title": "The suppression has nothing to suppress",
+   "issue": 126,
+   "proposedRange": "SK7000-SK7999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantDisableWarningComment"
+   ]
+  },
+  {
+   "slug": "empty-region",
+   "title": "The region is empty",
+   "issue": 127,
+   "proposedRange": "SK7000-SK7999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Syntax",
+   "proposedFix": "safe",
+   "inspections": [
+    "EmptyRegion"
+   ]
+  },
+  {
+   "slug": "redundant-cast-and-type-arguments",
+   "title": "The cast or type argument is redundant",
+   "issue": 128,
+   "proposedRange": "SK0001-SK0999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantCast",
+    "RedundantTypeArgumentsOfMethod",
+    "RedundantTypeArgumentsInsideNameof",
+    "RedundantExplicitArrayCreation",
+    "RedundantExplicitArraySize",
+    "RedundantExplicitNullableCreation",
+    "RedundantExplicitTupleComponentName",
+    "PreferExplicitlyProvidedTupleComponentName"
+   ]
+  },
+  {
+   "slug": "redundant-modifier",
+   "title": "The modifier has no effect",
+   "issue": 129,
+   "proposedRange": "SK0001-SK0999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantAbstractModifier",
+    "RedundantVirtualModifier",
+    "RedundantReadonlyModifier",
+    "RedundantScopedParameterModifier",
+    "SealedMemberInSealedClass",
+    "RedundantRecordClassKeyword",
+    "PartialTypeWithSinglePart",
+    "PartialMethodWithSinglePart",
+    "RedundantOverflowCheckingContext",
+    "RedundantUnsafeContext",
+    "EnumUnderlyingTypeIsInt"
+   ]
+  },
+  {
+   "slug": "redundant-declaration",
+   "title": "The declaration adds nothing",
+   "issue": 130,
+   "proposedRange": "SK0001-SK0999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantOverriddenMember",
+    "RedundantBaseConstructorCall",
+    "RedundantDefaultMemberInitializer",
+    "RedundantExtendsListEntry",
+    "EmptyConstructor",
+    "EmptyDestructor",
+    "EmptyNamespace",
+    "RedundantPartialMethodEmptyImplementation",
+    "RedundantExplicitPositionalPropertyDeclaration",
+    "RedundantSetterValueParameterDeclaration",
+    "RedundantTypeDeclarationBody",
+    "RedundantSetsRequiredMembersAttribute",
+    "RedundantAttributeUsageProperty",
+    "RedundantAttributeSuffix"
+   ]
+  },
+  {
+   "slug": "redundant-control-flow",
+   "title": "The control flow does nothing",
+   "issue": 131,
+   "proposedRange": "SK0001-SK0999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantJumpStatement",
+    "RedundantIfElseBlock",
+    "RedundantCaseLabel",
+    "RedundantEnumCaseLabelForDefaultSection",
+    "RedundantEmptySwitchSection",
+    "RedundantEmptyFinallyBlock",
+    "RedundantCatchClause",
+    "RedundantSwitchExpressionArms",
+    "RedundantTernaryExpression",
+    "RedundantBoolCompare",
+    "RedundantLogicalConditionalExpressionOperand",
+    "DoubleNegationOperator",
+    "NegativeEqualityExpression"
+   ]
+  },
+  {
+   "slug": "redundant-string-call",
+   "title": "The string call does nothing",
+   "issue": 132,
+   "proposedRange": "SK0001-SK0999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantToStringCall",
+    "RedundantToStringCallForValueType",
+    "RedundantStringFormatCall",
+    "RedundantStringToCharArrayCall",
+    "RedundantStringInterpolation",
+    "RedundantStringType",
+    "RedundantVerbatimPrefix",
+    "RedundantVerbatimStringPrefix"
+   ]
+  },
+  {
+   "slug": "redundant-syntax-noise",
+   "title": "The syntax is redundant",
+   "issue": 133,
+   "proposedRange": "SK0001-SK0999",
+   "proposedSeverity": "suggestion",
+   "proposedScope": "Syntax",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantAttributeParentheses",
+    "RedundantPropertyParentheses",
+    "RedundantLambdaSignatureParentheses",
+    "RedundantPatternParentheses",
+    "RedundantDeclarationSemicolon",
+    "RedundantCollectionInitializerElementBraces",
+    "RedundantAnonymousTypePropertyName",
+    "RedundantDiscardDesignation",
+    "RedundantArrayLowerBoundSpecification",
+    "RedundantFixedPointerDeclaration",
+    "RedundantQueryOrderByAscendingKeyword",
+    "RedundantRangeBound",
+    "RedundantPropertyPatternClause"
+   ]
+  },
+  {
+   "slug": "redundant-argument",
+   "title": "The argument or signature element is redundant",
+   "issue": 134,
+   "proposedRange": "SK0001-SK0999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantArgumentDefaultValue",
+    "RedundantCallerArgumentExpressionDefaultValue",
+    "RedundantExplicitParamsArrayCreation",
+    "RedundantDelegateCreation",
+    "UnusedAnonymousMethodSignature",
+    "RedundantLambdaParameterType",
+    "RedundantImmediateDelegateInvocation"
+   ]
+  },
+  {
+   "slug": "redundant-nullable-syntax",
+   "title": "The nullable annotation or directive is redundant",
+   "issue": 135,
+   "proposedRange": "SK0001-SK0999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantNullableDirective",
+    "UnusedNullableDirective",
+    "RedundantNotNullConstraint",
+    "RedundantNullableAnnotationOnReferenceTypeConstraint",
+    "RedundantNullableAnnotationOnTypeConstraintHasNonNullableBaseType",
+    "RedundantNullableAnnotationOnTypeConstraintHasNonNullableTypeKind"
+   ]
+  },
+  {
+   "slug": "redundant-qualifier-or-using",
+   "title": "The qualifier or using directive is redundant",
+   "issue": 136,
+   "proposedRange": "SK0001-SK0999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantQualifier",
+    "RedundantBaseQualifier",
+    "RedundantUsingDirective.Global",
+    "UnusedImportClause"
+   ]
+  },
+  {
+   "slug": "redundant-with-and-initializer",
+   "title": "The `with` or initializer is empty",
+   "issue": 137,
+   "proposedRange": "SK0001-SK0999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Syntax",
+   "proposedFix": "safe",
+   "inspections": [
+    "RedundantWithExpression",
+    "resharper_redundant_empty_with_element_highlighting",
+    "RedundantEmptyObjectOrCollectionInitializer"
+   ]
+  }
+ ],
+ "excluded": [
+  {
+   "inspection": "AccessRightsInText",
+   "reason": "Resolution inside ReSharper's text-argument/source-template machinery, not a language construct."
+  },
+  {
+   "inspection": "AnnotationConflictInHierarchy",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "AnnotationRedundancyAtValueType",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "AnnotationRedundancyInHierarchy",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "ArgumentsStyleNamedExpression",
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+  },
+  {
+   "inspection": "ArrangeTypeMemberModifiers",
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+  },
+  {
+   "inspection": "ArrangeTypeModifiers",
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+  },
+  {
+   "inspection": "ArrangeVarKeywordsInDeconstructingDeclaration",
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+  },
+  {
+   "inspection": "AssignNullToNotNullAttribute",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "Blazor.EditorRequired",
+   "reason": "Framework front end (Blazor / WCF / WPF); a plugin's audience rather than the core's."
+  },
+  {
+   "inspection": "BothContextCallDeclaration.Global",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "BothContextCallUsage.Global",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "CDeclarationWithImplicitIntType",
+   "reason": "C++ inspection; Skala is C#-only."
+  },
+  {
+   "inspection": "CannotApplyEqualityOperatorToType",
+   "reason": "ReSharper's own annotation machinery (`[CannotApplyEqualityOperator]`). It configures ReSharper rather than describing a defect in the code."
+  },
+  {
+   "inspection": "CenterTagIsObsolete",
+   "reason": "HTML/markup inspection; the key carries no language prefix but it is not C#."
+  },
+  {
+   "inspection": "ChangeFieldTypeToSystemThreadingLock",
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+  },
+  {
+   "inspection": "ClearAttributeIsObsolete",
+   "reason": "HTML/markup inspection; the key carries no language prefix but it is not C#."
+  },
+  {
+   "inspection": "ClearAttributeIsObsolete.All",
+   "reason": "HTML/markup inspection; the key carries no language prefix but it is not C#."
+  },
+  {
+   "inspection": "CommandInvasionDeclaration.Global",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "CommandInvasionUsage.Global",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "ConditionalAccessQualifierIsNonNullableAccordingToAPIContract",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "ConflictCqrsAttribute",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "ConstevalIfIsAlwaysConstant",
+   "reason": "C++ inspection; Skala is C#-only."
+  },
+  {
+   "inspection": "ConstructorWithMustDisposeResourceAttributeBaseIsNotAnnotated",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "ContainerAnnotationRedundancy",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "ContextValueIsProvided",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "ContractAnnotationNotParsed",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "CqrsDebug",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "CqrsNamingRecommendation",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "DuplicateResource",
+   "reason": "RESX/localization resource inspection, not a C# code defect."
+  },
+  {
+   "inspection": "EmptyTitleTag",
+   "reason": "HTML/markup inspection; the key carries no language prefix but it is not C#."
+  },
+  {
+   "inspection": "IfStdIsConstantEvaluatedCanBeReplaced",
+   "reason": "C++ inspection; Skala is C#-only."
+  },
+  {
+   "inspection": "InParameterWithMustDisposeResourceAttribute",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "InvalidValueType",
+   "reason": "RESX/localization resource inspection, not a C# code defect."
+  },
+  {
+   "inspection": "LocalizableElement",
+   "reason": "RESX/localization resource inspection, not a C# code defect."
+  },
+  {
+   "inspection": "MergeCastWithTypeCheck",
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+  },
+  {
+   "inspection": "MissingAltAttributeInImgTag",
+   "reason": "HTML/markup inspection; the key carries no language prefix but it is not C#."
+  },
+  {
+   "inspection": "MissingBodyTag",
+   "reason": "HTML/markup inspection; the key carries no language prefix but it is not C#."
+  },
+  {
+   "inspection": "MissingHeadAndBodyTags",
+   "reason": "HTML/markup inspection; the key carries no language prefix but it is not C#."
+  },
+  {
+   "inspection": "MissingHeadTag",
+   "reason": "HTML/markup inspection; the key carries no language prefix but it is not C#."
+  },
+  {
+   "inspection": "MultipleCqrsEntity",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "MultipleNullableAttributesUsage",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "MultipleResolveCandidatesInText",
+   "reason": "Resolution inside ReSharper's text-argument/source-template machinery, not a language construct."
+  },
+  {
+   "inspection": "NotAssignedOutParameter",
+   "reason": "An unassigned `out` parameter is `CS0177`, a compiler error \u2014 the code does not build, so there is nothing to warn about. This is the recorded cut reason for `SK2006` in docs/plan/08."
+  },
+  {
+   "inspection": "NotDeclaredInParentCulture",
+   "reason": "RESX/localization resource inspection, not a C# code defect."
+  },
+  {
+   "inspection": "NotObservableAnnotationRedundancy",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "NotOverriddenInSpecificCulture",
+   "reason": "RESX/localization resource inspection, not a C# code defect."
+  },
+  {
+   "inspection": "NotResolvedInText",
+   "reason": "Resolution inside ReSharper's text-argument/source-template machinery, not a language construct."
+  },
+  {
+   "inspection": "NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "NullnessAnnotationConflictWithJetBrainsAnnotations",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "OneWayOperationContractWithReturnType",
+   "reason": "Framework front end (Blazor / WCF / WPF); a plugin's audience rather than the core's."
+  },
+  {
+   "inspection": "OperationContractWithoutServiceContract",
+   "reason": "Framework front end (Blazor / WCF / WPF); a plugin's audience rather than the core's."
+  },
+  {
+   "inspection": "OperatorIsCanBeUsed",
+   "reason": "VB.NET inspection; the key carries no language prefix but the construct is VB-only."
+  },
+  {
+   "inspection": "OutParameterWithHandlesResourceDisposalAttribute",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "OverriddenWithEmptyValue",
+   "reason": "RESX/localization resource inspection, not a C# code defect."
+  },
+  {
+   "inspection": "OverriddenWithSameValue",
+   "reason": "RESX/localization resource inspection, not a C# code defect."
+  },
+  {
+   "inspection": "PossibleInvalidOperationExceptionCollectionWasModified",
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+  },
+  {
+   "inspection": "PossiblyUnintendedUsageParameterlessGetExpressionType",
+   "reason": "Reports on ReSharper's own SDK API, not on general C#."
+  },
+  {
+   "inspection": "PublicConstructorInAbstractClass",
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+  },
+  {
+   "inspection": "PureAttributeOnVoidMethod",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "QueryInvasionDeclaration.Global",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "QueryInvasionUsage.Global",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "RedundantCqrsAttribute",
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+  },
+  {
+   "inspection": "RedundantParentheses",
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+  },
+  {
+   "inspection": "RequiredBaseTypesConflict",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "RequiredBaseTypesDirectConflict",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "RequiredBaseTypesIsNotInherited",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "ReturnOfTaskProducedByUsingVariable",
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+  },
+  {
+   "inspection": "ServiceContractWithoutOperations",
+   "reason": "Framework front end (Blazor / WCF / WPF); a plugin's audience rather than the core's."
+  },
+  {
+   "inspection": "ShebangDirectiveBadPlacement",
+   "reason": "C++ inspection; Skala is C#-only."
+  },
+  {
+   "inspection": "SimplifyIIf",
+   "reason": "VB.NET inspection; the key carries no language prefix but the construct is VB-only."
+  },
+  {
+   "inspection": "StaticProblemInText",
+   "reason": "Resolution inside ReSharper's text-argument/source-template machinery, not a language construct."
+  },
+  {
+   "inspection": "StdIsConstantEvaluatedWillAlwaysEvaluateToConstant",
+   "reason": "C++ inspection; Skala is C#-only."
+  },
+  {
+   "inspection": "SuggestDiscardDeclarationVarStyle",
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+  },
+  {
+   "inspection": "SymbolFromNotCopiedLocallyReferenceUsedWarning",
+   "reason": "Reports a build/packaging configuration (`CopyLocal`), not the source."
+  },
+  {
+   "inspection": "UnsupportedRequiredBaseType",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "UseAwaitUsing",
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+  },
+  {
+   "inspection": "UseImplicitlyTypedVariable",
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+  },
+  {
+   "inspection": "UseImplicitlyTypedVariableEvident",
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+  },
+  {
+   "inspection": "UseNameofForDependencyProperty",
+   "reason": "Framework front end (Blazor / WCF / WPF); a plugin's audience rather than the core's."
+  },
+  {
+   "inspection": "ValueRangeAttributeViolation",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "VoidMethodWithMustDisposeResourceAttribute",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "VoidMethodWithMustUseReturnValueAttribute",
+   "reason": "ReSharper's own annotation machinery (JetBrains.Annotations). It configures ReSharper rather than describing a defect in the code, and retiring ReSharper retires the attributes with it."
+  },
+  {
+   "inspection": "VulnerableApi",
+   "reason": "Needs a vulnerability feed. `NuGetAudit` / `dotnet list package --vulnerable` already does this in the build, and a stale offline feed is worse than none."
+  },
+  {
+   "inspection": "resharper_arrange_accessors_order_highlighting",
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+  },
+  {
+   "inspection": "resharper_arrange_empty_string_highlighting",
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+  },
+  {
+   "inspection": "resharper_async_method_without_await_highlighting",
+   "reason": "The C# compiler already reports it. ADR: compiler diagnostics are surfaced, never reimplemented (`CS1998`)."
+  },
+  {
+   "inspection": "resharper_async_void_method_without_await_highlighting",
+   "reason": "The C# compiler already reports it. ADR: compiler diagnostics are surfaced, never reimplemented (`CS1998`)."
+  },
+  {
+   "inspection": "resharper_c_sharp14_overload_resolution_with_span_breaking_change_highlighting",
+   "reason": "A compiler breaking-change notice tied to one language version, not a standing code defect."
+  },
+  {
+   "inspection": "resharper_ignored_directive_highlighting",
+   "reason": "Not identifiable: the key exists only in ReSharper newer than the 2025.2.6 catalogue dumped here, and no description was obtainable. Revisit on a 2026.x dump."
+  },
+  {
+   "inspection": "resharper_no_support_for_vb_highlighting",
+   "reason": "VB.NET inspection; the key carries no language prefix but the construct is VB-only."
+  },
+  {
+   "inspection": "resharper_redundant_include_highlighting",
+   "reason": "RESX/localization resource inspection, not a C# code defect."
+  },
+  {
+   "inspection": "resharper_unexpected_attribute_highlighting",
+   "reason": "Not identifiable: the key exists only in ReSharper newer than the 2025.2.6 catalogue dumped here, and no description was obtainable. Revisit on a 2026.x dump."
+  },
+  {
+   "inspection": "resharper_unexpected_directive_highlighting",
+   "reason": "Not identifiable: the key exists only in ReSharper newer than the 2025.2.6 catalogue dumped here, and no description was obtainable. Revisit on a 2026.x dump."
+  }
+ ]
+}
