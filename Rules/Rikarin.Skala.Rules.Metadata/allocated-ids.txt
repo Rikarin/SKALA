@@ -115,6 +115,7 @@ SK4003 params-span-overload
 SK6020 enum-constraint-without-struct
 SK6021 exception-name-without-exception-base
 SK6022 type-name-restates-its-kind
+SK6023 empty-type
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

@@ -2745,6 +2745,33 @@
       "configuration": [
         "dotnet_diagnostic.SK6022.severity"
       ]
+    },
+    {
+      "id": "SK6023",
+      "concept": "empty-type",
+      "title": "A type has no members, no base and no attributes",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2094"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A `class Foo { }` that derives from nothing, carries no attribute and declares nothing is a declaration that was started and not finished.",
+      "rationale": "An empty type is usually one of four things, and three of them are legitimate patterns: a marker attribute, a marker interface, a named specialisation of a generic base, or the leftovers of an edit. Only the fourth is a finding, and the first three are all recognisable from the declaration itself — an attribute has a base or an attribute list, a marker interface is an interface, and a specialisation has a base list. What is left is a type with nothing attached to it in any direction: no members, no base, no interfaces, no attributes, no type parameters, not `partial`. That is not a marker, because nothing can key on it; it is a name and a pair of braces. Either it is about to become something and the declaration landed early, or it stopped being something and the members were deleted around it.",
+      "examples": {
+        "bad": "public sealed class OrderProcessor { }",
+        "good": "[AttributeUsage(AttributeTargets.Class)]\npublic sealed class AuditedAttribute : Attribute { }"
+      },
+      "falsePositives": "**The exemptions are the rule.** A detector for \"no members\" is three lines; deciding which empty types are deliberate is the whole of this one, and each answer is decidable from the declaration alone.\n\n**A marker interface is a real pattern and is never reported.** `interface IAggregateRoot { }` is how a codebase tags types for a generic constraint, for assembly scanning, or for a dispatcher — and an interface is the *only* correct shape for that, because it is the only one a type can adopt without changing what it inherits from. Every empty interface is out of scope, no further test.\n\n**A marker attribute is never reported either**, and it does not need to be recognised as one: any declaration carrying an attribute list, or any declaration with a base list, is exempt — and every attribute type has at least one of the two. That also covers `[JsonSerializable]`-style declarations whose whole purpose is to be read by a generator, and `[ApiController]`-style types whose behaviour is entirely in a framework.\n\n**A base list is an exemption on its own.** `class StringList : List<string> { }` names a closed generic, `class SqlOrderRepository : RepositoryBase<Order> { }` is a leaf of a closed hierarchy, and `class TimeoutFailure : Failure { }` is a case in a sealed-hierarchy discriminated union — three shapes where the declaration carries all its meaning in the base list and the empty body is correct. ⚠ This also puts an empty exception type, which the proposal wanted reported, out of scope. `class NotFoundException : Exception { }` is a real complaint — the type cannot carry a message — but it is `CA1032`'s complaint, it is stated better there, and separating \"an exception with no constructors\" from \"a leaf of a closed hierarchy\" needs semantics this rule does not have.\n\n**`partial` is never reported.** The other part may be in another file, or may not exist yet because a generator writes it. This single exemption is what keeps the rule out of every source-generated codebase.\n\n**A generic empty type is never reported.** `class Metres { }` used as `Quantity<Metres>` is a phantom type, and `class Marker<T> { }` is the generic version of one; a type parameter is a strong signal that the type exists to be *named* rather than instantiated.\n\n**A bodyless `record Foo;` is never reported.** The semicolon form exists precisely to declare a complete type with nothing in it — a unit or a message in a message-based codebase — so writing one is a statement rather than an omission. `record Foo { }`, with braces around nothing, is reported.\n\n⚠ **The shape that remains genuinely ambiguous is the non-generic phantom type**: `sealed class Metres { }` with no base and no attribute, used only as a type argument. It is reported, and it is a false positive. Deciding otherwise would need to know every use of the type, which is a whole-compilation question and this rule is syntactic by design. Suppress it or baseline it; the rule ships at `suggestion` for this reason.\n\n⚠ **No fix.** Deleting a type is not a mechanical edit — something may name it, including code the compilation cannot see, such as reflection, a DI registration by name, or a serialised payload. Filling it in is not mechanical either. The finding says look at this; it does not say what to do.",
+      "configuration": [
+        "dotnet_diagnostic.SK6023.severity"
+      ]
     }
   ]
 }

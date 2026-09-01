@@ -230,6 +230,7 @@ about their place in the band's argument has been written yet.
   from one.
 - `SK6022` `type-name-restates-its-kind` — a type name that repeats its own kind keyword
   (`OrderClass`, `PointStruct`).
+- `SK6023` `empty-type` — a type with no members, no base and no attributes.
 
 ## SK7000 — Maintainability
 
@@ -331,8 +332,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **129** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **99** | **77.3 %** |
+| Rules this document names | **130** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **100** | **77.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
