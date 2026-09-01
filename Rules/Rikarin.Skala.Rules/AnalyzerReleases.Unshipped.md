@@ -107,3 +107,4 @@ SK3020 | Skala.Async | Warning | The non-`async` `Task` method returns null.
 SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
 SK8020 | Skala.Tests | Warning | A class with `[TestMethod]` members carries no `[TestClass]`.
 SK8021 | Skala.Tests | Warning | The test class declares no test.
+SK8022 | Skala.Tests | Warning | The assertion's expected and actual arguments are swapped.

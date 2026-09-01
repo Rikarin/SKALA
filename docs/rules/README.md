@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 131 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 132 ids are allocated.
 
 ## Async
 
@@ -176,6 +176,7 @@
 | [SK8007](SK8007.md) | Use controlled assertion input | suggestion | — | no |
 | [SK8020](SK8020.md) | A class with `[TestMethod]` members carries no `[TestClass]` | warning | review | no |
 | [SK8021](SK8021.md) | The test class declares no test | warning | — | no |
+| [SK8022](SK8022.md) | The assertion's expected and actual arguments are swapped | warning | safe | no |
 
 ## Tool
 
