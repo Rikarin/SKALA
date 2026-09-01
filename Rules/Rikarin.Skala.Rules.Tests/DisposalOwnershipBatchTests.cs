@@ -20,14 +20,15 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class DisposalOwnershipBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new RedundantDisposeAnalyzer(), new UsingResourceInitializerAnalyzer(),
-        new UsingVariableReturnedAnalyzer(), new TaskReturnedFromUsingAnalyzer()
+        new UsingVariableReturnedAnalyzer(), new NullTaskReturnAnalyzer(),
+        new TaskReturnedFromUsingAnalyzer()
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
             var data = new TheoryData<RuleFixture>();
             foreach (var fixture in RuleFixtures.All()
-                         .Where(static f => f.RuleId is "SK3510" or "SK3511" or "SK3512")) {
+                         .Where(static f => f.RuleId is "SK3510" or "SK3511" or "SK3512" or "SK3020")) {
                 data.Add(fixture);
             }
 
@@ -197,6 +198,28 @@ public sealed class DisposalOwnershipBatchTests {
         Assert.Single(findings, static d => d.Id == "SK3007");
         Assert.DoesNotContain(findings, static d => d.Id == "SK3512");
     }
+
+    /// <summary>
+    ///     ⚠ The replacement is resolved, not spelled out of the declaration's text.
+    /// </summary>
+    /// <remarks>
+    ///     An alias makes the written return type a name that a string edit would get wrong, so the
+    ///     rule asks whether the simple name <c>Task</c> means <c>System.Threading.Tasks.Task</c>
+    ///     where the fix lands and qualifies fully when it does not. Both branches are exercised
+    ///     here: the second file never imports the namespace.
+    /// </remarks>
+    [Theory]
+    [InlineData("using System.Threading.Tasks;\npublic class C { Task M() { return null; } }", "Task.CompletedTask")]
+    [InlineData(
+        "using System.Threading.Tasks;\npublic class C { Task<int> M() { return null; } }",
+        "Task.FromResult<int>(default!)"
+    )]
+    [InlineData(
+        "using MyTask = System.Threading.Tasks.Task;\npublic class C { MyTask M() { return null; } }",
+        "global::System.Threading.Tasks.Task.CompletedTask"
+    )]
+    public void NullTaskFix_SpellsTheCompletedTaskSoThatItBinds(string source, string expected) =>
+        Assert.Contains(expected, Apply(source, "SK3020"), StringComparison.Ordinal);
 
     [Theory]
     [InlineData("SK3510", "a-using-declaration")]

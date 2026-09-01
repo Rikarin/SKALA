@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 107 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 108 ids are allocated.
 
 ## Async
 
@@ -15,6 +15,7 @@
 | [SK3005](SK3005.md) | A task is discarded in synchronous code | warning | — | no |
 | [SK3007](SK3007.md) | A `Task` that uses a `using` resource is returned instead of awaited | warning | review | no |
 | [SK3009](SK3009.md) | Review explicitly unsynchronized Lazy in static state | warning | — | no |
+| [SK3020](SK3020.md) | The non-`async` `Task` method returns null | warning | review | no |
 
 ## Correctness
 

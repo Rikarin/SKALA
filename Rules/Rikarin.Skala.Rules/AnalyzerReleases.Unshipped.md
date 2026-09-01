@@ -83,3 +83,4 @@ SK4003 | Skala.Performance | Hidden | Review a temporary params array with a spa
 SK3510 | Skala.Lifetime | Warning | A variable already owned by `using` is disposed again.
 SK3511 | Skala.Lifetime | Warning | The `using` resource is built with an object initializer.
 SK3512 | Skala.Lifetime | Warning | A variable captured by `using` is returned.
+SK3020 | Skala.Async | Warning | The non-`async` `Task` method returns null.

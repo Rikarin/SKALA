@@ -2743,6 +2743,33 @@
       "configuration": [
         "dotnet_diagnostic.SK3512.severity"
       ]
+    },
+    {
+      "id": "SK3020",
+      "concept": "null-returned-from-task-method",
+      "title": "The non-`async` `Task` method returns null",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S4586"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A method whose declared return type is `Task` or `Task<T>` and which is not `async` returns `null` or `default`.",
+      "rationale": "A `Task` return type invites the caller to write `await Something()`, and awaiting null is a `NullReferenceException` whose stack names the caller rather than the method that produced it. An `async` method cannot do this — the compiler wraps whatever it returns — so the shape exists only where the signature was written by hand, and there `return null;` looks exactly like every other \"nothing to do\" in the file. `Task.CompletedTask` is the completed task the caller was promised.",
+      "examples": {
+        "bad": "Task Flush(bool dirty) {\n    if (!dirty) {\n        return null;\n    }\n\n    return writer.FlushAsync();\n}",
+        "good": "Task Flush(bool dirty) {\n    if (!dirty) {\n        return Task.CompletedTask;\n    }\n\n    return writer.FlushAsync();\n}"
+      },
+      "falsePositives": "⚠ **The fix is unsafe by declaration and the generic form is why.** `Task.CompletedTask` is the only completed non-generic task there is, so that half is mechanical; `Task.FromResult<T>(default!)` picks a *value* the method never named, and what a completed task should carry is a decision about the method rather than an edit. Applying it turns a crash into a default result, which is the point of the rule and is still a behaviour change somebody should read. ⚠ Only ordinary methods and local functions, only where the declared return type resolves to `System.Threading.Tasks.Task` or `Task<T>`, and only for a literal `null` or `default` — a null-valued local, a conditional whose branch is null, and a `default(Task)` are the same bug and are not matched, because the rule reports what it can rewrite in one span. ⚠ **`async` withdraws it**: `async Task<string>` returning `null` returns a null *string* inside a real task, which is an ordinary nullable-reference question. ⚠ **`Task?` withdraws it too**, because the author has declared that null is a value this method returns and the contract already carries the warning. `ValueTask` is not covered: it is a struct and cannot be null. ⚠ The replacement is not built by editing the declaration's text — an alias (`using MyTask = System.Threading.Tasks.Task;`) makes the written name resolve to something a string edit would get wrong. The rule asks whether the simple name `Task` means `System.Threading.Tasks.Task` at that position and falls back to the fully qualified name, which always binds.",
+      "configuration": [
+        "dotnet_diagnostic.SK3020.severity"
+      ]
     }
   ]
 }
