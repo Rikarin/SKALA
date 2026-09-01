@@ -163,3 +163,4 @@ SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
 SK1070 | Skala.Modernization | Info | Deconstruct the tuple instead of reading it element by element.
 SK1071 | Skala.Modernization | Info | Copy the record with a `with` expression.
 SK1072 | Skala.Modernization | Info | The spread of a freshly created array is its elements.
+SK1073 | Skala.Modernization | Info | Use the framework's cached instance.

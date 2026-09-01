@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 187 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 188 ids are allocated.
 
 ## Async
 
@@ -194,6 +194,7 @@
 | [SK1070](SK1070.md) | Deconstruct the tuple instead of reading it element by element | suggestion | safe | no |
 | [SK1071](SK1071.md) | Copy the record with a `with` expression | suggestion | safe | no |
 | [SK1072](SK1072.md) | The spread of a freshly created array is its elements | suggestion | safe | no |
+| [SK1073](SK1073.md) | Use the framework's cached instance | suggestion | safe | no |
 
 ## Performance
 

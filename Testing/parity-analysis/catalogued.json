@@ -198,5 +198,6 @@
   "ArrangeNullCheckingPattern": "SK1010",
   "UseDeconstruction": "SK1070",
   "UseWithExpressionToCopyRecord": "SK1071",
-  "RedundantSpreadElement": "SK1072"
+  "RedundantSpreadElement": "SK1072",
+  "UseEventArgsEmptyField": "SK1073"
 }
