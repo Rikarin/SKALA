@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 184 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 189 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -80,6 +80,11 @@
 <tr><td><a href="SK2032.html">SK2032</a></td><td>Remove GC.SuppressFinalize from a type with no finalizer</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2033.html">SK2033</a></td><td>Do not stackalloc inside a loop</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2034.html">SK2034</a></td><td>Do not name a declaration after a reserved keyword</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK2050.html">SK2050</a></td><td>Integer division feeds a fractional result</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2051.html">SK2051</a></td><td>The arithmetic has a result its constant operand already fixes</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK2052.html">SK2052</a></td><td>The shift count is masked to a different count</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2053.html">SK2053</a></td><td>The size comparison is decided by a count never being negative</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2054.html">SK2054</a></td><td>A signed modulus result is compared for equality with a non-zero value</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
