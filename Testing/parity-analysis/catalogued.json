@@ -138,5 +138,8 @@
  "UsingStatementResourceInitialization": "SK3511",
  "UsingStatementResourceInitializationExpression": "SK3511",
  "ReturnOfUsingVariable": "SK3512",
- "SpinLockInReadonlyField": "SK3021"
+ "SpinLockInReadonlyField": "SK3021",
+ "RedundantWithExpression": "SK0230",
+ "RedundantEmptyWithElement": "SK0230",
+ "RedundantEmptyObjectOrCollectionInitializer": "SK0230"
 }

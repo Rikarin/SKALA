@@ -3316,6 +3316,32 @@
       "configuration": [
         "dotnet_diagnostic.SK3021.severity"
       ]
+    },
+    {
+      "id": "SK0230",
+      "concept": "empty-initializer",
+      "title": "The `with` expression or object initializer is empty",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "RedundantWithExpression",
+      "resharperNote": "⚠ ReSharper rates `RedundantWithExpression` a *suggestion* and `RedundantEmptyObjectOrCollectionInitializer` a *warning*; Skala reports one concept at `warning` and reading `resharper_redundant_with_expression_highlighting` therefore lowers both. The severity split is the same observation this rule's `fixIsSafe: false` records: the empty initializer is nothing, and the empty `with` is an allocation somebody may have meant.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A pair of initializer braces that sets nothing: `new Foo { }` is `new Foo()`, and `x with { }` copies a record and changes nothing.",
+      "rationale": "Empty braces read as a list somebody is about to fill in and stay in the file for years after nobody is. `new Foo { }` is two characters of ceremony over `new Foo()`. `x with { }` is more than ceremony — `with` invokes the record's compiler-generated copy constructor, so it allocates a whole instance in order to produce a value equal to the one it was given.",
+      "examples": {
+        "bad": "var options = new JsonSerializerOptions { };\nvar copy = original with { };",
+        "good": "var options = new JsonSerializerOptions();\nvar copy = original;"
+      },
+      "falsePositives": "⚠ **The fix is declared unsafe, and the empty `with` is the whole reason.** `new Foo { }` → `new Foo()` is a pure deletion with no observable effect at all, but `x with { }` → `x` is not: the copy constructor produces a *distinct* instance, so removing it aliases a clone the author may have written in order to mutate it, and it removes the `NullReferenceException` a null operand would have thrown. Splitting one concept into two safety classes would have been the alternative; the conservative reading of the whole rule is the cheaper mistake. ⚠ Only the two initializer kinds that mean \"and then set these members\" are matched. An empty array initializer belongs to an `ArrayCreationExpression`, which this rule never sees — `new int[] { }` cannot lose its braces and still compile. An anonymous type is a different node again: `new { }` has no `new ()` to become. ⚠ A creation with no argument list *grows* one, because `new Foo` is not an expression; a creation that already has arguments keeps them, and `new()` target-typed creation is matched through the same path. ⚠ A comment or a preprocessor directive between the braces withdraws the finding: an empty initializer holding a note is a note about why it is empty, and the fix deletes the braces wholesale.",
+      "configuration": [
+        "dotnet_diagnostic.SK0230.severity"
+      ]
     }
   ]
 }
