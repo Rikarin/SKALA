@@ -558,6 +558,82 @@ the whole of the difference between a clean corpus and seventeen false positives
 textually.** Roslyn's comparison already ignores trivia and compares tokens and structure, so no
 hand-written comparer was needed; a text comparison would call `if (a && b)` and `if (a  &&  b)`
 different and would call two conditions sharing a sub-expression the same.
+### The collection batch
+
+⚠ **The prose pass on this block is owed.** These rules are entered here because a shipped id that
+this document does not name fails `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`; the
+paragraph that places them against the rest of the range, and against `SK4030`–`SK4033`, has not
+been written yet.
+
+- `SK2080` `duplicate-initializer-key` — a set or dictionary initializer that writes the same
+  constant key twice. ⚠ **The comparer is not resolved: the rule declines whenever the constructor
+  is given any argument at all.** Key equality belongs to the collection's comparer, so
+  `new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["a"] = 1, ["A"] = 2 }` throws
+  where the two keys are distinct ordinally. Declining on *any* argument is broader than declining
+  on a comparer argument on purpose — it costs a capacity-only initializer a true finding, and the
+  rule never has to decide which parameter a comparer arrived through. Constant keys only, a closed
+  receiver table, and a key type whose default equality is decidable: `string`, `bool`, `char`, the
+  integral types and any `enum`. ⚠ **Both spellings**: `new HashSet<T> { "a", "a" }` is a collection
+  initializer and `HashSet<T> s = ["a", "a"]` is a collection expression, a different node kind, and
+  a rule registered only on the first says nothing about the second — which is what a probe file
+  dropped into a real project found after the fixtures were green. A spread anywhere in a collection
+  expression withdraws the finding.
+
+⚠ **`CA2244` overlaps `SK2080`'s indexer form, and only the indexer form — and it is not in the
+default .NET analysis set.** Measured the way § "The compiler already says it" measures: an ordinary
+`net10.0` SDK project with nothing configured reports `CA2200` on a control shape and says nothing
+about any of the three duplicate-key forms. It fires in *this* repository only because
+`Directory.Build.props` raises `AnalysisMode`. So a repository that has not raised it sees no
+duplicate finding, which is the standard that let `SK3004` and `SK3501` ship past `CA2016` and
+`CA2000`. `CA2244` also says nothing at all about the `Add` form — the one that throws
+`ArgumentException` at construction — or about a set that silently drops an element.
+- `SK2081` `collection-passed-to-itself` — a set, list or array given to one of its own members as
+  the *other* collection: `set.UnionWith(set)` does nothing, `set.ExceptWith(set)` is `Clear()`
+  written so nobody reads it as `Clear()`, `set.SetEquals(set)` is `true` with a hash walk in front
+  of it, `list.AddRange(list)` doubles the list. ⚠ **The two sides must be the same *storage*, which
+  is a symbol walk and not a text match** — `a.items` and `b.items` are one field symbol through two
+  receivers — and every symbol on the path must be a local, a parameter or a field, because a
+  property is an accessor call. ⚠ `a.Equals(a)`, `Concat`, `Zip` and `Array.Copy` are deliberately
+  outside the table: reflexive equality is what an equality test asserts, `items.Concat(items)` is a
+  legitimate "twice", and `Array.Copy(buffer, 1, buffer, 0, n)` is how a shift is written.
+- `SK2082` `overwritten-collection-element` — one entry assigned twice inside a contiguous run of
+  element writes to one collection, so the first value is computed and discarded. ⚠ **Roslyn's
+  `AnalyzeDataFlow` answers questions about variables, not about indexed elements**, so there is no
+  dataflow under this rule and it does not pretend to have any: the moment a statement that is not
+  such a write appears between the two, or an invocation, `await`, lambda, nested assignment, `++`
+  or `ref` argument appears inside one, the run ends. That is a fraction of `S4143` and it is the
+  fraction that can be proved without a lattice. ⚠ "The keys are different" is a stronger claim than
+  "the keys are not the same" and only two constants answer it, so an undecidable pair ends the run
+  rather than being stepped over. ⚠ `ConcurrentDictionary` is out of the receiver table on purpose:
+  another thread may read between the writes, so "nothing read it" is not a claim to make there.
+- `SK2083` `provably-empty-collection` — a `foreach` over a local created empty that nothing in the
+  member ever touches again. ⚠ **Proved by exhaustion, not by dataflow**: `AnalyzeDataFlow` answers
+  questions about variables and not about a collection's contents, so the rule asks a question it
+  can answer — *every* reference to the local inside its declaring member must be the subject of a
+  `foreach`. A collection can only be filled through a member call, an assignment, or by being
+  handed somewhere, and each of those is a reference of another kind, so one such reference
+  withdraws the finding and the analyzer never has to decide what it does. The scan covers the whole
+  member rather than running forward from the declaration, so the answer does not depend on
+  ordering. Locals only: a field can be filled by anything holding the instance.
+
+⚠ **The linear-search-in-a-set rule (#36) was refuted by measurement, and no id was allocated for
+it.** The issue's premise — that `Enumerable.Contains` on a `HashSet<T>` reached through
+`IEnumerable<T>` "binds to the O(n) extension rather than the O(1) member, so the data structure
+chosen for lookup speed is used at list speed" — is **false on .NET**.
+`Enumerable.Contains<T>(IEnumerable<T>, T)` opens with an `is ICollection<T>` test and delegates to
+the collection's own `Contains`. Measured on this machine, 200 lookups of the last element of a
+two-million-element collection reached through `IEnumerable<T>` take **0 ms** for every one of
+`HashSet`, `SortedSet`, `ImmutableHashSet`, `ImmutableSortedSet`, `FrozenSet` and `Dictionary`
+(the last through `Dictionary.Contains(kvp)`, which binds to the extension because
+`ICollection<KeyValuePair<K, V>>.Contains` is implemented explicitly). The delegation is observable
+as well as fast: a `HashSet<string>(StringComparer.OrdinalIgnoreCase)` reached through
+`IEnumerable<string>` answers `Contains("ALPHA")` with `true`, which only the set's own comparer can
+do. ⚠ **The one shape that really is linear is the three-argument overload** —
+`Contains(value, comparer)` cannot delegate and scans: 20 calls over the same two million elements
+take 300 ms. But passing a comparer is an explicit statement that *this* comparison is wanted rather
+than the set's, there is no `HashSet<T>.Contains(value, comparer)` to redirect it to, and a rule
+that reports something nobody can write differently is the failure mode `SK2034`'s note already
+names. There is no rule here to build.
 
 ## SK3000 — Async, concurrency, lifetime
 
@@ -1348,6 +1424,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **237** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **203** | **86.0 %** |
+| Rules this document names | **214** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **180** | **84.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |

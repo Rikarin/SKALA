@@ -116,6 +116,8 @@ public sealed class RuleFixtureTests {
         new MisleadingOperatorSequenceAnalyzer(), new NonShortCircuitBooleanAnalyzer(),
         new ConstantReturningMethodAnalyzer(), new DerivedTypeTestOnThisAnalyzer(),
         new NullSequenceReturnAnalyzer(), new AsyncSuffixAnalyzer(),
+        new DuplicateInitializerKeyAnalyzer(), new SelfCollectionArgumentAnalyzer(),
+        new OverwrittenElementAnalyzer(), new EmptyCollectionLoopAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

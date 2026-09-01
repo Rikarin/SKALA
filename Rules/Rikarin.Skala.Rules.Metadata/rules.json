@@ -5481,6 +5481,112 @@
       "configuration": [
         "dotnet_diagnostic.SK6053.severity"
       ]
+    },
+    {
+      "id": "SK2080",
+      "concept": "duplicate-initializer-key",
+      "title": "The set or dictionary initializer repeats a key",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "DuplicateKeyCollectionInitialization",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "Two entries of one set or dictionary initializer — or of one collection expression — carry the same constant key, so the collection ends up smaller than it was written or the construction throws.",
+      "rationale": "The three initializer forms fail in three different ways and none of them is what the author wrote. `{ { k, v }, { k, w } }` calls `Add` twice and `Dictionary<K, V>.Add` throws `ArgumentException` at construction — a field initializer doing that takes the type's constructor with it. `{ [k] = v, [k] = w }` assigns through the indexer, so the second write silently wins and `v` is evaluated and thrown away. `new HashSet<T> { a, a }` returns a set of one where two were written. In every case the object at the end of the initializer is not the object on the page, and the key is right there to compare.",
+      "examples": {
+        "bad": "static readonly Dictionary<string, int> Weights = new() {\n    [\"alpha\"] = 1,\n    [\"beta\"] = 2,\n    [\"alpha\"] = 3\n};",
+        "good": "static readonly Dictionary<string, int> Weights = new() {\n    [\"alpha\"] = 1,\n    [\"beta\"] = 2,\n    [\"gamma\"] = 3\n};"
+      },
+      "falsePositives": "⚠ **Constant keys only.** `{ [a] = 1, [b] = 2 }` with two variables is not a finding even when `a` and `b` hold the same value at run time, because the analyzer has no way to know that and the shape is legitimate for a table built from names. An entry whose key is not a constant is skipped rather than blocking the entries around it. ⚠ **The comparer is not resolved — the rule declines whenever the constructor is given any argument at all.** Key equality belongs to the collection's comparer, not to the key type: `new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { [\"a\"] = 1, [\"A\"] = 2 }` throws where `\"a\" != \"A\"` ordinally, and a comparer can just as easily make two keys the rule thinks are equal distinct. Declining on *any* argument is deliberately broader than declining on a comparer argument: it costs a capacity-only initializer a true finding, and it means the rule never has to decide which parameter a comparer arrived through. ⚠ **The receiver must be one of `Dictionary`, `SortedDictionary`, `SortedList`, `ConcurrentDictionary`, `HashSet` or `SortedSet` as the semantic model resolves it.** A `List<T>` may repeat an element on purpose and a user collection's `Add` means whatever its author wrote, so neither is examined. ⚠ **The key type must be one whose default equality the analyzer can decide**: `string` (ordinal, which is what `EqualityComparer<string>.Default` does), `bool`, `char`, the integral types and any `enum`. `double`, `float`, `decimal`, a nullable key and every reference type other than `string` are declined. Two equal constants are still equal under a *sorted* collection's default `IComparer<T>`, which is why the sorted types are in the table; the reverse — two ordinally distinct strings a culture comparer would call equal — is not reported. Only the second and any later occurrence is reported, so three copies of one key give two findings and each points at a line that can be deleted. No fix: deleting the duplicate entry and correcting its key are the two available repairs, they produce different programs, and the analyzer has no way to tell which one was meant — and deleting the entry would discard a value expression that may have side effects. ⚠ **A collection expression is a different node kind, and a rule registered only on the initializer would quietly say nothing about it.** `new HashSet<T> { \"a\", \"a\" }` and `HashSet<T> s = [\"a\", \"a\"]` are one defect in two spellings and the second is the idiom now, so both are examined; a **spread** anywhere in a collection expression withdraws the whole finding rather than being stepped over, because a duplicate the spread supplies is not this rule's to report and one it hides is not this rule's to claim. ⚠ **`CA2244` overlaps the indexer form and only the indexer form**, and it is **not in the default .NET analysis set** — measured, not assumed: an ordinary `net10.0` SDK project with nothing configured reports `CA2200` on a control shape and says nothing about any of these three, so a repository that has not raised `AnalysisMode` sees no duplicate. `CA2244` also says nothing at all about the `Add` form, which is the one that throws at construction, or about a set that silently drops an element.",
+      "configuration": [
+        "dotnet_diagnostic.SK2080.severity"
+      ]
+    },
+    {
+      "id": "SK2081",
+      "concept": "collection-passed-to-itself",
+      "title": "The collection is passed to its own method as the other collection",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2114"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A set, list or array is given to one of its own members as the second collection, where the answer is fixed, the call does nothing, or the collection is emptied or doubled.",
+      "rationale": "`set.UnionWith(set)` does nothing. `set.ExceptWith(set)` is `Clear()` written so that nobody reads it as `Clear()`. `set.SetEquals(set)` is `true` with a hash walk in front of it, `set.IsProperSubsetOf(set)` is `false`, and `list.AddRange(list)` doubles the list in place. Every entry in the table is a call whose result does not depend on what the collection holds, which is never why anybody writes one. The defect underneath is almost always a single identifier — the second collection was meant to be a different one — and that is also why there is no fix: naming the right collection is the repair, and the analyzer does not know which one it is.",
+      "examples": {
+        "bad": "var stale = new HashSet<string>(known);\nstale.ExceptWith(stale);",
+        "good": "var stale = new HashSet<string>(known);\nstale.ExceptWith(current);"
+      },
+      "falsePositives": "⚠ **The two sides must be the same *storage*, which is a symbol comparison and not a text one.** `a.items` and `b.items` resolve to one field symbol through two different receivers, so the walk compares the receivers too and stops at the first symbol that differs; `items` and `this.items` are recognised as one storage because the member symbol already matched. ⚠ **Every symbol on the path must be a local, a parameter or a field.** A property is an accessor call and two reads of one property may hand back two different objects, so `Current.Items.UnionWith(Current.Items)` is not reported; an invocation or an indexer anywhere in the path is excluded for the same reason. ⚠ **`a.Equals(a)` is deliberately outside the table** even though it is the shape the upstream title suggests: asserting that a type's equality is reflexive is exactly what an equality test does, and this repository's own `SK2004` fixtures would be the first false positives. ⚠ **`Concat`, `Zip` and `Array.Copy` are outside it for the opposite reason**: `items.Concat(items)` is a legitimate way to say \"twice\", and `Array.Copy(buffer, 1, buffer, 0, n)` is how a shift is written. A degenerate result is the entry condition for the table, not an unusual-looking argument. The receiver is matched against concrete framework types — `HashSet<T>`, `SortedSet<T>`, `List<T>`, `System.Array` and the four `Enumerable` operators — never against `ISet<T>` or a user collection, where the member's meaning is its author's. A named argument or a `ref` argument anywhere in the call withdraws the finding, because the slot an argument occupies is then not the slot it is written in.",
+      "configuration": [
+        "dotnet_diagnostic.SK2081.severity"
+      ]
+    },
+    {
+      "id": "SK2082",
+      "concept": "overwritten-collection-element",
+      "title": "The collection element is written twice with nothing reading it in between",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S4143"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "One entry of a list, array or dictionary is assigned twice in a contiguous run of element writes, so the first value is computed and thrown away.",
+      "rationale": "A block of `map[…] = …;` statements is how a lookup table gets built by hand, and it is where one key gets written twice: the first value is computed, stored and discarded by a later statement, and nothing in the compiler notices because both writes are legal. Either a key is wrong or a line is redundant, and which of the two it is decides what the program was supposed to do — which is also why there is no fix.",
+      "examples": {
+        "bad": "limits[\"read\"] = 100;\nlimits[\"write\"] = 50;\nlimits[\"read\"] = 25;",
+        "good": "limits[\"read\"] = 100;\nlimits[\"write\"] = 50;\nlimits[\"admin\"] = 25;"
+      },
+      "falsePositives": "⚠ **Roslyn's `AnalyzeDataFlow` answers questions about variables, not about indexed elements**, so there is no dataflow behind this rule and it does not pretend to have any. It reports only a *contiguous run of element writes to one collection*: the moment a statement that is not such a write appears between the two, the finding is withdrawn. That is a fraction of the defect and it is the fraction that can be proved without a lattice — a loop, a branch, a method call or a `ref` escape between the writes all end the run. ⚠ **The run is additionally required to be opaque-free**: an invocation, an object creation, an `await`, a lambda, a nested assignment, a `++` or a `ref` argument anywhere in an intervening write ends it, and so does any mention of the collection itself on the right of one, because each is a place the first value could be read through an alias. ⚠ **\"The keys are different\" is a stronger claim than \"the keys are not the same\", and only two constants answer it.** Two variables may hold one value and a comparer may make two distinct-looking values one key, so an undecidable pair ends the run rather than being stepped over. Two keys are the same when they are equal constants — which every `IEqualityComparer<T>` agrees with, since equality is reflexive — or when they are one storage read twice. ⚠ **`ConcurrentDictionary` is not in the receiver table, deliberately**: the point of the type is that another thread may read between the two writes, so \"nothing read it\" is not something this analysis is entitled to say there. The receiver must be an array or one of `List<T>`, `Dictionary<K, V>`, `SortedDictionary<K, V>` or `SortedList<K, V>`; a user type's indexer setter may accumulate, log or dispatch, and two writes to one index there are two events rather than one lost value. Compound assignment (`c[k] += v`) is a read as well as a write and is never a candidate.",
+      "configuration": [
+        "dotnet_diagnostic.SK2082.severity"
+      ]
+    },
+    {
+      "id": "SK2083",
+      "concept": "provably-empty-collection",
+      "title": "The collection iterated here is provably empty",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S4158"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A local collection is created empty, is never referred to except as the subject of a foreach, and is then iterated — so the loop body cannot run.",
+      "rationale": "The population step was removed, or was never written. The loop reads as working code, the compiler has nothing to say about it, and every test over it passes, because a body that never runs never fails. The repair is the missing step, which is why there is no fix: deleting the loop would silence the rule and keep the defect.",
+      "examples": {
+        "bad": "var overdue = new List<Invoice>();\nforeach (var invoice in overdue) {\n    Remind(invoice);\n}",
+        "good": "var overdue = new List<Invoice>();\noverdue.AddRange(invoices.Where(static i => i.IsOverdue));\nforeach (var invoice in overdue) {\n    Remind(invoice);\n}"
+      },
+      "falsePositives": "⚠ **This is proved by exhaustion, not by dataflow.** Roslyn's `AnalyzeDataFlow` answers questions about variables and not about a collection's contents, so the rule asks a question it can answer instead: *every* reference to the local inside the member that declares it must be the subject of a `foreach`. A collection can only be filled through a member call, an assignment, or by being handed somewhere, and each of those is a reference that is not a `foreach` subject — so one reference of any other kind, including an argument, a receiver, an assignment target, a `ref` or a capture, withdraws the finding, and the analyzer never has to decide what that reference does. ⚠ **The scan runs over the whole enclosing member rather than forward from the declaration.** A lambda or local function declared before the local cannot capture it, and one declared after it holds a reference the scan sees, so the answer does not depend on ordering — which is what makes the exhaustion argument sound. ⚠ **Locals only.** A field or a property can be filled by any member of the type and by anything holding the instance, so \"nothing adds to it\" is not a claim available there. The initialiser must be an empty collection expression, an empty array, `Array.Empty<T>()`, `Enumerable.Empty<T>()`, or a parameterless construction of a known framework collection; **any constructor argument withdraws it**, because a capacity leaves the collection empty and a source collection does not, and declining both is cheaper than telling them apart. `foreach` over something that is not a plain name — an expression, a call, a member path — is not examined at all.",
+      "configuration": [
+        "dotnet_diagnostic.SK2083.severity"
+      ]
     }
   ]
 }

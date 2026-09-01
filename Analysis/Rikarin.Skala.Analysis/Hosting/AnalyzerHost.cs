@@ -154,6 +154,8 @@ public static class AnalyzerHost {
         new MisleadingOperatorSequenceAnalyzer(), new NonShortCircuitBooleanAnalyzer(),
         new ConstantReturningMethodAnalyzer(), new DerivedTypeTestOnThisAnalyzer(),
         new NullSequenceReturnAnalyzer(), new AsyncSuffixAnalyzer(),
+        new DuplicateInitializerKeyAnalyzer(), new SelfCollectionArgumentAnalyzer(),
+        new OverwrittenElementAnalyzer(), new EmptyCollectionLoopAnalyzer(),
     ];
 
     /// <summary>

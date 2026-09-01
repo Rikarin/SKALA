@@ -187,3 +187,7 @@ SK6050 | Skala.Design | Info | The method ignores its inputs and returns a const
 SK6051 | Skala.Design | Info | The base type tests `this` against a derived type.
 SK6052 | Skala.Design | Info | Null is returned where an empty sequence was expected.
 SK6053 | Skala.Design | Disabled | The method name does not reflect its synchronicity.
+SK2080 | Skala.Correctness | Warning | The set or dictionary initializer repeats a key.
+SK2081 | Skala.Correctness | Warning | The collection is passed to its own method as the other collection.
+SK2082 | Skala.Correctness | Warning | The collection element is written twice with nothing reading it in between.
+SK2083 | Skala.Correctness | Warning | The collection iterated here is provably empty.

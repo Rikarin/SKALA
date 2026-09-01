@@ -207,5 +207,6 @@
   "BaseObjectEqualsIsObjectEquals": "SK2041",
   "BaseObjectGetHashCodeCallInGetHashCode": "SK2041",
   "NonReadonlyMemberInGetHashCode": "SK2043",
-  "AssignmentInConditionalExpression": "SK2060"
+  "AssignmentInConditionalExpression": "SK2060",
+  "DuplicateKeyCollectionInitialization": "SK2080"
 }
