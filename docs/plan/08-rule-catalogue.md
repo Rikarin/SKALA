@@ -141,10 +141,6 @@ performance wins that read as style:
 | `SK1034` | `.Count() > 0`, `.Any()` on `ICollection` | `.Count > 0` |
 | `SK1035` | `Enum.GetValues(typeof(T))` | `Enum.GetValues<T>()` |
 | `SK1036` | manual `IAsyncEnumerable` consumption via `MoveNextAsync` loops | `await foreach` |
-| `SK1040` | `Nullable<T>` | `T?` |
-| `SK1041` | `x = x + 1` | `x += 1` |
-| `SK1042` | `if (a) { if (b) { … } }` | `if (a && b) { … }` |
-| `SK1043` | `for (; cond;)` | `while (cond)` |
 
 ⚠ Several of these (`SK1022`, `SK1025`, `SK1027`, `SK1032`) are only wins in hot paths and are noise
 everywhere else. They ship at `hint`, not `suggestion`, and become `suggestion` inside paths the
@@ -157,6 +153,18 @@ built by agents as they went, 916 lines and 56 path-scoped sections, never revie
 a rule's default can be justified by how one unreviewed file happens to be laid out is the error
 [16](16-risks-and-open-questions.md) § "The reference trees are a test subject" names, and the
 `hint` default is listed under § "Decisions that rest on a reference-tree count" for it.
+
+⚠ **`SK1040`–`SK1043` are named here and nowhere else in this section; the prose pass is owed.**
+They ship, so `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister` requires the register to
+name them — this block is that requirement being met and nothing more. They belong in the groups
+above, and have not been worked into them.
+
+| ID | Concept | Instead of | Use |
+|---|---|---|---|
+| `SK1040` | `nullable-short-form` | `Nullable<T>` | `T?` |
+| `SK1041` | `compound-assignment` | `x = x + 1` | `x += 1` |
+| `SK1042` | `mergeable-if` | `if (a) { if (b) { … } }` | `if (a && b) { … }` |
+| `SK1043` | `for-loop-is-while` | `for (; cond;)` | `while (cond)` |
 
 ## SK2000 — Correctness
 
