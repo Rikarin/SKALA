@@ -3,7 +3,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
-using Rikarin.Skala.Rules.Performance;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
@@ -169,7 +168,7 @@ public sealed class SelfCollectionArgumentAnalyzer : DiagnosticAnalyzer {
             }
         }
 
-        if (!SameStorage(model, source, other.Expression, cancellation)) {
+        if (!CollectionShape.SameStorage(model, source, other.Expression, cancellation)) {
             return;
         }
 
@@ -198,72 +197,5 @@ public sealed class SelfCollectionArgumentAnalyzer : DiagnosticAnalyzer {
         }
 
         return null;
-    }
-
-    /// <summary>
-    ///     Whether two expressions certainly denote the same object, by walking both name paths and
-    ///     comparing symbols.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Every symbol on the path has to be a local, a parameter or a field. A property is an
-    ///     accessor call, and <c>Current.Items.UnionWith(Current.Items)</c> is two calls to
-    ///     <c>Current</c> that a rule has no right to assume return the same object. An invocation or
-    ///     an indexer anywhere in the path is excluded by <c>IsPlainNamePath</c> for the same reason.
-    /// </remarks>
-    static bool SameStorage(
-        SemanticModel model,
-        ExpressionSyntax left,
-        ExpressionSyntax right,
-        CancellationToken cancellation
-    ) {
-        left = Unwrap(left);
-        right = Unwrap(right);
-        if (!CallShape.IsPlainNamePath(left) || !CallShape.IsPlainNamePath(right)) {
-            return false;
-        }
-
-        while (true) {
-            if (left is ThisExpressionSyntax && right is ThisExpressionSyntax) {
-                return true;
-            }
-
-            if (left is BaseExpressionSyntax && right is BaseExpressionSyntax) {
-                return true;
-            }
-
-            var leftSymbol = model.GetSymbolInfo(left, cancellation).Symbol;
-            var rightSymbol = model.GetSymbolInfo(right, cancellation).Symbol;
-            if (leftSymbol is not (ILocalSymbol or IParameterSymbol or IFieldSymbol)
-                || !SymbolEqualityComparer.Default.Equals(leftSymbol, rightSymbol)) {
-                return false;
-            }
-
-            var leftNext = Parent(left);
-            var rightNext = Parent(right);
-
-            // `items` and `this.items` are one storage written two ways, and the symbol above has
-            // already established that it is the same member of the same type.
-            if (leftNext is null) {
-                return rightNext is null or ThisExpressionSyntax;
-            }
-
-            if (rightNext is null) {
-                return leftNext is ThisExpressionSyntax;
-            }
-
-            left = leftNext;
-            right = rightNext;
-        }
-    }
-
-    static ExpressionSyntax? Parent(ExpressionSyntax expression) =>
-        expression is MemberAccessExpressionSyntax access ? Unwrap(access.Expression) : null;
-
-    static ExpressionSyntax Unwrap(ExpressionSyntax expression) {
-        while (expression is ParenthesizedExpressionSyntax parentheses) {
-            expression = parentheses.Expression;
-        }
-
-        return expression;
     }
 }

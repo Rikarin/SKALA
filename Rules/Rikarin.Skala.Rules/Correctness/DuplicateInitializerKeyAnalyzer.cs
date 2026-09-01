@@ -3,10 +3,9 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
-using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Globalization;
+using System.Collections.Immutable;
 using System.Threading;
 
 namespace Rikarin.Skala.Rules.Correctness;
@@ -111,14 +110,14 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
 
         var isSet = collection.TypeArguments.Length == 1;
         var keyType = collection.TypeArguments[0];
-        if (!IsDecidable(keyType)) {
+        if (!CollectionShape.IsDecidableKeyType(keyType)) {
             return;
         }
 
-        var seen = new Dictionary<string, ExpressionSyntax>(StringComparer.Ordinal);
+        var seen = new Dictionary<string, ExpressionSyntax>(System.StringComparer.Ordinal);
         foreach (var element in initializer.Expressions) {
             var (key, form) = KeyOf(element, isSet);
-            if (key is null || Normalize(model, key, cancellation) is not { } normalized) {
+            if (key is null || CollectionShape.ConstantKey(model, key, cancellation) is not { } normalized) {
                 continue;
             }
 
@@ -185,61 +184,6 @@ public sealed class DuplicateInitializerKeyAnalyzer : DiagnosticAnalyzer {
             InitializerExpressionSyntax or AssignmentExpressionSyntax => (null, Form.Add),
             _ => isSet ? (element, Form.Element) : (null, Form.Add)
         };
-
-    /// <summary>
-    ///     A key type whose default equality this analyzer can decide from constants alone.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ <c>double</c>, <c>float</c> and <c>decimal</c> are excluded even though their boxed
-    ///     <c>Equals</c> happens to agree with <c>EqualityComparer&lt;T&gt;.Default</c>: a rule that
-    ///     reports a duplicate <c>NaN</c> or a duplicate <c>-0.0</c> is arguing about a key nobody
-    ///     writes, and the exclusion costs nothing. Every reference type other than <c>string</c> is
-    ///     excluded because a constant of one can only be <c>null</c>, and <c>Nullable&lt;T&gt;</c>
-    ///     with it.
-    /// </remarks>
-    static bool IsDecidable(ITypeSymbol keyType) =>
-        keyType.TypeKind == TypeKind.Enum
-        || keyType.SpecialType is SpecialType.System_String
-            or SpecialType.System_Boolean
-            or SpecialType.System_Char
-            or SpecialType.System_SByte
-            or SpecialType.System_Byte
-            or SpecialType.System_Int16
-            or SpecialType.System_UInt16
-            or SpecialType.System_Int32
-            or SpecialType.System_UInt32
-            or SpecialType.System_Int64
-            or SpecialType.System_UInt64;
-
-    /// <summary>
-    ///     A constant key as a comparable string, or null when the key is not a constant this rule
-    ///     decides.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ The numeric constants are normalised to one spelling on purpose. In a
-    ///     <c>Dictionary&lt;long, V&gt;</c> the constants <c>1</c> and <c>1L</c> are boxed as
-    ///     <c>int</c> and <c>long</c>, and comparing the boxes would say they differ where the
-    ///     dictionary says they are one key. Every entry in one initializer converts to the same key
-    ///     type, so collapsing them all through the invariant decimal spelling is exact.
-    /// </remarks>
-    static string? Normalize(SemanticModel model, ExpressionSyntax key, CancellationToken cancellation) {
-        var constant = model.GetConstantValue(key, cancellation);
-        if (!constant.HasValue) {
-            return null;
-        }
-
-        return constant.Value switch {
-            null => "null",
-            string text => "s:" + text,
-            bool flag => flag ? "b:1" : "b:0",
-            char character => "n:" + ((long)character).ToString(CultureInfo.InvariantCulture),
-            ulong unsigned => "n:" + unsigned.ToString(CultureInfo.InvariantCulture),
-            sbyte or byte or short or ushort or int or uint or long =>
-                "n:" + Convert.ToInt64(constant.Value, CultureInfo.InvariantCulture)
-                    .ToString(CultureInfo.InvariantCulture),
-            _ => null
-        };
-    }
 
     static bool Contains(List<INamedTypeSymbol> lookups, INamedTypeSymbol type) {
         foreach (var candidate in lookups) {

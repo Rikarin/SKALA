@@ -376,6 +376,16 @@ been written yet.
   property is an accessor call. ⚠ `a.Equals(a)`, `Concat`, `Zip` and `Array.Copy` are deliberately
   outside the table: reflexive equality is what an equality test asserts, `items.Concat(items)` is a
   legitimate "twice", and `Array.Copy(buffer, 1, buffer, 0, n)` is how a shift is written.
+- `SK2082` `overwritten-collection-element` — one entry assigned twice inside a contiguous run of
+  element writes to one collection, so the first value is computed and discarded. ⚠ **Roslyn's
+  `AnalyzeDataFlow` answers questions about variables, not about indexed elements**, so there is no
+  dataflow under this rule and it does not pretend to have any: the moment a statement that is not
+  such a write appears between the two, or an invocation, `await`, lambda, nested assignment, `++`
+  or `ref` argument appears inside one, the run ends. That is a fraction of `S4143` and it is the
+  fraction that can be proved without a lattice. ⚠ "The keys are different" is a stronger claim than
+  "the keys are not the same" and only two constants answer it, so an undecidable pair ends the run
+  rather than being stepped over. ⚠ `ConcurrentDictionary` is out of the receiver table on purpose:
+  another thread may read between the writes, so "nothing read it" is not a claim to make there.
 
 ⚠ **The linear-search-in-a-set rule (#36) was refuted by measurement, and no id was allocated for
 it.** The issue's premise — that `Enumerable.Contains` on a `HashSet<T>` reached through
@@ -1153,8 +1163,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **212** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **178** | **84.4 %** |
+| Rules this document names | **213** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **179** | **84.4 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
