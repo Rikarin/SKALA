@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 133 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 184 ids are allocated.
 
 ## Async
 
@@ -149,6 +149,12 @@
 | [SK7081](SK7081.md) | The type depends on more other types than the threshold | hint | — | no |
 | [SK7082](SK7082.md) | The conditional expressions are nested | suggestion | — | yes |
 | [SK7083](SK7083.md) | The string literal is repeated | hint | — | yes |
+| [SK7090](SK7090.md) | A thrown `NotImplementedException` has no issue reference | warning | — | no |
+| [SK7091](SK7091.md) | The process is terminated outside the entry point | warning | — | no |
+| [SK7092](SK7092.md) | The exception is both logged and rethrown | warning | — | no |
+| [SK7093](SK7093.md) | The console is written to where a logger was meant | warning | — | no |
+| [SK7100](SK7100.md) | The documentation duplicates the base member's | suggestion | safe | no |
+| [SK7101](SK7101.md) | A non-public member has no documentation comment | none | — | yes |
 
 ## Modernization
 
