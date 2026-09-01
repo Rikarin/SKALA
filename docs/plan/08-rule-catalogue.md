@@ -468,6 +468,29 @@ and has no logger at all is under-reported, which is the direction [16](16-risks
 § R3 says to err in. The interface is matched on the type's own name because the namespace is the part
 that differs across `Microsoft.Extensions.Logging`, `Serilog`, `NLog` and `log4net`.
 
+⚠ **All four are `requiresSemantics: true`, so the reference-tree sweep measures nothing about them —
+and this batch has the direct proof [#277](https://github.com/Rikarin/SKALA/issues/277) was missing.**
+`Testing/corpus/real/*` are source slices with no project files, so the only load mode they support is
+loose, and `AnalyzerHost` withdraws every semantic rule there. The SARIF says so in as many words —
+each of the four carries `"skipped": "requires a semantic model; --load=loose has no project"` — so the
+corpus zero for `SK7090`–`SK7093` is the *third* kind of zero, the analysis never running, and it is
+not evidence of anything. What makes it provable rather than merely suspected: the corpus contains
+**twelve** `throw new NotImplementedException` sites in `newtonsoft`, none carrying an issue reference,
+and wrapping three of those files in a throwaway `.csproj` — which still does not compile, 14 `CS`
+errors — makes `SK7090` report **nine** of them under `--load=workspace`. Same files, same analyzer,
+same day: 0 loose, 9 workspace. ⚠ Those nine are all members of test doubles implementing an interface
+the test never calls, which is the one class measured to fire in volume; the rule does not exempt them
+and § "SK7090" in `rules.json` records why.
+
+Measured against Skala's own tree with `check . --load=workspace` (587 findings overall, so the run is
+real): all four report **zero**, and the three kinds of zero split cleanly. `SK7090`, `SK7091` and
+`SK7093` are *shape absent* — the tree holds no `NotImplementedException`, no `Environment.Exit`, and
+no member typed `ILogger` or `ILog` anywhere. `SK7092` is the one that is **shape present and correctly
+declined**: `Tools/Rikarin.Skala.Cli/Program.cs` writes `exception.ToString()` to `Console.Error` from
+a `catch`, and `AnalysisCommands.cs` writes `exception.Message` from two more — all three then
+`return` rather than rethrow, so there is one record and no finding. That is the only one of the four
+whose zero is evidence.
+
 `SK7090` a thrown `NotImplementedException` with no issue reference · `SK7091` `Environment.Exit`
 outside the entry point · `SK7092` the exception is both logged and rethrown · `SK7093` the console is
 written to where a logger was meant.
