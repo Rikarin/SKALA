@@ -112,3 +112,7 @@ SK4021 | Skala.Performance | Hidden | The private method does not use instance s
 SK4022 | Skala.Performance | Info | The struct is never mutated and is not `readonly`.
 SK4023 | Skala.Performance | Warning | The capacity argument matches the default.
 SK4024 | Skala.Performance | Warning | `GC.Collect` is called from application code.
+SK7090 | Skala.Maintainability | Warning | A thrown `NotImplementedException` has no issue reference.
+SK7091 | Skala.Maintainability | Warning | The process is terminated outside the entry point.
+SK7092 | Skala.Maintainability | Warning | The exception is both logged and rethrown.
+SK7093 | Skala.Maintainability | Warning | The console is written to where a logger was meant.

@@ -3494,6 +3494,114 @@
       "configuration": [
         "dotnet_diagnostic.SK4024.severity"
       ]
+    },
+    {
+      "id": "SK7090",
+      "concept": "not-implemented-member",
+      "title": "A thrown `NotImplementedException` has no issue reference",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3717"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A member's body is `throw new NotImplementedException()` and nothing names the issue that owes the implementation.",
+      "rationale": "⚠ This is `SK7040`'s requirement on the form that compiles, and it sits on Skala's premise rather than beside it. A model asked for an implementation produces a signature with a `throw new NotImplementedException()` body far more readily than it says it cannot do the work — and that body type-checks, binds, formats, and passes every analyzer in the build. It fails only when it runs, in a caller that had no way to know. A `TODO` at least announces itself to whoever opens the line; this announces itself to nobody. The requirement is therefore the same one `SK7040` makes: somewhere a reader will already be looking, name the issue that owns finishing this. The same vocabulary is accepted — a URL, `#123`, or a project key such as `SKALA-123` — read from the exception's own message, from the throw's own comments, or from the enclosing member's leading trivia.",
+      "examples": {
+        "bad": "public decimal Total(Order order) => throw new NotImplementedException();",
+        "good": "// TODO SKALA-412: the discount table is not specified yet.\npublic decimal Total(Order order) => throw new NotImplementedException(\"SKALA-412\");"
+      },
+      "falsePositives": "⚠ Report-only, and deliberately so: no edit writes the implementation, and every mechanical guess available — delete the member, return `default`, change the exception type — turns a loud failure into a quiet one, which is strictly worse than what is there. Only a construction that is *thrown* is reported; Sonar's `S3717` tracks every use of the type, but constructing one to compare against or to hand to a test helper is not a member that compiles and does not work. ⚠ **`NotSupportedException` and `UnreachableException` never fire, and that is the rule's position rather than an omission.** Both are permanent statements about a contract — an operation this type will never offer, a branch the author asserts is unreachable — and they are what an author writes when the answer really is \"not here\". `NotImplementedException` is the one that means \"not yet\", and \"not yet\" is what needs an owner. A repository that uses source comments as its backlog should disable the rule, exactly as it would `SK7040`. ⚠ **Test doubles are the one class measured to fire in volume, and the rule does not exempt them.** Wrapped in a project file, three slices of `Testing/corpus/real/newtonsoft` produce nine findings, every one of them a member of a fake implementing an interface the test never calls; the corpus holds twelve such throws and not one carries a reference. The rule's position is that a fake noting that nothing calls the member is exactly the sentence the finding asks for, and a repository that disagrees should path-scope the severity to its test projects. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK7090.severity"
+      ]
+    },
+    {
+      "id": "SK7091",
+      "concept": "process-exit-outside-entry-point",
+      "title": "The process is terminated outside the entry point",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1147"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`Environment.Exit` is called somewhere other than the entry point, so the process ends without unwinding.",
+      "rationale": "`Environment.Exit` does not unwind. No `finally` runs, no `using` disposes, no buffered writer flushes and no `await` resumes. In a library, in a service, and in an executable's own helper class alike, it ends work that has nothing to do with whoever made the call — the caller's transaction is left open, its temporary file is left on disk, and its log line is left in a buffer that is never written.",
+      "examples": {
+        "bad": "if (config is null) {\n    Environment.Exit(1);\n}",
+        "good": "if (config is null) {\n    throw new InvalidOperationException(\"no configuration was found\");\n}"
+      },
+      "falsePositives": "⚠ **The rule does not try to tell an application from a library, and that is a measurement rather than a shrug.** `LooseLoader` constructs its compilation with `OutputKind.DynamicallyLinkedLibrary`, so \"this compilation is a library\" and \"no project file was loaded\" are the same observation — and loose is the mode Skala exists for, because a folder of generated `.cs` files has no project. A rule keyed on `OutputKind` would report every console application analysed without its project file. The line drawn instead holds under every load mode: the entry point may end the process, because ending it is the process's own decision and there is nothing above to unwind into; everywhere else the call destroys cleanup somebody else wrote. The entry point is the compilation's own where there is one, and otherwise a `static Main` by name, which is the fallback loose mode needs. Top-level statements are the entry point and never fire. ⚠ `Environment.FailFast` is deliberately not reported: skipping cleanup is the whole point of it — it is what an author writes when the state is corrupt enough that running `finally` blocks is the more dangerous act — so reporting it would be reporting a decision rather than an accident. `Environment.ExitCode` is a property assignment, not a call, and never fires. The type is resolved by the semantic model and never matched on the written name. Report-only: the repair is to return, to throw, or to set an exit code and let the entry point end the process, and which of those the caller is owed is not something an edit can guess.",
+      "configuration": [
+        "dotnet_diagnostic.SK7091.severity"
+      ]
+    },
+    {
+      "id": "SK7092",
+      "concept": "logged-and-rethrown",
+      "title": "The exception is both logged and rethrown",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2139"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A `catch` hands the caught exception to a logging call and then rethrows it.",
+      "rationale": "Every layer that does this multiplies the log. One failure arrives as five entries with five different stack depths, nothing in any of them says they are the same event, and the layer that finally handled it is indistinguishable from the four that only watched it go past. Either handle the exception — and then it is not the caller's problem — or propagate it and let whoever handles it record it once.",
+      "examples": {
+        "bad": "catch (IOException error) {\n    logger.LogError(error, \"the import failed\");\n    throw;\n}",
+        "good": "catch (IOException error) {\n    throw new ImportException($\"the import of {path} failed\", error);\n}"
+      },
+      "falsePositives": "⚠ **The rule ships the half it can prove and the omitted half is named.** A finding requires the logging call to be handed *the caught exception itself*. Deciding that an arbitrary call \"is logging\" is name-matching, and name-matching a bare `logger.LogError(\"failed\")` beside a `throw;` would report every method in the tree called `Error`; passing the caught exception to something in the logging vocabulary is not a guess, because nothing else does that. A `catch` with no exception variable therefore never fires, and neither does one that logs a message without the exception — under-reporting in the direction that keeps the rule usable. ⚠ **Wrapping is not rethrowing and is deliberately not reported.** `throw new ImportException(message, error)` translates the failure at a boundary and produces one record rather than two, and logging the original before translating it is how detail that the translation drops survives at all. Only a bare `throw;` and `throw error;` count — the two forms that send on the same exception the same layer just recorded. A nested `try`'s own `catch` is not this one: the walk is scoped to the clause that owns the node. Report-only: \"handle it or propagate it\" names two repairs, choosing between them is a decision about what this layer is for, and an edit that deleted the log would lose the context the log adds while one that deleted the `throw` would swallow a failure.",
+      "configuration": [
+        "dotnet_diagnostic.SK7092.severity"
+      ]
+    },
+    {
+      "id": "SK7093",
+      "concept": "console-instead-of-logger",
+      "title": "The console is written to where a logger was meant",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S106"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A `Console.Write` or `Console.WriteLine` is made from code that has a logger in scope.",
+      "rationale": "A console write cannot be filtered, routed, structured or correlated, and in every hosted environment — a container, a service, a function, a test host — it goes nowhere anybody looks. Complements `SK2016`, which assumes a logger is being used at all.",
+      "examples": {
+        "bad": "public Importer(ILogger<Importer> logger) => this.logger = logger;\n\npublic void Import(string path) {\n    Console.WriteLine($\"importing {path}\");\n}",
+        "good": "public void Import(string path) {\n    logger.LogInformation(\"importing {Path}\", path);\n}"
+      },
+      "falsePositives": "⚠ **The rule does not decide whether this code is an application or a library, because nothing in the tree can tell it.** `LooseLoader` builds its compilation as `OutputKind.DynamicallyLinkedLibrary`, so \"this is a library\" and \"no project file was loaded\" are one observation, and loose is the mode Skala exists for. A rule keyed on `OutputKind` would report every line of every console application analysed without its project, which is `S106` turned into a false-positive engine. What ships is the narrower fact the issue's own title names and which no load mode can distort: **a logger is in scope at this call site and the code wrote to the console anyway** — a member or parameter typed `ILogger`, `ILogger<T>` or `ILog` is present, so the routing question is already answered for this code and answered differently two lines away. That is a contradiction inside one method rather than a policy judgement about the project. A console application's entry point printing usage has no logger and is never reported, which is the correct outcome by construction rather than by an exemption somebody has to maintain — and a service class that writes to the console and has no logger at all is under-reported, deliberately. The logger interface is matched on the type's own name and not on a namespace, because the namespace is the part that differs across `Microsoft.Extensions.Logging`, `Serilog`, `NLog` and `log4net`. `Console.Out` and `Console.Error` are reported through the receiver, so a `TextWriter` the caller handed in is not the console and never fires; reads such as `Console.ReadLine` never fire. Report-only: which level the line deserves is intent — `Debug`, `Information` and `Error` are all plausible for the same string — a console argument list is not mechanically a message template, and an edit that guessed would put the wrong severity on somebody's alerting.",
+      "configuration": [
+        "dotnet_diagnostic.SK7093.severity"
+      ]
     }
   ]
 }
