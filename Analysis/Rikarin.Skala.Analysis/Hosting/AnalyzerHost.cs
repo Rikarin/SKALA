@@ -92,7 +92,8 @@ public static class AnalyzerHost {
         new SqlInjectionAnalyzer(), new ProcessArgumentInjectionAnalyzer(), new WeakCipherAnalyzer(),
         new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(),
         new CollectionExpressionAnalyzer(), new UsingDeclarationAnalyzer(), new TypePatternAnalyzer(),
-        new NullConditionalAssignmentAnalyzer(), new DictionaryLookupAnalyzer()
+        new NullConditionalAssignmentAnalyzer(), new DictionaryLookupAnalyzer(),
+        new NanComparisonAnalyzer()
     ];
 
     /// <summary>

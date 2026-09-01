@@ -170,6 +170,11 @@ a value type without an override, boxing · `SK2012` self-assignment, self-compa
 rethrow · `SK2015` `throw ex` losing the stack trace · `SK2016` interpolated string in a logger call
 that takes a template (the `CA2254` case, which the export sets to `suggestion`).
 
+Later correctness allocations, each specified individually rather than as a block, so the numbers are
+not contiguous with the sixteen above:
+
+- `SK2030` `==` or `!=` against a constant `NaN`.
+
 ## SK3000 — Async, concurrency, lifetime
 
 `SK3001` `async void` outside an event handler · `SK3002` blocking on async (`.Result`, `.Wait()`,
@@ -321,8 +326,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **126** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **96** | **76.8 %** |
+| Rules this document names | **127** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **97** | **77.0 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
