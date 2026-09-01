@@ -89,8 +89,10 @@ public sealed class ArithmeticAndRangeBatchTests {
     [Fact]
     public void TheModulusAsymmetry_IsReal() {
         Assert.Equal(-1, -5 % 2);
+#pragma warning disable SK2054 // The defect SK2054 reports, written out so the language fact is asserted.
         Assert.False(-5 % 2 == 1);
         Assert.True(-5 % 2 != 0);
+#pragma warning restore SK2054
         Assert.Single(Findings("class C { bool M(int v) => v % 2 == 1; }"), d => d.Id == "SK2054");
         Assert.DoesNotContain(Findings("class C { bool M(int v) => v % 2 == 0; }"), d => d.Id == "SK2054");
     }
@@ -103,7 +105,9 @@ public sealed class ArithmeticAndRangeBatchTests {
     [Fact]
     public void TheShiftMask_FollowsTheOperandWidth() {
         var value = 1;
+#pragma warning disable SK2052 // The defect SK2052 reports, written out so the language fact is asserted.
         Assert.Equal(value, value << 32);
+#pragma warning restore SK2052
         Assert.Equal(4294967296L, 1L << 32);
         Assert.Single(Findings("class C { int M(int v) => v << 32; }"), d => d.Id == "SK2052");
         Assert.DoesNotContain(Findings("class C { long M(long v) => v << 32; }"), d => d.Id == "SK2052");
@@ -147,7 +151,9 @@ public sealed class ArithmeticAndRangeBatchTests {
     /// </summary>
     [Fact]
     public void TheDivisionFix_ChangesTheAnswer() {
+#pragma warning disable SK2050 // The defect SK2050 reports, written out so the truncation is asserted.
         double before = 7 / 2;
+#pragma warning restore SK2050
         var after = (double)7 / 2;
         Assert.Equal(3.0, before);
         Assert.Equal(3.5, after);
@@ -206,8 +212,7 @@ public sealed class ArithmeticAndRangeBatchTests {
         Assert.DoesNotContain(Analyze(compilation), static diagnostic => diagnostic.Id == "SK2054");
     }
 
-    static ImmutableArray<Diagnostic> Findings(string source) =>
-        Analyze(RuleFixtures.Compile(source, "test.cs"));
+    static ImmutableArray<Diagnostic> Findings(string source) => Analyze(RuleFixtures.Compile(source, "test.cs"));
 
     static ImmutableArray<Diagnostic> Analyze(CSharpCompilation compilation) =>
         RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken);

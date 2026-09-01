@@ -48,7 +48,9 @@ public sealed class IntegerDivisionFractionAnalyzer : DiagnosticAnalyzer {
         // `GetTypeInfo((double)(a / b)).ConvertedType` on the *division* is `int`, not `double`, so
         // the conversion path alone misses the single most common wrong repair for this defect.
         // Refuted while building the rule, and the enclosing cast is read separately because of it.
-        var converted = IsFractional(info.ConvertedType) ? info.ConvertedType : EnclosingCast(model, binary, cancellation);
+        var converted = IsFractional(info.ConvertedType)
+            ? info.ConvertedType
+            : EnclosingCast(model, binary, cancellation);
         if (converted is null) {
             return;
         }

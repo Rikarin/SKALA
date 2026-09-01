@@ -1631,11 +1631,56 @@ non-negative constant, when it is a count or a length, or when it is `Math.Abs`.
   assumption was caught. The enclosing cast is now read separately. A rule that had checked only the
   conversion would have missed the commonest wrong repair for this defect while looking complete.
 
-Validation is 28 positive and 59 "should not fire" fixtures, exact per-fixture counts, an explicit
+Validation is 28 positive and 60 "should not fire" fixtures, exact per-fixture counts, an explicit
 `AD0001` sweep over every fixture in the batch — an analyzer that throws is swallowed and then
 produces nothing, so its negatives all pass and it reads as half-working rather than dead — plus
 runtime demonstrations that `-5 % 2` is `-1`, that `1 << 32` differs between `int` and `long`, and
 that `-0.0 + 0.0` is `+0.0`, which is why `SK2051` is integral-only.
+
+#### The measurement, and what each zero means
+
+⚠ **`--load=workspace` was unusable and the number it would have produced was a lie.** A workspace
+load over this repository reported **4409 `CS` errors** — 2024 `CS0103` and 1835 `CS0246`, i.e. the
+references never resolved — and every rule in this batch is `requiresSemantics`. A run against error
+types under-reports silently, so the whole measurement was moved to a Release binlog
+(`dotnet build Skala.slnx -c Release -bl:artifacts/skala.binlog --no-incremental`), which reports
+**zero `CS` diagnostics**. That is the instrument check: the same command that gave the zero also
+proves the compilation bound.
+
+⚠ **The instrument was verified before the zero was believed.** A probe carrying all five shapes was
+dropped into `Analysis/Rikarin.Skala.Analysis`, the binlog rebuilt, and all five rules fired on it,
+one finding each. The probe was then deleted and the binlog rebuilt.
+
+Against Skala's own solution, with the probe gone, all five report **zero**. Classified:
+
+| ID | The zero | Counted how |
+|---|---|---|
+| `SK2050` | **Shape present, correctly declined.** 8 integral-looking ratio computations exist — `DuplicationModel`, `PreferenceSweep`, `Fidelity`, `ConstructReport`, `ArrangementDifferential` — and every one already casts or promotes before dividing (`(double)Agreed / Spans`, `100.0 * Plain / …`). The shape the rule reports is exactly the shape this tree already writes correctly | regex census over 458 own-source files, then each hit read |
+| `SK2051` | **Shape absent.** The two textual hits are a documentation table and a string inside a test | same census |
+| `SK2052` | **Shape present, correctly declined.** 3 real shift-by-32-or-more sites — `BreakPlan.Key`'s `(long)node.SpanStart << 32`, `BreakPlan`'s `key >> 32` on a `long`, `FuzzRandom`'s `1UL << 53` — and all three are 64-bit operands, where those counts are inside the width. ⚠ This is the width trap firing in the tree's favour: the identical text on an `int` is a defect | same census |
+| `SK2053` | **Shape absent.** The two textual hits are a comment and a string inside a test | same census |
+| `SK2054` | **Shape absent.** The five textual hits are documentation comments and strings inside tests | same census |
+
+⚠ **The reference trees cannot measure any of these five, and a zero from them would not be a
+zero.** `Testing/corpus/real` has no project files, so `--load=loose` skips every
+`requiresSemantics` rule, and `skala.jsonc` excludes the path outright (#277). What is available is
+the same textual census over its 1140 files, which is a reading of the source and not a run of the
+rule:
+
+- `SK2053` and `SK2054`: **no candidate lines at all** in Vixen, Serilog or Newtonsoft.
+- `SK2052`: 6 candidate lines, every one a `long`/`ulong` operand — `(long)…Order << 32`,
+  `value >> 63` — which the rule would decline.
+- `SK2050`: 12 candidate lines, all already `float`-typed or explicitly cast.
+- ⚠ **`SK2051`: 8 distinct sites in Vixen that the rule would report**, all of the shape
+  `coordinates[(b * 2) + 0]` in `Distortion.cs`, `EnvironmentTexture.cs` and `MorphTargetData.cs`,
+  where the `+ 0` is written for column alignment against a neighbouring `+ 1`. Every one is a
+  **true** finding — the `+ 0` computes nothing — and every one is alignment somebody meant.
+
+⚠ **That count is reported and the rule is not changed for it.** § "Never calibrate a rule to what
+Vixen already does" applies in both directions: eight findings on an idiom is not evidence the rule
+is wrong any more than zero findings would have been evidence it is right, and issue #8 proposes
+`warning` on its own reasoning. The number belongs in front of whoever revisits the severity; it is
+not a reason to carve an exception for index arithmetic.
 
 ### ⚠ Decisions that rest on a reference-tree count, and are awaiting revisit
 
