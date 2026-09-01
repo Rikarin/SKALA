@@ -158,6 +158,8 @@ public static class AnalyzerHost {
         new OverwrittenElementAnalyzer(), new EmptyCollectionLoopAnalyzer(),
         new IndexFromEndAnalyzer(), new NameofExpressionAnalyzer(), new EscapeFreeStringLiteralAnalyzer(),
         new InterpolatedStringFormAnalyzer(), new UnsignedRightShiftAnalyzer(),
+        new TupleDeconstructionAnalyzer(), new WithExpressionCopyAnalyzer(),
+        new RedundantSpreadElementAnalyzer(), new CachedEmptyInstanceAnalyzer(),
     ];
 
     /// <summary>

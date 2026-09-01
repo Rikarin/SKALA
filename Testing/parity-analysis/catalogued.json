@@ -218,5 +218,9 @@
   "UseStringInterpolationWhenPossible": "SK1063",
   "SimplifyStringInterpolation": "SK1063",
   "StringLiteralAsInterpolationArgument": "SK1063",
-  "UseUnsignedRightShiftOperator": "SK1064"
+  "UseUnsignedRightShiftOperator": "SK1064",
+  "UseDeconstruction": "SK1070",
+  "UseWithExpressionToCopyRecord": "SK1071",
+  "RedundantSpreadElement": "SK1072",
+  "UseEventArgsEmptyField": "SK1073"
 }

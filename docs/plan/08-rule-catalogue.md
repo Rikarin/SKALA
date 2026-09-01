@@ -317,6 +317,24 @@ voice the rest of this section is written in, have not been written yet.
 | `SK1062` | `escape-free-string-literal` | `"{\"id\":1}"`, `"\x41"` | `"""{"id":1}"""`, `"A"` |
 | `SK1063` | `interpolated-string-form` | `string.Format("{0}", x)`, `$"{x.ToString()}"` | `$"{x}"` |
 | `SK1064` | `unsigned-right-shift` | `(int)((uint)x >> n)` | `x >>> n` |
+⚠ **`SK1070`–`SK1073` are registered here and the prose pass is owed.** The rows below exist so the
+numbers are taken and readable; the paragraphs that say *why* each one is worth a rule, in the voice
+the rest of this section is written in, have not been written yet.
+
+| ID | Concept | Instead of | Use |
+|---|---|---|---|
+| `SK1070` | `tuple-deconstruction` | `var a = t.Item1; var b = t.Item2;` | `var (a, b) = t;` |
+| `SK1071` | `with-expression-copy` | `new R(x.A, x.B, c)` | `x with { C = c }` |
+| `SK1072` | `redundant-spread-element` | `[.. new[] { a, b }, c]` | `[a, b, c]` |
+| `SK1073` | `cached-empty-instance` | `new EventArgs()`, `new Guid()` | `EventArgs.Empty`, `Guid.Empty` |
+
+⚠ **"Use an object or collection initializer" was measured and closed as hosted, not built.** It was
+the fifth concept of this batch, and `IDE0017` and `IDE0028` ship in the .NET SDK, report exactly that
+shape, and were confirmed on SDK 10.0.400 to *decline* the two cases that make the rewrite unsound —
+an assignment guarded by an `if`, and a read of the half-built object between the construction and the
+assignments. ADR-008 hosts rather than rebuilds, so no id was allocated. Its two sibling inspections,
+`ConvertConstructorToMemberInitializers` and `WithExpressionInsteadOfInitializer`, are different
+concepts and remain uncovered; the second is the *opposite* direction to `SK1071`.
 
 ## SK2000 — Correctness
 
@@ -1436,6 +1454,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **246** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **212** | **86.5 %** |
+| Rules this document names | **214** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **180** | **84.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
