@@ -107,3 +107,4 @@ SK3020 | Skala.Async | Warning | The non-`async` `Task` method returns null.
 SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
 SK4030 | Skala.Performance | Info | Use the collection's own `Find`/`Exists`/`TrueForAll`/`Contains`.
 SK4031 | Skala.Performance | Warning | The loop looks up a key it is already holding.
+SK4032 | Skala.Performance | Info | Pass the start index instead of calling `Substring`.

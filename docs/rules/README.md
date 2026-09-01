@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 131 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 132 ids are allocated.
 
 ## Async
 
@@ -158,6 +158,7 @@
 | [SK4010](SK4010.md) | A `Where` the next operator could have taken as its predicate | suggestion | safe | no |
 | [SK4030](SK4030.md) | The collection's own method answers this faster than the LINQ extension | suggestion | safe | no |
 | [SK4031](SK4031.md) | The loop looks up a key it is already holding | warning | safe | no |
+| [SK4032](SK4032.md) | `Substring` is called to feed a search that takes a start index | suggestion | safe | no |
 
 ## Security
 
