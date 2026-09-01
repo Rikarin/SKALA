@@ -3372,6 +3372,34 @@
         "dotnet_code_quality.SK7081.threshold",
         "dotnet_diagnostic.SK7081.severity"
       ]
+    },
+    {
+      "id": "SK7082",
+      "concept": "nested-conditional",
+      "title": "The conditional expressions are nested",
+      "category": "Maintainability",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3358"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "Conditional expressions nest more deeply than dotnet_code_quality.SK7082.threshold (default 1), counting a right-associated ladder as one level.",
+      "rationale": "Nested `?:` is the one expression form where operator precedence and reader expectation reliably disagree: `a ? b : c ? d : e` groups one way and `a ? b ? c : d : e` another, and neither grouping is visible without counting. ⚠ The measurement makes one distinction that decides whether the rule is usable at all: a right-associated ladder — `a ? x : b ? y : z` — costs **one** level, not one per rung. That shape is an `else if` chain written as an expression; it reads top to bottom, each condition is tested once, and charging it per rung would make the rule fire on the one nested form that is idiomatic. What costs a level is a `?:` anywhere else inside another: in the condition, in the `true` branch, or buried inside the `false` branch rather than being it. Rewriting a nest is a judgement about which branch deserves a name, so there is no fix.",
+      "examples": {
+        "bad": "var label = ready ? (loud ? \"READY\" : \"ready\") : \"waiting\";",
+        "good": "var word = loud ? \"READY\" : \"ready\";\nvar label = ready ? word : \"waiting\";\n\n// and the ladder, which is one level and never reported:\nvar size = n < 10 ? \"small\" : n < 100 ? \"medium\" : \"large\";"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. ⚠ **The right-associated ladder is exempt and that exemption is the rule.** Without it the default threshold would fire on `n < 10 ? \"small\" : n < 100 ? \"medium\" : \"large\"`, which no reader has ever had trouble with, and the category would be switched off within a day. Parentheses around a ladder rung do not change the number, because some house styles write them and some do not. ⚠ A lambda body restarts the count, exactly as `SK7006`'s nesting depth does: `xs.Select(x => x > 0 ? a : b)` written inside a conditional is not a nested conditional in any sense a reader experiences. ⚠ **An interpolation hole restarts it too, and for the rule's own reason.** The rule exists because precedence and reader expectation disagree about `?:`; inside `$\"…{…}…\"` they cannot, because the hole has explicit delimiters and C# *requires* a conditional written in one to be parenthesised — a bare `:` there is the format specifier. There is nothing left to mis-group. ⚠ Only the outermost conditional of a nest reports — every conditional in the compilation reaches the analyzer, and reporting each would produce one finding per level pointing at the same expression, with the innermost carrying the smallest number. A null-conditional `?.` and a null-coalescing `??` are different operators and are not counted. Generated code is excluded. The finding points at the outermost `?` token.",
+      "configuration": [
+        "dotnet_code_quality.SK7082.threshold",
+        "dotnet_diagnostic.SK7082.severity"
+      ]
     }
   ]
 }

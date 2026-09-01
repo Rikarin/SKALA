@@ -421,7 +421,14 @@ with nested helpers is not coupled to somebody else's design. ⚠ Like `SK7080`,
 reference is skipped rather than counted, so its zero on the corpus is a declined measurement.
 
 `SK7080` a class with more source-declared base classes than the threshold (default 4) ·
-`SK7081` a type declaration naming more distinct other types than the threshold (default 80).
+⚠ **`SK7082`'s exemption is the rule.** A right-associated ladder — `a ? x : b ? y : z` — costs one
+level, not one per rung: that shape is an `else if` chain written as an expression, it reads top to
+bottom, and charging it per rung would fire on the one nested form that is idiomatic. Parentheses
+around a rung do not change the number. A lambda body restarts the count, as it does for `SK7006`,
+and only the outermost conditional of a nest reports.
+
+`SK7081` a type declaration naming more distinct other types than the threshold (default 80) ·
+`SK7082` conditional expressions nested deeper than the threshold (default 1, ladders exempt).
 
 ## SK8000 — Tests
 
@@ -506,8 +513,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **123** | **80.4 %** |
+| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **124** | **80.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |

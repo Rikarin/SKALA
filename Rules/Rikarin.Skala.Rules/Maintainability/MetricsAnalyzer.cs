@@ -351,10 +351,16 @@ sealed class MetricThresholds {
     /// <summary><c>SK7081</c>: distinct other named types one type declaration mentions.</summary>
     public int TypeCoupling { get; private set; } = 80;
 
+    /// <summary>
+    ///     <c>SK7082</c>: conditional-expression nesting, with a right-associated ladder costing one.
+    /// </summary>
+    public int ConditionalNesting { get; private set; } = 1;
+
     public static MetricThresholds Read(AnalyzerConfigOptions options) =>
         new() {
             InheritanceDepth = Value(options, RuleIds.InheritanceDepth, Default.InheritanceDepth),
             TypeCoupling = Value(options, RuleIds.TypeCoupling, Default.TypeCoupling),
+            ConditionalNesting = Value(options, RuleIds.NestedConditional, Default.ConditionalNesting),
             Cyclomatic = Value(options, RuleIds.CyclomaticComplexity, Default.Cyclomatic),
             Cognitive = Value(options, RuleIds.CognitiveComplexity, Default.Cognitive),
             Statements = Value(options, RuleIds.MethodLengthInStatements, Default.Statements),
