@@ -107,6 +107,7 @@ public static class AnalyzerHost {
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new GlobalNamespaceTypeAnalyzer(),
         new ReadonlyMutableFieldAnalyzer(),
+        new AbstractTypeWithoutAbstractionAnalyzer(),
     ];
 
     /// <summary>

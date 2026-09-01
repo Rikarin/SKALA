@@ -18,9 +18,10 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class DesignPromiseBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new GlobalNamespaceTypeAnalyzer(), new ReadonlyMutableFieldAnalyzer(),
+        new AbstractTypeWithoutAbstractionAnalyzer(),
     ];
 
-    static readonly string[] Ids = ["SK6030", "SK6031"];
+    static readonly string[] Ids = ["SK6030", "SK6031", "SK6032"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {

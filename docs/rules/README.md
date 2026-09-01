@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 131 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 132 ids are allocated.
 
 ## Async
 
@@ -56,6 +56,7 @@
 | [SK6023](SK6023.md) | A type has no members, no base and no attributes | suggestion | — | yes |
 | [SK6030](SK6030.md) | A type is declared in the global namespace | warning | — | yes |
 | [SK6031](SK6031.md) | `readonly` does not protect a mutable field's contents | warning | — | no |
+| [SK6032](SK6032.md) | An abstract type declares nothing to implement | suggestion | — | yes |
 
 ## Formatting
 
