@@ -205,11 +205,15 @@ def hosted(v):
 # Tier D ("known to the registry, not implemented") are opposite answers to
 # "does Skala cover this today?".
 GOV = json.load(open(f"{W}/gov.json"))
+# ⚠ `gov.json` is id-keyed like the other two maps, and 81 rows have no id. Re-index it onto
+# the export keys for the same reason -- an inspection the registry governs must not fall
+# through to `Uncovered` merely because the joining dump does not know its id.
+GOV_BYKEY = bykey(GOV)
 
 
 def option(v):
     iid = v["id"] or ""
-    keys = GOV.get(iid)
+    keys = GOV.get(iid) or GOV_BYKEY.get(v["key"])
     if keys is None and v["category"] in ("FormattingIssues", "CodeStyleIssues"):
         # Whitespace/line-break/indent families are the formatter's output as a whole;
         # SK0001 reports "file is not formatted" rather than one rule per whitespace shape.

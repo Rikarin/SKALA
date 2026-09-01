@@ -121,8 +121,8 @@ inspections are counted separately: they are C#, and they are not code Skala is 
 
 | Bucket | Count | of 888 | `error` | `warning` | `suggestion` | `hint` | `none` |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| **Uncovered** | **577** | **65.0 %** | 3 | 320 | 170 | 57 | 27 |
-| Catalogued | 93 | 10.5 % | 0 | 41 | 32 | 12 | 8 |
+| **Uncovered** | **578** | **65.1 %** | 3 | 320 | 171 | 57 | 27 |
+| Catalogued | 92 | 10.4 % | 0 | 41 | 31 | 12 | 8 |
 | Hosted | 75 | 8.4 % | 0 | 44 | 18 | 10 | 3 |
 | Option | 67 | 7.5 % | 0 | 1 | 3 | 15 | 48 |
 | Out of scope | 74 | 8.3 % | 10 | 43 | 5 | 10 | 6 |
@@ -132,7 +132,7 @@ inspections are counted separately: they are C#, and they are not code Skala is 
 A further 65 Unity/Burst inspections are out of scope for the engine rather than for the language.
 
 ⚠ **This table read `Uncovered` 580 / `Catalogued` 89 / `Hosted` 76, and both of those numbers were
-produced by an instrument with a defect in it. The measured figures are 577 / 93 / 75.** The
+produced by an instrument with a defect in it. The measured figures are 578 / 92 / 75.** The
 correction is small and the failure mode it exposes is not, so it is worth stating in full.
 
 `classify.py` looked its two hand-built maps up by **inspection id**. `universe.py` can only attach
@@ -174,6 +174,26 @@ Two entries were wrong rather than missing, and removing them does not move the 
   genuinely uncovered — it is issue #161. ⚠ **Two wrong entries stacked on one inspection is the
   argument for the test rather than for a third careful read**: the hosted map hid the catalogued
   one, and only fixing the first made the second reachable.
+
+⚠ **A third over-claiming entry, and the reason the count keeps moving up.** `catalogued.json` also
+credited `PossibleMultipleEnumeration` to `SK4006`. `SK4006` is *Review a materialization used only by
+`foreach`* — a `ToList()` that should be **removed**. Multiple enumeration is the opposite: no
+materialization where one is needed. The entry is deleted and the row is uncovered; the concept is
+issue #267, which reached the queue from the SonarQube rule-idea pass rather than from here, because
+this map was hiding it. **Three wrong entries have now been found in one hand-written map**, two of
+them only reachable after the one above them was fixed.
+
+⚠ **`gov.json` was id-keyed too, and fixing it changed no bucket — which is the finding.**
+`option()` now re-indexes `gov.json` onto the export keys like the other two maps, so
+`ArrangeAccessorsOrder` and `ArrangeEmptyString` are found rather than silently missed. Both still
+land in `Uncovered`, because the keys they name — `resharper_accessors_order` and
+`resharper_empty_string_style` — **are not in the option registry at all**. Before the fix they read
+as "nothing governs this"; now they read as "something governs this and Skala does not know the key",
+which is the distinction § "The `Option` bucket covers less than its size suggests" is entirely about.
+⚠ **They are a formatter and registry gap, not a rule gap, and they inflate `578` by two.** The
+bucket vocabulary has no name for that, and inventing one here would be a worse error than the
+overcount — [`06`](06-arrangement-and-syntax-styles.md) owns them. Both are excluded in
+`ledger-resharper.json` with that reason.
 
 ⚠ **Two surviving entries over-claim, and are left alone deliberately.**
 `UseArgumentExceptionThrowIfMethod → SK1020` and `ReplaceWithOfType → SK4010` both credit a shipped
@@ -620,10 +640,10 @@ published, and the reason is worth carrying forward.** The published `Uncovered`
 with `types.json` present — an uncommitted metadata cache from an older `jb`. Without it the same
 scripts returned **586**, because `classify.py` looked its maps up by inspection id and 81 of the 888
 rows have none. The lookup now matches on the export key as well, so the maps no longer depend on
-whether the joining dump happens to know the inspection, and the measured figure is **577**. See
+whether the joining dump happens to know the inspection, and the measured figure is **578**. See
 § "The classification" for the full accounting.
 
-**A re-run is therefore expected to print `Uncovered 577` and nothing else.** If it prints anything
+**A re-run is therefore expected to print `Uncovered 578` and nothing else.** If it prints anything
 else, the difference is a real change in the inputs — a newer export, a newer dump, an edit to the
 maps — and not the instrument drifting. That is what the fix bought: the number is now a function of
 the committed inputs alone.

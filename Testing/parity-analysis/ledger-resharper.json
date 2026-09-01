@@ -2238,6 +2238,10 @@
    "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
   },
   {
+   "inspection": "PossibleMultipleEnumeration",
+   "reason": "Not a new proposal: the concept is already tracked by issue #267, opened from the SonarQube rule-idea pass as S3047. It reached the queue by that route because catalogued.json credited it to SK4006, which is *Review a materialization used only by foreach* -- the opposite direction, a ToList() that should be removed rather than one that should be added. That mapping is deleted. Recorded so this ledger stays complete."
+  },
+  {
    "inspection": "PossiblyUnintendedUsageParameterlessGetExpressionType",
    "reason": "Reports on ReSharper's own SDK API, not on general C#."
   },
