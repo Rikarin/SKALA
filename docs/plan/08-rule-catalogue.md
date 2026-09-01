@@ -385,7 +385,13 @@ and report where the two disagree.**
   withdraws **the whole attribute**, not the one hole. The dotted path is the exclusion that
   matters most: `{Owner.Name}` needs the member's type to answer and `{DateTime.Now}` has a root
   that is not a member of anything, so reporting either would be wrong for a different reason each
-  time. It ships without a fix: only the author knows which member was meant.
+  time. ⚠ **A sabotage that failed to fail moved this rule's member lookup.** It carried two guards
+  — a walk of the implemented interfaces, and a match on the mangled name an explicit interface
+  implementation is stored under — and breaking either one left every fixture green, because each
+  masked the other: an explicit implementation requires the interface to be in `AllInterfaces`,
+  where the member appears under its plain name. The mangled match was removed as having no case
+  of its own, and a **default interface member** fixture was added, which is the one case only the
+  interface walk saves. It ships without a fix: only the author knows which member was meant.
 - `SK2103` `duplicated-attribute` — one declaration carrying the same `AllowMultiple` attribute
   twice with provably identical arguments.
 

@@ -93,10 +93,16 @@ static class AttributeContract {
     ///     Null means the question could not be answered.
     /// </summary>
     /// <remarks>
-    ///     ⚠ An explicit interface implementation is stored under a mangled name (<c>IFoo.Bar</c>), so
-    ///     a plain <c>GetMembers(name)</c> misses it. A type whose only <c>Count</c> is
-    ///     <c>ICollection.Count</c> would then be reported for <c>[DebuggerDisplay("{Count}")]</c>,
-    ///     which is a false positive on correct code.
+    ///     ⚠ <b>The interface walk is what carries this, and a sabotage that failed to fail is how that
+    ///     was established.</b> The first version also matched a mangled explicit-implementation name
+    ///     (<c>IFoo.Bar</c> ends with <c>.Bar</c>), on the reasoning that a plain
+    ///     <c>GetMembers(name)</c> misses an explicit implementation and a type whose only
+    ///     <c>Count</c> is <c>ICollection.Count</c> would be wrongly reported. That reasoning is true
+    ///     and the code was still redundant: an explicit implementation requires the interface to be in
+    ///     <c>AllInterfaces</c>, where the member is declared under its plain name — so the two guards
+    ///     covered exactly the same cases and <em>neither could be sabotaged into failing</em>, each
+    ///     masking the other. The mangled match had no case of its own; the interface walk has one the
+    ///     type does not declare at all, which is a default interface member.
     /// </remarks>
     public static bool? HasMemberNamed(ITypeSymbol type, string name) {
         for (var current = type; current is not null; current = current.BaseType) {
@@ -122,16 +128,7 @@ static class AttributeContract {
         return false;
     }
 
-    static bool Declares(ITypeSymbol type, string name) {
-        foreach (var member in type.GetMembers()) {
-            if (string.Equals(member.Name, name, StringComparison.Ordinal)
-                || member.Name.EndsWith("." + name, StringComparison.Ordinal)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    static bool Declares(ITypeSymbol type, string name) => !type.GetMembers(name).IsEmpty;
 
     /// <summary>
     ///     The span that deletes one attribute application and nothing else.
