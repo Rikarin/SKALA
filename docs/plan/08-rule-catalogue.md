@@ -351,6 +351,23 @@ already names in the other direction.
 - `SK2033` `stackalloc-in-loop` — a `stackalloc` a loop re-evaluates.
 - `SK2034` `escaped-keyword` — a declaration named after a reserved keyword and escaped with `@`.
 
+### The collection batch
+
+⚠ **The prose pass on this block is owed.** These rules are entered here because a shipped id that
+this document does not name fails `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`; the
+paragraph that places them against the rest of the range, and against `SK4030`–`SK4033`, has not
+been written yet.
+
+- `SK2080` `duplicate-initializer-key` — a set or dictionary initializer that writes the same
+  constant key twice. ⚠ **The comparer is not resolved: the rule declines whenever the constructor
+  is given any argument at all.** Key equality belongs to the collection's comparer, so
+  `new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["a"] = 1, ["A"] = 2 }` throws
+  where the two keys are distinct ordinally. Declining on *any* argument is broader than declining
+  on a comparer argument on purpose — it costs a capacity-only initializer a true finding, and the
+  rule never has to decide which parameter a comparer arrived through. Constant keys only, a closed
+  receiver table, and a key type whose default equality is decidable: `string`, `bool`, `char`, the
+  integral types and any `enum`.
+
 ## SK3000 — Async, concurrency, lifetime
 
 `SK3001` `async void` outside an event handler · `SK3002` blocking on async (`.Result`, `.Wait()`,
@@ -1108,8 +1125,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **210** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **176** | **84.2 %** |
+| Rules this document names | **211** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **177** | **84.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
