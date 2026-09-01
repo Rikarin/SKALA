@@ -194,6 +194,7 @@ SK7082 nested-conditional
 SK7083 repeated-string-literal
 SK1070 tuple-deconstruction
 SK1071 with-expression-copy
+SK1072 redundant-spread-element
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

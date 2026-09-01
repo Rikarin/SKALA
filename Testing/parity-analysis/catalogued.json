@@ -197,5 +197,6 @@
   "RedundantDictionaryContainsKeyBeforeAdding": "SK1033",
   "ArrangeNullCheckingPattern": "SK1010",
   "UseDeconstruction": "SK1070",
-  "UseWithExpressionToCopyRecord": "SK1071"
+  "UseWithExpressionToCopyRecord": "SK1071",
+  "RedundantSpreadElement": "SK1072"
 }
