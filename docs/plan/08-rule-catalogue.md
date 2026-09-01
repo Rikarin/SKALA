@@ -244,7 +244,8 @@ paragraph yet in this document explaining the decision behind each, and § "Prio
 has not been extended to cover them.
 
 `SK7070` `Obsolete` without a message · `SK7071` `ExcludeFromCodeCoverage` without a
-`Justification` · `SK7072` a `#pragma warning disable` region with no code in it.
+`Justification` · `SK7072` a `#pragma warning disable` region with no code in it ·
+`SK7073` an empty `#region`.
 
 ## SK8000 — Tests
 
@@ -329,8 +330,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **129** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **99** | **77.3 %** |
+| Rules this document names | **130** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **100** | **77.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

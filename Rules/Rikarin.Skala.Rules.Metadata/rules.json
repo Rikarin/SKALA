@@ -2747,6 +2747,31 @@
       "configuration": [
         "dotnet_diagnostic.SK7072.severity"
       ]
+    },
+    {
+      "id": "SK7073",
+      "concept": "empty-region",
+      "title": "A region is empty",
+      "category": "Maintainability",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A `#region` and its `#endregion` have only whitespace between them.",
+      "rationale": "A region survives every deletion inside it, so an empty one is the residue of a member that moved or went away. It is a heading over nothing, and the outline it produces claims a structure the file does not have. The fix deletes the two directive lines, which is the whole of the edit: nothing else in the file changes and no token moves.",
+      "examples": {
+        "bad": "#region Serialization\n#endregion",
+        "good": "// Delete the directives; the members they grouped are gone."
+      },
+      "falsePositives": "Only whitespace counts as nothing. A comment, a `#pragma`, a `#if` and in particular inactive `#if` text are all content, and the rule stays quiet — a region that still says something to a reader is not the residue this is about, and inactive text is code under another set of preprocessor symbols. The one exception is a nested region, so that a region holding only another region is one edit rather than two `skala fix` passes. A `#region` the parser could not match to an `#endregion` is skipped, because deleting one half of an unbalanced pair would be an edit made on a guess.",
+      "resharperId": "EmptyRegion",
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK7073.severity"
+      ]
     }
   ]
 }
