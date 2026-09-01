@@ -141,5 +141,6 @@
  "SpinLockInReadonlyField": "SK3021",
  "LambdaExpressionCanBeMadeStatic": "SK4020",
  "LocalFunctionCanBeMadeStatic": "SK4020",
- "MemberCanBeMadeStatic.Local": "SK4021"
+ "MemberCanBeMadeStatic.Local": "SK4021",
+ "StructCanBeMadeReadOnly": "SK4022"
 }

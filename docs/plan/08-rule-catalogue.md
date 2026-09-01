@@ -308,6 +308,9 @@ them needs a profile to justify the edit.
 - `SK4021` a `private` instance method whose body never reaches `this`. `static` drops the hidden
   argument and states the independence the body already had. Restricted to `private` because the
   edit has to check every call site, and a visible member's are not all in view.
+- `SK4022` a struct that already satisfies `readonly struct` — all instance fields `readonly`, no
+  settable instance property, no member writing `this` — and does not say so. The modifier deletes
+  the defensive copies that `SK2005` and `SK4007` report the consequences of.
 
 ## SK5000 — Security
 
@@ -493,8 +496,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **123** | **80.9 %** |
+| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **124** | **81.0 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
