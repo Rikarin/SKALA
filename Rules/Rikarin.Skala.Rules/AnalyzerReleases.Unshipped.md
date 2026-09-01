@@ -160,3 +160,4 @@ SK7080 | Skala.Maintainability | Hidden | The inheritance chain is deeper than t
 SK7081 | Skala.Maintainability | Hidden | The type depends on more other types than the threshold.
 SK7082 | Skala.Maintainability | Info | The conditional expressions are nested.
 SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
+SK1060 | Skala.Modernization | Info | Use an index-from-end expression.

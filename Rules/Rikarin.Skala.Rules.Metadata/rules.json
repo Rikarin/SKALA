@@ -4769,6 +4769,31 @@
         "dotnet_code_quality.SK7083.minimum_length",
         "dotnet_diagnostic.SK7083.severity"
       ]
+    },
+    {
+      "id": "SK1060",
+      "concept": "index-from-end",
+      "title": "Use an index-from-end expression",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseIndexFromEndExpression",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "8.0",
+      "summary": "An element access whose index counts back from the collection's own `Count` or `Length` is an index-from-end expression.",
+      "rationale": "`items[items.Count - 1]` names the collection twice and subtracts, and the reader has to check that both names are the same collection before believing the expression means \"the last one\". `items[^1]` says it, names the receiver once, and cannot be written with the wrong collection on one side — the copy-paste defect this shape produces is exactly `a[b.Count - 1]`, which compiles and is wrong. The subtraction is also the arithmetic the compiler was going to emit anyway: `^1` lowers to `Count - 1`, so the rewrite costs nothing and removes the only place a person can get it wrong.",
+      "examples": {
+        "bad": "var last = items[items.Count - 1];\nvar previous = buffer[buffer.Length - offset];",
+        "good": "var last = items[^1];\nvar previous = buffer[^offset];"
+      },
+      "falsePositives": "⚠ **`^` is not available on everything that has a `Count`.** The language's implicit index support needs a countable type *and* an `int` indexer, and `IEnumerable<T>` has neither — so the rule reads the indexed type rather than the shape of the expression, and admits only an array, a `string`, a type with a real `System.Index` indexer (`Span<T>`, `ReadOnlySpan<T>`), or a type implementing `IList<T>`/`IReadOnlyList<T>`. ⚠ **`Dictionary<int, V>` is countable and has an `int` indexer, so `d[^1]` compiles** and means the entry keyed `Count - 1` — the same program, spelled as if it were the last element. The `IList<T>` restriction is what keeps that out, and it is the reason the rule is not simply \"the type is countable\". ⚠ The receiver of the element access and the receiver of `.Count`/`.Length` must be the same chain of plain names, so `a[b.Count - 1]` is never rewritten and nothing that could have a side effect is evaluated a different number of times. ⚠ **The subtrahend is admitted only as a positive integer literal or a plain `int`-typed name path.** `^0` is `Count`, which throws where `Count - 0` also throws but is a different sentence, and a negative constant reaches `Index`'s constructor, which throws `ArgumentOutOfRangeException` where the subtraction would have thrown `IndexOutOfRangeException`. ⚠ Silent below C# 8, silent where the compilation has no `System.Index`, and silent inside an expression tree, where the indexer pattern is not expressible. The rule is one shape with one floor, so the gate is per-rule.",
+      "configuration": [
+        "dotnet_diagnostic.SK1060.severity"
+      ]
     }
   ]
 }
