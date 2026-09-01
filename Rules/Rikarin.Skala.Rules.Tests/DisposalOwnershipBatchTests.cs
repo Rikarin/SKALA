@@ -21,14 +21,14 @@ public sealed class DisposalOwnershipBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new RedundantDisposeAnalyzer(), new UsingResourceInitializerAnalyzer(),
         new UsingVariableReturnedAnalyzer(), new NullTaskReturnAnalyzer(),
-        new TaskReturnedFromUsingAnalyzer()
+        new SpinLockInReadonlyFieldAnalyzer(), new TaskReturnedFromUsingAnalyzer()
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
             var data = new TheoryData<RuleFixture>();
             foreach (var fixture in RuleFixtures.All()
-                         .Where(static f => f.RuleId is "SK3510" or "SK3511" or "SK3512" or "SK3020")) {
+                         .Where(static f => f.RuleId is "SK3510" or "SK3511" or "SK3512" or "SK3020" or "SK3021")) {
                 data.Add(fixture);
             }
 
@@ -220,6 +220,18 @@ public sealed class DisposalOwnershipBatchTests {
     )]
     public void NullTaskFix_SpellsTheCompletedTaskSoThatItBinds(string source, string expected) =>
         Assert.Contains(expected, Apply(source, "SK3020"), StringComparison.Ordinal);
+
+    /// <summary>
+    ///     ⚠ The keyword and the space after it, leaving the rest of the modifiers alone.
+    /// </summary>
+    [Theory]
+    [InlineData("static readonly SpinLock Gate;", "static SpinLock Gate;")]
+    [InlineData("internal readonly SpinLock Gate;", "internal SpinLock Gate;")]
+    [InlineData("readonly SpinLock Gate;", "SpinLock Gate;")]
+    public void SpinLockFix_RemovesOnlyTheReadonlyKeyword(string declaration, string expected) {
+        var source = "using System.Threading;\npublic class C { " + declaration + " }";
+        Assert.Contains("{ " + expected + " }", Apply(source, "SK3021"), StringComparison.Ordinal);
+    }
 
     [Theory]
     [InlineData("SK3510", "a-using-declaration")]
