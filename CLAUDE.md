@@ -68,9 +68,10 @@ even `NukeBuild` itself. **The cause is not established.** What is measured:
   no files at all. So the generator loads and emits nothing, with no `CS8785` or `CS8034` to say why.
 - Clearing `build/obj` and `build/bin` does not help; the package under `~/.nuget/packages` is intact.
 
-**CI is very likely unaffected** — the workflows install the SDK from `global.json` via
-`actions/setup-dotnet` and this is a local toolchain problem — but that is an inference, not a
-measurement. Do not report a red CI on the strength of it.
+⚠ **CI is separately red, and has been for a while.** That is known and deliberately not being worked
+on. **Do not infer either failure from the other**: this local one is a NUKE bootstrap that will not
+compile, and nothing here has established that CI fails for the same reason. Do not report red CI as a
+discovery, and do not start fixing it without being asked.
 
 Until then, go around it — `dotnet test` bypasses the NUKE bootstrap entirely:
 
