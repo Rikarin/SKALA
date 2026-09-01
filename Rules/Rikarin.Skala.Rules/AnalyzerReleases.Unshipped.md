@@ -131,3 +131,8 @@ SK3531 | Skala.Lifetime | Warning | The `DisposeAsync` override never calls the 
 SK3532 | Skala.Lifetime | Warning | The `ref struct` owns a disposable and cannot declare it.
 SK3030 | Skala.Async | Warning | The async iterator is enumerated without `await foreach`.
 SK3031 | Skala.Async | Info | The method is `async` only to return an awaited task.
+SK0230 | Skala.Cleanup | Warning | An initializer or `with` expression is empty.
+SK0231 | Skala.Cleanup | Warning | A call on a string returns the string it was given.
+SK0232 | Skala.Cleanup | Warning | An argument or signature element restates the declaration.
+SK0233 | Skala.Cleanup | Info | Nine token-level redundant syntax deletions.
+SK0234 | Skala.Cleanup | Warning | A conversion that converts nothing.

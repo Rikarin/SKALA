@@ -87,6 +87,28 @@ the correctness range and already contains allocated rules. The mapping is mecha
 `SK02nn`), but an old baseline must not replace those strings blindly: `SK2007`, `SK2013` and
 `SK2015` also name live correctness rules. Regenerate arrangement findings with `verify` instead.
 
+### Redundant expressions — the cheap third of the parity gap
+
+⚠ **The prose pass for this block is owed.** These rows are the allocation register doing its one
+job — recording that a number is taken — written as a rule lands rather than as a considered section.
+They are not arrangement rules: nothing here goes through the `arrange` fixed point, and each is an
+ordinary `DiagnosticAnalyzer` in `Rules/Rikarin.Skala.Rules/Cleanup/` under a new `Cleanup` category.
+They sit in the `SK02xx` band because doc 17 § "Inspection ids are not concepts" puts ReSharper's
+whole *Redundancies in Code* family here, and because `SK0209` — redundant *expression* parentheses,
+governed by `resharper_parentheses_redundancy_style` — was already here to be double-counted against.
+
+⚠ **Each row is one concept covering several ReSharper inspections, and none of them covers all of
+its family.** The count in the last column is inspections *retired*, not inspections listed on the
+issue; what was declined and why is in each rule's `falsePositives` in `rules.json`.
+
+| ID | Rule | Scope | Issue | Inspections retired |
+|---|---|---|---|---|
+| `SK0230` | The `with` expression or object initializer is empty | Syntax | [#137](https://github.com/Rikarin/SKALA/issues/137) | 3 of 3 |
+| `SK0231` | The string call produces the string it was given | Semantic | [#132](https://github.com/Rikarin/SKALA/issues/132) | 5 of 8 |
+| `SK0232` | The argument or signature element is redundant | Semantic | [#134](https://github.com/Rikarin/SKALA/issues/134) | 3 of 7 |
+| `SK0233` | The syntax is redundant | Syntax | [#133](https://github.com/Rikarin/SKALA/issues/133) | 9 of 13 |
+| `SK0234` | The cast or type argument is redundant | Semantic | [#128](https://github.com/Rikarin/SKALA/issues/128) | 4 of 8 |
+
 ## SK1000 — Modernization
 
 The reason the tool exists in an AI-heavy workflow. These are not bugs; they are code written in an
@@ -831,6 +853,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **179** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **147** | **82.6 %** |
+| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **126** | **81.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **19** | includes the twelve declared cut with no reason recorded |

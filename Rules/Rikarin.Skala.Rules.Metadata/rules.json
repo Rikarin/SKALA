@@ -4001,6 +4001,133 @@
       "configuration": [
         "dotnet_diagnostic.SK3031.severity"
       ]
+    },
+    {
+      "id": "SK0230",
+      "concept": "empty-initializer",
+      "title": "The `with` expression or object initializer is empty",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "RedundantWithExpression",
+      "resharperNote": "⚠ ReSharper rates `RedundantWithExpression` a *suggestion* and `RedundantEmptyObjectOrCollectionInitializer` a *warning*; Skala reports one concept at `warning` and reading `resharper_redundant_with_expression_highlighting` therefore lowers both. The severity split is the same observation this rule's `fixIsSafe: false` records: the empty initializer is nothing, and the empty `with` is an allocation somebody may have meant.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A pair of initializer braces that sets nothing: `new Foo { }` is `new Foo()`, and `x with { }` copies a record and changes nothing.",
+      "rationale": "Empty braces read as a list somebody is about to fill in and stay in the file for years after nobody is. `new Foo { }` is two characters of ceremony over `new Foo()`. `x with { }` is more than ceremony — `with` invokes the record's compiler-generated copy constructor, so it allocates a whole instance in order to produce a value equal to the one it was given.",
+      "examples": {
+        "bad": "var options = new JsonSerializerOptions { };\nvar copy = original with { };",
+        "good": "var options = new JsonSerializerOptions();\nvar copy = original;"
+      },
+      "falsePositives": "⚠ **The fix is declared unsafe, and the empty `with` is the whole reason.** `new Foo { }` → `new Foo()` is a pure deletion with no observable effect at all, but `x with { }` → `x` is not: the copy constructor produces a *distinct* instance, so removing it aliases a clone the author may have written in order to mutate it, and it removes the `NullReferenceException` a null operand would have thrown. Splitting one concept into two safety classes would have been the alternative; the conservative reading of the whole rule is the cheaper mistake. ⚠ Only the two initializer kinds that mean \"and then set these members\" are matched. An empty array initializer belongs to an `ArrayCreationExpression`, which this rule never sees — `new int[] { }` cannot lose its braces and still compile. An anonymous type is a different node again: `new { }` has no `new ()` to become. ⚠ A creation with no argument list *grows* one, because `new Foo` is not an expression; a creation that already has arguments keeps them, and `new()` target-typed creation is matched through the same path. ⚠ A comment or a preprocessor directive between the braces withdraws the finding: an empty initializer holding a note is a note about why it is empty, and the fix deletes the braces wholesale.",
+      "configuration": [
+        "dotnet_diagnostic.SK0230.severity"
+      ]
+    },
+    {
+      "id": "SK0231",
+      "concept": "redundant-string-call",
+      "title": "The string call produces the string it was given",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantToStringCall",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`ToString()` on a string, `foreach` over `ToCharArray()`, `string.Format` of a literal with no placeholders, an interpolated string with no holes, and a verbatim prefix that escapes nothing.",
+      "rationale": "Two of the five are allocations rather than noise. `s.ToCharArray()` copies the whole string so that `foreach` can walk what `string` already enumerates by index, and `string.Format` runs a format parser over a format that has no items. The other three are the reader's cost: a `$` promises a hole, a `@` promises something that needs escaping, and a `.ToString()` on a string promises a conversion. Each one is a sentence that turns out to say nothing, and a reader has to finish it before finding that out.",
+      "examples": {
+        "bad": "foreach (var c in line.ToCharArray()) {\n    Consume(c);\n}\n\nvar label = string.Format(\"unnamed\") + name.ToString();",
+        "good": "foreach (var c in line) {\n    Consume(c);\n}\n\nvar label = \"unnamed\" + name;"
+      },
+      "falsePositives": "⚠ **Each branch is guarded by what the deletion would mean, not by what it would look like.** An interpolated string is reported only where the compiler was converting it to `string`: `FormattableString fs = $\"a\";` and every interpolated-string-handler overload accept `$\"a\"` and reject `\"a\"`, and nothing in the syntax separates the two. `string.Format` is reported only where the literal holds no brace at all, because `string.Format(\"{{0}}\")` returns `{0}` and the literal returns `{{0}}` — the shape that looks most obviously safe is the one that is not. A verbatim prefix is reported only where the body holds no backslash, no doubled quote and no newline, since the prefix is what makes each of those mean what it means. ⚠ `s.ToString();` as a whole statement is the null-check idiom and is never reported: the result is discarded, so the dereference *is* the call, and `s;` is not an expression statement. ⚠ A receiver the compiler's flow analysis says may be null is left alone in both call shapes, because `s.ToString()` is typed `string` where `s` is `string?` and the deletion is where `CS8600` would come from. ⚠ **Three of the family's eight inspections are deliberately not covered.** `RedundantToStringCallForValueType` is not: `$\"{d}\"` on an `IFormattable` calls `ToString(null, provider)` where `d.ToString()` calls `ToString()`, and a supplied provider makes those two different strings. `RedundantStringInterpolation`'s single-hole form is not: `$\"{x}\"` is `\"\"` where `x` is null and `x` is null, which is a change of value and not of spelling. `RedundantStringType` and `RedundantVerbatimPrefix`'s identifier form are not covered either — the identifier form neighbours `SK2034`. ⚠ The receiver's type is read from the symbol and never from the written name, so `((object)s).ToString()` and `count.ToString()` are both left alone.",
+      "configuration": [
+        "dotnet_diagnostic.SK0231.severity"
+      ]
+    },
+    {
+      "id": "SK0232",
+      "concept": "redundant-argument",
+      "title": "The argument or signature element is redundant",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantArgumentDefaultValue",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A trailing argument that restates the parameter's default, a delegate creation the conversion would have performed, or lambda parameter types the target already declares.",
+      "rationale": "An argument restating a default is a value that silently stops tracking the default the day it changes — the same hazard `optional-and-params-hazards` reports from the declaration side, seen from the call. `new EventHandler(Foo)` is an allocation as well as noise: the method group converts to the delegate on its own, and writing the conversion out produces exactly the same object through more text.",
+      "examples": {
+        "bad": "Parse(text, throwOnFailure: false);\nProcess(text, 0);\nchanged += new EventHandler(OnChanged);\nFunc<int, int> twice = (int n) => n * 2;",
+        "good": "Parse(text, throwOnFailure: false);\nProcess(text);\nchanged += OnChanged;\nFunc<int, int> twice = n => n * 2;"
+      },
+      "falsePositives": "⚠ **Deleting an argument can change which method is called, and the rule asks the compiler rather than reasoning about it.** With `Foo(int a, int b = 0)` beside `Foo(int a)`, `Foo(1, 0)` and `Foo(1)` are calls to two different methods and nothing about the argument says so. Every finding re-binds the shortened call speculatively and withdraws unless the same symbol comes back, which is the guard Roslyn's own `IDE0004` family exists to remind everybody about. ⚠ **A caller-info parameter is excluded and looks exactly like the shape that is not.** Passing `null` to a `[CallerMemberName] string name = null` restates the default in the source and is the only thing keeping the value null: omit it and the compiler substitutes the caller's name. The same applies to `[CallerLineNumber]`, `[CallerFilePath]` and `[CallerArgumentExpression]`. ⚠ Positional arguments only — a named argument need not be last and need not fill the parameter its position names, so \"the trailing argument's parameter\" stops being a fact. A `params` parameter, a `ref`/`out`/`in` argument, and any argument whose value is not a compile-time constant equal to the default are all excluded; `default(SomeStruct)` is not a constant, so a struct default is never matched. Consecutive trailing defaults are removed in **one** edit, longest suffix first, because one at a time would make the rule fire on its own output. ⚠ The two conversion shapes avoid overload resolution instead of answering it: both are reported only where the target type is written down — an explicitly typed variable or an assignment — because as an *argument* a method group or a lambda can be the thing that picks the overload. A method group only, never a delegate value (`new EventHandler(other)` is a copy) and never a lambda. Lambda parameter types are compared **including nullability**: `Func<string?, int> f = (string x) => x.Length;` compiles, and dropping the written type would introduce the `CS8602` the author wrote it to avoid. ⚠ **Four of the family's seven inspections are not covered**: `RedundantExplicitParamsArrayCreation` (`Foo(new object[] { arr })` and `Foo(arr)` pass the array in two different roles), `RedundantCallerArgumentExpressionDefaultValue`, `UnusedAnonymousMethodSignature` and `RedundantImmediateDelegateInvocation`. Constructor arguments and attribute arguments are not matched either; only invocations are.",
+      "configuration": [
+        "dotnet_diagnostic.SK0232.severity"
+      ]
+    },
+    {
+      "id": "SK0233",
+      "concept": "redundant-syntax",
+      "title": "The syntax is redundant",
+      "category": "Cleanup",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantAttributeParentheses",
+      "resharperNote": "⚠ ReSharper rates `RedundantAttributeParentheses` a *hint* and rates `RedundantAnonymousTypePropertyName`, one of the other eight shapes under this id, a *warning*. Skala reports the concept at `suggestion`, so reading `resharper_redundant_attribute_parentheses_highlighting` raises the whole concept to whatever that one key says.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "Nine token-level deletions: an empty attribute argument list, a single lambda parameter's parentheses, parentheses around a whole pattern, a semicolon after a braced declaration, braces around a one-argument collection element, an anonymous-type property name that restates the expression, `ascending`, a range bound that is already the default, and an empty property pattern under a type.",
+      "rationale": "Each one is a token the grammar allows and the reader has to account for. None of them is a judgement call: the deletion is proved by the shape, there is no semantic component at all, and the fix is the shortest edit in the catalogue. Doc 17 § \"A large share of the 580 is cheap\" is about exactly this family — the mechanical cleanups a Rider user does not notice they rely on until they are gone.",
+      "examples": {
+        "bad": "[Obsolete()]\npublic static int Count(IEnumerable<int> values) =>\n    values.Where((v) => v is (> 0)).ToArray()[0..^0];",
+        "good": "[Obsolete]\npublic static int Count(IEnumerable<int> values) =>\n    values.Where(v => v is > 0).ToArray()[..];"
+      },
+      "falsePositives": "⚠ **`SK0209` is not being duplicated, and the check was made rather than assumed.** That rule removes redundant *expression* parentheses through `resharper_parentheses_redundancy_style`, and it matches `ParenthesizedExpressionSyntax` and nothing else. The three parenthesis shapes here are an attribute argument list, a lambda parameter list and a parenthesized *pattern* — three different nodes, none of which that option reaches. ⚠ **Purely syntactic on purpose**: no branch reads the semantic model, so this is the one rule in the `SK023x` family that still runs, and is therefore still measurable, under `--load=loose` where a dependency-less source slice makes every semantic guard withdraw. ⚠ Pattern parentheses are removed only where the pattern is the *whole* of its position — under an `is`, a switch arm, a `case` label or a subpattern. Inside an `and`/`or` the parentheses can be the precedence, and proving otherwise is a re-parse this rule deliberately does not do. ⚠ A trailing declaration semicolon is reported only where braces are present: `record R(int X);` has no body, and there the semicolon is the terminator. ⚠ A lambda parameter with a type, a modifier, an attribute or a default value keeps its parentheses — the typed case belongs to `SK0232`, which *produces* this shape's output, so the two are disjoint by construction. ⚠ A range bound is matched on the literal `0` read from the source, never on a constant value: a named constant that happens to be zero is a name somebody chose. ⚠ An anonymous-type property name is dropped only for the two spellings C# infers a name from, so `x.Foo<int>` is left alone even where the written name matches. ⚠ **Four of the family's thirteen inspections are not covered.** `RedundantDiscardDesignation` is left out on purpose: `out var _` becomes `out _` only where nothing named `_` is in scope, and answering that needs a symbol lookup that would make the whole rule semantic. `RedundantFixedPointerDeclaration` is unsafe-code-only. `RedundantPropertyParentheses` and `RedundantArrayLowerBoundSpecification` could not be identified from the export with enough confidence to write a guard for them.",
+      "configuration": [
+        "dotnet_diagnostic.SK0233.severity"
+      ]
+    },
+    {
+      "id": "SK0234",
+      "concept": "redundant-cast",
+      "title": "The cast or type argument is redundant",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantCast",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A cast whose operand already has the cast's type, explicit method type arguments inference reproduces exactly, an array size that repeats the element count, and tuple component names the declared type already carries.",
+      "rationale": "Each one is a conversion that converts nothing, and each is read as if it might. A cast makes a reader ask what the operand was before it; explicit type arguments make them ask what inference would have chosen; an array size makes them count the elements to see whether the two agree.",
+      "examples": {
+        "bad": "var name = (string)text;\nvar items = Enumerable.Empty<int>().ToList<int>();\nvar row = new string[2] { \"a\", \"b\" };\n(string Name, int Age) person = (Name: name, Age: 30);",
+        "good": "var name = text;\nvar items = Enumerable.Empty<int>().ToList();\nvar row = new string[] { \"a\", \"b\" };\n(string Name, int Age) person = (name, 30);"
+      },
+      "falsePositives": "⚠ **A cast is not redundant merely because the types allow removing it, and this rule is written around that sentence.** `var x = (long)1;` types `x` as `long` and `var x = 1;` types it as `int`. `M((object)s)` and `M(s)` call different overloads. `flag ? (long)a : b` infers a different type once the cast is gone. Roslyn's own `IDE0004` is the standing example of getting this wrong, so Skala covers the one subset where none of those questions can be asked: an **identity** conversion, where the operand's type and the cast's type are the same symbol — checked with `SymbolEqualityComparer.IncludeNullability` and confirmed by `ClassifyConversion(...).IsIdentity`. The expression's type is then unchanged by the deletion, so nothing downstream of it can change either. ⚠ **Every widening, narrowing and boxing cast is therefore deliberately uncovered**, including the upcast that is most of what `RedundantCast` reports in practice. That is a smaller rule on purpose; the negative fixture set records each declined shape. ⚠ Nullability is not a detail here: `(string)maybeNull` is typed `string` where its operand is `string?`, so the cast is what tells the flow analysis what the author knows, and a `var` declared from it would change type without it. ⚠ Tuples are excluded from the cast branch entirely and handled by the component-name branch, because `((int a, int b))(1, 2)` and `((int, int))(1, 2)` differ in the names the result carries. ⚠ Explicit method type arguments are removed only where re-binding the call without them reaches the **identical constructed method** — the same definition with different inferred type arguments does not count. ⚠ An array size is matched for one dimension only: a jagged or rectangular creation has sizes whose relationship to the initializer is not the flat count this compares against. ⚠ Tuple component names are dropped only under a **written** tuple type. Under `var` the names come from the literal and deleting them deletes them from the variable's type, and no semantic query separates those two cases because the resulting type is identical. ⚠ **Four of the family's eight inspections are not covered**: `RedundantExplicitArrayCreation` (`new object[] { \"a\", \"b\" }` infers `string[]` once the type is dropped), `RedundantExplicitNullableCreation`, `RedundantTypeArgumentsInsideNameof` and `PreferExplicitlyProvidedTupleComponentName`, which asks for the opposite of what this rule does.",
+      "configuration": [
+        "dotnet_diagnostic.SK0234.severity"
+      ]
     }
   ]
 }

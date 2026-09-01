@@ -163,6 +163,11 @@ SK3531 dispose-async-without-base-call
 SK3532 ref-struct-owns-undisposed-resource
 SK3030 async-iterator-not-enumerated
 SK3031 async-only-to-await
+SK0230 empty-initializer
+SK0231 redundant-string-call
+SK0232 redundant-argument
+SK0233 redundant-syntax
+SK0234 redundant-cast
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

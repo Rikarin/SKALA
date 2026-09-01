@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Async;
+using Rikarin.Skala.Rules.Cleanup;
 using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Design;
 using Rikarin.Skala.Rules.Maintainability;
@@ -83,6 +84,9 @@ public sealed class RuleFixtureTests {
         new UndisposedOwnedFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
         new RefStructOwnedDisposableAnalyzer(), new AsyncIteratorNotEnumeratedAnalyzer(),
         new AsyncOnlyToAwaitAnalyzer(),
+        new EmptyInitializerAnalyzer(), new RedundantStringCallAnalyzer(),
+        new RedundantArgumentAnalyzer(), new RedundantSyntaxAnalyzer(),
+        new RedundantCastAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

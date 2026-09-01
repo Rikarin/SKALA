@@ -6,6 +6,7 @@ using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules;
 using Rikarin.Skala.Rules.Async;
+using Rikarin.Skala.Rules.Cleanup;
 using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Design;
 using Rikarin.Skala.Rules.Maintainability;
@@ -121,6 +122,9 @@ public static class AnalyzerHost {
         new UndisposedOwnedFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
         new RefStructOwnedDisposableAnalyzer(), new AsyncIteratorNotEnumeratedAnalyzer(),
         new AsyncOnlyToAwaitAnalyzer(),
+        new EmptyInitializerAnalyzer(), new RedundantStringCallAnalyzer(),
+        new RedundantArgumentAnalyzer(), new RedundantSyntaxAnalyzer(),
+        new RedundantCastAnalyzer(),
     ];
 
     /// <summary>
