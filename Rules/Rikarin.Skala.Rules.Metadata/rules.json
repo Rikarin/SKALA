@@ -2719,6 +2719,33 @@
         "dotnet_diagnostic.SK1041.severity"
       ],
       "resharperNote": "The export sets `resharper_convert_to_compound_assignment_highlighting = hint` while this rule defaults to `suggestion`. Reading the ReSharper key with `--resharper-severities` therefore lowers it: ReSharper treats the long form as a cosmetic preference, and Skala treats it as the shape a half-finished rename hides in."
+    },
+    {
+      "id": "SK1042",
+      "concept": "mergeable-if",
+      "title": "The nested `if` statements can be combined",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "An `if` whose entire body is another `if` with no `else` is one condition written as two.",
+      "rationale": "The second `if` adds a level of nesting and no branch: there is no path where the outer condition holds and the inner one does not lead anywhere else. `&&` short-circuits, so the merged form evaluates exactly what the nested one did, in the same order — and it stops the nesting counting against the `SK7006` depth metric for a structure that never had two branches.",
+      "examples": {
+        "bad": "if (order != null) {\n    if (order.IsPaid) {\n        Ship(order);\n    }\n}",
+        "good": "if (order != null && order.IsPaid) {\n    Ship(order);\n}"
+      },
+      "falsePositives": "A whole chain is one finding reported at its top, so the fix never overlaps another and the rule is silent after its own fix. Any `else` anywhere in the chain excludes it, as does an outer body holding anything besides the inner `if`. An operand that `&&` would capture — `||`, `??`, a conditional or an assignment — is parenthesised rather than merged flat. Names a merged condition introduces (a pattern variable, an `out var`) have their scope widened by the rewrite, so the whole member is scanned for a colliding declaration first and the finding is dropped if one exists; the scan deliberately over-bails, counting names that could never conflict. Comments and preprocessor directives anywhere outside the surviving body exclude the chain, and so does a `#` inside a condition's string literal.",
+      "resharperId": null,
+      "supersedes": [
+        "S1066"
+      ],
+      "since": "2.0",
+      "configuration": [
+        "dotnet_diagnostic.SK1042.severity"
+      ]
     }
   ]
 }

@@ -82,3 +82,4 @@ SK2005 | Skala.Correctness | Warning | Do not mutate a copy of a readonly struct
 SK4003 | Skala.Performance | Hidden | Review a temporary params array with a span overload.
 SK1040 | Skala.Modernization | Info | Use `T?` instead of `Nullable<T>`.
 SK1041 | Skala.Modernization | Info | Use a compound assignment.
+SK1042 | Skala.Modernization | Info | The nested `if` statements can be combined.

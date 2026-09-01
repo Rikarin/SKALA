@@ -114,6 +114,7 @@ SK2005 readonly-struct-mutation
 SK4003 params-span-overload
 SK1040 nullable-short-form
 SK1041 compound-assignment
+SK1042 mergeable-if
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because
