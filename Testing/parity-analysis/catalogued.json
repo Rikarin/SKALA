@@ -125,5 +125,6 @@
  "NUnitNonPublicMethodWithTestAttribute": "SK8003",
  "MissingBlankLines": "SK0001",
  "RedundantBlankLines": "SK0001",
- "IncorrectBlankLinesNearBraces": "SK0001"
+ "IncorrectBlankLinesNearBraces": "SK0001",
+ "ValueParameterNotUsed": "SK2031"
 }

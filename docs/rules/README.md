@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 105 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 106 ids are allocated.
 
 ## Async
 
@@ -36,6 +36,7 @@
 | [SK2015](SK2015.md) | `throw ex;` resets the stack trace | warning | safe | yes |
 | [SK2016](SK2016.md) | A logger message is interpolated before it is logged | suggestion | — | no |
 | [SK2030](SK2030.md) | Detect NaN with IsNaN rather than equality | warning | safe | no |
+| [SK2031](SK2031.md) | Do not discard a setter's value parameter | warning | — | yes |
 
 ## Design
 

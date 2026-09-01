@@ -2695,6 +2695,31 @@
       "configuration": [
         "dotnet_diagnostic.SK2030.severity"
       ]
+    },
+    {
+      "id": "SK2031",
+      "concept": "unused-value-parameter",
+      "title": "Do not discard a setter's value parameter",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "A property, indexer or init accessor body does work and never mentions `value`, so every assignment through it is discarded while appearing to succeed.",
+      "rationale": "The setter's whole contract is to consume `value`. One that runs statements and never reads it stores something else, or stores nothing, and the caller has no way to see that the write went nowhere. The repair is a decision about what the setter was meant to store, so the rule reports and does not rewrite.",
+      "examples": {
+        "bad": "public int Retries { get => retries; set => retries = DefaultRetries; }",
+        "good": "public int Retries { get => retries; set => retries = value; }"
+      },
+      "falsePositives": "Only accessors with a body are examined; auto-properties, abstract, extern, interface and partial declarations have none. Three shapes earn an exemption because the discard is legible as deliberate rather than accidental: a body with no statements at all (`set { }`), a body that only throws, and an accessor or member carrying `[Obsolete]`. That is the line: an empty setter announces that it ignores the write, and a setter that does work while ignoring it does not. `value` counts as read wherever it is mentioned in the body, including inside a lambda, a local function, a nested accessor and `nameof(value)` — the last is conservative on purpose, since a name mentioned is a name the author had in mind. Statements the file's preprocessor directives disable are not in the body, so a setter emptied by `#if` reads as the empty exemption. The rule does not judge whether the value stored is the right one, only whether one was read.",
+      "resharperId": "ValueParameterNotUsed",
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2031.severity"
+      ]
     }
   ]
 }
