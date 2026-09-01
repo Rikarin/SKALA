@@ -71,6 +71,7 @@ public sealed class RuleFixtureTests {
         new ReadonlyMutableFieldAnalyzer(),
         new AbstractTypeWithoutAbstractionAnalyzer(),
         new PrivateConstructorOnlyAnalyzer(),
+        new PublicConstantAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

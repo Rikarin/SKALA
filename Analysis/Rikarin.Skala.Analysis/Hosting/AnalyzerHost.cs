@@ -109,6 +109,7 @@ public static class AnalyzerHost {
         new ReadonlyMutableFieldAnalyzer(),
         new AbstractTypeWithoutAbstractionAnalyzer(),
         new PrivateConstructorOnlyAnalyzer(),
+        new PublicConstantAnalyzer(),
     ];
 
     /// <summary>

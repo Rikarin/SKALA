@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 133 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 134 ids are allocated.
 
 ## Async
 
@@ -58,6 +58,7 @@
 | [SK6031](SK6031.md) | `readonly` does not protect a mutable field's contents | warning | — | no |
 | [SK6032](SK6032.md) | An abstract type declares nothing to implement | suggestion | — | yes |
 | [SK6033](SK6033.md) | A type has only private constructors and is not static | warning | — | no |
+| [SK6034](SK6034.md) | A public constant is baked into every caller | suggestion | review | no |
 
 ## Formatting
 

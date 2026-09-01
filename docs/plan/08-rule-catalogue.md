@@ -366,6 +366,16 @@ puts them beside `SK6020`–`SK6023` rather than in the semantic bands.
 - `SK6032` `abstract-type-without-abstraction` — an `abstract` class with nothing to override,
   nothing `protected` and no base.
 - `SK6033` `only-private-constructors` — a class nothing can construct and nothing can derive from.
+- `SK6034` `public-constant-field` — an externally visible `const`, copied into every caller at
+  compile time.
+
+⚠ **Four of the five ship `hasFix: false`, and `SK6033` is the one that names why a fix cannot be
+partial.** Its static-holder shape has an obvious two-edit repair and its general shape has none, and
+`RuleFixtureTests.EveryFix_ProducesTextThatStillParses` asserts that *every* finding of a rule
+declaring `hasFix: true` carries edits — so a rule offers a fix for all of its shapes or for none.
+`SK6034` is the exception and carries one: `const` → `static readonly` is a single token, and
+`fixIsSafe: false` because the breakage it can cause — an attribute argument, a parameter default, a
+`case` label — lands in files the edit does not touch.
 
 ## SK7000 — Maintainability
 
@@ -495,10 +505,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **125** | **80.6 %** |
+| **Shipped** — present in `rules.json` | **126** | **81.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
