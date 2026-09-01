@@ -86,22 +86,22 @@ public sealed class ExceptionHandlingBatchTests {
     [Fact]
     public void SK2091_ReportsANestedThrowAgainstTheInnermostFinallyOnly() {
         const string source = """
-            class C {
-                void M() {
-                    try {
-                        Work();
-                    } finally {
-                        try {
-                            Work();
-                        } finally {
-                            throw new System.InvalidOperationException("inner");
-                        }
-                    }
-                }
+                              class C {
+                                  void M() {
+                                      try {
+                                          Work();
+                                      } finally {
+                                          try {
+                                              Work();
+                                          } finally {
+                                              throw new System.InvalidOperationException("inner");
+                                          }
+                                      }
+                                  }
 
-                static void Work() { }
-            }
-            """;
+                                  static void Work() { }
+                              }
+                              """;
 
         var finding = Assert.Single(Findings(source, "SK2091"));
         Assert.Equal(source.IndexOf("throw new", System.StringComparison.Ordinal), finding.Location.SourceSpan.Start);
@@ -114,14 +114,15 @@ public sealed class ExceptionHandlingBatchTests {
     ///     <c>SK7092</c> requires the clause to propagate what it caught; <c>SK2093</c> requires that it
     ///     does not. The day either condition is relaxed into a filter, this is what says the two rules
     ///     started reporting the same clause twice.
-    /// </remarks>
-    /// <remarks>
-    ///     ⚠ <b>The fourth case is the only one that tests anything.</b> A clause holding <em>only</em> a
-    ///     <c>throw;</c> has no <c>throw new</c> for <c>SK2093</c> to match and one holding only a
-    ///     <c>throw new</c> has no propagation for <c>SK7092</c> to match, so both stay silent whether or
-    ///     not the guard exists — three green rows proving the shapes are different rather than the rules
-    ///     disjoint. A sabotage that deleted the guard left every one of them passing. Only a clause that
-    ///     holds <b>both</b> forms can double-report, and that is the row that goes red.
+    ///     <para>
+    ///         ⚠ <b>The fourth case is the only one that tests anything.</b> A clause holding
+    ///         <em>only</em> a <c>throw;</c> has no <c>throw new</c> for <c>SK2093</c> to match, and one
+    ///         holding only a <c>throw new</c> has no propagation for <c>SK7092</c> to match, so both
+    ///         stay silent whether or not the guard exists — three green rows proving the shapes are
+    ///         different rather than the rules disjoint. A sabotage that deleted the guard left every
+    ///         one of them passing. Only a clause holding <b>both</b> forms can double-report, and that
+    ///         is the row that goes red.
+    ///     </para>
     /// </remarks>
     [Theory]
     [InlineData("System.Console.WriteLine(error); throw;", "SK7092")]
@@ -162,32 +163,32 @@ public sealed class ExceptionHandlingBatchTests {
     [Fact]
     public void SK2090_FollowsOneCallHopAndStops() {
         const string oneHop = """
-            sealed class C {
-                ~C() {
-                    Release();
-                }
+                              sealed class C {
+                                  ~C() {
+                                      Release();
+                                  }
 
-                void Release() {
-                    throw new System.InvalidOperationException("one hop");
-                }
-            }
-            """;
+                                  void Release() {
+                                      throw new System.InvalidOperationException("one hop");
+                                  }
+                              }
+                              """;
 
         const string twoHops = """
-            sealed class C {
-                ~C() {
-                    Release();
-                }
+                               sealed class C {
+                                   ~C() {
+                                       Release();
+                                   }
 
-                void Release() {
-                    Actually();
-                }
+                                   void Release() {
+                                       Actually();
+                                   }
 
-                void Actually() {
-                    throw new System.InvalidOperationException("two hops");
-                }
-            }
-            """;
+                                   void Actually() {
+                                       throw new System.InvalidOperationException("two hops");
+                                   }
+                               }
+                               """;
 
         Assert.Single(Findings(oneHop, "SK2090"));
         Assert.Empty(Findings(twoHops, "SK2090"));
@@ -209,16 +210,16 @@ public sealed class ExceptionHandlingBatchTests {
     [InlineData("throw new System.InvalidOperationException(\"always\");", 1)]
     public void SK2090_ReadsTheDisposingBranchTheFinalizerActuallyTakes(string body, int expected) {
         var source = """
-            sealed class C {
-                ~C() {
-                    Dispose(false);
-                }
+                     sealed class C {
+                         ~C() {
+                             Dispose(false);
+                         }
 
-                void Dispose(bool disposing) {
-                    BODY
-                }
-            }
-            """.Replace("BODY", body, System.StringComparison.Ordinal);
+                         void Dispose(bool disposing) {
+                             BODY
+                         }
+                     }
+                     """.Replace("BODY", body, System.StringComparison.Ordinal);
 
         Assert.Equal(expected, Findings(source, "SK2090").Length);
     }

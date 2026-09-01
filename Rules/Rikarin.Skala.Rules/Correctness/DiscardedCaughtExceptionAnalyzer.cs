@@ -125,7 +125,10 @@ public sealed class DiscardedCaughtExceptionAnalyzer : DiagnosticAnalyzer {
                     Descriptor,
                     creation.GetLocation(),
                     fix,
-                    "`" + created.Name + "` replaces `" + declaration.Identifier.ValueText
+                    "`"
+                    + created.Name
+                    + "` replaces `"
+                    + declaration.Identifier.ValueText
                     + "` without carrying it, so the stack trace, the message and the cause are gone by "
                     + "the time the caller sees the failure"
                 )

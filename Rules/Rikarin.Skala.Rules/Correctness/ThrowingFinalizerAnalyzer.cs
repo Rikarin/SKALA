@@ -99,7 +99,9 @@ public sealed class ThrowingFinalizerAnalyzer : DiagnosticAnalyzer {
                 Report(
                     context,
                     thrown,
-                    "`" + callee.Name + "` is reached from the finalizer and can throw from there, which "
+                    "`"
+                    + callee.Name
+                    + "` is reached from the finalizer and can throw from there, which "
                     + "terminates the process"
                 );
             }

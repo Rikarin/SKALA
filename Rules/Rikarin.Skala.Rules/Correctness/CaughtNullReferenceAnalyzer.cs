@@ -44,9 +44,7 @@ public sealed class CaughtNullReferenceAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>Every spelling of the one type this rule is about.</summary>
     static readonly HashSet<string> Spellings = new(StringComparer.Ordinal) {
-        "NullReferenceException",
-        "System.NullReferenceException",
-        "global::System.NullReferenceException"
+        "NullReferenceException", "System.NullReferenceException", "global::System.NullReferenceException"
     };
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);
