@@ -2771,6 +2771,32 @@
       "configuration": [
         "dotnet_diagnostic.SK2033.severity"
       ]
+    },
+    {
+      "id": "SK2034",
+      "concept": "escaped-keyword",
+      "title": "Do not name a declaration after a reserved keyword",
+      "category": "Correctness",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "A declaration is named after a reserved C# keyword and can only be written with an `@` escape, so every mention of it reads as a verbatim string, a typo or a keyword until the reader checks.",
+      "rationale": "`@class`, `@new` and `@event` are legal and cost the reader a stop every time. The `@` on a reserved keyword is never a disambiguation the language asked for; it is the only spelling available once the name was chosen, so the finding is about the name. No fix is offered: renaming a declaration means renaming every reference, which is a refactoring rather than a text edit.",
+      "examples": {
+        "bad": "void Register(Type @class, EventInfo @event) { }",
+        "good": "void Register(Type declaredType, EventInfo declaredEvent) { }"
+      },
+      "falsePositives": "⚠ **Reserved keywords only, and that is what keeps the rule off load-bearing escapes.** Every `@` a language feature can *require* is on a contextual keyword — `@field` once `field` became the backing-field keyword, `@value` in an accessor, `@extension`, `@record`, `@var`, `@async`, `@await` — and a contextual keyword is a legal identifier without the escape, so an escape on one is disambiguation rather than a name to change. None of them is reported. Only the declaring identifier is reported, never a reference to it: a name that comes from another assembly must be escaped at every use site and the author cannot rename it, so reporting uses would be reporting something nobody can fix, and it would multiply one finding by its call count. Constructors and destructors are skipped because their identifier repeats the type's, which is already reported once. Namespace name parts and query continuations are not examined. Verbatim strings, interpolated verbatim strings and `@` inside documentation or comments are not identifiers and are never seen.",
+      "resharperId": "EscapedKeyword",
+      "resharperNote": "⚠ ReSharper publishes this one as an `.editorconfig` key with no inspection id in its issue-type dump, so `resharperId` carries the id that derives to the real key — `resharper_escaped_keyword_highlighting`, which the export sets to `warning`. Skala defaults the rule to `suggestion`, so `--resharper-severities` raises it: an escaped keyword compiles and runs correctly, and the cost is entirely to the reader.",
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2034.severity"
+      ]
     }
   ]
 }

@@ -18,10 +18,11 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class SmallCorrectnessBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new NanComparisonAnalyzer(), new FloatingPointEqualityAnalyzer(), new UnusedValueParameterAnalyzer(),
-        new RedundantSuppressFinalizeAnalyzer(), new StackAllocInLoopAnalyzer()
+        new RedundantSuppressFinalizeAnalyzer(), new StackAllocInLoopAnalyzer(),
+        new EscapedKeywordAnalyzer()
     ];
 
-    static readonly string[] Ids = ["SK2030", "SK2031", "SK2032", "SK2033"];
+    static readonly string[] Ids = ["SK2030", "SK2031", "SK2032", "SK2033", "SK2034"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
@@ -101,6 +102,64 @@ public sealed class SmallCorrectnessBatchTests {
             + "    }\n\n    void Close() { }\n}\n",
             after
         );
+    }
+
+    /// <summary>
+    ///     ⚠ SK2034's safety argument, as a test rather than a paragraph.
+    /// </summary>
+    /// <remarks>
+    ///     Every <c>@</c> a language feature can <em>require</em> is on a contextual keyword, and the
+    ///     rule is silent on all of them because it asks
+    ///     <see cref="Microsoft.CodeAnalysis.CSharp.SyntaxFacts.GetKeywordKind(string)" />, which answers
+    ///     for reserved words only. If a future Roslyn ever promoted one of these to reserved, the
+    ///     language would have broken far more than this rule — but this is where it would be noticed.
+    /// </remarks>
+    [Theory]
+    [InlineData("field")]
+    [InlineData("value")]
+    [InlineData("extension")]
+    [InlineData("record")]
+    [InlineData("var")]
+    [InlineData("async")]
+    [InlineData("await")]
+    [InlineData("dynamic")]
+    [InlineData("required")]
+    [InlineData("scoped")]
+    [InlineData("file")]
+    [InlineData("args")]
+    [InlineData("nameof")]
+    [InlineData("partial")]
+    [InlineData("when")]
+    [InlineData("from")]
+    [InlineData("yield")]
+    public void SK2034_IsSilentOnEveryContextualKeyword(string word) {
+        Assert.Empty(Findings("class C { int @" + word + "; }", "test.cs", "SK2034"));
+    }
+
+    [Theory]
+    [InlineData("class")]
+    [InlineData("event")]
+    [InlineData("new")]
+    [InlineData("int")]
+    [InlineData("static")]
+    public void SK2034_ReportsAReservedKeywordName(string word) {
+        Assert.Single(Findings("class C { int @" + word + "; }", "test.cs", "SK2034"));
+    }
+
+    /// <summary>
+    ///     ⚠ One finding per declaration, not per mention.
+    /// </summary>
+    /// <remarks>
+    ///     A name reached from another assembly has to be escaped at every use site and nobody here can
+    ///     rename it, so reporting references would report something no one can fix — and would multiply
+    ///     one naming decision by its call count. This is the half of that claim a single file can
+    ///     assert.
+    /// </remarks>
+    [Fact]
+    public void SK2034_ReportsTheDeclarationAndNotItsReferences() {
+        const string source = "class C { int M() { var @class = 1; return @class + @class + @class; } }";
+        var finding = Assert.Single(Findings(source, "test.cs", "SK2034"));
+        Assert.Equal(source.IndexOf("@class", System.StringComparison.Ordinal), finding.Location.SourceSpan.Start);
     }
 
     static Diagnostic[] Findings(string source, string path, string ruleId) =>

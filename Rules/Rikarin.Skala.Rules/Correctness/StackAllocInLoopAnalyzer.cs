@@ -124,10 +124,12 @@ public sealed class StackAllocInLoopAnalyzer : DiagnosticAnalyzer {
     }
 
     static bool RunsAtMostOnce(StatementSyntax loop) {
-        if (loop is DoStatementSyntax @do
-            && @do.Condition.IsKind(SyntaxKind.FalseLiteralExpression)
-            || loop is WhileStatementSyntax @while
-            && @while.Condition.IsKind(SyntaxKind.FalseLiteralExpression)) {
+        // ⚠ `doLoop` and `whileLoop`, not `@do` and `@while`: SK2034 reported this line the day it
+        // shipped, one commit after this one landed.
+        if (loop is DoStatementSyntax doLoop
+            && doLoop.Condition.IsKind(SyntaxKind.FalseLiteralExpression)
+            || loop is WhileStatementSyntax whileLoop
+            && whileLoop.Condition.IsKind(SyntaxKind.FalseLiteralExpression)) {
             return true;
         }
 

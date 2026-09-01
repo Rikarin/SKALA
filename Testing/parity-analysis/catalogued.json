@@ -128,5 +128,6 @@
  "IncorrectBlankLinesNearBraces": "SK0001",
  "ValueParameterNotUsed": "SK2031",
  "GCSuppressFinalizeForTypeWithoutDestructor": "SK2032",
- "StackAllocInsideLoop": "SK2033"
+ "StackAllocInsideLoop": "SK2033",
+ "EscapedKeyword": "SK2034"
 }

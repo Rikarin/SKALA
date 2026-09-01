@@ -170,13 +170,15 @@ a value type without an override, boxing · `SK2012` self-assignment, self-compa
 rethrow · `SK2015` `throw ex` losing the stack trace · `SK2016` interpolated string in a logger call
 that takes a template (the `CA2254` case, which the export sets to `suggestion`).
 
-Later correctness allocations, each specified individually rather than as a block, so the numbers are
-not contiguous with the sixteen above:
+⚠ **The prose pass on this block is owed.** These five ids are recorded here only so the register
+names every number that is taken (ADR-012) and so `RuleCatalogTests` can read them; they have not been
+folded into the paragraph above, and the gap below `SK2016` is a reservation rather than a decision.
 
-- `SK2030` `==` or `!=` against a constant `NaN`.
-- `SK2031` a setter that does work and never reads `value`.
-- `SK2032` `GC.SuppressFinalize` in a sealed type with no finalizer.
-- `SK2033` `stackalloc` a loop re-evaluates.
+- `SK2030` `nan-comparison` — `==` or `!=` against a constant `NaN`.
+- `SK2031` `unused-value-parameter` — a setter that does work and never reads `value`.
+- `SK2032` `redundant-suppress-finalize` — `GC.SuppressFinalize` in a sealed type with no finalizer.
+- `SK2033` `stackalloc-in-loop` — a `stackalloc` a loop re-evaluates.
+- `SK2034` `escaped-keyword` — a declaration named after a reserved keyword and escaped with `@`.
 
 ## SK3000 — Async, concurrency, lifetime
 
@@ -329,8 +331,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **130** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **100** | **77.5 %** |
+| Rules this document names | **131** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **101** | **77.7 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

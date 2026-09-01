@@ -84,3 +84,4 @@ SK2030 | Skala.Correctness | Warning | Detect NaN with IsNaN rather than equalit
 SK2031 | Skala.Correctness | Warning | Do not discard a setter's value parameter.
 SK2032 | Skala.Correctness | Info | Remove GC.SuppressFinalize from a type with no finalizer.
 SK2033 | Skala.Correctness | Warning | Do not stackalloc inside a loop.
+SK2034 | Skala.Correctness | Info | Do not name a declaration after a reserved keyword.
