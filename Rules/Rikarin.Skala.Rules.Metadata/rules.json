@@ -2668,6 +2668,31 @@
       "configuration": [
         "dotnet_diagnostic.SK7060.severity"
       ]
+    },
+    {
+      "id": "SK1040",
+      "concept": "nullable-short-form",
+      "title": "Use `T?` instead of `Nullable<T>`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A bound `System.Nullable<T>` is written in long form where `T?` names exactly the same type.",
+      "rationale": "`T?` is the spelling every other nullable in the file already uses, so the long form reads as though it meant something different. It is also the form older samples and generated code produce, which is why an assistant writes it: the training data is full of `Nullable<int>` and the language stopped needing it in C# 2.",
+      "examples": {
+        "bad": "Nullable<int> total = null;",
+        "good": "int? total = null;"
+      },
+      "falsePositives": "The name is bound before anything is reported, so a user-defined `Nullable<T>` is never touched. Positions where the short form is not legal syntax are excluded rather than rewritten: the unbound `typeof(Nullable<>)`, a `cref` or `nameof` argument, a `using` alias, a member-access receiver, a pointer element type, and any pattern or `is` type test, because C# rejects a nullable value type in a pattern. Comments and preprocessor directives inside the type name are excluded because the rewrite deletes the text they live in.",
+      "resharperId": "ConvertNullableToShortForm",
+      "supersedes": [],
+      "since": "2.0",
+      "configuration": [
+        "dotnet_diagnostic.SK1040.severity"
+      ]
     }
   ]
 }

@@ -80,3 +80,4 @@ SK1022 | Skala.Modernization | Hidden | Precompute a constant character search s
 SK1025 | Skala.Modernization | Hidden | Freeze a private lookup-only dictionary.
 SK2005 | Skala.Correctness | Warning | Do not mutate a copy of a readonly struct field.
 SK4003 | Skala.Performance | Hidden | Review a temporary params array with a span overload.
+SK1040 | Skala.Modernization | Info | Use `T?` instead of `Nullable<T>`.
