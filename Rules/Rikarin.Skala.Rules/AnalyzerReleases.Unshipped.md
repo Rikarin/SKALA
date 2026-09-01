@@ -100,3 +100,8 @@ SK1041 | Skala.Modernization | Info | Use a compound assignment.
 SK1042 | Skala.Modernization | Info | The nested `if` statements can be combined.
 SK1043 | Skala.Modernization | Info | The `for` loop is a `while`.
 SK1044 | Skala.Modernization | Info | Use `string.IsNullOrEmpty`.
+SK3510 | Skala.Lifetime | Warning | A variable already owned by `using` is disposed again.
+SK3511 | Skala.Lifetime | Warning | The `using` resource is built with an object initializer.
+SK3512 | Skala.Lifetime | Warning | A variable captured by `using` is returned.
+SK3020 | Skala.Async | Warning | The non-`async` `Task` method returns null.
+SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.

@@ -133,5 +133,10 @@
  "StackAllocInsideLoop": "SK2033",
  "EscapedKeyword": "SK2034",
  "ConvertNullableToShortForm": "SK1040",
- "ConvertToCompoundAssignment": "SK1041"
+ "ConvertToCompoundAssignment": "SK1041",
+ "DisposeOnUsingVariable": "SK3510",
+ "UsingStatementResourceInitialization": "SK3511",
+ "UsingStatementResourceInitializationExpression": "SK3511",
+ "ReturnOfUsingVariable": "SK3512",
+ "SpinLockInReadonlyField": "SK3021"
 }

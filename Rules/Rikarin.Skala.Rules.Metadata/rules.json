@@ -3189,6 +3189,133 @@
       "configuration": [
         "dotnet_diagnostic.SK1044.severity"
       ]
+    },
+    {
+      "id": "SK3510",
+      "concept": "using-variable-disposed-again",
+      "title": "A variable already owned by `using` is disposed again",
+      "category": "Lifetime",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "DisposeOnUsingVariable",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`Dispose()` is called by hand on a variable whose `using` disposes it at the end of the scope anyway.",
+      "rationale": "A `using` disposes its resource when the scope ends, on every path including the exceptional one, so an explicit `Dispose()` on the same variable is a second call that the language guarantees will happen. Double disposal is only harmless for a type whose `Dispose` is idempotent — the framework asks for that and not every type delivers it, and a second call that releases a handle number the process has since reissued corrupts an unrelated file rather than throwing. Deleting the call removes the second disposal without changing when the first one happens.",
+      "examples": {
+        "bad": "void Copy(string path) {\n    using var stream = File.OpenRead(path);\n    Read(stream);\n    stream.Dispose();\n}",
+        "good": "void Copy(string path) {\n    using var stream = File.OpenRead(path);\n    Read(stream);\n}"
+      },
+      "falsePositives": "⚠ **The fix is safe because of a language guarantee rather than an analysis.** A `using` variable is read-only, so nothing between the declaration and the explicit call can have made the two disposals land on different objects; the rule does not have to prove it. ⚠ Ownership is read from the variable's own declarator, never from an enclosing `using` that happens to name the same identifier — a shadowing local of the same name in an inner scope is a different symbol and is not reported. ⚠ The call must be an entire statement directly inside a block: `if (failed) reader.Dispose();` is the same redundancy and is not reported, because deleting the statement would leave an `if` with no body, and a fix that produces text which does not parse is the one failure a fixing tool may not have. A `Dispose()` whose result is read, or one behind an `&&`, has nothing the fix can remove. ⚠ The invoked member is resolved by the semantic model and must be the parameterless disposal contract the `using` will itself invoke — `Dispose` is an ordinary identifier and a type may declare one that does something else. `Close()` is not reported: it is a different method, it is not always an alias for `Dispose`, and deleting it is not the same edit. A call reached across a lambda or a local function is skipped, because when that body runs is not something the enclosing `using` says anything about.",
+      "configuration": [
+        "dotnet_diagnostic.SK3510.severity"
+      ]
+    },
+    {
+      "id": "SK3511",
+      "concept": "using-resource-object-initializer",
+      "title": "The `using` resource is built with an object initializer",
+      "category": "Lifetime",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UsingStatementResourceInitialization",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`using var x = new Foo { Bar = Baz() };` — the object initializer runs before the `using` owns anything, so an initializer that throws leaks the constructed resource.",
+      "rationale": "The `using` protects what is assigned to its variable, and an object initializer runs after the constructor and before that assignment. So `using var x = new Foo { Bar = Baz() }` has a window in which a fully constructed `Foo` — with its handle, its socket, its pooled buffer — exists and nothing owns it: if `Baz()` throws, the object is unreachable, no `Dispose` ever reaches it, and the code reads as if the `using` covered it. The leak is invisible in every test where the initializer does not throw, which is all of them. Constructing first and assigning afterwards moves the assignment inside the scope the `using` protects, and it is a mechanical edit.",
+      "examples": {
+        "bad": "using var writer = new StreamWriter(path) { AutoFlush = Configured() };\nwriter.WriteLine(\"done\");",
+        "good": "using var writer = new StreamWriter(path);\nwriter.AutoFlush = Configured();\nwriter.WriteLine(\"done\");"
+      },
+      "falsePositives": "⚠ **The rule reports only the shapes the hoist has somewhere to land.** `using (Open() { … })` declares no name to assign through, and a `using` statement whose body is not a block has no place to put the assignments; both are the same bug and neither is reported, because a finding a fix cannot honour is worse than a missing one. The declaration must have a single declarator whose initializer is literally a `new` with an object initializer. ⚠ **Reference types only.** A `using` local is read-only, so `x.Member = value` on a struct-typed one is CS1654 — the hoisted form does not compile and there is no other one. ⚠ **A `required` member makes the hoist illegal rather than awkward**: the object initializer is what satisfies the requirement, so `new Foo()` alone is CS9035 and the type is skipped entirely. ⚠ Every initializer member must be a plain `Name = value` whose target is a settable property or a writable field: an `init` accessor is assignable in an object initializer and nowhere else, and a nested initializer (`A = { B = 1 }`), an indexed one (`[0] = v`) and a collection element are different rewrites that this rule does not attempt. Accessibility needs no check — the hoisted assignment sits where the initializer did and obeys the same rules. ⚠ **A comment inside the initializer withdraws the finding.** The hoist rebuilds the assignments from their expressions, and trivia between two members belongs to no expression, so it would go out with the braces — silently, under a fix marked safe. The reference tree has exactly this: an `IrradianceFieldRenderer` initializer carrying a six-line note about which pass reads the bound names. ⚠ **A constant initializer is reported too.** `new Foo { Retries = 3 }` cannot throw and therefore cannot leak, and the finding on it is about the shape rather than a proven leak; separating the two would mean deciding which expressions can throw, which is not decidable and is exactly the guessing that turns a rule into a nuisance in the other direction.",
+      "configuration": [
+        "dotnet_diagnostic.SK3511.severity"
+      ]
+    },
+    {
+      "id": "SK3512",
+      "concept": "using-variable-returned",
+      "title": "A variable captured by `using` is returned",
+      "category": "Lifetime",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "ReturnOfUsingVariable",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`return x;` where `x` is owned by an enclosing `using`, so the caller receives an object that was disposed on the way out.",
+      "rationale": "A `using` disposes at the `return`, before the value reaches the caller, so the method's signature and its body disagree: it says \"here is a resource\" and delivers one that is already closed. The caller gets an `ObjectDisposedException` on first use, from a method that reads as correct — or, for a type whose `Dispose` only returns a pooled buffer, no exception at all and silent corruption once that buffer is handed to somebody else.",
+      "examples": {
+        "bad": "Stream Open(string path) {\n    using var stream = File.OpenRead(path);\n    return stream;\n}",
+        "good": "Stream Open(string path) => File.OpenRead(path);"
+      },
+      "falsePositives": "⚠ **No fix, and that is a decision rather than an omission.** Deleting the `using` makes the method leak; keeping it makes the method wrong. Which the author meant is the whole question and no edit answers it, so the finding is a report. ⚠ **The `Task` shape belongs to `SK3007`.** The two rules overlap on exactly one shape — `return x;` where `x` is a `using` variable of a task type — and `SK3007` is the one carrying a fix for it, so this rule tests the type and stays quiet rather than being deduplicated after the fact. `supersedes` was considered and rejected: it dedupes on a shared span and would have suppressed the finding that has the fix. Where `SK3007` declines the shape because it cannot rewrite the whole method, neither rule reports, which is a known gap. ⚠ **The returned expression must be the variable itself.** `return x.Stream;` and `return Wrap(x);` hand out something whose lifetime may well depend on `x`, and proving that needs to know what the member or the method did with it; guessing about ownership is how a rule comes to report the correct code around the incorrect code. ⚠ The `return` and the `using` must belong to the same member, lambda or local function: a `return` inside a lambda returns from the lambda, and a lambda closing over a `using` variable may run at a time the `using` says nothing about.",
+      "configuration": [
+        "dotnet_diagnostic.SK3512.severity"
+      ]
+    },
+    {
+      "id": "SK3020",
+      "concept": "null-returned-from-task-method",
+      "title": "The non-`async` `Task` method returns null",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S4586"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A method whose declared return type is `Task` or `Task<T>` and which is not `async` returns `null` or `default`.",
+      "rationale": "A `Task` return type invites the caller to write `await Something()`, and awaiting null is a `NullReferenceException` whose stack names the caller rather than the method that produced it. An `async` method cannot do this — the compiler wraps whatever it returns — so the shape exists only where the signature was written by hand, and there `return null;` looks exactly like every other \"nothing to do\" in the file. `Task.CompletedTask` is the completed task the caller was promised.",
+      "examples": {
+        "bad": "Task Flush(bool dirty) {\n    if (!dirty) {\n        return null;\n    }\n\n    return writer.FlushAsync();\n}",
+        "good": "Task Flush(bool dirty) {\n    if (!dirty) {\n        return Task.CompletedTask;\n    }\n\n    return writer.FlushAsync();\n}"
+      },
+      "falsePositives": "⚠ **The fix is unsafe by declaration and the generic form is why.** `Task.CompletedTask` is the only completed non-generic task there is, so that half is mechanical; `Task.FromResult<T>(default!)` picks a *value* the method never named, and what a completed task should carry is a decision about the method rather than an edit. Applying it turns a crash into a default result, which is the point of the rule and is still a behaviour change somebody should read. ⚠ Only ordinary methods and local functions, only where the declared return type resolves to `System.Threading.Tasks.Task` or `Task<T>`, and only for a literal `null` or `default` — a null-valued local, a conditional whose branch is null, and a `default(Task)` are the same bug and are not matched, because the rule reports what it can rewrite in one span. ⚠ **`async` withdraws it**: `async Task<string>` returning `null` returns a null *string* inside a real task, which is an ordinary nullable-reference question. ⚠ **`Task?` withdraws it too**, because the author has declared that null is a value this method returns and the contract already carries the warning. `ValueTask` is not covered: it is a struct and cannot be null. ⚠ The replacement is not built by editing the declaration's text — an alias (`using MyTask = System.Threading.Tasks.Task;`) makes the written name resolve to something a string edit would get wrong. The rule asks whether the simple name `Task` means `System.Threading.Tasks.Task` at that position and falls back to the fully qualified name, which always binds.",
+      "configuration": [
+        "dotnet_diagnostic.SK3020.severity"
+      ]
+    },
+    {
+      "id": "SK3021",
+      "concept": "spin-lock-in-readonly-field",
+      "title": "A `SpinLock` is stored in a `readonly` field",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "SpinLockInReadonlyField",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A field of type `System.Threading.SpinLock` is declared `readonly`, so every caller takes the lock on a defensive copy.",
+      "rationale": "`SpinLock` is a mutable struct and its state *is* the lock. `Enter` is not a `readonly` member, so reading a `readonly` field to call it makes the compiler take a defensive copy: the lock is acquired on a temporary and released on a temporary, and nothing is ever excluded. It compiles, it runs, `lockTaken` comes back true every time, and the race the lock was written to prevent is exactly as it was — with the code above it saying otherwise. Removing `readonly` is the only repair.",
+      "examples": {
+        "bad": "sealed class Counter {\n    readonly SpinLock gate = new(false);\n\n    int value;\n\n    public void Increment() {\n        var taken = false;\n        gate.Enter(ref taken);\n        value++;\n        if (taken) {\n            gate.Exit();\n        }\n    }\n}",
+        "good": "sealed class Counter {\n    SpinLock gate = new(false);\n\n    int value;\n\n    public void Increment() {\n        var taken = false;\n        gate.Enter(ref taken);\n        value++;\n        if (taken) {\n            gate.Exit();\n        }\n    }\n}"
+      },
+      "falsePositives": "⚠ **The fix is one word and it is not cosmetic.** Removing `readonly` makes the field assignable and makes every call site operate on the real lock instead of a copy, which changes what the program does — for the better, and still not without review. `fixIsSafe` is false for that reason rather than because the edit is uncertain: there is exactly one repair and no intent to guess at. ⚠ The type is resolved by the semantic model and never matched on the written name: `SpinLock` is a plausible name for somebody's own type and stripping `readonly` from a field of one would be a change made for no reason. ⚠ **One finding per declaration, not per declarator.** `readonly SpinLock a, b;` has one `readonly` token, and two findings would carry the same deletion twice. ⚠ **An instance field inside a `readonly struct` is the same bug and is withheld, because the fix would not compile.** CS8340 requires every instance field of a `readonly struct` to be `readonly`, so the keyword there is not the author's choice and deleting it is an error rather than a repair; the lock is just as broken, and the repair is to stop the containing type being a `readonly struct`, which is a design change and not an edit. The same applies to a `SpinLock` returned from a property or exposed through an `in` parameter.",
+      "configuration": [
+        "dotnet_diagnostic.SK3021.severity"
+      ]
     }
   ]
 }

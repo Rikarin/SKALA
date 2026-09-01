@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 124 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 129 ids are allocated.
 
 ## Async
 
@@ -15,6 +15,8 @@
 | [SK3005](SK3005.md) | A task is discarded in synchronous code | warning | — | no |
 | [SK3007](SK3007.md) | A `Task` that uses a `using` resource is returned instead of awaited | warning | review | no |
 | [SK3009](SK3009.md) | Review explicitly unsynchronized Lazy in static state | warning | — | no |
+| [SK3020](SK3020.md) | The non-`async` `Task` method returns null | warning | review | no |
+| [SK3021](SK3021.md) | A `SpinLock` is stored in a `readonly` field | warning | review | no |
 
 ## Correctness
 
@@ -85,6 +87,9 @@
 | [SK3501](SK3501.md) | A disposable is created in a local and never disposed | warning | safe | no |
 | [SK3502](SK3502.md) | A type owns a disposable field but is not disposable | warning | — | no |
 | [SK3503](SK3503.md) | An `IAsyncDisposable` is disposed synchronously | warning | review | no |
+| [SK3510](SK3510.md) | A variable already owned by `using` is disposed again | warning | safe | no |
+| [SK3511](SK3511.md) | The `using` resource is built with an object initializer | warning | safe | no |
+| [SK3512](SK3512.md) | A variable captured by `using` is returned | warning | — | no |
 
 ## Maintainability
 

@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 124 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 129 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -24,6 +24,8 @@
 <tr><td><a href="SK3005.html">SK3005</a></td><td>A task is discarded in synchronous code</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3007.html">SK3007</a></td><td>A <code>Task</code> that uses a <code>using</code> resource is returned instead of awaited</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3009.html">SK3009</a></td><td>Review explicitly unsynchronized Lazy in static state</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3020.html">SK3020</a></td><td>The non-<code>async</code> <code>Task</code> method returns null</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3021.html">SK3021</a></td><td>A <code>SpinLock</code> is stored in a <code>readonly</code> field</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -106,6 +108,9 @@
 <tr><td><a href="SK3501.html">SK3501</a></td><td>A disposable is created in a local and never disposed</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK3502.html">SK3502</a></td><td>A type owns a disposable field but is not disposable</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3503.html">SK3503</a></td><td>An <code>IAsyncDisposable</code> is disposed synchronously</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3510.html">SK3510</a></td><td>A variable already owned by <code>using</code> is disposed again</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK3511.html">SK3511</a></td><td>The <code>using</code> resource is built with an object initializer</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK3512.html">SK3512</a></td><td>A variable captured by <code>using</code> is returned</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
