@@ -196,5 +196,6 @@
   "ChangeFieldTypeToSystemThreadingLock": "SK1023",
   "RedundantDictionaryContainsKeyBeforeAdding": "SK1033",
   "ArrangeNullCheckingPattern": "SK1010",
-  "UseDeconstruction": "SK1070"
+  "UseDeconstruction": "SK1070",
+  "UseWithExpressionToCopyRecord": "SK1071"
 }

@@ -161,3 +161,4 @@ SK7081 | Skala.Maintainability | Hidden | The type depends on more other types t
 SK7082 | Skala.Maintainability | Info | The conditional expressions are nested.
 SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
 SK1070 | Skala.Modernization | Info | Deconstruct the tuple instead of reading it element by element.
+SK1071 | Skala.Modernization | Info | Copy the record with a `with` expression.

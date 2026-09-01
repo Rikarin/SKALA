@@ -4795,6 +4795,31 @@
       "configuration": [
         "dotnet_diagnostic.SK1070.severity"
       ]
+    },
+    {
+      "id": "SK1071",
+      "concept": "with-expression-copy",
+      "title": "Copy the record with a `with` expression",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseWithExpressionToCopyRecord",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "9.0",
+      "summary": "A record is copied by calling its own constructor back with its own members, which is what `with` is for.",
+      "rationale": "A copy that respells every member is a copy that silently drops the next member added to the type: the constructor call still compiles, still passes the new parameter *something*, and nobody looking at the copy site can see that a field stopped travelling. `with` is the shape that cannot go stale, because the members it does not name are the ones it copies.",
+      "examples": {
+        "bad": "public Settings WithRetries(Settings settings, int retries) =>\n    new Settings(settings.Host, settings.Port, retries);",
+        "good": "public Settings WithRetries(Settings settings, int retries) =>\n    settings with { Retries = retries };"
+      },
+      "falsePositives": "⚠ **`with` invokes the record's copy constructor, which copies *every* field — including the ones the hand-written call deliberately dropped — so the rule is only sound where the record has no state beyond its positional parameters, and that is proved rather than assumed.** The record must be `sealed` (or a `record struct`), must derive from no other record, must declare no instance field and no instance event, and every one of its positional properties must be the property that parameter itself declared — asked by comparing the two symbols' declaring syntax, since a positional property and its parameter are the same piece of source. A hand-written accessor in the record body would be called by `settings.Host` and *not* called by the copy constructor, which moves the backing field across without asking. ⚠ `IsImplicitlyDeclared` is the obvious test for that and is the wrong one: it is **false** for a positional record property, because the parameter is where the property is written down, and reading it as true silently disables the rule everywhere. It also means only records declared in source are matched, because a record from metadata has no declaring syntax to compare and nothing else in the symbol separates the two. A record deriving from another carries state `GetMembers` does not return, and an unsealed one is worse — `settings with { … }` calls the virtual clone and returns the runtime type, where `new Settings(…)` returns exactly `Settings`. ⚠ **At least one argument must be replaced.** A call that carries every member across unchanged would rewrite to `settings with { }`, which is `SK0230`'s finding and not this one, so the two never report the same code. ⚠ The receiver must be a single identifier naming a local or a parameter of exactly the record's type, and must not be assigned anywhere in the enclosing member: `with` evaluates the receiver once and clones before any initializer runs, so an argument that reassigns the receiver would make the two forms read different objects. Arguments must all be positional, with no `ref`, `out`, `in` or named argument. ⚠ The nested case `x with { A = x.A with { B = … } }` is not covered, and neither are the struct, tuple and anonymous-object inspections of the same ReSharper family. ⚠ The creation must sit where a `with` expression does not need parentheses — a declaration, a `return`, an expression body, an argument, a simple assignment or an initializer element — because `with` binds looser than member access.",
+      "configuration": [
+        "dotnet_diagnostic.SK1071.severity"
+      ]
     }
   ]
 }
