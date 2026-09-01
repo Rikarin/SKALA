@@ -293,6 +293,19 @@ this document allocated before any of them existed, and the register above is on
 new concept takes a new number rather than the nearest tidy one. Folding
 `xs.Where(p).First()` into `xs.First(p)` is not any of the eight.
 
+### Performance a declaration states, rather than a body measures
+
+⚠ **The prose pass is owed for this block.** These are recorded here because the register requires
+it; the surrounding sections carry an argument and this one carries a list.
+
+Concepts whose whole decision is visible in one declaration and what its body touches, so none of
+them needs a profile to justify the edit.
+
+- `SK4020` a lambda, anonymous method or local function that references nothing outside itself and
+  is not `static`. `static` is a compile-time assertion that no environment is allocated, so a fix
+  that compiles is a fix that is right. Disjoint from `SK4002` by construction: that rule reports a
+  capture and this one reports the absence of every capture.
+
 ## SK5000 — Security
 
 Deliberately narrow, deliberately loud. Rules here are `error` by default, so they must be right.
@@ -477,8 +490,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **151** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **121** | **80.7 %** |
+| Rules this document names | **152** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **122** | **80.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

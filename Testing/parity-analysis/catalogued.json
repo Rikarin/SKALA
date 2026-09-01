@@ -138,5 +138,7 @@
  "UsingStatementResourceInitialization": "SK3511",
  "UsingStatementResourceInitializationExpression": "SK3511",
  "ReturnOfUsingVariable": "SK3512",
- "SpinLockInReadonlyField": "SK3021"
+ "SpinLockInReadonlyField": "SK3021",
+ "LambdaExpressionCanBeMadeStatic": "SK4020",
+ "LocalFunctionCanBeMadeStatic": "SK4020"
 }
