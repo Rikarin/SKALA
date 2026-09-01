@@ -160,3 +160,7 @@ SK7080 | Skala.Maintainability | Hidden | The inheritance chain is deeper than t
 SK7081 | Skala.Maintainability | Hidden | The type depends on more other types than the threshold.
 SK7082 | Skala.Maintainability | Info | The conditional expressions are nested.
 SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
+SK2090 | Skala.Correctness | Warning | The finalizer can throw.
+SK2091 | Skala.Correctness | Warning | An exception is thrown from a `finally` block.
+SK2092 | Skala.Correctness | Warning | `NullReferenceException` is caught.
+SK2093 | Skala.Correctness | Warning | The handler discards the exception it caught.

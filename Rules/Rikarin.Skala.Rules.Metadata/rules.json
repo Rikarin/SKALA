@@ -4769,6 +4769,112 @@
         "dotnet_code_quality.SK7083.minimum_length",
         "dotnet_diagnostic.SK7083.severity"
       ]
+    },
+    {
+      "id": "SK2090",
+      "concept": "finalizer-can-throw",
+      "title": "The finalizer can throw",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1048"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `throw` can leave a finalizer, where nothing catches it and the process ends.",
+      "rationale": "An exception that escapes a finalizer is not caught anywhere. The runtime tears the process down from the finalizer thread, and the stack it prints names the finalizer queue rather than the code that put the object on it — so the one failure mode with no recovery path is also the one with the least diagnostic value. There is no `try` a caller can write that helps, because on that thread there is no caller.",
+      "examples": {
+        "bad": "~Buffer() {\n    Dispose(false);\n}\n\nprotected virtual void Dispose(bool disposing) {\n    if (_handle == 0) {\n        throw new InvalidOperationException(\"already released\");\n    }\n}",
+        "good": "~Buffer() {\n    Dispose(false);\n}\n\nprotected virtual void Dispose(bool disposing) {\n    if (_handle == 0) {\n        return;\n    }\n}"
+      },
+      "falsePositives": "⚠ **The finalizer body is almost never where the throw is**, so the rule follows exactly one call hop, into a method declared on the same type whose body is in this compilation. The recall that costs is named rather than hidden: a `Dispose(bool)` inherited from another assembly is not followed, a throw two calls down is not followed, and a `virtual` member overridden by a derived type is read as the body the finalized type itself runs — which is why an `abstract` declaring type is skipped entirely. ⚠ **The `disposing` guard is what keeps the hop honest.** The disposal pattern's whole structure is `if (disposing) { ... }` holding the managed cleanup, which the finalizer path never enters; when the call site passes the literal `false`, throws that the branch condition proves unreachable are dropped, and without that every correct implementation of the pattern that throws anywhere in its managed half would be a false positive. Only an explicit `throw` counts — a finalizer that calls something which *might* throw is every finalizer ever written. A throw inside the `try` block of a `try`/`catch`, or inside a lambda or a local function, is not on the escaping path and is not reported. Report-only: wrapping the body in `catch { }` silences the rule and swallows the failure, deleting the `throw` deletes whatever the author meant by it, and which of the two is right is a decision about what the type owns.",
+      "configuration": [
+        "dotnet_diagnostic.SK2090.severity"
+      ]
+    },
+    {
+      "id": "SK2091",
+      "concept": "throw-in-finally",
+      "title": "An exception is thrown from a `finally` block",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1163"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `throw` written inside a `finally` replaces whatever exception was already in flight.",
+      "rationale": "A `finally` runs while an exception is unwinding, and a `throw` from it does not join that exception — it replaces it. The failure that explains everything is destroyed, and the log is left holding the cleanup's complaint about a state the original failure created. The report names the one failure nobody can diagnose from, which is why this is worth a rule rather than a review comment.",
+      "examples": {
+        "bad": "try {\n    Import(path);\n} finally {\n    if (!_committed) {\n        throw new InvalidOperationException(\"the import did not commit\");\n    }\n}",
+        "good": "try {\n    Import(path);\n} finally {\n    if (!_committed) {\n        _log.LogWarning(\"the import did not commit\");\n    }\n}"
+      },
+      "falsePositives": "⚠ **Only an explicit `throw`.** A `finally` that calls a method which might throw is every `finally` ever written — `Dispose`, `Close` and `Flush` all can — so a rule asking \"can anything in here throw\" would fire across the whole tree and be switched off within a day. The keyword written inside the block is the author's own statement of intent and is the only thing the rule reads. A `throw` inside the `try` block of a nested `try`/`catch` within the `finally` never leaves it and is not reported, and neither is one held by a lambda or a local function, which may never be invoked. Nested `finally` blocks report against the innermost one that owns the keyword, so one `throw` produces one finding rather than one per enclosing clause. Report-only: deleting the `throw` discards whatever it was reporting and moving it out of the `finally` changes when it runs, and which of those the author meant is not visible in the block.",
+      "configuration": [
+        "dotnet_diagnostic.SK2091.severity"
+      ]
+    },
+    {
+      "id": "SK2092",
+      "concept": "null-reference-exception-caught",
+      "title": "`NullReferenceException` is caught",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1696"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `catch` clause names `NullReferenceException` as the type it handles.",
+      "rationale": "A `NullReferenceException` is a dereference that should not have happened, and naming it in a `catch` converts that bug into a control-flow path the program is expected to take. The handler also covers a region far larger than the one dereference that was meant, so the next null anywhere under the `try` is silently absorbed by a recovery written for a different one. The repair is a null check at the dereference, not a handler around the region.",
+      "examples": {
+        "bad": "try {\n    Render(model.Header);\n} catch (NullReferenceException) {\n    Render(Fallback);\n}",
+        "good": "if (model.Header is null) {\n    Render(Fallback);\n} else {\n    Render(model.Header);\n}"
+      },
+      "falsePositives": "⚠ **`catch (Exception)` catches it too and is deliberately not this rule.** A catch-all is a different decision with a different argument — sometimes a correct one at a process boundary — and folding the two together would make the finding unanswerable. The rule fires only where `NullReferenceException` is the type the clause itself names, which is the author stating that a null dereference is an expected outcome; a bare `catch`, a `catch (SystemException)` and a `catch (ArgumentNullException)` are all silent. ⚠ **Syntactic, matching the name as written**, in the three spellings a compiling program can use. The residual is a user-defined type whose own simple name is `NullReferenceException`, or a `using` alias for the framework one; neither occurs on either reference tree or anywhere in `Testing/corpus`, and buying them would cost the rule its ability to run under `--load=loose`, which is where most of the code an agent writes is first seen. Report-only: the repair is a null check somewhere under the `try` and not at the `catch`, no edit here can write it, and deleting the clause would turn a swallowed bug into a crash without anyone deciding that.",
+      "configuration": [
+        "dotnet_diagnostic.SK2092.severity"
+      ]
+    },
+    {
+      "id": "SK2093",
+      "concept": "caught-exception-discarded",
+      "title": "The handler discards the exception it caught",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The `catch` names the exception, throws a different one, and never passes the first to the second.",
+      "rationale": "`catch (SqlException error) { throw new ImportException(\"the import failed\"); }` keeps the word \"failed\" and throws away the stack trace, the message, the error code and the cause. The caller is handed a sentence it cannot act on, and the frame that actually broke is no longer in the process. It looks like diligence, which is why it is more common than either the empty catch `SK2014` reports or the `throw ex;` restatement `SK2015` reports — and the repair is one argument.",
+      "examples": {
+        "bad": "catch (SqlException error) {\n    throw new ImportException(\"the import failed\");\n}",
+        "good": "catch (SqlException error) {\n    throw new ImportException(\"the import failed\", error);\n}"
+      },
+      "falsePositives": "⚠ **Not `SK2014`.** That rule reports a `catch` whose block is *empty*, and its negative fixture asserts silence on any clause containing a statement; this one requires a statement, so the two cannot both fire on one clause. ⚠ **Disjoint from `SK7092` by construction rather than by filter.** `SK7092` requires the clause to propagate what it caught, by `throw;` or `throw error;`; this rule requires that it does **not**. The two conditions are negations of one another, so no clause can produce both findings and no `supersedes` entry is involved. ⚠ **The rule ships the half it can repair and names the half it omits.** A finding needs a `catch` that declared a variable — the author's own statement that the exception mattered — and a replacement type that already offers a constructor taking the same arguments plus a trailing `System.Exception`. Where no such constructor exists there is no edit to propose and the advice would be to redesign a type the handler's author may not own; where the clause binds no variable, `catch (FileNotFoundException) { throw new ConfigMissing(...); }` is a deliberate translation in which the type was the whole of the information. Passing the caught exception anywhere inside the construction — as the inner exception, or interpolated into the message — is silent, as is a `throw` inside a nested `try`/`catch`, a lambda or a local function. The fix appends the caught variable as the trailing argument and is `fixIsSafe: false`: it changes what a caller sees, and a boundary that deliberately hides the cause from an untrusted consumer is the one shape where the finding is right about the mechanism and wrong about the intent.",
+      "configuration": [
+        "dotnet_diagnostic.SK2093.severity"
+      ]
     }
   ]
 }

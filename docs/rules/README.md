@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 184 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 188 ids are allocated.
 
 ## Async
 
@@ -65,6 +65,10 @@
 | [SK2032](SK2032.md) | Remove GC.SuppressFinalize from a type with no finalizer | suggestion | safe | no |
 | [SK2033](SK2033.md) | Do not stackalloc inside a loop | warning | — | yes |
 | [SK2034](SK2034.md) | Do not name a declaration after a reserved keyword | suggestion | — | yes |
+| [SK2090](SK2090.md) | The finalizer can throw | warning | — | no |
+| [SK2091](SK2091.md) | An exception is thrown from a `finally` block | warning | — | yes |
+| [SK2092](SK2092.md) | `NullReferenceException` is caught | warning | — | yes |
+| [SK2093](SK2093.md) | The handler discards the exception it caught | warning | review | no |
 
 ## Design
 
