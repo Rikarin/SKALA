@@ -51,21 +51,7 @@ static class MessageTemplate {
         var positional = false;
 
         for (var i = 0; i < text.Length; i++) {
-            if (text[i] == '}') {
-                // `}}` is an escaped brace; a lone `}` is malformed and the logger renders it verbatim.
-                if (i + 1 < text.Length && text[i + 1] == '}') {
-                    i++;
-                }
-
-                continue;
-            }
-
-            if (text[i] != '{') {
-                continue;
-            }
-
-            if (i + 1 < text.Length && text[i + 1] == '{') {
-                i++;
+            if (!OpensAHole(text, ref i)) {
                 continue;
             }
 
@@ -75,18 +61,8 @@ static class MessageTemplate {
                 break;
             }
 
-            var start = i + 1;
-            if (start < close && (text[start] == '@' || text[start] == '$')) {
-                start++;
-            }
-
-            // The name ends at the alignment (`,`) or the format specifier (`:`), whichever comes first.
-            var end = start;
-            while (end < close && text[end] != ',' && text[end] != ':') {
-                end++;
-            }
-
-            var name = text.Substring(start, end - start);
+            var start = NameStart(text, i, close);
+            var name = text.Substring(start, NameEnd(text, start, close) - start);
             i = close;
 
             if (name.Length == 0) {
@@ -102,6 +78,51 @@ static class MessageTemplate {
         }
 
         return new TemplateAnalysis(holes, positional);
+    }
+
+    /// <summary>
+    ///     Whether <paramref name="i" /> sits on a hole's opening brace, having stepped over an escape.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It advances <paramref name="i" /> past the second brace of <c>{{</c> and <c>}}</c>, which is
+    ///     the whole of the escape handling. A lone <c>}</c> is malformed and the logger renders it
+    ///     verbatim, so it is stepped over rather than treated as the end of anything.
+    /// </remarks>
+    static bool OpensAHole(string text, ref int i) {
+        if (text[i] == '}') {
+            if (i + 1 < text.Length && text[i + 1] == '}') {
+                i++;
+            }
+
+            return false;
+        }
+
+        if (text[i] != '{') {
+            return false;
+        }
+
+        if (i + 1 < text.Length && text[i + 1] == '{') {
+            i++;
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>The name's first character, past any destructuring sigil.</summary>
+    static int NameStart(string text, int open, int close) {
+        var start = open + 1;
+        return start < close && (text[start] == '@' || text[start] == '$') ? start + 1 : start;
+    }
+
+    /// <summary>The name ends at the alignment (<c>,</c>) or the format specifier (<c>:</c>).</summary>
+    static int NameEnd(string text, int start, int close) {
+        var end = start;
+        while (end < close && text[end] != ',' && text[end] != ':') {
+            end++;
+        }
+
+        return end;
     }
 
     static bool IsAllDigits(string name) {
@@ -122,19 +143,18 @@ static class MessageTemplate {
     ///     matched <c>Information</c> or <c>LogError</c> by spelling would fire on every domain method
     ///     that happens to be called that, and would miss the one call written through an alias.
     /// </remarks>
-    internal static readonly string[] SerilogTypes = [
-        "Serilog.ILogger", "Serilog.Log"
-    ];
+    const string SerilogLogger = "Serilog.ILogger";
 
-    internal const string ExtensionsLoggingType = "Microsoft.Extensions.Logging.LoggerExtensions";
+    const string SerilogLog = "Serilog.Log";
+    const string ExtensionsLoggingType = "Microsoft.Extensions.Logging.LoggerExtensions";
 
     /// <summary>Serilog's logging entry points, or an empty array where Serilog is not referenced.</summary>
     internal static ImmutableArray<INamedTypeSymbol> ResolveSerilog(Compilation compilation) =>
-        Resolve(compilation, SerilogTypes);
+        Resolve(compilation, [SerilogLogger, SerilogLog]);
 
     /// <summary>Every logging entry point this analysis knows: Serilog's, plus MEL's extensions.</summary>
     internal static ImmutableArray<INamedTypeSymbol> ResolveLoggers(Compilation compilation) =>
-        Resolve(compilation, ["Serilog.ILogger", "Serilog.Log", ExtensionsLoggingType]);
+        Resolve(compilation, [SerilogLogger, SerilogLog, ExtensionsLoggingType]);
 
     internal static ImmutableArray<INamedTypeSymbol> Resolve(Compilation compilation, string[] metadataNames) {
         var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>(metadataNames.Length);
