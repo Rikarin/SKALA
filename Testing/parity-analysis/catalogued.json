@@ -126,5 +126,6 @@
  "MissingBlankLines": "SK0001",
  "RedundantBlankLines": "SK0001",
  "IncorrectBlankLinesNearBraces": "SK0001",
- "ConvertNullableToShortForm": "SK1040"
+ "ConvertNullableToShortForm": "SK1040",
+ "ConvertToCompoundAssignment": "SK1041"
 }

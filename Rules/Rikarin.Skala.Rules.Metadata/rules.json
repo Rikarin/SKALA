@@ -2693,6 +2693,32 @@
       "configuration": [
         "dotnet_diagnostic.SK1040.severity"
       ]
+    },
+    {
+      "id": "SK1041",
+      "concept": "compound-assignment",
+      "title": "Use a compound assignment",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "An assignment whose right-hand side is a binary operation on the assignment target itself, where the compound operator says it once.",
+      "rationale": "Naming the target twice is the shape a rename can half-finish: `total = subtotal + 1` compiles and is a different program, and nothing in the long form says which of the two occurrences was meant. The compound form cannot drift, and it is the form C# has had since version 1 — the long one is what a model writes because most of its training data predates the habit.",
+      "examples": {
+        "bad": "count = count + 1;",
+        "good": "count += 1;"
+      },
+      "falsePositives": "The direction is safe and the reverse is not: C# defines `x op= y` as `x = (T)(x op y)` with an explicit conversion back to the target's type, which the long form lacks — `byte b; b = b + 1;` does not compile at all, so the rule never sees the shapes where the conversion differs. A cast on the right-hand side is therefore never unwrapped: `long l; l = (int)(l + 1);` truncates and `l += 1` does not. Only whole expression statements are reported, the target must be a chain of plain names so that the two forms evaluate it the same number of times, and the binary operator's left operand must be that same target textually — which excludes `x = x + a + b`, whose left operand is `x + a`. `&&` and `||` have no compound spelling and are excluded. Comments and preprocessor directives between the target and the operator are excluded because the fix deletes that text.",
+      "resharperId": "ConvertToCompoundAssignment",
+      "supersedes": [],
+      "since": "2.0",
+      "configuration": [
+        "dotnet_diagnostic.SK1041.severity"
+      ],
+      "resharperNote": "The export sets `resharper_convert_to_compound_assignment_highlighting = hint` while this rule defaults to `suggestion`. Reading the ReSharper key with `--resharper-severities` therefore lowers it: ReSharper treats the long form as a cosmetic preference, and Skala treats it as the shape a half-finished rename hides in."
     }
   ]
 }
