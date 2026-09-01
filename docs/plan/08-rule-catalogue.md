@@ -1108,8 +1108,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **210** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **176** | **84.2 %** |
+| Rules this document names | **215** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **181** | **84.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
@@ -1559,6 +1559,128 @@ of a hot-path bottleneck. The other four rules reported zero occurrences; their 
 remains the fixtures and workspace integration test. No audit finding was auto-fixed. Eligibility
 checks run before whole-file field-reference scans; summed time for these five analyzers in the
 final audit was about 1.35 s, not a performance guarantee.
+
+### Arithmetic, shift widths and constant-valued comparisons
+
+⚠ **The prose pass over this section is owed.** It was written alongside the five analyzers and
+records what they do; it has not been read back against the rest of this document, and the
+surrounding sections have not been reconciled with it.
+
+`SK2050`, `SK2051`, `SK2052`, `SK2053` and `SK2054` now ship:
+
+| ID | Initial scope | Fix / default |
+|---|---|---|
+| `SK2050` | Integral division whose result reaches `float`, `double` or `decimal` | cast the dividend / warning, **not safe** |
+| `SK2051` | Built-in integral arithmetic a constant operand makes an identity or a constant | remove the operation / warning, safe |
+| `SK2052` | A constant shift count the operand's promoted width masks to a different count | none / warning |
+| `SK2053` | A count or a length compared against a bound its non-negativity already decides | none / warning |
+| `SK2054` | A signed `%` compared with `==`/`!=` against a non-zero constant | none / warning |
+
+**What each does that `SK2001` does not.** `SK2001` folds a *relational comparison* whose answer the
+operand *type's* range fixes, and it is the nearest neighbour to all five. `SK2050`, `SK2051` and
+`SK2052` are about arithmetic rather than comparison and share none of its decision procedure.
+`SK2054` is an *equality* comparison, which `SK2001` does not consider at all, and turns on the sign
+of `%` rather than on any range. ⚠ `SK2053` is the one that had to be checked rather than assumed:
+it is the same relational shape, and it is a different rule because a count is an `int`, whose range
+decides nothing about zero. The extra fact is the framework contract that a count is never negative,
+which lowers the bound from `int.MinValue` to `0`. `SK2053` computes `SK2001`'s answer first and
+stands down when the type range already decides, so the two can never report one expression twice;
+`ArithmeticAndRangeBatchTests.SK2001_AndSK2053_NeverBothFire` asserts both directions.
+
+⚠ **`checked` does not change any of these answers, and that is why they can ship without reading
+`CheckForOverflowUnderflow`.** `SK2050` reports a fraction discarded inside the division operator,
+where no overflow arises. `SK2051` reports identities and constant results, neither of which can
+overflow. The overflow half of the ReSharper concept behind `SK2050` — `IntVariableOverflow` and its
+checked/unchecked variants — is **not** shipped and is discussed under "Refuted or declined" below.
+
+⚠ **`SK2052` cannot be a syntactic rule.** C# masks a shift count rather than clamping it: `x << 32`
+on an `int` shifts by `32 & 31`, which is zero, so the expression is its own left operand and not the
+zero it reads as; the same text on a `long` masks with 63 and is a real 32-bit shift. A `byte` left
+operand promotes to `int` and masks with 31. `nint`/`nuint` are excluded because their mask is 31 or
+63 depending on the process, so no single answer about the same source is right.
+
+⚠ **`SK2054`'s exclusion is the rule.** `%` takes the sign of its dividend, so `-5 % 2` is `-1` and
+`value % 2 == 1` is false for every negative odd value — while `value % 2 == 0` is correct for both
+signs and must never be reported. The dividend is taken as non-negative when its own type is unsigned
+(so `someByte % 2 == 1` is left alone even though the operation promotes to `int`), when it is a
+non-negative constant, when it is a count or a length, or when it is `Math.Abs`.
+
+**Refuted or declined, with the reason.**
+
+- ⚠ **The overflow and divide-by-zero halves of the `SK2050` concept are not shipped.** A constant
+  zero divisor is already `CS0020` and a constant expression that overflows is already `CS0220`, so
+  the compiler covers exactly the part that is decidable without flow analysis. What is left —
+  a divisor that is zero on some path, a variable product that cannot fit — needs a range lattice
+  with flow, which `SK2001`'s does not have. Shipping it over the constant cases alone would be a
+  rule that is usually right, which is the failure mode doc 16 § R3 exists to prevent. `SK2050`
+  therefore covers `PossibleLossOfFraction` and nothing else from that group, and the parity map
+  credits it that narrowly.
+- ⚠ **`MathClampMinGreaterThanMax` is declined for now and no id is allocated for it.** It is a live
+  bug and it has no possible fix, and `FixRoundTripTests` requires *every* positive fixture of a
+  rule with `hasFix: true` to carry edits — so it cannot live inside `SK2051`, which ships a safe
+  fix. It needs either a fixless rule of its own or `SK2051` losing its fix, and ADR-012 says not to
+  allocate a number for a concept nobody has specified yet.
+- `MathAbsMethodIsRedundant` and `SuspiciousMathSignMethod` are not implemented: both reduce to
+  constant folding the compiler already performs, and the non-constant form of `MathAbsMethodIsRedundant`
+  needs the range lattice that is not there.
+- ⚠ **`UselessComparisonToIntegralConstant` is `SK2001`'s, not `SK2051`'s**, and the parity map does
+  not currently credit it to anything. That is a mis-credit in `catalogued.json` rather than a gap in
+  the product; it is left for whoever owns the parity map.
+- ⚠ **Roslyn does not report a cast's target as the operand's converted type.** `SK2050` was written
+  on the assumption that it does and its `(double)(a / b)` fixture failed, which is how the
+  assumption was caught. The enclosing cast is now read separately. A rule that had checked only the
+  conversion would have missed the commonest wrong repair for this defect while looking complete.
+
+Validation is 28 positive and 60 "should not fire" fixtures, exact per-fixture counts, an explicit
+`AD0001` sweep over every fixture in the batch — an analyzer that throws is swallowed and then
+produces nothing, so its negatives all pass and it reads as half-working rather than dead — plus
+runtime demonstrations that `-5 % 2` is `-1`, that `1 << 32` differs between `int` and `long`, and
+that `-0.0 + 0.0` is `+0.0`, which is why `SK2051` is integral-only.
+
+#### The measurement, and what each zero means
+
+⚠ **`--load=workspace` was unusable and the number it would have produced was a lie.** A workspace
+load over this repository reported **4409 `CS` errors** — 2024 `CS0103` and 1835 `CS0246`, i.e. the
+references never resolved — and every rule in this batch is `requiresSemantics`. A run against error
+types under-reports silently, so the whole measurement was moved to a Release binlog
+(`dotnet build Skala.slnx -c Release -bl:artifacts/skala.binlog --no-incremental`), which reports
+**zero `CS` diagnostics**. That is the instrument check: the same command that gave the zero also
+proves the compilation bound.
+
+⚠ **The instrument was verified before the zero was believed.** A probe carrying all five shapes was
+dropped into `Analysis/Rikarin.Skala.Analysis`, the binlog rebuilt, and all five rules fired on it,
+one finding each. The probe was then deleted and the binlog rebuilt.
+
+Against Skala's own solution, with the probe gone, all five report **zero**. Classified:
+
+| ID | The zero | Counted how |
+|---|---|---|
+| `SK2050` | **Shape present, correctly declined.** 8 integral-looking ratio computations exist — `DuplicationModel`, `PreferenceSweep`, `Fidelity`, `ConstructReport`, `ArrangementDifferential` — and every one already casts or promotes before dividing (`(double)Agreed / Spans`, `100.0 * Plain / …`). The shape the rule reports is exactly the shape this tree already writes correctly | regex census over 458 own-source files, then each hit read |
+| `SK2051` | **Shape absent.** The two textual hits are a documentation table and a string inside a test | same census |
+| `SK2052` | **Shape present, correctly declined.** 3 real shift-by-32-or-more sites — `BreakPlan.Key`'s `(long)node.SpanStart << 32`, `BreakPlan`'s `key >> 32` on a `long`, `FuzzRandom`'s `1UL << 53` — and all three are 64-bit operands, where those counts are inside the width. ⚠ This is the width trap firing in the tree's favour: the identical text on an `int` is a defect | same census |
+| `SK2053` | **Shape absent.** The two textual hits are a comment and a string inside a test | same census |
+| `SK2054` | **Shape absent.** The five textual hits are documentation comments and strings inside tests | same census |
+
+⚠ **The reference trees cannot measure any of these five, and a zero from them would not be a
+zero.** `Testing/corpus/real` has no project files, so `--load=loose` skips every
+`requiresSemantics` rule, and `skala.jsonc` excludes the path outright (#277). What is available is
+the same textual census over its 1140 files, which is a reading of the source and not a run of the
+rule:
+
+- `SK2053` and `SK2054`: **no candidate lines at all** in Vixen, Serilog or Newtonsoft.
+- `SK2052`: 6 candidate lines, every one a `long`/`ulong` operand — `(long)…Order << 32`,
+  `value >> 63` — which the rule would decline.
+- `SK2050`: 12 candidate lines, all already `float`-typed or explicitly cast.
+- ⚠ **`SK2051`: 8 distinct sites in Vixen that the rule would report**, all of the shape
+  `coordinates[(b * 2) + 0]` in `Distortion.cs`, `EnvironmentTexture.cs` and `MorphTargetData.cs`,
+  where the `+ 0` is written for column alignment against a neighbouring `+ 1`. Every one is a
+  **true** finding — the `+ 0` computes nothing — and every one is alignment somebody meant.
+
+⚠ **That count is reported and the rule is not changed for it.** § "Never calibrate a rule to what
+Vixen already does" applies in both directions: eight findings on an idiom is not evidence the rule
+is wrong any more than zero findings would have been evidence it is right, and issue #8 proposes
+`warning` on its own reasoning. The number belongs in front of whoever revisits the severity; it is
+not a reason to carve an exception for index arithmetic.
 
 ### ⚠ Decisions that rest on a reference-tree count, and are awaiting revisit
 

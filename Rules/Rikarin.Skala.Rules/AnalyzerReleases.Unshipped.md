@@ -160,3 +160,8 @@ SK7080 | Skala.Maintainability | Hidden | The inheritance chain is deeper than t
 SK7081 | Skala.Maintainability | Hidden | The type depends on more other types than the threshold.
 SK7082 | Skala.Maintainability | Info | The conditional expressions are nested.
 SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
+SK2050 | Skala.Correctness | Warning | Integer division feeds a fractional result.
+SK2051 | Skala.Correctness | Warning | The arithmetic has a result its constant operand already fixes.
+SK2052 | Skala.Correctness | Warning | The shift count is masked to a different count.
+SK2053 | Skala.Correctness | Warning | The size comparison is decided by a count never being negative.
+SK2054 | Skala.Correctness | Warning | A signed modulus result is compared for equality with a non-zero value.
