@@ -17,7 +17,8 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     to produce a fix that both compiles and silences it.
 /// </remarks>
 public sealed class PatternMatchingBatchTests {
-    static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [new TestAndCastPatternAnalyzer()];
+    static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers =
+        [new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer()];
 
     [Theory]
     [InlineData(
@@ -70,6 +71,48 @@ public sealed class PatternMatchingBatchTests {
         );
 
         Assert.NotEmpty(Analyze(source, LanguageVersion.CSharp9));
+    }
+
+    /// <summary>
+    ///     ⚠ <c>SK1051</c>'s inversion is a behaviour change on every type whose order is not total,
+    ///     and the two ways that happens do not look alike.
+    /// </summary>
+    [Theory]
+    // NaN is greater than nothing and less than nothing: it falls into `not (> 5)` and out of `<= 5`.
+    [InlineData("class C { bool M(double d) => d is not (> 5); }", false)]
+    [InlineData("class C { bool M(float f) => f is not (> 5); }", false)]
+    // `null` does the same thing to a lifted comparison.
+    [InlineData("class C { bool M(int? n) => n is not (> 5); }", false)]
+    // The input type is the property's, and this rule does not walk into a subpattern to find it.
+    [InlineData("class B { public double X { get; set; } } class C { bool M(B b) => b is { X: not (> 5) }; }", false)]
+    [InlineData("class C { bool M(int i) => i is not (> 5); }", true)]
+    [InlineData("class C { bool M(char c) => c is not (> 'a'); }", true)]
+    [InlineData("class C { bool M(decimal d) => d is not (> 5); }", true)]
+    [InlineData("enum E { A, B } class C { bool M(E e) => e is not (> E.A); }", true)]
+    // The governing expression of a `switch` is an input the walk can see.
+    [InlineData("class C { int M(int i) => i switch { not (> 5) => 0, _ => 1 }; }", true)]
+    public void RelationalInversion_RequiresATotalOrder(string source, bool inverts) =>
+        Assert.Equal(inverts, Analyze(source, LanguageVersion.CSharp12).Any(static d => d.Id == "SK1051"));
+
+    /// <summary>Cancelling a run of `not` needs no total order, and the whole run goes at once.</summary>
+    [Theory]
+    [InlineData("class C { bool M(double d) => d is not not (> 5); }", "(> 5)")]
+    [InlineData("class C { bool M(object o) => o is not not string; }", "string")]
+    [InlineData("class C { bool M(object o) => o is not not not string; }", "not string")]
+    [InlineData("class C { bool M(int i) => i is not not not > 5; }", "<= 5")]
+    // ⚠ `not` binds tighter than `and`, so the parentheses have to survive the collapse.
+    [InlineData("class C { bool M(int i) => i is > 0 and not not (1 or 2); }", "(1 or 2)")]
+    public void ANotRun_CollapsesInOneEdit(string source, string expected) {
+        var finding = Assert.Single(Analyze(source, LanguageVersion.CSharp12));
+        Assert.Equal("SK1051", finding.Id);
+        Assert.Contains("`" + expected + "`", finding.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PatternSimplification_RequiresCSharp9() {
+        const string source = "class C { bool M(int i) => i is not not > 5; }";
+        Assert.Empty(Analyze(source, LanguageVersion.CSharp8).Where(static d => d.Id == "SK1051"));
+        Assert.NotEmpty(Analyze(source, LanguageVersion.CSharp9).Where(static d => d.Id == "SK1051"));
     }
 
     static ImmutableArray<Diagnostic> Analyze(string source, LanguageVersion version) =>

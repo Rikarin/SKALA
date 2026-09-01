@@ -189,6 +189,7 @@ the rest of this section is written in, have not been written yet.
 | ID | Concept | Instead of | Use |
 |---|---|---|---|
 | `SK1050` | `pattern-matching-over-test-and-cast` | `var b = x as T; if (b != null)` | `x is T b` |
+| `SK1051` | `simplified-pattern` | `x is not not P`, `x is not (> 5)` | `x is P`, `x is <= 5` |
 
 ## SK2000 — Correctness
 
@@ -485,8 +486,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **122** | **80.3 %** |
+| Rules this document names | **154** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **123** | **80.4 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |

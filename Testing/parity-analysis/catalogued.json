@@ -142,5 +142,7 @@
  "UsePatternMatching": "SK1050",
  "SafeCastIsUsedAsTypeCheck": "SK1050",
  "UseNegatedPatternInIsExpression": "SK1050",
- "ConvertTypeCheckToNullCheck": "SK1050"
+ "ConvertTypeCheckToNullCheck": "SK1050",
+ "DoubleNegationInPattern": "SK1051",
+ "NegationOfRelationalPattern": "SK1051"
 }
