@@ -8425,7 +8425,7 @@
       "defaultSource": "unknown",
       "tier": "A",
       "construct": "Formatter",
-      "summary": "â  The recorded \"inert at both values\" is refuted, and the fixture was the reason rather than the key: the oracle preserves every inter-token run byte for byte â the trailing-comment gap included â while still reindenting and rewrapping. Implemented; Tier D until the key-flip sweep reaches it. SK-DIV-0062.",
+      "summary": "⚠ The recorded \"inert at both values\" is refuted, and the fixture was the reason rather than the key: the oracle preserves every inter-token run byte for byte â the trailing-comment gap included â while still reindenting and rewrapping. Implemented; Tier D until the key-flip sweep reaches it. SK-DIV-0062.",
       "since": "0.1",
       "oracle": "constructs/suppression/resharper_disable_space_changes.cs",
       "docs": null,
