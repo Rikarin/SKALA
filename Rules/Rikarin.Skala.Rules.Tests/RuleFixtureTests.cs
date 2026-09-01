@@ -93,6 +93,9 @@ public sealed class RuleFixtureTests {
         new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
         new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
         new RedundantDeclarationAnalyzer(),
+        new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(),
+        new MergedConditionalAccessAnalyzer(), new DiscardAssignmentAnalyzer(),
+        new InlineOutVariableAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

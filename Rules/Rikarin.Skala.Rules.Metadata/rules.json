@@ -4401,6 +4401,136 @@
       "configuration": [
         "dotnet_diagnostic.SK0244.severity"
       ]
+    },
+    {
+      "id": "SK1050",
+      "concept": "pattern-matching-over-test-and-cast",
+      "title": "Use pattern matching instead of a test-and-cast",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UsePatternMatching",
+      "supersedes": [
+        "IDE0078",
+        "IDE0083"
+      ],
+      "since": "1.3",
+      "languageVersion": "7.0",
+      "summary": "A conversion followed by a null check, a safe cast used only as a type test, or a negated type check is a pattern.",
+      "rationale": "`var b = x as Binary; if (b != null)` converts, stores, and then asks whether the conversion worked — three steps for one question the language has had an answer to since C# 7. `x is Binary b` is one `isinst`, one variable, and a relationship the reader does not have to reconstruct from two adjacent statements. The same holds for `(x as T) != null`, which allocates a conversion result nobody wants in order to test a type, and for `!(x is T)`, which reads as the negation of a question rather than as the question the code is actually asking.",
+      "examples": {
+        "bad": "var binary = node as Binary;\nif (binary != null) {\n    Visit(binary.Left);\n}",
+        "good": "if (node is Binary binary) {\n    Visit(binary.Left);\n}"
+      },
+      "falsePositives": "⚠ **`SK1015` owns `is T` followed by a cast; this rule is the rest of the family and never restates it.** Four shapes: an `as` conversion whose very next statement is an `if` testing it for null, a safe cast compared against null (`(x as T) != null` → `x is T`), a negated type test (`!(x is T)` → `x is not T`), and a type check that succeeds for every non-null value of the operand's own static type (`s is object` → `s is not null`). ⚠ The `as`-plus-null-check shape requires **every** reference to the local to be inside the `if` it guards: a pattern variable is not definitely assigned after the `if`, so a use below it would be CS0165, and an `else` branch is refused for the same reason. The conversion operand must be a chain of plain names, so nothing that could be evaluated for a side effect moves into a condition. ⚠ The tested type must be a reference type — `x is int?` is CS8116 — and a null comparison whose operand type declares `operator ==` is left alone, because `==` there is not the reference test the pattern makes. ⚠ The two shapes that produce a `not` pattern are silent below C# 9 even though the rule's floor is C# 7, and every shape is silent inside an expression tree, where a pattern is CS8122, and where rewriting would change what the tree contains. ⚠ **Not covered, and deliberately so:** `UseSwitchCasePatternVariable` (a `switch` case that casts in its body), `ConvertTypeCheckPatternToNullCheck`, and the negated `as` guard (`if (t == null) return;`), which needs a reachability proof the other shapes do not.",
+      "configuration": [
+        "dotnet_diagnostic.SK1050.severity"
+      ]
+    },
+    {
+      "id": "SK1051",
+      "concept": "simplified-pattern",
+      "title": "Simplify the pattern",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "DoubleNegationInPattern",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "9.0",
+      "summary": "A run of `not` that cancels itself, or a `not` in front of a relational pattern that the operator already spells.",
+      "rationale": "Patterns compose, so they also accumulate. `SK1011` and `SK1014` introduce property and relational patterns and nothing tidies them afterwards, which is how a modernization rule creates its own debt: a `not` added to an existing `not` during a refactor, or a `not (> 5)` written because the condition it replaced was `!(x > 5)`. Neither survives being read aloud, and both have an exact spelling that does.",
+      "examples": {
+        "bad": "if (value is not not > 0) {\n}\n\nif (count is not (> 5)) {\n}",
+        "good": "if (value is > 0) {\n}\n\nif (count is <= 5) {\n}"
+      },
+      "falsePositives": "⚠ **`not (> 5)` is `<= 5` only where the type's order is total, which is why this rule is `Semantic` rather than the `Syntax` its proposal assumed.** On `double`, `NaN > 5` is false, so `not (> 5)` matches `NaN` and `<= 5` does not; on `int?`, `not (> 5)` matches `null` and `<= 5` does not. Both rewrites look like De Morgan's law and neither is one, so the inversion is admitted only for a non-nullable `sbyte`/`byte`/`short`/`ushort`/`int`/`uint`/`long`/`ulong`/`char`/`decimal`/`nint`/`nuint` or an enum, and the input type is read from the `is` operand or the governing expression of the `switch` — a `not` inside a property subpattern or a list pattern is declined because the walk cannot see what it is being matched against. ⚠ Cancelling a run of `not` is unconditional and needs none of that; only the relational inversion does. ⚠ **The top of a `not` run owns the finding**, so a triple negation is one rewrite rather than two overlapping ones, and an odd residual is folded into the inversion instead of being left for a second pass — a rule that still fires after its own fix turns `skala fix` into a loop. ⚠ **The residual pattern keeps whatever parentheses it had**: `not` binds tighter than `and`, so unwrapping `Z and not not (A or B)` would produce `Z and A or B`, a different predicate. ⚠ Not covered: `RedundantIsBeforeRelationalPattern`, `ReplaceObjectPatternWithVarPattern`, `ExtractCommonPropertyPattern` and `ReplaceSequenceEqualWithConstantPattern`, each of which is a different rewrite with its own proof obligation.",
+      "configuration": [
+        "dotnet_diagnostic.SK1051.severity"
+      ]
+    },
+    {
+      "id": "SK1052",
+      "concept": "merged-conditional-access",
+      "title": "Merge the `?:` into a conditional access",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "MergeConditionalExpression",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "7.0",
+      "summary": "A conditional whose only job is to guard a member access against null is a `?.`.",
+      "rationale": "`x != null ? x.Y : null` names the receiver three times to say one thing, and the thing it says is what `?.` was added to the language for. The rewrite also reads the receiver once instead of twice, which is the point at which it stops being cosmetic: two reads of the same path is a shape where a reader has to check that nothing changed in between, and the conditional access removes the question.",
+      "examples": {
+        "bad": "return document != null ? document.Root : null;",
+        "good": "return document?.Root;"
+      },
+      "falsePositives": "⚠ **The rewrite evaluates the receiver once where the original evaluated it twice, and that is stated rather than hidden.** On a property whose getter is not idempotent the two programs differ; property paths are admitted anyway, for the reason `RewriteGuards.IsPlainNamePath` gives — excluding them would silence the rule on `this.Items` and `Options.Map`, which is most of its value, and the two reads it collapses are adjacent inside one expression. An invocation, an indexer or an `await` anywhere in the *receiver* is refused, because there the second evaluation is visibly a second call. ⚠ **The accessed member must be a reference type and must already be the conditional's own type.** `x != null ? x.Count : null` is a target-typed `int?` and `x?.Count` is an `int?` arrived at differently; matching them would mean reasoning about the conversion the expression was subjected to, and being wrong about it changes an overload. ⚠ A receiver that is already the subject of a `?.` — `x != null ? x?.Y : null` — is refused rather than rewritten, because appending the suffix would produce `x??.Y`; so is `x != null ? x() : null`, where `x?()` is not syntax. ⚠ A null comparison whose operand type declares `operator ==` is left alone, since `==` there is not the null test `?.` performs, and the whole finding is withheld inside an expression tree, where `?.` is CS8072. ⚠ **The declared floor is C# 7 and `?.` arrived in C# 6**: the version map Skala checks floors against starts at C# 7, so the floor is stated one version high rather than falling through to `preview`.",
+      "configuration": [
+        "dotnet_diagnostic.SK1052.severity"
+      ]
+    },
+    {
+      "id": "SK1053",
+      "concept": "discard-over-unread-local",
+      "title": "Use a discard",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseDiscardAssignment",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "7.0",
+      "summary": "A named local that exists only to receive a value nobody reads — a return value kept for the call's effect, or an `out var` the caller does not want.",
+      "rationale": "A name is a claim that something will be referred to again. When nothing refers to it, the name is a small lie the reader has to check: they look for the second use, do not find it, and only then know the call was there for its effect. `_` says that in the first character, and it says it to the compiler too — the local stops being allocated and stops being something a later edit can accidentally read.",
+      "examples": {
+        "bad": "var ignored = queue.TryDequeue(out var unused);",
+        "good": "_ = queue.TryDequeue(out _);"
+      },
+      "falsePositives": "⚠ **This is not `SK0217`.** `arrange-discard-declaration` decides how an *existing* discard is spelled — `var _` against `_` — and never introduces one; this rule introduces one and never restyles one, so the two do not double-count. ⚠ **`_` is a discard only where nothing else claims the name.** A local, a parameter or a field called `_` turns `_ = Foo();` into an assignment to that thing, silently, so every lookup for `_` at the rewrite position must come back empty. ⚠ **Only `out var`, never `out T`.** A discard has no type, so replacing an explicitly typed out-variable can change which overload a call resolves to; `out var` is already typeless in that sense and loses nothing. ⚠ The local's initializer must be a call, a construction, an `await` or a conditional access — something whose *evaluation* is the reason the statement exists. `var x = 5;` is dead code whose repair is deletion, and `_ = 5;` is the same dead code with an assignment bolted on. ⚠ \"Never read\" is measured as \"never mentioned\" over the whole member, deliberately: a later assignment is not a read, but dropping a declaration underneath one is a compile error rather than a tidy-up, and a local written twice and read never has no fix here either way. ⚠ `using`, `await using`, `const`, `ref`, attributed and multi-declarator declarations are all left alone.",
+      "configuration": [
+        "dotnet_diagnostic.SK1053.severity"
+      ]
+    },
+    {
+      "id": "SK1054",
+      "concept": "inline-out-variable",
+      "title": "Inline the `out` variable declaration",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "InlineOutVariableDeclaration",
+      "supersedes": [
+        "IDE0018"
+      ],
+      "since": "1.3",
+      "languageVersion": "7.0",
+      "summary": "A bare local declaration whose only purpose is the `out` argument in the statement below it.",
+      "rationale": "The inline form has been available since C# 7 and the separated form is still what a model writes, because most of its training data predates it. The separated form also states a lie for one statement: `int value;` claims a variable exists and is meaningful before anything has put a value in it, and a reader has to look down one line to find out that it does not. `SK1033` already reports the `TryGetValue` shape this most often appears in.",
+      "examples": {
+        "bad": "int value;\nif (entries.TryGetValue(key, out value)) {\n    return value;\n}",
+        "good": "if (entries.TryGetValue(key, out int value)) {\n    return value;\n}"
+      },
+      "falsePositives": "⚠ **The written type is carried across verbatim and never replaced by `var`.** `out` is invariant, so the declared type is exactly the parameter's and reproducing it leaves overload resolution where it was, while `out var` is typeless in that respect and can move it; copying the text rather than the symbol also keeps an alias or a `using`-shortened name spelled the way the file spells it. ⚠ **Scope is the whole risk and it is answered by position, not by a table of statement kinds.** An expression variable is scoped no wider than the statement introducing it, so every reference to the local must be inside the statement the `out` argument belongs to, and the argument must sit in that statement's own expression — not inside a nested block, a lambda or a local function, each of which would put the new declaration somewhere the old one was not. ⚠ The declaration must be immediately above, must have no initializer, and must be a single declarator with no modifiers and no attributes; exactly one `out` argument may name the local, since two would be two declarations of one name. A `ref` argument is not an `out` argument and is left alone.",
+      "configuration": [
+        "dotnet_diagnostic.SK1054.severity"
+      ]
     }
   ]
 }

@@ -146,3 +146,8 @@ SK0241 | Skala.Cleanup | Warning | The modifier has no effect.
 SK0242 | Skala.Cleanup | Warning | The `#nullable` directive changes nothing.
 SK0243 | Skala.Cleanup | Warning | The qualifier is redundant.
 SK0244 | Skala.Cleanup | Warning | The declaration adds nothing.
+SK1050 | Skala.Modernization | Info | Use pattern matching instead of a test-and-cast.
+SK1051 | Skala.Modernization | Info | Simplify the pattern.
+SK1052 | Skala.Modernization | Info | Merge the `?:` into a conditional access.
+SK1053 | Skala.Modernization | Info | Use a discard.
+SK1054 | Skala.Modernization | Info | Inline the `out` variable declaration.

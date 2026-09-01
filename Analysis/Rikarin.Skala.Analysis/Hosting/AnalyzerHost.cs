@@ -131,6 +131,9 @@ public static class AnalyzerHost {
         new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
         new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
         new RedundantDeclarationAnalyzer(),
+        new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(),
+        new MergedConditionalAccessAnalyzer(), new DiscardAssignmentAnalyzer(),
+        new InlineOutVariableAnalyzer(),
     ];
 
     /// <summary>

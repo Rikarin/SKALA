@@ -178,5 +178,14 @@
   "RedundantAbstractModifier": "SK0241",
   "RedundantNullableDirective": "SK0242",
   "RedundantQualifier": "SK0243",
-  "RedundantOverriddenMember": "SK0244"
+  "RedundantOverriddenMember": "SK0244",
+  "UsePatternMatching": "SK1050",
+  "SafeCastIsUsedAsTypeCheck": "SK1050",
+  "UseNegatedPatternInIsExpression": "SK1050",
+  "ConvertTypeCheckToNullCheck": "SK1050",
+  "DoubleNegationInPattern": "SK1051",
+  "NegationOfRelationalPattern": "SK1051",
+  "MergeConditionalExpression": "SK1052",
+  "UseDiscardAssignment": "SK1053",
+  "InlineOutVariableDeclaration": "SK1054"
 }

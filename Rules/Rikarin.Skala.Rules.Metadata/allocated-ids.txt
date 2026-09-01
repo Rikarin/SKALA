@@ -178,6 +178,11 @@ SK0241 ineffective-modifier
 SK0242 redundant-nullable-directive
 SK0243 redundant-qualifier
 SK0244 redundant-declaration
+SK1050 pattern-matching-over-test-and-cast
+SK1051 simplified-pattern
+SK1052 merged-conditional-access
+SK1053 discard-over-unread-local
+SK1054 inline-out-variable
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because
