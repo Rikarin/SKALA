@@ -183,3 +183,7 @@ SK2061 | Skala.Correctness | Warning | Both operands of the operator are the sam
 SK2062 | Skala.Correctness | Warning | A later condition in the chain repeats an earlier one.
 SK2063 | Skala.Correctness | Warning | The operator sequence reads as a different operator.
 SK2064 | Skala.Correctness | Warning | A non-short-circuiting bitwise operator joins two booleans.
+SK6050 | Skala.Design | Info | The method ignores its inputs and returns a constant.
+SK6051 | Skala.Design | Info | The base type tests `this` against a derived type.
+SK6052 | Skala.Design | Info | Null is returned where an empty sequence was expected.
+SK6053 | Skala.Design | Disabled | The method name does not reflect its synchronicity.

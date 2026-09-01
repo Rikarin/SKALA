@@ -211,6 +211,10 @@ SK2061 identical-operands
 SK2062 repeated-condition
 SK2063 misleading-operator-sequence
 SK2064 non-short-circuit-boolean
+SK6050 method-returns-a-constant
+SK6051 is-check-against-this
+SK6052 null-returned-instead-of-empty
+SK6053 async-suffix-convention
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

@@ -984,6 +984,36 @@ declaring `hasFix: true` carries edits — so a rule offers a fix for all of its
 `fixIsSafe: false` because the breakage it can cause — an attribute argument, a parameter default, a
 `case` label — lands in files the edit does not touch.
 
+⚠ **The prose pass for `SK6050`–`SK6053` is owed.** What follows is the allocation record and the
+one-line reason for each; the paragraphs that explain the batch the way `SK6020`'s and `SK6022`'s are
+explained above have not been written. Each rule's `falsePositives` in `rules.json` carries the full
+argument in the meantime, and `skala explain SK6050` prints it.
+
+**`SK6050`–`SK6053` are members and signatures whose shape contradicts what they say.** A body that
+does not do what the parameters promise, a base type that asks what it is, a sequence contract that
+returns nothing at all, and a name that does not say whether the caller must await.
+
+- `SK6050` `method-returns-a-constant` — a `private` method that takes arguments, reads none of them,
+  and returns a compile-time constant.
+- `SK6051` `is-check-against-this` — a class that asks whether `this` is one of its own subclasses.
+- `SK6052` `null-returned-instead-of-empty` — a method whose return type is a sequence returning
+  `null`.
+- `SK6053` `async-suffix-convention` — a method returning an awaitable and not named `…Async`, or the
+  reverse. Ships `defaultSeverity: none`; the count that decided that is in its `falsePositives`.
+
+⚠ **A fifth concept in this batch — #211, "the field is exposed rather than a property" — took no id,
+because `CA1051` already does it.** ADR-008 hosts rather than rebuilds, and the hosting was measured
+rather than assumed: a probe carrying ten field shapes, built at `AnalysisLevel=latest-recommended`
+(what `Directory.Build.props` sets), reports the `public` and the `protected` instance field and
+correctly exempts a `[StructLayout]` interop struct, a `readonly`-adjacent `static readonly`, a `const`
+and a `public` field on an `internal` type — including the interop exemption that is the load-bearing
+one. The one thing `CA1051` does not reach is `S2357`'s `internal`-instance-field half, and that half
+is declined rather than built: an `internal` field never leaves the assembly, so "it should have been
+a property" is a style opinion about code no consumer can see. Recorded in
+`Testing/parity-analysis/ledger-sonar.json` as `S1104` and `S2357` resolved `hosted`. **No id was
+allocated** — ADR-012 makes one permanent, and a number handed out for a concept that ships nothing is
+a number that can never be reused.
+
 ## SK7000 — Maintainability
 
 The metrics from [07](07-analysis-host.md) § "Metrics" — `SK7001` cyclomatic complexity ·
@@ -1318,6 +1348,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **233** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **199** | **85.8 %** |
+| Rules this document names | **214** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **180** | **84.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |

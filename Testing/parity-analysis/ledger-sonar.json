@@ -934,19 +934,6 @@
    ]
   },
   {
-   "slug": "public-mutable-field",
-   "title": "The field is exposed rather than a property",
-   "issue": 211,
-   "proposedRange": "SK6000-SK6999",
-   "proposedSeverity": "suggestion",
-   "proposedScope": "Semantic",
-   "proposedFix": "unsafe",
-   "rules": [
-    "S1104",
-    "S2357"
-   ]
-  },
-  {
    "slug": "equality-contract-completeness",
    "title": "The equality members are inconsistent with each other",
    "issue": 212,
@@ -1041,6 +1028,10 @@
    "proposedFix": "none",
    "rules": [
     "S3400"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6050"
    ]
   },
   {
@@ -1053,6 +1044,10 @@
    "proposedFix": "none",
    "rules": [
     "S3060"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6051"
    ]
   },
   {
@@ -1065,6 +1060,10 @@
    "proposedFix": "unsafe",
    "rules": [
     "S1168"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6052"
    ]
   },
   {
@@ -1077,6 +1076,10 @@
    "proposedFix": "unsafe",
    "rules": [
     "S4261"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6053"
    ]
   },
   {
@@ -3171,6 +3174,16 @@
    "rule": "S9129",
    "resolution": "out-of-scope",
    "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+  },
+  {
+   "rule": "S1104",
+   "resolution": "hosted",
+   "detail": "ADR-008: Skala hosts rather than rebuilds. Covered by `CA1051`, which ships in the .NET SDK and is on by default at `latest-recommended` \u2014 measured, not assumed: a probe with ten field shapes reports the public and the protected instance field and correctly exempts a `[StructLayout]` interop struct, a `const`, a `static readonly` and a public field on an `internal` type. #211 closed as hosted."
+  },
+  {
+   "rule": "S2357",
+   "resolution": "hosted",
+   "detail": "ADR-008, with `CA1051` as for `S1104`. \u26a0 `CA1051` does not reach the `internal` instance field on a public type, which is the half of \"fields should be private\" that goes uncovered. That half is declined rather than built: an `internal` field never leaves the assembly, so \"it should have been a property\" is a style opinion about code no consumer can see, and it is the contentious half of the rule. #211 closed as hosted."
   }
  ],
  "ideas": {
