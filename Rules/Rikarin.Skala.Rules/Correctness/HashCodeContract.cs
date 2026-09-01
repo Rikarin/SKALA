@@ -57,6 +57,7 @@ readonly struct HashCodeContract {
     ) {
         if (model.GetDeclaredSymbol(declaration, cancellation) is not INamedTypeSymbol { IsRecord: false } type
             || type.DeclaringSyntaxReferences.Length != 1
+            || !EqualityMembers.BindsCompletely(type)
             || EqualityMembers.HashCode(type) is not { } hash) {
             return default;
         }

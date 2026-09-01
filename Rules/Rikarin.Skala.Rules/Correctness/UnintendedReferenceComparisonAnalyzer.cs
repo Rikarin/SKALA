@@ -78,6 +78,7 @@ public sealed class UnintendedReferenceComparisonAnalyzer : DiagnosticAnalyzer {
     static bool DefinesValueEquality(INamedTypeSymbol type) =>
         type is { TypeKind: TypeKind.Class, IsRecord: false, IsAnonymousType: false, SpecialType: SpecialType.None }
         && type.Locations.Any(static location => location.IsInSource)
+        && EqualityMembers.BindsCompletely(type)
         && EqualityMembers.InheritsObjectEquals(type);
 
     static IOperation Unwrap(IOperation operation) {

@@ -174,6 +174,48 @@ public sealed class EqualityRuleBoundaryTests {
             RuleIds.InconsistentEqualityMembers
         );
 
+    /// <summary>
+    ///     ⚠ A base list that did not bind withdraws the type from every rule in the batch.
+    /// </summary>
+    /// <remarks>
+    ///     This one is not a fixture, because a fixture has to compile and the whole point is a
+    ///     compilation where a name did not resolve. It was found by measurement rather than by
+    ///     reading: <c>Vixen.Raven</c>'s <c>BufferTypeSymbol</c> declares
+    ///     <c>IEquatable&lt;BufferTypeSymbol&gt;</c>, and without the SDK's implicit global usings
+    ///     that name binds to an error type — so <c>AllInterfaces</c> held <c>IEquatable&lt;&gt;</c>,
+    ///     the comparison against <c>System.IEquatable`1</c> failed, and <c>SK2044</c> reported the
+    ///     type for not implementing the interface it implements. Skala loads compilations three
+    ///     ways and two of them can be incomplete, so this is a live shape rather than a lab one.
+    /// </remarks>
+    [Fact]
+    public void AnInterfaceThatDidNotBind_WithdrawsTheTypeEntirely() {
+        // No `using System;`, so `IEquatable` is an error type — deliberately.
+        const string source = """
+            public sealed class Handle : IEquatable<Handle> {
+                public int Id { get; init; }
+
+                public bool Equals(Handle? other) => other is not null && other.Id == Id;
+
+                public override bool Equals(object? other) => Equals(other as Handle);
+
+                public override int GetHashCode() => Id;
+            }
+            """;
+
+        var compilation = RuleFixtures.Compile(source, "unbound.cs");
+        Assert.Contains(
+            compilation.GetDiagnostics(TestContext.Current.CancellationToken),
+            static d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error && d.Id == "CS0246"
+        );
+
+        var produced = RuleFixtures.Analyze(compilation, Equality, TestContext.Current.CancellationToken);
+        Assert.True(
+            produced.Length == 0,
+            "a type whose base list did not bind was reported anyway: "
+            + string.Join(", ", produced.Select(static d => d.Id + ": " + d.GetMessage()))
+        );
+    }
+
     static void AssertExactly(string source, string expected) {
         var compilation = RuleFixtures.Compile(source, "boundary.cs");
         var errors = compilation.GetDiagnostics(TestContext.Current.CancellationToken)

@@ -11,10 +11,16 @@ namespace Rikarin.Skala.Rules.Correctness;
 /// <summary><c>SK2044</c> — the equality members are inconsistent with each other.</summary>
 /// <remarks>
 ///     ⚠ <b>One finding per type, and <c>SK2004</c>'s span is left alone by construction.</b> The
-///     three inconsistencies below are aspects of a single omission, so the first that matches is
-///     reported and the rest are not; and a type <c>SK2004</c> already reports — implementing
-///     <c>IEquatable&lt;Self&gt;</c> with no <c>Equals(object)</c> — is refused before any of them is
+///     two inconsistencies below are aspects of a single omission, so the first that matches is
+///     reported and the other is not; and a type <c>SK2004</c> already reports — implementing
+///     <c>IEquatable&lt;Self&gt;</c> with no <c>Equals(object)</c> — is refused before either is
 ///     asked, so no severity setting can turn the pair into a duplicate.
+///     <para>
+///         ⚠ A type whose base list did not bind is refused before anything else. See
+///         <see cref="EqualityMembers.BindsCompletely" />: the measurement on the reference trees
+///         found this rule reporting a type for not implementing the very interface it declares,
+///         because the name had bound to an error type.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class InconsistentEqualityMembersAnalyzer : DiagnosticAnalyzer {
@@ -35,6 +41,7 @@ public sealed class InconsistentEqualityMembersAnalyzer : DiagnosticAnalyzer {
             || type.DeclaringSyntaxReferences.FirstOrDefault() is not { } first
             || first.SyntaxTree != declaration.SyntaxTree
             || first.Span != declaration.Span
+            || !EqualityMembers.BindsCompletely(type)
             || EqualityMembers.IsReportedByIncompleteEqualityContract(type, context.Compilation)) {
             return;
         }

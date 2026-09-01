@@ -416,6 +416,16 @@ the parity pipeline looks at what `csc` already says. `CA1036` was checked the s
 ordering half and does **not** fire at the SDK's recommended analysis level, which is the only
 reason that one stands; a repository at `AnalysisMode=All` would host it too.
 
+⚠ **A type whose base list did not bind is withdrawn from all five, and that guard came from the
+measurement rather than from reading the code.** On the reference trees `SK2044` reported
+`Vixen.Raven`'s `BufferTypeSymbol` for not implementing `IEquatable<BufferTypeSymbol>` — which its
+base list declares on the same line. Without the SDK's implicit global usings the name binds to an
+*error* type, so `AllInterfaces` holds `IEquatable<>`, the comparison against `System.IEquatable`1`
+fails, and the rule states the opposite of the truth. Skala loads a compilation three ways and two
+of them can be incomplete, so this is a live shape rather than a laboratory one. It cannot be a
+fixture, because a fixture has to compile and the whole point is a name that did not resolve; it is
+pinned as a unit test instead.
+
 ⚠ **Four of the five ship fixless**, which is four more than doc 08's bar contemplates and the same
 decision `SK3040`–`SK3044` took. In each the repair is a choice between two edits that mean opposite
 things — drop the member from the hash or add it to `Equals`; freeze the state or stop using the type

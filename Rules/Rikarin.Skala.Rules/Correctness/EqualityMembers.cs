@@ -82,6 +82,35 @@ static class EqualityMembers {
     }
 
     /// <summary>
+    ///     Whether the type's base list bound at all — no error type among its bases or its
+    ///     interfaces.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>This is not defensive tidiness; without it the rules report the opposite of the
+    ///     truth.</b> Measured on the reference trees: <c>Vixen.Raven</c>'s <c>BufferTypeSymbol</c>
+    ///     declares <c>IEquatable&lt;BufferTypeSymbol&gt;</c> in its base list, and in a compilation
+    ///     without the SDK's implicit global usings that name binds to an <em>error</em> type — so
+    ///     <c>AllInterfaces</c> holds <c>IEquatable&lt;&gt;</c>, the comparison against
+    ///     <c>System.IEquatable`1</c> fails, and <c>SK2044</c> reports a type for not implementing
+    ///     the interface it does implement. A base that did not bind is a base nobody read, and a
+    ///     rule that reads it anyway is inventing an answer. Same discipline as <c>SK7080</c>'s
+    ///     "an error type anywhere on the chain withdraws the measurement".
+    /// </remarks>
+    public static bool BindsCompletely(INamedTypeSymbol type) {
+        if (type.BaseType is { TypeKind: TypeKind.Error }) {
+            return false;
+        }
+
+        foreach (var contract in type.AllInterfaces) {
+            if (contract.TypeKind == TypeKind.Error || contract.IsUnboundGenericType) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
     ///     ⚠ <c>SK2004</c>'s exact precondition, so the rules in this file can hold off the span it
     ///     already reports.
     /// </summary>
