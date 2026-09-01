@@ -105,3 +105,4 @@ SK3511 | Skala.Lifetime | Warning | The `using` resource is built with an object
 SK3512 | Skala.Lifetime | Warning | A variable captured by `using` is returned.
 SK3020 | Skala.Async | Warning | The non-`async` `Task` method returns null.
 SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
+SK4030 | Skala.Performance | Info | Use the collection's own `Find`/`Exists`/`TrueForAll`/`Contains`.

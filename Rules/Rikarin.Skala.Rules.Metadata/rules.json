@@ -3316,6 +3316,36 @@
       "configuration": [
         "dotnet_diagnostic.SK3021.severity"
       ]
+    },
+    {
+      "id": "SK4030",
+      "concept": "collection-own-method",
+      "title": "The collection's own method answers this faster than the LINQ extension",
+      "category": "Performance",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "S6602",
+        "S6603",
+        "S6605",
+        "S6617"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`List<T>` and `ImmutableList<T>` declare `Find`, `Exists` and `TrueForAll`; the `Enumerable` extension that answers the same question allocates an enumerator to do it.",
+      "rationale": "`FirstOrDefault`, `Any` and `All` are written against `IEnumerable<T>`, so they allocate an enumerator, drive it through `MoveNext` and call the predicate through it. `Find`, `Exists` and `TrueForAll` are members of the list, so they walk the backing array with an index and allocate nothing. The delegate is the same object under two names — `Predicate<T>` and `Func<T, bool>` have identical signatures — so the substitution costs the reader nothing either. `Any(x => x == v)` is a third case of the same argument and the sharpest: `Contains(v)` needs no delegate at all, and the comparison ends up somewhere the reader can see it.",
+      "examples": {
+        "bad": "var ready = items.FirstOrDefault(item => item.IsReady);\nvar anyReady = items.Any(item => item.IsReady);\nvar known = names.Any(name => name == wanted);",
+        "good": "var ready = items.Find(item => item.IsReady);\nvar anyReady = items.Exists(item => item.IsReady);\nvar known = names.Contains(wanted);"
+      },
+      "falsePositives": "⚠ **Every pair was checked on the empty sequence, which is where a substitution like this goes wrong, and none of them changes a return.** `All` is vacuously `true` and `TrueForAll` returns `true` over zero elements; `Any` and `Exists` are both `false`; `FirstOrDefault` and `Find` both return `default(T)` — for a value type as well, so neither throws where the other does not. `First`, `Single` and `SingleOrDefault` are deliberately outside the table, because `Find` returns a default where those throw. ⚠ **The receiver must be `List<T>` or `ImmutableList<T>` as the semantic model resolves it**, never a type that merely has a member of the right name. A set carries an `IEqualityComparer<T>`, so `HashSet<string>(StringComparer.OrdinalIgnoreCase).Contains(v)` and `Any(x => x == v)` genuinely disagree, and that is the false positive this restriction exists to prevent. ⚠ The `Any(x => x == v)` rewrite additionally requires an element type whose default equality comparer *is* its `==`: `string`, the integral types, `char`, `bool`, `decimal` and any `enum`. `double` and `float` are excluded because `NaN == NaN` is false where `EqualityComparer<double>.Default.Equals(NaN, NaN)` is true and `-0.0 == 0.0` is true where `Equals` is false; reference types are excluded because `==` may be identity, or an operator somebody wrote. The compared value must also be a name path or a literal, so that moving it out of the lambda does not change how many times it is evaluated. ⚠ The predicate must be written as a lambda or an anonymous method. A `Func<T, bool>` variable does not convert to `Predicate<T>` — the fix would be CS1503 — and a method group is left alone as the cheaper miss. ⚠ **One real behavioural difference is recorded rather than guarded**: `Enumerable.Any` iterates through the list's enumerator, which checks the version field, so a predicate that mutates the list mid-scan throws `InvalidOperationException`; `Exists` walks the array and does not. A predicate that mutates the collection it is scanning is a defect either way, and building a guard for it would mean proving a lambda pure.",
+      "configuration": [
+        "dotnet_diagnostic.SK4030.severity"
+      ]
     }
   ]
 }

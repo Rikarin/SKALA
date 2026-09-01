@@ -1,0 +1,194 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
+using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Modernization;
+using Rikarin.Skala.Rules.Performance;
+using System.Collections.Immutable;
+using System.Globalization;
+
+namespace Rikarin.Skala.Rules.Tests;
+
+/// <summary>
+///     The five rules decided by the receiver's static type plus the operator called on it.
+/// </summary>
+/// <remarks>
+///     ⚠ <c>SK1034</c> is in the analyzer list on purpose. <c>SK4033</c> declares
+///     <c>supersedes: ["SK1034"]</c>, and whether the two land on the same span — which is the only
+///     thing <c>Supersession.Apply</c> can match on — is a property of the pair rather than of either
+///     rule.
+/// </remarks>
+public sealed class CollectionCallShapeBatchTests {
+    static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
+        new CollectionOwnMethodAnalyzer(), new CountPropertyAnalyzer(),
+    ];
+
+    static readonly string[] Ids = ["SK4030"];
+
+    public static TheoryData<RuleFixture> Fixtures {
+        get {
+            var data = new TheoryData<RuleFixture>();
+            foreach (var fixture in RuleFixtures.All().Where(static f => Ids.Contains(f.RuleId))) {
+                data.Add(fixture);
+            }
+
+            return data;
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Fixtures))]
+    public void Fixtures_HaveExactCountsAndCarryTheirFix(RuleFixture fixture) {
+        var findings = Analyze(RuleFixtures.Compile(File.ReadAllText(fixture.Path), fixture.Path))
+            .Where(diagnostic => diagnostic.Id == fixture.RuleId)
+            .ToArray();
+
+        Assert.Equal(fixture.ShouldFire ? 1 : 0, findings.Length);
+
+        // ⚠ Both directions. A rule the catalogue says has no fix must not smuggle edits into the
+        // property bag either: `skala fix --safe` reads the bag rather than `hasFix`.
+        var fixable = RuleCatalog.Get(fixture.RuleId).HasFix;
+        Assert.All(findings, d => Assert.Equal(fixable, d.Properties.ContainsKey(FixEdits.CountKey)));
+    }
+
+    /// <summary>
+    ///     ⚠ The <c>Contains</c> rewrite is the one that can be wrong, and declining it must leave
+    ///     <c>Exists</c> standing rather than leaving the call alone.
+    /// </summary>
+    /// <remarks>
+    ///     Every row here is a <c>List&lt;T&gt;.Any(x =&gt; x == v)</c> the rule reads correctly as
+    ///     <em>not</em> a <c>Contains</c>. It is still an <c>Any</c> on a list, so the answer is
+    ///     <c>Exists</c> — which is why none of these can be a "should not fire" fixture, and why the
+    ///     assertion has to be on the text of the fix rather than on a count.
+    /// </remarks>
+    [Theory]
+    [InlineData("double", "value == wanted", "⚠ NaN == NaN is false; the default comparer says true")]
+    [InlineData("float", "value == wanted", "same, one width down")]
+    [InlineData("Widget", "value == wanted", "`==` is identity here; Contains calls Equals")]
+    public void ContainsIsDeclinedAndExistsIsStillOffered(string element, string body, string why) {
+        Assert.NotEmpty(why);
+
+        var source = $$"""
+                       using System.Collections.Generic;
+                       using System.Linq;
+                       public sealed class Widget { }
+                       public sealed class Registry {
+                           public static bool Knows(List<{{element}}> values, {{element}} wanted) =>
+                               values.Any(value => {{body}});
+                       }
+                       """;
+
+        var fixedText = Apply(source, "SK4030");
+        Assert.Contains("values.Exists(", fixedText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Contains", fixedText, StringComparison.Ordinal);
+    }
+
+    /// <summary>The element types where <c>==</c> and the default comparer are the same test.</summary>
+    [Theory]
+    [InlineData("string")]
+    [InlineData("int")]
+    [InlineData("long")]
+    [InlineData("char")]
+    [InlineData("bool")]
+    [InlineData("decimal")]
+    public void ContainsIsOfferedForTypesWhoseDefaultComparerIsTheirOperator(string element) {
+        var source = $$"""
+                       using System.Collections.Generic;
+                       using System.Linq;
+                       public sealed class Registry {
+                           public static bool Knows(List<{{element}}> values, {{element}} wanted) =>
+                               values.Any(value => value == wanted);
+                       }
+                       """;
+
+        Assert.Contains("values.Contains(wanted)", Apply(source, "SK4030"), StringComparison.Ordinal);
+    }
+
+    /// <summary>An <c>enum</c> element compares by value under both, and is named by neither table.</summary>
+    [Fact]
+    public void ContainsIsOfferedForAnEnumElement() {
+        const string source = """
+                              using System.Collections.Generic;
+                              using System.Linq;
+                              public enum State { Idle, Ready }
+                              public sealed class Registry {
+                                  public static bool Knows(List<State> values, State wanted) =>
+                                      values.Any(value => value == wanted);
+                              }
+                              """;
+
+        Assert.Contains("values.Contains(wanted)", Apply(source, "SK4030"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ A comment inside the lambda is content the <c>Contains</c> edit would delete, so the
+    ///     rule falls back to the rename — which touches one token and cannot lose anything.
+    /// </summary>
+    [Fact]
+    public void ACommentInsideTheLambdaFallsBackToTheRename() {
+        const string source = """
+                              using System.Collections.Generic;
+                              using System.Linq;
+                              public sealed class Registry {
+                                  public static bool Knows(List<string> names, string wanted) =>
+                                      names.Any(
+                                          // ordinal on purpose: these are paths, not display names
+                                          name => name == wanted
+                                      );
+                              }
+                              """;
+
+        var fixedText = Apply(source, "SK4030");
+        Assert.Contains("names.Exists(", fixedText, StringComparison.Ordinal);
+        Assert.Contains("// ordinal on purpose", fixedText, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The compared value leaves the lambda, so it is evaluated once instead of once per
+    ///     element. A call there is a change to the program even when the answer is the same.
+    /// </summary>
+    [Fact]
+    public void AComputedComparisonValueIsNotHoistedIntoContains() {
+        const string source = """
+                              using System.Collections.Generic;
+                              using System.Linq;
+                              public sealed class Registry {
+                                  public static bool Knows(List<int> codes) => codes.Any(code => code == Wanted());
+
+                                  static int Wanted() => 7;
+                              }
+                              """;
+
+        Assert.Contains("codes.Exists(", Apply(source, "SK4030"), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("SK4030", "any-becomes-exists")]
+    public void GeneratedCode_IsIgnored(string id, string name) {
+        var source = "// <auto-generated/>\n"
+            + File.ReadAllText(Path.Combine(RuleFixtures.Root, id, "positive", name + ".cs"));
+        Assert.Empty(Analyze(RuleFixtures.Compile(source, "generated.cs")).Where(d => d.Id == id));
+    }
+
+    internal static ImmutableArray<Diagnostic> Analyze(CSharpCompilation compilation) =>
+        RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken);
+
+    /// <summary>Applies every edit the single finding of <paramref name="id" /> carries.</summary>
+    internal static string Apply(string source, string id) {
+        var diagnostic = Assert.Single(Analyze(RuleFixtures.Compile(source, "probe.cs")).Where(d => d.Id == id));
+
+        var count = int.Parse(diagnostic.Properties[FixEdits.CountKey]!, CultureInfo.InvariantCulture);
+        var edits = Enumerable.Range(0, count)
+            .Select(index => new TextChange(
+                    new TextSpan(
+                        int.Parse(diagnostic.Properties[FixEdits.StartKey(index)]!, CultureInfo.InvariantCulture),
+                        int.Parse(diagnostic.Properties[FixEdits.LengthKey(index)]!, CultureInfo.InvariantCulture)
+                    ),
+                    diagnostic.Properties[FixEdits.TextKey(index)]!
+                )
+            );
+
+        return SourceText.From(source).WithChanges(edits).ToString();
+    }
+}

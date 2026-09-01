@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 129 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 130 ids are allocated.
 
 ## Async
 
@@ -156,6 +156,7 @@
 | [SK4006](SK4006.md) | Review a materialization used only by foreach | hint | — | no |
 | [SK4007](SK4007.md) | Review large struct arguments in loops | hint | — | no |
 | [SK4010](SK4010.md) | A `Where` the next operator could have taken as its predicate | suggestion | safe | no |
+| [SK4030](SK4030.md) | The collection's own method answers this faster than the LINQ extension | suggestion | safe | no |
 
 ## Security
 

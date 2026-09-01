@@ -293,6 +293,29 @@ this document allocated before any of them existed, and the register above is on
 new concept takes a new number rather than the nearest tidy one. Folding
 `xs.Where(p).First()` into `xs.First(p)` is not any of the eight.
 
+### `SK4030`–`SK4034` — call shapes decided by the receiver's static type
+
+⚠ **The prose pass for this block is owed.** The entries below are the register doing its job —
+naming the numbers so they cannot be handed out twice — and not the considered write-up the rest of
+this document carries.
+
+`SK4030` the collection's own `Find`/`Exists`/`TrueForAll`/`Contains` where the LINQ extension was
+called · `SK4031` a `foreach` over `dict.Keys` that indexes the dictionary with the key it is already
+holding · `SK4032` `Substring` allocated only to feed a search that takes a start index ·
+`SK4033` the expensive `ConcurrentDictionary` member where a cheap one answers the same question ·
+`SK4034` a `Where` that runs after the `OrderBy` it could have run before.
+
+Five ids, one analysis: take the receiver's static type, look at the operator called on it, and ask
+whether the type itself already offers the cheaper member. They are grouped here rather than folded
+into `SK4001`–`SK4008` for the reason the note above gives about `SK4010`.
+
+⚠ `SK4033` declares `supersedes: ["SK1034"]`, and it is the first rule to supersede another Skala
+rule rather than a foreign analyzer id. `SK1034` reads `dict.Keys.Count()` and offers
+`dict.Keys.Count`, which is correct and still wrong: on a `ConcurrentDictionary` the cost is `.Keys`
+taking every lock in the table and materialising a whole new collection, and the answer is
+`dict.Count`. Where both fire on the same span the stronger remedy wins and `SK1034` stays in the
+report marked superseded, which is what `Supersession.Apply` is for.
+
 ## SK5000 — Security
 
 Deliberately narrow, deliberately loud. Rules here are `error` by default, so they must be right.
@@ -477,11 +500,11 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **151** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **121** | **80.7 %** |
+| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **122** | **78.7 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
