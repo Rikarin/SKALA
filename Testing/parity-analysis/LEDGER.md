@@ -62,11 +62,16 @@ exception is deliberate: a concept may name an inspection the pipeline buckets `
 `docs/plan/08` allocates ids for concepts it has never shipped (`SK1002`, `SK1004`), and a proposal
 to *implement* one of those is exactly what the ledger should hold.
 
-⚠ **The pipeline prints `Uncovered: 560` today**, measured on this tree with
-`python3 universe.py && python3 classify.py`. It printed **563** before the four map entries added in
-this pass, which moved `PublicConstructorInAbstractClass`, `ChangeFieldTypeToSystemThreadingLock` and
-`RedundantDictionaryContainsKeyBeforeAdding` out of the residue. ⚠ Both figures are far below the 586
-recorded in `curatedAgainst`, and neither is comparable to a number read out of a document — re-run it.
+⚠ **The pipeline prints `Uncovered: 522` today**, measured with
+`python3 universe.py && python3 classify.py`. The four map entries added in this pass are worth
+**−3** of that: `PublicConstructorInAbstractClass`, `ChangeFieldTypeToSystemThreadingLock` and
+`RedundantDictionaryContainsKeyBeforeAdding` leave the residue, and `ArrangeNullCheckingPattern`
+moves `Option` Tier D → `Catalogued` without touching it.
+
+⚠ **The absolute number moves under you and the delta does not.** The same four entries measured
+563 → 560 at `8d0d8fb3` and 525 → 522 an hour later, because 39 more rules and ~38 more map entries
+landed in between. **Quote the delta, and re-run for the absolute.** The 586 in `curatedAgainst` is
+two pipeline corrections and a catalogue's worth of rules out of date.
 
 ⚠ **`universe.py` prints a complete-looking universe with zero metadata when `types-2026.xml` is
 absent** — 953 rows, 888 C#-proper, every `id` null — and every downstream map then misses. The file
@@ -116,20 +121,20 @@ rules; instead the issue bodies consistently name the neighbouring Skala rule an
 curation was careful. What was stale was the *map*, not the queue.
 
 **The map's keys are checked, not just its values.** `RuleCatalogTests` asserts every *value* is an
-id doc 08 knows. Nothing asserted the *keys*, and 17 of 142 entries named an inspection that does not
+id doc 08 knows. Nothing asserted the *keys*, and 16 of them name an inspection that does not
 exist — `MemberCanBeInternal.Global` has no `.Global` suffix in ReSharper, `CyclomaticComplexity` and
 `CognitiveComplexity` have no ReSharper counterpart at all. They matched no universe row, credited
 nothing, and were counted as part of the map's size.
 
 ## What the map actually decides
 
-Of **145** entries today, only **107** were load-bearing before this pass:
+Of **183** entries today:
 
 | | count | effect |
 |---|---:|---|
-| Load-bearing — the entry is what puts the row in `Catalogued` | 107 | real |
+| Load-bearing — the entry is what puts the row in `Catalogued` | 149 | real |
 | Shadowed — `hosted()` runs before `catalogued()`, so a `CA*`/`IDE*` claim wins | 18 | none |
-| Inert — the key matches no universe row | 17 | none |
+| Inert — the key matches no universe row | 16 | none |
 
 ⚠ **The 18 shadowed entries are the interesting ones.** `SK1006`, `SK1010`, `SK1012`, `SK1020`,
 `SK1030` and `SK1034` each ship a rule for a concept the hosted map says Roslyn already covers
