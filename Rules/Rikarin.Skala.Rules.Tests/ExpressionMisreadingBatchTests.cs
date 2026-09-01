@@ -167,7 +167,10 @@ public sealed class ExpressionMisreadingBatchTests {
         // ⚠ Parentheses pin the grouping, and then *both* operators come back — which is the guard
         // being a precedence guard rather than a blanket "any bitwise nesting" refusal. `a || (b & c)`
         // and `a | (b && c)` and `a || (b && c)` all mean what `a | (b & c)` meant.
-        Assert.Equal(2, Findings("class C { bool M(bool a, bool b, bool c) => a | (b & c); }", "t.cs", "SK2064").Length);
+        Assert.Equal(
+            2,
+            Findings("class C { bool M(bool a, bool b, bool c) => a | (b & c); }", "t.cs", "SK2064").Length
+        );
     }
 
     /// <summary>
@@ -183,20 +186,20 @@ public sealed class ExpressionMisreadingBatchTests {
     [Fact]
     public void SK2062_ReportsOneFindingPerRepeatedRung_NotOncePerChainHead() {
         const string source = """
-            class C {
-                void M(bool a) {
-                    if (a) { A(); }
-                    else if (a) { B(); }
-                    else if (a) { D(); }
-                }
+                              class C {
+                                  void M(bool a) {
+                                      if (a) { A(); }
+                                      else if (a) { B(); }
+                                      else if (a) { D(); }
+                                  }
 
-                static void A() { }
+                                  static void A() { }
 
-                static void B() { }
+                                  static void B() { }
 
-                static void D() { }
-            }
-            """;
+                                  static void D() { }
+                              }
+                              """;
 
         Assert.Equal(2, Findings(source, "t.cs", "SK2062").Length);
     }
@@ -204,20 +207,20 @@ public sealed class ExpressionMisreadingBatchTests {
     [Fact]
     public void SK2062_PointsAtTheRepeatAndNotAtTheOriginal() {
         const string source = """
-            class C {
-                void M(bool a) {
-                    if (a) { A(); }
-                    else if (!a) { B(); }
-                    else if (a) { D(); }
-                }
+                              class C {
+                                  void M(bool a) {
+                                      if (a) { A(); }
+                                      else if (!a) { B(); }
+                                      else if (a) { D(); }
+                                  }
 
-                static void A() { }
+                                  static void A() { }
 
-                static void B() { }
+                                  static void B() { }
 
-                static void D() { }
-            }
-            """;
+                                  static void D() { }
+                              }
+                              """;
 
         var finding = Assert.Single(Findings(source, "t.cs", "SK2062"));
 
@@ -231,8 +234,11 @@ public sealed class ExpressionMisreadingBatchTests {
     /// <remarks>
     ///     <c>SK2061</c>'s first draft examined the six comparison operators, on the strength of doc
     ///     08 § "The compiler already says it" recording that <c>CS1717</c>/<c>CS1718</c> "reach the
-    ///     identifier spellings only". ⚠ <b>That sentence is wrong, and this theory is the
-    ///     measurement that refutes it.</b> <c>CS1718</c> also covers <c>this.g == this.g</c>,
+    ///     identifier spellings only". ⚠
+    ///     <b>
+    ///         That sentence is wrong, and this theory is the
+    ///         measurement that refutes it.
+    ///     </b> <c>CS1718</c> also covers <c>this.g == this.g</c>,
     ///     <c>b.v == b.v</c> and <c>Box.Which == Box.Which</c> — a member access to a <em>field</em>
     ///     is covered; only a <em>property</em> access is not, which is the example the sentence was
     ///     built from. Since this rule reports storage paths and never properties, the compiler
@@ -279,8 +285,7 @@ public sealed class ExpressionMisreadingBatchTests {
         }
     }
 
-    static ExpressionSyntax Parse(string expression) =>
-        SyntaxFactory.ParseExpression(expression);
+    static ExpressionSyntax Parse(string expression) => SyntaxFactory.ParseExpression(expression);
 
     static Diagnostic[] Findings(string source, string path, string ruleId) {
         var compilation = RuleFixtures.Compile(source, path);

@@ -17,8 +17,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     went, so the guard stops guarding and the <c>NullReferenceException</c> it was written to
 ///     prevent is thrown anyway. One character.
 ///     <para>
-///         ⚠ <b>The operand type decides everything, and getting it wrong would be catastrophic rather
-///         than noisy.</b> <c>flags &amp; Mask</c> on an integer or a <c>[Flags]</c> enum is the only
+///         ⚠
+///         <b>
+///             The operand type decides everything, and getting it wrong would be catastrophic rather
+///             than noisy.
+///         </b> <c>flags &amp; Mask</c> on an integer or a <c>[Flags]</c> enum is the only
 ///         way to write that operation and has no <c>&amp;&amp;</c> form at all; reporting it would
 ///         make the rule actively harmful. Both operands must be exactly non-nullable
 ///         <c>System.Boolean</c>, which is the whole reason this rule is <c>Semantic</c>.
@@ -30,14 +33,20 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         rewrite would change the answer, not merely the evaluation order.
 ///     </para>
 ///     <para>
-///         ⚠ <b>A right operand with a side effect is deliberate.</b> <c>if (ValidateName(x) &amp;
-///         ValidateAge(x))</c> is written that way so both validators run and both messages are
+///         ⚠ <b>A right operand with a side effect is deliberate.</b>
+///         <c>
+/// if (ValidateName(x) &amp;
+///         ValidateAge(x))
+///         </c> is written that way so both validators run and both messages are
 ///         collected; short-circuiting it deletes work. Only a right operand built from names,
 ///         member-access paths, literals and tests over them is reported.
 ///     </para>
 ///     <para>
-///         ⚠ <b>A mixed bitwise expression is declined, and this is the guard that keeps the fix
-///         honest.</b> <c>&amp;</c> and <c>|</c> bind tighter than <c>&amp;&amp;</c> and <c>||</c>, so
+///         ⚠
+///         <b>
+///             A mixed bitwise expression is declined, and this is the guard that keeps the fix
+///             honest.
+///         </b> <c>&amp;</c> and <c>|</c> bind tighter than <c>&amp;&amp;</c> and <c>||</c>, so
 ///         swapping one token inside <c>a | b &amp; c</c> turns <c>a | (b &amp; c)</c> into
 ///         <c>(a | b) &amp;&amp; c</c> — a different program, produced by a fix the catalogue calls
 ///         safe. When the node's parent or either of its operands is another <c>&amp;</c>, <c>|</c> or

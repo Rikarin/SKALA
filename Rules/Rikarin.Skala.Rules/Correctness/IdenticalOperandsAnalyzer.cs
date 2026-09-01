@@ -17,8 +17,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     something else, the compiler folds the result to a constant, and the check that was written to
 ///     catch a case cannot catch it.
 ///     <para>
-///         ⚠ <b>The six comparison operators are NOT examined, because <c>csc</c> already reports
-///         every one of them.</b> The rule's first draft did examine them, and measuring
+///         ⚠
+///         <b>
+///             The six comparison operators are NOT examined, because <c>csc</c> already reports
+///             every one of them.
+///         </b> The rule's first draft did examine them, and measuring
 ///         <c>CS1718</c> rather than remembering doc 08's sentence about it disposed of that half
 ///         entirely: <c>q == q</c>, <c>q &lt; q</c>, <c>this.g == this.g</c>, <c>b.v == b.v</c>,
 ///         <c>Box.Which == Box.Which</c>, <c>a == a</c> on a string and <c>b == b</c> on a reference

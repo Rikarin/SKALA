@@ -388,6 +388,18 @@ For `SK2061` and `SK2062` the repair is *what the other side should have said*, 
 content of the bug. For `SK2063` both `x -= 1` and `x = -1` are plausible readings. A fix in any of
 these would be the tool choosing which bug it found.
 
+⚠ **The batch was measured, and three of the five could be.** `SK2060`, `SK2062` and `SK2063` are
+syntactic, so they run under `--load=loose` and the 4 459-file corpus is available to them; all
+five ran over Skala's own tree under `--load=workspace`, which produced **0 CS diagnostics** here
+and 590 findings across the catalogue. Every rule reports **zero** on both. ⚠ **Three of those
+zeros are shape-absent and one is not.** Widening each rule to its bare shape and re-running finds
+nothing at all for `SK2060`, `SK2061`, `SK2062` and `SK2064` on either tree — and **17**
+occurrences for `SK2063`, every one of them in `Testing/corpus/unformatted/collapse/`, where
+whitespace has been stripped on purpose and `GoalIndex = -1;` is stored as `GoalIndex=-1;`. The
+shipped rule declines all 17 because the operand is not spaced away from the sign. ⚠ **A rule that
+reads whitespace for meaning meets machine-mangled whitespace sooner than most**, and that guard is
+the whole of the difference between a clean corpus and seventeen false positives on it.
+
 ⚠ **`SK2061` and `SK2062` compare expressions structurally with `SyntaxFactory.AreEquivalent`, not
 textually.** Roslyn's comparison already ignores trivia and compares tokens and structure, so no
 hand-written comparer was needed; a text comparison would call `if (a && b)` and `if (a  &&  b)`
