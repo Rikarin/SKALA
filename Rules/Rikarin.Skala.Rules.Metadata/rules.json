@@ -3369,6 +3369,31 @@
       "configuration": [
         "dotnet_diagnostic.SK1051.severity"
       ]
+    },
+    {
+      "id": "SK1052",
+      "concept": "merged-conditional-access",
+      "title": "Merge the `?:` into a conditional access",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "MergeConditionalExpression",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "7.0",
+      "summary": "A conditional whose only job is to guard a member access against null is a `?.`.",
+      "rationale": "`x != null ? x.Y : null` names the receiver three times to say one thing, and the thing it says is what `?.` was added to the language for. The rewrite also reads the receiver once instead of twice, which is the point at which it stops being cosmetic: two reads of the same path is a shape where a reader has to check that nothing changed in between, and the conditional access removes the question.",
+      "examples": {
+        "bad": "return document != null ? document.Root : null;",
+        "good": "return document?.Root;"
+      },
+      "falsePositives": "⚠ **The rewrite evaluates the receiver once where the original evaluated it twice, and that is stated rather than hidden.** On a property whose getter is not idempotent the two programs differ; property paths are admitted anyway, for the reason `RewriteGuards.IsPlainNamePath` gives — excluding them would silence the rule on `this.Items` and `Options.Map`, which is most of its value, and the two reads it collapses are adjacent inside one expression. An invocation, an indexer or an `await` anywhere in the *receiver* is refused, because there the second evaluation is visibly a second call. ⚠ **The accessed member must be a reference type and must already be the conditional's own type.** `x != null ? x.Count : null` is a target-typed `int?` and `x?.Count` is an `int?` arrived at differently; matching them would mean reasoning about the conversion the expression was subjected to, and being wrong about it changes an overload. ⚠ A receiver that is already the subject of a `?.` — `x != null ? x?.Y : null` — is refused rather than rewritten, because appending the suffix would produce `x??.Y`; so is `x != null ? x() : null`, where `x?()` is not syntax. ⚠ A null comparison whose operand type declares `operator ==` is left alone, since `==` there is not the null test `?.` performs, and the whole finding is withheld inside an expression tree, where `?.` is CS8072. ⚠ **The declared floor is C# 7 and `?.` arrived in C# 6**: the version map Skala checks floors against starts at C# 7, so the floor is stated one version high rather than falling through to `preview`.",
+      "configuration": [
+        "dotnet_diagnostic.SK1052.severity"
+      ]
     }
   ]
 }

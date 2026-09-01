@@ -18,7 +18,7 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class PatternMatchingBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers =
-        [new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer()];
+        [new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(), new MergedConditionalAccessAnalyzer()];
 
     [Theory]
     [InlineData(
@@ -114,6 +114,42 @@ public sealed class PatternMatchingBatchTests {
         Assert.Empty(Analyze(source, LanguageVersion.CSharp8).Where(static d => d.Id == "SK1051"));
         Assert.NotEmpty(Analyze(source, LanguageVersion.CSharp9).Where(static d => d.Id == "SK1051"));
     }
+
+    /// <summary>
+    ///     <c>SK1052</c>: the four spellings of the guard, and the receiver shapes it will not touch.
+    /// </summary>
+    [Theory]
+    [InlineData("class E { } class D { public E? R; } class C { E? M(D? d) => d != null ? d.R : null; }", "d?.R")]
+    [InlineData("class E { } class D { public E? R; } class C { E? M(D? d) => d == null ? null : d.R; }", "d?.R")]
+    [InlineData(
+        "class E { } class D { public E? R; } class C { E? M(D? d) => d is not null ? d.R : null; }",
+        "d?.R"
+    )]
+    [InlineData("class E { } class D { public E? R; } class C { E? M(D? d) => d is null ? null : d.R; }", "d?.R")]
+    // An element access is a legal suffix; a call on the receiver itself is not.
+    [InlineData(
+        "using System.Collections.Generic; class C { string? M(List<string>? l) => l != null ? l[0] : null; }",
+        "l?[0]"
+    )]
+    public void ConditionalAccess_MergesEverySpellingOfTheGuard(string source, string expected) {
+        var finding = Assert.Single(Analyze(source, LanguageVersion.CSharp12));
+        Assert.Equal("SK1052", finding.Id);
+        Assert.Contains("`" + expected + "`", finding.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    // `x?()` is not syntax.
+    [InlineData("using System; class C { string? M(Func<string>? f) => f != null ? f() : null; }")]
+    // The member is a value type, so `?.` produces `int?` by a different route.
+    [InlineData("class D { public int N; } class C { int? M(D? d) => d != null ? d.N : null; }")]
+    // Two evaluations of a call are not one.
+    [InlineData("class D { public string? N; } class C { D? G() => null; string? M() => G() != null ? G()!.N : null; }")]
+    // The guard and the access are about different objects.
+    [InlineData("class E { } class D { public E? R; } class C { E? M(D? a, D b) => a != null ? b.R : null; }")]
+    // Already a conditional access: appending the suffix would splice `d??.R`.
+    [InlineData("class E { } class D { public E? R; } class C { E? M(D? d) => d != null ? d?.R : null; }")]
+    public void ConditionalAccess_DeclinesTheNearestMiss(string source) =>
+        Assert.Empty(Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1052"));
 
     static ImmutableArray<Diagnostic> Analyze(string source, LanguageVersion version) =>
         RuleFixtures.Analyze(

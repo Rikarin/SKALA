@@ -139,6 +139,7 @@ SK3020 null-returned-from-task-method
 SK3021 spin-lock-in-readonly-field
 SK1050 pattern-matching-over-test-and-cast
 SK1051 simplified-pattern
+SK1052 merged-conditional-access
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

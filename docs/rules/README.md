@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 131 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 132 ids are allocated.
 
 ## Async
 
@@ -146,6 +146,7 @@
 | [SK1044](SK1044.md) | Use `string.IsNullOrEmpty` | suggestion | safe | no |
 | [SK1050](SK1050.md) | Use pattern matching instead of a test-and-cast | suggestion | safe | no |
 | [SK1051](SK1051.md) | Simplify the pattern | suggestion | safe | no |
+| [SK1052](SK1052.md) | Merge the `?:` into a conditional access | suggestion | safe | no |
 
 ## Performance
 
