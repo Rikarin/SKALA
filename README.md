@@ -155,12 +155,17 @@ formatted at 1.0 are formatted differently at 1.1 — pin the version if that ma
 exist; a rule's default severity; and every `Testing/Rikarin.Skala.Testing`
 subcommand.
 
-**Known gaps at 1.0**, because a version number is not a claim of completeness: `skala arrange` (M4)
-does not exist; `SK5xxx` security rules (M8) do not exist; the nightly job runs the property suite
-and **there is no fuzzer**; web languages (M9) are postponed to last and the language seam they are
-gated on has not been written; and **the tool is not yet adopted by any repository, including the two
-it is measured against**. [`docs/overview.md`](docs/overview.md) § "What is not built" is the full
-list, and [`docs/plan/15`](docs/plan/15-roadmap.md) is where each one sits in the order.
+**Known gaps at 1.0**, because a version number is not a claim of completeness: web languages (M9) are
+postponed to last and the language seam they are gated on has not been written; and **the tool is not
+yet adopted by any repository, including the two it is measured against**.
+[`docs/overview.md`](docs/overview.md) § "What is not built" is the full list, and
+[`docs/plan/15`](docs/plan/15-roadmap.md) is where each one sits in the order.
+
+⚠ **This list had five entries and three of them had gone stale**, which is worth recording rather
+than quietly deleting: `skala arrange` exists (a top-level command, seventeen `SK02xx` rules), the
+`SK5xxx` security rules exist (`SK5001`, `SK5002`, `SK5005`, `SK5007`, `SK5009` ship), and the nightly
+job runs a fuzzer over the properties. A gap list is the part of a README that rots first, because
+closing a gap is the one change nobody thinks to come back and unwrite.
 
 ## The documents
 

@@ -13,8 +13,16 @@ beside it. Nothing is carried over from a plan document or from a milestone repo
 recorded elsewhere could **not** be reproduced, it is named as such and left out rather than
 repeated — § "Numbers this file does not carry" is the list.
 
-⚠ **Work in flight is not in here.** `master` at `8cbd66d` has no arrangement engine and no taint
-table; both exist on unmerged branches. This file describes `master`.
+⚠ **Work in flight is not in here.** `master` at `8cbd66d` had no arrangement engine and no taint
+table; both were on unmerged branches when this file was measured. **Both have since merged** —
+`arrange` is a top-level command with seventeen `SK02xx` rules, and `taint.json` ships beside
+`rules.json` — so the command table below is right about them and this paragraph was not.
+
+⚠ **This file is pinned to `8cbd66d` and `master` is a long way past it.** That is the arrangement:
+every number here was produced by running something at that commit, and a number is not updated
+without re-running the thing that produced it. But it means a *claim* here can be stale in the
+direction of understating what exists, and the two above were. When this file and the code disagree,
+the code wins — the same way this file wins over `docs/plan/`.
 
 ## Legend
 
