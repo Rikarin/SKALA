@@ -13,8 +13,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>The table is four entries long and it is a table on purpose: "this type has a cached
-///         instance" is not a property that generalizes.</b> Each entry carries its own reason.
+///         ⚠
+///         <b>
+///             The table is four entries long and it is a table on purpose: "this type has a cached
+///             instance" is not a property that generalizes.
+///         </b> Each entry carries its own reason.
 ///         <c>EventArgs</c> has no instance state and no member that could separate one instance from
 ///         another, so the singleton and a fresh one differ only by reference identity.
 ///         <c>Guid.Empty</c>, <c>TimeSpan.Zero</c> and <c>CancellationToken.None</c> are the default
@@ -25,8 +28,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         is <c>CA1825</c>, which ships in the SDK, and ADR-008 hosts rather than rebuilds.
 ///     </para>
 ///     <para>
-///         ⚠ <b>A parameter's default value is the trap, and it looks exactly like the shape that is
-///         not.</b> <c>void M(TimeSpan t = new TimeSpan())</c> compiles and <c>= TimeSpan.Zero</c> does
+///         ⚠
+///         <b>
+///             A parameter's default value is the trap, and it looks exactly like the shape that is
+///             not.
+///         </b> <c>void M(TimeSpan t = new TimeSpan())</c> compiles and <c>= TimeSpan.Zero</c> does
 ///         not: a default has to be a compile-time constant and a <c>static readonly</c> field is not
 ///         one. An attribute argument and a constant pattern are the same story, and all three are
 ///         excluded by where they sit rather than by what they contain.
@@ -80,7 +86,8 @@ public sealed class CachedEmptyInstanceAnalyzer : DiagnosticAnalyzer {
     static void Analyze(SyntaxNodeAnalysisContext context, IReadOnlyDictionary<ISymbol, string> table) {
         var (written, isDefault) = context.Node switch {
             ObjectCreationExpressionSyntax {
-                ArgumentList: null or { Arguments.Count: 0 }, Initializer: null
+                ArgumentList: null or { Arguments.Count: 0 },
+                Initializer: null
             } creation => (creation.Type, false),
             DefaultExpressionSyntax @default => (@default.Type, true),
             _ => (null, false)

@@ -15,8 +15,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>The whole risk is that deconstruction evaluates the receiver once and the longhand form
-///         evaluates it once per element.</b> A property whose getter counts calls, a field behind a
+///         ⚠
+///         <b>
+///             The whole risk is that deconstruction evaluates the receiver once and the longhand form
+///             evaluates it once per element.
+///         </b> A property whose getter counts calls, a field behind a
 ///         lazy initializer, an indexer — each of them makes "read it twice" and "read it once" two
 ///         different programs, and none of that is visible at the assignment. Rather than reason about
 ///         which receivers are safe, the rule requires the receiver to be a single identifier naming a

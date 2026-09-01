@@ -18,12 +18,18 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         this is the cleanup that follows it, where the <c>new</c> has ended up <em>inside</em> one.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The element types have to be identical, and that is not fussiness about a widening
-///         nobody would notice.</b> Before the rewrite an element is converted twice — to the array's
+///         ⚠
+///         <b>
+///             The element types have to be identical, and that is not fussiness about a widening
+///             nobody would notice.
+///         </b> Before the rewrite an element is converted twice — to the array's
 ///         element type, then from there to the outer collection's. After it, once. Two conversions in
 ///         sequence and one in their place are not the same conversion: <c>new long[] { anInt }</c>
-///         spread into a <c>double[]</c> goes <c>int → long → double</c> and would go <c>int →
-///         double</c>, and where a user-defined conversion is involved the single step does not exist at
+///         spread into a <c>double[]</c> goes <c>int → long → double</c> and would go
+///         <c>
+/// int →
+///         double
+///         </c>, and where a user-defined conversion is involved the single step does not exist at
 ///         all, because C# never chains two of them. Requiring the two element types to be the same
 ///         symbol makes both sides one conversion and removes the whole question.
 ///     </para>

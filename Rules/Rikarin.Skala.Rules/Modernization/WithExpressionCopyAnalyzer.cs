@@ -15,8 +15,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b><c>with</c> does not do what the constructor call does, and the difference is the whole
-///         rule.</b> <c>with</c> invokes the record's copy constructor, which copies <em>every</em>
+///         ⚠
+///         <b>
+///             <c>with</c> does not do what the constructor call does, and the difference is the whole
+///             rule.
+///         </b> <c>with</c> invokes the record's copy constructor, which copies <em>every</em>
 ///         field — including the ones the hand-written call deliberately left out. So the rewrite is
 ///         sound only where the record has no state beyond its positional parameters, and this asks for
 ///         that rather than pattern-matching the shape: no instance field, no instance event, no
@@ -35,8 +38,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         logs or lazily fills would produce a different value on each side of the rewrite.
 ///     </para>
 ///     <para>
-///         ⚠ <b>At least one argument has to be replaced, which is also what keeps this rule and
-///         <c>SK0230</c> off each other's ground.</b> A call carrying every member across unchanged
+///         ⚠
+///         <b>
+///             At least one argument has to be replaced, which is also what keeps this rule and
+///             <c>SK0230</c> off each other's ground.
+///         </b> A call carrying every member across unchanged
 ///         rewrites to <c>x with { }</c> — an empty <c>with</c>, which is exactly what <c>SK0230</c>
 ///         reports. Requiring a replacement means the two rules never see the same code.
 ///     </para>
@@ -116,10 +122,10 @@ public sealed class WithExpressionCopyAnalyzer : DiagnosticAnalyzer {
                         return;
                     }
                 } else if (!RewriteGuards.Same(source, receiver)
-                    || !SymbolEqualityComparer.Default.Equals(
-                        model.GetSymbolInfo(source, cancellation).Symbol,
-                        receiverSymbol
-                    )) {
+                           || !SymbolEqualityComparer.Default.Equals(
+                               model.GetSymbolInfo(source, cancellation).Symbol,
+                               receiverSymbol
+                           )) {
                     return;
                 }
 
@@ -214,9 +220,8 @@ public sealed class WithExpressionCopyAnalyzer : DiagnosticAnalyzer {
         // clone, and `new R(…)` returns exactly R.
         if (!record.IsRecord
             || !record.IsSealed
-            || record.BaseType is not (null or {
-                SpecialType: SpecialType.System_Object or SpecialType.System_ValueType
-            })
+            || record.BaseType is not (null
+                or { SpecialType: SpecialType.System_Object or SpecialType.System_ValueType })
             || constructor.Parameters.Length == 0) {
             return false;
         }
@@ -242,9 +247,7 @@ public sealed class WithExpressionCopyAnalyzer : DiagnosticAnalyzer {
             // Reading it as true would have silently disabled the whole rule.
             var named = record.GetMembers(parameter.Name);
             if (named.Length != 1
-                || named[0] is not IPropertySymbol {
-                    IsStatic: false, IsIndexer: false, SetMethod: not null
-                } property
+                || named[0] is not IPropertySymbol { IsStatic: false, IsIndexer: false, SetMethod: not null } property
                 || !SymbolEqualityComparer.Default.Equals(property.Type, parameter.Type)
                 || !DeclaredBy(property, parameter, cancellation)) {
                 return false;
