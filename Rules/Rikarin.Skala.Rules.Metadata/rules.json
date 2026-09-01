@@ -3366,6 +3366,134 @@
       "configuration": [
         "dotnet_diagnostic.SK6041.severity"
       ]
+    },
+    {
+      "id": "SK4020",
+      "concept": "noncapturing-lambda",
+      "title": "The lambda captures nothing and is not `static`",
+      "category": "Performance",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "LambdaExpressionCanBeMadeStatic",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "9.0",
+      "summary": "A lambda, anonymous method or local function that references nothing outside itself can be `static`, and then it cannot allocate a closure.",
+      "rationale": "A lambda that captures a local or `this` is compiled into a display class, and every evaluation of the lambda expression allocates one — or, where the compiler can cache it, keeps the captured object alive for the lifetime of the cache. A lambda that captures nothing has neither cost, and the compiler is free to cache one delegate instance for the whole program. `static` is the keyword that says so and the compiler that checks it: the modifier is a compile-time assertion that the body references no enclosing local, parameter, `this` or `base`, so a `static` lambda that compiles is a lambda that provably allocates no environment. That makes it the rare performance edit with no judgement in it — the fix is one keyword, the compiler verifies the claim, and a later edit that starts capturing is rejected at the point it is written instead of silently reintroducing the allocation.",
+      "examples": {
+        "bad": "items.Select(item => item.Name);\n\nvoid Sort(int[] values) {\n    int Compare(int left, int right) => left.CompareTo(right);\n}",
+        "good": "items.Select(static item => item.Name);\n\nvoid Sort(int[] values) {\n    static int Compare(int left, int right) => left.CompareTo(right);\n}"
+      },
+      "falsePositives": "⚠ The rule reports only what it can prove, and every unproven shape is declined. The body is walked in full — including nested lambdas, local functions and query clauses — and any of the following withholds the finding: `this` or `base`; a local, parameter or range variable declared outside the reported declaration, which includes a primary constructor parameter and the implicit `value` of a setter; an instance field, property, event or method reached without a receiver; a call to a local function declared outside, whose own captures this rule cannot see; and any name the semantic model does not resolve, so a file with errors reports nothing rather than guessing. Names that cannot capture are admitted: types, namespaces, aliases, labels, discards, static members, and everything inside `nameof`. Lambdas converted to an expression tree rather than to a delegate are excluded, as is any lambda nested inside one. A declaration already marked `static` is not reported, and neither is anything below C# 9. ⚠ **Disjoint from `SK4002` by construction**: that rule reports a delegate capturing iteration-local storage, and a declaration this rule reports captures nothing at all, so no declaration can produce both. ⚠ The fix does not claim an allocation was measured — it claims the allocation is now impossible.",
+      "configuration": [
+        "dotnet_diagnostic.SK4020.severity"
+      ],
+      "resharperNote": "The export sets `resharper_lambda_expression_can_be_made_static_highlighting = none`, so a repository that reads ReSharper's key gets this rule switched off. Skala ships it at `suggestion`: the inspection is quiet in the export because JetBrains treats it as a style opportunity, and the parity measurement makes it the highest-volume quiet inspection in the whole survey."
+    },
+    {
+      "id": "SK4021",
+      "concept": "stateless-private-method",
+      "title": "The private method does not use instance state",
+      "category": "Performance",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "MemberCanBeMadeStatic.Local",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A private instance method whose body never touches `this` can be `static`, which drops the hidden argument and the null check.",
+      "rationale": "An instance call passes a `this` argument the method does not read and, through a reference, carries a null check the callee cannot avoid. Making the method `static` removes both, and the declaration then states the fact the body already established: this code depends on its arguments and on nothing else. That is the larger half of the value — a reader no longer has to read the body to learn whether the method participates in the object's state, and a later edit that starts using a field is rejected at the point it is written. The rule is deliberately restricted to `private` methods, where the change is invisible outside the type; `static` on a visible member is an API change and a different decision.",
+      "examples": {
+        "bad": "sealed class Report {\n    readonly string title;\n\n    string Format(int count) => count + \" rows\";\n}",
+        "good": "sealed class Report {\n    readonly string title;\n\n    static string Format(int count) => count + \" rows\";\n}"
+      },
+      "falsePositives": "Only an ordinary `private` method with a body, in a non-partial class, struct or record declared once in one file, is considered. `static`, `abstract`, `virtual`, `override`, `partial`, `extern` and `new` declarations are excluded, as is anything carrying an attribute — a serialization callback, a marked event handler and a framework-invoked method are all shapes where the signature is a contract rather than a choice. The body is walked with the same proof `SK4020` uses, so any `this`, `base`, instance member or unresolved name withholds the finding; a recursive call to the method itself is admitted, because the fix makes that call static too. ⚠ Every call site in the file is then checked, and a single `this.Method()` or `instance.Method()` withholds the finding, because that spelling does not compile against a static method. ⚠ **What the rule cannot see is reflection**: a private method found by name through `MethodInfo` and invoked with an instance target breaks when it becomes static, and no analyzer can prove the absence of that. It also cannot see another file, which is why a partial containing type is excluded rather than analysed.",
+      "configuration": [
+        "dotnet_diagnostic.SK4021.severity"
+      ]
+    },
+    {
+      "id": "SK4022",
+      "concept": "immutable-struct-not-readonly",
+      "title": "The struct is never mutated and is not `readonly`",
+      "category": "Performance",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "StructCanBeMadeReadOnly",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "7.2",
+      "summary": "A struct with only readonly state and no member that assigns `this` can be `readonly`, which deletes the defensive copies.",
+      "rationale": "The compiler cannot know that a struct's members leave it alone, so wherever the struct is reached through storage it may not write — a `readonly` field, an `in` parameter, a `ref readonly` return, a `foreach` variable — it copies the whole value before every member call. `SK2005` and `SK4007` report two consequences of exactly that. The `readonly` modifier is the declaration that removes the doubt: the compiler verifies that no member writes to the instance and then stops emitting the copies. The keyword is not a hint or a tuning parameter; it is a fact about the type that the type already satisfied and had not written down.",
+      "examples": {
+        "bad": "struct Point {\n    public readonly int X;\n    public readonly int Y;\n\n    public int Length => X + Y;\n}",
+        "good": "readonly struct Point {\n    public readonly int X;\n    public readonly int Y;\n\n    public int Length => X + Y;\n}"
+      },
+      "falsePositives": "The proof is the compiler's own rule for `readonly struct`, checked before the keyword is proposed: every instance field must already be `readonly`, no instance property or indexer may have a `set` accessor, and no member may assign to `this`, pass it by `ref` or `out`, or increment it. `init` accessors are admitted, because a `readonly struct` permits them. Excluded outright: a struct already `readonly`, a `partial` or multiply-declared struct, a `ref struct`, a `record struct` — where the modifier would turn positional `set` accessors into `init` and change the public API — anything `unsafe` or holding a `fixed` buffer or a pointer, a field-like `event`, whose backing field cannot be readonly, and a struct that already spells `readonly` on one of its members. Nested types inside the struct are not searched, because `this` there is a different instance. ⚠ **The modifier is not a no-op for consumers even though it is source-compatible**: an `in` parameter and a `readonly` field stop copying, so a member that returned a value derived from a stale copy now returns the current one. That is the bug the copies were hiding rather than a behaviour the rule breaks, but it is a change and it is why the finding is a suggestion rather than a warning.",
+      "configuration": [
+        "dotnet_diagnostic.SK4022.severity"
+      ]
+    },
+    {
+      "id": "SK4023",
+      "concept": "redundant-capacity-argument",
+      "title": "The capacity argument matches the default",
+      "category": "Performance",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantCapacityArgument",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`new List<T>(0)` and `new StringBuilder(16)` ask for the capacity the parameterless constructor already gives.",
+      "rationale": "A capacity argument is how an author records a measurement: this collection is known to hold about this many elements, so do not grow it from nothing. An argument equal to the type's own default records no measurement and makes no allocation smaller — it reads as a deliberate tuning decision to the next person, who then has to open the framework source to discover that it decides nothing. Removing it is a deletion with no runtime effect at all, which is the unusual case where the value is entirely in what the code no longer claims.",
+      "examples": {
+        "bad": "var rows = new List<string>(0);\nvar text = new StringBuilder(16);",
+        "good": "var rows = new List<string>();\nvar text = new StringBuilder();"
+      },
+      "falsePositives": "The constructor must be the framework's own single-`int` `capacity` overload on one of six types whose default is known and fixed — `List<T>`, `Dictionary<TKey, TValue>`, `HashSet<T>`, `Queue<T>` and `Stack<T>` at 0, and `StringBuilder` at 16 — resolved through the semantic model and required to come from metadata rather than from source, so a same-named type of the author's own is never touched. The type must also expose an accessible parameterless constructor for the argument to be removable. ⚠ **Only a numeric literal is reported.** `new List<string>(DefaultCapacity)` is left alone even where the constant is 0: a named constant is a statement about intent that happens to equal the default today, and deleting it silently decouples the call site from the name. An argument list carrying a comment or a directive is left alone for the same reason. Any other capacity value, any other overload, and any other type are outside the rule.",
+      "configuration": [
+        "dotnet_diagnostic.SK4023.severity"
+      ]
+    },
+    {
+      "id": "SK4024",
+      "concept": "forced-garbage-collection",
+      "title": "`GC.Collect` is called from application code",
+      "category": "Performance",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1215"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A forced collection suspends every thread and promotes what survives, so it usually makes the pressure it was added to relieve permanent.",
+      "rationale": "`GC.Collect` is almost always added after a memory graph looked wrong, and it is the one response that cannot help. The collector's generational assumption is that most objects die young; a collection forced at an arbitrary moment finds the young objects still live, promotes them to a longer-lived generation, and thereby guarantees that the next collection to reach them is a more expensive one. Meanwhile every managed thread is suspended for the duration. The cost is paid at every call and the benefit is a number in a profiler that looks better for one sample. What the call is standing in for is an allocation that should not happen, a buffer that should be pooled, or a handle that should be disposed — and none of those is an edit an analyzer can write, which is why this rule reports and does not fix.",
+      "examples": {
+        "bad": "void Refresh() {\n    cache.Clear();\n    GC.Collect();\n}",
+        "good": "void Refresh() {\n    cache.Clear();\n}"
+      },
+      "falsePositives": "Every overload of `System.GC.Collect` is reported, resolved through the semantic model rather than matched on the written name. ⚠ **There is no fix**, and the rule says so in `rules.json` rather than offering the deletion: the call is a symptom, and removing it without dealing with what it was compensating for changes the program's memory behaviour in a direction nobody measured. ⚠ **Measurement code is the one legitimate caller and is excluded**: a method or type carrying a test or benchmark attribute — `Fact`, `Theory`, `Test`, `TestCase`, `TestMethod`, `Benchmark` and the BenchmarkDotNet setup and cleanup markers — establishes a known heap on purpose, and reporting there would be reporting the measurement rather than the program. A finaliser-behaviour test outside those attributes, and a deliberate collection at a genuine idle point in a desktop application, are real callers the rule still reports; they are the case for a suppression with a reason, which is what `SK7071` and the baseline are for.",
+      "configuration": [
+        "dotnet_diagnostic.SK4024.severity"
+      ]
     }
   ]
 }
