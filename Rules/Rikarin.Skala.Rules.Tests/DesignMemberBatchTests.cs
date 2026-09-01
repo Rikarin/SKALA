@@ -28,10 +28,10 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class DesignMemberBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new ConstantReturningMethodAnalyzer(), new DerivedTypeTestOnThisAnalyzer(),
-        new NullSequenceReturnAnalyzer(),
+        new NullSequenceReturnAnalyzer(), new AsyncSuffixAnalyzer(),
     ];
 
-    static readonly string[] Ids = ["SK6050", "SK6051", "SK6052"];
+    static readonly string[] Ids = ["SK6050", "SK6051", "SK6052", "SK6053"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
