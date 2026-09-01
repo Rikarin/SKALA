@@ -34,11 +34,18 @@ public sealed class ArrangementRuleTests {
     ///     <c>null</c> exercises sorting and never removal — and a test written against it would pass
     ///     whatever the removal did.
     /// </param>
+    /// <param name="overrides">
+    ///     ⚠ The keys this test is <em>about</em>, pinned rather than inherited. Options are resolved
+    ///     from the repository's own <c>.editorconfig</c>, so without this a test asserting a rewrite
+    ///     is really asserting that Skala's house style still asks for it — and the day the house
+    ///     style changes, the rule test goes red for a reason that has nothing to do with the rule.
+    /// </param>
     static string Arrange(
         string source,
         bool aggressive = false,
         string? only = null,
-        bool removeUnused = false
+        bool removeUnused = false,
+        IReadOnlyList<KeyValuePair<string, string>>? overrides = null
     ) {
         const string path = "/arrangement/Probe.cs";
         var text = SourceText.From(source);
@@ -55,7 +62,8 @@ public sealed class ArrangementRuleTests {
         );
 
         var options = OptionResolver.Resolve(
-            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs")
+            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs"),
+            overrides
         ).Options;
 
         var result = Arranger.Arrange(
@@ -149,21 +157,53 @@ public sealed class ArrangementRuleTests {
         Assert.Contains("s is not null", output, StringComparison.Ordinal);
     }
 
+    const string EmptyStringProbe = """
+                                    namespace P;
+                                    public class C {
+                                        public string F = string.Empty;
+                                        public string M() { return System.String.Empty; }
+                                    }
+                                    """;
+
+    /// <summary>
+    ///     ⚠ The key is pinned here rather than inherited from the repository's own
+    ///     <c>.editorconfig</c>. This test read that file and asserted the rewrite unconditionally, so
+    ///     when <c>9193c537</c> deliberately flipped Skala's house style to
+    ///     <c>resharper_empty_string = string_empty</c> — across the export, the canonical distribution
+    ///     and doc 06 together, which is what makes it a decision rather than drift — the test went red
+    ///     reporting a rule regression that had not happened. The rule was correctly disabled.
+    /// </summary>
     [Fact]
-    public void EmptyString_BecomesTheLiteral() {
+    public void EmptyString_BecomesTheLiteral_UnderEmptyLiteral() {
         var output = Arrange(
-            """
-            namespace P;
-            public class C {
-                public string F = string.Empty;
-                public string M() { return System.String.Empty; }
-            }
-            """,
-            only: ArrangeIds.EmptyString
+            EmptyStringProbe,
+            only: ArrangeIds.EmptyString,
+            overrides: [new KeyValuePair<string, string>("resharper_empty_string", "empty_literal")]
         );
 
         Assert.DoesNotContain(".Empty", output, StringComparison.Ordinal);
         Assert.Contains("\"\"", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     The other direction of the same key, which is the setting in force in this repository.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>string_empty</c> is not the inverse rewrite — Skala has no <c>""</c> ⇒
+    ///     <c>string.Empty</c> arrangement — it is the rule declining to run. Asserting that here is
+    ///     what stops the pinned test above from being the only witness: with only the pinned case, a
+    ///     rule that fired regardless of the option would still be green.
+    /// </remarks>
+    [Fact]
+    public void EmptyString_IsLeftAlone_UnderStringEmpty() {
+        var output = Arrange(
+            EmptyStringProbe,
+            only: ArrangeIds.EmptyString,
+            overrides: [new KeyValuePair<string, string>("resharper_empty_string", "string_empty")]
+        );
+
+        Assert.Contains("string.Empty", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"\"", output, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -355,6 +355,31 @@ this document allocated before any of them existed, and the register above is on
 new concept takes a new number rather than the nearest tidy one. Folding
 `xs.Where(p).First()` into `xs.First(p)` is not any of the eight.
 
+### Performance a declaration states, rather than a body measures
+
+⚠ **The prose pass is owed for this block.** These are recorded here because the register requires
+it; the surrounding sections carry an argument and this one carries a list.
+
+Concepts whose whole decision is visible in one declaration and what its body touches, so none of
+them needs a profile to justify the edit.
+
+- `SK4020` a lambda, anonymous method or local function that references nothing outside itself and
+  is not `static`. `static` is a compile-time assertion that no environment is allocated, so a fix
+  that compiles is a fix that is right. Disjoint from `SK4002` by construction: that rule reports a
+  capture and this one reports the absence of every capture.
+- `SK4021` a `private` instance method whose body never reaches `this`. `static` drops the hidden
+  argument and states the independence the body already had. Restricted to `private` because the
+  edit has to check every call site, and a visible member's are not all in view.
+- `SK4022` a struct that already satisfies `readonly struct` — all instance fields `readonly`, no
+  settable instance property, no member writing `this` — and does not say so. The modifier deletes
+  the defensive copies that `SK2005` and `SK4007` report the consequences of.
+- `SK4023` a `capacity` argument equal to the framework type's own default, on the six types where
+  that default is a fixed and known number. The deletion has no runtime effect at all; the value is
+  in what the call site stops claiming.
+- `SK4024` `GC.Collect` outside measurement code. ⚠ **The one of the five that ships fixless**: the
+  call is a symptom of an allocation, a buffer or a handle, and deleting it without dealing with
+  that is a memory change nobody measured.
+
 ## SK5000 — Security
 
 Deliberately narrow, deliberately loud. Rules here are `error` by default, so they must be right.
@@ -412,6 +437,53 @@ so that `skala explain` prints it.
   (`OrderClass`, `PointStruct`).
 - `SK6023` `empty-type` — a type with no members, no base and no attributes.
 
+⚠ **The prose pass for `SK6040`–`SK6049` is owed.** What follows is the allocation record only, written
+so that no number below is handed out twice; the paragraphs that explain the batch the way the rest of
+this section is explained have not been written yet.
+
+⚠ **`SK6040` is one ninth of the concept issue #121 named, and the other eight are deliberately not
+shipped.** "The local declaration is never used" groups nine ReSharper inspections. Only
+`NotAccessedOutParameterVariable` has a repair that cannot change what the program does — the callee
+writes the `out` argument either way, so replacing the declaration with `_` removes a name and nothing
+else. Deleting an unread ordinary local cannot promise that: `var response = Send();` is unread and
+deleting it stops the request. `UnusedLocalFunction` is already **CS8321**, a compiler warning, and is
+not re-implemented. The remaining seven — `NotAccessedVariable`, `UnusedLocalFunctionParameter`,
+`UnusedLocalFunctionReturnValue`, `UnusedTypeParameter`, `UnusedTupleComponentInReturnValue`,
+`UnusedParameterInPartialMethod`, `PrivateFieldCanBeConvertedToLocalVariable` — each need either every
+call site or a judgement about intent, and are left in [17](17-inspection-parity.md)'s residue where
+they still count.
+
+- `SK6040` `unused-out-variable` — an `out` argument declares a variable nothing reads; write `out _`.
+
+⚠ **`SK6041` needs no safety guard against the body reassigning the loop variable, because C# has
+one.** CS1656 forbids assigning to an iteration variable, so a declared type that is only ever read is
+the only shape there is, and narrowing it can never invalidate a write. The guard that *is* needed is on
+the conversion: only an implicit **reference** or **boxing** widening is reported. An implicit numeric
+one (`foreach (long value in ints)`) is an arithmetic width the body depends on, a nullable one says the
+loop deals in absence, a user-defined one is somebody's operator, and an **explicit** one —
+`foreach (string text in objects)`, which `foreach` uniquely permits — is a downcast written on purpose
+and the opposite of this finding.
+
+- `SK6041` `wider-foreach-variable-type` — a `foreach` variable declared as a base type, an interface
+  or `object` when the collection already knows the element type.
+
+⚠ **`SK6042`–`SK6049` are unallocated and free.** Issues #114 (a member more accessible than its use
+requires), #115 (storage never written after initialization) and #119 (a class with only static
+members) were read in the same pass and **no id was taken for any of them**. #114 and #115 are the
+family [17](17-inspection-parity.md) § "Two ways a zero can lie" names: ReSharper splits both into
+`.Global` and `.Local`, every `.Global` scored zero in the recorded sweep because solution-wide
+analysis was off, and Skala analyses one compilation — so only the `.Local` halves are answerable, and
+the `.Local` half of #115 is largely `IDE0044` already. The half of #115 that is genuinely uncovered is
+the auto-property one (`{ get; private set; }` assigned only in a constructor), and it was declined for
+a reason no syntax shows: **Newtonsoft.Json writes private setters by default, with no attribute to
+exempt on**, so the finding has a false-positive story the reference trees cannot be used to measure.
+#119 is `CA1052`, which ships in the .NET SDK and is off by default — hosting it is the cheaper answer
+than reimplementing it, and either way "nothing instantiates this type" stops at the assembly boundary
+for a `public` one. ⚠ `catalogued.json` maps `MemberCanBeInternal.Global` to
+`SK6002`, which this document allocates to *"public member exposing a mutable array or `List<T>`"* — a
+different concept. **That mapping is wrong and should be re-pointed at whichever id #114 eventually
+takes**, or dropped; it is left alone here rather than corrected by an agent that is not shipping #114.
+
 ## SK7000 — Maintainability
 
 The metrics from [07](07-analysis-host.md) § "Metrics" — `SK7001` cyclomatic complexity ·
@@ -455,6 +527,127 @@ trees are the argument for it — across all three there is exactly **one** `got
 `Justification` · `SK7072` a `#pragma warning disable` region with no code in it ·
 `SK7073` an empty `#region` · `SK7074` a `goto` to a label (`goto case` and `goto default` are
 not reported).
+
+⚠ **The block below is the register entry for `SK7090`–`SK7093` and the prose pass on it is owed.**
+It records what shipped and the position each rule takes, written by the agent that built them; it has
+not been through the editorial pass the rest of this section has had, and it should be read as notes
+that are accurate rather than as finished catalogue prose.
+
+**`SK7090` is `SK7040`'s requirement on the form that compiles.** `SK7040` asks a `TODO` to name the
+issue that owns it; `SK7090` asks the same of a thrown `NotImplementedException`, and the two accept
+the same vocabulary — a URL, `#123`, a project key such as `SKALA-123` — deliberately character for
+character, because two rules asking for "an issue reference" and disagreeing about what one looks like
+is a rule nobody can obey. ⚠ This one sits **on** the premise in [00](00-vision-and-principles.md) rather
+than beside it: a model asked for an implementation produces a compiling signature with a
+`NotImplementedException` body far more readily than it admits it cannot do the work, and that body
+type-checks, binds, formats and passes every analyzer in the build. It fails only when it runs, in a
+caller that had no way to know.
+
+⚠ **`SK7090` states an exclusion rather than merely detecting.** `NotSupportedException` and
+`UnreachableException` never fire. Both are permanent statements about a contract — an operation this
+type will never offer, a branch the author asserts is unreachable — and they are what an author writes
+when the answer really is "not here". `NotImplementedException` is the one that means "not yet", and
+"not yet" is what needs an owner; reporting the other two would make the rule an opinion about
+exception types and get it turned off with the part that is worth having. Only a construction that is
+*thrown* is reported, which is narrower than Sonar's `S3717`: constructing one to compare against or
+to hand to a test helper is not a member that compiles and does not work. Report-only, and this is the
+strongest case in the catalogue for a rule with no fix — every mechanical guess available (delete the
+member, return `default`, change the exception type) turns a loud failure into a quiet one.
+
+⚠ **`SK7091` refuses the application/library distinction the proposal was written around, and the
+refusal is a measurement.** [#236](https://github.com/Rikarin/SKALA/issues/236) is titled "the process
+is terminated from library code", and the obvious implementation reads `Compilation.Options.OutputKind`.
+That cannot work here: `LooseLoader` constructs its compilation with
+`OutputKind.DynamicallyLinkedLibrary`, so *"this compilation is a library"* and *"no project file was
+loaded"* are the same observation — and loose is the mode [00](00-vision-and-principles.md) says Skala
+exists for, because a folder of generated `.cs` files has no project. An `OutputKind` rule would report
+every console application analysed without its project file, which is precisely the false-positive
+engine [16](16-risks-and-open-questions.md) § R3 is about.
+
+So the line `SK7091` draws is a different one and it holds under every load mode: **the entry point may
+end the process**, because ending it is the process's own decision and there is nothing above that
+frame to unwind into; everywhere else — a library, a service, and an executable's own helper class
+alike — `Environment.Exit` destroys `finally` blocks, `IDisposable` cleanup and buffered writes that
+somebody else wrote and did not choose to abandon. The entry point is the compilation's own where
+there is one and a `static Main` by name otherwise, and that fallback is load-mode insurance rather
+than laziness: a loose compilation has no entry point to ask for. ⚠ `Environment.FailFast` is
+deliberately never reported — skipping cleanup is the whole point of it, so reporting it would be
+reporting a decision rather than an accident.
+
+⚠ **`SK7092` ships the provable half of `S2139` and names the half it omits.** A finding requires the
+logging call to be handed *the caught exception itself*. Deciding that an arbitrary call "is logging"
+is name-matching, and name-matching a bare `logger.LogError("failed")` beside a `throw;` would report
+every method in the tree called `Error`; passing the caught exception to something in the logging
+vocabulary is not a guess, because nothing else does that. So a `catch` with no exception variable
+never fires, and neither does one that logs a message without the exception — under-reporting in the
+direction that keeps the rule usable, which is the same trade `SK7072` made. ⚠ **Wrapping is not
+rethrowing and is not reported**: `throw new ImportException(message, error)` translates the failure at
+a boundary and produces one record rather than two, and logging the original before translating is how
+detail the translation drops survives at all. Only bare `throw;` and `throw error;` count.
+
+⚠ **`SK7093` answers "policy or defect?" by refusing the question and finding a decidable one
+underneath it.** `S106` says standard output should not be used to log, which is correct in a library
+and wrong in a console application's entry point — and `SK7091`'s measurement applies here unchanged:
+`LooseLoader` builds every loose compilation as `OutputKind.DynamicallyLinkedLibrary`, so nothing in
+the tree distinguishes "a library" from "no project file was loaded", and an `OutputKind` rule would
+report every line of every console application analysed without its project. What `SK7093` reports
+instead is the narrower fact [#230](https://github.com/Rikarin/SKALA/issues/230)'s own title names: **a
+logger is in scope at this call site and the code wrote to the console anyway.** A member or parameter
+typed `ILogger`, `ILogger<T>` or `ILog` is present, so the routing question is already answered for
+this code and answered differently two lines away — a contradiction inside one method rather than a
+policy judgement about the project's shape. ⚠ The consequences are deliberate in both directions: an
+entry point printing usage has no logger and is never reported, which is right *by construction*
+rather than by an exemption somebody has to maintain, and a service class that writes to the console
+and has no logger at all is under-reported, which is the direction [16](16-risks-and-open-questions.md)
+§ R3 says to err in. The interface is matched on the type's own name because the namespace is the part
+that differs across `Microsoft.Extensions.Logging`, `Serilog`, `NLog` and `log4net`.
+
+⚠ **All four are `requiresSemantics: true`, so the reference-tree sweep measures nothing about them —
+and this batch has the direct proof [#277](https://github.com/Rikarin/SKALA/issues/277) was missing.**
+`Testing/corpus/real/*` are source slices with no project files, so the only load mode they support is
+loose, and `AnalyzerHost` withdraws every semantic rule there. The SARIF says so in as many words —
+each of the four carries `"skipped": "requires a semantic model; --load=loose has no project"` — so the
+corpus zero for `SK7090`–`SK7093` is the *third* kind of zero, the analysis never running, and it is
+not evidence of anything. What makes it provable rather than merely suspected: the corpus contains
+**twelve** `throw new NotImplementedException` sites in `newtonsoft`, none carrying an issue reference,
+and wrapping three of those files in a throwaway `.csproj` — which still does not compile, 14 `CS`
+errors — makes `SK7090` report **nine** of them under `--load=workspace`. Same files, same analyzer,
+same day: 0 loose, 9 workspace. ⚠ Those nine are all members of test doubles implementing an interface
+the test never calls, which is the one class measured to fire in volume; the rule does not exempt them
+and § "SK7090" in `rules.json` records why.
+
+Measured against Skala's own tree with `check . --load=workspace` (587 findings overall, so the run is
+real): all four report **zero**, and the three kinds of zero split cleanly. `SK7090`, `SK7091` and
+`SK7093` are *shape absent* — the tree holds no `NotImplementedException`, no `Environment.Exit`, and
+no member typed `ILogger` or `ILog` anywhere. `SK7092` is the one that is **shape present and correctly
+declined**: `Tools/Rikarin.Skala.Cli/Program.cs` writes `exception.ToString()` to `Console.Error` from
+a `catch`, and `AnalysisCommands.cs` writes `exception.Message` from two more — all three then
+`return` rather than rethrow, so there is one record and no finding. That is the only one of the four
+whose zero is evidence.
+
+`SK7090` a thrown `NotImplementedException` with no issue reference · `SK7091` `Environment.Exit`
+outside the entry point · `SK7092` the exception is both logged and rethrown · `SK7093` the console is
+written to where a logger was meant.
+
+⚠ **"The block adds nesting and nothing else" ([#225](https://github.com/Rikarin/SKALA/issues/225),
+Sonar `S1199`) is refuted, no id was allocated, and the reason is measured rather than argued.** The
+proposal's premise was that `SK0208` owns *control-statement* braces and that the free-standing block
+is a residue the arrangement option does not reach. It reaches it.
+`RedundantBracesRule.Rewriter.VisitBlock` in
+`Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/RedundancyRules.cs` walks the statements of
+every block and lifts any statement that is itself a `BlockSyntax` — a free-standing `{ … }` nested in
+a method body is exactly that shape, and `skala arrange --check` over one reports `SK0208 redundant
+braces` and would remove it. What `SK0208` declines to lift is a block holding a local declaration, a
+local function, a label, or a preprocessor directive, because lifting those widens a scope or moves a
+directive. ⚠ **That residue is the wrong half to build a rule on**: a block that scopes a declaration
+is a block that adds something besides nesting, which is the one case the proposed rule's own title
+excludes. A new `SK7xxx` rule here would either duplicate `SK0208` or report precisely the blocks that
+are not redundant, so it is not built and the number stays free. ⚠ Note for whoever revisits this:
+`resharper_csharp_braces_redundant` is **tier D**, which here does *not* mean unimplemented —
+`ArrangementOptions.Ids` collects the key and the rewriter runs. The conformance sweep records it as
+`❌ SPURIOUS`, "Skala moved and the oracle did not", so the tier is about fidelity to `jb cleanupcode`
+rather than about whether the shape is reached. It is reached, which is all this refutation needs; the
+divergence against the oracle is a separate question and is not disturbed here.
 
 ## SK8000 — Tests
 
@@ -539,11 +732,11 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **126** | **81.3 %** |
+| Rules this document names | **169** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **137** | **81.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **19** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

@@ -105,6 +105,17 @@ SK3511 | Skala.Lifetime | Warning | The `using` resource is built with an object
 SK3512 | Skala.Lifetime | Warning | A variable captured by `using` is returned.
 SK3020 | Skala.Async | Warning | The non-`async` `Task` method returns null.
 SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
+SK6040 | Skala.Design | Warning | An `out` variable is declared and never read.
+SK6041 | Skala.Design | Info | A `foreach` variable is declared wider than the element it receives.
+SK4020 | Skala.Performance | Info | The lambda captures nothing and is not `static`.
+SK4021 | Skala.Performance | Hidden | The private method does not use instance state.
+SK4022 | Skala.Performance | Info | The struct is never mutated and is not `readonly`.
+SK4023 | Skala.Performance | Warning | The capacity argument matches the default.
+SK4024 | Skala.Performance | Warning | `GC.Collect` is called from application code.
+SK7090 | Skala.Maintainability | Warning | A thrown `NotImplementedException` has no issue reference.
+SK7091 | Skala.Maintainability | Warning | The process is terminated outside the entry point.
+SK7092 | Skala.Maintainability | Warning | The exception is both logged and rethrown.
+SK7093 | Skala.Maintainability | Warning | The console is written to where a logger was meant.
 SK3530 | Skala.Lifetime | Warning | The disposable field is not disposed by `Dispose`.
 SK3531 | Skala.Lifetime | Warning | The `DisposeAsync` override never calls the base implementation.
 SK3532 | Skala.Lifetime | Warning | The `ref struct` owns a disposable and cannot declare it.

@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 134 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 145 ids are allocated.
 
 ## Async
 
@@ -56,6 +56,8 @@
 | [SK6021](SK6021.md) | A type is named like an exception and is not one | warning | — | no |
 | [SK6022](SK6022.md) | A type name repeats the keyword the declaration already carries | suggestion | — | yes |
 | [SK6023](SK6023.md) | A type has no members, no base and no attributes | suggestion | — | yes |
+| [SK6040](SK6040.md) | An `out` variable is declared and never read | warning | safe | no |
+| [SK6041](SK6041.md) | A `foreach` variable is declared wider than the element it receives | suggestion | review | no |
 
 ## Formatting
 
@@ -118,6 +120,10 @@
 | [SK7072](SK7072.md) | A warning suppression covers nothing | warning | safe | yes |
 | [SK7073](SK7073.md) | A region is empty | suggestion | safe | yes |
 | [SK7074](SK7074.md) | Review a goto to a label | warning | — | yes |
+| [SK7090](SK7090.md) | A thrown `NotImplementedException` has no issue reference | warning | — | no |
+| [SK7091](SK7091.md) | The process is terminated outside the entry point | warning | — | no |
+| [SK7092](SK7092.md) | The exception is both logged and rethrown | warning | — | no |
+| [SK7093](SK7093.md) | The console is written to where a logger was meant | warning | — | no |
 
 ## Modernization
 
@@ -161,6 +167,11 @@
 | [SK4006](SK4006.md) | Review a materialization used only by foreach | hint | — | no |
 | [SK4007](SK4007.md) | Review large struct arguments in loops | hint | — | no |
 | [SK4010](SK4010.md) | A `Where` the next operator could have taken as its predicate | suggestion | safe | no |
+| [SK4020](SK4020.md) | The lambda captures nothing and is not `static` | suggestion | safe | no |
+| [SK4021](SK4021.md) | The private method does not use instance state | hint | safe | no |
+| [SK4022](SK4022.md) | The struct is never mutated and is not `readonly` | suggestion | safe | no |
+| [SK4023](SK4023.md) | The capacity argument matches the default | warning | safe | no |
+| [SK4024](SK4024.md) | `GC.Collect` is called from application code | warning | — | no |
 
 ## Security
 

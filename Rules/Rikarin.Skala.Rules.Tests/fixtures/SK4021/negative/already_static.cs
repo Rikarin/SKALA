@@ -1,0 +1,5 @@
+sealed class AlreadyStaticFixture {
+    public int Use(int value) => Twice(value);
+
+    static int Twice(int value) => value * 2;
+}

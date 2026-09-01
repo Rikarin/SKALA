@@ -3318,6 +3318,292 @@
       ]
     },
     {
+      "id": "SK6040",
+      "concept": "unused-out-variable",
+      "title": "An `out` variable is declared and never read",
+      "category": "Design",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "NotAccessedOutParameterVariable",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "7.0",
+      "summary": "`M(out var x)` where nothing ever mentions `x` again declares a name for a value the code has decided not to look at; `out _` says that.",
+      "rationale": "An `out` argument is a second return value, and a declaration expression is how the caller receives it. When the receiving name is never read, the declaration is doing one thing only — satisfying the signature — and it does that while adding a name to the enclosing scope, a definite-assignment obligation, and a line the next reader has to check before concluding it does not matter. `out _` is the language's word for exactly this: the argument is required, the value is not wanted. It also removes the name from scope, so a later edit cannot accidentally read a value nobody meant to keep, and it makes the two `TryGetValue` calls in a file that differ only in whether the value is used visibly different from each other.",
+      "examples": {
+        "bad": "if (!lookup.TryGetValue(key, out var existing)) {\n    lookup.Add(key, value);\n}",
+        "good": "if (!lookup.TryGetValue(key, out _)) {\n    lookup.Add(key, value);\n}"
+      },
+      "falsePositives": "**This is one of the nine inspections issue #121 grouped, and it is the only one shipped.** It is the shape with a mechanical, always-safe repair: the callee writes the argument either way, so replacing the declaration with a discard cannot remove a side effect. Removing an unread *ordinary* local cannot promise that — `var response = Send();` is unread and deleting it stops the request — and the remaining seven shapes each need something a single declaration does not carry. `UnusedLocalFunction` is already **CS8321**, a compiler warning, and is not re-implemented here. `NotAccessedVariable`, `UnusedLocalFunctionParameter`, `UnusedTypeParameter` and `UnusedParameterInPartialMethod` have no safe edit; `UnusedLocalFunctionReturnValue` and `UnusedTupleComponentInReturnValue` need every call site. What is left uncovered is named rather than implied, so [17](17-inspection-parity.md)'s residue keeps counting it.\n\n**Only a declaration expression in an `out` argument position.** A pre-declared local (`int n; M(out n);`) is not reported: the declaration is a statement of its own, the repair is to delete it as well as the reference, and that is two edits in two places rather than one replacement. A discard already written is not a declaration and produces nothing.\n\n**Never read *and* never written.** Any reference to the local at all withdraws the finding, including one that only assigns it and one that passes it to a second `out`. That is stricter than \"never read\" and it is deliberate: `out _` deletes the name, so a finding that only proves the value is unread would produce an edit that does not compile wherever the name is used for anything else.\n\n**A second, redundant guard reads tokens rather than operations.** Before reporting, the enclosing operation blocks are scanned for any identifier token spelling the same name. A match withdraws the finding even when the operation tree showed no reference — the case it is there for is `nameof(x)`, and the cost of being wrong in this direction is one missed finding rather than one broken build. A member or a type with the same name as the variable also silences it; that is the price and it is small.\n\n⚠ **A member containing a preprocessor directive is skipped entirely.** Disabled text is trivia, so a reference inside `#if DEBUG` is invisible to both the operation tree and the token scan, and under another configuration the variable is read. This is the same refusal `SK6003` and `SK6020` make for the same reason.\n\n⚠ **A parameter whose type mentions one of the invoked method's own type parameters is skipped, conservatively.** `out _` is an implicitly typed discard, and CS8183 is what a discard that cannot be typed produces. Whether inference actually fails depends on the rest of the call, and answering that properly means re-running overload resolution; declining is cheaper and only ever costs findings. The related shape the rule cannot see at all is an overload set whose members differ *only* in the `out` parameter's type, where `out _` becomes ambiguous — vanishingly rare, and a compiler error rather than a silent change if it happens.",
+      "configuration": [
+        "dotnet_diagnostic.SK6040.severity"
+      ]
+    },
+    {
+      "id": "SK6041",
+      "concept": "wider-foreach-variable-type",
+      "title": "A `foreach` variable is declared wider than the element it receives",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "MoreSpecificForeachVariableTypeAvailable",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`foreach (object item in names)` over a `List<string>` throws the element type away at the top of the loop and makes the body ask for it back.",
+      "rationale": "The collection already knows what it holds. Declaring the loop variable as a base type discards that at the one point in the method where it was free, and everything downstream pays: the body cannot call the element's own members without a cast or a pattern, the reader cannot tell what is in the collection without following the collection back to its declaration, and where the element is a value type every iteration boxes. Naming the element type is not extra precision — it is the precision the collection was carrying anyway, written down.",
+      "examples": {
+        "bad": "foreach (object name in names) {\n    Console.WriteLine(((string)name).Length);\n}",
+        "good": "foreach (string name in names) {\n    Console.WriteLine(name.Length);\n}"
+      },
+      "falsePositives": "**Only a widening the compiler would have performed implicitly, and only two kinds of it.** The conversion from the element type to the declared type must be an implicit *reference* conversion or a *boxing* conversion — a base class, an implemented interface, or `object`. An identity conversion is nothing to report; an implicit *numeric* one (`foreach (long value in ints)`) is not a lost type but a deliberate arithmetic width, and narrowing it would change what the body computes; an implicit *nullable* one (`foreach (int? value in ints)`) is the author saying the loop deals in absence; a *user-defined* one is somebody's operator and not a widening at all. An **explicit** conversion — `foreach (string text in objects)`, which `foreach` uniquely permits — is a downcast the author wrote on purpose and is the opposite of this finding.\n\n**`var` is never reported.** It already is the element type, and the whole rule is the request to write that type down.\n\n**The iteration variable cannot be assigned**, so the shape that would make this dangerous does not exist: CS1656 forbids `item = …` inside the loop. That is why there is no dataflow guard here and no fixture for one.\n\n**Three shapes are skipped because the fix could not be written.** An anonymous element type has no name to write; a `dynamic` element type is not a type this question applies to; and an element type the containing assembly cannot see (`Compilation.IsSymbolAccessibleWithin` answers it) would produce a name that does not bind. The suggested type is rendered with `ToMinimalDisplayString` against the position of the loop, so it uses the file's own `using` directives and never introduces one.\n\n⚠ **The interface case is the one most likely to be deliberate.** `foreach (IShape shape in circles)` is reported, and \"program to the interface\" is a real reason to have written it. So is a base class chosen to say that the loop body only needs the base. The rule ships at `suggestion` for this reason: it is an observation about what the collection knows, not a claim about what the author meant.\n\n⚠ **The fix is `fixIsSafe: false` and the reason is overload resolution.** `Write(item)` binding to `Write(string)` instead of `Write(object)` is a different program, and a `switch` arm inside the body may become CS8121 — a pattern the narrower type can no longer match. Both are visible on review and the second is a compiler error rather than a silent change, but neither is an edit to apply unread. Where the element type is nullable the narrowed declaration also inherits the annotation, which is correct and may surface a CS8602 the wider type was hiding.",
+      "configuration": [
+        "dotnet_diagnostic.SK6041.severity"
+      ]
+    },
+    {
+      "id": "SK4020",
+      "concept": "noncapturing-lambda",
+      "title": "The lambda captures nothing and is not `static`",
+      "category": "Performance",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "LambdaExpressionCanBeMadeStatic",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "9.0",
+      "summary": "A lambda, anonymous method or local function that references nothing outside itself can be `static`, and then it cannot allocate a closure.",
+      "rationale": "A lambda that captures a local or `this` is compiled into a display class, and every evaluation of the lambda expression allocates one — or, where the compiler can cache it, keeps the captured object alive for the lifetime of the cache. A lambda that captures nothing has neither cost, and the compiler is free to cache one delegate instance for the whole program. `static` is the keyword that says so and the compiler that checks it: the modifier is a compile-time assertion that the body references no enclosing local, parameter, `this` or `base`, so a `static` lambda that compiles is a lambda that provably allocates no environment. That makes it the rare performance edit with no judgement in it — the fix is one keyword, the compiler verifies the claim, and a later edit that starts capturing is rejected at the point it is written instead of silently reintroducing the allocation.",
+      "examples": {
+        "bad": "items.Select(item => item.Name);\n\nvoid Sort(int[] values) {\n    int Compare(int left, int right) => left.CompareTo(right);\n}",
+        "good": "items.Select(static item => item.Name);\n\nvoid Sort(int[] values) {\n    static int Compare(int left, int right) => left.CompareTo(right);\n}"
+      },
+      "falsePositives": "⚠ The rule reports only what it can prove, and every unproven shape is declined. The body is walked in full — including nested lambdas, local functions and query clauses — and any of the following withholds the finding: `this` or `base`; a local, parameter or range variable declared outside the reported declaration, which includes a primary constructor parameter and the implicit `value` of a setter; an instance field, property, event or method reached without a receiver; a call to a local function declared outside, whose own captures this rule cannot see; and any name the semantic model does not resolve, so a file with errors reports nothing rather than guessing. Names that cannot capture are admitted: types, namespaces, aliases, labels, discards, static members, and everything inside `nameof`. Lambdas converted to an expression tree rather than to a delegate are excluded, as is any lambda nested inside one. A declaration already marked `static` is not reported, and neither is anything below C# 9. ⚠ **Disjoint from `SK4002` by construction**: that rule reports a delegate capturing iteration-local storage, and a declaration this rule reports captures nothing at all, so no declaration can produce both. ⚠ The fix does not claim an allocation was measured — it claims the allocation is now impossible.",
+      "configuration": [
+        "dotnet_diagnostic.SK4020.severity"
+      ],
+      "resharperNote": "The export sets `resharper_lambda_expression_can_be_made_static_highlighting = none`, so a repository that reads ReSharper's key gets this rule switched off. Skala ships it at `suggestion`: the inspection is quiet in the export because JetBrains treats it as a style opportunity, and the parity measurement makes it the highest-volume quiet inspection in the whole survey."
+    },
+    {
+      "id": "SK4021",
+      "concept": "stateless-private-method",
+      "title": "The private method does not use instance state",
+      "category": "Performance",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "MemberCanBeMadeStatic.Local",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A private instance method whose body never touches `this` can be `static`, which drops the hidden argument and the null check.",
+      "rationale": "An instance call passes a `this` argument the method does not read and, through a reference, carries a null check the callee cannot avoid. Making the method `static` removes both, and the declaration then states the fact the body already established: this code depends on its arguments and on nothing else. That is the larger half of the value — a reader no longer has to read the body to learn whether the method participates in the object's state, and a later edit that starts using a field is rejected at the point it is written. The rule is deliberately restricted to `private` methods, where the change is invisible outside the type; `static` on a visible member is an API change and a different decision.",
+      "examples": {
+        "bad": "sealed class Report {\n    readonly string title;\n\n    string Format(int count) => count + \" rows\";\n}",
+        "good": "sealed class Report {\n    readonly string title;\n\n    static string Format(int count) => count + \" rows\";\n}"
+      },
+      "falsePositives": "Only an ordinary `private` method with a body, in a non-partial class, struct or record declared once in one file, is considered. `static`, `abstract`, `virtual`, `override`, `partial`, `extern` and `new` declarations are excluded, as is anything carrying an attribute — a serialization callback, a marked event handler and a framework-invoked method are all shapes where the signature is a contract rather than a choice. The body is walked with the same proof `SK4020` uses, so any `this`, `base`, instance member or unresolved name withholds the finding; a recursive call to the method itself is admitted, because the fix makes that call static too. ⚠ Every call site in the file is then checked, and a single `this.Method()` or `instance.Method()` withholds the finding, because that spelling does not compile against a static method. ⚠ **What the rule cannot see is reflection**: a private method found by name through `MethodInfo` and invoked with an instance target breaks when it becomes static, and no analyzer can prove the absence of that. It also cannot see another file, which is why a partial containing type is excluded rather than analysed.",
+      "configuration": [
+        "dotnet_diagnostic.SK4021.severity"
+      ]
+    },
+    {
+      "id": "SK4022",
+      "concept": "immutable-struct-not-readonly",
+      "title": "The struct is never mutated and is not `readonly`",
+      "category": "Performance",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "StructCanBeMadeReadOnly",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "7.2",
+      "summary": "A struct with only readonly state and no member that assigns `this` can be `readonly`, which deletes the defensive copies.",
+      "rationale": "The compiler cannot know that a struct's members leave it alone, so wherever the struct is reached through storage it may not write — a `readonly` field, an `in` parameter, a `ref readonly` return, a `foreach` variable — it copies the whole value before every member call. `SK2005` and `SK4007` report two consequences of exactly that. The `readonly` modifier is the declaration that removes the doubt: the compiler verifies that no member writes to the instance and then stops emitting the copies. The keyword is not a hint or a tuning parameter; it is a fact about the type that the type already satisfied and had not written down.",
+      "examples": {
+        "bad": "struct Point {\n    public readonly int X;\n    public readonly int Y;\n\n    public int Length => X + Y;\n}",
+        "good": "readonly struct Point {\n    public readonly int X;\n    public readonly int Y;\n\n    public int Length => X + Y;\n}"
+      },
+      "falsePositives": "The proof is the compiler's own rule for `readonly struct`, checked before the keyword is proposed: every instance field must already be `readonly`, no instance property or indexer may have a `set` accessor, and no member may assign to `this`, pass it by `ref` or `out`, or increment it. `init` accessors are admitted, because a `readonly struct` permits them. Excluded outright: a struct already `readonly`, a `partial` or multiply-declared struct, a `ref struct`, a `record struct` — where the modifier would turn positional `set` accessors into `init` and change the public API — anything `unsafe` or holding a `fixed` buffer or a pointer, a field-like `event`, whose backing field cannot be readonly, and a struct that already spells `readonly` on one of its members. Nested types inside the struct are not searched, because `this` there is a different instance. ⚠ **The modifier is not a no-op for consumers even though it is source-compatible**: an `in` parameter and a `readonly` field stop copying, so a member that returned a value derived from a stale copy now returns the current one. That is the bug the copies were hiding rather than a behaviour the rule breaks, but it is a change and it is why the finding is a suggestion rather than a warning.",
+      "configuration": [
+        "dotnet_diagnostic.SK4022.severity"
+      ]
+    },
+    {
+      "id": "SK4023",
+      "concept": "redundant-capacity-argument",
+      "title": "The capacity argument matches the default",
+      "category": "Performance",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantCapacityArgument",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`new List<T>(0)` and `new StringBuilder(16)` ask for the capacity the parameterless constructor already gives.",
+      "rationale": "A capacity argument is how an author records a measurement: this collection is known to hold about this many elements, so do not grow it from nothing. An argument equal to the type's own default records no measurement and makes no allocation smaller — it reads as a deliberate tuning decision to the next person, who then has to open the framework source to discover that it decides nothing. Removing it is a deletion with no runtime effect at all, which is the unusual case where the value is entirely in what the code no longer claims.",
+      "examples": {
+        "bad": "var rows = new List<string>(0);\nvar text = new StringBuilder(16);",
+        "good": "var rows = new List<string>();\nvar text = new StringBuilder();"
+      },
+      "falsePositives": "The constructor must be the framework's own single-`int` `capacity` overload on one of six types whose default is known and fixed — `List<T>`, `Dictionary<TKey, TValue>`, `HashSet<T>`, `Queue<T>` and `Stack<T>` at 0, and `StringBuilder` at 16 — resolved through the semantic model and required to come from metadata rather than from source, so a same-named type of the author's own is never touched. The type must also expose an accessible parameterless constructor for the argument to be removable. ⚠ **Only a numeric literal is reported.** `new List<string>(DefaultCapacity)` is left alone even where the constant is 0: a named constant is a statement about intent that happens to equal the default today, and deleting it silently decouples the call site from the name. An argument list carrying a comment or a directive is left alone for the same reason. Any other capacity value, any other overload, and any other type are outside the rule.",
+      "configuration": [
+        "dotnet_diagnostic.SK4023.severity"
+      ]
+    },
+    {
+      "id": "SK4024",
+      "concept": "forced-garbage-collection",
+      "title": "`GC.Collect` is called from application code",
+      "category": "Performance",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1215"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A forced collection suspends every thread and promotes what survives, so it usually makes the pressure it was added to relieve permanent.",
+      "rationale": "`GC.Collect` is almost always added after a memory graph looked wrong, and it is the one response that cannot help. The collector's generational assumption is that most objects die young; a collection forced at an arbitrary moment finds the young objects still live, promotes them to a longer-lived generation, and thereby guarantees that the next collection to reach them is a more expensive one. Meanwhile every managed thread is suspended for the duration. The cost is paid at every call and the benefit is a number in a profiler that looks better for one sample. What the call is standing in for is an allocation that should not happen, a buffer that should be pooled, or a handle that should be disposed — and none of those is an edit an analyzer can write, which is why this rule reports and does not fix.",
+      "examples": {
+        "bad": "void Refresh() {\n    cache.Clear();\n    GC.Collect();\n}",
+        "good": "void Refresh() {\n    cache.Clear();\n}"
+      },
+      "falsePositives": "Every overload of `System.GC.Collect` is reported, resolved through the semantic model rather than matched on the written name. ⚠ **There is no fix**, and the rule says so in `rules.json` rather than offering the deletion: the call is a symptom, and removing it without dealing with what it was compensating for changes the program's memory behaviour in a direction nobody measured. ⚠ **Measurement code is the one legitimate caller and is excluded**: a method or type carrying a test or benchmark attribute — `Fact`, `Theory`, `Test`, `TestCase`, `TestMethod`, `Benchmark` and the BenchmarkDotNet setup and cleanup markers — establishes a known heap on purpose, and reporting there would be reporting the measurement rather than the program. A finaliser-behaviour test outside those attributes, and a deliberate collection at a genuine idle point in a desktop application, are real callers the rule still reports; they are the case for a suppression with a reason, which is what `SK7071` and the baseline are for.",
+      "configuration": [
+        "dotnet_diagnostic.SK4024.severity"
+      ]
+    },
+    {
+      "id": "SK7090",
+      "concept": "not-implemented-member",
+      "title": "A thrown `NotImplementedException` has no issue reference",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3717"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A member's body is `throw new NotImplementedException()` and nothing names the issue that owes the implementation.",
+      "rationale": "⚠ This is `SK7040`'s requirement on the form that compiles, and it sits on Skala's premise rather than beside it. A model asked for an implementation produces a signature with a `throw new NotImplementedException()` body far more readily than it says it cannot do the work — and that body type-checks, binds, formats, and passes every analyzer in the build. It fails only when it runs, in a caller that had no way to know. A `TODO` at least announces itself to whoever opens the line; this announces itself to nobody. The requirement is therefore the same one `SK7040` makes: somewhere a reader will already be looking, name the issue that owns finishing this. The same vocabulary is accepted — a URL, `#123`, or a project key such as `SKALA-123` — read from the exception's own message, from the throw's own comments, or from the enclosing member's leading trivia.",
+      "examples": {
+        "bad": "public decimal Total(Order order) => throw new NotImplementedException();",
+        "good": "// TODO SKALA-412: the discount table is not specified yet.\npublic decimal Total(Order order) => throw new NotImplementedException(\"SKALA-412\");"
+      },
+      "falsePositives": "⚠ Report-only, and deliberately so: no edit writes the implementation, and every mechanical guess available — delete the member, return `default`, change the exception type — turns a loud failure into a quiet one, which is strictly worse than what is there. Only a construction that is *thrown* is reported; Sonar's `S3717` tracks every use of the type, but constructing one to compare against or to hand to a test helper is not a member that compiles and does not work. ⚠ **`NotSupportedException` and `UnreachableException` never fire, and that is the rule's position rather than an omission.** Both are permanent statements about a contract — an operation this type will never offer, a branch the author asserts is unreachable — and they are what an author writes when the answer really is \"not here\". `NotImplementedException` is the one that means \"not yet\", and \"not yet\" is what needs an owner. A repository that uses source comments as its backlog should disable the rule, exactly as it would `SK7040`. ⚠ **Test doubles are the one class measured to fire in volume, and the rule does not exempt them.** Wrapped in a project file, three slices of `Testing/corpus/real/newtonsoft` produce nine findings, every one of them a member of a fake implementing an interface the test never calls; the corpus holds twelve such throws and not one carries a reference. The rule's position is that a fake noting that nothing calls the member is exactly the sentence the finding asks for, and a repository that disagrees should path-scope the severity to its test projects. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK7090.severity"
+      ]
+    },
+    {
+      "id": "SK7091",
+      "concept": "process-exit-outside-entry-point",
+      "title": "The process is terminated outside the entry point",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1147"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`Environment.Exit` is called somewhere other than the entry point, so the process ends without unwinding.",
+      "rationale": "`Environment.Exit` does not unwind. No `finally` runs, no `using` disposes, no buffered writer flushes and no `await` resumes. In a library, in a service, and in an executable's own helper class alike, it ends work that has nothing to do with whoever made the call — the caller's transaction is left open, its temporary file is left on disk, and its log line is left in a buffer that is never written.",
+      "examples": {
+        "bad": "if (config is null) {\n    Environment.Exit(1);\n}",
+        "good": "if (config is null) {\n    throw new InvalidOperationException(\"no configuration was found\");\n}"
+      },
+      "falsePositives": "⚠ **The rule does not try to tell an application from a library, and that is a measurement rather than a shrug.** `LooseLoader` constructs its compilation with `OutputKind.DynamicallyLinkedLibrary`, so \"this compilation is a library\" and \"no project file was loaded\" are the same observation — and loose is the mode Skala exists for, because a folder of generated `.cs` files has no project. A rule keyed on `OutputKind` would report every console application analysed without its project file. The line drawn instead holds under every load mode: the entry point may end the process, because ending it is the process's own decision and there is nothing above to unwind into; everywhere else the call destroys cleanup somebody else wrote. The entry point is the compilation's own where there is one, and otherwise a `static Main` by name, which is the fallback loose mode needs. Top-level statements are the entry point and never fire. ⚠ `Environment.FailFast` is deliberately not reported: skipping cleanup is the whole point of it — it is what an author writes when the state is corrupt enough that running `finally` blocks is the more dangerous act — so reporting it would be reporting a decision rather than an accident. `Environment.ExitCode` is a property assignment, not a call, and never fires. The type is resolved by the semantic model and never matched on the written name. Report-only: the repair is to return, to throw, or to set an exit code and let the entry point end the process, and which of those the caller is owed is not something an edit can guess.",
+      "configuration": [
+        "dotnet_diagnostic.SK7091.severity"
+      ]
+    },
+    {
+      "id": "SK7092",
+      "concept": "logged-and-rethrown",
+      "title": "The exception is both logged and rethrown",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2139"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A `catch` hands the caught exception to a logging call and then rethrows it.",
+      "rationale": "Every layer that does this multiplies the log. One failure arrives as five entries with five different stack depths, nothing in any of them says they are the same event, and the layer that finally handled it is indistinguishable from the four that only watched it go past. Either handle the exception — and then it is not the caller's problem — or propagate it and let whoever handles it record it once.",
+      "examples": {
+        "bad": "catch (IOException error) {\n    logger.LogError(error, \"the import failed\");\n    throw;\n}",
+        "good": "catch (IOException error) {\n    throw new ImportException($\"the import of {path} failed\", error);\n}"
+      },
+      "falsePositives": "⚠ **The rule ships the half it can prove and the omitted half is named.** A finding requires the logging call to be handed *the caught exception itself*. Deciding that an arbitrary call \"is logging\" is name-matching, and name-matching a bare `logger.LogError(\"failed\")` beside a `throw;` would report every method in the tree called `Error`; passing the caught exception to something in the logging vocabulary is not a guess, because nothing else does that. A `catch` with no exception variable therefore never fires, and neither does one that logs a message without the exception — under-reporting in the direction that keeps the rule usable. ⚠ **Wrapping is not rethrowing and is deliberately not reported.** `throw new ImportException(message, error)` translates the failure at a boundary and produces one record rather than two, and logging the original before translating it is how detail that the translation drops survives at all. Only a bare `throw;` and `throw error;` count — the two forms that send on the same exception the same layer just recorded. A nested `try`'s own `catch` is not this one: the walk is scoped to the clause that owns the node. Report-only: \"handle it or propagate it\" names two repairs, choosing between them is a decision about what this layer is for, and an edit that deleted the log would lose the context the log adds while one that deleted the `throw` would swallow a failure.",
+      "configuration": [
+        "dotnet_diagnostic.SK7092.severity"
+      ]
+    },
+    {
+      "id": "SK7093",
+      "concept": "console-instead-of-logger",
+      "title": "The console is written to where a logger was meant",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S106"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A `Console.Write` or `Console.WriteLine` is made from code that has a logger in scope.",
+      "rationale": "A console write cannot be filtered, routed, structured or correlated, and in every hosted environment — a container, a service, a function, a test host — it goes nowhere anybody looks. Complements `SK2016`, which assumes a logger is being used at all.",
+      "examples": {
+        "bad": "public Importer(ILogger<Importer> logger) => this.logger = logger;\n\npublic void Import(string path) {\n    Console.WriteLine($\"importing {path}\");\n}",
+        "good": "public void Import(string path) {\n    logger.LogInformation(\"importing {Path}\", path);\n}"
+      },
+      "falsePositives": "⚠ **The rule does not decide whether this code is an application or a library, because nothing in the tree can tell it.** `LooseLoader` builds its compilation as `OutputKind.DynamicallyLinkedLibrary`, so \"this is a library\" and \"no project file was loaded\" are one observation, and loose is the mode Skala exists for. A rule keyed on `OutputKind` would report every line of every console application analysed without its project, which is `S106` turned into a false-positive engine. What ships is the narrower fact the issue's own title names and which no load mode can distort: **a logger is in scope at this call site and the code wrote to the console anyway** — a member or parameter typed `ILogger`, `ILogger<T>` or `ILog` is present, so the routing question is already answered for this code and answered differently two lines away. That is a contradiction inside one method rather than a policy judgement about the project. A console application's entry point printing usage has no logger and is never reported, which is the correct outcome by construction rather than by an exemption somebody has to maintain — and a service class that writes to the console and has no logger at all is under-reported, deliberately. The logger interface is matched on the type's own name and not on a namespace, because the namespace is the part that differs across `Microsoft.Extensions.Logging`, `Serilog`, `NLog` and `log4net`. `Console.Out` and `Console.Error` are reported through the receiver, so a `TextWriter` the caller handed in is not the console and never fires; reads such as `Console.ReadLine` never fire. Report-only: which level the line deserves is intent — `Debug`, `Information` and `Error` are all plausible for the same string — a console argument list is not mechanically a message template, and an edit that guessed would put the wrong severity on somebody's alerting.",
+      "configuration": [
+        "dotnet_diagnostic.SK7093.severity"
+      ]
+    },
+    {
       "id": "SK3530",
       "concept": "disposable-field-not-disposed",
       "title": "The disposable field is not disposed by `Dispose`",

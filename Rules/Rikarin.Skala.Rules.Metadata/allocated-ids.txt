@@ -137,6 +137,17 @@ SK3511 using-resource-object-initializer
 SK3512 using-variable-returned
 SK3020 null-returned-from-task-method
 SK3021 spin-lock-in-readonly-field
+SK6040 unused-out-variable
+SK6041 wider-foreach-variable-type
+SK4020 noncapturing-lambda
+SK4021 stateless-private-method
+SK4022 immutable-struct-not-readonly
+SK4023 redundant-capacity-argument
+SK4024 forced-garbage-collection
+SK7090 not-implemented-member
+SK7091 process-exit-outside-entry-point
+SK7092 logged-and-rethrown
+SK7093 console-instead-of-logger
 SK3530 disposable-field-not-disposed
 SK3531 dispose-async-without-base-call
 SK3532 ref-struct-owns-undisposed-resource
