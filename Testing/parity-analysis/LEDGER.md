@@ -62,16 +62,21 @@ exception is deliberate: a concept may name an inspection the pipeline buckets `
 `docs/plan/08` allocates ids for concepts it has never shipped (`SK1002`, `SK1004`), and a proposal
 to *implement* one of those is exactly what the ledger should hold.
 
-⚠ **The pipeline prints `Uncovered: 522` today**, measured with
-`python3 universe.py && python3 classify.py`. The four map entries added in this pass are worth
-**−3** of that: `PublicConstructorInAbstractClass`, `ChangeFieldTypeToSystemThreadingLock` and
+⚠ **Read `Uncovered` from a run, never from here.** It is the last line of
+`python3 universe.py && python3 classify.py`, and it fell 563 → 508 in the two hours this section
+took to write, entirely because other agents were shipping rules. What follows is a delta, which
+survives; the absolutes are dated examples of why not to quote one.
+
+The four map entries added in this pass are worth **−3**:
+`PublicConstructorInAbstractClass`, `ChangeFieldTypeToSystemThreadingLock` and
 `RedundantDictionaryContainsKeyBeforeAdding` leave the residue, and `ArrangeNullCheckingPattern`
 moves `Option` Tier D → `Catalogued` without touching it.
 
-⚠ **The absolute number moves under you and the delta does not.** The same four entries measured
-563 → 560 at `8d0d8fb3` and 525 → 522 an hour later, because 39 more rules and ~38 more map entries
-landed in between. **Quote the delta, and re-run for the absolute.** The 586 in `curatedAgainst` is
-two pipeline corrections and a catalogue's worth of rules out of date.
+⚠ **The absolute moves under you and the delta does not.** Those same four entries measured
+563 → 560 at `8d0d8fb3` and 525 → 522 an hour later — same change, same −3, two different
+headlines — because 39 more rules and ~38 more map entries landed in between. **Quote the delta,
+re-run for the absolute.** The 586 in `curatedAgainst` is two pipeline corrections and a
+catalogue's worth of rules out of date.
 
 ⚠ **`universe.py` prints a complete-looking universe with zero metadata when `types-2026.xml` is
 absent** — 953 rows, 888 C#-proper, every `id` null — and every downstream map then misses. The file
@@ -128,13 +133,20 @@ nothing, and were counted as part of the map's size.
 
 ## What the map actually decides
 
-Of **183** entries today:
+An entry only decides a bucket if its key matches a universe row *and* no higher-precedence bucket
+claims that row first. Three states, and only one of them does anything:
 
-| | count | effect |
-|---|---:|---|
-| Load-bearing — the entry is what puts the row in `Catalogued` | 149 | real |
-| Shadowed — `hosted()` runs before `catalogued()`, so a `CA*`/`IDE*` claim wins | 18 | none |
-| Inert — the key matches no universe row | 16 | none |
+| | effect |
+|---|---|
+| **Load-bearing** — the entry is what puts the row in `Catalogued` | real |
+| **Shadowed** — `hosted()` runs before `catalogued()`, so a `CA*`/`IDE*` claim wins | none |
+| **Inert** — the key matches no universe row | none |
+
+⚠ **No count is written here on purpose.** `verify_ledger.py` prints the split on every run
+(`parity map: N of M entries match a universe row`), and the numbers moved three times in the hour
+this section was being written, as twelve agents shipped rules and appended to the map. When it was
+first measured the map was 142 entries of which **107** were load-bearing, **18** shadowed and **17**
+inert — a quarter of it doing nothing. Read the current split from a run.
 
 ⚠ **The 18 shadowed entries are the interesting ones.** `SK1006`, `SK1010`, `SK1012`, `SK1020`,
 `SK1030` and `SK1034` each ship a rule for a concept the hosted map says Roslyn already covers
