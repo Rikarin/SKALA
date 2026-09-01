@@ -293,6 +293,14 @@ It is not yet the considered account the sections above carry.
   for across the **whole type**, not in `Dispose`'s body, because the documented pattern puts the
   work in `Dispose(bool)` and reading only the entry point would report every correct implementation
   of it.
+- `SK3531` `dispose-async-without-base-call` — an `override` of `DisposeAsync` or `DisposeAsyncCore`
+  that never reaches the implementation it replaced, so the base type's flush, graceful close or
+  return to a pool stops happening with nothing to say so. `CA1063` pins the synchronous pattern and
+  `CA2215` the synchronous base call; neither has an asynchronous counterpart. **Fixless**: the call
+  goes last in an override and first in a wrapper, and where it belongs among the override's own
+  cleanup is an ordering decision no edit can read. ⚠ **Every finding is provable and the guards are
+  what make that true**: the base must be declared in this compilation and its body must invoke
+  something. The stated cost is that a framework base in another assembly is not covered at all.
 
 ## SK4000 — Performance
 
@@ -493,8 +501,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **152** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **122** | **80.8 %** |
+| Rules this document names | **153** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **123** | **80.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

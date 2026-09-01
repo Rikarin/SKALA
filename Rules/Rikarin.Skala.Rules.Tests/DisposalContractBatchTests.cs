@@ -20,13 +20,13 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class DisposalContractBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
-        new UndisposedOwnedFieldAnalyzer(), new OwnedDisposableFieldAnalyzer(),
+        new UndisposedOwnedFieldAnalyzer(), new OwnedDisposableFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
             var data = new TheoryData<RuleFixture>();
-            foreach (var fixture in RuleFixtures.All().Where(static f => f.RuleId is "SK3530")) {
+            foreach (var fixture in RuleFixtures.All().Where(static f => f.RuleId is "SK3530" or "SK3531")) {
                 data.Add(fixture);
             }
 
@@ -123,6 +123,24 @@ public sealed class DisposalContractBatchTests {
             Apply(source, "SK3530"),
             StringComparison.Ordinal
         );
+    }
+
+    /// <summary>
+    ///     ⚠ The two guards that make every <c>SK3531</c> finding provable rather than probable.
+    /// </summary>
+    /// <remarks>
+    ///     Dropping either one is the widening the rule is most likely to suffer, and each costs a
+    ///     different kind of wrong report: without the "the base does work" test the rule asks every
+    ///     leaf of every hook-shaped hierarchy to call a no-op, and without the abstract test it asks
+    ///     for a call to a method that has no body at all — <c>CS0205</c>, a fix that cannot compile.
+    /// </remarks>
+    [Theory]
+    [InlineData("the-base-does-no-work")]
+    [InlineData("the-base-is-abstract")]
+    public void ABaseWithNothingToLose_IsNotReported(string name) {
+        var source = File.ReadAllText(Path.Combine(RuleFixtures.Root, "SK3531", "negative", name + ".cs"));
+
+        Assert.DoesNotContain(Analyze(RuleFixtures.Compile(source, name + ".cs")), static d => d.Id == "SK3531");
     }
 
     [Fact]

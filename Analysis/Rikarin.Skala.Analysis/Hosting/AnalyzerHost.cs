@@ -105,7 +105,7 @@ public static class AnalyzerHost {
         new EscapedKeywordAnalyzer(),
         new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
-        new UndisposedOwnedFieldAnalyzer(),
+        new UndisposedOwnedFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
     ];
 
     /// <summary>
