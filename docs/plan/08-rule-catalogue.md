@@ -154,10 +154,25 @@ a rule's default can be justified by how one unreviewed file happens to be laid 
 [16](16-risks-and-open-questions.md) § "The reference trees are a test subject" names, and the
 `hint` default is listed under § "Decisions that rest on a reference-tree count" for it.
 
-⚠ **`SK1040`–`SK1044` are named here and nowhere else in this section; the prose pass is owed.**
-They ship, so `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister` requires the register to
-name them — this block is that requirement being met and nothing more. They belong in the groups
-above, and have not been worked into them.
+**`SK1040`–`SK1044` are the cheap end of the band, and shipping them first was the point.**
+[17](17-inspection-parity.md) § "A large share of the 580 is cheap" argues that this catalogue is
+weighted towards semantically hard rules and under-represents the mechanical ones — the family that
+is syntactic, safely fixable and has near-zero false-positive surface. These five are that argument
+executed: every one carries a safe fix, and together they cost a fraction of what any single rule in
+the `SK1002`/`SK1004` group will.
+
+⚠ **`SK1041` inverts the concern that was raised against it, and the inversion is worth recording
+because it looks like a counter-example and is not.** C# defines `x op= y` as `x = (T)(x op y)` with
+an *explicit* conversion the long form lacks — so `byte b; b = b + 1;` does not compile while
+`b += 1` does. The shapes where the rewrite would lose a conversion are shapes the compiler has
+already rejected, and the rule never sees them. What the fix must never do is the opposite: unwrap a
+cast on the right-hand side, because `long l; l = (int)(l + 1);` truncates to 32 bits and `l += 1`
+does not.
+
+⚠ **`SK1043` finds nothing on the reference trees, and the reason is not that the trees are clean.**
+They contain two `for (; cond;)` loops, both inside `[GeneratedCode]` types, and every Skala analyzer
+declares `GeneratedCodeAnalysisFlags.None`. A zero from a file that was never analysed — the
+distinction § "What a corpus zero is worth" below now exists to keep.
 
 | ID | Concept | Instead of | Use |
 |---|---|---|---|
@@ -189,9 +204,22 @@ is the next free number in the band and not the nearest tidy one. It is **not** 
 § "Cut, with the reason" disposed of and which ADR-012 keeps taken for ever whether or not it ever
 shipped.
 
-⚠ **The prose pass on this block is owed.** These five ids are recorded here only so the register
-names every number that is taken (ADR-012) and so `RuleCatalogTests` can read them; they have not been
-folded into the paragraph above, and the gap below `SK2016` is a reservation rather than a decision.
+**These five are decidable from a small amount of local information** — one invocation, one
+accessor body, one declaration — with a tight false-positive surface and no dataflow between them.
+That is what made them a batch. ⚠ The gap below `SK2030` is a **reservation**, held while a parallel
+batch was in flight so that two agents could not take the same number; it is not a decision about
+anything, and every number in it is free. It is deliberately not spelled out as a range here — this
+document *is* the register, and writing an id down in it is what makes the id look taken.
+
+⚠ **`SK2034` is the one that argues with its own default.** It fires ten times on Skala's own
+production source — `@operator`, `@default`, `@using` in `MetricsAnalyzer`, `MemberMetrics`,
+`AsyncVoidAnalyzer`, `CheckCommand` and the options generator — and every one is a true positive,
+because identifiers named after the syntax nodes they hold are idiomatic when writing Roslyn-shaped
+code. It therefore ships at `suggestion` against the export's `warning`, with the divergence recorded
+in its `resharperNote`. **Whether the code or the rule should change is deliberately left open**:
+contorting a tree to satisfy a rule nobody has argued for is the same error as calibrating a rule to
+the tree, which [16](16-risks-and-open-questions.md) § "The reference trees are a test subject"
+already names in the other direction.
 
 - `SK2030` `nan-comparison` — `==` or `!=` against a constant `NaN`.
 - `SK2031` `unused-value-parameter` — a setter that does work and never reads `value`.
@@ -210,21 +238,45 @@ with no `await` · `SK3007` `Task` returned from a `using` block that disposes w
 state · `SK3501` `IDisposable` created and not disposed on all paths · `SK3502` field of a disposable
 type in a type that is not disposable · `SK3503` `IAsyncDisposable` disposed synchronously.
 
-### ⚠ Registered, prose pass owed — `SK3500` disposal and lifetime
+### `SK3510`–`SK3512` — one ownership question, asked three ways
 
-⚠ These ids ship and are listed here only so the register names them. The paragraph above has not
-been extended to describe them properly; that pass is owed.
+`SK3501` reports a disposable that is never disposed and `SK3502` a type that owns one without
+saying so. These three ask the complementary question — *this variable **is** owned by a `using`;
+what else happens to it?* — and share a single analysis of what a `using` statement or declaration
+owns:
 
-- `SK3510` — `using-variable-disposed-again`
-- `SK3511` — `using-resource-object-initializer`
-- `SK3512` — `using-variable-returned`
+- `SK3510` `using-variable-disposed-again` — an explicit `Dispose()` on a variable `using` already
+  disposes. ⚠ Ownership is read off the **declarator**, never off the name: the corpus holds 24
+  name-matching shapes and **none** is a true positive, so a name-matching rule would have deleted
+  four disposals that nothing else performs.
+- `SK3511` `using-resource-object-initializer` — `using var x = new Foo { Bar = Baz() }` does not
+  protect the `new Foo`; if the initializer throws, the constructed resource was never assigned to
+  the `using` variable and leaks. ⚠ The rule **withdraws when the initializer contains a comment**,
+  because the fix rebuilds assignments from expressions and trivia between members belongs to no
+  expression — a fix marked *safe* would otherwise have silently deleted a six-line note in the
+  reference trees. That guard came from reading the corpus, not from reasoning about it.
+- `SK3512` `using-variable-returned` — the plain-value shape of `SK3007`. **Fixless**: returning a
+  disposed object is a design error and no edit repairs it.
 
-### ⚠ Registered, prose pass owed — `SK3000` async and concurrency
+⚠ **`SK3512` declines `supersedes` deliberately, and the reason generalises.** `Supersession.Apply`
+dedupes on a shared `(rule, path, line, column)` and marks the *superseded* finding suppressed — so
+declaring `supersedes: ["SK3007"]` would hide the finding that carries the remedy. The two are made
+disjoint by construction instead: `SK3512` tests the returned local's type and stays silent on
+`Task`/`ValueTask`, which is exactly where `SK3007` fires. `TheTaskShape_IsReportedByExactlyOneOfTheTwoRules`
+double-reports when inverted. ⚠ Known gap, stated rather than hidden: where `SK3007` declines because
+it cannot rewrite the whole method, neither rule reports.
 
-⚠ Same: shipped, listed so the register names them, prose owed.
+### `SK3020`, `SK3021` — two independents in the async band
 
-- `SK3020` — `null-returned-from-task-method`
-- `SK3021` — `spin-lock-in-readonly-field`
+- `SK3020` `null-returned-from-task-method` — a non-`async` `Task` method returning `null`, where
+  `await` at the call site is a `NullReferenceException` naming the caller rather than the method.
+- `SK3021` `spin-lock-in-readonly-field` — `SpinLock` is a mutable struct, so a `readonly` field
+  hands every caller a copy and the lock excludes nothing. ⚠ Its first draft shipped a fix that does
+  not compile: deleting `readonly` from an instance field of a `readonly struct` is **CS8340**, which
+  forces the keyword. The rule now withdraws there.
+
+⚠ **Both ship on fixture evidence alone.** The reference trees contain none of either shape — not a
+clean zero, an absent one.
 
 ## SK4000 — Performance
 
@@ -266,9 +318,30 @@ mutable array or `List<T>` · `SK6003` `abstract` type with a public constructor
 in a public virtual method · `SK6006` `enum` without an explicit zero value · `SK6007` `struct`
 without `IEquatable<T>` · `SK6008` extension method on `object`.
 
-⚠ **Register entries only — the prose pass for the four below is owed.** They ship, so
-`RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister` requires them to be named here; nothing
-about their place in the band's argument has been written yet.
+**These four are decidable from a declaration alone**, which is what separates them from the rest
+of the band: no dataflow, no call graph, and for three of them no semantic model beyond the declared
+symbol. ⚠ **Three of them ship `hasFix: false`, and they are the first fixless rules in the
+catalogue** — a possibility this document has repeatedly declined to rule out and never exercised.
+Renaming a type is a solution-wide edit that Skala's one-file text-edit model cannot make, and
+deleting one is not mechanical: reflection, DI-by-name and serialised payloads all reach a type that
+nothing in the tree references.
+
+⚠ **A fifth rule was refused rather than built.** *"A non-constructor method should not share its
+type's name"* is already **CS0542** in C#; every shape was compiled and all six are compile errors,
+and in the four shapes that remain legal the stated harm cannot occur. **No id was allocated**, so
+the band has no gap where it sits — the proposal is closed as refuted, which this document counts as
+a result rather than an omission.
+
+⚠ **`SK6020`'s justification is not the one it was proposed with.** `where T : Enum` does *not*
+admit `Nullable<TEnum>` — that is CS0312. What `struct` excludes is `System.Enum` itself, which
+satisfies the bare constraint by identity: `default(T)` is then `null`, every use boxes, and none of
+`Enum.GetValues<T>`/`TryParse<T>`/`IsDefined<T>`/`GetName<T>` can be called, because the BCL declares
+all four `where TEnum : struct, Enum`. The refutation is carried in the rule's own `falsePositives`
+so that `skala explain` prints it.
+
+⚠ **`SK6022` deliberately drops the `Record` suffix** the proposal named. `LogRecord`, `AuditRecord`,
+`DnsRecord` — the domain noun predates the keyword by decades and no syntactic test separates them.
+`PersonRecord` goes unreported; that is the price of not reporting `LogRecord`.
 
 - `SK6020` `enum-constraint-without-struct` — `where T : Enum` with no `struct` beside it.
 - `SK6021` `exception-name-without-exception-base` — a type named `…Exception` that does not derive
@@ -294,10 +367,27 @@ because a register that the code can drift away from is a register nobody can tr
 `SK7050` `#pragma warning disable` without a justification comment · `SK7051` `SuppressMessage`
 without a real `Justification` · `SK7060` commented-out code (token-density heuristic, `hint`).
 
-⚠ **Allocation only — the prose pass is owed.** The ids below were allocated by the batch that built
-them and are named here so that ADR-012's register can answer "is this number free". They have no
-paragraph yet in this document explaining the decision behind each, and § "Priority 1 hygiene rules"
-has not been extended to cover them.
+**`SK7070`–`SK7074` extend the justification family `SK7050` and `SK7051` started.** That family is
+now four rules — a suppression, a `SuppressMessage`, an obsolescence and a coverage exclusion — and
+all four are report-only for the same reason: no edit can write the sentence a human owes the next
+reader. ⚠ **`SK7070` and `SK7074` are, with the `SK60xx` batch, the first rules to ship with no fix
+at all.**
+
+⚠ **`SK7072` is the first rule to ship a deliberately partial concept, and the part it omits is
+named.** Deciding that a suppressed warning *no longer fires* requires the compilation's diagnostics
+without the pragma, and an analyzer cannot obtain them: pragma filtering is applied before
+`GetDiagnostics` returns, an analyzer cannot enumerate its peers, and re-analysing from inside one is
+re-entrant. Only the host could answer, and that is a separate feature. What ships is the sound half
+— a `disable` region with no source token in it — with a safe fix. ⚠ Its `resharperId` is left
+**null** rather than claiming `RedundantDisableWarningComment`, so the uncovered remainder stays
+visible in [17](17-inspection-parity.md)'s residue instead of being hidden by an over-claim of
+exactly the kind that document spent a pass removing.
+
+⚠ **`SK7074` states an exclusion rather than merely detecting.** `goto case` and `goto default` never
+fire: they are the only way C# expresses fall-through, cannot leave their `switch`, and leave the flow
+visible. The exclusion lives in the syntax kinds registered rather than in a filter, and the reference
+trees are the argument for it — across all three there is exactly **one** `goto`, and it is a
+`goto case`.
 
 `SK7070` `Obsolete` without a message · `SK7071` `ExcludeFromCodeCoverage` without a
 `Justification` · `SK7072` a `#pragma warning disable` region with no code in it ·
@@ -407,6 +497,33 @@ with a fix, zero false positives across two reference trees, and a negative fixt
 large as the positive one. Twenty-nine rules that are always right is the goal.
 [16](16-risks-and-open-questions.md) § R3 describes the alternative — a hundred that are usually
 right — as the failure mode, not the target.
+
+### ⚠ What a corpus zero is worth, and for most rules it is nothing
+
+**The bar's second clause — zero false positives across two reference trees — is currently vacuous
+for every rule with `requiresSemantics: true`, and that was discovered while shipping twenty of
+them.** `Testing/corpus/real/{vixen,newtonsoft,serilog}` are vendored **source slices with no project
+files and no dependency closure**; a compilation over them is a sea of error types, measured at
+roughly 12 951 CS errors for vixen, 2 316 for newtonsoft and 1 484 for serilog. Every semantic guard
+in every analyzer withdraws against an error type, so the rule goes quiet and the sweep prints a
+clean zero.
+
+⚠ **The proof is a number in this document.** § "Backing storage, precomputed lookups and span call
+sites" records `SK3501` finding **1** on `corpus/real`. It finds **0** today, under both
+`check --load=loose` and a direct compilation, and the rule has not changed. That figure is stale for
+**instrument** reasons rather than code reasons, and correcting it by editing the number would be the
+error rather than the fix.
+
+This is [17](17-inspection-parity.md)'s *"a zero from a disabled inspection and a zero from a clean
+codebase are the same zero"*, one level up: **a zero from an uncompilable tree and a zero from clean
+code are the same zero.** The distinction a report must therefore draw, and which several rules above
+now draw explicitly, is between three different zeros — the shape is absent from the trees, the shape
+is present and correctly declined, and the analysis never ran. Only the second is evidence.
+
+Where a semantic rule needed real evidence it was measured against **Skala's own tree**, which
+compiles; that is how `SK3511`'s one true positive in `Reporting/…/SarifWriter.cs` was found, which
+no corpus sweep could have seen. Fixing the instrument is tracked separately and is not a rule
+problem.
 
 ⚠ Three artefacts agree with each other and are test-enforced — `rules.json`, `allocated-ids.txt`
 and `docs/rules/`. `SK7003`, `SK7004` and `SK7005` ship and were named nowhere in this document until
