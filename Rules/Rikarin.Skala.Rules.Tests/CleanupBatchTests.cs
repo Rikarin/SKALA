@@ -18,9 +18,10 @@ public sealed class CleanupBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
         new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
+        new RedundantDeclarationAnalyzer(),
     ];
 
-    static readonly string[] Ids = ["SK0240", "SK0241", "SK0242", "SK0243"];
+    static readonly string[] Ids = ["SK0240", "SK0241", "SK0242", "SK0243", "SK0244"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
@@ -203,6 +204,46 @@ public sealed class CleanupBatchTests {
         );
 
         Assert.Contains(sentence, finding.GetMessage(), StringComparison.Ordinal);
+    }
+
+    /// <summary>Each of <c>SK0244</c>'s six declarations, named by the sentence it reports.</summary>
+    [Theory]
+    [InlineData("empty_finalizer", "an empty finalizer is not free")]
+    [InlineData("empty_public_constructor", "the parameterless constructor is empty and is the only one")]
+    [InlineData(
+        "empty_protected_constructor_on_an_abstract_class",
+        "the parameterless constructor is empty and is the only one"
+    )]
+    [InlineData("empty_constructor_with_a_base_call", "the parameterless constructor is empty and is the only one")]
+    [InlineData("empty_namespace", "the namespace declares nothing")]
+    [InlineData("redundant_base_call", "the constructor initializer the compiler supplies")]
+    [InlineData("default_int_field", "a field is zero-initialized before any code runs")]
+    [InlineData("default_bool_field", "a field is zero-initialized before any code runs")]
+    [InlineData("default_nullable_field", "a field is zero-initialized before any code runs")]
+    [InlineData("default_expression_field", "a field is zero-initialized before any code runs")]
+    [InlineData("default_auto_property", "property's storage is zero-initialized")]
+    [InlineData("override_forwards_to_base", "does nothing but call the base implementation")]
+    [InlineData("override_forwards_from_a_block", "does nothing but call the base implementation")]
+    public void SK0244_ReportsWhichDeclarationItMatched(string name, string sentence) {
+        var finding = Assert.Single(
+            Findings(Path.Combine(RuleFixtures.Root, "SK0244", "positive", name + ".cs"), "SK0244")
+        );
+
+        Assert.Contains(sentence, finding.GetMessage(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The empty finalizer's message names the runtime cost, because that is the whole reason it
+    ///     stays in a rule about redundancy instead of moving to the performance range.
+    /// </summary>
+    [Fact]
+    public void SK0244_SaysWhatAnEmptyFinalizerCosts() {
+        var finding = Assert.Single(
+            Findings(Path.Combine(RuleFixtures.Root, "SK0244", "positive", "empty_finalizer.cs"), "SK0244")
+        );
+
+        Assert.Contains("finalization", finding.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("a generation later", finding.GetMessage(), StringComparison.Ordinal);
     }
 
     static Diagnostic[] Findings(string path, string id) {

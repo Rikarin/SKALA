@@ -110,6 +110,7 @@ the primary inspection only; `supersedes` names the rest.
 | `SK0241` | The modifier has no effect | Syntax | safe |
 | `SK0242` | The `#nullable` directive changes nothing | Syntax | safe |
 | `SK0243` | The qualifier is redundant | Semantic | safe |
+| `SK0244` | The declaration adds nothing | Syntax | safe |
 
 `SK0240` covers three shapes of [#131](https://github.com/Rikarin/SKALA/issues/131)'s thirteen: a
 `continue;` ending a loop body or a `return;` ending a void body (`RedundantJumpStatement`), a
@@ -159,6 +160,23 @@ fire. `UsingsRule.Unused` builds its removal set from Roslyn's **CS8019** alone
 duplicated by a `global using X;` is reported by the compiler as **CS8933** — measured on a probe
 project, where the using is genuinely redundant and CS8019 is silent. Nothing in `SK0243` claims that
 inspection: shipping it here would be a second id for one concept.
+
+`SK0244` covers six of [#130](https://github.com/Rikarin/SKALA/issues/130)'s fourteen: an empty
+finalizer, an empty sole constructor, an empty namespace, a `: base()` with no arguments, a member
+initialized to the value it already holds, and an `override` whose body is a call to the member it
+overrides.
+
+⚠ **`EmptyDestructor` stays here at `warning` rather than moving to the performance range** — the
+decision the issue asked for. An empty finalizer costs every instance a second GC generation, and that
+is real; but the finding and the edit are identical to the other five, so splitting it out would have
+made one concept two ids for the sake of a severity. The cost is carried in the message and the
+rationale, where a reader sees it. ⚠ A `static` constructor is the mirror image and is never reported:
+declaring one, even empty, clears `beforefieldinit`, so deleting it is a timing change.
+
+⚠ `RedundantTypeDeclarationBody` is **declined rather than outstanding**, and the reason is a conflict
+inside this catalogue: it asks for `class Foo { }` to become `class Foo;`, and `SK6023` reports those
+same braces as an unfinished declaration. Two shipped rules disagreeing about one span is worse than
+neither covering it.
 
 ## SK1000 — Modernization
 
@@ -550,8 +568,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **125** | **80.6 %** |
+| Rules this document names | **157** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **126** | **80.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |

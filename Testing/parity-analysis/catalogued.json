@@ -142,5 +142,6 @@
  "RedundantJumpStatement": "SK0240",
  "RedundantAbstractModifier": "SK0241",
  "RedundantNullableDirective": "SK0242",
- "RedundantQualifier": "SK0243"
+ "RedundantQualifier": "SK0243",
+ "RedundantOverriddenMember": "SK0244"
 }

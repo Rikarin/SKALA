@@ -3428,6 +3428,37 @@
       "configuration": [
         "dotnet_diagnostic.SK0243.severity"
       ]
+    },
+    {
+      "id": "SK0244",
+      "concept": "redundant-declaration",
+      "title": "The declaration adds nothing",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantOverriddenMember",
+      "supersedes": [
+        "EmptyDestructor",
+        "EmptyConstructor",
+        "EmptyNamespace",
+        "RedundantBaseConstructorCall",
+        "RedundantDefaultMemberInitializer"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An empty finalizer, an empty sole constructor, an empty namespace, a `: base()` with no arguments, a member initialized to the value it already has, or an `override` that only calls the base.",
+      "rationale": "⚠ **The empty finalizer is not merely redundant, and it stays in this rule at `warning` rather than moving to the performance range.** An empty `~Foo() { }` opts the type into finalization: every instance goes on the finalizer queue, survives the collection that would otherwise have taken it, and is freed a generation later — for a body that does nothing. It is kept here because the finding and the edit are the same as the other five, a declaration that adds nothing being deleted; splitting it out would have made one concept two ids for the sake of a severity, and the cost is instead in the message, where a reader will actually see it. The other five are deletions with no effect at all: the compiler generates exactly the constructor that was written, supplies exactly that constructor initializer, zero-initializes exactly that field, and dispatches to exactly the base method the override forwards to.",
+      "examples": {
+        "bad": "sealed class Buffer {\n    byte[] data = new byte[1024];\n\n    ~Buffer() { }\n}",
+        "good": "sealed class Buffer {\n    byte[] data = new byte[1024];\n}"
+      },
+      "falsePositives": "⚠ **A `static` constructor is never this shape and an empty one is not redundant.** Declaring one — even empty — clears `beforefieldinit` on the type, which changes when the runtime is allowed to run the type's initialization; deleting it is a timing change and not a cleanup. ⚠ The constructor shape is classes only, never a `partial` one and never one with a primary constructor: in a partial type the other part may hold the constructor that makes this one meaningful, and it is not visible from here. It must also be the only instance constructor, and its accessibility must be the one the compiler would have generated — `protected` on an abstract class and `public` on every other — because an accessibility that differs is doing something. ⚠ **`= null` is accepted only on a type written with a `?`, and `= default` on the same set plus the value-type keywords.** Under an enabled nullable context `string name = null;` warns at the initializer (CS8625), and deleting it moves the warning to CS8618 at the constructor — a *different* warning, which a fix marked safe may not introduce. `string`, `object` and every user-written type are therefore out, because whether one is a struct is not visible in the declaration. `0f`, `0m` and `'\\0'` are the same value written differently and are not matched; an enum member and a struct's own `Empty` are not decidable here at all. Automatically implemented properties only — an accessor with a body stores wherever its code says. ⚠ **The `override` shape is `void`-only, and that is the covariant-return guard.** C# 9 lets an override narrow its return type, and such an override is the declaration carrying the narrower type, so deleting it changes what every caller sees; comparing the two return types needs the base symbol, which this rule does not ask for, so the question is excluded by matching the `void` keyword instead. `sealed`, an attribute, a type parameter list and a parameter with a default value each withdraw it as well. ⚠ **The fix deletes a declaration's *full* span, which begins at its leading trivia**, so a documentation comment, an ordinary comment, a `#region` or an attribute list withdraws the finding rather than being carried away by a fix marked safe. ⚠ Eight of [#130](https://github.com/Rikarin/SKALA/issues/130)'s fourteen inspections are not covered. `RedundantTypeDeclarationBody` is the notable one and it is **declined rather than pending**: it asks for `class Foo { }` to become `class Foo;`, and `SK6023` reports the same braces as an unfinished declaration — two rules would disagree about one span. `RedundantExtendsListEntry`, `RedundantAttributeSuffix` and `RedundantExplicitPositionalPropertyDeclaration` each need a symbol; `RedundantPartialMethodEmptyImplementation` needs the other part; `RedundantSetterValueParameterDeclaration`, `RedundantSetsRequiredMembersAttribute` and `RedundantAttributeUsageProperty` are each a distinct edit that this rule does not attempt.",
+      "configuration": [
+        "dotnet_diagnostic.SK0244.severity"
+      ]
     }
   ]
 }
