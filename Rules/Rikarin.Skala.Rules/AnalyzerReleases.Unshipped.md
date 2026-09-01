@@ -82,3 +82,4 @@ SK2005 | Skala.Correctness | Warning | Do not mutate a copy of a readonly struct
 SK4003 | Skala.Performance | Hidden | Review a temporary params array with a span overload.
 SK6020 | Skala.Design | Warning | An `Enum` constraint has no `struct` beside it.
 SK6021 | Skala.Design | Warning | A type is named like an exception and is not one.
+SK6022 | Skala.Design | Info | A type name repeats the keyword the declaration already carries.

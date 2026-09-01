@@ -2720,6 +2720,31 @@
       "configuration": [
         "dotnet_diagnostic.SK6021.severity"
       ]
+    },
+    {
+      "id": "SK6022",
+      "concept": "type-name-restates-its-kind",
+      "title": "A type name repeats the keyword the declaration already carries",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`class OrderClass` and `struct PointStruct` say the same thing twice; the keyword is already there, two words to the left.",
+      "rationale": "A type's kind is written in its declaration, and every tool that shows the type shows the keyword: the IDE's completion list, the hover, the go-to-definition, the diff. Repeating it in the identifier spends a word on information the reader already has, and it costs the name whatever a real noun would have contributed — `OrderClass` is a worse name than `Order`, not a more precise one. The suffix is also the first thing to go stale, because it survives the edit that makes it wrong: a `class` that becomes a `record` keeps its `Class` suffix until somebody notices. This is not `CA1711`, which is about suffixes .NET has *reserved* — `Attribute`, `Collection`, `EventArgs`. These are not reserved; they are simply empty.",
+      "examples": {
+        "bad": "public sealed class OrderClass {\n    public int Id { get; init; }\n}",
+        "good": "public sealed class Order {\n    public int Id { get; init; }\n}"
+      },
+      "falsePositives": "**Only two suffixes, and the declaration has to agree with the one it uses.** `Class` is reported on a `class` or a `record` (a record class is a class, and a `record OrderClass` is the stale suffix in its most literal form); `Struct` is reported on a `struct` or a `record struct`. Where the name and the keyword *disagree* — a `class` called `PointStruct` — the rule says nothing, because there the name is not redundant, it is wrong, and \"delete the suffix\" is the wrong advice for a name that lies about its kind.\n\n⚠ **`Record` is deliberately not a suffix this rule knows about, even though the proposal names it.** `Record` was a domain noun for a row of data for decades before it was a C# keyword: `LogRecord`, `AuditRecord`, `MedicalRecord`, `DnsRecord`, `ResourceRecord`, `ActivationRecord`, `ChangeRecord`. There is no syntactic test that separates the noun from the redundant suffix, the noun is overwhelmingly the more common of the two, and a rule that cannot tell them apart on a word this common would be wrong far more often than right. `PersonRecord` goes unreported. That is the price of not reporting `LogRecord`, and it is worth paying.\n\n**A curated list of compound words is exempt, and it is judgement rather than measurement.** The rule reads the PascalCase word immediately before the suffix, and stays silent when it is one of: `Base`, `Sub`, `Super`, `Inner`, `Outer`, `Nested`, `Abstract`, `Sealed`, `Partial`, `Generic`, `Derived`, `Test`, `Master`, `Character`, `Equivalence`, `Storage`, `Business`, `Economy`, `First`, `Second`, `Weight`, `Size`, `Device`, `Object`, `Working`, `Worker`, `Ref`, `Readonly`. Two different things are on that list. In `MasterClass`, `CharacterClass`, `EquivalenceClass`, `StorageClass`, `BusinessClass` and `WeightClass` the word \"class\" means *category* and is not about C# at all. In `BaseClass`, `InnerClass`, `NestedClass`, `AbstractClass` and `TestClass` the type is *about* a class — a fixture, a sample, a node in a tool that reads C# — so the word is the head noun rather than a suffix; `TestClass` in particular is MSTest's own attribute name and a term of art. ⚠ **The list is incomplete by construction and always will be.** English compounds are not enumerable, and a name whose last word is a real compound and is not on this list will be reported wrongly. Add a `#pragma` or a baseline entry; the rule ships at `suggestion` because that is the honest severity for a judgement of this kind.\n\n**Two mechanical guards keep the obvious noise out.** The name must be longer than the suffix, so a `class Class` or a `struct Struct` in a parser or a code generator — where that is the whole subject — is never reported. And the character before the suffix must be lower-case or a digit, so the suffix has to begin a new PascalCase word after a real one; an all-caps run running into it is not a suffix boundary anyone wrote on purpose.\n\n⚠ **No fix.** Renaming a type rewrites every reference to it across a solution, and Skala's fix model is a list of text edits against one file's `SourceText` — an edit that renamed the declaration and nothing else would produce a tree that does not build. Choosing the replacement name is a person's decision in any case; `Order` is usually right and is not always right.",
+      "configuration": [
+        "dotnet_diagnostic.SK6022.severity"
+      ]
     }
   ]
 }
