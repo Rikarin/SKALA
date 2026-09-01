@@ -141,6 +141,7 @@ public static class AnalyzerHost {
         new RepeatedStringLiteralAnalyzer(),
         new UnintendedReferenceComparisonAnalyzer(),
         new BaseEqualityCallAnalyzer(),
+        new UncomparedHashMemberAnalyzer(),
     ];
 
     /// <summary>
