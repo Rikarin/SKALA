@@ -114,6 +114,7 @@ SK2005 readonly-struct-mutation
 SK4003 params-span-overload
 SK7070 obsolete-without-message
 SK7071 exclude-from-code-coverage-without-justification
+SK7072 empty-suppression-region
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

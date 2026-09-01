@@ -2722,6 +2722,31 @@
       "configuration": [
         "dotnet_diagnostic.SK7071.severity"
       ]
+    },
+    {
+      "id": "SK7072",
+      "concept": "empty-suppression-region",
+      "title": "A warning suppression covers nothing",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A `#pragma warning disable` region contains no code, so it suppresses nothing and silently covers whatever is written there next.",
+      "rationale": "The usual way this happens is an edit: the code the pragma bracketed was deleted and the bracket stayed. What is left is a suppression waiting for a subject, and the next statement written between the directives is exempted from a diagnostic nobody chose to exempt it from. No code inside means no diagnostic inside, for every analyzer that will ever run, so the finding needs to know nothing about which analyzers those are — and the fix is to delete the directives and nothing else.",
+      "examples": {
+        "bad": "#pragma warning disable CS0168\n#pragma warning restore CS0168",
+        "good": "// Delete both directives; the code they bracketed is gone."
+      },
+      "falsePositives": "⚠ This is the decidable half of the concept and the other half is deliberately not attempted. Deciding that a suppressed warning *no longer fires* requires knowing what the compilation reports without the pragma, which an analyzer cannot ask: pragma filtering is applied to compiler diagnostics before `Compilation.GetDiagnostics` returns, an analyzer cannot enumerate the other analyzers in the run, and re-analysing from inside an analyzer is re-entrant. Only the analysis host is in a position to answer it, and doing so is a separate feature. What ships is the degenerate case: no source token between a `disable` and the `restore` that lifts it, or between a `disable` and end of file. A region holding only other `#pragma warning` directives also counts as empty, so nested empty brackets are one edit rather than several passes. Every other trivia is content and the rule stays quiet — a comment, a `#region`, and in particular inactive `#if` text, which is code under another set of preprocessor symbols. Numeric and `CS`-prefixed ids are matched as one id; a `restore` naming other ids does not close a `disable`, and a bare `restore` closes every one.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK7072.severity"
+      ]
     }
   ]
 }
