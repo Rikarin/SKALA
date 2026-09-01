@@ -165,3 +165,7 @@ SK2051 | Skala.Correctness | Warning | The arithmetic has a result its constant 
 SK2052 | Skala.Correctness | Warning | The shift count is masked to a different count.
 SK2053 | Skala.Correctness | Warning | The size comparison is decided by a count never being negative.
 SK2054 | Skala.Correctness | Warning | A signed modulus result is compared for equality with a non-zero value.
+SK2090 | Skala.Correctness | Warning | The finalizer can throw.
+SK2091 | Skala.Correctness | Warning | An exception is thrown from a `finally` block.
+SK2092 | Skala.Correctness | Warning | `NullReferenceException` is caught.
+SK2093 | Skala.Correctness | Warning | The handler discards the exception it caught.

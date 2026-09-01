@@ -197,6 +197,10 @@ SK2051 fixed-result-arithmetic
 SK2052 masked-shift-count
 SK2053 nonnegative-size-comparison
 SK2054 signed-modulus-equality
+SK2090 finalizer-can-throw
+SK2091 throw-in-finally
+SK2092 null-reference-exception-caught
+SK2093 caught-exception-discarded
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

@@ -1110,6 +1110,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **215** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **181** | **84.6 %** |
+| Rules this document names | **214** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **180** | **84.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
@@ -2088,3 +2090,57 @@ tested at nothing.
 bad/good examples, the known false positives, the configuration keys, and the related rules in other
 tools. `skala explain SK1002` prints it. The website, if there ever is one, renders the same files.
 One source, three surfaces — the same rule the option registry follows.
+
+## `SK2090`–`SK2093` — what a handler does with the exception it was handed
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
+Correctness" only to keep it out of a section nine concurrent branches were editing.** What follows
+is the register doing the one job ADR-012 needs it to do — the numbers are taken and written down
+where the next milestone will read them. It is not yet the considered account the sections above
+carry, and it belongs beside `SK2013`–`SK2017`.
+
+Four rules about the same seam: the point where a program decides what to do with a failure it did
+not want. Each one reports a place where that decision destroys the evidence.
+
+- `SK2090` a `throw` that can escape a finalizer. The process ends, from the finalizer thread, with a
+  stack naming the finalizer queue rather than the code that filled it. ⚠ **The recall decision is
+  the rule.** `~T()` is a one-line `Dispose(false)` in the documented pattern, so reading only the
+  destructor's block would be silent on nearly every real occurrence; the rule follows **one** call
+  hop, into a method declared on the same type whose body is in this compilation, and stops. A
+  `Dispose(bool)` inherited from another assembly, and a throw two calls down, are not reached — that
+  is the price and it is stated rather than hidden. ⚠ **Without the `disposing` guard the rule would
+  fire on every correct implementation of the pattern**: `if (disposing) { … }` is where the managed
+  cleanup lives, the finalizer passes `false`, and a `throw` in that branch is unreachable from
+  `~T()`. Report-only.
+- `SK2091` a `throw` written inside a `finally`. It replaces the exception already in flight, so the
+  failure that explains everything is destroyed and the log holds only the cleanup's complaint about
+  the state that failure created. ⚠ **Only the explicit keyword.** A `finally` that calls something
+  which *might* throw is every `finally` ever written — `Dispose`, `Close` and `Flush` all can — and
+  a rule asking that question would fire across the tree and be switched off in a day. Syntactic, so
+  it runs under `--load=loose`. Report-only.
+- `SK2092` a `catch` clause naming `NullReferenceException`. ⚠ **`catch (Exception)` catches it too
+  and is deliberately a different question**; folding the two together would make the finding
+  unanswerable, so the rule fires only where the clause names the type itself. Syntactic, matching
+  the three spellings a compiling program can use, which is what lets it run under `--load=loose`;
+  the residual is a user-defined type of the same simple name, which exists nowhere on either
+  reference tree or in `Testing/corpus`. Report-only.
+- `SK2093` the handler names the exception, throws a different one, and never passes the first to the
+  second. ⚠ **This is the third member of the `SK2014`/`SK2015` family and the most common of the
+  three, because it looks like diligence.** It is not `SK2014`, which requires the block to be
+  *empty*; and it is **disjoint from `SK7092` by construction rather than by filter** — `SK7092`
+  requires the clause to propagate what it caught, this rule requires that it does not, so the two
+  conditions are negations and no clause can produce both. The one rule of the four that ships a fix:
+  the caught variable is appended as the trailing argument, `fixIsSafe: false` because it changes what
+  a caller sees.
+
+⚠ **A fifth concept was measured and closed as hosted rather than shipped, and no id was allocated
+for it.** Issue #176 — "a general or reserved exception type is thrown", SonarSource's `S112` — is
+covered by the SDK's own `CA2201`. Measured, not assumed: a probe throwing ten exception types builds
+with `AnalysisMode=All` and `CA2201` reports nine of them, naming `Exception`, `SystemException` and
+`ApplicationException` as "not sufficiently specific" and `NullReferenceException`,
+`IndexOutOfRangeException`, `StackOverflowException`, `OutOfMemoryException`, `AccessViolationException`
+and `ExternalException` as "reserved by the runtime" — a superset of the list the issue proposed. It
+is off under `AnalysisMode=Default`, and ADR-008's answer to that is to enable it, not to rebuild it.
+The one gap found is that `CA2201` matches the exact type, so a `Win32Exception` — which derives from
+the `ExternalException` it does report — passes; that is not what the issue is about and does not
+justify an id.

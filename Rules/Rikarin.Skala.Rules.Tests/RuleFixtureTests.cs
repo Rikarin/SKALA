@@ -103,6 +103,8 @@ public sealed class RuleFixtureTests {
         new RepeatedStringLiteralAnalyzer(),
         new IntegerDivisionFractionAnalyzer(), new FixedResultArithmeticAnalyzer(), new MaskedShiftCountAnalyzer(),
         new NonnegativeSizeComparisonAnalyzer(), new SignedModulusEqualityAnalyzer(),
+        new ThrowingFinalizerAnalyzer(), new ThrowInFinallyAnalyzer(),
+        new CaughtNullReferenceAnalyzer(), new DiscardedCaughtExceptionAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

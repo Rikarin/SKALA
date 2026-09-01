@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 189 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 188 ids are allocated.
 
 ## Async
 
@@ -65,11 +65,10 @@
 | [SK2032](SK2032.md) | Remove GC.SuppressFinalize from a type with no finalizer | suggestion | safe | no |
 | [SK2033](SK2033.md) | Do not stackalloc inside a loop | warning | — | yes |
 | [SK2034](SK2034.md) | Do not name a declaration after a reserved keyword | suggestion | — | yes |
-| [SK2050](SK2050.md) | Integer division feeds a fractional result | warning | review | no |
-| [SK2051](SK2051.md) | The arithmetic has a result its constant operand already fixes | warning | safe | no |
-| [SK2052](SK2052.md) | The shift count is masked to a different count | warning | — | no |
-| [SK2053](SK2053.md) | The size comparison is decided by a count never being negative | warning | — | no |
-| [SK2054](SK2054.md) | A signed modulus result is compared for equality with a non-zero value | warning | — | no |
+| [SK2090](SK2090.md) | The finalizer can throw | warning | — | no |
+| [SK2091](SK2091.md) | An exception is thrown from a `finally` block | warning | — | yes |
+| [SK2092](SK2092.md) | `NullReferenceException` is caught | warning | — | yes |
+| [SK2093](SK2093.md) | The handler discards the exception it caught | warning | review | no |
 
 ## Design
 
