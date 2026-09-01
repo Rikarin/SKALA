@@ -2686,12 +2686,143 @@
         "bad": "void Write(string value) {\n    if (value is null) {\n        throw new ArgumentNullException(\"vlaue\");\n    }\n}",
         "good": "void Write(string value) {\n    if (value is null) {\n        throw new ArgumentNullException(nameof(value));\n    }\n}"
       },
-      "falsePositives": "The argument is located by the *constructor symbol's* parameter named `paramName`, never by position, so the overloads where the same slot is a message \u2014 `ArgumentException(message, innerException)`, `ArgumentNullException(message, innerException)` \u2014 are not touched, and a named argument is followed to the right slot. Only a plain string literal is examined: `nameof`, a constant, an interpolation, a variable and an empty literal are all left alone. \u26a0 **The names in scope are every parameter the C# scoping rules put there**, which is deliberately more than the enclosing method: a lambda's and a local function's own parameters, an indexer's parameters, the implicit `value` of a `set`, `init`, `add` and `remove` accessor, the containing type's primary-constructor parameters, and the parameters of every enclosing function \u2014 so a nested local function that validates its caller's argument by name is correct and is not reported. The walk stops at a `static` lambda or `static` local function, whose enclosing parameters it may not name, and at the containing type, whose outer type's primary constructor is not in scope. \u26a0 **A literal that resembles nothing in scope is a deliberate false negative.** The rule reports only where exactly one parameter in scope is a case-only difference or a single edit \u2014 insertion, deletion, substitution or adjacent transposition \u2014 away from the literal, and both names are at least three characters long. Where two parameters are equally close, or none is, the rule cannot say which name was meant; reporting there would be a finding whose repair `skala fix` could not write, and doc 08 ships this rule with a safe fix. A `paramName` copied from a different overload, or left behind by a rename to an unrelated word, is therefore silent rather than guessed at.",
+      "falsePositives": "The argument is located by the *constructor symbol's* parameter named `paramName`, never by position, so the overloads where the same slot is a message — `ArgumentException(message, innerException)`, `ArgumentNullException(message, innerException)` — are not touched, and a named argument is followed to the right slot. Only a plain string literal is examined: `nameof`, a constant, an interpolation, a variable and an empty literal are all left alone. ⚠ **The names in scope are every parameter the C# scoping rules put there**, which is deliberately more than the enclosing method: a lambda's and a local function's own parameters, an indexer's parameters, the implicit `value` of a `set`, `init`, `add` and `remove` accessor, the containing type's primary-constructor parameters, and the parameters of every enclosing function — so a nested local function that validates its caller's argument by name is correct and is not reported. The walk stops at a `static` lambda or `static` local function, whose enclosing parameters it may not name, and at the containing type, whose outer type's primary constructor is not in scope. ⚠ **A literal that resembles nothing in scope is a deliberate false negative.** The rule reports only where exactly one parameter in scope is a case-only difference or a single edit — insertion, deletion, substitution or adjacent transposition — away from the literal, and both names are at least three characters long. Where two parameters are equally close, or none is, the rule cannot say which name was meant; reporting there would be a finding whose repair `skala fix` could not write, and doc 08 ships this rule with a safe fix. A `paramName` copied from a different overload, or left behind by a rename to an unrelated word, is therefore silent rather than guessed at.",
       "resharperId": "SuspiciousParameterNameInArgumentNullException",
       "supersedes": [],
       "since": "1.3",
       "configuration": [
         "dotnet_diagnostic.SK2017.severity"
+      ]
+    },
+    {
+      "id": "SK7070",
+      "concept": "obsolete-without-message",
+      "title": "An obsolete marker has no message",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "`Obsolete` is applied with no message, or with a placeholder message, so no caller is told what to use instead.",
+      "rationale": "An obsolescence is a migration instruction addressed to every caller. Without a message the compiler warning says only that something is deprecated, and the reader has to find the replacement by archaeology. This is the same requirement `SK7050` and `SK7051` make of a suppression, on the other side of the conversation: the annotation that changes what other code should do carries the reason. The tool reports the omission and never invents the replacement, because a manufactured message would be worse than none.",
+      "examples": {
+        "bad": "[Obsolete]\npublic void Save() { }",
+        "good": "[Obsolete(\"Use SaveAsync; this overload blocks the calling thread.\")]\npublic void Save() { }"
+      },
+      "falsePositives": "Only attributes that semantically resolve to `System.ObsoleteAttribute` are inspected, so a user attribute with the same short name is ignored. The message argument is resolved against the constructor's parameter list, so the positional and `message:` spellings are one answer. A non-constant expression is accepted without inspection rather than guessed at. Empty, whitespace and TODO/FIXME/TBD/N/A placeholders are not treated as messages; the rule cannot assess whether otherwise substantive prose actually names a replacement. `DiagnosticId` and `UrlFormat` are not accepted as substitutes, because neither is shown in the compiler's warning text.",
+      "resharperId": null,
+      "supersedes": [
+        "S1123"
+      ],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK7070.severity"
+      ]
+    },
+    {
+      "id": "SK7071",
+      "concept": "exclude-from-code-coverage-without-justification",
+      "title": "A coverage exclusion has no justification",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "`ExcludeFromCodeCoverage` omits a meaningful `Justification`, on a target framework whose attribute has the property.",
+      "rationale": "An exclusion changes what the coverage percentage counts, and it does so permanently and invisibly: the number goes up and nothing in the report says which code stopped being measured. The reason is the only thing that lets a later reader decide whether the exclusion is still earned. This is the third member of the family `SK7050` and `SK7051` started, and it reports the omission without writing the reason, for the same reason they do.",
+      "examples": {
+        "bad": "[ExcludeFromCodeCoverage]\nsealed class GeneratedShim { }",
+        "good": "[ExcludeFromCodeCoverage(Justification = \"Thin P/Invoke shim; exercised by the integration suite.\")]\nsealed class GeneratedShim { }"
+      },
+      "falsePositives": "⚠ The rule is silent where `Justification` does not exist on the bound attribute type — it arrived in .NET 5, and demanding it of a `netstandard2.0` or `net472` compilation would be demanding something the language cannot express. The property is looked up on the symbol rather than inferred from the target framework moniker. Only attributes that semantically resolve to `System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute` are inspected, so a user attribute with the same short name is ignored. A `Justification` that is present and not constant-foldable counts as written. Empty, whitespace and TODO/FIXME/TBD/N/A placeholders are not reasons; the rule cannot assess whether otherwise substantive prose is true.",
+      "resharperId": null,
+      "supersedes": [
+        "S6513"
+      ],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK7071.severity"
+      ]
+    },
+    {
+      "id": "SK7072",
+      "concept": "empty-suppression-region",
+      "title": "A warning suppression covers nothing",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A `#pragma warning disable` region contains no code, so it suppresses nothing and silently covers whatever is written there next.",
+      "rationale": "The usual way this happens is an edit: the code the pragma bracketed was deleted and the bracket stayed. What is left is a suppression waiting for a subject, and the next statement written between the directives is exempted from a diagnostic nobody chose to exempt it from. No code inside means no diagnostic inside, for every analyzer that will ever run, so the finding needs to know nothing about which analyzers those are — and the fix is to delete the directives and nothing else.",
+      "examples": {
+        "bad": "#pragma warning disable CS0168\n#pragma warning restore CS0168",
+        "good": "// Delete both directives; the code they bracketed is gone."
+      },
+      "falsePositives": "⚠ This is the decidable half of the concept and the other half is deliberately not attempted. Deciding that a suppressed warning *no longer fires* requires knowing what the compilation reports without the pragma, which an analyzer cannot ask: pragma filtering is applied to compiler diagnostics before `Compilation.GetDiagnostics` returns, an analyzer cannot enumerate the other analyzers in the run, and re-analysing from inside an analyzer is re-entrant. Only the analysis host is in a position to answer it, and doing so is a separate feature. What ships is the degenerate case: no source token between a `disable` and the `restore` that lifts it, or between a `disable` and end of file. A region holding only other `#pragma warning` directives also counts as empty, so nested empty brackets are one edit rather than several passes. Every other trivia is content and the rule stays quiet — a comment, a `#region`, and in particular inactive `#if` text, which is code under another set of preprocessor symbols. Numeric and `CS`-prefixed ids are matched as one id; a `restore` naming other ids does not close a `disable`, and a bare `restore` closes every one.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK7072.severity"
+      ]
+    },
+    {
+      "id": "SK7073",
+      "concept": "empty-region",
+      "title": "A region is empty",
+      "category": "Maintainability",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A `#region` and its `#endregion` have only whitespace between them.",
+      "rationale": "A region survives every deletion inside it, so an empty one is the residue of a member that moved or went away. It is a heading over nothing, and the outline it produces claims a structure the file does not have. The fix deletes the two directive lines, which is the whole of the edit: nothing else in the file changes and no token moves.",
+      "examples": {
+        "bad": "#region Serialization\n#endregion",
+        "good": "// Delete the directives; the members they grouped are gone."
+      },
+      "falsePositives": "Only whitespace counts as nothing. A comment, a `#pragma`, a `#if` and in particular inactive `#if` text are all content, and the rule stays quiet — a region that still says something to a reader is not the residue this is about, and inactive text is code under another set of preprocessor symbols. The one exception is a nested region, so that a region holding only another region is one edit rather than two `skala fix` passes. A `#region` the parser could not match to an `#endregion` is skipped, because deleting one half of an unbalanced pair would be an edit made on a guess.",
+      "resharperId": "EmptyRegion",
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK7073.severity"
+      ]
+    },
+    {
+      "id": "SK7074",
+      "concept": "unstructured-goto",
+      "title": "Review a goto to a label",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "A `goto` names a label, so control leaves the statement nesting. `goto case` and `goto default` are not reported.",
+      "rationale": "⚠ The position, because `goto` is legal and occasionally right. `goto case` and `goto default` are the only way C# expresses switch fall-through, they cannot leave the switch they are written in, and the flow they describe is already in front of the reader — reporting them would make this a style opinion about `switch` and get the whole rule turned off. A `goto` to a label is the other thing: its target is anywhere in the enclosing member, so what runs next can no longer be read off the nesting. Neither can it be computed: `SK7001` and `SK7002` derive complexity from the structure of the statements, and a label jump is an edge those numbers do not contain, which is why the rule sits in the same range as the metrics it distorts.",
+      "examples": {
+        "bad": "foreach (var row in rows) {\n    foreach (var cell in row) {\n        if (cell.Bad) { goto broken; }\n    }\n}\nbroken:",
+        "good": "// Extract the search, return early, or use a flag — whichever says what the loop means."
+      },
+      "falsePositives": "⚠ Report-only, and this is one of the two rules the catalogue's shipping bar allows no fix for. Breaking out of nested loops is a real use with no mechanical rewrite: a flag, an extracted method and an early return are all correct and choosing between them is a design decision about what the loop means, so an edit that guessed would be worse than the `goto`. Every `goto` to a label is reported, including one inside a `switch` section, because the label is not confined to the switch. `goto case` and `goto default` are never reported. Generated code is excluded, which is where nearly all remaining `goto` lives — parser and state-machine generators emit it by design.",
+      "resharperId": null,
+      "supersedes": [
+        "S907"
+      ],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK7074.severity"
       ]
     }
   ]

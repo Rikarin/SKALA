@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 105 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 110 ids are allocated.
 
 ## Async
 
@@ -94,6 +94,11 @@
 | [SK7050](SK7050.md) | A warning-disable pragma has no justification | warning | — | yes |
 | [SK7051](SK7051.md) | A suppression attribute has no justification | warning | — | no |
 | [SK7060](SK7060.md) | Review commented-out statements | hint | — | yes |
+| [SK7070](SK7070.md) | An obsolete marker has no message | warning | — | no |
+| [SK7071](SK7071.md) | A coverage exclusion has no justification | warning | — | no |
+| [SK7072](SK7072.md) | A warning suppression covers nothing | warning | safe | yes |
+| [SK7073](SK7073.md) | A region is empty | suggestion | safe | yes |
+| [SK7074](SK7074.md) | Review a goto to a label | warning | — | yes |
 
 ## Modernization
 

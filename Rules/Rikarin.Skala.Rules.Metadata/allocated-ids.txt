@@ -113,6 +113,11 @@ SK1025 frozen-dictionary
 SK2005 readonly-struct-mutation
 SK4003 params-span-overload
 SK2017 wrong-argument-name-in-exception
+SK7070 obsolete-without-message
+SK7071 exclude-from-code-coverage-without-justification
+SK7072 empty-suppression-region
+SK7073 empty-region
+SK7074 unstructured-goto
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

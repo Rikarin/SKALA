@@ -244,6 +244,16 @@ because a register that the code can drift away from is a register nobody can tr
 `SK7050` `#pragma warning disable` without a justification comment · `SK7051` `SuppressMessage`
 without a real `Justification` · `SK7060` commented-out code (token-density heuristic, `hint`).
 
+⚠ **Allocation only — the prose pass is owed.** The ids below were allocated by the batch that built
+them and are named here so that ADR-012's register can answer "is this number free". They have no
+paragraph yet in this document explaining the decision behind each, and § "Priority 1 hygiene rules"
+has not been extended to cover them.
+
+`SK7070` `Obsolete` without a message · `SK7071` `ExcludeFromCodeCoverage` without a
+`Justification` · `SK7072` a `#pragma warning disable` region with no code in it ·
+`SK7073` an empty `#region` · `SK7074` a `goto` to a label (`goto case` and `goto default` are
+not reported).
+
 ## SK8000 — Tests
 
 `SK8001` test method with no assertion · `SK8002` `Assert.True(x == y)` instead of `Assert.Equal` ·
@@ -327,8 +337,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **127** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **97** | **77.0 %** |
+| Rules this document names | **132** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **102** | **77.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
