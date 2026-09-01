@@ -160,3 +160,7 @@ SK7080 | Skala.Maintainability | Hidden | The inheritance chain is deeper than t
 SK7081 | Skala.Maintainability | Hidden | The type depends on more other types than the threshold.
 SK7082 | Skala.Maintainability | Info | The conditional expressions are nested.
 SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
+SK2100 | Skala.Correctness | Warning | `[ThreadStatic]` is applied where it cannot take effect.
+SK2101 | Skala.Correctness | Warning | `[Pure]` is applied to a method that returns nothing.
+SK2102 | Skala.Correctness | Warning | The `[DebuggerDisplay]` string names a member that does not exist.
+SK2103 | Skala.Correctness | Warning | The attribute is applied twice with the same arguments.

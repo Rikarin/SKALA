@@ -197,3 +197,11 @@ SK7083 repeated-string-literal
 # number cannot be handed out a second time; there is no rules.json entry to point at, because
 # the rule was retired before it was ever written.
 SK6001 public-api-comment-density retired — superseded by SK7010, which shipped
+
+# ⚠ Live allocations continue below the retired block. The register is append-only, so the order
+# of the file is the order numbers were handed out and not a grouping; a line under this heading
+# is retired only when the line itself says so.
+SK2100 ineffective-thread-static
+SK2101 pure-attribute-on-void
+SK2102 debugger-display-missing-member
+SK2103 duplicated-attribute

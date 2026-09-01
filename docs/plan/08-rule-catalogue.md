@@ -351,6 +351,74 @@ already names in the other direction.
 - `SK2033` `stackalloc-in-loop` — a `stackalloc` a loop re-evaluates.
 - `SK2034` `escaped-keyword` — a declaration named after a reserved keyword and escaped with `@`.
 
+⚠ **The prose pass for the attribute-contradiction batch is owed.** What follows is the allocation
+register entry — enough that the ids are written down and
+`RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister` can see them — not the worked-through
+account the rest of this section carries.
+
+**Four rules, one question asked of one pair of things: read an attribute, read the thing it is on,
+and report where the two disagree.**
+
+- `SK2100` `ineffective-thread-static` — `[ThreadStatic]` on a field that is not `static`, where it
+  does nothing whatsoever, or on a `static` field with an initializer, where it does something
+  worse. ⚠ **The initializer case is the one people actually hit.** The initializer runs in the
+  static constructor, once, on whichever thread reaches the type first; that thread sees the value
+  and every other thread sees `default`. Nothing throws and nothing warns, and the field reads
+  correctly in the debugger on the thread that happens to be attached. `= 0`, `= false`, `= null`
+  and `= default` are excluded because they assign exactly what the other threads already see, and
+  a `const` is excluded because it must carry an initializer and is implicitly static.
+- `SK2101` `pure-attribute-on-void` — `[Pure]` on a method that returns nothing. ⚠ **There are at
+  least three different `PureAttribute`s and they do not mean the same thing.** The rule resolves
+  by namespace-qualified name and accepts exactly two: the BCL's
+  `System.Diagnostics.Contracts.PureAttribute`, which promises no visible state change and is
+  therefore vacuous on a method with no result, and `JetBrains.Annotations.PureAttribute`, which
+  means the return value must be used and is inapplicable where there is none. ⚠ The comparison is
+  a *string* rather than `GetTypeByMetadataName`, which returns null when two assemblies declare
+  the name — and JetBrains' annotations are routinely present twice, once from the package and
+  once from a source-embedded `Annotations.cs`. A method with an `out` or `ref` parameter is
+  declined: its results leave through the parameters. The annotation is load-bearing here
+  specifically, because `SK2002` reads it to decide whether a discarded result matters.
+- `SK2102` `debugger-display-missing-member` — a `{…}` hole in `[DebuggerDisplay]` naming an
+  identifier that is not a member of the annotated type. ⚠ **The text inside the braces is a
+  limited expression language, not a member name**, so the accepted grammar is one identifier, an
+  optional `this.` in front and an optional all-letters format specifier behind — and anything else
+  withdraws **the whole attribute**, not the one hole. The dotted path is the exclusion that
+  matters most: `{Owner.Name}` needs the member's type to answer and `{DateTime.Now}` has a root
+  that is not a member of anything, so reporting either would be wrong for a different reason each
+  time. It ships without a fix: only the author knows which member was meant.
+- `SK2103` `duplicated-attribute` — one declaration carrying the same `AllowMultiple` attribute
+  twice with provably identical arguments.
+
+⚠ **`SK2103` is where this batch's internal boundary is drawn, and it is drawn by construction
+rather than by a filter.** The other three ask *does this attribute contradict the declaration it is
+on?* and read the declaration to answer. `SK2103` never reads the declaration at all; it asks
+whether two applications of one attribute say the same thing. Nothing it looks at is something they
+look at, so no shape can reach both and no exclusion list is needed to keep them apart. Two fixtures
+assert it rather than describing it: a type carrying two `[DebuggerDisplay]` strings where only one
+names a missing member produces exactly one finding — `SK2102`'s, because differing arguments are
+not a repetition — and a `void` method carrying both vendors' `[Pure]` produces exactly one finding
+— `SK2101`'s, because two different attribute classes are not a repetition either.
+
+⚠ **The general form of issue #269 is not what shipped, and the three sub-concepts left out were
+left out because the compiler already has them.** An attribute on a target it does not declare is
+`CS0592`; a repeat where `AllowMultiple` is false is `CS0579`; and an attribute naming a member that
+does not exist is `CS8776` for the nullable-contract attributes — `[MemberNotNull("Nope")]` is a
+**compile error**, which was the assumption this batch expected to be able to build on and measured
+instead. Repetition with identical arguments is the one remaining case the compiler is silent
+about, because for an `AllowMultiple` attribute it is legal. The fourth sub-concept — one attribute
+contradicting another — is **not built and no id is allocated for it**: no decidable table of
+contradicting pairs was found, and ADR-012 makes an id permanent, so a concept nobody has specified
+must not take one.
+
+⚠ **The `[Flags]` proposal (#214) was closed as hosted, and that is the outcome rather than a
+shortfall.** All three directions ship in the SDK's own analyzers, measured on a probe project with
+`AnalysisMode=All` rather than assumed: `CA2217` fires on a `[Flags]` enum whose members are neither
+powers of two nor combinations of declared ones, `CA1027` fires on a non-`[Flags]` enum whose
+members are powers of two, and `CA1008` fires both when a `[Flags]` enum has no zero member and when
+its zero member is not named `None`. The same probe confirmed the legitimate exceptions are already
+handled — an enum declaring `None = 0` and `ReadWrite = Read | Write` produced **no** finding from
+any of the three. ADR-008 is host, never rebuild, so no `SK` id was allocated.
+
 ## SK3000 — Async, concurrency, lifetime
 
 `SK3001` `async void` outside an event handler · `SK3002` blocking on async (`.Result`, `.Wait()`,
@@ -1108,8 +1176,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **210** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **176** | **84.2 %** |
+| Rules this document names | **214** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **180** | **84.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |

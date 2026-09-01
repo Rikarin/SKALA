@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 184 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 188 ids are allocated.
 
 ## Async
 
@@ -65,6 +65,10 @@
 | [SK2032](SK2032.md) | Remove GC.SuppressFinalize from a type with no finalizer | suggestion | safe | no |
 | [SK2033](SK2033.md) | Do not stackalloc inside a loop | warning | — | yes |
 | [SK2034](SK2034.md) | Do not name a declaration after a reserved keyword | suggestion | — | yes |
+| [SK2100](SK2100.md) | `[ThreadStatic]` is applied where it cannot take effect | warning | review | no |
+| [SK2101](SK2101.md) | `[Pure]` is applied to a method that returns nothing | warning | safe | no |
+| [SK2102](SK2102.md) | The `[DebuggerDisplay]` string names a member that does not exist | warning | — | no |
+| [SK2103](SK2103.md) | The attribute is applied twice with the same arguments | warning | review | no |
 
 ## Design
 
