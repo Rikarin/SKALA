@@ -26,10 +26,10 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class DesignMemberBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
-        new ConstantReturningMethodAnalyzer(),
+        new ConstantReturningMethodAnalyzer(), new DerivedTypeTestOnThisAnalyzer(),
     ];
 
-    static readonly string[] Ids = ["SK6050"];
+    static readonly string[] Ids = ["SK6050", "SK6051"];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
