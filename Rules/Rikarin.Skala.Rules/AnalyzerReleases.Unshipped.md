@@ -84,3 +84,4 @@ SK1040 | Skala.Modernization | Info | Use `T?` instead of `Nullable<T>`.
 SK1041 | Skala.Modernization | Info | Use a compound assignment.
 SK1042 | Skala.Modernization | Info | The nested `if` statements can be combined.
 SK1043 | Skala.Modernization | Info | The `for` loop is a `while`.
+SK1044 | Skala.Modernization | Info | Use `string.IsNullOrEmpty`.

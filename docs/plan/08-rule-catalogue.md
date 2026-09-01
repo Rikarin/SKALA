@@ -154,7 +154,7 @@ a rule's default can be justified by how one unreviewed file happens to be laid 
 [16](16-risks-and-open-questions.md) § "The reference trees are a test subject" names, and the
 `hint` default is listed under § "Decisions that rest on a reference-tree count" for it.
 
-⚠ **`SK1040`–`SK1043` are named here and nowhere else in this section; the prose pass is owed.**
+⚠ **`SK1040`–`SK1044` are named here and nowhere else in this section; the prose pass is owed.**
 They ship, so `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister` requires the register to
 name them — this block is that requirement being met and nothing more. They belong in the groups
 above, and have not been worked into them.
@@ -165,6 +165,7 @@ above, and have not been worked into them.
 | `SK1041` | `compound-assignment` | `x = x + 1` | `x += 1` |
 | `SK1042` | `mergeable-if` | `if (a) { if (b) { … } }` | `if (a && b) { … }` |
 | `SK1043` | `for-loop-is-while` | `for (; cond;)` | `while (cond)` |
+| `SK1044` | `null-or-empty-check` | `x == null \|\| x.Length == 0` | `string.IsNullOrEmpty(x)` |
 
 ## SK2000 — Correctness
 
@@ -333,8 +334,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **130** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **100** | **77.5 %** |
+| Rules this document names | **131** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **101** | **77.7 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

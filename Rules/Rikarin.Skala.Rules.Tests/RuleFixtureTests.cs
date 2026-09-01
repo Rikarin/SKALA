@@ -55,7 +55,7 @@ public sealed class RuleFixtureTests {
         new CollectionExpressionAnalyzer(), new UsingDeclarationAnalyzer(), new TypePatternAnalyzer(),
         new NullConditionalAssignmentAnalyzer(), new DictionaryLookupAnalyzer(),
         new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
-        new ForAsWhileAnalyzer()
+        new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer()
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

@@ -2773,6 +2773,33 @@
       "configuration": [
         "dotnet_diagnostic.SK1043.severity"
       ]
+    },
+    {
+      "id": "SK1044",
+      "concept": "null-or-empty-check",
+      "title": "Use `string.IsNullOrEmpty`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A null test on a string followed by an emptiness test on the same string, or the negation of both.",
+      "rationale": "The hand-written form states the check twice and gets its order wrong easily — `x.Length == 0 || x == null` dereferences null before it tests for it. `string.IsNullOrEmpty` also carries `[NotNullWhen(false)]`, so the compiler's null analysis learns from the call what it cannot learn from the pair.",
+      "examples": {
+        "bad": "if (name == null || name.Length == 0) {\n    return \"anonymous\";\n}",
+        "good": "if (string.IsNullOrEmpty(name)) {\n    return \"anonymous\";\n}"
+      },
+      "falsePositives": "`x.Length == 0` and `x == \"\"` are both reported and are the same check: string `==` is ordinal value equality that compares lengths first. `string.Empty` counts as the literal. ⚠ The rule this one must not become is `IsNullOrWhiteSpace`: `x == null || x.Trim().Length == 0` is a different predicate — true for a single space, where `IsNullOrEmpty` is false — and nothing separates the two shapes except what stands between the receiver and `.Length`. The receiver is therefore required to be a chain of plain names, which excludes `Trim()`, every other call, and the double evaluation an indexer would suffer. The receiver must bind to `System.String`, so an array's `Length` is never matched; it must be the same expression on both sides; and the null test must come first. A longer `||` chain is only matched where the pair is a single subexpression, which left-associativity makes true for `x == null || x.Length == 0 || y` and false for `y || x == null || x.Length == 0`. Comments and preprocessor directives inside the expression exclude it.",
+      "resharperId": null,
+      "supersedes": [
+        "S3256"
+      ],
+      "since": "2.0",
+      "configuration": [
+        "dotnet_diagnostic.SK1044.severity"
+      ]
     }
   ]
 }
