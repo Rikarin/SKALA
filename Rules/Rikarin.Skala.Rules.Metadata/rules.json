@@ -2668,6 +2668,33 @@
       "configuration": [
         "dotnet_diagnostic.SK7060.severity"
       ]
+    },
+    {
+      "id": "SK7070",
+      "concept": "obsolete-without-message",
+      "title": "An obsolete marker has no message",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "`Obsolete` is applied with no message, or with a placeholder message, so no caller is told what to use instead.",
+      "rationale": "An obsolescence is a migration instruction addressed to every caller. Without a message the compiler warning says only that something is deprecated, and the reader has to find the replacement by archaeology. This is the same requirement `SK7050` and `SK7051` make of a suppression, on the other side of the conversation: the annotation that changes what other code should do carries the reason. The tool reports the omission and never invents the replacement, because a manufactured message would be worse than none.",
+      "examples": {
+        "bad": "[Obsolete]\npublic void Save() { }",
+        "good": "[Obsolete(\"Use SaveAsync; this overload blocks the calling thread.\")]\npublic void Save() { }"
+      },
+      "falsePositives": "Only attributes that semantically resolve to `System.ObsoleteAttribute` are inspected, so a user attribute with the same short name is ignored. The message argument is resolved against the constructor's parameter list, so the positional and `message:` spellings are one answer. A non-constant expression is accepted without inspection rather than guessed at. Empty, whitespace and TODO/FIXME/TBD/N/A placeholders are not treated as messages; the rule cannot assess whether otherwise substantive prose actually names a replacement. `DiagnosticId` and `UrlFormat` are not accepted as substitutes, because neither is shown in the compiler's warning text.",
+      "resharperId": null,
+      "supersedes": [
+        "S1123"
+      ],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK7070.severity"
+      ]
     }
   ]
 }
