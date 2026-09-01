@@ -322,10 +322,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **126** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **76** | **60.8 %** |
+| **Shipped** — present in `rules.json` | **81** | **64.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **37** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **32** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
@@ -450,8 +450,10 @@ that duplicates one of them does not duplicate a diagnostic the user already see
 CA2254 and CA1001 cases as well.
 
 ⚠ **`CS1717`/`CS1718` reach the identifier spellings only.** `Prop = Prop`, `other.Prop =
-other.Prop` and `other.Prop == other.Prop` produce nothing, so `SK2012` is not fully disposed of and
-stays outstanding rather than cut. The compiler also leaves an `IEquatable<T>` implemented without
+other.Prop` and `other.Prop == other.Prop` produce nothing. `SK2012` now covers non-virtual
+auto-properties declared in the same file, without assuming arbitrary accessors are side-effect-free.
+`SK2001` covers comparisons decided by integral type endpoints that the compiler leaves silent;
+neither rule duplicates the compiler-covered cases. The compiler also leaves an `IEquatable<T>` implemented without
 an object equality override silent. `SK2004` now covers that gap for self-typed contracts, while
 leaving existing overrides and the compiler-covered missing-hash-code case alone.
 
@@ -481,11 +483,9 @@ reason is kept; it is a description of remaining work, not a disposal.
 | Group | IDs | Waiting on |
 |---|---|---|
 | Declaration-shape rewrites | `SK1002`, `SK1008` | The unsafe-fix path and an `--include` story. Each is a good rule and neither is a *safe* fix (M5) |
-| Evaluation-changing rewrites | `SK1012` | The guard that makes it provably behaviour-preserving is most of the rule (M5) |
 | ⚠ Hot-path rules | `SK1022`, `SK1025`, `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
-| The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1013`, `SK1021`, `SK1023`, `SK1024`, `SK1026`, `SK1029`, `SK1036` | Nothing recorded. Not started |
+| The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1021`, `SK1023`, `SK1024`, `SK1029`, `SK1036` | Nothing recorded. Not started |
 | Correctness | `SK2003`, `SK2005` | Nothing recorded beyond the shipping bar. Not started |
-| ⚠ Correctness, partly disposed of by a compiler warning | `SK2001`, `SK2012` | § "The compiler already says it" measures which spellings `csc` reports. What is left is an always-true comparison that is not to an integral constant, or `Prop = Prop` and `a.P == a.P`, where a property accessor may have a side effect and the fix is therefore not mechanical |
 | Async and lifetime | `SK3009` | Nothing recorded. Not started |
 | Security | `SK5003`, `SK5004`, `SK5006`, `SK5008` | The remaining M8 rules; a wrong security rule is worse than a missing one |
 | Maintainability, non-metric | `SK7060` | Nothing recorded. Not started |
@@ -551,6 +551,44 @@ are not a substitute for the positive fixtures. The five analyzers together cons
 of summed analyzer time in that run (98 ms relational patterns, 75 ms file length, 14 ms property
 patterns, 11 ms span decoding and under 1 ms for the disabled async policy); these are observations,
 not performance guarantees.
+
+### Returning expressions, list patterns, UTF-8 literals and comparison checks
+
+`SK1012`, `SK1013`, `SK1026`, `SK2001` and `SK2012` now ship as semantic rules. The three
+modernizations have safe fixes, with deliberately bounded initial coverage:
+
+- `SK1012` (C# 8): returning equality chains over a stable local/parameter, distinct integral,
+  enum or string constants, an explicit fallback, and identity-converted results of one type.
+- `SK1013` (C# 11): null-guarded arrays/strings with an exact length of 1–8 and distinct,
+  constant-index element equalities. A preceding `SK1011` fix combining null and length into a
+  property pattern does not hide the list-pattern opportunity. No custom indexers or slices.
+- `SK1026` (C# 11): framework `Encoding.UTF8.GetBytes` of constant ASCII text passed to an
+  already-selected `ReadOnlySpan<byte>` parameter. Speculative binding must preserve the exact
+  constructed consumer method; mutable array/span APIs and non-ASCII text are excluded.
+
+The two correctness rules are report-only. `SK2001` uses exact fixed-width integral/char ranges,
+not nullable annotations or flow guesses, and leaves `CS0652` cases to the compiler. `SK2012`
+requires a same-file, non-virtual auto-property and an identical stable receiver; arbitrary
+accessors, NaN-sensitive comparisons and compiler-covered `CS1717`/`CS1718` cases are excluded.
+Deleting either operation could remove side effects or conceal the author's intended operand.
+
+Source constant dependencies, including transitive initializers, must stay in the finding's file;
+metadata constants are allowed. Auto-property declarations must also be in the finding's file.
+This keeps body-dependent proofs compatible with the existing per-file semantic cache. The fixes
+exclude comments/directives and observable caller-argument-expression text; pattern spellings
+such as a constant named `_` are not copied into discard patterns.
+
+Validation includes exact fixture counts and fix availability, language floors, all nine integral
+type endpoints, cross-file dependencies, compiler-warning exclusions and negative cases. Runtime
+differential tests compare selected-branch effects, null/length/element outcomes, and encoded bytes
+including NUL and escaped ASCII. Workspace integration exercises `check`, `verify`, safe fixing,
+per-file severity and warm/cold cache agreement after another file changes.
+
+An audit of Skala's own workspace found one `SK1026` opportunity in `CacheKeyPathTests`: a
+constant ASCII payload allocated as a byte array only to feed `CacheKey.For`'s read-only span.
+It found no occurrences of the other four rules; their evidence remains the positive and negative
+tests, not those zero counts. The five analyzers together consumed about 727 ms of summed analyzer
+time in that run. The audit did not rewrite unrelated existing code.
 
 ### ⚠ Decisions that rest on a reference-tree count, and are awaiting revisit
 

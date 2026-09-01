@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 84 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 89 ids are allocated.
 
 ## Async
 
@@ -19,6 +19,7 @@
 
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
+| [SK2001](SK2001.md) | Comparison is fixed by the integral type's range | warning | — | no |
 | [SK2002](SK2002.md) | A pure method's result is discarded | warning | — | no |
 | [SK2004](SK2004.md) | Typed equality has no matching object equality | warning | — | no |
 | [SK2007](SK2007.md) | The collection being enumerated is modified inside the loop | warning | review | no |
@@ -26,6 +27,7 @@
 | [SK2009](SK2009.md) | An enum switch omits declared members | warning | — | no |
 | [SK2010](SK2010.md) | A string comparison has an implicit culture policy | warning | — | no |
 | [SK2011](SK2011.md) | A struct uses inherited ValueType.Equals | warning | — | no |
+| [SK2012](SK2012.md) | Review a self-operation on an automatic property | warning | — | no |
 | [SK2013](SK2013.md) | An exception is constructed and then discarded | warning | safe | no |
 | [SK2014](SK2014.md) | An empty catch silently discards an exception | warning | — | yes |
 | [SK2015](SK2015.md) | `throw ex;` resets the stack trace | warning | safe | yes |
@@ -97,9 +99,12 @@
 | [SK1006](SK1006.md) | Use a `using` declaration | suggestion | safe | yes |
 | [SK1010](SK1010.md) | Use `is null` / `is not null` instead of `==` / `!=` | suggestion | safe | no |
 | [SK1011](SK1011.md) | Use a property pattern | suggestion | safe | no |
+| [SK1012](SK1012.md) | Use a switch expression for a returning equality chain | suggestion | safe | no |
+| [SK1013](SK1013.md) | Use a list pattern for guarded element checks | suggestion | safe | no |
 | [SK1014](SK1014.md) | Use relational and logical patterns | suggestion | safe | no |
 | [SK1015](SK1015.md) | Use `is T t` instead of `is T` and a cast | suggestion | safe | no |
 | [SK1020](SK1020.md) | Use `ArgumentNullException.ThrowIfNull` | suggestion | safe | no |
+| [SK1026](SK1026.md) | Use a UTF-8 literal for constant ASCII bytes | suggestion | safe | no |
 | [SK1028](SK1028.md) | Decode a byte span without an array copy | suggestion | safe | no |
 | [SK1030](SK1030.md) | Use `??=` | suggestion | safe | yes |
 | [SK1031](SK1031.md) | Use a null-conditional assignment | suggestion | safe | no |

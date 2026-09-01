@@ -92,6 +92,11 @@ SK1014 relational-pattern
 SK1028 span-decoding
 SK3003 missing-configure-await
 SK7030 file-length
+SK1012 returning-switch-expression
+SK1013 list-pattern
+SK1026 utf8-literal
+SK2001 constant-range-comparison
+SK2012 self-assignment-or-comparison
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

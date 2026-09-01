@@ -60,3 +60,8 @@ SK1014 | Skala.Modernization | Info | Use relational and logical patterns.
 SK1028 | Skala.Modernization | Info | Decode a byte span without an array copy.
 SK3003 | Skala.Async | Warning | Configure awaited tasks in library code.
 SK7030 | Skala.Maintainability | Hidden | File length exceeds the configured threshold.
+SK1012 | Skala.Modernization | Info | Use a switch expression for a returning equality chain.
+SK1013 | Skala.Modernization | Info | Use a list pattern for guarded element checks.
+SK1026 | Skala.Modernization | Info | Use a UTF-8 literal for constant ASCII bytes.
+SK2001 | Skala.Correctness | Warning | Comparison is fixed by the integral type's range.
+SK2012 | Skala.Correctness | Warning | Review a self-operation on an automatic property.
