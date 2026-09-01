@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 184 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 185 ids are allocated.
 
 ## Async
 
@@ -83,6 +83,7 @@
 | [SK6034](SK6034.md) | A public constant is baked into every caller | suggestion | review | no |
 | [SK6040](SK6040.md) | An `out` variable is declared and never read | warning | safe | no |
 | [SK6041](SK6041.md) | A `foreach` variable is declared wider than the element it receives | suggestion | review | no |
+| [SK6050](SK6050.md) | The method ignores its inputs and returns a constant | suggestion | — | no |
 
 ## Formatting
 

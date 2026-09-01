@@ -776,6 +776,18 @@ declaring `hasFix: true` carries edits — so a rule offers a fix for all of its
 `fixIsSafe: false` because the breakage it can cause — an attribute argument, a parameter default, a
 `case` label — lands in files the edit does not touch.
 
+⚠ **The prose pass for `SK6050`–`SK6053` is owed.** What follows is the allocation record and the
+one-line reason for each; the paragraphs that explain the batch the way `SK6020`'s and `SK6022`'s are
+explained above have not been written. Each rule's `falsePositives` in `rules.json` carries the full
+argument in the meantime, and `skala explain SK6050` prints it.
+
+**`SK6050`–`SK6053` are members and signatures whose shape contradicts what they say.** A body that
+does not do what the parameters promise, a base type that asks what it is, a sequence contract that
+returns nothing at all, and a name that does not say whether the caller must await.
+
+- `SK6050` `method-returns-a-constant` — a `private` method that takes arguments, reads none of them,
+  and returns a compile-time constant.
+
 ## SK7000 — Maintainability
 
 The metrics from [07](07-analysis-host.md) § "Metrics" — `SK7001` cyclomatic complexity ·
@@ -1108,11 +1120,11 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **210** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **176** | **84.2 %** |
+| Rules this document names | **212** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **177** | **83.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
