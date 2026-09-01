@@ -400,7 +400,10 @@ recording why the second ships at `none`, has not been written.
 
 `SK7100` a documentation comment that is word for word the one on the member it overrides or
 implements — reported only where the two are *identical*, because a similarity threshold is what
-would make the rule dangerous.
+would make the rule dangerous. · `SK7101` a declaration that is not publicly visible and carries no
+documentation comment — `SK7010`'s predicates with the accessibility test negated, shipped at
+`none` and enabled per path, because it is the highest-firing uncovered inspection in the parity
+measurement and that is an argument for caution rather than for volume.
 
 ## SK8000 — Tests
 
@@ -498,10 +501,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **125** | **80.6 %** |
+| **Shipped** — present in `rules.json` | **126** | **81.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 

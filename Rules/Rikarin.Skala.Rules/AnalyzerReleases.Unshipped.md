@@ -109,3 +109,4 @@ SK8020 | Skala.Tests | Warning | A class with `[TestMethod]` members carries no 
 SK8021 | Skala.Tests | Warning | The test class declares no test.
 SK8022 | Skala.Tests | Warning | The assertion's expected and actual arguments are swapped.
 SK7100 | Skala.Maintainability | Info | The documentation duplicates the base member's.
+SK7101 | Skala.Maintainability | Disabled | A non-public member has no documentation comment.

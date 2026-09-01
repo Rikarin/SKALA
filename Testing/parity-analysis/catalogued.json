@@ -139,5 +139,6 @@
  "UsingStatementResourceInitializationExpression": "SK3511",
  "ReturnOfUsingVariable": "SK3512",
  "SpinLockInReadonlyField": "SK3021",
- "InheritdocConsiderUsage": "SK7100"
+ "InheritdocConsiderUsage": "SK7100",
+ "InternalOrPrivateMemberNotDocumented": "SK7101"
 }
