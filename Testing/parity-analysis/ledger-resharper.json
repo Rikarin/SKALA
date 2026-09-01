@@ -1482,18 +1482,6 @@
    ]
   },
   {
-   "slug": "argument-exception-throw-if",
-   "title": "Use the `ArgumentException.ThrowIf*` helpers",
-   "issue": 105,
-   "proposedRange": "SK1000-SK1999",
-   "proposedSeverity": "suggestion",
-   "proposedScope": "Semantic",
-   "proposedFix": "safe",
-   "inspections": [
-    "resharper_use_argument_exception_throw_if_method_highlighting"
-   ]
-  },
-  {
    "slug": "tail-recursive-call",
    "title": "Rewrite the tail-recursive call as a loop",
    "issue": 106,
@@ -2190,6 +2178,10 @@
    "reason": "Resolution inside ReSharper's text-argument/source-template machinery, not a language construct."
   },
   {
+   "inspection": "NonReadonlyMemberInGetHashCode",
+   "reason": "Not a new proposal: the concept is already tracked by issue #161, opened from the SonarQube pass as S2328. It reached the queue by that route because two stacked wrong entries hid it here -- the hosted map claimed CA1065 and catalogued.json claimed SK2004, and neither reports a hash code computed over mutable state. Recorded so this ledger stays complete."
+  },
+  {
    "inspection": "NotAssignedOutParameter",
    "reason": "An unassigned `out` parameter is `CS0177`, a compiler error \u2014 the code does not build, so there is nothing to warn about. This is the recorded cut reason for `SK2006` in docs/plan/08."
   },
@@ -2392,6 +2384,10 @@
   {
    "inspection": "resharper_unexpected_directive_highlighting",
    "reason": "Not identifiable: the key exists only in ReSharper newer than the 2025.2.6 catalogue dumped here, and no description was obtainable. Revisit on a 2026.x dump."
+  },
+  {
+   "inspection": "resharper_use_argument_exception_throw_if_method_highlighting",
+   "reason": "Hosted. Roslyn ships CA1510-CA1513 for the ArgumentNullException / ArgumentException / ArgumentOutOfRangeException / ObjectDisposedException ThrowIf* helpers, and SK1020 already ships the ThrowIfNull case. ADR-008: Skala hosts rather than rebuilds. Proposed as issue #105 and closed once the pipeline's fixed lookup put the row in Hosted."
   }
  ]
 }

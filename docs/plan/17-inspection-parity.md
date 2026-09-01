@@ -121,8 +121,8 @@ inspections are counted separately: they are C#, and they are not code Skala is 
 
 | Bucket | Count | of 888 | `error` | `warning` | `suggestion` | `hint` | `none` |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| **Uncovered** | **576** | **64.9 %** | 3 | 320 | 169 | 57 | 27 |
-| Catalogued | 94 | 10.6 % | 0 | 41 | 33 | 12 | 8 |
+| **Uncovered** | **577** | **65.0 %** | 3 | 320 | 170 | 57 | 27 |
+| Catalogued | 93 | 10.5 % | 0 | 41 | 32 | 12 | 8 |
 | Hosted | 75 | 8.4 % | 0 | 44 | 18 | 10 | 3 |
 | Option | 67 | 7.5 % | 0 | 1 | 3 | 15 | 48 |
 | Out of scope | 74 | 8.3 % | 10 | 43 | 5 | 10 | 6 |
@@ -132,7 +132,7 @@ inspections are counted separately: they are C#, and they are not code Skala is 
 A further 65 Unity/Burst inspections are out of scope for the engine rather than for the language.
 
 ⚠ **This table read `Uncovered` 580 / `Catalogued` 89 / `Hosted` 76, and both of those numbers were
-produced by an instrument with a defect in it. The measured figures are 576 / 94 / 75.** The
+produced by an instrument with a defect in it. The measured figures are 577 / 93 / 75.** The
 correction is small and the failure mode it exposes is not, so it is worth stating in full.
 
 `classify.py` looked its two hand-built maps up by **inspection id**. `universe.py` can only attach
@@ -168,9 +168,12 @@ Two entries were wrong rather than missing, and removing them does not move the 
   makes wrong entries *count*, where before they could hide behind a missing id.
 - **`NonReadonlyMemberInGetHashCode` was `Hosted` as "CA1065-adjacent".** `CA1065` is "do not raise
   exceptions in unexpected locations" and says nothing about a hash code computed over mutable state.
-  The entry credited a Roslyn analyzer that does not exist. Removed — the row is now `Catalogued` on
-  `SK2004`, which is the map's own reading of it, and the coverage question is
-  issue #161.
+  The entry credited a Roslyn analyzer that does not exist. Removing it exposed a second wrong entry
+  underneath: the map also read the inspection as `SK2004`, which is *typed equality without
+  `Equals(object)`* and says nothing about a hash code either. Both are deleted and the row is
+  genuinely uncovered — it is issue #161. ⚠ **Two wrong entries stacked on one inspection is the
+  argument for the test rather than for a third careful read**: the hosted map hid the catalogued
+  one, and only fixing the first made the second reachable.
 
 ⚠ **Two surviving entries over-claim, and are left alone deliberately.**
 `UseArgumentExceptionThrowIfMethod → SK1020` and `ReplaceWithOfType → SK4010` both credit a shipped
@@ -617,10 +620,10 @@ published, and the reason is worth carrying forward.** The published `Uncovered`
 with `types.json` present — an uncommitted metadata cache from an older `jb`. Without it the same
 scripts returned **586**, because `classify.py` looked its maps up by inspection id and 81 of the 888
 rows have none. The lookup now matches on the export key as well, so the maps no longer depend on
-whether the joining dump happens to know the inspection, and the measured figure is **576**. See
+whether the joining dump happens to know the inspection, and the measured figure is **577**. See
 § "The classification" for the full accounting.
 
-**A re-run is therefore expected to print `Uncovered 576` and nothing else.** If it prints anything
+**A re-run is therefore expected to print `Uncovered 577` and nothing else.** If it prints anything
 else, the difference is a real change in the inputs — a newer export, a newer dump, an edit to the
 maps — and not the instrument drifting. That is what the fix bought: the number is now a function of
 the committed inputs alone.
