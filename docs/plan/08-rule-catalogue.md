@@ -367,6 +367,34 @@ been written yet.
   rule never has to decide which parameter a comparer arrived through. Constant keys only, a closed
   receiver table, and a key type whose default equality is decidable: `string`, `bool`, `char`, the
   integral types and any `enum`.
+- `SK2081` `collection-passed-to-itself` — a set, list or array given to one of its own members as
+  the *other* collection: `set.UnionWith(set)` does nothing, `set.ExceptWith(set)` is `Clear()`
+  written so nobody reads it as `Clear()`, `set.SetEquals(set)` is `true` with a hash walk in front
+  of it, `list.AddRange(list)` doubles the list. ⚠ **The two sides must be the same *storage*, which
+  is a symbol walk and not a text match** — `a.items` and `b.items` are one field symbol through two
+  receivers — and every symbol on the path must be a local, a parameter or a field, because a
+  property is an accessor call. ⚠ `a.Equals(a)`, `Concat`, `Zip` and `Array.Copy` are deliberately
+  outside the table: reflexive equality is what an equality test asserts, `items.Concat(items)` is a
+  legitimate "twice", and `Array.Copy(buffer, 1, buffer, 0, n)` is how a shift is written.
+
+⚠ **The linear-search-in-a-set rule (#36) was refuted by measurement, and no id was allocated for
+it.** The issue's premise — that `Enumerable.Contains` on a `HashSet<T>` reached through
+`IEnumerable<T>` "binds to the O(n) extension rather than the O(1) member, so the data structure
+chosen for lookup speed is used at list speed" — is **false on .NET**.
+`Enumerable.Contains<T>(IEnumerable<T>, T)` opens with an `is ICollection<T>` test and delegates to
+the collection's own `Contains`. Measured on this machine, 200 lookups of the last element of a
+two-million-element collection reached through `IEnumerable<T>` take **0 ms** for every one of
+`HashSet`, `SortedSet`, `ImmutableHashSet`, `ImmutableSortedSet`, `FrozenSet` and `Dictionary`
+(the last through `Dictionary.Contains(kvp)`, which binds to the extension because
+`ICollection<KeyValuePair<K, V>>.Contains` is implemented explicitly). The delegation is observable
+as well as fast: a `HashSet<string>(StringComparer.OrdinalIgnoreCase)` reached through
+`IEnumerable<string>` answers `Contains("ALPHA")` with `true`, which only the set's own comparer can
+do. ⚠ **The one shape that really is linear is the three-argument overload** —
+`Contains(value, comparer)` cannot delegate and scans: 20 calls over the same two million elements
+take 300 ms. But passing a comparer is an explicit statement that *this* comparison is wanted rather
+than the set's, there is no `HashSet<T>.Contains(value, comparer)` to redirect it to, and a rule
+that reports something nobody can write differently is the failure mode `SK2034`'s note already
+names. There is no rule here to build.
 
 ## SK3000 — Async, concurrency, lifetime
 
@@ -1125,8 +1153,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **211** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **177** | **84.3 %** |
+| Rules this document names | **212** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **178** | **84.4 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |

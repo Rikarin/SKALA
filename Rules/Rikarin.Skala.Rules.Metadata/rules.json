@@ -4794,6 +4794,33 @@
       "configuration": [
         "dotnet_diagnostic.SK2080.severity"
       ]
+    },
+    {
+      "id": "SK2081",
+      "concept": "collection-passed-to-itself",
+      "title": "The collection is passed to its own method as the other collection",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2114"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A set, list or array is given to one of its own members as the second collection, where the answer is fixed, the call does nothing, or the collection is emptied or doubled.",
+      "rationale": "`set.UnionWith(set)` does nothing. `set.ExceptWith(set)` is `Clear()` written so that nobody reads it as `Clear()`. `set.SetEquals(set)` is `true` with a hash walk in front of it, `set.IsProperSubsetOf(set)` is `false`, and `list.AddRange(list)` doubles the list in place. Every entry in the table is a call whose result does not depend on what the collection holds, which is never why anybody writes one. The defect underneath is almost always a single identifier — the second collection was meant to be a different one — and that is also why there is no fix: naming the right collection is the repair, and the analyzer does not know which one it is.",
+      "examples": {
+        "bad": "var stale = new HashSet<string>(known);\nstale.ExceptWith(stale);",
+        "good": "var stale = new HashSet<string>(known);\nstale.ExceptWith(current);"
+      },
+      "falsePositives": "⚠ **The two sides must be the same *storage*, which is a symbol comparison and not a text one.** `a.items` and `b.items` resolve to one field symbol through two different receivers, so the walk compares the receivers too and stops at the first symbol that differs; `items` and `this.items` are recognised as one storage because the member symbol already matched. ⚠ **Every symbol on the path must be a local, a parameter or a field.** A property is an accessor call and two reads of one property may hand back two different objects, so `Current.Items.UnionWith(Current.Items)` is not reported; an invocation or an indexer anywhere in the path is excluded for the same reason. ⚠ **`a.Equals(a)` is deliberately outside the table** even though it is the shape the upstream title suggests: asserting that a type's equality is reflexive is exactly what an equality test does, and this repository's own `SK2004` fixtures would be the first false positives. ⚠ **`Concat`, `Zip` and `Array.Copy` are outside it for the opposite reason**: `items.Concat(items)` is a legitimate way to say \"twice\", and `Array.Copy(buffer, 1, buffer, 0, n)` is how a shift is written. A degenerate result is the entry condition for the table, not an unusual-looking argument. The receiver is matched against concrete framework types — `HashSet<T>`, `SortedSet<T>`, `List<T>`, `System.Array` and the four `Enumerable` operators — never against `ISet<T>` or a user collection, where the member's meaning is its author's. A named argument or a `ref` argument anywhere in the call withdraws the finding, because the slot an argument occupies is then not the slot it is written in.",
+      "configuration": [
+        "dotnet_diagnostic.SK2081.severity"
+      ]
     }
   ]
 }

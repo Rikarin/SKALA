@@ -193,6 +193,7 @@ SK7081 type-coupling
 SK7082 nested-conditional
 SK7083 repeated-string-literal
 SK2080 duplicate-initializer-key
+SK2081 collection-passed-to-itself
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because
