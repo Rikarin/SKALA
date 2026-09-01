@@ -142,9 +142,9 @@ public sealed class PatternMatchingBatchTests {
     }
 
     [Theory]
-    // `x?()` is not syntax.
+    // ⚠ Declined by `System.Delegate`'s own `operator ==`, before the "`x?()` is not syntax" check.
     [InlineData("using System; class C { string? M(Func<string>? f) => f != null ? f() : null; }")]
-    // The member is a value type, so `?.` produces `int?` by a different route.
+    // ⚠ A target-typed conditional has no natural type, so there is nothing to match the member against.
     [InlineData("class D { public int N; } class C { int? M(D? d) => d != null ? d.N : null; }")]
     // Two evaluations of a call are not one.
     [InlineData(
