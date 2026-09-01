@@ -3316,6 +3316,34 @@
       "configuration": [
         "dotnet_diagnostic.SK3021.severity"
       ]
+    },
+    {
+      "id": "SK1050",
+      "concept": "pattern-matching-over-test-and-cast",
+      "title": "Use pattern matching instead of a test-and-cast",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UsePatternMatching",
+      "supersedes": [
+        "IDE0078",
+        "IDE0083"
+      ],
+      "since": "1.3",
+      "languageVersion": "7.0",
+      "summary": "A conversion followed by a null check, a safe cast used only as a type test, or a negated type check is a pattern.",
+      "rationale": "`var b = x as Binary; if (b != null)` converts, stores, and then asks whether the conversion worked — three steps for one question the language has had an answer to since C# 7. `x is Binary b` is one `isinst`, one variable, and a relationship the reader does not have to reconstruct from two adjacent statements. The same holds for `(x as T) != null`, which allocates a conversion result nobody wants in order to test a type, and for `!(x is T)`, which reads as the negation of a question rather than as the question the code is actually asking.",
+      "examples": {
+        "bad": "var binary = node as Binary;\nif (binary != null) {\n    Visit(binary.Left);\n}",
+        "good": "if (node is Binary binary) {\n    Visit(binary.Left);\n}"
+      },
+      "falsePositives": "⚠ **`SK1015` owns `is T` followed by a cast; this rule is the rest of the family and never restates it.** Four shapes: an `as` conversion whose very next statement is an `if` testing it for null, a safe cast compared against null (`(x as T) != null` → `x is T`), a negated type test (`!(x is T)` → `x is not T`), and a type check that succeeds for every non-null value of the operand's own static type (`s is object` → `s is not null`). ⚠ The `as`-plus-null-check shape requires **every** reference to the local to be inside the `if` it guards: a pattern variable is not definitely assigned after the `if`, so a use below it would be CS0165, and an `else` branch is refused for the same reason. The conversion operand must be a chain of plain names, so nothing that could be evaluated for a side effect moves into a condition. ⚠ The tested type must be a reference type — `x is int?` is CS8116 — and a null comparison whose operand type declares `operator ==` is left alone, because `==` there is not the reference test the pattern makes. ⚠ The two shapes that produce a `not` pattern are silent below C# 9 even though the rule's floor is C# 7, and every shape is silent inside an expression tree, where a pattern is CS8122, and where rewriting would change what the tree contains. ⚠ **Not covered, and deliberately so:** `UseSwitchCasePatternVariable` (a `switch` case that casts in its body), `ConvertTypeCheckPatternToNullCheck`, and the negated `as` guard (`if (t == null) return;`), which needs a reachability proof the other shapes do not.",
+      "configuration": [
+        "dotnet_diagnostic.SK1050.severity"
+      ]
     }
   ]
 }

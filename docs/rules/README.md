@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 129 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 130 ids are allocated.
 
 ## Async
 
@@ -144,6 +144,7 @@
 | [SK1042](SK1042.md) | The nested `if` statements can be combined | suggestion | safe | yes |
 | [SK1043](SK1043.md) | The `for` loop is a `while` | suggestion | safe | yes |
 | [SK1044](SK1044.md) | Use `string.IsNullOrEmpty` | suggestion | safe | no |
+| [SK1050](SK1050.md) | Use pattern matching instead of a test-and-cast | suggestion | safe | no |
 
 ## Performance
 
