@@ -200,5 +200,7 @@
   "UselessBinaryOperation": "SK2051",
   "ShiftExpressionRealShiftCountIsZero": "SK2052",
   "ShiftExpressionRightOperandNotEqualRealCount": "SK2052",
-  "ShiftExpressionZeroLeftOperand": "SK2052"
+  "ShiftExpressionZeroLeftOperand": "SK2052",
+  "ThreadStaticAtInstanceField": "SK2100",
+  "ThreadStaticFieldHasInitializer": "SK2100"
 }

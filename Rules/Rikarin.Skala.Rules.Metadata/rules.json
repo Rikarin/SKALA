@@ -5004,6 +5004,111 @@
       "configuration": [
         "dotnet_diagnostic.SK2093.severity"
       ]
+    },
+    {
+      "id": "SK2100",
+      "concept": "ineffective-thread-static",
+      "title": "`[ThreadStatic]` is applied where it cannot take effect",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "ThreadStaticAtInstanceField",
+      "resharperNote": "The export carries two inspections for this concept — `ThreadStaticAtInstanceField` and `ThreadStaticFieldHasInitializer` — both at `warning`, and Skala reports them as one rule because they are one question asked of one declaration. `--resharper-severities` maps the first; the second has no separate Skala id and never will.",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A field marked `[ThreadStatic]` is either not `static`, in which case the attribute does nothing at all, or is `static` with an initializer, in which case only the first thread to touch the type sees the initialized value.",
+      "rationale": "Thread-static storage is per-thread storage of a *static* slot. On an instance field there is already one slot per object and the runtime ignores the attribute entirely, so the isolation the author asked for was never there. ⚠ The initializer case is worse than nothing and is the one people actually hit: the initializer runs in the static constructor, once, on whichever thread reaches the type first. That thread sees the value and every other thread sees `default`. Nothing throws, nothing warns, and the field reads correctly in the debugger on the thread that happens to be attached — which is why the bug survives review and is found from a null reference on a background thread three weeks later.",
+      "examples": {
+        "bad": "sealed class Scratch {\n    [ThreadStatic] StringBuilder buffer;              // not static: the attribute does nothing\n    [ThreadStatic] static StringBuilder shared = new(); // only thread one sees the builder\n}",
+        "good": "sealed class Scratch {\n    [ThreadStatic] static StringBuilder? buffer;\n\n    static StringBuilder Buffer => buffer ??= new StringBuilder();\n}"
+      },
+      "falsePositives": "The attribute must resolve to `System.ThreadStaticAttribute` by namespace-qualified name, so a same-named attribute of the author's own is never touched. ⚠ **A `const` is excluded**: it is implicitly static and is required to carry an initializer, so neither half of the rule can be true of it and the repair the second half offers would not compile. ⚠ **`= 0`, `= false`, `= null` and `= default` are excluded**, and that is not tidiness — those initializers assign exactly what every thread but the first already sees, so there is no divergence between threads to report, and firing on them would make the rule fire on a declaration that is merely verbose. An instance field carrying an initializer is reported once, as an instance field: the initializer is beside the point when the attribute is inert to begin with, and two findings on one declaration would be the same defect counted twice. The non-static half reports once for the declaration because the modifier is shared by every declarator; the initializer half reports once per declarator, because `[ThreadStatic] static int a = 1, b;` is wrong about `a` and right about `b`. ⚠ **The fix for the non-static half deletes the attribute rather than inserting `static`, and the harness is what settled that.** Adding `static` turns an instance field with an initializer into a *static* field with an initializer, which is the other half of this same rule — so the fix fired the rule again on its own output and `skala fix` would have looped. Deleting the annotation makes the declaration say what it already does, in one edit, from any starting shape; the other repair moves where the value lives and which threads share it, which is why neither fix is marked safe. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2100.severity"
+      ]
+    },
+    {
+      "id": "SK2101",
+      "concept": "pure-attribute-on-void",
+      "title": "`[Pure]` is applied to a method that returns nothing",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "S3603"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A `void` method carries `System.Diagnostics.Contracts.PureAttribute` or `JetBrains.Annotations.PureAttribute`, neither of which can be true of a method that returns nothing.",
+      "rationale": "The two accepted attributes fail for two different reasons and both fail. The BCL's `[Pure]` promises no visible state change; a `void` method that makes no visible state change and returns nothing has no observable effect at all, so either the annotation is wrong or the method is dead. JetBrains' `[Pure]` means the return value must be used; a `void` method has no return value, so the annotation is inapplicable by its own definition. ⚠ The annotation is load-bearing in Skala specifically: `SK2002` reads it to decide whether a discarded result matters, so an annotation that cannot be true feeds a second rule bad input.",
+      "examples": {
+        "bad": "[Pure]\nstatic void Validate(string input) => Check(input);",
+        "good": "[Pure]\nstatic bool IsValid(string input) => Check(input);"
+      },
+      "falsePositives": "⚠ **There are at least three different `PureAttribute`s and they do not mean the same thing**, so the rule resolves by namespace-qualified name and accepts exactly two: `System.Diagnostics.Contracts.PureAttribute` and `JetBrains.Annotations.PureAttribute`. Anything else spelled `PureAttribute` is declined — a third-party attribute that happens to share the simple name is under no obligation to mean either thing, and matching on the short name is how an annotation rule acquires false positives on code it has never seen. ⚠ **The comparison is a string rather than `Compilation.GetTypeByMetadataName`**, which returns null when two referenced assemblies both declare the name; JetBrains' annotations are routinely present twice, once from the package and once from a source-embedded `Annotations.cs`, and resolving by metadata name would silently answer \"not that attribute\" in exactly the repositories where the rule has the most to say. ⚠ **A method with an `out` or `ref` parameter is declined even when it returns `void`** — its results leave through the parameters, Code Contracts explicitly permitted that shape, and \"returns nothing\" is not true of it in the sense the rule means. Only methods and local functions are examined; `[Pure]` also targets a class, a property, an event, a parameter and a delegate, and on those there is no return type to contradict. One finding per declaration rather than one per annotation: two `[Pure]` attributes from two vendors on one `void` method is one mistake. ⚠ **The fix removes every accepted annotation, not only the one the finding points at** — a fix that left the second behind fired the rule again on its own output, which is a `skala fix` loop, and the harness caught that rather than the reasoning doing so. A list every one of whose attributes is being deleted goes as one span, because deleting them individually would leave `[]` behind and an empty attribute list does not parse. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2101.severity"
+      ]
+    },
+    {
+      "id": "SK2102",
+      "concept": "debugger-display-missing-member",
+      "title": "The `[DebuggerDisplay]` string names a member that does not exist",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S4545"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A `{…}` hole in a `[DebuggerDisplay]` string on a type declaration names a single identifier that is not a member of that type or of anything it inherits or implements.",
+      "rationale": "The expression is bound by the debugger at inspection time, not by the compiler, so a rename breaks it silently and it is discovered while debugging something else, at the moment it is least welcome. It is the same string-to-member binding `nameof` exists to remove, and the same class of defect as an `ArgumentException` naming a parameter that is not there. There is no fix: only the author knows which member was meant, and a rule that guessed would rename the display to whatever happened to be nearby.",
+      "examples": {
+        "bad": "[DebuggerDisplay(\"{Title,nq}\")]\nsealed class Book {\n    public string Name { get; init; } = \"\";\n}",
+        "good": "[DebuggerDisplay(\"{Name,nq}\")]\nsealed class Book {\n    public string Name { get; init; } = \"\";\n}"
+      },
+      "falsePositives": "⚠ **The text inside the braces is a limited expression language, not a member name**, and a parser that guesses at it produces false positives on correct code. The accepted grammar is therefore deliberately tiny: one identifier, with an optional `this.` in front and an optional `,nq`-style all-letters format specifier behind. ⚠ **Anything else withdraws the whole attribute rather than the one hole** — a call, an index, an operator, a literal, a further `.`, a nested brace, an unbalanced brace, a comma this parser cannot account for. A string this parser only half understands is a string it has no standing to report on. ⚠ **The dotted path is the exclusion that matters most**: `{Owner.Name}` would need the member's type to answer and `{DateTime.Now}` has a root that is not a member of anything, so reporting either would be wrong for a different reason each time. ⚠ **The lookup searches implemented interfaces as well as base types, and a sabotage that failed to fail is what established that this is the guard doing the work.** The first version also matched a mangled explicit-implementation name — `ICollection.Count` ends with `.Count` — on the reasoning that a plain lookup misses an explicit implementation. The reasoning is true and the code was still redundant: an explicit implementation requires the interface to be in `AllInterfaces`, where the member is declared under its plain name, so the two guards covered exactly the same cases and *neither could be broken into failing*, each masking the other. The mangled match was removed as having no case of its own; the interface walk has one — **a default interface member**, which the type does not declare at all — and there is now a fixture that only it can save. **An error type anywhere on the base or interface chain withdraws the answer entirely** — an unresolved base reads as \"no such member\" and reporting it would be silently wrong, which is also why the rule finds nothing on a source slice with no dependency closure (#277). Only a class, struct, record or record struct declaration is examined; `[DebuggerDisplay]` also targets a field, a property and an assembly, and on those the expression binds against something other than the annotated declaration. The argument must be a compile-time constant string. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2102.severity"
+      ]
+    },
+    {
+      "id": "SK2103",
+      "concept": "duplicated-attribute",
+      "title": "The attribute is applied twice with the same arguments",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "One declaration carries the same `AllowMultiple` attribute more than once with provably identical arguments, so nothing distinguishes the second application from the first.",
+      "rationale": "⚠ This is the one of issue #269's four sub-concepts the compiler is silent about, and the silence is the point. An attribute applied to a target it does not declare is `CS0592`; applied twice when `AllowMultiple` is false it is `CS0579`; naming a member that does not exist it is `CS8776` for the nullable-contract attributes and `SK2102` for `[DebuggerDisplay]`. For an `AllowMultiple` attribute the repetition is *legal* — it is simply indistinguishable from writing it once — so it survives review, and what it costs depends on who reads the metadata: a duplicated `[InlineData]` runs one test case twice under a name that says it ran once, and a duplicated `[SuppressMessage]` is dead metadata that the next person tries to work out the difference between.",
+      "examples": {
+        "bad": "[Conditional(\"TRACE\")]\n[Conditional(\"TRACE\")]\nstatic void Log(string message) { }",
+        "good": "[Conditional(\"TRACE\")]\nstatic void Log(string message) { }"
+      },
+      "falsePositives": "⚠ **Identity is proved, never assumed.** If any argument on either application is not a compile-time constant or a `typeof`, the pair is declined: two expressions that might differ are not a repetition. Positional arguments are compared in order and named ones by name; a `name:` argument makes position and name two different orderings of one list and declines the pair rather than guessing. ⚠ **Only an attribute whose `AttributeUsage` reaches `AllowMultiple = true` is considered** — anything else cannot legally repeat, so a second application is `CS0579` and this rule has nothing to add to source that does not compile. The `AttributeUsage` lookup walks the attribute class's base chain, because that is what the runtime's own lookup does. ⚠ **`[method: X]` and `[return: X]` are two different things written on one declaration**, so the target is part of the group's identity and the two never compare against each other. ⚠ **Attribute lists on two `partial` declarations of one type are not compared**: the repetition is real but it is spread across files, the repair is a judgement about which file keeps it, and the answer would stop being decidable from the file the finding is in — which is what `scope: Semantic` promises the cache. Assembly-level lists are compared within one file for the same reason. The finding lands on the second and later applications, never the first, and the fix deletes that one application together with whichever separator it needs so the list still parses.",
+      "configuration": [
+        "dotnet_diagnostic.SK2103.severity"
+      ]
     }
   ]
 }

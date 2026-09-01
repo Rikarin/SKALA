@@ -169,3 +169,7 @@ SK2090 | Skala.Correctness | Warning | The finalizer can throw.
 SK2091 | Skala.Correctness | Warning | An exception is thrown from a `finally` block.
 SK2092 | Skala.Correctness | Warning | `NullReferenceException` is caught.
 SK2093 | Skala.Correctness | Warning | The handler discards the exception it caught.
+SK2100 | Skala.Correctness | Warning | `[ThreadStatic]` is applied where it cannot take effect.
+SK2101 | Skala.Correctness | Warning | `[Pure]` is applied to a method that returns nothing.
+SK2102 | Skala.Correctness | Warning | The `[DebuggerDisplay]` string names a member that does not exist.
+SK2103 | Skala.Correctness | Warning | The attribute is applied twice with the same arguments.

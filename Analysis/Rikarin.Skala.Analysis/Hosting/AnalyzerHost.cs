@@ -143,6 +143,8 @@ public static class AnalyzerHost {
         new NonnegativeSizeComparisonAnalyzer(), new SignedModulusEqualityAnalyzer(),
         new ThrowingFinalizerAnalyzer(), new ThrowInFinallyAnalyzer(),
         new CaughtNullReferenceAnalyzer(), new DiscardedCaughtExceptionAnalyzer(),
+        new IneffectiveThreadStaticAnalyzer(), new PureAttributeOnVoidAnalyzer(),
+        new DebuggerDisplayMissingMemberAnalyzer(), new DuplicatedAttributeAnalyzer(),
     ];
 
     /// <summary>
