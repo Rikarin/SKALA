@@ -182,7 +182,7 @@ state · `SK3501` `IDisposable` created and not disposed on all paths · `SK3502
 type in a type that is not disposable · `SK3503` `IAsyncDisposable` disposed synchronously.
 
 What a `using` owns, and what else happens to it: `SK3510` a variable already owned by `using` is
-disposed again.
+disposed again · `SK3511` the `using` resource is built with an object initializer.
 
 ## SK4000 — Performance
 
@@ -324,8 +324,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **127** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **97** | **77.0 %** |
+| Rules this document names | **128** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **98** | **77.2 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

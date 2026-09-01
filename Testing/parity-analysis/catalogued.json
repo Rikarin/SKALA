@@ -126,5 +126,7 @@
  "MissingBlankLines": "SK0001",
  "RedundantBlankLines": "SK0001",
  "IncorrectBlankLinesNearBraces": "SK0001",
- "DisposeOnUsingVariable": "SK3510"
+ "DisposeOnUsingVariable": "SK3510",
+ "UsingStatementResourceInitialization": "SK3511",
+ "UsingStatementResourceInitializationExpression": "SK3511"
 }

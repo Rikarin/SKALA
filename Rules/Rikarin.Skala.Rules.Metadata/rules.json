@@ -2693,6 +2693,31 @@
       "configuration": [
         "dotnet_diagnostic.SK3510.severity"
       ]
+    },
+    {
+      "id": "SK3511",
+      "concept": "using-resource-object-initializer",
+      "title": "The `using` resource is built with an object initializer",
+      "category": "Lifetime",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UsingStatementResourceInitialization",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`using var x = new Foo { Bar = Baz() };` — the object initializer runs before the `using` owns anything, so an initializer that throws leaks the constructed resource.",
+      "rationale": "The `using` protects what is assigned to its variable, and an object initializer runs after the constructor and before that assignment. So `using var x = new Foo { Bar = Baz() }` has a window in which a fully constructed `Foo` — with its handle, its socket, its pooled buffer — exists and nothing owns it: if `Baz()` throws, the object is unreachable, no `Dispose` ever reaches it, and the code reads as if the `using` covered it. The leak is invisible in every test where the initializer does not throw, which is all of them. Constructing first and assigning afterwards moves the assignment inside the scope the `using` protects, and it is a mechanical edit.",
+      "examples": {
+        "bad": "using var writer = new StreamWriter(path) { AutoFlush = Configured() };\nwriter.WriteLine(\"done\");",
+        "good": "using var writer = new StreamWriter(path);\nwriter.AutoFlush = Configured();\nwriter.WriteLine(\"done\");"
+      },
+      "falsePositives": "⚠ **The rule reports only the shapes the hoist has somewhere to land.** `using (Open() { … })` declares no name to assign through, and a `using` statement whose body is not a block has no place to put the assignments; both are the same bug and neither is reported, because a finding a fix cannot honour is worse than a missing one. The declaration must have a single declarator whose initializer is literally a `new` with an object initializer. ⚠ **Reference types only.** A `using` local is read-only, so `x.Member = value` on a struct-typed one is CS1654 — the hoisted form does not compile and there is no other one. ⚠ **A `required` member makes the hoist illegal rather than awkward**: the object initializer is what satisfies the requirement, so `new Foo()` alone is CS9035 and the type is skipped entirely. ⚠ Every initializer member must be a plain `Name = value` whose target is a settable property or a writable field: an `init` accessor is assignable in an object initializer and nowhere else, and a nested initializer (`A = { B = 1 }`), an indexed one (`[0] = v`) and a collection element are different rewrites that this rule does not attempt. Accessibility needs no check — the hoisted assignment sits where the initializer did and obeys the same rules. ⚠ **A comment inside the initializer withdraws the finding.** The hoist rebuilds the assignments from their expressions, and trivia between two members belongs to no expression, so it would go out with the braces — silently, under a fix marked safe. The reference tree has exactly this: an `IrradianceFieldRenderer` initializer carrying a six-line note about which pass reads the bound names. ⚠ **A constant initializer is reported too.** `new Foo { Retries = 3 }` cannot throw and therefore cannot leak, and the finding on it is about the shape rather than a proven leak; separating the two would mean deciding which expressions can throw, which is not decidable and is exactly the guessing that turns a rule into a nuisance in the other direction.",
+      "configuration": [
+        "dotnet_diagnostic.SK3511.severity"
+      ]
     }
   ]
 }
