@@ -219,10 +219,17 @@ rather than guessing — [00](00-vision-and-principles.md)'s false-positive bar 
 mutable array or `List<T>` · `SK6003` `abstract` type with a public constructor ·
 `SK6004` interface with one implementation and no test double (hint) · `SK6005` optional parameter
 in a public virtual method · `SK6006` `enum` without an explicit zero value · `SK6007` `struct`
-without `IEquatable<T>` · `SK6008` extension method on `object` ·
-`SK6020` `where T : Enum` with no `struct` beside it ·
-`SK6021` a type named `…Exception` that does not derive from one ·
-`SK6022` a type name that repeats its own kind keyword (`OrderClass`, `PointStruct`).
+without `IEquatable<T>` · `SK6008` extension method on `object`.
+
+⚠ **Register entries only — the prose pass for the four below is owed.** They ship, so
+`RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister` requires them to be named here; nothing
+about their place in the band's argument has been written yet.
+
+- `SK6020` `enum-constraint-without-struct` — `where T : Enum` with no `struct` beside it.
+- `SK6021` `exception-name-without-exception-base` — a type named `…Exception` that does not derive
+  from one.
+- `SK6022` `type-name-restates-its-kind` — a type name that repeats its own kind keyword
+  (`OrderClass`, `PointStruct`).
 
 ## SK7000 — Maintainability
 
