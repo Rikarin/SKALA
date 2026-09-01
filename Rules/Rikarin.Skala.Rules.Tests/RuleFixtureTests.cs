@@ -69,6 +69,7 @@ public sealed class RuleFixtureTests {
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new UndisposedOwnedFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
         new RefStructOwnedDisposableAnalyzer(), new AsyncIteratorNotEnumeratedAnalyzer(),
+        new AsyncOnlyToAwaitAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

@@ -109,3 +109,4 @@ SK3530 | Skala.Lifetime | Warning | The disposable field is not disposed by `Dis
 SK3531 | Skala.Lifetime | Warning | The `DisposeAsync` override never calls the base implementation.
 SK3532 | Skala.Lifetime | Warning | The `ref struct` owns a disposable and cannot declare it.
 SK3030 | Skala.Async | Warning | The async iterator is enumerated without `await foreach`.
+SK3031 | Skala.Async | Info | The method is `async` only to return an awaited task.

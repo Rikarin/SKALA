@@ -107,6 +107,7 @@ public static class AnalyzerHost {
         new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
         new UndisposedOwnedFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
         new RefStructOwnedDisposableAnalyzer(), new AsyncIteratorNotEnumeratedAnalyzer(),
+        new AsyncOnlyToAwaitAnalyzer(),
     ];
 
     /// <summary>

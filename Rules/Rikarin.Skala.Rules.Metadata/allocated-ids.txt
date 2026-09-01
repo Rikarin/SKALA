@@ -141,6 +141,7 @@ SK3530 disposable-field-not-disposed
 SK3531 dispose-async-without-base-call
 SK3532 ref-struct-owns-undisposed-resource
 SK3030 async-iterator-not-enumerated
+SK3031 async-only-to-await
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

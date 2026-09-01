@@ -320,6 +320,25 @@ It is not yet the considered account the sections above carry.
   shadowing is CS0136. The fix is `fixIsSafe: false` against the issue's proposal: it turns a
   statement that does nothing into one that runs the iterator, which is the repair and is still a
   behaviour change somebody should read.
+- `SK3031` `async-only-to-await` — the whole body is `return await X()`, so the state machine exists
+  to hand back a task the method already had. `suggestion`, and `fixIsSafe: false` because eliding
+  the `await` moves exceptions from the returned task to the call and drops the method from the
+  stack traces the task carries.
+
+⚠ **`SK3031` and `SK3007` are disjoint by construction, and the construction is the body shape.**
+`SK3007` reports a task returned out of a `using` that disposes what it awaits, which is exactly
+what `SK3031`'s fix would create — so `supersedes` is the wrong instrument twice over:
+`Supersession.Apply` suppresses the *superseded* finding, and here that would hide the report
+carrying the remedy. Instead `SK3031` matches only a body that is a **single** statement or a single
+expression: a `using` declaration needs a statement before the return, and a `using` statement makes
+the block's one statement a `using` rather than a `return`, so no shape it reports can contain one.
+`ElidingTheAwaitInsideAUsing_IsTheBugSk3007Reports` pins it from the other end — it applies the edit
+by hand to the `using` shape and asserts `SK3007` then fires on the result.
+
+⚠ **`SK4008` is a different concept and stays where it is.** Doc 08 allocated it for "`async` state
+machine for a method that always completes synchronously (→ `ValueTask`)", which is a change of
+return type; `SK3031` removes a state machine and keeps the signature. Issue #55 read the two as one
+and they are not.
 
 ## SK4000 — Performance
 
@@ -520,8 +539,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **125** | **81.2 %** |
+| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **126** | **81.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |

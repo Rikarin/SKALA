@@ -139,5 +139,6 @@
  "UsingStatementResourceInitializationExpression": "SK3511",
  "ReturnOfUsingVariable": "SK3512",
  "SpinLockInReadonlyField": "SK3021",
- "AsyncIteratorInvocationWithoutAwaitForeach": "SK3030"
+ "AsyncIteratorInvocationWithoutAwaitForeach": "SK3030",
+ "ReplaceAsyncWithTaskReturn": "SK3031"
 }

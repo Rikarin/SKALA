@@ -3418,6 +3418,32 @@
       "configuration": [
         "dotnet_diagnostic.SK3030.severity"
       ]
+    },
+    {
+      "id": "SK3031",
+      "concept": "async-only-to-await",
+      "title": "The method is `async` only to return an awaited task",
+      "category": "Async",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "ReplaceAsyncWithTaskReturn",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "The method's whole body is `return await X()`, so the `async` state machine exists only to hand back a task the method already had.",
+      "rationale": "An `async` method compiles to a state machine, an allocation and a resumption path. Where the entire body is one `await` whose result is returned unchanged, all of that exists to give the caller a task the method was holding already. Returning it directly removes the machinery and does the same work.",
+      "examples": {
+        "bad": "async Task<int> ReadAsync(Stream source) {\n    return await source.ReadAsync(buffer);\n}",
+        "good": "Task<int> ReadAsync(Stream source) {\n    return source.ReadAsync(buffer);\n}"
+      },
+      "falsePositives": "⚠ **The fix is unsafe and the reason is not the edit.** Eliding the `await` moves exceptions from the returned task to the call — a method that used to fault its task now throws synchronously, at a place the caller may not be catching — and drops the method from every stack trace the task carries. Both are behaviour, both are usually acceptable, and neither is a decision a tool makes. ⚠ **It is outright wrong inside a `using`, which is what `SK3007` reports, and the two are disjoint by construction.** The body matched here must be a *single* statement that is the `return await`, or a single expression body: a `using` declaration needs a statement before the return, and a `using` statement makes the block's one statement a `using` rather than a `return`, so no shape this rule reports can contain one. `supersedes` would be the wrong instrument regardless — `Supersession.Apply` suppresses the *superseded* finding, which is the one carrying the remedy. ⚠ **The operand's type must be the declared return type, not merely awaitable to it.** `await GetValueTask()` inside an `async Task<int>` is legal and `return GetValueTask()` is not; the same test is what excludes `.ConfigureAwait(false)`, whose type is a configured awaitable rather than a task. ⚠ **A nested `await` in the operand withdraws it**: `return await Read(await Open());` would leave an `await` in a method that is no longer `async`, which is CS4032 — a fix that parses and does not compile. ⚠ Only ordinary methods and local functions; `partial`, `abstract` and `extern` are skipped, and lambdas are not matched at all. ⚠ A comment between `async` and the return type, or between `await` and its operand, withdraws the finding rather than being deleted with the keyword.",
+      "resharperNote": "⚠ The export sets `resharper_replace_async_with_task_return_highlighting = none` and this rule defaults to `suggestion`. ReSharper ships the inspection switched off, which is a reasonable default for a change that moves where exceptions surface; doc 00's ninth non-negotiable says a severity comes from what the rule means rather than from how loud it is, and what this one means is \"there is machinery here doing nothing\" — a suggestion. Reading the ReSharper key (off by default, doc 03 § \"Severities\") would silence it.",
+      "configuration": [
+        "dotnet_diagnostic.SK3031.severity"
+      ]
     }
   ]
 }

@@ -20,13 +20,14 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class AsyncShapeBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
-        new AsyncIteratorNotEnumeratedAnalyzer(), new TaskReturnedFromUsingAnalyzer(),
+        new AsyncIteratorNotEnumeratedAnalyzer(), new AsyncOnlyToAwaitAnalyzer(),
+        new TaskReturnedFromUsingAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
             var data = new TheoryData<RuleFixture>();
-            foreach (var fixture in RuleFixtures.All().Where(static f => f.RuleId is "SK3030")) {
+            foreach (var fixture in RuleFixtures.All().Where(static f => f.RuleId is "SK3030" or "SK3031")) {
                 data.Add(fixture);
             }
 
@@ -77,6 +78,49 @@ public sealed class AsyncShapeBatchTests {
         var source = File.ReadAllText(Path.Combine(RuleFixtures.Root, "SK3030", "negative", name + ".cs"));
 
         Assert.DoesNotContain(Analyze(RuleFixtures.Compile(source, name + ".cs")), static d => d.Id == "SK3030");
+    }
+
+    /// <summary>⚠ Three body shapes, two of them one edit and the third two.</summary>
+    [Theory]
+    [InlineData("a-return-await-body", "    public Task<int> CountAsync() {\n        return LoadAsync();\n    }")]
+    [InlineData("an-expression-bodied-method", "    public ValueTask<int> CountAsync() => LoadAsync();")]
+    [InlineData("a-non-generic-task-body", "    public Task FlushAsync() {\n        return WriteAsync();\n    }")]
+    public void TheElisionFix_RemovesTheStateMachineAndKeepsTheCall(string name, string expected) {
+        var source = File.ReadAllText(Path.Combine(RuleFixtures.Root, "SK3031", "positive", name + ".cs"));
+
+        Assert.Contains(expected, Apply(source, "SK3031"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ <c>SK3031</c>'s edit, applied to the shape it refuses, is exactly <c>SK3007</c>'s bug.
+    /// </summary>
+    /// <remarks>
+    ///     This is the pin the pair needs and it runs in both directions. The fixture is silent under
+    ///     <c>SK3031</c> — its body is two statements, and no shape this rule matches can hold a
+    ///     <c>using</c> — and the same file with <c>async</c> and <c>await</c> taken out by hand is
+    ///     reported by <c>SK3007</c>, because the <c>using</c> now disposes the stream at the
+    ///     <c>return</c>, before the task it produced has finished. Widening <c>SK3031</c> past a
+    ///     single-statement body would make it recommend that edit, and the two rules would then
+    ///     disagree about one line with only one of them right.
+    ///     <para>
+    ///         ⚠ It is also why <c>supersedes</c> is not used. <c>Supersession.Apply</c> suppresses the
+    ///         <em>superseded</em> finding on a shared span, which here would hide <c>SK3007</c> — the
+    ///         one that carries the remedy.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void ElidingTheAwaitInsideAUsing_IsTheBugSk3007Reports() {
+        var path = Path.Combine(RuleFixtures.Root, "SK3031", "negative", "the-await-is-inside-a-using.cs");
+        var source = File.ReadAllText(path);
+
+        var before = Analyze(RuleFixtures.Compile(source, path));
+        Assert.DoesNotContain(before, static d => d.Id == "SK3031");
+        Assert.DoesNotContain(before, static d => d.Id == "SK3007");
+
+        var elided = source.Replace("async Task<int> ReadAsync", "Task<int> ReadAsync", StringComparison.Ordinal)
+            .Replace("return await stream", "return stream", StringComparison.Ordinal);
+
+        Assert.Single(Analyze(RuleFixtures.Compile(elided, path)), static d => d.Id == "SK3007");
     }
 
     [Fact]

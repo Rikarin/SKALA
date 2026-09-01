@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 133 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 134 ids are allocated.
 
 ## Async
 
@@ -18,6 +18,7 @@
 | [SK3020](SK3020.md) | The non-`async` `Task` method returns null | warning | review | no |
 | [SK3021](SK3021.md) | A `SpinLock` is stored in a `readonly` field | warning | review | no |
 | [SK3030](SK3030.md) | The async iterator is enumerated without `await foreach` | warning | review | no |
+| [SK3031](SK3031.md) | The method is `async` only to return an awaited task | suggestion | review | no |
 
 ## Correctness
 
