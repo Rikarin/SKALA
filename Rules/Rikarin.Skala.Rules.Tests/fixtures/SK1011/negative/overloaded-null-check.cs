@@ -1,0 +1,1 @@
+class Item { public int Count; public static bool operator ==(Item? a, Item? b) => true; public static bool operator !=(Item? a, Item? b) => false; public override bool Equals(object? o) => false; public override int GetHashCode() => 0; } class C { bool M(Item item) => item != null && item.Count == 3; }

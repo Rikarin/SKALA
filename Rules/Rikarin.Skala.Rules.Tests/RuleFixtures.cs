@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Rikarin.Skala.Rules.Tests;
@@ -140,7 +141,7 @@ public static class RuleFixtures {
             .WithAnalyzers(
                 analyzers,
                 new CompilationWithAnalyzersOptions(
-                    new AnalyzerOptions([]),
+                    new AnalyzerOptions([], new FixtureOptionsProvider()),
                     null,
                     false,
                     false,
@@ -150,4 +151,43 @@ public static class RuleFixtures {
             .GetAnalyzerDiagnosticsAsync(cancellation)
             .GetAwaiter()
             .GetResult();
+
+    /// <summary>Fixture-local EditorConfig values, written as leading // analyzer-option: key = value comments.</summary>
+    internal sealed class FixtureOptionsProvider : AnalyzerConfigOptionsProvider {
+        public override AnalyzerConfigOptions GlobalOptions => new FixtureOptions(string.Empty);
+
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) =>
+            new FixtureOptions(tree.GetText().ToString());
+
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => GlobalOptions;
+    }
+
+    sealed class FixtureOptions : AnalyzerConfigOptions {
+        readonly Dictionary<string, string> values = new(StringComparer.OrdinalIgnoreCase);
+
+        public FixtureOptions(string source) {
+            foreach (var line in SourceText.From(source).Lines) {
+                var trimmed = line.ToString().Trim();
+                if (!trimmed.StartsWith("//", StringComparison.Ordinal)) {
+                    break;
+                }
+
+                const string prefix = "// analyzer-option:";
+                if (!trimmed.StartsWith(prefix, StringComparison.Ordinal)) {
+                    continue;
+                }
+
+                var assignment = trimmed[prefix.Length..];
+                var separator = assignment.IndexOf('=');
+                if (separator > 0) {
+                    values[assignment[..separator].Trim()] = assignment[(separator + 1)..].Trim();
+                }
+            }
+        }
+
+        public override IEnumerable<string> Keys => values.Keys;
+
+        public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value) =>
+            values.TryGetValue(key, out value);
+    }
 }

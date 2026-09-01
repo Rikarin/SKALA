@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 79 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 84 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -19,6 +19,7 @@
 <tbody>
 <tr><td><a href="SK3001.html">SK3001</a></td><td><code>async void</code> outside an event handler</td><td><span class="tag sev-none">none</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3002.html">SK3002</a></td><td>Blocking on an async call</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3003.html">SK3003</a></td><td>Configure awaited tasks in library code</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3004.html">SK3004</a></td><td>A <code>CancellationToken</code> is accepted and not passed on</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3005.html">SK3005</a></td><td>A task is discarded in synchronous code</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3007.html">SK3007</a></td><td>A <code>Task</code> that uses a <code>using</code> resource is returned instead of awaited</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
@@ -106,6 +107,7 @@
 <tr><td><a href="SK7006.html">SK7006</a></td><td>The member nests deeper than the threshold</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK7010.html">SK7010</a></td><td>Public API without a documentation comment</td><td><span class="tag sev-none">none</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK7020.html">SK7020</a></td><td>Duplicated block</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK7030.html">SK7030</a></td><td>File length exceeds the configured threshold</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK7040.html">SK7040</a></td><td>TODO or FIXME has no issue reference</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK7050.html">SK7050</a></td><td>A warning-disable pragma has no justification</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK7051.html">SK7051</a></td><td>A suppression attribute has no justification</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
@@ -121,8 +123,11 @@
 <tr><td><a href="SK1005.html">SK1005</a></td><td>Use a file-scoped namespace</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1006.html">SK1006</a></td><td>Use a <code>using</code> declaration</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1010.html">SK1010</a></td><td>Use <code>is null</code> / <code>is not null</code> instead of <code>==</code> / <code>!=</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1011.html">SK1011</a></td><td>Use a property pattern</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1014.html">SK1014</a></td><td>Use relational and logical patterns</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1015.html">SK1015</a></td><td>Use <code>is T t</code> instead of <code>is T</code> and a cast</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1020.html">SK1020</a></td><td>Use <code>ArgumentNullException.ThrowIfNull</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1028.html">SK1028</a></td><td>Decode a byte span without an array copy</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1030.html">SK1030</a></td><td>Use <code>??=</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1031.html">SK1031</a></td><td>Use a null-conditional assignment</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1033.html">SK1033</a></td><td>Use <code>TryGetValue</code> or <code>TryAdd</code> instead of <code>ContainsKey</code> and a second lookup</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>

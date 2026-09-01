@@ -341,6 +341,8 @@ sealed class MetricThresholds {
 
     public int NestingDepth { get; private set; } = 6;
 
+    public int FileLines { get; private set; } = 1000;
+
     public static MetricThresholds Read(AnalyzerConfigOptions options) =>
         new() {
             Cyclomatic = Value(options, RuleIds.CyclomaticComplexity, Default.Cyclomatic),
@@ -348,7 +350,8 @@ sealed class MetricThresholds {
             Statements = Value(options, RuleIds.MethodLengthInStatements, Default.Statements),
             TypeMembers = Value(options, RuleIds.TypeSizeInMembers, Default.TypeMembers),
             Parameters = Value(options, RuleIds.ParameterCount, Default.Parameters),
-            NestingDepth = Value(options, RuleIds.NestingDepth, Default.NestingDepth)
+            NestingDepth = Value(options, RuleIds.NestingDepth, Default.NestingDepth),
+            FileLines = Value(options, RuleIds.FileLength, Default.FileLines)
         };
 
     static int Value(AnalyzerConfigOptions options, string ruleId, int fallback) {

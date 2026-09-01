@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 79 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 84 ids are allocated.
 
 ## Async
 
@@ -10,6 +10,7 @@
 |---|---|---|---|---|
 | [SK3001](SK3001.md) | `async void` outside an event handler | none | review | no |
 | [SK3002](SK3002.md) | Blocking on an async call | warning | review | no |
+| [SK3003](SK3003.md) | Configure awaited tasks in library code | warning | — | no |
 | [SK3004](SK3004.md) | A `CancellationToken` is accepted and not passed on | warning | review | no |
 | [SK3005](SK3005.md) | A task is discarded in synchronous code | warning | — | no |
 | [SK3007](SK3007.md) | A `Task` that uses a `using` resource is returned instead of awaited | warning | review | no |
@@ -82,6 +83,7 @@
 | [SK7006](SK7006.md) | The member nests deeper than the threshold | hint | — | yes |
 | [SK7010](SK7010.md) | Public API without a documentation comment | none | — | yes |
 | [SK7020](SK7020.md) | Duplicated block | warning | — | no |
+| [SK7030](SK7030.md) | File length exceeds the configured threshold | hint | — | yes |
 | [SK7040](SK7040.md) | TODO or FIXME has no issue reference | suggestion | — | yes |
 | [SK7050](SK7050.md) | A warning-disable pragma has no justification | warning | — | yes |
 | [SK7051](SK7051.md) | A suppression attribute has no justification | warning | — | no |
@@ -94,8 +96,11 @@
 | [SK1005](SK1005.md) | Use a file-scoped namespace | suggestion | safe | yes |
 | [SK1006](SK1006.md) | Use a `using` declaration | suggestion | safe | yes |
 | [SK1010](SK1010.md) | Use `is null` / `is not null` instead of `==` / `!=` | suggestion | safe | no |
+| [SK1011](SK1011.md) | Use a property pattern | suggestion | safe | no |
+| [SK1014](SK1014.md) | Use relational and logical patterns | suggestion | safe | no |
 | [SK1015](SK1015.md) | Use `is T t` instead of `is T` and a cast | suggestion | safe | no |
 | [SK1020](SK1020.md) | Use `ArgumentNullException.ThrowIfNull` | suggestion | safe | no |
+| [SK1028](SK1028.md) | Decode a byte span without an array copy | suggestion | safe | no |
 | [SK1030](SK1030.md) | Use `??=` | suggestion | safe | yes |
 | [SK1031](SK1031.md) | Use a null-conditional assignment | suggestion | safe | no |
 | [SK1033](SK1033.md) | Use `TryGetValue` or `TryAdd` instead of `ContainsKey` and a second lookup | suggestion | safe | no |

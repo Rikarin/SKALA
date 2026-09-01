@@ -1792,17 +1792,19 @@
     },
     {
       "key": "resharper_configure_await_analysis_mode",
-      "aliases": [],
+      "aliases": [
+        "configure_await_analysis_mode"
+      ],
       "language": "csharp",
       "type": "enum:ConfigureAwaitAnalysisMode",
       "default": "disabled",
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "AwaitExpression",
-      "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against `jb cleanupcode` 2025.2.6, one key flipped at a time over the export in an appended `[*.cs]` section — the sweep's own method — and classified wrong subsystem — an inspection's. Flat at `disabled`, `library` and `ui` under the cleanup profile on a fixture with two bare `await`s, where the same profile demonstrably rewrites `a + (b * c)` to `a + b * c`. It configures an inspection and its quick-fix, neither of which a cleanup profile runs.",
+      "summary": "Selects ConfigureAwait inspection policy, not cleanup behavior. SK3003 reports bare framework Task/ValueTask awaits in library mode; disabled and ui do not require missing configuration. Explicit ConfigureAwait choices are respected. UI mode's separate redundant ConfigureAwait(true) inspection is not implemented. The prefixed key wins if both spellings are supplied. Measured 2026-08-29: jb cleanupcode 2025.2.6 does not change bare awaits in any mode, so this remains outside the arrangement tiers.",
       "since": "0.1",
       "oracle": null,
-      "docs": null,
+      "docs": "https://www.jetbrains.com/help/resharper/ConfigureAwait_Analysis.html",
       "templateLine": 652,
       "expands": []
     },

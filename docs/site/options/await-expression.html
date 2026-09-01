@@ -15,7 +15,7 @@
 <p class="lede">1 key.</p>
 <section class="option" id="resharper_configure_await_analysis_mode">
 <h2><code>resharper_configure_await_analysis_mode</code> <a class="self" href="#resharper_configure_await_analysis_mode">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — an inspection's. Flat at <code>disabled</code>, <code>library</code> and <code>ui</code> under the cleanup profile on a fixture with two bare <code>await</code>s, where the same profile demonstrably rewrites <code>a + (b * c)</code> to <code>a + b * c</code>. It configures an inspection and its quick-fix, neither of which a cleanup profile runs.</p>
+<p>Selects ConfigureAwait inspection policy, not cleanup behavior. SK3003 reports bare framework Task/ValueTask awaits in library mode; disabled and ui do not require missing configuration. Explicit ConfigureAwait choices are respected. UI mode's separate redundant ConfigureAwait(true) inspection is not implemented. The prefixed key wins if both spellings are supplied. Measured 2026-08-29: jb cleanupcode 2025.2.6 does not change bare awaits in any mode, so this remains outside the arrangement tiers.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>disabled</code>, <code>library</code>, <code>ui</code></td></tr>
@@ -24,6 +24,9 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Also spelled</th><td><code>configure_await_analysis_mode</code></td></tr>
+<tr><th>Read by</th><td><a href="../rules/SK3003.html">SK3003</a></td></tr>
+<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/ConfigureAwait_Analysis.html">https://www.jetbrains.com/help/resharper/ConfigureAwait_Analysis.html</a></td></tr>
 </tbody>
 </table>
 </section>

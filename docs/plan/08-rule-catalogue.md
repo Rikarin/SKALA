@@ -322,10 +322,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **126** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **71** | **56.8 %** |
+| **Shipped** — present in `rules.json` | **76** | **60.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **42** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **37** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
@@ -483,12 +483,12 @@ reason is kept; it is a description of remaining work, not a disposal.
 | Declaration-shape rewrites | `SK1002`, `SK1008` | The unsafe-fix path and an `--include` story. Each is a good rule and neither is a *safe* fix (M5) |
 | Evaluation-changing rewrites | `SK1012` | The guard that makes it provably behaviour-preserving is most of the rule (M5) |
 | ⚠ Hot-path rules | `SK1022`, `SK1025`, `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
-| The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1011`, `SK1013`, `SK1014`, `SK1021`, `SK1023`, `SK1024`, `SK1026`, `SK1028`, `SK1029`, `SK1036` | Nothing recorded. Not started |
+| The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1013`, `SK1021`, `SK1023`, `SK1024`, `SK1026`, `SK1029`, `SK1036` | Nothing recorded. Not started |
 | Correctness | `SK2003`, `SK2005` | Nothing recorded beyond the shipping bar. Not started |
 | ⚠ Correctness, partly disposed of by a compiler warning | `SK2001`, `SK2012` | § "The compiler already says it" measures which spellings `csc` reports. What is left is an always-true comparison that is not to an integral constant, or `Prop = Prop` and `a.P == a.P`, where a property accessor may have a side effect and the fix is therefore not mechanical |
-| Async and lifetime | `SK3003`, `SK3009` | Nothing recorded. Not started |
+| Async and lifetime | `SK3009` | Nothing recorded. Not started |
 | Security | `SK5003`, `SK5004`, `SK5006`, `SK5008` | The remaining M8 rules; a wrong security rule is worse than a missing one |
-| Maintainability, non-metric | `SK7030`, `SK7060` | Nothing recorded. Not started |
+| Maintainability, non-metric | `SK7060` | Nothing recorded. Not started |
 
 ### Priority 1 hygiene rules
 
@@ -519,6 +519,38 @@ semantic capture of an incremented for-loop variable by a delegate stored throug
 and accept explicit comparison/culture arguments. Value-type equality reports only calls that bind
 to the inherited `ValueType.Equals` implementation. All five are semantic and report-only; their
 repair requires an assignment target, identity policy, capture lifetime or culture decision.
+
+### Pattern, span, async-policy and file-length batch
+
+`SK1011`, `SK1014`, `SK1028`, `SK3003` and `SK7030` now ship. The three modernization rules
+carry safe fixes for conservative shapes: a stable null-guarded receiver with one member equality,
+two integral comparisons with representable constant bounds, and a framework byte span copied only
+to feed `Encoding.UTF8.GetString`. Pattern fixes exclude expression trees, captured/ref storage,
+overloaded operators and constant-result ranges that could become compiler diagnostics. Span fixes
+bind the replacement overload and keep the existing slice operation intact.
+
+`SK3003` is report-only and requires explicit `library` mode from the resolved per-file
+`resharper_configure_await_analysis_mode` (or unprefixed alias). It respects existing explicit
+`ConfigureAwait` choices. Missing, disabled and UI mode do not report missing configuration;
+UI mode's redundant-`ConfigureAwait(true)` inspection is a different concept and is not implemented.
+
+`SK7030` is a syntax-scoped, report-only physical-line metric with a configurable 1000-line default:
+`dotnet_code_quality.SK7030.threshold`. Blank/comment/inactive lines count; the terminal empty
+line after a final newline does not. Generated code is excluded. The default is a broad review
+policy, not a threshold calibrated to Skala's current files. Per-file severities and metric values
+use the existing analysis host and reporting pipeline.
+
+Validation: the rule fixtures include exact-count, language-floor, generated-code, ref/capture,
+configuration and negative cases. Runtime differential tests compare range results, getter-call
+counts, decoded output and slice exception types/parameter names before and after the safe fixes.
+The workspace integration test exercises all five rules through `check` and `verify`, applies the
+three safe fixes, and compares warm/cold findings after another file changes and after policy changes.
+An audit of Skala's own workspace found 11 file-length hints and no findings for the other four;
+`ConfigureAwait` analysis remains disabled by this repository's existing configuration. Those zeros
+are not a substitute for the positive fixtures. The five analyzers together consumed about 198 ms
+of summed analyzer time in that run (98 ms relational patterns, 75 ms file length, 14 ms property
+patterns, 11 ms span decoding and under 1 ms for the disabled async policy); these are observations,
+not performance guarantees.
 
 ### ⚠ Decisions that rest on a reference-tree count, and are awaiting revisit
 

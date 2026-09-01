@@ -55,3 +55,8 @@ SK7040  | Skala.Maintainability | Info | A TODO or FIXME has no issue reference.
 SK7050  | Skala.Maintainability | Warning | A warning-disable pragma has no justification.
 SK7051  | Skala.Maintainability | Warning | A suppression attribute has no justification.
 SK8006  | Skala.Tests | Warning | A skipped xUnit test has no reason.
+SK1011 | Skala.Modernization | Info | Use a property pattern.
+SK1014 | Skala.Modernization | Info | Use relational and logical patterns.
+SK1028 | Skala.Modernization | Info | Decode a byte span without an array copy.
+SK3003 | Skala.Async | Warning | Configure awaited tasks in library code.
+SK7030 | Skala.Maintainability | Hidden | File length exceeds the configured threshold.
