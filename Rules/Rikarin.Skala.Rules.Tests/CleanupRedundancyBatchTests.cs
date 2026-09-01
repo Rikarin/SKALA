@@ -22,7 +22,7 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class CleanupRedundancyBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
-        new EmptyInitializerAnalyzer(),
+        new EmptyInitializerAnalyzer(), new RedundantStringCallAnalyzer(),
     ];
 
     [Theory]
@@ -55,6 +55,36 @@ public sealed class CleanupRedundancyBatchTests {
         "SK0230",
         "using System.Collections.Generic; static class C { static List<int> M() => new List<int> { }; }",
         "using System.Collections.Generic; static class C { static List<int> M() => new List<int>(); }"
+    )]
+    // SK0231 — `ToString()` on something already a string.
+    [InlineData(
+        "SK0231",
+        "static class C { static string M(string s) => s.ToString(); }",
+        "static class C { static string M(string s) => s; }"
+    )]
+    // SK0231 — the `foreach` copy, which is the allocation rather than the noise.
+    [InlineData(
+        "SK0231",
+        "static class C { static int M(string s) { var n = 0; foreach (var c in s.ToCharArray()) { n += c; } return n; } }",
+        "static class C { static int M(string s) { var n = 0; foreach (var c in s) { n += c; } return n; } }"
+    )]
+    // SK0231 — `string.Format` of a literal with no placeholders is the literal.
+    [InlineData(
+        "SK0231",
+        "static class C { static string M() => string.Format(\"plain\"); }",
+        "static class C { static string M() => \"plain\"; }"
+    )]
+    // SK0231 — the `$` goes and nothing else does.
+    [InlineData(
+        "SK0231",
+        "static class C { static string M() => $\"plain\"; }",
+        "static class C { static string M() => \"plain\"; }"
+    )]
+    // SK0231 — and so does the `@`.
+    [InlineData(
+        "SK0231",
+        "static class C { const string S = @\"plain\"; static string M() => S; }",
+        "static class C { const string S = \"plain\"; static string M() => S; }"
     )]
     public void TheFix_ProducesExactlyThisText(string rule, string before, string after) =>
         Assert.Equal(after, Fix(rule, before));

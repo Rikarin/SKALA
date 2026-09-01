@@ -3342,6 +3342,31 @@
       "configuration": [
         "dotnet_diagnostic.SK0230.severity"
       ]
+    },
+    {
+      "id": "SK0231",
+      "concept": "redundant-string-call",
+      "title": "The string call produces the string it was given",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantToStringCall",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`ToString()` on a string, `foreach` over `ToCharArray()`, `string.Format` of a literal with no placeholders, an interpolated string with no holes, and a verbatim prefix that escapes nothing.",
+      "rationale": "Two of the five are allocations rather than noise. `s.ToCharArray()` copies the whole string so that `foreach` can walk what `string` already enumerates by index, and `string.Format` runs a format parser over a format that has no items. The other three are the reader's cost: a `$` promises a hole, a `@` promises something that needs escaping, and a `.ToString()` on a string promises a conversion. Each one is a sentence that turns out to say nothing, and a reader has to finish it before finding that out.",
+      "examples": {
+        "bad": "foreach (var c in line.ToCharArray()) {\n    Consume(c);\n}\n\nvar label = string.Format(\"unnamed\") + name.ToString();",
+        "good": "foreach (var c in line) {\n    Consume(c);\n}\n\nvar label = \"unnamed\" + name;"
+      },
+      "falsePositives": "⚠ **Each branch is guarded by what the deletion would mean, not by what it would look like.** An interpolated string is reported only where the compiler was converting it to `string`: `FormattableString fs = $\"a\";` and every interpolated-string-handler overload accept `$\"a\"` and reject `\"a\"`, and nothing in the syntax separates the two. `string.Format` is reported only where the literal holds no brace at all, because `string.Format(\"{{0}}\")` returns `{0}` and the literal returns `{{0}}` — the shape that looks most obviously safe is the one that is not. A verbatim prefix is reported only where the body holds no backslash, no doubled quote and no newline, since the prefix is what makes each of those mean what it means. ⚠ `s.ToString();` as a whole statement is the null-check idiom and is never reported: the result is discarded, so the dereference *is* the call, and `s;` is not an expression statement. ⚠ A receiver the compiler's flow analysis says may be null is left alone in both call shapes, because `s.ToString()` is typed `string` where `s` is `string?` and the deletion is where `CS8600` would come from. ⚠ **Three of the family's eight inspections are deliberately not covered.** `RedundantToStringCallForValueType` is not: `$\"{d}\"` on an `IFormattable` calls `ToString(null, provider)` where `d.ToString()` calls `ToString()`, and a supplied provider makes those two different strings. `RedundantStringInterpolation`'s single-hole form is not: `$\"{x}\"` is `\"\"` where `x` is null and `x` is null, which is a change of value and not of spelling. `RedundantStringType` and `RedundantVerbatimPrefix`'s identifier form are not covered either — the identifier form neighbours `SK2034`. ⚠ The receiver's type is read from the symbol and never from the written name, so `((object)s).ToString()` and `count.ToString()` are both left alone.",
+      "configuration": [
+        "dotnet_diagnostic.SK0231.severity"
+      ]
     }
   ]
 }
