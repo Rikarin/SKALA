@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 74 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 79 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -30,8 +30,13 @@
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
+<tr><td><a href="SK2002.html">SK2002</a></td><td>A pure method's result is discarded</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2004.html">SK2004</a></td><td>Typed equality has no matching object equality</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2007.html">SK2007</a></td><td>The collection being enumerated is modified inside the loop</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2008.html">SK2008</a></td><td>A stored delegate captures a changing loop variable</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2009.html">SK2009</a></td><td>An enum switch omits declared members</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2010.html">SK2010</a></td><td>A string comparison has an implicit culture policy</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2011.html">SK2011</a></td><td>A struct uses inherited ValueType.Equals</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2013.html">SK2013</a></td><td>An exception is constructed and then discarded</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2014.html">SK2014</a></td><td>An empty catch silently discards an exception</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2015.html">SK2015</a></td><td><code>throw ex;</code> resets the stack trace</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>

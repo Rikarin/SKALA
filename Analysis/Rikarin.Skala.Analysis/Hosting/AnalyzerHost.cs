@@ -68,6 +68,8 @@ public static class AnalyzerHost {
         new NullCoalescingAssignmentAnalyzer(),
         new CountPropertyAnalyzer(), new EnumGetValuesAnalyzer(), new DiscardedExceptionAnalyzer(),
         new RethrowAnalyzer(), new CollectionModifiedAnalyzer(), new EnumSwitchExhaustivenessAnalyzer(),
+        new DiscardedPureResultAnalyzer(), new IncompleteEqualityContractAnalyzer(), new CapturedLoopVariableAnalyzer(),
+        new ImplicitStringCultureAnalyzer(), new InheritedValueTypeEqualsAnalyzer(),
         new EmptyCatchAnalyzer(), new InterpolatedLoggerMessageAnalyzer(),
         new AsyncVoidAnalyzer(), new BlockingOnAsyncAnalyzer(), new CancellationTokenForwardingAnalyzer(),
         new FireAndForgetTaskAnalyzer(), new TaskReturnedFromUsingAnalyzer(), new UndisposedLocalAnalyzer(),

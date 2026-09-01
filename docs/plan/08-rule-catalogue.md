@@ -322,10 +322,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **126** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **66** | **52.8 %** |
+| **Shipped** — present in `rules.json` | **71** | **56.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **47** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **42** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
@@ -451,9 +451,9 @@ CA2254 and CA1001 cases as well.
 
 ⚠ **`CS1717`/`CS1718` reach the identifier spellings only.** `Prop = Prop`, `other.Prop =
 other.Prop` and `other.Prop == other.Prop` produce nothing, so `SK2012` is not fully disposed of and
-stays outstanding rather than cut. The same is true of `SK2004`: an `IEquatable<T>` implemented
-without overriding `Equals(object)` or `GetHashCode` is silent, and it is the shape that puts a type
-in a `HashSet` and gets reference equality.
+stays outstanding rather than cut. The compiler also leaves an `IEquatable<T>` implemented without
+an object equality override silent. `SK2004` now covers that gap for self-typed contracts, while
+leaving existing overrides and the compiler-covered missing-hash-code case alone.
 
 ### ⚠ Declared cut with no recorded reason — reclassified as outstanding
 
@@ -484,8 +484,8 @@ reason is kept; it is a description of remaining work, not a disposal.
 | Evaluation-changing rewrites | `SK1012` | The guard that makes it provably behaviour-preserving is most of the rule (M5) |
 | ⚠ Hot-path rules | `SK1022`, `SK1025`, `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
 | The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1011`, `SK1013`, `SK1014`, `SK1021`, `SK1023`, `SK1024`, `SK1026`, `SK1028`, `SK1029`, `SK1036` | Nothing recorded. Not started |
-| Correctness | `SK2002`, `SK2003`, `SK2005`, `SK2008`, `SK2010`–`SK2011` | Nothing recorded beyond the shipping bar. Not started |
-| ⚠ Correctness, partly disposed of by a compiler warning | `SK2001`, `SK2004`, `SK2012` | § "The compiler already says it" measures which spellings `csc` reports. What is left of each is the shape it does *not*: an always-true comparison that is not to an integral constant; an `IEquatable<T>` with no `GetHashCode`; `Prop = Prop` and `a.P == a.P`, where a property accessor may have a side effect and the fix is therefore not mechanical |
+| Correctness | `SK2003`, `SK2005` | Nothing recorded beyond the shipping bar. Not started |
+| ⚠ Correctness, partly disposed of by a compiler warning | `SK2001`, `SK2012` | § "The compiler already says it" measures which spellings `csc` reports. What is left is an always-true comparison that is not to an integral constant, or `Prop = Prop` and `a.P == a.P`, where a property accessor may have a side effect and the fix is therefore not mechanical |
 | Async and lifetime | `SK3003`, `SK3009` | Nothing recorded. Not started |
 | Security | `SK5003`, `SK5004`, `SK5006`, `SK5008` | The remaining M8 rules; a wrong security rule is worse than a missing one |
 | Maintainability, non-metric | `SK7030`, `SK7060` | Nothing recorded. Not started |
@@ -508,6 +508,17 @@ parameter; fire-and-forget reports only bare Task calls in synchronous bodies, l
 to `CS4014`; and disposable-field ownership requires a direct instance-field construction. All five
 are report-only because adding enum behavior, exception recovery, logging property names, an async
 API boundary or a disposal implementation requires author intent.
+
+### Next correctness batch
+
+`SK2002`, `SK2004`, `SK2008`, `SK2010` and `SK2011` now ship. Pure-result detection recognizes
+framework method-level contracts and a closed list of immutable string transformations. Equality
+contracts are checked only for `IEquatable<Self>` without an object override. Loop captures require
+semantic capture of an incremented for-loop variable by a delegate stored through framework
+`List<T>.Add`; arbitrary callbacks and storage are not guessed. Culture checks bind string methods
+and accept explicit comparison/culture arguments. Value-type equality reports only calls that bind
+to the inherited `ValueType.Equals` implementation. All five are semantic and report-only; their
+repair requires an assignment target, identity policy, capture lifetime or culture decision.
 
 ### ⚠ Decisions that rest on a reference-tree count, and are awaiting revisit
 

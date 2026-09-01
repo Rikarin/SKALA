@@ -82,6 +82,11 @@ SK7040 todo-without-issue-reference
 SK7050 pragma-without-justification
 SK7051 suppress-message-without-justification
 SK8006 skipped-test-without-reason
+SK2002 discarded-pure-result
+SK2004 incomplete-equality-contract
+SK2008 captured-loop-variable
+SK2010 implicit-string-culture
+SK2011 inherited-value-type-equals
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

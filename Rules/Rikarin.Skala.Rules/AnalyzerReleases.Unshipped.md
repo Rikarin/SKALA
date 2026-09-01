@@ -36,6 +36,11 @@ SK1015  | Skala.Modernization | Info | Use `is T t` instead of `is T` and a cast
 SK1031  | Skala.Modernization | Info | Use a null-conditional assignment.
 SK1033  | Skala.Modernization | Info | Use `TryGetValue` / `TryAdd` instead of `ContainsKey` and a second lookup.
 SK2007  | Skala.Correctness | Warning | The collection being enumerated is modified inside the loop.
+SK2002  | Skala.Correctness | Warning | A pure method's result is discarded.
+SK2004  | Skala.Correctness | Warning | Typed equality has no matching object equality.
+SK2008  | Skala.Correctness | Warning | A stored delegate captures a changing loop variable.
+SK2010  | Skala.Correctness | Warning | A string comparison has an implicit culture policy.
+SK2011  | Skala.Correctness | Warning | A struct uses inherited ValueType.Equals.
 SK2009  | Skala.Correctness | Warning | A non-flags enum switch omits declared values and has no catch-all.
 SK2014  | Skala.Correctness | Warning | An empty catch silently discards an exception.
 SK2016  | Skala.Correctness | Info | A logger message is interpolated before it is logged.

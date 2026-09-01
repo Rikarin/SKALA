@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 74 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 79 ids are allocated.
 
 ## Async
 
@@ -18,8 +18,13 @@
 
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
+| [SK2002](SK2002.md) | A pure method's result is discarded | warning | — | no |
+| [SK2004](SK2004.md) | Typed equality has no matching object equality | warning | — | no |
 | [SK2007](SK2007.md) | The collection being enumerated is modified inside the loop | warning | review | no |
+| [SK2008](SK2008.md) | A stored delegate captures a changing loop variable | warning | — | no |
 | [SK2009](SK2009.md) | An enum switch omits declared members | warning | — | no |
+| [SK2010](SK2010.md) | A string comparison has an implicit culture policy | warning | — | no |
+| [SK2011](SK2011.md) | A struct uses inherited ValueType.Equals | warning | — | no |
 | [SK2013](SK2013.md) | An exception is constructed and then discarded | warning | safe | no |
 | [SK2014](SK2014.md) | An empty catch silently discards an exception | warning | — | yes |
 | [SK2015](SK2015.md) | `throw ex;` resets the stack trace | warning | safe | yes |

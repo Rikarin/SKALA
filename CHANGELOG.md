@@ -13,6 +13,16 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Added — five more correctness analyzers
+
+`SK2002` reports discarded pure results; `SK2004` reports self-typed `IEquatable<T>` contracts with
+no object equality override; `SK2008` reports changing for-loop variables captured by delegates
+stored in a persistent `List`; `SK2010` asks for an explicit culture policy in string comparisons;
+and `SK2011` reports calls to inherited `ValueType.Equals` on concrete structs. All five are
+report-only and semantic: no fix can choose an assignment target, equality identity, capture
+lifetime or culture policy. Positive/negative fixtures and a workspace check/verify integration
+test cover the new rules and EditorConfig severity propagation.
+
 ### Added — five conservative correctness and lifetime analyzers
 
 The second post-audit rule set now ships: `SK2009` finds incomplete non-flags enum switches;

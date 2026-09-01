@@ -839,6 +839,56 @@
       ]
     },
     {
+      "id": "SK2002",
+      "concept": "discarded-pure-result",
+      "title": "A pure method's result is discarded",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A bare call discards the result of a method marked System.Diagnostics.Contracts.Pure or a known immutable string transformation.",
+      "rationale": "Pure calls do not update their receiver. Discarding the returned string or calculation often leaves the input unchanged where a normalization or assignment was intended.",
+      "examples": {
+        "bad": "value.Trim();",
+        "good": "value = value.Trim();"
+      },
+      "falsePositives": "Only method-level framework PureAttribute contracts and a closed set of System.String transformations are recognized. Arbitrary methods, lookalike attributes and void calls are ignored. Assignment to a discard, storage, return and other consumption are explicit choices. Bare expression statements only; no fix can decide which value should receive the result.",
+      "configuration": [
+        "dotnet_diagnostic.SK2002.severity"
+      ]
+    },
+    {
+      "id": "SK2004",
+      "concept": "incomplete-equality-contract",
+      "title": "Typed equality has no matching object equality",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A type implements `IEquatable<Self>` without overriding Equals(object).",
+      "rationale": "Typed and object-based consumers can otherwise disagree about equality. A class can compare equal through `IEquatable<T>` while its object equality and hash code still use identity; structs can similarly diverge from their fallback field comparison.",
+      "examples": {
+        "bad": "class Key : IEquatable<Key> { public bool Equals(Key? other) => other is not null; }",
+        "good": "class Key : IEquatable<Key> { public bool Equals(Key? other) => other is not null; public override bool Equals(object? other) => other is Key key && Equals(key); public override int GetHashCode() => 0; }"
+      },
+      "falsePositives": "Only the framework `IEquatable<T>` with the containing type itself as T is recognized. Records and inherited object-equality overrides are accepted, and partial types report once. Types already overriding Equals(object) are left to compiler diagnostics for a missing GetHashCode. This does not prove that existing equality or hashing implementations are consistent, and no fix can infer the identity fields.",
+      "configuration": [
+        "dotnet_diagnostic.SK2004.severity"
+      ]
+    },
+    {
       "id": "SK2007",
       "concept": "collection-modified-during-enumeration",
       "title": "The collection being enumerated is modified inside the loop",
@@ -864,6 +914,31 @@
       ]
     },
     {
+      "id": "SK2008",
+      "concept": "captured-loop-variable",
+      "title": "A stored delegate captures a changing loop variable",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A delegate added to a persistent `List<TDelegate>` captures a variable declared and incremented by an enclosing for loop.",
+      "rationale": "Closures capture a variable rather than the value it had when the delegate was created. Delegates retained by the list can therefore all see the loop's final value instead of one value per iteration.",
+      "examples": {
+        "bad": "for (var i = 0; i < 3; i++) { actions.Add(() => Use(i)); }",
+        "good": "for (var i = 0; i < 3; i++) { var iteration = i; actions.Add(() => Use(iteration)); }"
+      },
+      "falsePositives": "The rule binds `List<T>.Add` and uses Roslyn capture analysis. It requires a delegate element type, a field receiver or a local declared outside the loop, and a control variable changed by built-in ++/-- or a nonzero constant integer +=/-= step. Other assignments and user-defined increment operators are not treated as proven changes. Per-iteration snapshots, foreach variables, nameof-only references, immediate invocations, custom Add methods and iteration-local lists are ignored. It does not infer arbitrary storage, mutation or invocation timing. A retained delegate intended to observe the final value needs an explicit suppression; no fix chooses or rewrites a captured identity.",
+      "configuration": [
+        "dotnet_diagnostic.SK2008.severity"
+      ]
+    },
+    {
       "id": "SK2009",
       "concept": "enum-switch-missing-members",
       "title": "An enum switch omits declared members",
@@ -886,6 +961,56 @@
       "falsePositives": "The rule excludes `[Flags]` enums, whose combinations are intentionally open, and any switch with `default`, discard, `var` or declaration catch-all handling. It also skips pattern forms other than constants and `or` combinations rather than guessing which values a relational, negated or recursive pattern covers. Enum aliases are compared by constant value, so handling one alias handles all aliases with that value. No fix is offered because the correct behavior for a missing value is a domain decision.",
       "configuration": [
         "dotnet_diagnostic.SK2009.severity"
+      ]
+    },
+    {
+      "id": "SK2010",
+      "concept": "implicit-string-culture",
+      "title": "A string comparison has an implicit culture policy",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A string.Compare overload omits a culture/comparison argument, or parameterless ToLower/ToUpper is used directly in equality.",
+      "rationale": "Ambient culture can change comparison outcomes across machines or requests. The correct policy may be linguistic or ordinal; spelling that policy explicitly keeps it independent of an accidental process setting.",
+      "examples": {
+        "bad": "return string.Compare(left, right) == 0;",
+        "good": "return string.Equals(left, right, StringComparison.Ordinal);"
+      },
+      "falsePositives": "Only bound System.String methods are inspected. Explicit CultureInfo or StringComparison overloads, invariant casing and display-oriented casing outside a direct == or != expression are ignored. The rule also accepts an explicit ignoreCase argument only when a culture is specified; a bool alone still uses ambient culture. Custom lookalikes are excluded. No fix chooses between ordinal, invariant or user-culture semantics.",
+      "configuration": [
+        "dotnet_diagnostic.SK2010.severity"
+      ]
+    },
+    {
+      "id": "SK2011",
+      "concept": "inherited-value-type-equals",
+      "title": "A struct uses inherited ValueType.Equals",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A call on a concrete struct binds to System.ValueType.Equals(object) instead of a typed or overridden equality method.",
+      "rationale": "The inherited implementation uses object-based fallback comparison and can require boxing. Implementing a deliberate equality contract gives collections and direct comparisons a consistent typed path.",
+      "examples": {
+        "bad": "struct Point { public int X; } // point.Equals(other) binds to ValueType.Equals",
+        "good": "struct Point : IEquatable<Point> { public int X; public bool Equals(Point other) => X == other.X; public override bool Equals(object? other) => other is Point point && Equals(point); public override int GetHashCode() => X; }"
+      },
+      "falsePositives": "The bound target must be the inherited ValueType.Equals member and the receiver must be a concrete struct. Typed overloads, overrides, records, enums, nullable values and already-boxed receivers are excluded. No fix generates equality or changes comparisons without knowing which fields define identity.",
+      "configuration": [
+        "dotnet_diagnostic.SK2011.severity"
       ]
     },
     {
