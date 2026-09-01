@@ -161,3 +161,4 @@ SK7081 | Skala.Maintainability | Hidden | The type depends on more other types t
 SK7082 | Skala.Maintainability | Info | The conditional expressions are nested.
 SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
 SK2040 | Skala.Correctness | Warning | The comparison is by reference where value equality was meant.
+SK2041 | Skala.Correctness | Warning | `base.Equals` or `base.GetHashCode` resolves to `object`'s.

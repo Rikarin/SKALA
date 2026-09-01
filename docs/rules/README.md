@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 185 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 186 ids are allocated.
 
 ## Async
 
@@ -66,6 +66,7 @@
 | [SK2033](SK2033.md) | Do not stackalloc inside a loop | warning | — | yes |
 | [SK2034](SK2034.md) | Do not name a declaration after a reserved keyword | suggestion | — | yes |
 | [SK2040](SK2040.md) | The comparison is by reference where value equality was meant | warning | review | no |
+| [SK2041](SK2041.md) | `base.Equals` or `base.GetHashCode` resolves to `object`'s | warning | — | no |
 
 ## Design
 
