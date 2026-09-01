@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 202 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 207 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -90,6 +90,11 @@
 <tr><td><a href="SK2052.html">SK2052</a></td><td>The shift count is masked to a different count</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2053.html">SK2053</a></td><td>The size comparison is decided by a count never being negative</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2054.html">SK2054</a></td><td>A signed modulus result is compared for equality with a non-zero value</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2060.html">SK2060</a></td><td>The condition is an assignment, not a comparison</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK2061.html">SK2061</a></td><td>Both operands of the operator are the same expression</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2062.html">SK2062</a></td><td>A later condition in the chain repeats an earlier one</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK2063.html">SK2063</a></td><td>The operator sequence reads as a different operator</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK2064.html">SK2064</a></td><td>Use &amp;&amp; or || rather than &amp; or | on booleans</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2090.html">SK2090</a></td><td>The finalizer can throw</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2091.html">SK2091</a></td><td>An exception is thrown from a <code>finally</code> block</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK2092.html">SK2092</a></td><td><code>NullReferenceException</code> is caught</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
