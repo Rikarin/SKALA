@@ -18,7 +18,10 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class PatternMatchingBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers =
-        [new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(), new MergedConditionalAccessAnalyzer()];
+    [
+        new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(), new MergedConditionalAccessAnalyzer(),
+        new DiscardAssignmentAnalyzer()
+    ];
 
     [Theory]
     [InlineData(
@@ -150,6 +153,28 @@ public sealed class PatternMatchingBatchTests {
     [InlineData("class E { } class D { public E? R; } class C { E? M(D? d) => d != null ? d?.R : null; }")]
     public void ConditionalAccess_DeclinesTheNearestMiss(string source) =>
         Assert.Empty(Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1052"));
+
+    /// <summary><c>SK1053</c>: both places a name is invented for a value nobody reads.</summary>
+    [Theory]
+    [InlineData("class C { bool R() => true; void M() { var x = R(); } }", true)]
+    [InlineData("class C { bool R(out int v) { v = 1; return true; } void M() { R(out var v); } }", true)]
+    [InlineData("class C { object M() { var x = new object(); return x; } }", false)]
+    // A constant initializer is dead code whose repair is deletion, not a discard.
+    [InlineData("class C { void M() { var x = 5; } }", false)]
+    // ⚠ `_` is a name here, so the rewrite would assign to the parameter.
+    [InlineData("class C { bool R() => true; string M(string _) { var x = R(); return _; } }", false)]
+    // An explicitly typed out-variable carries type information into overload resolution.
+    [InlineData("class C { bool R(out int v) { v = 1; return true; } void M() { R(out int v); } }", false)]
+    [InlineData("using System; class H : IDisposable { public void Dispose() { } } class C { void M() { using var h = new H(); } }", false)]
+    public void Discard_ReplacesOnlyAnUnreadName(string source, bool fires) =>
+        Assert.Equal(fires, Analyze(source, LanguageVersion.CSharp12).Any(static d => d.Id == "SK1053"));
+
+    [Fact]
+    public void Discard_RequiresCSharp7() {
+        const string source = "class C { bool R() => true; void M() { var x = R(); } }";
+        Assert.Empty(Analyze(source, LanguageVersion.CSharp6).Where(static d => d.Id == "SK1053"));
+        Assert.NotEmpty(Analyze(source, LanguageVersion.CSharp7).Where(static d => d.Id == "SK1053"));
+    }
 
     static ImmutableArray<Diagnostic> Analyze(string source, LanguageVersion version) =>
         RuleFixtures.Analyze(

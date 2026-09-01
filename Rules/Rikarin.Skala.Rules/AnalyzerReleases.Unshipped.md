@@ -108,3 +108,4 @@ SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
 SK1050 | Skala.Modernization | Info | Use pattern matching instead of a test-and-cast.
 SK1051 | Skala.Modernization | Info | Simplify the pattern.
 SK1052 | Skala.Modernization | Info | Merge the `?:` into a conditional access.
+SK1053 | Skala.Modernization | Info | Use a discard.
