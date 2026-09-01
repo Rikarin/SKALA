@@ -5,6 +5,12 @@ carry a real byte, and a real zero-width byte is exactly as invisible in the fix
 code the rule exists to find. So the bytes are placed here, from a code point named in the source of
 this script, and every fixture declares what it carries in a `// contains:` header that
 InvisibleCharacterFixtureTests checks against the file's actual bytes.
+
+Run it from the repository root:  python3 Rules/Rikarin.Skala.Rules.Tests/fixtures/SK2072/generate.py
+
+It rewrites every fixture in this directory, so edit the script rather than the fixtures. Nothing in
+the build invokes it — the test is what holds the fixtures to their declarations, and this is how a
+new one gets written.
 """
 import os
 
