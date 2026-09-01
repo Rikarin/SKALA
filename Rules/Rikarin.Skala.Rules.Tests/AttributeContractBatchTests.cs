@@ -91,10 +91,10 @@ public sealed class AttributeContractBatchTests {
         foreach (var fixture in fixtures) {
             var compilation = RuleFixtures.Compile(File.ReadAllText(fixture.Path), fixture.Path);
             foreach (var diagnostic in RuleFixtures.Analyze(
-                compilation,
-                Batch,
-                TestContext.Current.CancellationToken
-            )) {
+                         compilation,
+                         Batch,
+                         TestContext.Current.CancellationToken
+                     )) {
                 if (string.Equals(diagnostic.Id, "AD0001", StringComparison.Ordinal)) {
                     failures.Add(
                         fixture.Path + ": " + diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture)
@@ -138,10 +138,10 @@ public sealed class AttributeContractBatchTests {
 
     static ImmutableArray<Diagnostic> Findings(string path) =>
         RuleFixtures.Analyze(
-                RuleFixtures.Compile(File.ReadAllText(path), path),
-                Batch,
-                TestContext.Current.CancellationToken
-            )
+            RuleFixtures.Compile(File.ReadAllText(path), path),
+            Batch,
+            TestContext.Current.CancellationToken
+        )
             .Where(static diagnostic => Array.IndexOf(Ids, diagnostic.Id) >= 0)
             .ToImmutableArray();
 }

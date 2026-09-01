@@ -91,7 +91,8 @@ public sealed class IneffectiveThreadStaticAnalyzer : DiagnosticAnalyzer {
 
         foreach (var declarator in field.Declaration.Variables) {
             if (declarator.Initializer is null
-                || IsDefaultValue(context.SemanticModel.GetConstantValue(
+                || IsDefaultValue(
+                    context.SemanticModel.GetConstantValue(
                         declarator.Initializer.Value,
                         context.CancellationToken
                     )

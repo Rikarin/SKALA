@@ -15,12 +15,18 @@ namespace Rikarin.Skala.Rules.Correctness;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>This is where the boundary against <c>SK2100</c>, <c>SK2101</c> and <c>SK2102</c> is
-///         drawn, and it is drawn by construction rather than by a filter.</b> Those three ask one
+///         ⚠
+///         <b>
+///             This is where the boundary against <c>SK2100</c>, <c>SK2101</c> and <c>SK2102</c> is
+///             drawn, and it is drawn by construction rather than by a filter.
+///         </b> Those three ask one
 ///         question — <em>does this attribute contradict the declaration it is on?</em> — and to answer
 ///         it they read the declaration. This rule never reads the declaration at all. It asks a
-///         question about a different pair of things: <em>do two applications of the same attribute say
-///         the same thing?</em> Nothing this rule looks at is something they look at, so no shape can
+///         question about a different pair of things:
+///         <em>
+///             do two applications of the same attribute say
+///             the same thing?
+///         </em> Nothing this rule looks at is something they look at, so no shape can
 ///         reach both, and no exclusion list is needed to keep them apart.
 ///     </para>
 ///     <para>

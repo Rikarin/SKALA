@@ -13,8 +13,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <c>SK2101</c> — a <c>[Pure]</c> annotation on a method that returns nothing.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>There are at least three different <c>PureAttribute</c>s and they do not mean the same
-///     thing</b>, so the rule resolves by namespace-qualified name and accepts exactly two.
+///     ⚠
+///     <b>
+///         There are at least three different <c>PureAttribute</c>s and they do not mean the same
+///         thing
+///     </b>, so the rule resolves by namespace-qualified name and accepts exactly two.
 ///     <list type="bullet">
 ///         <item>
 ///             <c>System.Diagnostics.Contracts.PureAttribute</c> — the BCL one: "makes no visible state
