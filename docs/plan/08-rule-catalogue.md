@@ -317,6 +317,77 @@ them needs a profile to justify the edit.
 - `SK4024` `GC.Collect` outside measurement code. ⚠ **The one of the five that ships fixless**: the
   call is a symptom of an allocation, a buffer or a handle, and deleting it without dealing with
   that is a memory change nobody measured.
+### `SK4030`–`SK4034` — call shapes decided by the receiver's static type
+
+⚠ **The prose pass for this block is owed.** The entries below are the register doing its job —
+naming the numbers so they cannot be handed out twice — and not the considered write-up the rest of
+this document carries.
+
+`SK4030` the collection's own `Find`/`Exists`/`TrueForAll`/`Contains` where the LINQ extension was
+called · `SK4031` a `foreach` over `dict.Keys` that indexes the dictionary with the key it is already
+holding · `SK4032` `Substring` allocated only to feed a search that takes a start index ·
+`SK4033` the expensive `ConcurrentDictionary` member where a cheap one answers the same question ·
+`SK4034` a `Where` that runs after the `OrderBy` it could have run before.
+
+Five ids, one analysis: take the receiver's static type, look at the operator called on it, and ask
+whether the type itself already offers the cheaper member. They are grouped here rather than folded
+into `SK4001`–`SK4008` for the reason the note above gives about `SK4010`.
+
+⚠ **Three of the batch's five source issues bundled more than one upstream rule, and the ids shipped
+are narrower than the issues asked for.** Named here rather than silently dropped:
+
+- `SK4030` takes `S6602`, `S6603`, `S6605` and `S6617` from issue #204 and leaves three. `S6608`
+  (index instead of `First()`/`Last()` on an `IList`) changes `InvalidOperationException` into
+  `ArgumentOutOfRangeException` on an empty list. `S6609` (`SortedSet.Min`) returns `default(T)` on
+  an empty set where `Enumerable.Min()` throws for a value type. `S6613` (`LinkedList.First`) returns
+  a `LinkedListNode<T>` rather than a `T`. All three are behaviour changes rather than substitutions.
+- `SK4034` takes `S6607` from issue #205 and leaves three. `S6610` (`StartsWith(char)`) replaces a
+  culture-aware comparison with an ordinal one, which is a behaviour change wearing a performance
+  fix's clothes. `S6612` is a closure rule about `ConcurrentDictionary` factory lambdas and is not a
+  LINQ chain at all. `S6618` (`string.Create` over `FormattableString`) is niche.
+- `SK4033` leaves `dict.Keys.Contains(k)` alone, and the reason is worth reading: `Keys` hands back a
+  plain `List<TKey>` whose `Contains` uses `EqualityComparer<TKey>.Default`, while `ContainsKey` uses
+  the comparer the table was *constructed* with. For an `OrdinalIgnoreCase` table the two disagree,
+  and nothing at the call site says which kind of table it is.
+
+⚠ `SK4033` declares `supersedes: ["SK1034"]`, and it is the first rule to supersede another Skala
+rule rather than a foreign analyzer id. `SK1034` reads `dict.Keys.Count()` and offers
+`dict.Keys.Count`, which is correct and still wrong: on a `ConcurrentDictionary` the cost is `.Keys`
+taking every lock in the table and materialising a whole new collection, and the answer is
+`dict.Count`. Where both fire on the same span the stronger remedy wins and `SK1034` stays in the
+report marked superseded, which is what `Supersession.Apply` is for.
+
+#### What the batch measured
+
+Instrument verified first: the twenty-three positive fixtures were compiled as one project outside
+the repository and swept with `skala check --load=workspace`, and all twenty-three fired. The same
+command was then run over Skala's own tree, which compiles.
+
+| Id | Fixtures (+/−) | Skala's own tree | The zero, or the findings |
+|---|---:|---:|---|
+| `SK4030` | 6 / 11 | **12** | all twelve read; all twelve true |
+| `SK4031` | 4 / 11 | 0 | shape present 4×, correctly declined 4× |
+| `SK4032` | 4 / 11 | 0 | shape absent |
+| `SK4033` | 5 / 11 | 0 | shape present 3×, correctly declined 3× |
+| `SK4034` | 4 / 10 | 0 | shape absent |
+
+⚠ **`SK4031`'s and `SK4033`'s zeros are the kind that is evidence, and one of them is the rule's own
+guard firing.** `IntAlign.cs:541` is `foreach (var offset in insertions.Keys.Order())` with
+`insertions[offset]` in the body — the loop deliberately wants the keys in *sorted* order, so
+iterating the dictionary would reorder it, and the guard that the source be exactly `X.Keys` refuses
+it. The other three `SK4031` candidates put `Concat` or `Union` between `Keys` and the loop and read
+the value with `TryGetValue`. `SK4033`'s three are `live.Count == loaded.Count` (two counts, not an
+emptiness test), `live.Values.ToList()` (the snapshot is what was wanted) and a `Count` returned as a
+number.
+
+⚠ **A corpus number for this batch would have been a third kind of zero — the analysis never ran —
+and for a reason narrower than issue #277 records.** `skala.jsonc` excludes `Testing/corpus/**` from
+analysis outright, so `skala check` over those paths reports `SK9023: no C# files were found` and
+exits before any rule is loaded. That is on top of the dependency-closure problem #277 describes.
+Counted syntactically, the corpus holds 8 `foreach`-over-`.Keys`, 2 mentions of
+`ConcurrentDictionary`, 47 lambda-taking `FirstOrDefault`/`Any`/`All`, and none of either string or
+sort shape — so a corpus run would have had something to say about three of the five and could not
+have said it.
 
 ## SK5000 — Security
 
@@ -672,6 +743,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **164** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **132** | **81.0 %** |
+| Rules this document names | **156** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **126** | **81.3 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **19** | includes the twelve declared cut with no reason recorded |

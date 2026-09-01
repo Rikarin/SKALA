@@ -3602,6 +3602,142 @@
       "configuration": [
         "dotnet_diagnostic.SK7093.severity"
       ]
+    },
+    {
+      "id": "SK4030",
+      "concept": "collection-own-method",
+      "title": "The collection's own method answers this faster than the LINQ extension",
+      "category": "Performance",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "S6602",
+        "S6603",
+        "S6605",
+        "S6617"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`List<T>` and `ImmutableList<T>` declare `Find`, `Exists` and `TrueForAll`; the `Enumerable` extension that answers the same question allocates an enumerator to do it.",
+      "rationale": "`FirstOrDefault`, `Any` and `All` are written against `IEnumerable<T>`, so they allocate an enumerator, drive it through `MoveNext` and call the predicate through it. `Find`, `Exists` and `TrueForAll` are members of the list, so they walk the backing array with an index and allocate nothing. The delegate is the same object under two names — `Predicate<T>` and `Func<T, bool>` have identical signatures — so the substitution costs the reader nothing either. `Any(x => x == v)` is a third case of the same argument and the sharpest: `Contains(v)` needs no delegate at all, and the comparison ends up somewhere the reader can see it.",
+      "examples": {
+        "bad": "var ready = items.FirstOrDefault(item => item.IsReady);\nvar anyReady = items.Any(item => item.IsReady);\nvar known = names.Any(name => name == wanted);",
+        "good": "var ready = items.Find(item => item.IsReady);\nvar anyReady = items.Exists(item => item.IsReady);\nvar known = names.Contains(wanted);"
+      },
+      "falsePositives": "⚠ **Every pair was checked on the empty sequence, which is where a substitution like this goes wrong, and none of them changes a return.** `All` is vacuously `true` and `TrueForAll` returns `true` over zero elements; `Any` and `Exists` are both `false`; `FirstOrDefault` and `Find` both return `default(T)` — for a value type as well, so neither throws where the other does not. `First`, `Single` and `SingleOrDefault` are deliberately outside the table, because `Find` returns a default where those throw. ⚠ **The receiver must be `List<T>` or `ImmutableList<T>` as the semantic model resolves it**, never a type that merely has a member of the right name. A set carries an `IEqualityComparer<T>`, so `HashSet<string>(StringComparer.OrdinalIgnoreCase).Contains(v)` and `Any(x => x == v)` genuinely disagree, and that is the false positive this restriction exists to prevent. ⚠ The `Any(x => x == v)` rewrite additionally requires an element type whose default equality comparer *is* its `==`: `string`, the integral types, `char`, `bool`, `decimal` and any `enum`. `double` and `float` are excluded because `NaN == NaN` is false where `EqualityComparer<double>.Default.Equals(NaN, NaN)` is true and `-0.0 == 0.0` is true where `Equals` is false; reference types are excluded because `==` may be identity, or an operator somebody wrote. The compared value must also be a name path or a literal, so that moving it out of the lambda does not change how many times it is evaluated. ⚠ The predicate must be written as a lambda or an anonymous method. A `Func<T, bool>` variable does not convert to `Predicate<T>` — the fix would be CS1503 — and a method group is left alone as the cheaper miss. ⚠ **One real behavioural difference is recorded rather than guarded**: `Enumerable.Any` iterates through the list's enumerator, which checks the version field, so a predicate that mutates the list mid-scan throws `InvalidOperationException`; `Exists` walks the array and does not. A predicate that mutates the collection it is scanning is a defect either way, and building a guard for it would mean proving a lambda pure.",
+      "configuration": [
+        "dotnet_diagnostic.SK4030.severity"
+      ]
+    },
+    {
+      "id": "SK4031",
+      "concept": "dictionary-key-relookup-in-loop",
+      "title": "The loop looks up a key it is already holding",
+      "category": "Performance",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": "7.0",
+      "summary": "`foreach (var key in dict.Keys)` and then `dict[key]` in the body: the entry was already in hand and is hashed and probed for again, once per element.",
+      "rationale": "Enumerating `Keys` walks the same entries the dictionary would have handed over whole, and then throws the value away. Every `dict[key]` in the body hashes the key again, probes the bucket chain again and compares again — work the enumerator already did on the way past, multiplied by the count of the dictionary. Iterating the dictionary itself and deconstructing the pair is one pass with no hashing at all. `SK1033` reports the `ContainsKey`-then-index double lookup; this is the same waste inside a loop, which is where it is worth a `warning` rather than a suggestion.",
+      "examples": {
+        "bad": "foreach (var key in totals.Keys) {\n    Console.WriteLine(key + \": \" + totals[key]);\n}",
+        "good": "foreach (var (key, value) in totals) {\n    Console.WriteLine(key + \": \" + value);\n}"
+      },
+      "falsePositives": "⚠ **The receiver is matched against a closed list of framework dictionaries** — `Dictionary`, `SortedDictionary`, `SortedList`, `ReadOnlyDictionary`, `ImmutableDictionary`, `ImmutableSortedDictionary` and `FrozenDictionary` — because the rewrite depends on `Keys` and the dictionary enumerating the same entries in the same order, and that is a promise those types make and `IDictionary<TKey, TValue>` does not. A user implementation whose `Keys` is a sorted projection would be reordered by the fix, so it is left alone. ⚠ **`ConcurrentDictionary` is excluded, and not only for tidiness**: its `Keys` takes every lock in the table and returns a snapshot, where iterating the table itself is a live, lock-free walk — under concurrent writes the two loops genuinely see different things, so the rewrite is a change to what the program observes rather than to what it costs. `SK4033` is where that receiver's costs are reported. ⚠ **A body that writes `dict[key] = …` withdraws the whole finding**, not just that site: the deconstructed `value` is a copy and assigning to it would silently stop updating the dictionary. So does a body that reassigns the dictionary variable, or passes it by reference. ⚠ The dictionary must be reached through a name path ending in a local, a parameter or a field. A property could hand back a different dictionary on the second read, and the fix leaves the indexer's receiver text in place precisely because it is not supposed to be re-evaluated. ⚠ The loop variable must be `var` or exactly the key type, and the fix needs a name for the value that the enclosing body does not already use; inside a `set` or `init` accessor `value` is taken by the implicit parameter, so a fallback name is chosen there rather than writing CS0136. ⚠ The rule is silent below C# 7.0 and where the framework's `KeyValuePair<TKey, TValue>` has no `Deconstruct`, because the fix would not compile.",
+      "configuration": [
+        "dotnet_diagnostic.SK4031.severity"
+      ]
+    },
+    {
+      "id": "SK4032",
+      "concept": "substring-before-index-search",
+      "title": "`Substring` is called to feed a search that takes a start index",
+      "category": "Performance",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "S4635"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`s.Substring(n).IndexOf(x)` copies the tail of the string onto the heap only to search inside it; `s.IndexOf(x, n)` reads the same characters in place.",
+      "rationale": "`Substring` is an allocation and a copy proportional to what is left of the string, and the only thing done with the result here is a search that already accepts the offset as an argument. `IndexOf(value, startIndex)` and `IndexOfAny(anyOf, startIndex)` begin exactly where the copy would have begun and never build it. `SK1028` makes the span-based version of the same argument; this one needs no new type at the call site at all, which is why it is the first thing to reach for.",
+      "examples": {
+        "bad": "if (path.Substring(prefix.Length).IndexOf('/') >= 0) {\n    Split(path);\n}",
+        "good": "if (path.IndexOf('/', prefix.Length) >= 0) {\n    Split(path);\n}"
+      },
+      "falsePositives": "⚠ **The two expressions do not return the same number, and everything about this rule follows from that.** `s.Substring(n).IndexOf(x)` is an index into the copy; `s.IndexOf(x, n)` is an index into `s`; they differ by exactly `n`. So the finding is raised only where the result is used as a *presence test* — compared with `0` or `-1` by `>= 0`, `< 0`, `> -1`, `<= -1`, `== -1` or `!= -1`, in either operand order — because that is the one question both spellings answer identically. Where the number is assigned, returned, passed on, or compared with anything else, the rule is silent; a fix there would have been a silently wrong offset, which is worse than the allocation. ⚠ **`LastIndexOf` is excluded rather than overlooked**: its `startIndex` overload searches *backwards* from that position, so the substitution is not a narrower search but the opposite one. ⚠ Only the one-argument `Substring(n)` qualifies — `Substring(n, length)` bounds the search as well as moving its start, and the rewritten call would look past the end of what was asked for. ⚠ The start-index overload is looked up on the compilation's own `string` rather than assumed: `IndexOf(char, StringComparison)` exists and `IndexOf(char, int, StringComparison)` does not, so a rule that appended an `int` to whatever overload it saw would write a call that does not bind. ⚠ The offset and every search argument must be a literal or a path of names. Moving the offset after the arguments changes the evaluation order, and rather than reason about whose side effects could see whose, the rule declines when either side could have any. ⚠ The boundary cases were checked and agree: at `n == s.Length` both spellings answer \"not found\"; for an empty search string both answer \"found\" (at different positions, which is why only the presence test is offered); and both throw `ArgumentOutOfRangeException` for the same out-of-range `n`. ⚠ `s.Substring(n).Contains(x)` is deliberately out of scope, because its rewrite turns a `bool` atom into a relational expression and that needs the surrounding-syntax analysis `SK1034` does for `Any()`.",
+      "configuration": [
+        "dotnet_diagnostic.SK4032.severity"
+      ]
+    },
+    {
+      "id": "SK4033",
+      "concept": "concurrent-dictionary-expensive-member",
+      "title": "The `ConcurrentDictionary` member taken is the expensive one",
+      "category": "Performance",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "SK1034"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`dict.Keys.Count` locks the whole table and copies every key into a new list to produce a number `dict.Count` already has; `dict.Count == 0` locks it to answer what `dict.IsEmpty` answers for free.",
+      "rationale": "On every other dictionary `Keys` and `Values` are views and `Count` is a field read. On this one they are neither. `ConcurrentDictionary.Keys` acquires every lock in the table and copies the whole collection into a fresh `List<TKey>` before the caller reads anything at all, so `dict.Keys.Count` is a locking O(n) allocation. `Count` acquires every lock as well, because a consistent total means stopping the table. `IsEmpty` acquires nothing and allocates nothing. The receiver is what makes the difference enormous rather than marginal, and it is invisible in the shape of the call — which is exactly why it is worth a rule.",
+      "examples": {
+        "bad": "if (cache.Keys.Count > 0) {\n    Flush(cache);\n}\n\nif (pending.Count == 0) {\n    return;\n}",
+        "good": "if (!cache.IsEmpty) {\n    Flush(cache);\n}\n\nif (pending.IsEmpty) {\n    return;\n}"
+      },
+      "falsePositives": "⚠ **`SK1034` reads `dict.Keys.Count()` and offers `dict.Keys.Count`, which is right and leaves the expensive half standing.** This rule reports on the same span and declares `supersedes: [\"SK1034\"]`, so where both fire the stronger remedy wins and the weaker one stays in the report marked superseded rather than disappearing. Matching the span is the whole mechanism — `Supersession.Apply` pairs findings by rule, file, line and column — which is why `SK1034` runs inside this batch's own test list. The one shape where the two spans do not coincide is a mirrored comparison, `0 < dict.Keys.Count()`, where both are reported; both are true and neither is wrong. ⚠ **`dict.Keys.Contains(k)` looks like it belongs here and does not, and this is the useful exclusion.** `Keys` hands back a plain `List<TKey>`, whose `Contains` uses `EqualityComparer<TKey>.Default`, while `ContainsKey` uses the comparer the dictionary was *constructed* with. For a table built with `StringComparer.OrdinalIgnoreCase` the two give different answers, and nothing at the call site says which kind of table this is — so the obvious rewrite is a behaviour change wearing a performance fix's clothes. ⚠ Only comparisons with `0`, or with `1` under `<`/`>=`, are read as emptiness tests; a count is never negative, so those are the only ones a comparison with a literal decides. Anything else is a claim about *how many*, which `IsEmpty` cannot answer. ⚠ `Any()` becomes `!dict.IsEmpty`, which is a unary expression where the call was a primary one, so it is offered only where the surrounding syntax cannot re-bind — the same restriction and the same list as `SK1034`. `dict.Keys.Any().ToString()` would otherwise become `!dict.IsEmpty.ToString()`, which parses, binds, and means something else. The `!dict.Keys.Any()` form has no such restriction, because `dict.IsEmpty` is primary too. ⚠ The receiver must be a path of names, since the fix writes it a second time. ⚠ `LongCount()` is left alone: it returns `long` where `Count` returns `int`, and a narrowing of the static type can change which overload a surrounding call resolves to.",
+      "configuration": [
+        "dotnet_diagnostic.SK4033.severity"
+      ]
+    },
+    {
+      "id": "SK4034",
+      "concept": "sort-before-filter",
+      "title": "The collection is sorted before it is filtered",
+      "category": "Performance",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "S6607"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`xs.OrderBy(k).Where(p)` buffers, keys and sorts every element, and then throws some of them away; `xs.Where(p).OrderBy(k)` does all three to the survivors only.",
+      "rationale": "`OrderBy` is not lazy in the way the rest of the pipeline is: it buffers the entire sequence, computes a key for every element and sorts all of them before it yields the first one. Putting `Where` after it means paying `O(n log n)` on elements that are about to be discarded, and holding a buffer and a key array sized to the input rather than to the output. Swapping the two makes every one of those proportional to what survives — the one rewrite in this range that moves an asymptotic term rather than an allocation count.",
+      "examples": {
+        "bad": "var recent = entries.OrderBy(entry => entry.Created).Where(entry => entry.IsVisible);",
+        "good": "var recent = entries.Where(entry => entry.IsVisible).OrderBy(entry => entry.Created);"
+      },
+      "falsePositives": "⚠ **The output sequence is identical, and that rests entirely on `OrderBy` being a stable sort.** A stable sort leaves elements with equal keys in their original relative order and `Where` preserves relative order, so both spellings emit the survivors ordered by key with ties broken by source position. LINQ documents `OrderBy` as stable; were it not, the two orders would differ for equal keys and this rule would be wrong. ⚠ **The indexed `Where(Func<T, int, bool>)` overload is refused.** After the sort the index is a position in sorted order and before it a position in source order, so moving that call rewrites the program rather than the pipeline. A parameter count alone would not tell the two overloads apart — the predicate's shape is what does. ⚠ `Queryable` is excluded for the reason `SK4010` excludes it: a provider is free to translate one ordering of a pipeline and not the other, and a fix that turns a working query into a runtime \"unsupported expression\" is worse than the sort it saved. ⚠ **What does change is when the two functions run and on what.** The predicate is now invoked in source order rather than in sorted order, and the key selector runs only on the survivors — so a key selector that throws for an element the filter would have removed used to throw and now does not, and a predicate with side effects observes a different order. Both are defects in the lambda rather than in the rewrite, and neither is decidable without proving a lambda pure. ⚠ **The static type of the whole expression widens from `IEnumerable<T>` to `IOrderedEnumerable<T>`.** Every context that accepted the first accepts the second, but a `var` declaration now infers the ordered type and an overload set containing both could resolve differently. ⚠ Where the `Where` is immediately consumed by one of `SK4010`'s nine operators, this rule says nothing: both are right about `xs.OrderBy(k).Where(p).First()` and their edits overlap, so `SK4010` keeps it — folding the predicate into `First` lets the search stop at the first match, and once applied this shape no longer exists. ⚠ A `ThenBy` between the two calls is not this shape and is not reported, because the `Where` receiver is then the `ThenBy` rather than the sort.",
+      "configuration": [
+        "dotnet_diagnostic.SK4034.severity"
+      ]
     }
   ]
 }

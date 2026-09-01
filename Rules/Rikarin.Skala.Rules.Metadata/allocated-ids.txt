@@ -148,6 +148,11 @@ SK7090 not-implemented-member
 SK7091 process-exit-outside-entry-point
 SK7092 logged-and-rethrown
 SK7093 console-instead-of-logger
+SK4030 collection-own-method
+SK4031 dictionary-key-relookup-in-loop
+SK4032 substring-before-index-search
+SK4033 concurrent-dictionary-expensive-member
+SK4034 sort-before-filter
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

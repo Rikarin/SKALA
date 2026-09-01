@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 140 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 134 ids are allocated.
 
 ## Async
 
@@ -162,11 +162,11 @@
 | [SK4006](SK4006.md) | Review a materialization used only by foreach | hint | — | no |
 | [SK4007](SK4007.md) | Review large struct arguments in loops | hint | — | no |
 | [SK4010](SK4010.md) | A `Where` the next operator could have taken as its predicate | suggestion | safe | no |
-| [SK4020](SK4020.md) | The lambda captures nothing and is not `static` | suggestion | safe | no |
-| [SK4021](SK4021.md) | The private method does not use instance state | hint | safe | no |
-| [SK4022](SK4022.md) | The struct is never mutated and is not `readonly` | suggestion | safe | no |
-| [SK4023](SK4023.md) | The capacity argument matches the default | warning | safe | no |
-| [SK4024](SK4024.md) | `GC.Collect` is called from application code | warning | — | no |
+| [SK4030](SK4030.md) | The collection's own method answers this faster than the LINQ extension | suggestion | safe | no |
+| [SK4031](SK4031.md) | The loop looks up a key it is already holding | warning | safe | no |
+| [SK4032](SK4032.md) | `Substring` is called to feed a search that takes a start index | suggestion | safe | no |
+| [SK4033](SK4033.md) | The `ConcurrentDictionary` member taken is the expensive one | warning | safe | no |
+| [SK4034](SK4034.md) | The collection is sorted before it is filtered | suggestion | safe | no |
 
 ## Security
 

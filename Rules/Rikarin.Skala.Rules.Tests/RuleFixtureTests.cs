@@ -72,6 +72,9 @@ public sealed class RuleFixtureTests {
         new RedundantCapacityArgumentAnalyzer(), new ForcedGarbageCollectionAnalyzer(),
         new NotImplementedMemberAnalyzer(), new ProcessExitAnalyzer(), new LoggedAndRethrownAnalyzer(),
         new ConsoleInsteadOfLoggerAnalyzer(),
+        new CollectionOwnMethodAnalyzer(), new DictionaryKeyRelookupAnalyzer(),
+        new SubstringBeforeSearchAnalyzer(), new ConcurrentDictionaryMemberAnalyzer(),
+        new SortBeforeFilterAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

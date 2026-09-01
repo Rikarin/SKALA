@@ -116,3 +116,8 @@ SK7090 | Skala.Maintainability | Warning | A thrown `NotImplementedException` ha
 SK7091 | Skala.Maintainability | Warning | The process is terminated outside the entry point.
 SK7092 | Skala.Maintainability | Warning | The exception is both logged and rethrown.
 SK7093 | Skala.Maintainability | Warning | The console is written to where a logger was meant.
+SK4030 | Skala.Performance | Info | Use the collection's own `Find`/`Exists`/`TrueForAll`/`Contains`.
+SK4031 | Skala.Performance | Warning | The loop looks up a key it is already holding.
+SK4032 | Skala.Performance | Info | Pass the start index instead of calling `Substring`.
+SK4033 | Skala.Performance | Warning | Take the cheap `ConcurrentDictionary` member.
+SK4034 | Skala.Performance | Info | Filter before sorting.

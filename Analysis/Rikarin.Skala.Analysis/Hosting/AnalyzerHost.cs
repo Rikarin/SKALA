@@ -110,6 +110,9 @@ public static class AnalyzerHost {
         new RedundantCapacityArgumentAnalyzer(), new ForcedGarbageCollectionAnalyzer(),
         new NotImplementedMemberAnalyzer(), new ProcessExitAnalyzer(), new LoggedAndRethrownAnalyzer(),
         new ConsoleInsteadOfLoggerAnalyzer(),
+        new CollectionOwnMethodAnalyzer(), new DictionaryKeyRelookupAnalyzer(),
+        new SubstringBeforeSearchAnalyzer(), new ConcurrentDictionaryMemberAnalyzer(),
+        new SortBeforeFilterAnalyzer(),
     ];
 
     /// <summary>
