@@ -139,6 +139,8 @@ public static class AnalyzerHost {
         new InconsistentlySynchronizedFieldAnalyzer(),
         new InheritanceDepthAnalyzer(), new TypeCouplingAnalyzer(), new NestedConditionalAnalyzer(),
         new RepeatedStringLiteralAnalyzer(),
+        new AssignmentInConditionAnalyzer(), new IdenticalOperandsAnalyzer(), new RepeatedConditionAnalyzer(),
+        new MisleadingOperatorSequenceAnalyzer(), new NonShortCircuitBooleanAnalyzer(),
     ];
 
     /// <summary>

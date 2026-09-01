@@ -4769,6 +4769,140 @@
         "dotnet_code_quality.SK7083.minimum_length",
         "dotnet_diagnostic.SK7083.severity"
       ]
+    },
+    {
+      "id": "SK2060",
+      "concept": "assignment-in-condition",
+      "title": "The condition is an assignment, not a comparison",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "The whole condition of an `if`, `while`, `do` or `for` is a simple assignment, so the condition stores a value and then tests what it stored rather than comparing anything.",
+      "rationale": "`if (x = y)` compiles only where the assigned type is `bool`, which is exactly why the mistake survives the compiler and why the rule can exist at all. The branch then runs whenever `y` is true, and the value the author meant to compare against is silently overwritten. ⚠ **The signal is that the assignment is the *entire* condition.** `while ((line = reader.ReadLine()) != null)` assigns inside a condition too, and is correct and common; there the assignment is an operand of a comparison, not the condition itself. Wrapping the assignment in its own parentheses — `if ((ok = TryLoad()))` — is the convention C programmers have used for forty years to say the assignment was meant, and the rule honours it.",
+      "examples": {
+        "bad": "if (ready = pending) { Start(); }",
+        "good": "if (ready == pending) { Start(); }\n\n// and the two shapes that are already correct and are never reported:\nwhile ((line = reader.ReadLine()) != null) { Handle(line); }\nif ((ok = TryLoad())) { Use(); }"
+      },
+      "falsePositives": "Only a simple `=` is examined, and only where it is the complete condition of an `if`, `while`, `do` or `for`. ⚠ **An assignment nested inside the condition is never reported** — `while ((line = reader.ReadLine()) != null)`, `if ((node = node.Parent) is not null)` and `if (Init() && (handle = Open()) != Invalid)` are the read-assign-test idiom and are correct; the assignment there is an operand, not the condition. ⚠ **An extra pair of parentheses withdraws the finding**: `if ((ok = TryLoad()))` is the long-standing convention for saying the assignment is deliberate, and a rule that ignored it would leave no way to write the intended code. Compound assignments — `flag |= Check()`, `count += 1` — are a different shape with a different repair and are not reported. A `for` statement's initialiser and incrementor are not conditions and are not examined. ⚠ **A `?:` condition is not examined, and the reason is the grammar rather than a judgement**: assignment binds looser than `?:`, so `x = flag = other ? 1 : 2` parses as `x = (flag = (other ? 1 : 2))` and a bare assignment can never be a ternary condition. Writing one requires the parentheses this rule already exempts, so the first draft's `ConditionalExpression` registration was a guard that could not fire. There is no fix, because the repair is a choice the rule cannot make: `==` and a parenthesised assignment are both plausible and they are different programs. Generated code is excluded.",
+      "resharperId": "AssignmentInConditionalExpression",
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2060.severity"
+      ]
+    },
+    {
+      "id": "SK2061",
+      "concept": "identical-operands",
+      "title": "Both operands of the operator are the same expression",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "The left and right operands of a comparison, a logical operator or a subtracting, dividing or remaindering operator are the same side-effect-free expression, so the operator answers a question about nothing.",
+      "rationale": "`if (left == left)`, `a && a`, `offset - offset` — one side was meant to name something else and a copy-paste left it naming the first. The result is a constant the compiler is happy to fold, and the check that was written to catch a case cannot catch it. ⚠ **The rule must know the operand's type, which is the whole reason it is semantic.** `x == x` on a `double` is the idiomatic NaN test and is deliberate; the same text on an `int` is a bug. ⚠ **It must also know the operands cannot move.** `Next() == Next()` is two different draws written the same way, so only paths of locals, parameters and fields — never an invocation, never a property, never an index — are compared.",
+      "examples": {
+        "bad": "if (candidate.start == candidate.start) { Merge(); }",
+        "good": "if (candidate.start == candidate.end) { Merge(); }\n\n// and the NaN test, which is the same text on a different type and is never reported:\nbool isNan = value != value;"
+      },
+      "falsePositives": "⚠ **Floating-point operands are excluded outright, and that exclusion is the rule.** `x == x` is how NaN is tested without calling `IsNaN`, `x != x` is the same test negated, and `x - x` is a way of producing a NaN-preserving zero; all three are deliberate and all three look exactly like the defect. `double`, `float`, `decimal` and their nullable forms therefore never reach the report, which is why the rule is `Semantic` rather than `Syntax`. ⚠ **Only side-effect-free paths of locals, parameters, fields, `this` and `base` are compared.** An invocation on either side is two evaluations that may differ — `rng.Next() == rng.Next()` and `reader.Read() - reader.Read()` are not defects — and a property access is a method call whose two reads the rule does not attempt to prove equal. ⚠ **`Math.Max(x, x)` and `a.CompareTo(a)` are invocations, not operators, and are outside the subject entirely**; a generator emitting them is not reported. ⚠ **Properties are excluded for a second reason as well**: `SK2012` already reports the automatic-property case with a proof this rule does not have, and reporting both would be one defect counted twice. A user-defined operator, a lifted (nullable-operand) operation and an operand of an unresolved type are all excluded, because none of them has the meaning the rule assumes. ⚠ **`string == string` is not one of them, and the first draft of this rule assumed it was.** It looks like a user-defined operator and Roslyn models it as a *built-in* equality with a null `OperatorMethod`, so it reaches the report — correctly: `a == a` on a string is always true and is the same copy-paste it is everywhere else. `+`, `*`, `<<` and `>>` are not examined: doubling, squaring and shifting by oneself are ordinary arithmetic. `=` is not examined either — the compiler's own `CS1717` says it, and `SK2012` says the rest. Generated code is excluded.",
+      "resharperId": null,
+      "supersedes": [
+        "S1764"
+      ],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2061.severity"
+      ]
+    },
+    {
+      "id": "SK2062",
+      "concept": "repeated-condition",
+      "title": "A later condition in the chain repeats an earlier one",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "One `if`/`else if` chain tests the same side-effect-free condition twice, so the later branch is unreachable and the case it was written for is never handled.",
+      "rationale": "In an `if`/`else if` chain nothing at all runs between one condition and the next: reaching the second means the first was false, so a second condition identical to the first is false too and its body is dead. No compiler reports it, because the code is perfectly well formed — it simply does something other than what it looks like. ⚠ **The comparison is structural, not textual.** `if (a && b)` and `if (b && a)` are different conditions and neither is reported for the other; two conditions that merely share a sub-expression — `if (x.Kind == A) … else if (x.Kind == B)` — are different conditions too. Only a whole condition equal to a whole earlier condition, token for token and ignoring layout, is a finding.",
+      "examples": {
+        "bad": "if (mode == Mode.Fast) { Fast(); } else if (mode == Mode.Fast) { Careful(); }",
+        "good": "if (mode == Mode.Fast) { Fast(); } else if (mode == Mode.Careful) { Careful(); }"
+      },
+      "falsePositives": "⚠ **Sequential `if` statements are deliberately not reported, and that is the rule's main exclusion.** Two separate `if`s testing the same thing are only pointless when nothing between them changed the answer, and the first body usually did exactly that — `if (dirty) { Flush(); } if (dirty) { … }` needs the bodies read before it means anything. Only conditions inside one `if`/`else if` chain, where no statement can run between the two tests, are compared. ⚠ **The condition must be side-effect free**: an invocation, an `await`, an assignment, an `++` or a `--` anywhere in either condition withdraws the finding, because `if (Read()) … else if (Read())` really is two different questions. ⚠ **Structural equality, never text.** `SyntaxFactory.AreEquivalent` compares the trees ignoring trivia, so layout, line breaks and comments do not decide it, and neither does a shared sub-expression: only complete conditions are compared with each other, never their parts. Element access is excluded because an indexer is a call. A condition containing a preprocessor directive is excluded, because the two branches of an `#if` are not the same program. Every later condition is compared against every earlier one in its own chain and the finding points at the repeat, not at the original. There is no fix: which of the two conditions was meant to be something else, and what, is the entire content of the bug. Generated code is excluded.",
+      "resharperId": null,
+      "supersedes": [
+        "S1862",
+        "S2760"
+      ],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2062.severity"
+      ]
+    },
+    {
+      "id": "SK2063",
+      "concept": "misleading-operator-sequence",
+      "title": "The operator sequence reads as a different operator",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "An `=` is written hard against a following unary `-`, `+` or `!` and separated from the operand — `x =- 1` — so the pair reads as the compound operator `-=` and is not one.",
+      "rationale": "`x =- 1` assigns negative one. `x -= 1` subtracts one. C# has no `=-` operator, so the compiler splits the two characters silently and the reader's eye does not. ⚠ **The whitespace is the entire signal, and it is the only signal there is.** `x = -1` and `x =- 1` are the same program and differ only in layout, so nothing semantic can separate the deliberate from the mistyped; what separates them is that somebody wrote the `=` and the sign as one token and then put a space before the number, which is how `-=` is spelled and not how a negative literal is. A rule that ignored trivia here would have nothing left to look at.",
+      "examples": {
+        "bad": "remaining =- 1;",
+        "good": "remaining -= 1;\n\n// or, if assignment really was meant, written so it reads that way:\nremaining = -1;"
+      },
+      "falsePositives": "⚠ **Three conditions must hold together, and each one alone would over-fire.** The `=` and the unary operator must be adjacent with no trivia between them; the unary operator must be separated from its operand by trivia; and there must be trivia before the `=`. `x = -1` (spaced normally), `x =-1` (both halves closed up, which is how somebody writing a negative literal in a hurry spells it) and `x=-1` (no space anywhere, a compressed style) are all left alone — only the asymmetric `x =- 1`, where the spacing groups the two operator characters together and pushes the operand away, is reported. ⚠ **The rule reads the trivia of the tree as parsed**, which is the source as the author wrote it; it draws no conclusion from what the formatter would produce, and running the formatter over the file is one of the ways to make the finding go away. Only `-`, `+` and `!` are considered: they are the unary operators whose characters also start a compound assignment (`-=`, `+=`, `!=`). A `~` or a `&` has no such reading. Compound assignments themselves are not examined, and neither is any binary operator. ⚠ There is **no fix**, deliberately: `x -= 1` and `x = -1` are both plausible readings and they are different programs, so an automatic repair would have to guess which bug it was looking at. Generated code is excluded.",
+      "resharperId": null,
+      "supersedes": [
+        "S2757"
+      ],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2063.severity"
+      ]
+    },
+    {
+      "id": "SK2064",
+      "concept": "non-short-circuit-boolean",
+      "title": "Use && or || rather than & or | on booleans",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A `&` or `|` joins two `bool` operands whose right side has no side effect, so the non-short-circuiting operator evaluates a guard's right half that the guard exists to skip.",
+      "rationale": "`if (node != null & node.Ready)` evaluates `node.Ready` whichever way the null check went, so the check protects nothing and the `NullReferenceException` it was written to prevent is thrown anyway. One character separates it from the code that works. ⚠ **The rule is semantic because the operand type decides everything.** `&` and `|` on integers and on `[Flags]` enums are the *only* way to write those operations, and reporting `flags & Mask` would be a catastrophe rather than a false positive; the rule therefore fires only where both operands are non-nullable `bool` and the operator is the language's own, never a user-defined one.",
+      "examples": {
+        "bad": "if (node != null & node.Ready) { Use(node); }",
+        "good": "if (node != null && node.Ready) { Use(node); }\n\n// and the two shapes that are never reported:\nvar masked = flags & FileAttributes.ReadOnly;   // integral and enum operands\nif (ValidateName(x) & ValidateAge(x)) { }       // both sides must run, so & is deliberate"
+      },
+      "falsePositives": "⚠ **Integral and enum operands are excluded, and nothing else in this rule matters as much.** `flags & Mask`, `a | b` on `int`, and every `[Flags]` combination are `&`/`|` used correctly and have no `&&` form at all; the rule reads the operand types and fires only where both are exactly non-nullable `System.Boolean`. ⚠ **`bool?` is excluded too, and it is not the same exclusion.** Lifted `&` and `|` on nullable booleans are three-valued — `null & false` is `false`, not `null` — and `&&`/`||` cannot express that, so the rewrite would change the answer rather than the evaluation order. A user-defined `operator &` or `operator |`, and any operand whose type did not resolve, are excluded for the same reason: the operator does not mean what the rule assumes. ⚠ **A right operand with a side effect is deliberate and is never reported.** An invocation, an assignment, an `await`, an `++`, an object creation or an element access on the right is the documented reason to reach for `&` — both validators must run so both messages are collected — and short-circuiting it would delete work. Only a right operand built from names, member-access paths, literals, `is`/`as` tests and comparisons over them is reported. ⚠ **A mixed bitwise expression is declined rather than reported**, because `&` and `|` bind tighter than `&&` and `||` and swapping one token inside `a | b & c` regroups the whole expression. If the node's parent, or either of its operands, is another `&`, `|` or `^`, the rule stays silent — an under-report in the one place where the fix could silently change the program. `^` is not examined at all: it has no short-circuiting form. The fix replaces the single operator token and nothing else, so it is safe to apply without review. Generated code is excluded.",
+      "resharperId": null,
+      "supersedes": [
+        "S2178"
+      ],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2064.severity"
+      ]
     }
   ]
 }

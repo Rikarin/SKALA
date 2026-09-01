@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 184 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 189 ids are allocated.
 
 ## Async
 
@@ -65,6 +65,11 @@
 | [SK2032](SK2032.md) | Remove GC.SuppressFinalize from a type with no finalizer | suggestion | safe | no |
 | [SK2033](SK2033.md) | Do not stackalloc inside a loop | warning | — | yes |
 | [SK2034](SK2034.md) | Do not name a declaration after a reserved keyword | suggestion | — | yes |
+| [SK2060](SK2060.md) | The condition is an assignment, not a comparison | warning | — | yes |
+| [SK2061](SK2061.md) | Both operands of the operator are the same expression | warning | — | no |
+| [SK2062](SK2062.md) | A later condition in the chain repeats an earlier one | warning | — | yes |
+| [SK2063](SK2063.md) | The operator sequence reads as a different operator | warning | — | yes |
+| [SK2064](SK2064.md) | Use && or \|\| rather than & or \| on booleans | warning | safe | no |
 
 ## Design
 

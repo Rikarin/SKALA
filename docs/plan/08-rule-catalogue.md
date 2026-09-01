@@ -351,6 +351,46 @@ already names in the other direction.
 - `SK2033` `stackalloc-in-loop` — a `stackalloc` a loop re-evaluates.
 - `SK2034` `escaped-keyword` — a declaration named after a reserved keyword and escaped with `@`.
 
+⚠ **The prose pass for `SK2060`–`SK2064` is owed.** What follows is the allocation register entry —
+enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+**`SK2060`–`SK2064` are the family of expressions that read as something they are not**, and every
+one of them has a legitimate form that is textually identical to the defect. That is what makes the
+batch a batch, and it is why four of the five ship without a fix: in each case the repair is a
+decision about which of two plausible programs the author meant, and a tool that guesses is worse
+than one that reports.
+
+`SK2060` `assignment-in-condition` — a simple `=` that is the *entire* condition of an `if`,
+`while`, `do`, `for` or `?:`. ⚠ The discriminator is "entire": `while ((line = reader.ReadLine())
+!= null)` assigns inside a condition and is correct, and `if ((ok = TryLoad()))` uses the
+forty-year-old double-parenthesis convention to say the assignment was meant. Both are declined. ·
+`SK2061` `identical-operands` — the same side-effect-free path on both sides of `==`, `!=`, `<`,
+`<=`, `>`, `>=`, `&&`, `||`, `&`, `|`, `^`, `-`, `/` or `%`. ⚠ Floating-point operands are excluded
+outright, because `x == x` is the NaN test; properties are excluded because `SK2012` already owns
+the automatic-property case with a proof this rule does not have. · `SK2062` `repeated-condition` —
+a later `else if` condition structurally equal to an earlier one in the same chain. ⚠ Sequential
+`if`s are **not** compared: the first body usually changed the answer, so a repeat there is not a
+defect. · `SK2063` `misleading-operator-sequence` — `x =- 1`, where an `=` is hard against a unary
+`-`, `+` or `!` that is then spaced away from its operand. ⚠ Whitespace is the entire signal, which
+is the one place in this catalogue where trivia, not structure, decides a correctness finding. ·
+`SK2064` `non-short-circuit-boolean` — `&` or `|` between two non-nullable `bool` operands whose
+right side has no side effect. ⚠ The only rule of the five that carries a fix, and the only one
+whose worst failure would be catastrophic rather than noisy: `flags & Mask` on an integer or a
+`[Flags]` enum must never be reported, so the rule reads the operand types and is `Semantic` for
+that reason alone.
+
+⚠ **Four fixless rules in one batch is more than doc 08's bar contemplates, and it is deliberate.**
+For `SK2060` the two repairs — `==`, or parentheses around the assignment — are different programs.
+For `SK2061` and `SK2062` the repair is *what the other side should have said*, which is the whole
+content of the bug. For `SK2063` both `x -= 1` and `x = -1` are plausible readings. A fix in any of
+these would be the tool choosing which bug it found.
+
+⚠ **`SK2061` and `SK2062` compare expressions structurally with `SyntaxFactory.AreEquivalent`, not
+textually.** Roslyn's comparison already ignores trivia and compares tokens and structure, so no
+hand-written comparer was needed; a text comparison would call `if (a && b)` and `if (a  &&  b)`
+different and would call two conditions sharing a sub-expression the same.
+
 ## SK3000 — Async, concurrency, lifetime
 
 `SK3001` `async void` outside an event handler · `SK3002` blocking on async (`.Result`, `.Wait()`,
@@ -1108,8 +1148,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **210** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **176** | **84.2 %** |
+| Rules this document names | **215** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **181** | **84.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |

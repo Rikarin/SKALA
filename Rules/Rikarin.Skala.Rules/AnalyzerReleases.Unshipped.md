@@ -160,3 +160,8 @@ SK7080 | Skala.Maintainability | Hidden | The inheritance chain is deeper than t
 SK7081 | Skala.Maintainability | Hidden | The type depends on more other types than the threshold.
 SK7082 | Skala.Maintainability | Info | The conditional expressions are nested.
 SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
+SK2060 | Skala.Correctness | Warning | The condition is an assignment, not a comparison.
+SK2061 | Skala.Correctness | Warning | Both operands of the operator are the same expression.
+SK2062 | Skala.Correctness | Warning | A later condition in the chain repeats an earlier one.
+SK2063 | Skala.Correctness | Warning | The operator sequence reads as a different operator.
+SK2064 | Skala.Correctness | Warning | A non-short-circuiting bitwise operator joins two booleans.
