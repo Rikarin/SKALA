@@ -163,3 +163,4 @@ SK7083 | Skala.Maintainability | Hidden | The string literal is repeated.
 SK2070 | Skala.Correctness | Warning | The Serilog message template has a different number of holes than the call supplies values.
 SK2071 | Skala.Correctness | Warning | The structured log template names the same property twice.
 SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
+SK2073 | Skala.Correctness | Warning | The caught exception is not passed to the logger's exception parameter.

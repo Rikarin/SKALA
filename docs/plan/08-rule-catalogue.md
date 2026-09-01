@@ -364,6 +364,13 @@ section.
 - `SK2072` `invisible-character-in-literal` — a zero-width, bidirectional or control character
   written as itself inside a literal that could have escaped it.
   ([#183](https://github.com/Rikarin/SKALA/issues/183))
+- `SK2073` `caught-exception-not-logged` — an error-level log inside a `catch` that never gives the
+  logger the exception it caught. ([#238](https://github.com/Rikarin/SKALA/issues/238))
+
+⚠ **`SK2073` is `SK7xxx` on its issue and `SK2xxx` here.** An entry that cannot be diagnosed from is
+a defect in what the program observably does rather than a maintenance cost, and the argument that
+puts `SK2014` — a `catch` that swallows without logging or rethrow — in the correctness band puts
+this next to it.
 
 ⚠ **Two of this batch's concepts were closed as hosted rather than shipped, and the measurement is
 the finding.** A probe project built at *default* analysis level — no `AnalysisMode`, no
@@ -1144,8 +1151,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **213** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **179** | **84.4 %** |
+| Rules this document names | **214** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **180** | **84.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |

@@ -140,7 +140,7 @@ public static class AnalyzerHost {
         new InheritanceDepthAnalyzer(), new TypeCouplingAnalyzer(), new NestedConditionalAnalyzer(),
         new RepeatedStringLiteralAnalyzer(),
         new LogTemplateArgumentCountAnalyzer(), new LogTemplateDuplicatePropertyAnalyzer(),
-        new InvisibleCharacterAnalyzer(),
+        new InvisibleCharacterAnalyzer(), new CaughtExceptionNotLoggedAnalyzer(),
     ];
 
     /// <summary>

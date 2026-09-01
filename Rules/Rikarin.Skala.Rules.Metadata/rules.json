@@ -4846,6 +4846,34 @@
       "configuration": [
         "dotnet_diagnostic.SK2072.severity"
       ]
+    },
+    {
+      "id": "SK2073",
+      "concept": "caught-exception-not-logged",
+      "title": "The caught exception is not passed to the logger's exception parameter",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "S6667",
+        "S6668"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An error-level logging call inside a catch clause does not give the logger the exception the clause caught, although the overload that takes one exists.",
+      "rationale": "Every one of these APIs takes the exception in its own parameter, and that parameter is what a sink treats as an exception: it is where the stack trace, the inner chain and the type end up as structure rather than as a sentence in a message. Left empty, the entry says something went wrong and carries nothing anybody can act on, which is the whole reason the line was written. ⚠ **This is `SK7xxx` on the issue and `SK2xxx` here.** An entry that cannot be diagnosed from is a defect in the program's observable behaviour rather than a maintenance cost, and the same argument that puts `SK2014` — a `catch` that swallows without logging or rethrow — in the correctness band puts this next to it.",
+      "examples": {
+        "bad": "catch (IOException ex) {\n    logger.LogError(\"could not read {Path}\", path);\n}",
+        "good": "catch (IOException ex) {\n    logger.LogError(ex, \"could not read {Path}\", path);\n}"
+      },
+      "falsePositives": "⚠ **Error and critical levels only** (`LogError`, `LogCritical`, `Error`, `Fatal`). An information- or debug-level line inside a `catch` is very often deliberate — an expected exception, handled, noted in passing — and reporting those is how a rule about logging becomes noise about control flow. ⚠ **Nothing is reported unless the repair exists**: the analysis looks up an overload with an `exception` parameter on the logging type first, so a logger that has none has no defect this rule can name and the fix cannot assume an overload into being. ⚠ **Only the `Log*(template, values…)` shape is reported, and that is a correctness constraint rather than caution.** `Microsoft.Extensions.Logging` orders its event-id overload `(EventId, Exception, string)`, so an exception prepended in front of an event id does not bind — `skala fix` would have broken the build on the tool's own advice. A call that writes anything before the template is declined outright rather than reported with a fix that cannot be applied. ⚠ **A call that already passes the exception as a *template argument* still fires**, because the `exception` parameter is still empty and a sink still gets a string where it expected an exception; the fix attaches the exception and does **not** also delete the now-redundant hole, because removing text from inside a literal needs a value-to-source offset map that escape sequences break, and a fix that is right except after a `\\n` is worse than one that leaves a tidy-up for the author. A `catch` with no declared variable (`catch { }`, `catch (IOException)`) has no exception to pass and is silent. The nearest enclosing `catch` is the one used, and the walk stops at the member declaration rather than at the first `try`, so a lambda or local function written inside a `catch` — which really does close over the variable — is still reported. Binding is by containing type (`Serilog.ILogger`, `Serilog.Log`, `Microsoft.Extensions.Logging.LoggerExtensions`), never by method name. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2073.severity"
+      ]
     }
   ]
 }
