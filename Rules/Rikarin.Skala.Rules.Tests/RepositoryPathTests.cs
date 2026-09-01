@@ -28,9 +28,28 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class RepositoryPathTests {
     /// <summary>The device names Win32 reserves in every directory, at any extension.</summary>
     static readonly HashSet<string> ReservedDeviceNames = new(StringComparer.OrdinalIgnoreCase) {
-        "CON", "PRN", "AUX", "NUL",
-        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9"
     };
 
     /// <summary>The characters Win32 forbids in a path component.</summary>
