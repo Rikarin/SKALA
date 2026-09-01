@@ -1,0 +1,1 @@
+using System.Runtime.InteropServices; [StructLayout(LayoutKind.Explicit)] struct Large { [FieldOffset(0)] public long A; [FieldOffset(0)] public decimal B; } class C { void Use(Large value) { } void M(Large value) { for (int i = 0; i < 10; i++) Use(value); } }

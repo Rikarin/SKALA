@@ -2417,6 +2417,132 @@
       "configuration": [
         "dotnet_diagnostic.SK8007.severity"
       ]
+    },
+    {
+      "id": "SK1023",
+      "concept": "dedicated-lock",
+      "title": "Use a dedicated System.Threading.Lock",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": "13.0",
+      "summary": "A private readonly object field used only by lock statements can use System.Threading.Lock.",
+      "rationale": "C# 13 uses the dedicated Lock API when the lock target has that type. The fix changes both the field type and its object creation, retaining the existing lock statements. It is offered only when all source references are lock targets and the framework provides the Lock API.",
+      "examples": {
+        "bad": "readonly object gate = new(); void M() { lock (gate) { Work(); } }",
+        "good": "readonly System.Threading.Lock gate = new(); void M() { lock (gate) { Work(); } }"
+      },
+      "falsePositives": "Only a single private readonly object field in a class, initialized directly with new object() or target-typed new(), is supported. There must be at least one lock use; every bound reference in the file, including constructed generic types, must be a direct lock target. Monitor calls, aliases, casts, escapes, reassignment, attributes, interior comments and lock bodies containing yields are excluded. Partial containing types and files with directives are excluded so references in another source file or inactive branch cannot escape the proof. C# 13 and a metadata System.Threading.Lock with the required API are mandatory. Reflection-based access to private fields is outside the proof. Shared monitors used for Wait/Pulse are never converted.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK1023.severity"
+      ]
+    },
+    {
+      "id": "SK2003",
+      "concept": "floating-point-equality",
+      "title": "Review exact equality of floating-point arithmetic",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "Exact equality or inequality directly compares a computed float or double arithmetic result.",
+      "rationale": "Binary floating-point arithmetic rounds its results. A mathematical equality can therefore differ from exact machine equality. An appropriate tolerance depends on the domain and scale; the rule reports the comparison without inventing an epsilon or replacing it with Equals.",
+      "examples": {
+        "bad": "bool M(double x, double y, double expected) => x + y == expected;",
+        "good": "// Choose a domain-appropriate comparison, or retain intentional exact equality with a scoped suppression."
+      },
+      "falsePositives": "The initial scope requires a direct built-in addition, subtraction, multiplication, division or remainder operand of a built-in, non-lifted float/double == or != comparison. Plain variable comparisons, property change guards, decimal/integral arithmetic, custom operators, constant-folded comparisons, and comparisons against constant zero, NaN or infinity are excluded. Source constant dependencies must stay in the same file, including transitive initializers. It does not trace earlier arithmetic through variables or method calls. Exact floating-point contracts may be intentional and can require suppression; no automatic fix is offered.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK2003.severity"
+      ]
+    },
+    {
+      "id": "SK4004",
+      "concept": "constrained-boxing",
+      "title": "Review boxing despite an existing generic constraint",
+      "category": "Performance",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "An explicit interface cast boxes a value-type-constrained type parameter before an interface method call, despite an existing matching constraint.",
+      "rationale": "A constrained generic call can often dispatch without boxing. An explicit cast to the already-provided interface introduces a boxing conversion. Removing it is not automatically safe: a mutating struct method may then modify the original value instead of the boxed copy, and overload selection can differ.",
+      "examples": {
+        "bad": "int M<T>(T value, T other) where T : struct, IComparable<T> => ((IComparable<T>)value).CompareTo(other);",
+        "good": "int M<T>(T value, T other) where T : struct, IComparable<T> => value.CompareTo(other); // after reviewing copy semantics"
+      },
+      "falsePositives": "Only explicit boxing casts immediately used as an interface method receiver are reported. The source must be a type parameter constrained to a value type and to the target interface, directly or through an inherited interface. Reference-type and unconstrained generic casts, object casts, extension methods, retained boxes, interface property access and expression trees are excluded. The rule identifies a boxing conversion, not an exact runtime allocation count; JIT optimization and deliberate copy semantics can make retaining it appropriate. No automatic fix is offered.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK4004.severity"
+      ]
+    },
+    {
+      "id": "SK4007",
+      "concept": "large-struct-argument",
+      "title": "Review large struct arguments in loops",
+      "category": "Performance",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "A source struct with known field payload exceeding dotnet_code_quality.SK4007.threshold (default 64 bytes) is passed by value in a loop body.",
+      "rationale": "Repeated by-value calls can copy a substantial struct. This rule uses a target-independent lower bound from primitive fields and same-file nested structs, not an ABI layout guess or Marshal.SizeOf. A by-reference API may reduce copying but can change aliasing, mutation and overload behavior, so the rule is report-only.",
+      "examples": {
+        "bad": "// Large has nine long fields: at least 72 bytes.\nforeach (var item in items) { Consume(large); } // Consume(Large value)",
+        "good": "// Measure and consider a reviewed in/ref API, or retain the by-value snapshot intentionally."
+      },
+      "falsePositives": "Only explicit identity-converted local/parameter arguments to by-value struct parameters in for/foreach/while/do bodies are supported. The threshold is strictly exceeded; invalid, zero or negative values fall back to 64. Size counts primitive field payload, including decimal and compiler backing fields, and recursively known same-file non-generic non-partial structs. Explicit/auto layout, other-file and metadata structs, generic structs, references, native integers, pointers, fixed buffers, ref fields and unknown fields contribute zero rather than an invented size. Layout attributes depending on another source file's constants are excluded. Padding and StructLayout.Size are ignored. in/ref/out arguments, factories, conversions, nested callable bodies and constructor calls are excluded. JIT copy elision and intentional value isolation require review. skala.size.lower_bound records the proven payload bound.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_code_quality.SK4007.threshold",
+        "dotnet_diagnostic.SK4007.severity"
+      ]
+    },
+    {
+      "id": "SK7060",
+      "concept": "commented-code",
+      "title": "Review commented-out statements",
+      "category": "Maintainability",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "A standalone comment block parses as at least two code-like C# statements with substantial code punctuation.",
+      "rationale": "Disabled statements can become stale and obscure the active implementation. This is a deliberately narrow syntax heuristic: it requests review, not deletion, because a comment may be an intentional example or a record of an experiment.",
+      "examples": {
+        "bad": "// Start();\n// Process();",
+        "good": "// Explain why an example is retained, or remove obsolete code and rely on version history."
+      },
+      "falsePositives": "Only standalone ordinary // groups on consecutive lines and standalone /* */ comments are examined. XML documentation, inline comments, inactive preprocessor text, strings, fenced/code-tagged examples, URLs, prose, single statements, malformed comments, incomplete parses and groups over 8192 characters or 100 line comments are excluded. A 128-opening-delimiter budget bounds parser work. The complete stripped block must parse using the file's language options and contain at least two code-like atomic statements; unsupported statement forms are skipped. No semantic binding is claimed. Unlabelled multi-statement examples can still match; add a meaningful explanation or suppress the hint. No automatic deletion is offered.",
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK7060.severity"
+      ]
     }
   ]
 }

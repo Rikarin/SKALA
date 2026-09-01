@@ -322,10 +322,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **126** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **86** | **68.8 %** |
+| **Shipped** — present in `rules.json` | **91** | **72.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **27** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
@@ -470,8 +470,8 @@ value · `SK4008` async state machine for a synchronous method · `SK6001` (reti
 `SK6004` interface with one implementation · `SK6008` extension method on `object` ·
 `SK8006` `[Skip]` without a reason · `SK8007` non-deterministic input in an assertion path.
 
-Saying "no reason was recorded" is the point. `SK6008`, `SK8006`, `SK4001`, `SK4002`, `SK4006`
-and `SK8007` now ship; `SK6001` is retired as a duplicate allocation. The other five remain
+Saying "no reason was recorded" is the point. `SK6008`, `SK8006`, `SK4001`, `SK4002`, `SK4004`,
+`SK4006`, `SK4007` and `SK8007` now ship; `SK6001` is retired as a duplicate allocation. The other three remain
 outstanding. These shipped rules are report-only: choosing a contract, justification, performance
 tradeoff or controlled test input requires author intent.
 
@@ -484,10 +484,9 @@ reason is kept; it is a description of remaining work, not a disposal.
 |---|---|---|
 | Declaration-shape rewrites | `SK1002`, `SK1008` | The unsafe-fix path and an `--include` story. Each is a good rule and neither is a *safe* fix (M5) |
 | ⚠ Hot-path rules | `SK1022`, `SK1025`, `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
-| The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1021`, `SK1023`, `SK1024`, `SK1029`, `SK1036` | Nothing recorded. Not started |
-| Correctness | `SK2003`, `SK2005` | Nothing recorded beyond the shipping bar. Not started |
+| The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1021`, `SK1024`, `SK1029`, `SK1036` | Nothing recorded. Not started |
+| Correctness | `SK2005` | Nothing recorded beyond the shipping bar. Not started |
 | Security | `SK5003`, `SK5004`, `SK5006`, `SK5008` | The remaining M8 rules; a wrong security rule is worse than a missing one |
-| Maintainability, non-metric | `SK7060` | Nothing recorded. Not started |
 
 ### Priority 1 hygiene rules
 
@@ -641,6 +640,61 @@ establish that those paths are hot or need rewriting. The other enabled rules pr
 findings, and `SK4001` stayed disabled by policy. Positive fixtures supply the evidence for those
 quiet rules. Summed analyzer time for this batch was about 1.0 s in that run, not a performance
 guarantee. No existing production or test code was rewritten to remove the audit hints.
+
+### Dedicated locks, floating-point arithmetic, boxing, struct copies and commented code
+
+`SK1023`, `SK2003`, `SK4004`, `SK4007` and `SK7060` now ship with explicitly bounded coverage:
+
+| ID | Initial scope | Fix / default |
+|---|---|---|
+| `SK1023` | A private readonly object constructed for use exclusively as lock targets | safe / suggestion |
+| `SK2003` | Exact equality directly involving built-in float/double arithmetic | none / warning |
+| `SK4004` | An interface method call through an explicit boxing cast of an already-constrained value-type parameter | none / hint |
+| `SK4007` | A known-large source struct local/parameter passed by value in a loop body | none / hint |
+| `SK7060` | Standalone ordinary comments that parse as multiple code-like statements | none / hint |
+
+The lock fix requires C# 13 and the framework `System.Threading.Lock` constructor/scope API.
+It edits the field type and initializer together. Every bound reference in the file must be a
+direct lock target; Monitor calls, escapes, aliases, reassignment and casts prevent the rewrite.
+Partial containing types, directives, field attributes and interior declaration comments are
+excluded, so no other source part or inactive branch can hide a reference from the proof.
+References through constructed generic types are checked against the original field definition;
+lock bodies containing yields are excluded because the new scope cannot cross an iterator yield.
+
+Floating-point review is deliberately narrower than all `==` uses: plain variable comparisons,
+property change guards, zero/NaN/infinity constants, constant-folded results, nullable arithmetic,
+decimal and custom operators are excluded. It does not invent a tolerance. The boxing rule likewise
+does not remove the cast: a constrained call can mutate the original struct instead of a boxed
+copy, even where avoiding the allocation is possible.
+
+Struct-copy review uses `dotnet_code_quality.SK4007.threshold` (default 64, strictly exceeded).
+The value is a **lower bound** from primitive fields and recursively known same-file structs,
+not a guessed ABI size. Unknown fields contribute zero. Partial/generic/other-file types and
+explicit/auto layouts are excluded from that calculation; ref fields and fixed buffers are not
+counted. Padding, native pointer size and explicit layout-size overrides are not guessed.
+Layout attributes must not depend on constants declared in another source file.
+`in`/`ref`/`out`, factories and user-defined conversions are not by-value local copies. The
+diagnostic records `skala.size.lower_bound`; changing the call signature requires author review.
+
+Comment detection is syntax-only and intentionally a hint. It examines standalone `//` groups and
+`/* */` comments, excluding XML documentation, inline comments, labelled/fenced examples, URLs,
+prose, incomplete code and single statements. Parsing is bounded to 8192 characters, 100 line
+comments and 128 opening delimiters. A complete parse and code-token density are required, but
+unlabelled examples can still look like disabled code. There is no automatic deletion.
+
+Validation covers positive/negative fixtures, exact finding counts, fix availability, language/API
+guards, generated code, source-constant/layout dependencies, threshold fallback and parser budgets.
+A runtime test checks that the lock fix preserves mutual exclusion and nested reentrancy; size
+tests compare the reported payload bound with `Unsafe.SizeOf` on the running framework. Workspace
+integration checks all five through `check` and `verify`, applies the lock fix, and compares warm
+and cold results after file and policy changes.
+
+A cold workspace audit of Skala with all five rules selected and hints included found zero
+occurrences of each. Existing dedicated synchronization fields already use `Lock`; collection
+monitors and lock examples inside test-source strings do not satisfy the field proof. These zero
+counts are not positive corpus coverage: fixtures and workspace integration remain the evidence
+for firing behavior. Summed analyzer time for the five rules was about 1.45 s in that profiled
+run, not a performance guarantee. No unrelated production or test source was rewritten.
 
 ### ⚠ Decisions that rest on a reference-tree count, and are awaiting revisit
 

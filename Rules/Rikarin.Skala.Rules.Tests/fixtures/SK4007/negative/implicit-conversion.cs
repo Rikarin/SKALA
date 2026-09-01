@@ -1,0 +1,1 @@
+struct Large { public long A, B, C, D, E, F, G, H, I; } class Small { public static implicit operator Large(Small value) => new(); } class C { void Use(Large value) { } void M(Small value) { for (int i = 0; i < 10; i++) Use(value); } }

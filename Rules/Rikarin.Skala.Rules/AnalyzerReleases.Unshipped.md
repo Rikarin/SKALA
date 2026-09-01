@@ -70,3 +70,8 @@ SK4001 | Skala.Performance | Disabled | Review LINQ in a configured hot path.
 SK4002 | Skala.Performance | Hidden | Review iteration-local delegate captures.
 SK4006 | Skala.Performance | Hidden | Review a materialization used only by foreach.
 SK8007 | Skala.Tests | Info | Use controlled assertion input.
+SK1023 | Skala.Modernization | Info | Use a dedicated System.Threading.Lock.
+SK2003 | Skala.Correctness | Warning | Review exact equality of floating-point arithmetic.
+SK4004 | Skala.Performance | Hidden | Review boxing despite an existing generic constraint.
+SK4007 | Skala.Performance | Hidden | Review large struct arguments in loops.
+SK7060 | Skala.Maintainability | Hidden | Review commented-out statements.

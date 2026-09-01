@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 94 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 99 ids are allocated.
 
 ## Async
 
@@ -22,6 +22,7 @@
 |---|---|---|---|---|
 | [SK2001](SK2001.md) | Comparison is fixed by the integral type's range | warning | — | no |
 | [SK2002](SK2002.md) | A pure method's result is discarded | warning | — | no |
+| [SK2003](SK2003.md) | Review exact equality of floating-point arithmetic | warning | — | no |
 | [SK2004](SK2004.md) | Typed equality has no matching object equality | warning | — | no |
 | [SK2007](SK2007.md) | The collection being enumerated is modified inside the loop | warning | review | no |
 | [SK2008](SK2008.md) | A stored delegate captures a changing loop variable | warning | — | no |
@@ -90,6 +91,7 @@
 | [SK7040](SK7040.md) | TODO or FIXME has no issue reference | suggestion | — | yes |
 | [SK7050](SK7050.md) | A warning-disable pragma has no justification | warning | — | yes |
 | [SK7051](SK7051.md) | A suppression attribute has no justification | warning | — | no |
+| [SK7060](SK7060.md) | Review commented-out statements | hint | — | yes |
 
 ## Modernization
 
@@ -105,6 +107,7 @@
 | [SK1014](SK1014.md) | Use relational and logical patterns | suggestion | safe | no |
 | [SK1015](SK1015.md) | Use `is T t` instead of `is T` and a cast | suggestion | safe | no |
 | [SK1020](SK1020.md) | Use `ArgumentNullException.ThrowIfNull` | suggestion | safe | no |
+| [SK1023](SK1023.md) | Use a dedicated System.Threading.Lock | suggestion | safe | no |
 | [SK1026](SK1026.md) | Use a UTF-8 literal for constant ASCII bytes | suggestion | safe | no |
 | [SK1028](SK1028.md) | Decode a byte span without an array copy | suggestion | safe | no |
 | [SK1030](SK1030.md) | Use `??=` | suggestion | safe | yes |
@@ -119,7 +122,9 @@
 |---|---|---|---|---|
 | [SK4001](SK4001.md) | Review LINQ in a configured hot path | none | — | no |
 | [SK4002](SK4002.md) | Review iteration-local delegate captures | hint | — | no |
+| [SK4004](SK4004.md) | Review boxing despite an existing generic constraint | hint | — | no |
 | [SK4006](SK4006.md) | Review a materialization used only by foreach | hint | — | no |
+| [SK4007](SK4007.md) | Review large struct arguments in loops | hint | — | no |
 | [SK4010](SK4010.md) | A `Where` the next operator could have taken as its predicate | suggestion | safe | no |
 
 ## Security
