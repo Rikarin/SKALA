@@ -108,3 +108,4 @@ SK3021 | Skala.Async | Warning | A `SpinLock` is stored in a `readonly` field.
 SK7090 | Skala.Maintainability | Warning | A thrown `NotImplementedException` has no issue reference.
 SK7091 | Skala.Maintainability | Warning | The process is terminated outside the entry point.
 SK7092 | Skala.Maintainability | Warning | The exception is both logged and rethrown.
+SK7093 | Skala.Maintainability | Warning | The console is written to where a logger was meant.

@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 132 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 133 ids are allocated.
 
 ## Async
 
@@ -116,6 +116,7 @@
 | [SK7090](SK7090.md) | A thrown `NotImplementedException` has no issue reference | warning | — | no |
 | [SK7091](SK7091.md) | The process is terminated outside the entry point | warning | — | no |
 | [SK7092](SK7092.md) | The exception is both logged and rethrown | warning | — | no |
+| [SK7093](SK7093.md) | The console is written to where a logger was meant | warning | — | no |
 
 ## Modernization
 

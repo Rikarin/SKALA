@@ -451,8 +451,26 @@ rethrowing and is not reported**: `throw new ImportException(message, error)` tr
 a boundary and produces one record rather than two, and logging the original before translating is how
 detail the translation drops survives at all. Only bare `throw;` and `throw error;` count.
 
+⚠ **`SK7093` answers "policy or defect?" by refusing the question and finding a decidable one
+underneath it.** `S106` says standard output should not be used to log, which is correct in a library
+and wrong in a console application's entry point — and `SK7091`'s measurement applies here unchanged:
+`LooseLoader` builds every loose compilation as `OutputKind.DynamicallyLinkedLibrary`, so nothing in
+the tree distinguishes "a library" from "no project file was loaded", and an `OutputKind` rule would
+report every line of every console application analysed without its project. What `SK7093` reports
+instead is the narrower fact [#230](https://github.com/Rikarin/SKALA/issues/230)'s own title names: **a
+logger is in scope at this call site and the code wrote to the console anyway.** A member or parameter
+typed `ILogger`, `ILogger<T>` or `ILog` is present, so the routing question is already answered for
+this code and answered differently two lines away — a contradiction inside one method rather than a
+policy judgement about the project's shape. ⚠ The consequences are deliberate in both directions: an
+entry point printing usage has no logger and is never reported, which is right *by construction*
+rather than by an exemption somebody has to maintain, and a service class that writes to the console
+and has no logger at all is under-reported, which is the direction [16](16-risks-and-open-questions.md)
+§ R3 says to err in. The interface is matched on the type's own name because the namespace is the part
+that differs across `Microsoft.Extensions.Logging`, `Serilog`, `NLog` and `log4net`.
+
 `SK7090` a thrown `NotImplementedException` with no issue reference · `SK7091` `Environment.Exit`
-outside the entry point · `SK7092` the exception is both logged and rethrown.
+outside the entry point · `SK7092` the exception is both logged and rethrown · `SK7093` the console is
+written to where a logger was meant.
 
 ⚠ **"The block adds nesting and nothing else" ([#225](https://github.com/Rikarin/SKALA/issues/225),
 Sonar `S1199`) is refuted, no id was allocated, and the reason is measured rather than argued.** The
@@ -558,10 +576,10 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **155** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **124** | **80.5 %** |
+| **Shipped** — present in `rules.json` | **125** | **81.2 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **18** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
