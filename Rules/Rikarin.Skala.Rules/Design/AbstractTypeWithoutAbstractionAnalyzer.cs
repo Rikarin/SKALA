@@ -19,8 +19,11 @@ namespace Rikarin.Skala.Rules.Design;
 ///     from nothing, then no part of it is arranged for derivation at all, and the keyword is doing
 ///     only the first half of its job — for a reason the declaration does not give.
 ///     <para>
-///         ⚠ <b>The <c>protected</c> exemption is the one carrying the rule, and a protected constructor
-///         is the usual form of it.</b> A base class that shares state through a protected constructor,
+///         ⚠
+///         <b>
+///             The <c>protected</c> exemption is the one carrying the rule, and a protected constructor
+///             is the usual form of it.
+///         </b> A base class that shares state through a protected constructor,
 ///         a protected field or a protected helper is set up for derivation whether or not it declares
 ///         anything abstract, and reporting it would be reporting the most ordinary base class in C#.
 ///         What is left after that exemption is a class with public and private concrete members, no
