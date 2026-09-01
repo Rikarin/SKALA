@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 105 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 106 ids are allocated.
 
 ## Async
 
@@ -94,6 +94,7 @@
 | [SK7051](SK7051.md) | A suppression attribute has no justification | warning | — | no |
 | [SK7060](SK7060.md) | Review commented-out statements | hint | — | yes |
 | [SK7070](SK7070.md) | An obsolete marker has no message | warning | — | no |
+| [SK7071](SK7071.md) | A coverage exclusion has no justification | warning | — | no |
 
 ## Modernization
 

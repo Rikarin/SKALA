@@ -81,3 +81,4 @@ SK1025 | Skala.Modernization | Hidden | Freeze a private lookup-only dictionary.
 SK2005 | Skala.Correctness | Warning | Do not mutate a copy of a readonly struct field.
 SK4003 | Skala.Performance | Hidden | Review a temporary params array with a span overload.
 SK7070 | Skala.Maintainability | Warning | An obsolete marker has no message.
+SK7071 | Skala.Maintainability | Warning | A coverage exclusion has no justification.

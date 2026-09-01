@@ -2695,6 +2695,33 @@
       "configuration": [
         "dotnet_diagnostic.SK7070.severity"
       ]
+    },
+    {
+      "id": "SK7071",
+      "concept": "exclude-from-code-coverage-without-justification",
+      "title": "A coverage exclusion has no justification",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "languageVersion": null,
+      "summary": "`ExcludeFromCodeCoverage` omits a meaningful `Justification`, on a target framework whose attribute has the property.",
+      "rationale": "An exclusion changes what the coverage percentage counts, and it does so permanently and invisibly: the number goes up and nothing in the report says which code stopped being measured. The reason is the only thing that lets a later reader decide whether the exclusion is still earned. This is the third member of the family `SK7050` and `SK7051` started, and it reports the omission without writing the reason, for the same reason they do.",
+      "examples": {
+        "bad": "[ExcludeFromCodeCoverage]\nsealed class GeneratedShim { }",
+        "good": "[ExcludeFromCodeCoverage(Justification = \"Thin P/Invoke shim; exercised by the integration suite.\")]\nsealed class GeneratedShim { }"
+      },
+      "falsePositives": "⚠ The rule is silent where `Justification` does not exist on the bound attribute type — it arrived in .NET 5, and demanding it of a `netstandard2.0` or `net472` compilation would be demanding something the language cannot express. The property is looked up on the symbol rather than inferred from the target framework moniker. Only attributes that semantically resolve to `System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute` are inspected, so a user attribute with the same short name is ignored. A `Justification` that is present and not constant-foldable counts as written. Empty, whitespace and TODO/FIXME/TBD/N/A placeholders are not reasons; the rule cannot assess whether otherwise substantive prose is true.",
+      "resharperId": null,
+      "supersedes": [
+        "S6513"
+      ],
+      "since": "1.3",
+      "configuration": [
+        "dotnet_diagnostic.SK7071.severity"
+      ]
     }
   ]
 }

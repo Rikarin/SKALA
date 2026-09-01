@@ -50,6 +50,7 @@ public sealed class RuleFixtureTests {
         new ExtensionMethodOnObjectAnalyzer(), new ThreadSleepInTestAnalyzer(),
         new TodoWithoutIssueAnalyzer(), new PragmaWithoutJustificationAnalyzer(),
         new SuppressMessageWithoutJustificationAnalyzer(), new ObsoleteWithoutMessageAnalyzer(),
+        new ExcludeFromCodeCoverageWithoutJustificationAnalyzer(),
         new SkippedTestWithoutReasonAnalyzer(),
         new SqlInjectionAnalyzer(), new ProcessArgumentInjectionAnalyzer(), new WeakCipherAnalyzer(),
         new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(),

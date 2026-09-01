@@ -243,7 +243,8 @@ them and are named here so that ADR-012's register can answer "is this number fr
 paragraph yet in this document explaining the decision behind each, and § "Priority 1 hygiene rules"
 has not been extended to cover them.
 
-`SK7070` `Obsolete` without a message.
+`SK7070` `Obsolete` without a message · `SK7071` `ExcludeFromCodeCoverage` without a
+`Justification`.
 
 ## SK8000 — Tests
 
@@ -328,8 +329,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **127** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **97** | **77.0 %** |
+| Rules this document names | **128** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **98** | **77.2 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **17** | includes the twelve declared cut with no reason recorded |
