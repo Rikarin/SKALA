@@ -93,7 +93,8 @@ public static class AnalyzerHost {
         new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(),
         new CollectionExpressionAnalyzer(), new UsingDeclarationAnalyzer(), new TypePatternAnalyzer(),
         new NullConditionalAssignmentAnalyzer(), new DictionaryLookupAnalyzer(),
-        new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer()
+        new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
+        new ForAsWhileAnalyzer()
     ];
 
     /// <summary>

@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 107 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 108 ids are allocated.
 
 ## Async
 
@@ -122,6 +122,7 @@
 | [SK1040](SK1040.md) | Use `T?` instead of `Nullable<T>` | suggestion | safe | no |
 | [SK1041](SK1041.md) | Use a compound assignment | suggestion | safe | yes |
 | [SK1042](SK1042.md) | The nested `if` statements can be combined | suggestion | safe | yes |
+| [SK1043](SK1043.md) | The `for` loop is a `while` | suggestion | safe | yes |
 
 ## Performance
 

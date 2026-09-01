@@ -2746,6 +2746,33 @@
       "configuration": [
         "dotnet_diagnostic.SK1042.severity"
       ]
+    },
+    {
+      "id": "SK1043",
+      "concept": "for-loop-is-while",
+      "title": "The `for` loop is a `while`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "languageVersion": null,
+      "summary": "A `for` with no initializer and no incrementor is a `while` written with two empty clauses.",
+      "rationale": "`for` promises a bound and then declares none, so a reader has to check both semicolons to find out there is nothing in them. The rewrite is exact rather than merely equivalent: with no incrementors, `continue` jumps to the condition in both forms, and nothing else in a `for` is being used.",
+      "examples": {
+        "bad": "for (; !reader.EndOfStream;) {\n    Consume(reader.ReadLine());\n}",
+        "good": "while (!reader.EndOfStream) {\n    Consume(reader.ReadLine());\n}"
+      },
+      "falsePositives": "`for (;;)` is deliberately not reported: it is the idiomatic infinite loop, and `while (true)` says nothing the original did not. A declaration, an initializer or an incrementor in any clause excludes the loop — converting a `for (int i = 0; c;)` would have to lift the declaration into the enclosing scope, which is a different rewrite with a different risk. Comments and preprocessor directives inside the empty clauses exclude it too, because the fix replaces the whole header.",
+      "resharperId": null,
+      "supersedes": [
+        "S1264"
+      ],
+      "since": "2.0",
+      "configuration": [
+        "dotnet_diagnostic.SK1043.severity"
+      ]
     }
   ]
 }
