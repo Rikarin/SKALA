@@ -95,6 +95,38 @@ public sealed class EqualityRuleBoundaryTests {
         );
 
     /// <summary>
+    ///     ⚠ The shape the gate above actually holds off — and the neighbouring test does not reach
+    ///     it.
+    /// </summary>
+    /// <remarks>
+    ///     With <c>IEquatable&lt;Self&gt;</c> present, <c>SK2044</c>'s typed-<c>Equals</c> sub-case is
+    ///     mutually exclusive with <c>SK2004</c> by its own condition, so
+    ///     <see cref="ATypedContractWithNoObjectEquality_IsLeftToTheOlderRule" /> passes whether or
+    ///     not the gate exists. Only an <c>operator ==</c> <em>and</em> <c>IEquatable&lt;Self&gt;</c>
+    ///     <em>and</em> no <c>Equals(object)</c> puts one declaration in front of both rules. A
+    ///     sabotage removing the gate turned nothing red until this case was written, which is the
+    ///     whole argument for sabotaging.
+    /// </remarks>
+    [Fact]
+    public void AnEquatableOperatorWithNoObjectEquality_IsStillLeftToTheOlderRule() =>
+        AssertExactly(
+            """
+            using System;
+
+            sealed class Handle : IEquatable<Handle> {
+                public int Id { get; init; }
+
+                public static bool operator ==(Handle? left, Handle? right) => left?.Id == right?.Id;
+
+                public static bool operator !=(Handle? left, Handle? right) => !(left == right);
+
+                public bool Equals(Handle? other) => other is not null && other.Id == Id;
+            }
+            """,
+            RuleIds.IncompleteEqualityContract
+        );
+
+    /// <summary>
     ///     A hash that reads nothing but <c>base</c> is one finding, not three: the delegation is
     ///     <c>SK2041</c>'s, and it leaves both hash-member sets empty rather than disagreeing.
     /// </summary>
