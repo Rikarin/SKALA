@@ -23,9 +23,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         ⚠ <b>The rule this one must not become is <c>IsNullOrWhiteSpace</c>.</b>
 ///         <c>x == null || x.Trim().Length == 0</c> is a <em>different predicate</em>: it is true for
 ///         <c>" "</c> and <c>string.IsNullOrEmpty(" ")</c> is false. Nothing separates the two shapes
-///         except what stands between the receiver and <c>.Length</c>, so the receiver is required to
-///         be a chain of plain names — which excludes <c>Trim()</c>, every other call, and the double
-///         evaluation an indexer would suffer at the same time.
+///         except what stands between the receiver and <c>.Length</c>, so the emptiness test must be
+///         on the <em>same</em> expression the null test named — which is what excludes
+///         <c>Trim()</c> — and that expression must be a chain of plain names, which is what excludes
+///         the double evaluation a call or an indexer would suffer. Two guards, two failure modes;
+///         neither one catches both.
 ///     </para>
 ///     <para>
 ///         The negated form is reported too. <c>string.IsNullOrEmpty</c> carries
