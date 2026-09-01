@@ -3392,6 +3392,31 @@
       "configuration": [
         "dotnet_diagnostic.SK4022.severity"
       ]
+    },
+    {
+      "id": "SK4023",
+      "concept": "redundant-capacity-argument",
+      "title": "The capacity argument matches the default",
+      "category": "Performance",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantCapacityArgument",
+      "supersedes": [],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "`new List<T>(0)` and `new StringBuilder(16)` ask for the capacity the parameterless constructor already gives.",
+      "rationale": "A capacity argument is how an author records a measurement: this collection is known to hold about this many elements, so do not grow it from nothing. An argument equal to the type's own default records no measurement and makes no allocation smaller — it reads as a deliberate tuning decision to the next person, who then has to open the framework source to discover that it decides nothing. Removing it is a deletion with no runtime effect at all, which is the unusual case where the value is entirely in what the code no longer claims.",
+      "examples": {
+        "bad": "var rows = new List<string>(0);\nvar text = new StringBuilder(16);",
+        "good": "var rows = new List<string>();\nvar text = new StringBuilder();"
+      },
+      "falsePositives": "The constructor must be the framework's own single-`int` `capacity` overload on one of six types whose default is known and fixed — `List<T>`, `Dictionary<TKey, TValue>`, `HashSet<T>`, `Queue<T>` and `Stack<T>` at 0, and `StringBuilder` at 16 — resolved through the semantic model and required to come from metadata rather than from source, so a same-named type of the author's own is never touched. The type must also expose an accessible parameterless constructor for the argument to be removable. ⚠ **Only a numeric literal is reported.** `new List<string>(DefaultCapacity)` is left alone even where the constant is 0: a named constant is a statement about intent that happens to equal the default today, and deleting it silently decouples the call site from the name. An argument list carrying a comment or a directive is left alone for the same reason. Any other capacity value, any other overload, and any other type are outside the rule.",
+      "configuration": [
+        "dotnet_diagnostic.SK4023.severity"
+      ]
     }
   ]
 }

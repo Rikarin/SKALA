@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 132 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 133 ids are allocated.
 
 ## Async
 
@@ -159,6 +159,7 @@
 | [SK4020](SK4020.md) | The lambda captures nothing and is not `static` | suggestion | safe | no |
 | [SK4021](SK4021.md) | The private method does not use instance state | hint | safe | no |
 | [SK4022](SK4022.md) | The struct is never mutated and is not `readonly` | suggestion | safe | no |
+| [SK4023](SK4023.md) | The capacity argument matches the default | warning | safe | no |
 
 ## Security
 
