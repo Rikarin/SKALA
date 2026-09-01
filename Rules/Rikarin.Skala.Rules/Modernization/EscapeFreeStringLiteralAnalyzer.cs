@@ -141,6 +141,13 @@ public sealed class EscapeFreeStringLiteralAnalyzer : DiagnosticAnalyzer {
     ///     obvious: it is empty; it contains a character that cannot be written literally on one line —
     ///     a newline, a tab, any other control character; or it begins or ends with a quote, which the
     ///     greedy fence would swallow.
+    ///     <para>
+    ///         ⚠ <b>The leading/trailing-quote test is redundant and is kept deliberately.</b> A
+    ///         sabotage that deleted it turned nothing red, because
+    ///         <see cref="ParsesBackToTheSameValue" /> already refuses every spelling it would have
+    ///         refused — the text it produces does not parse at all. It stays because it says *why*
+    ///         those values are declined, which a parse failure does not.
+    ///     </para>
     /// </remarks>
     static string? RawStringFor(string value) {
         if (value.Length == 0

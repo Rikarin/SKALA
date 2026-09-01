@@ -174,8 +174,12 @@ public sealed class LiteralAndExpressionFormBatchTests {
     [InlineData("class C { string M() => \"\\\\d+\\\\.\\\\d+\"; }", "\\d+\\.\\d+")]
     // The verbatim spelling of the same JSON body.
     [InlineData("class C { string M() => @\"{\"\"id\"\":1}\"; }", "{\"id\":1}")]
-    // ⚠ Two quotes in a row force a four-quote fence, which is the arithmetic most likely to be wrong.
+    // Two quotes in a row still fit inside a three-quote fence: the run has to *reach* three.
     [InlineData("class C { string M() => \"a\\\"\\\"b\"; }", "a\"\"b")]
+    // ⚠ Three quotes in a row is the case that needs a four-quote fence, and the only one in this
+    // set where the delimiter arithmetic is load-bearing. A sabotage pinning the fence at three
+    // turned nothing red until this case existed.
+    [InlineData("class C { string M() => \"a\\\"\\\"\\\"b\"; }", "a\"\"\"b")]
     // A fence longer than the content needs.
     [InlineData("class C { string M() => \"\"\"\"abc\"\"\"\"; }", "abc")]
     // No floor at all on this one: an escape that is simply a character.
