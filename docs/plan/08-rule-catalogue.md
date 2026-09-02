@@ -1055,6 +1055,158 @@ mechanical repair, because the edit that would fix them is a decision about what
 contract is — which lock is first, which field is `volatile`, where the boundary of a critical
 section falls. The pattern is now established enough to say so once rather than five times.
 
+### `SK3060`– — entering, leaving, and escaping
+
+⚠ **The prose pass for this block is owed.** The entries below are the register doing its minimum
+job — recording that a number is spent and on what — and not the written-through account the rest of
+this document gives. Whoever writes it should read the analyzers, not this list.
+
+⚠ **This block was cut from five proposed issues and spends three numbers, because two of the five
+are refuted rather than deferred.** The refutations are written out below the rules; they are the
+part of this section worth reading, and ADR-012 is why neither of them is holding an id.
+
+- `SK3060` `unreleased-lock` — a `Monitor.Enter`, `Monitor.TryEnter` or `ReaderWriterLockSlim`
+  enter call whose *matching* release is not inside a `finally`. The `lock` keyword compiles to
+  exactly that pair, which is the whole reason it exists, so this rule is only about the two calls
+  written by hand: put the release on the happy path and the first exception inside the critical
+  section holds the lock for the life of the process, deadlocking a thread somewhere else with
+  nothing connecting the two. ⚠ **The mismatched-release bug falls out of the same mechanism rather
+  than needing a branch** — `EnterWriteLock` released by an `ExitReadLock` has no matching
+  `ExitWriteLock` in the `finally`, so it is reported by the rule already written. **Fixless**: the
+  edit is to decide where the critical section ends, and wrapping the rest of the method in a `try`
+  changes what the method does with its own exceptions. ⚠ **Stated scope limit**: `SemaphoreSlim`
+  and the other primitives are out. A semaphore acquired in one method and released in another is
+  how a semaphore is *meant* to be used, so the same shape means something different there, and the
+  negative fixture set records that rather than hiding it. ⚠ A type with a deliberate
+  `Acquire()`/`Release()` protocol withdraws entirely — that is recall spent on precision, and it
+  is spent knowingly.
+- `SK3061` `ineffective-lock-target` — a `lock` whose monitor is not the monitor another thread
+  takes: a target created in the same invocation, so every call locks a different object and the
+  critical section excludes nobody; or a private field the type assigns outside a constructor, so a
+  thread that entered before the assignment and one that enters after are both inside the body.
+  **Fixless**: introducing a shared lock object changes the type's shape and is a design decision.
+  ⚠ **The rule is two-thirds of the issue that proposed it, and the missing third is deliberate.**
+  See the `CA2002` measurement below.
+- `SK3062` `constructor-publishes-this` — an instance constructor that stores `this` in another
+  type's static state, hands it to an object reached through a static, subscribes it to an event
+  that outlives it, or captures it in a delegate it starts on another thread. The object is not
+  there yet: derived constructors have not run, and on a weak memory model the second thread can
+  legally observe a field before its initializer — the failure that never reproduces on an x64
+  desk. **Fixless**: the repair is a static factory that constructs first and publishes second,
+  which is a change to how callers make the type. ⚠ **What it stays silent about is the rule.**
+  `button.Click += OnClick;` in a constructor is the overwhelmingly common *legitimate* form and a
+  rule that reports it fires on nearly every UI type ever written, so only publication whose second
+  reader is outside the constructor's control is reported — static state, or a thread the
+  constructor itself started. ⚠ **`current = this;` on the type's *own* static field is `SK2134`
+  and not this rule**, excluded deliberately so that one line does not carry two findings.
+
+⚠ **Issue #196's weak-identity third is hosted by `CA2002`, and that was measured rather than
+assumed — including one thing `CA2002`'s own documentation does not say.** On a pristine `net10.0`
+class library with empty `Directory.Build.props`/`.targets` above it, one shape per file:
+
+| shape | default build | `CA2002` raised |
+|---|---|---|
+| `lock (this)` | silent | **fires** |
+| `lock (typeof(T))` | silent | **fires** |
+| `lock ("literal")` | silent | **fires** |
+| `lock (stringField)` | silent | **fires** |
+| `lock (Thread.CurrentThread)` | silent | **fires** |
+| `lock (freshLocal)` | silent | silent |
+| `lock (readonly object field)` | silent | silent |
+| `lock (mutable object field)` | silent | silent |
+
+⚠ The first two rows are the ones to know about. `CA2002`'s own shipped description says only that
+"an object is said to have a weak identity when it can be directly accessed across application
+domain boundaries", which reads as a rule about a handful of framework *types* and gives no reason
+to expect `lock (this)` or `lock (typeof(T))` to be reported — they are, and that was found by
+measuring rather than by reading. ⚠ **Its default state is
+"off", not "hidden"**: the shipped descriptor reads `IsEnabledByDefault=False`,
+`DefaultSeverity=Warning`, tagged `EnabledRuleInAggressiveMode`, and the SDK lists it only in
+`analysislevel_10_all.globalconfig`. So it is invisible in an ordinary build **and visible in
+Skala's own repository, which raises `AnalysisMode`** — which is precisely why re-implementing it
+would double-report here first. The zeros in that table are instrument-checked: the same file
+produced five `CA2002` findings once the severity was raised, so "silent" is the analyzer declining
+and not the analyzer absent.
+
+⚠ **Two false positives were found on the reference tree and in a probe, and both fixes are
+subtle enough that somebody will otherwise re-add the finding.**
+
+- **`SK3062` reported Vixen's `VideoPlayer`, and that finding was wrong.** The type is `sealed` and
+  `thread.Start()` is the last statement of the constructor. `Thread.Start`, `Task.Run` and
+  `ThreadPool.QueueUserWorkItem` all publish a **memory barrier**, so everything the constructor
+  wrote before them is visible to the new thread — and a sealed type has no derived constructor
+  left to run. Nothing changes after the publication, so nothing races. Shape D now requires
+  something that still changes afterwards: a statement following the start at any enclosing level,
+  or a type that is not sealed. ⚠ **The asymmetry matters as much as the gate.** Shapes A, B and C
+  deliberately do *not* share it: storing a reference in static state is not a barrier and buys no
+  ordering, and the defect there is that the object is **reachable at all** before the caller has
+  the reference to undo it — not that it is unfinished. A gate copied across to them would delete
+  the rule's best findings.
+- **`SK3060` reported a `partial` type** whose `Acquire()`/`Release()` protocol is split across
+  parts. The walk that looks for the release starts from the *syntactic* type declaration holding
+  the enter, so it sees one part and not the others — and the parts are usually in different files.
+  A partial type is now declined outright where it would otherwise report. Walking every
+  `DeclaringSyntaxReference` instead would make the answer for one file depend on files the cache
+  key does not name, which is what `scope: Compilation` costs and what this rule declines to pay.
+
+⚠ **How that second one was nearly missed is worth more than the fix, and it is a new member of a
+family this document already warns about.** The shape was predicted, written as a negative fixture,
+and the suite was run — and the failures were read through `grep … | sort -u | head`. The `head`
+cut the third line, which was the one naming the fixture, so the run looked like two unrelated
+docs failures and the prediction looked refuted. It was nearly written up as "tested, does not
+reproduce"; an independent probe printing the analyzer's actual output is what caught it. ⚠ The
+standing rule is *never pipe a gate through `head` or `tail`, because the exit code becomes the
+pager's*. **This is the weaker form and it bites the same way: truncated output silently answers a
+different question than the one asked.** The rule is therefore not only about exit codes — do not
+put a pager between yourself and a gate's output either, when reading it or when running it.
+
+⚠ **Instrument check, because a zero from a rule that never ran and a zero from a rule that ran and
+declined are the same zero.** A file carrying one of each shape was planted in the reference tree,
+the tree was rebuilt, and it was re-swept with the shipped binary under `--load=binlog`: all four
+fired, at the right lines, with the right messages. Removed again. ⚠ **And the planted sweep is not
+a whole-tree measurement** — the rebuild behind it was *incremental*, so its binlog carries only the
+projects that recompiled, and a finding elsewhere in the tree correctly did not appear in it. The
+tree numbers come from a cold full build; the planted run proves only that the rules speak.
+
+⚠ **"Zero CS diagnostics" was true of the build and not of the analysis, and the two are different
+claims.** The cold Vixen build reports 0 CS errors and 0 CS warnings; `skala check --load=binlog`
+over the same tree reported **546** `CS0103`/`CS0234`/`CS0246`, all confined to **three** files of
+generated parser code that the binlog replay does not reproduce. Bounded, and no rule in this block
+fires there — but a report that says "0 CS errors" without saying which of the two it measured is
+saying nothing.
+
+⚠ **Issue #57's remainder is refuted, and no id is spent on it.** `SK3044` already ships the
+provable part of "the field is guarded on some paths and not others"; what #57 was left open for is
+the *unguarded read*, and `SK3044`'s third gate declines it because `public int Count => count;` — a
+deliberate best-effort snapshot — and a racing read are the same shape. Three ways to separate them
+were considered and none survives. **(1) Counting the reads** — two unguarded reads of the same
+guarded field cannot be one snapshot — separates `if (count > 0) return count;` from `=> count`, but
+the thing it detects is that the code observed twice, not that the code was wrong to; an author who
+accepted staleness accepted it for both reads. **(2) Reading the use** — whether the value is used
+in a way that assumes it is still true — is the right question and is intent, which is not in the
+tree. **(3) Reading the field's type** — a `decimal`, a `Guid` or a multi-field struct cannot be
+read atomically, so a bare read can observe a value that was never written rather than one that is
+merely stale — is the only candidate that needs no intent at all, and it answers a *different*
+question: it fires whether or not the field is guarded anywhere, so it is not this concept, and it
+says nothing about the `int count` that the issue is actually about. ⚠ **A guess here is worse than
+a silence**: a wrong concurrency finding sends somebody to read threading code that was correct,
+and §16 R3 prices that as the most expensive reading there is. `SK3044`'s recorded limits stand,
+and "silence is not a claim" is still what they mean.
+
+⚠ **Issue #250 is refuted, and no id is spent on it either.** "The constructor does more than
+construct" is a judgement rather than a fact, and its decidable members are already placed. The
+sharpest — a virtual or abstract call out of a constructor — is `CA2214`, measured on the same
+pristine probe: it fires on a virtual declared on the same non-sealed class and on an abstract
+call, correctly declines a sealed class, and is `IsEnabledByDefault=False` like `CA2002`. ⚠ It also
+**misses a virtual inherited from a base and not overridden, called from a non-sealed derived
+constructor**, which is a real gap and is recorded here rather than turned into a rule, because a
+rule whose whole content is one shape another analyzer nearly covers is not worth a permanent
+number. The next sharpest member — publishing to a thread the constructor starts — is `SK3062`.
+What is left after those two is "a constructor that performs I/O", which fires on every
+configuration loader and every type that wraps a file, has no mechanical fix, and says only "use a
+factory". That is a style opinion, it belongs at `none` or nowhere, and doc 08 has cut `SK6xxx`
+rules for less.
+
 ### `SK3050`–`SK3052` — async void wearing three disguises
 
 ⚠ **The prose pass on this block is owed.** The rows below are the allocation register doing its one
@@ -1775,8 +1927,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **295** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **260** | **88.4 %** |
+| Rules this document names | **298** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **263** | **88.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |

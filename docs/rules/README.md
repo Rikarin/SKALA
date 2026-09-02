@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 268 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 271 ids are allocated.
 
 ## Async
 
@@ -27,6 +27,9 @@
 | [SK3050](SK3050.md) | An exception is thrown out of an `async void` body | warning | — | yes |
 | [SK3051](SK3051.md) | The `async` method has no `CancellationToken` to forward | suggestion | review | no |
 | [SK3052](SK3052.md) | The `async` lambda is converted to a `void`-returning delegate | warning | — | no |
+| [SK3060](SK3060.md) | The lock is entered and not released on every path | warning | — | no |
+| [SK3061](SK3061.md) | The `lock` target is not the object other threads take | warning | — | no |
+| [SK3062](SK3062.md) | `this` escapes before the constructor finishes | warning | — | no |
 
 ## Cleanup
 

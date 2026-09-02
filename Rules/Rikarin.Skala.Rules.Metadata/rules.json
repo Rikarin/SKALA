@@ -6958,6 +6958,90 @@
       "configuration": [
         "dotnet_diagnostic.SK2134.severity"
       ]
+    },
+    {
+      "id": "SK3060",
+      "concept": "unreleased-lock",
+      "title": "The lock is entered and not released on every path",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2222",
+        "S7131",
+        "S7133"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `Monitor.Enter` or a `ReaderWriterLockSlim` enter call whose matching release is not inside a `finally`, so anything that throws in between leaves the lock held for the life of the process.",
+      "rationale": "The `lock` keyword compiles to `Monitor.Enter` followed by `try`/`finally` `Monitor.Exit`, and that pairing is the whole reason the keyword exists. Writing the two calls by hand and putting the release on the happy path means the first exception inside the critical section keeps the lock forever: the next thread to ask for it blocks, and the one after that, and the process deadlocks somewhere entirely unrelated to the throw. ⚠ **The failure has no diagnostic anywhere** — the exception propagates normally and the deadlock happens later, in another thread, in another file, so nothing connects the two.",
+      "examples": {
+        "bad": "sealed class Ledger {\n    readonly object gate = new();\n\n    int balance;\n\n    public void Post(int amount) {\n        Monitor.Enter(gate);\n        balance = checked(balance + amount);   // throws, and the lock is never released\n        Monitor.Exit(gate);\n    }\n}",
+        "good": "sealed class Ledger {\n    readonly object gate = new();\n\n    int balance;\n\n    public void Post(int amount) {\n        Monitor.Enter(gate);\n        try {\n            balance = checked(balance + amount);\n        } finally {\n            Monitor.Exit(gate);\n        }\n    }\n}"
+      },
+      "falsePositives": "⚠ **Fixless.** Wrapping the rest of the method in a `try` is one repair and replacing the pair with a `lock` statement is another, and they mean different things about what the method does with its own exceptions — an edit that guesses can swallow one the caller was meant to see, or widen the critical section across an I/O call. ⚠ **The `lock` keyword is out of scope by construction rather than by a guard.** `lock (x) { }` lowers to exactly `Monitor.Enter` plus `try`/`finally` `Monitor.Exit`, and it leaves no `Monitor.Enter` invocation in the syntax tree; the rule registers on invocation expressions only, so a `lock` statement can never reach it. The negative fixture pins that anyway, because \"cannot happen\" is a claim and an unasserted claim is worth nothing. ⚠ **Pairing is per enter *method*, not per type, and that is what buys the mismatched-release finding rather than a branch written for it.** `EnterWriteLock` released by `ExitReadLock` has no matching `ExitWriteLock` anywhere, so it is reported by the ordinary \"no matching release\" path, and the fact that the author did write *a* release in *a* `finally` never enters into it. Collapsing the three `ReaderWriterLockSlim` rows into \"an `Exit*` call\" would lose exactly that finding — and `ExitReadLock` on a write lock throws, so the lock is then held forever *and* the `finally` throws over whatever was propagating. ⚠ **Stated scope limit: `SemaphoreSlim` and `Mutex` are out.** `Wait`/`Release` and `WaitOne`/`ReleaseMutex` are the same *shape* and a different *fact* — a semaphore acquired in one method and released in another is how a semaphore is meant to be used, so a missing `finally` is not evidence of anything there. The negative fixture set records that rather than hiding it. ⚠ **Three escapes, each of them recall spent on precision knowingly.** A type that releases from a *different* member has an `Acquire()`/`Release()` protocol on purpose and no `finally` could span two members. A release inside a lambda or a local function silences the rule rather than counting as one, because where a delegate runs is not knowable here. And a **partial** type is declined outright where it would otherwise report: the walk that finds the release starts from the syntactic type declaration holding the enter, so it sees one part and not the others, and the parts are usually in different files. ⚠ That last escape was added after the shape was **tested rather than reasoned about** — a partial type with `Acquire()` in one part and `Release()` in the other produced a false positive, and the fixture that proves it is `a-protocol-split-across-partial-parts.cs`. Walking every `DeclaringSyntaxReference` instead would make the answer for one file depend on files the cache key does not name, which is what `scope: Compilation` costs and what this rule declines to pay for a shape this rare. ⚠ **The `finally` test is lexical and deliberately not a flow analysis.** The rule asks whether some matching release sits inside a `finally` of this body; it does not prove that `finally` guards this critical section. Anything stronger needs flow, and a wrong answer from a flow analysis is a finding on threading code that was correct — docs/plan/16 § R3's most expensive reading.",
+      "configuration": [
+        "dotnet_diagnostic.SK3060.severity"
+      ]
+    },
+    {
+      "id": "SK3061",
+      "concept": "ineffective-lock-target",
+      "title": "The `lock` target is not the object other threads take",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2445",
+        "S6507"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `lock` taken over an object created in the same invocation, or over a field the type reassigns, so the monitor it takes is not the monitor another thread takes.",
+      "rationale": "A `lock` excludes exactly the threads that take the same monitor, and the monitor lives on the object — so which object it is, is the entire contract. Both shapes here break it in the same way and read as correct: a local initialized with `new` gives every invocation its own monitor, so the critical section excludes nobody and the whole construct is a no-op; a field the type reassigns gives whoever entered before the reassignment a different monitor from whoever enters after, so two threads sit inside the same `lock` body at the same time. ⚠ **Neither produces a symptom that points at the lock.** The code compiles, the critical section is right there in the file, and the corruption it was supposed to prevent shows up as a data bug somewhere else.",
+      "examples": {
+        "bad": "sealed class Meter {\n    int count;\n\n    public void Bump() {\n        var gate = new object();   // a new monitor every call; this excludes nobody\n\n        lock (gate) {\n            count++;\n        }\n    }\n}",
+        "good": "sealed class Meter {\n    readonly Lock gate = new();\n\n    int count;\n\n    public void Bump() {\n        lock (gate) {\n            count++;\n        }\n    }\n}"
+      },
+      "falsePositives": "⚠ **Fixless.** Introducing a shared lock object changes the type's shape and hoisting the local to a field changes its lifetime; which one is meant depends on what the type is for, and the `lock` statement does not say. ⚠ **`lock (this)`, `lock (typeof(T))` and locking a string are `CA2002`'s and are deliberately absent — measured, not assumed.** On a pristine `net10.0` class library with empty `Directory.Build.props`/`.targets` above it, one shape per file, `CA2002` fires on `lock (this)`, `lock (typeof(T))`, a string literal, a `string` field and `Thread.CurrentThread`, and is **silent** on a fresh local, a `readonly object` field and a mutable `object` field — which is the whole of both shapes this rule does report. ⚠ Its shipped descriptor is `IsEnabledByDefault=False, DefaultSeverity=Warning`, listed only in `analysislevel_10_all.globalconfig`, so it is invisible in an ordinary build **and visible in Skala's own repository, which raises `AnalysisMode`** — which is precisely why duplicating it would double-report here first. The silences in that measurement are instrument-checked: the same file produced five `CA2002` findings once the severity was raised. ⚠ **Shape 1's load-bearing clause is that only an object *creation* counts.** `var gate = this.gate;` and `var gate = Shared.Gate;` alias an object other threads take and are correct; they are the single most likely false positive and they have a fixture each. The local must also never be reassigned and never be captured by a lambda — a delegate that closes over it gives it a lifetime longer than the invocation, and the \"one monitor per call\" argument stops holding. ⚠ **Shape 2 requires a *private* field assigned outside a constructor.** Private is what makes the analysis complete rather than a guess: every write is then inside the type. A field assigned only in a constructor or only in its initializer is effectively `readonly`, is common, is correct, and has two fixtures holding it. ⚠ **`SK3040`'s types are declined in both shapes.** `var s = new SemaphoreSlim(1); lock (s) { }` is a fresh local *and* a lock over a synchronization primitive, and the second reading is the one that tells the reader what to do. ⚠ **`SK1023` is disjoint by construction rather than by filter**: it modernizes a `lock` over a *private readonly* `object` field, and shape 2 requires a field that is not `readonly`, so no field can carry both findings. ⚠ **Known gap, recorded rather than hidden**: a `lock` in a top-level program is never examined, because the synthesized `Program` type's declarations are not type declarations and the symbol walk drops them. A top-level statement file is a script rather than a shared-state type.",
+      "configuration": [
+        "dotnet_diagnostic.SK3061.severity"
+      ]
+    },
+    {
+      "id": "SK3062",
+      "concept": "constructor-publishes-this",
+      "title": "`this` escapes before the constructor finishes",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3366"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A constructor stores `this` in another type's static state, hands it to an object reached through a static field, subscribes it to a static event, or captures it in a delegate it starts on another thread.",
+      "rationale": "A constructor's body runs before the derived constructors, before the readonly fields are visible to other threads under a weak memory model, and before anything the caller was going to do with the finished object. Publishing `this` from inside it hands somebody a reference to an object that is not there yet. ⚠ **The three destinations here are the ones where the second reader is not under the constructor's control**: static state outlives every instance, and a thread the constructor starts races the rest of the constructor by construction. On ARM64 the second thread can legally observe a field before its initializer, which is the failure that never reproduces on the developer's x64 machine.",
+      "examples": {
+        "bad": "sealed class Worker {\n    readonly int[] buffer;\n\n    public Worker(int size) {\n        Task.Run(() => Drain());     // races the line below\n        buffer = new int[size];\n    }\n\n    void Drain() { /* buffer may still be null here */ }\n}",
+        "good": "sealed class Worker {\n    readonly int[] buffer;\n\n    Worker(int size) => buffer = new int[size];\n\n    public static Worker Start(int size) {\n        var worker = new Worker(size);\n        Task.Run(worker.Drain);\n\n        return worker;\n    }\n\n    void Drain() { }\n}"
+      },
+      "falsePositives": "⚠ **Fixless.** Every repair — a factory that constructs and then publishes, a separate `Start`, a deferred subscription — moves code out of the constructor into a place the rule cannot choose, because which caller becomes responsible for the second step is a design decision the constructor does not contain. ⚠ **What the rule refuses to report is the rule.** `button.Click += OnClick;` in a constructor is the overwhelmingly common *legitimate* shape — nearly every UI type ever written contains it — and a rule that reports it is worse than no rule, because it would be dismissed wholesale and take the four real shapes with it. So only publication whose **second reader is outside the constructor's control** is reported: process-wide static state, or a thread the constructor itself starts. Subscribing to an instance event on a field, a local, a parameter or `this` is declined, and there is a fixture for each of those four rather than one standing for all of them. ⚠ **`this` passed to a static *method* is not publication and is not reported.** `Console.WriteLine(this)`, `ArgumentNullException.ThrowIfNull(this)` and a validation helper all read their argument and keep nothing; admitting them would bury the rule. Only a call whose *receiver* is a static field or property counts, because that is the object that outlives the constructor. ⚠ **Shape A stops at the constructor's own type, and the boundary is `SK2134`.** `current = this;` writing this type's own static field is the canonical shape of `instance-write-to-static` and is already reported there; two findings on one line is a double-report, and a reader who has to choose which of two to act on acts on neither. ⚠ **A `Thread` must be created *and* started inside the same constructor.** `new Thread(Work)` stored in a field and started later is not a race and is declined. A delegate that closes over only locals, parameters and statics does not reach `this` and is declined too. ⚠ **And shape D declines a `sealed` type that starts the thread as its last act, which is a gate the reference tree bought.** The first draft reported Vixen's `VideoPlayer` and that finding was *wrong*: `Thread.Start`, `Task.Run` and `ThreadPool.QueueUserWorkItem` all publish a memory barrier, so everything the constructor wrote before them is visible to the new thread, and a sealed type has no derived constructor left to run — nothing changes after the publication, so nothing races. The rule now requires something that still changes afterwards: a statement following the start at any enclosing level, or a type that is not sealed. ⚠ **Shapes A, B and C deliberately do not share that gate.** Storing a reference in static state is not a barrier and buys no ordering, and the defect there is that the object is reachable at all before the caller has the reference to undo it — not that it is unfinished. ⚠ **The framework types are resolved from the compilation, never matched on the written name.** `Thread` and `Task` are both plausible names for somebody's own type, and a finding on one of those sends a reader to threading code that does not exist.",
+      "configuration": [
+        "dotnet_diagnostic.SK3062.severity"
+      ]
     }
   ]
 }
