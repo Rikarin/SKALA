@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 279 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 284 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -147,6 +147,11 @@
 <tr><td><a href="SK2182.html">SK2182</a></td><td>A type is identified by comparing its name to a string</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2183.html">SK2183</a></td><td>A static member is reached through a type that inherits it</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2184.html">SK2184</a></td><td>The call skips a better overload the derived interface hides</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2190.html">SK2190</a></td><td>The struct key has no equality of its own</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2191.html">SK2191</a></td><td>The struct is copied before the mutation lands</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2192.html">SK2192</a></td><td><code>==</code> on spans compares memory locations</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2193.html">SK2193</a></td><td><code>ImmutableArray&lt;T&gt;</code> is built with a collection initializer</td><td><span class="tag sev-error">error</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2194.html">SK2194</a></td><td>The captured primary constructor parameter is assigned</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
