@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 312 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 317 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -168,6 +168,9 @@
 <tr><td><a href="SK2220.html">SK2220</a></td><td>The conditionally compiled call sits under a directive that deletes it</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2221.html">SK2221</a></td><td>The <code>[UnsafeAccessor]</code> names a member its target does not have</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2222.html">SK2222</a></td><td>The type declares <code>checked</code> for some of its operators and not the rest</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2240.html">SK2240</a></td><td>The <code>with</code> expression rewrites every member</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2241.html">SK2241</a></td><td>The regular expression pattern does not parse</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2242.html">SK2242</a></td><td>The argument check does not run until the result is enumerated</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -291,6 +294,7 @@
 <tbody>
 <tr><td><a href="SK1001.html">SK1001</a></td><td>Use a collection expression</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1003.html">SK1003</a></td><td>Use a field-backed property</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1004.html">SK1004</a></td><td>Use an <code>extension</code> block</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK1005.html">SK1005</a></td><td>Use a file-scoped namespace</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1006.html">SK1006</a></td><td>Use a <code>using</code> declaration</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1010.html">SK1010</a></td><td>Use <code>is null</code> / <code>is not null</code> instead of <code>==</code> / <code>!=</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
@@ -343,6 +347,7 @@
 <tr><td><a href="SK1101.html">SK1101</a></td><td>The local is declared on one line and assigned on the next</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1102.html">SK1102</a></td><td>The local function is declared before the jump that ends the block</td><td><span class="tag sev-hint">hint</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1103.html">SK1103</a></td><td>Both branches end with the same statements</td><td><span class="tag sev-hint">hint</span></td><td>review</td><td>yes</td></tr>
+<tr><td><a href="SK1110.html">SK1110</a></td><td>Collapse the forwarding overload into an optional parameter</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 </tbody>
 </table>
 </div>

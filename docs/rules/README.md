@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 300 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 317 ids are allocated.
 
 ## Async
 
@@ -146,6 +146,13 @@
 | [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | safe | no |
 | [SK2201](SK2201.md) | The unsubscription passes an anonymous function | warning | — | no |
 | [SK2202](SK2202.md) | The modification sits inside a conditional invocation | warning | — | yes |
+| [SK2210](SK2210.md) | The constant index or range cannot be valid | warning | — | no |
+| [SK2211](SK2211.md) | Nothing the loop condition reads is changed by the loop | warning | — | no |
+| [SK2212](SK2212.md) | The loop body cannot run more than once | warning | — | no |
+| [SK2213](SK2213.md) | The `IndexOf` result is compared to a positive number | warning | review | no |
+| [SK2220](SK2220.md) | The conditionally compiled call sits under a directive that deletes it | warning | review | no |
+| [SK2221](SK2221.md) | The `[UnsafeAccessor]` names a member its target does not have | error | — | no |
+| [SK2222](SK2222.md) | The type declares `checked` for some of its operators and not the rest | warning | — | no |
 | [SK2240](SK2240.md) | The `with` expression rewrites every member | warning | review | no |
 | [SK2241](SK2241.md) | The regular expression pattern does not parse | warning | — | no |
 | [SK2242](SK2242.md) | The argument check does not run until the result is enumerated | warning | — | no |
@@ -306,6 +313,10 @@
 | [SK1092](SK1092.md) | Use a tuple literal instead of constructing a `Tuple` | suggestion | review | no |
 | [SK1093](SK1093.md) | Express the cast in the declaration instead | hint | safe | no |
 | [SK1094](SK1094.md) | Use nullable reference type syntax instead of an annotation attribute | warning | review | no |
+| [SK1100](SK1100.md) | The local is a name for the expression on the next line | suggestion | safe | no |
+| [SK1101](SK1101.md) | The local is declared on one line and assigned on the next | suggestion | safe | yes |
+| [SK1102](SK1102.md) | The local function is declared before the jump that ends the block | hint | safe | yes |
+| [SK1103](SK1103.md) | Both branches end with the same statements | hint | review | yes |
 | [SK1110](SK1110.md) | Collapse the forwarding overload into an optional parameter | suggestion | review | no |
 
 ## Performance
