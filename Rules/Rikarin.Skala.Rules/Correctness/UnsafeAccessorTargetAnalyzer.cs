@@ -18,12 +18,21 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     called. That is a compile-time-knowable fact reported at run time, which is exactly the trade an
 ///     analyzer exists to undo.
 ///     <para>
-///         ⚠ <b>Every shape reported here was confirmed by running it on .NET 10, not by reading the
-///         documentation.</b> A name the target does not declare throws <c>MissingFieldException</c>
+///         ⚠
+///         <b>
+///             Every shape reported here was confirmed by running it on .NET 10, not by reading the
+///             documentation.
+///         </b> A name the target does not declare throws <c>MissingFieldException</c>
 ///         — <i>Field not found: 'Target._buffer'</i>; a <c>Field</c> kind naming a member that is a
 ///         method throws the same; and <c>UnsafeAccessorKind.Constructor</c> carrying
-///         <c>Name = "Create"</c> throws <b><c>BadImageFormatException</c></b>, <i>Invalid usage of
-///         UnsafeAccessorAttribute</i>. The correctly spelled field accessor and the unnamed
+///         <c>Name = "Create"</c> throws
+///         <b>
+///             <c>BadImageFormatException</c>
+///         </b>,
+///         <i>
+///             Invalid usage of
+///             UnsafeAccessorAttribute
+///         </i>. The correctly spelled field accessor and the unnamed
 ///         constructor accessor both succeeded in the same run, so the probe was measuring this
 ///         rule's subject rather than a broken harness. That is what justifies <c>error</c> severity.
 ///     </para>
