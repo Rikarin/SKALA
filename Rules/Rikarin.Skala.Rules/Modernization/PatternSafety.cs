@@ -23,13 +23,27 @@ internal static class PatternSafety {
     ///         into the left operand of an <c>is</c>, so the two copies had to agree about the grammar
     ///         and nothing made them.
     ///     </para>
+    ///     <para>
+    ///         ⚠ <c>ExpressionStatementSyntax</c> was on this list and is not a safe position (#327).
+    ///         The grammar accepts <c>x is "abc";</c> and the language does not — <c>CS0201</c>, only an
+    ///         assignment, call, increment, decrement, <c>await</c> or <c>new</c> may be a statement —
+    ///         so a pattern can never stand there whatever the parentheses say. It survived because the
+    ///         one caller that could reach it on <em>compiling</em> code is the one that shipped last:
+    ///         <c>SK1050</c> rewrites a comparison, and a bare <c>x != null;</c> is already
+    ///         <c>CS0201</c> before any rewrite, so the entry could only ever be reached on code that
+    ///         did not compile. <c>SK1130</c> rewrites an invocation, and <c>span.SequenceEqual("abc");</c>
+    ///         is perfectly legal — which turned a dead entry into a fix that emits <c>CS0201</c>.
+    ///         Removed here rather than excluded at <c>SK1130</c>'s call site, because a position no
+    ///         caller may use is this helper's answer to give, and a per-rule exception is the
+    ///         divergence sharing it was meant to prevent.
+    ///     </para>
     /// </remarks>
     public static bool IsPatternSafeContext(ExpressionSyntax expression) {
         var parent = expression.Parent;
         return parent switch {
             ParenthesizedExpressionSyntax => true,
             IfStatementSyntax or WhileStatementSyntax or DoStatementSyntax => true,
-            ReturnStatementSyntax or ExpressionStatementSyntax or ArrowExpressionClauseSyntax => true,
+            ReturnStatementSyntax or ArrowExpressionClauseSyntax => true,
             ArgumentSyntax or AttributeArgumentSyntax or EqualsValueClauseSyntax => true,
             AssignmentExpressionSyntax assignment => assignment.Right == expression,
             ConditionalExpressionSyntax conditional => conditional.Condition == expression,

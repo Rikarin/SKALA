@@ -104,9 +104,8 @@ public static class EditorConfigOptions {
             string diagnosticId,
             CancellationToken cancellationToken,
             out ReportDiagnostic severity
-        ) {
-            return set.GlobalConfigOptions.TreeOptions.TryGetValue(diagnosticId, out severity);
-        }
+        ) =>
+            set.GlobalConfigOptions.TreeOptions.TryGetValue(diagnosticId, out severity);
     }
 
     /// <summary>
