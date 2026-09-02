@@ -203,9 +203,9 @@ public sealed class SdkAdoptionTests {
     public void TheRuleIdList_IsDeclaredExactlyOnce() {
         var declarations = PackagedMSBuildFiles
             .SelectMany(file => XDocument.Parse(File.ReadAllText(file))
-                .Descendants()
-                .Where(static element => element.Name.LocalName == "SkalaRuleIds")
-                .Select(_ => file)
+                    .Descendants()
+                    .Where(static element => element.Name.LocalName == "SkalaRuleIds")
+                    .Select(_ => file)
             )
             .ToArray();
 
@@ -248,7 +248,7 @@ public sealed class SdkAdoptionTests {
                 .Where(static element => element.Name.LocalName == "Import")
                 .Where(static element =>
                     ((string?)element.Attribute("Project") ?? string.Empty)
-                    .Contains("RuleIds.props", StringComparison.Ordinal)
+                        .Contains("RuleIds.props", StringComparison.Ordinal)
                 ),
             element => element.Attribute("Condition") is not null
         );
