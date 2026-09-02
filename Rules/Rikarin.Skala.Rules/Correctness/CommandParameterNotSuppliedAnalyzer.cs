@@ -347,9 +347,21 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
                 continue;
             }
 
-            if (c != '@'
-                || (i > 0 && IsNameCharacter(sql[i - 1]))
-                || (i + 1 < sql.Length && sql[i + 1] == '@')) {
+            if (c != '@' || (i > 0 && IsNameCharacter(sql[i - 1]))) {
+                continue;
+            }
+
+            // ⚠ `@@identity` has to consume the whole global, not just the first sigil. Skipping
+            // only the first `@` leaves the loop standing on the second one, whose predecessor is
+            // `@` — not a name character — so it read `@identity` as a parameter and reported a
+            // missing binding for a T-SQL global. Found by the fixture that exists for it.
+            if (i + 1 < sql.Length && sql[i + 1] == '@') {
+                i += 2;
+                while (i < sql.Length && IsNameCharacter(sql[i])) {
+                    i++;
+                }
+
+                i--;
                 continue;
             }
 
