@@ -167,9 +167,6 @@ public sealed class ToolConfiguration {
                 }
 
                 break;
-
-            default:
-                break;
         }
     }
 }

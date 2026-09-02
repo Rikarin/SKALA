@@ -22,7 +22,12 @@ public sealed class SkalaDirectoryTests : IDisposable {
     public void Dispose() {
         try {
             Directory.Delete(root, true);
-        } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        } catch (IOException) {
+            // Best-effort cleanup of a temp directory the assertions have already finished with. A
+            // lingering handle here would fail a test that had otherwise passed.
+        } catch (UnauthorizedAccessException) {
+            // Same: a file left read-only by the run is not a failure of what the test measured.
+        }
     }
 
     [Fact]

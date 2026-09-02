@@ -180,6 +180,9 @@ public static class SkalaDirectory {
         } catch (IOException) {
             // A read-only tree, or a race with another process writing the same marker. Neither is
             // worth failing the caller's actual work over.
-        } catch (UnauthorizedAccessException) { }
+        } catch (UnauthorizedAccessException) {
+            // The same answer for the same reason: a tree the process may read and not write. Marking
+            // `.skala/` is housekeeping around the caller's work, never the caller's work itself.
+        }
     }
 }
