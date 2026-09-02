@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 273 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 298 ids are allocated.
 
 ## Async
 
@@ -133,6 +133,19 @@
 | [SK2172](SK2172.md) | The `!` before `is` reads as a negated `is` | warning | — | no |
 | [SK2173](SK2173.md) | `is not { }` is a null check written backwards | warning | safe | yes |
 | [SK2174](SK2174.md) | The shift or bitwise operand relies on precedence to group | suggestion | safe | yes |
+| [SK2180](SK2180.md) | The `foreach` casts every element down to a narrower type | warning | — | no |
+| [SK2181](SK2181.md) | `GetType()` is called on something that is already a `Type` | warning | review | no |
+| [SK2182](SK2182.md) | A type is identified by comparing its name to a string | warning | review | no |
+| [SK2183](SK2183.md) | A static member is reached through a type that inherits it | suggestion | safe | no |
+| [SK2184](SK2184.md) | The call skips a better overload the derived interface hides | warning | — | no |
+| [SK2190](SK2190.md) | The struct key has no equality of its own | warning | — | no |
+| [SK2191](SK2191.md) | The struct is copied before the mutation lands | warning | — | no |
+| [SK2192](SK2192.md) | `==` on spans compares memory locations | warning | review | no |
+| [SK2193](SK2193.md) | `ImmutableArray<T>` is built with a collection initializer | error | review | no |
+| [SK2194](SK2194.md) | The captured primary constructor parameter is assigned | warning | — | no |
+| [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | safe | no |
+| [SK2201](SK2201.md) | The unsubscription passes an anonymous function | warning | — | no |
+| [SK2202](SK2202.md) | The modification sits inside a conditional invocation | warning | — | yes |
 
 ## Design
 

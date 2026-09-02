@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 293 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 298 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -143,6 +143,11 @@
 <tr><td><a href="SK2162.html">SK2162</a></td><td>The date or time <code>TryParse</code> has an implicit culture</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2163.html">SK2163</a></td><td>Elapsed time is measured with the wall clock</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2164.html">SK2164</a></td><td>The assertion's expression has side effects</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2170.html">SK2170</a></td><td>The indentation says the statement is in the body and it is not</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK2171.html">SK2171</a></td><td>The <code>\x</code> escape's length is decided by what follows it</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK2172.html">SK2172</a></td><td>The <code>!</code> before <code>is</code> reads as a negated <code>is</code></td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2173.html">SK2173</a></td><td><code>is not { }</code> is a null check written backwards</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK2174.html">SK2174</a></td><td>The shift or bitwise operand relies on precedence to group</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK2180.html">SK2180</a></td><td>The <code>foreach</code> casts every element down to a narrower type</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2181.html">SK2181</a></td><td><code>GetType()</code> is called on something that is already a <code>Type</code></td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2182.html">SK2182</a></td><td>A type is identified by comparing its name to a string</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
