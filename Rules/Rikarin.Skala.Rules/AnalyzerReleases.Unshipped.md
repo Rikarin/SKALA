@@ -305,3 +305,6 @@ SK5042 | Skala.Security | Error | A file or directory created writable by every 
 SK0260 | Skala.Cleanup | Warning | The boolean expression says the same thing twice.
 SK0261 | Skala.Cleanup | Warning | The attribute writes out what the language already supplies.
 SK1130 | Skala.Modernization | Info | A character span is compared to a constant by a call.
+SK0280 | Skala.Cleanup | Warning | The base list names an interface it already has.
+SK0281 | Skala.Cleanup | Warning | The attribute promises to set members that do not exist.
+SK0282 | Skala.Cleanup | Warning | The record writes out the property its parameter generates.

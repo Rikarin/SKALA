@@ -360,3 +360,6 @@ SK5042 world-writable-file-mode
 SK0260 redundant-boolean-expression
 SK0261 redundant-attribute-detail
 SK1130 constant-pattern-over-sequence-equal
+SK0280 redundant-base-list-entry
+SK0281 redundant-required-members-attribute
+SK0282 redundant-positional-property

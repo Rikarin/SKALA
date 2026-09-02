@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 331 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 334 ids are allocated.
 
 ## Async
 
@@ -48,6 +48,9 @@
 | [SK0250](SK0250.md) | The discard designation is redundant | suggestion | safe | yes |
 | [SK0260](SK0260.md) | The boolean expression says the same thing twice | warning | safe | no |
 | [SK0261](SK0261.md) | The attribute writes out what the language already supplies | warning | safe | no |
+| [SK0280](SK0280.md) | The base list names an interface it already has | warning | safe | no |
+| [SK0281](SK0281.md) | The attribute promises to set members that do not exist | warning | safe | no |
+| [SK0282](SK0282.md) | The record writes out the property its parameter generates | warning | safe | no |
 
 ## Correctness
 

@@ -11,10 +11,10 @@ namespace Rikarin.Skala.Rules.Cleanup;
 /// <summary><c>SK0241</c> — a modifier the language already applies, written out anyway.</summary>
 /// <remarks>
 ///     <para>
-///         Five shapes, each of which is a keyword restating what the enclosing declaration has already
+///         Six shapes, each of which is a keyword restating what the enclosing declaration has already
 ///         said: <c>abstract</c> on an interface member, <c>sealed</c> on a member of a <c>sealed</c>
-///         type, <c>class</c> after <c>record</c>, <c>: int</c> on an enum, and <c>readonly</c> on a
-///         member of a <c>readonly struct</c>.
+///         type, <c>class</c> after <c>record</c>, <c>: int</c> on an enum, <c>readonly</c> on a
+///         member of a <c>readonly struct</c>, and <c>scoped</c> on an <c>out</c> parameter.
 ///     </para>
 ///     <para>
 ///         ⚠ <b>Every one of them is answered by a keyword that is written in the same file</b>, which
@@ -52,6 +52,40 @@ public sealed class IneffectiveModifierAnalyzer : DiagnosticAnalyzer {
         context.RegisterSyntaxNodeAction(AnalyzeAccessor, SyntaxKind.GetAccessorDeclaration);
         context.RegisterSyntaxNodeAction(AnalyzeRecord, SyntaxKind.RecordDeclaration);
         context.RegisterSyntaxNodeAction(AnalyzeEnum, SyntaxKind.EnumDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeParameter, SyntaxKind.Parameter);
+    }
+
+    /// <summary>
+    ///     <c>scoped</c> on an <c>out</c> parameter, which the language already applies.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         <c>out</c> is the only implicitly-scoped parameter form, and that was measured rather
+    ///         than reasoned from the name.
+    ///     </b> Six spellings were put through
+    ///     <c>jb inspectcode</c> 2025.2.6 — <c>scoped out int</c>, <c>scoped out</c> a <c>ref struct</c>,
+    ///     <c>scoped ref</c> a <c>ref struct</c>, <c>scoped in</c> a <c>ref struct</c>, <c>scoped</c> on
+    ///     a by-value <c>ref struct</c>, and <c>scoped ref int</c> — and ReSharper reported the two
+    ///     <c>out</c> forms and nothing else. The others are not redundant: <c>scoped</c> on a
+    ///     <c>ref</c> or <c>in</c> parameter narrows the <em>ref-safe-to-escape</em> of the reference
+    ///     itself, and deleting it lets the reference escape where it previously could not.
+    ///     <para>
+    ///         ⚠ Purely syntactic, like the rest of this rule: <c>scoped</c> and <c>out</c> are both
+    ///         tokens in the parameter's own modifier list, so nothing here has to bind a type — which
+    ///         is what keeps <c>SK0241</c> running on a loose file.
+    ///     </para>
+    /// </remarks>
+    static void AnalyzeParameter(SyntaxNodeAnalysisContext context) {
+        var parameter = (ParameterSyntax)context.Node;
+        if (Has(parameter.Modifiers, SyntaxKind.OutKeyword)
+            && Find(parameter.Modifiers, SyntaxKind.ScopedKeyword) is { } scoped) {
+            Report(
+                context,
+                scoped,
+                "an `out` parameter is implicitly `scoped`, so writing the modifier narrows nothing"
+            );
+        }
     }
 
     /// <summary>
