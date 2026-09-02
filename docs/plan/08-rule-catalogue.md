@@ -5175,3 +5175,16 @@ as *secondary* members of a cluster whose primary is a pre-existing file — the
 merges that landed beside it, which is the state `CLAUDE.md` describes: the baseline settles after
 the **last** merge, not the first, so it is deliberately left for the integrator rather than updated
 from inside one of ten concurrent worktrees.
+
+`./build.sh` compiles and passes every suite except five tests, and **none of the five is this
+batch's to fix**:
+
+- `SdkAdoptionTests.RuleIds_MatchRulesJson` and `DocsSiteTests.Site_IsUpToDateWithTheSources` are
+  the two **expected** failures: `Rikarin.Skala.Sdk.targets` is not edited here (#290) and
+  `skala docs site` is not run here, so `<SkalaRuleIds>` and `docs/site/` stay a merge step.
+- `ProvenanceTests` (×2) and `FrozenSweepTests` fail on an `.editorconfig` hash the formatter corpus
+  no longer matches — **2 814 of 2 814 committed fixtures**, which is the signature of a repository-
+  wide drift rather than of anything one batch did. ⚠ **Proved inherited rather than asserted**: the
+  file hashes `sha256:e256d0b9ed35b14f` at this batch's merge-base and the identical
+  `sha256:e256d0b9ed35b14f` at its tip, while the corpus records `sha256:1db666f69fec005d`. Nothing
+  here touches `.editorconfig`, and re-freezing the corpus is a reviewed commit of its own.
