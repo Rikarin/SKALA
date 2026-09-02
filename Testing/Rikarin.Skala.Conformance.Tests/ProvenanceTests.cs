@@ -428,7 +428,7 @@ public sealed class ProvenanceTests {
         Assert.True(
             onDisk.Length == SweptSources * 3,
             $"`corpus/real` holds {Count(onDisk.Length)} .cs files against {Count(swept.Count)} staged "
-            + $"sources, and the corpus keeps exactly three copies of each — expected "
+            + "sources, and the corpus keeps exactly three copies of each — expected "
             + $"{Count(swept.Count * 3)}. A source is missing one of its `.expected.cs` or "
             + "`.arranged.expected.cs` twins, or a twin has outlived its source. Run `./build.sh Oracle`."
         );

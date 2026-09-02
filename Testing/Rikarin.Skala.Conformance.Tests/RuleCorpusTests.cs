@@ -119,7 +119,7 @@ public sealed class RuleCorpusTests {
             $"the mass compile fires {recall.Fired.ToString(CultureInfo.InvariantCulture)} of {recall.Total.ToString(CultureInfo.InvariantCulture)} committed "
             + $"positives and the pinned floor is {RecallFloor.ToString(CultureInfo.InvariantCulture)}. The fixture tree only grows, so "
             + "this can only fall by the harness breaking — every corpus zero taken after this point is "
-            + $"meaningless until it is repaired. First five that stopped firing: "
+            + "meaningless until it is repaired. First five that stopped firing: "
             + string.Join(", ", recall.Missed.Take(5))
         );
 
