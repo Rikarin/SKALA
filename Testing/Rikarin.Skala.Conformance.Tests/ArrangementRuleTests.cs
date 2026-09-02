@@ -691,8 +691,11 @@ public sealed class ArrangementRuleTests {
     ///         out of order, come back in order with the redundant one gone.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>Sabotaged twice, and the first sabotage stayed green — which is the refutation
-    ///         restated as an experiment.</b> Swapping the filter from <c>CS8019</c> to <c>CS8933</c>
+    ///         ⚠
+    ///         <b>
+    ///             Sabotaged twice, and the first sabotage stayed green — which is the refutation
+    ///             restated as an experiment.
+    ///         </b> Swapping the filter from <c>CS8019</c> to <c>CS8933</c>
     ///         leaves this test passing, because on this shape the two diagnostics land on the same
     ///         directive and either one puts the name in the set. That is precisely why adding
     ///         <c>CS8933</c> to the filter is a no-op rather than a fix. Making the filter match
