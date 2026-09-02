@@ -2562,3 +2562,80 @@ is off under `AnalysisMode=Default`, and ADR-008's answer to that is to enable i
 The one gap found is that `CA2201` matches the exact type, so a `Win32Exception` — which derives from
 the `ExternalException` it does report — passes; that is not what the issue is about and does not
 justify an id.
+
+## `SK2140`–`SK2143` — what a parameter promises and what the call site does
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
+Correctness" only to keep it out of a section several concurrent branches were editing.** What
+follows is the register doing the one job ADR-012 needs it to do — the numbers are taken and written
+down where the next milestone will read them. It is not yet the considered account the sections above
+carry, and it belongs beside `SK2013`–`SK2017`.
+
+Four rules about one seam: the gap between what a parameter list declares and what the compiler
+actually does with it at the call site. The declaration is the thing everybody reads; the call site
+is the thing that runs.
+
+- `SK2140` an override or an implicit interface implementation declaring a parameter default the
+  call site will not use. A default is baked into the caller from the **static** type of the
+  receiver, so a base-typed reference gets the base's value and a derived-typed one gets the
+  override's, and the same member behaves as two methods depending on which reference the caller
+  happens to hold. ⚠ **The compiler is silent on exactly the cases that diverge and loud on the one
+  that cannot.** `CS1066` reports a default on an *explicit* interface implementation — a member that
+  can never be called with optional arguments at all — and says nothing about an override or an
+  implicit implementation. Measured on a probe build, not assumed; the explicit case is declined and
+  hosted. ⚠ **`params` was measured too and the issue proposing this rule had it backwards.** An
+  override cannot change `params`: dropped, the call still expands through the derived type; added
+  where the base has none, it expands through neither — both were compiled and both answers read off
+  the build, and Roslyn agrees at the symbol level by propagating the base's `IsParams` onto the
+  override's parameter even where no keyword is written. So the `params` half of this rule reports
+  interface implementations only, where nothing is inherited and the divergence is real. ⚠ **One
+  finding per declaration carrying every edit**, because optional parameters must form a suffix and
+  repairing one of two on its own is `CS1737` — `skala fix` applies one finding at a time, so
+  per-parameter findings would break the build between the first edit and the second. Fix,
+  `fixIsSafe: false`.
+- `SK2141` an argument that suppresses the caller-info substitution it sits on top of. Supplying a
+  value for `[CallerMemberName]` or `[CallerLineNumber]` makes the compiler step back without a word,
+  so a fabricated source location ends up in every log line and exception built from it. ⚠ **The
+  general shape does not ship and the narrowing is the whole rule.**
+  `OnPropertyChanged(nameof(Other))` is ordinary correct code in every view model ever written, so a
+  name or expression argument is a finding only when it restates *exactly* what would have been
+  substituted; a location argument has no equivalent deliberate use and is reported for any constant.
+  Forwarding needs no guard of its own — a relay passes an identifier and an identifier is not a
+  constant. ⚠ **Disjoint from `SK0232` by construction rather than by filter**: `SK0232` excludes
+  caller-info parameters outright, because passing `null` to one is the opposite of redundant, and
+  nothing here reports `null`. A trailing run goes in one edit, for the reason `SK0232` gives about
+  its own trailing defaults. Fix, `fixIsSafe: false`.
+- `SK2142` a parameter every path assigns before anything reads it, so the caller's value was
+  computed, passed and discarded. The verdict is Roslyn's data flow rather than a syntactic scan,
+  which is what makes `if (f) { x = 1; }`, `x += 1`, `x++` and `x ??= y` silent without a guard for
+  each. ⚠ **The `ref`/`out`/`in` exclusion is load-bearing rather than cautious**: an `out` parameter
+  has no incoming value *by contract*, so data flow reports every correct one with the defect's exact
+  signature — measured before the rule was written. ⚠ **A captured parameter is where the analysis
+  stops and it says so**, because data flow over a body holding a lambda or a local function is not
+  ordered the way its reader is. Parameters only; the caught exceptions and `foreach` variables the
+  originating issue also named are separate shapes with their own legitimate uses. Report-only, for
+  the reason `SK2090`–`SK2092` are: the repair is a choice between "the caller's value was meant to
+  be used" and "this wanted a local", and the rule cannot know which.
+- `SK2143` two adjacent arguments handed crosswise to the two parameters they are named after. ⚠
+  **`Copy(source, destination)` called as `Copy(destination, source)` is undetectable in general and
+  this rule does not try.** The only sound signal is the crosswise *name* match — adjacent
+  parameters, identical types, plain identifiers, names of at least three characters — and everything
+  looser reports ordinary code. `Max(y, x)` is where reversal is deliberate and a one-letter name is
+  no evidence either way. ⚠ **A call to a method of the enclosing member's own name is declined**,
+  which is the guard for the deliberate reversal that is genuinely correct: a descending comparer
+  written as `Compare(right, left)` delegating to an ascending one is this shape exactly, and
+  swapping it back is the one edit that would break it. Fix, `fixIsSafe: false` — the finding is a
+  question about intent and the rule is wrong about it in precisely the cases where the author meant
+  the reversal.
+
+⚠ **A fifth concept was measured and closed as hosted by the compiler, and no id was allocated for
+it.** Issue #31 — "the parameter name differs between partial declarations", ReSharper's
+`PartialMethodParameterNameMismatch` — is reported by Roslyn itself at default settings. Measured,
+not assumed: a probe declaring mismatched names across partial declarations builds with `CS8826`
+("Partial method declarations … have signature differences") for both classic and extended partial
+methods, including a difference of case alone, and with `CS9256` ("Partial member declarations …")
+for partial indexers and partial constructors. The brief that carried the issue expected `CS8826` to
+cover only extended partial methods and expected a residue; there is none. ⚠ **The same probe also
+refuted the claim that the implementing declaration's names are the ones callers see.** They are the
+defining declaration's: `Take(defining: 1)` compiles and `Take(implementing: 1)` is `CS1739`, which
+is what the issue itself said and the opposite of what the brief asserted.

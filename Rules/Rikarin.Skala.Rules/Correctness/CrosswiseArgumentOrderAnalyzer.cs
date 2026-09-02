@@ -74,10 +74,20 @@ public sealed class CrosswiseArgumentOrderAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        // ⚠ Exact arity, positional only, no byref, no `params` expansion. Every one of those makes
-        // "the parameter this argument fills" an inference rather than a fact — the assumption #298
-        // found SK0232 making, and the reason its loop indexed off the end of the parameter array.
-        if (arguments.Count != method.Parameters.Length) {
+        // ⚠ Positional only, no byref, no `params`, and never more arguments than parameters. Each
+        // makes "the parameter this argument fills" an inference rather than a fact — the assumption
+        // #298 found SK0232 making, and the reason its loop indexed off the end of the parameter
+        // array. Fewer arguments than parameters is fine: omitted optionals come off the end, so
+        // position still is the parameter's index for every argument that was written.
+        //
+        // ⚠ This guard and the `params` filter below cover each other, and neither can be sabotaged
+        // alone — which is worth writing down rather than claiming each is load-bearing. Valid C#
+        // cannot supply more arguments than there are parameters *without* a `params` parameter, so
+        // the filter already makes the over-supply branch unreachable and this comparison is the
+        // invariant made explicit. What is pinned, and what #298 actually teaches, is the loop bound
+        // below: with the index bounded on the array it reads, removing both guards produces a wrong
+        // finding that a fixture catches instead of a crash that makes every fixture pass.
+        if (arguments.Count > method.Parameters.Length) {
             return;
         }
 
@@ -97,7 +107,13 @@ public sealed class CrosswiseArgumentOrderAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        for (var i = 0; i + 1 < arguments.Count; i++) {
+        // ⚠ Bounded on both arrays rather than on the one that happens to be shorter in the
+        // well-formed case. This is #298's lesson applied instead of quoted: SK0232 bounds its
+        // counter on the parameter count and indexes with the argument position, and those are the
+        // same number only when the call is exactly arity-matched.
+        var pairs = arguments.Count < method.Parameters.Length ? arguments.Count : method.Parameters.Length;
+
+        for (var i = 0; i + 1 < pairs; i++) {
             if (!Crosswise(method.Parameters[i], method.Parameters[i + 1], arguments[i], arguments[i + 1])) {
                 continue;
             }
