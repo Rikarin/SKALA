@@ -3665,10 +3665,27 @@ repository because the corpus is unreachable through `skala check` in place (`SK
 real projects with empty `Directory.Build.props`/`.targets` above them, and read through
 `--load=binlog`. ⚠ **`--load=loose` would have skipped all three rules** (issue #277) and
 `--load=workspace` ignores its path argument (issue #284), so binlog is the only mode in which this
-measurement means anything. The load carried **14 460 CS diagnostics across 29, 11 and 24 distinct
-codes** — the slice does not compile, which is the normal state of it — and produced **197 `SK` findings
-across 26 distinct rules**, no `AD0001` and no `SK9030`. That last pair of numbers is the evidence the
-analysis ran at all, and is why the three zeros below are readable.
+measurement means anything.
+
+⚠ **The first set of numbers was discarded and re-taken, and the reason is `BinlogLoader`'s own
+measurement.** An *incremental* build's binlog is not stale — its mtime is seconds old — it is
+**partial**, containing only the projects MSBuild rebuilt, and on Vixen a complete build's binlog
+covers 98 % of the tree where an incremental one covers 1 %. The builds here already used
+`--no-incremental`, but the first sweep omitted `--require-fresh-binlog`, which is the flag that turns
+coverage below 90 % into an error rather than a number nobody checks. Re-taken with both:
+
+| Tree | Files covered | Coverage | `SK9021` | CS diagnostics | `SK` findings | Distinct `SK` rules |
+|---|---:|---:|---:|---:|---:|---:|
+| `newtonsoft` | 110 / 110 | 100 % | 0 | 2 531 | 280 | 38 |
+| `serilog` | 70 / 70 | 100 % | 0 | 944 | 141 | 21 |
+| `vixen` | 200 / 200 | 100 % | 0 | 10 982 | 211 | 24 |
+| **total** | **380 / 380** | **100 %** | **0** | **14 457** | **632** | — |
+
+No `AD0001` and no `SK9030` anywhere. The finding totals are the evidence the analysis ran at all, and
+are why the three zeros below are readable. ⚠ **One thing here is unexplained and is recorded rather
+than smoothed over**: the `vixen` invocation reports `partial: true`, whose only producer in
+`AnalyzerHost` is a cancelled run that returns *no* findings — and this run returned 211. The zero was
+therefore not trusted on that tree until the planted probe was run against it directly, below.
 
 ⚠ **`<ImplicitUsings>` was set to `enable` and the difference is not cosmetic.** The slice omits the
 generated file, and its absence lies in both directions. CS-error lines in the MSBuild log, disabled
@@ -3676,10 +3693,14 @@ then enabled: serilog **1 694 → 972**, vixen **9 534 → 8 218**, newtonsoft *
 run without it is measuring a different program on two of the three trees.
 
 **The instrument was verified before any zero was reported**, in the pipeline rather than in the
-harness: one file carrying all three shapes was planted into the serilog project, rebuilt, and swept.
-All three fired — `SK6060` on `IPlantedFactory<T>`, `SK6061` on a `[CallerMemberName]` parameter
-followed by an `int level = 0`, `SK6062` on a `List<string>` filled in a loop. The file was deleted and
-the sweep returned to zero.
+harness, and on **two** trees rather than one. A file carrying all three shapes was planted into the
+serilog project and then into vixen, each rebuilt with `--no-incremental` and swept with
+`--require-fresh-binlog`. All three fired both times — `SK6060` on `IPlantedFactory<T>`, `SK6061` on a
+`[CallerMemberName]` parameter followed by an `int level = 0`, `SK6062` on a `List<string>` filled in a
+loop — and deleting the file returned each sweep to zero. ⚠ **The vixen plant is the one that
+matters**, because it is the tree whose invocation reported `partial: true`: the probe fired there with
+the flag still set, which is what makes vixen's zero a statement about vixen's code rather than about a
+truncated run.
 
 | Rule | Findings | Classification |
 |---|---:|---|
