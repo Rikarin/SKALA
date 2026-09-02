@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaCleanup generated=2026-08-30
+// skala-oracle: resharper=2025.2.6 config=sha256:e256d0b9ed35b14f profile=SkalaCleanup generated=2026-09-02
 namespace Skala.Corpus.Arrangement;
 
 // dotnet_style_parentheses_in_relational_binary_operators, alone on a file that carries no other
