@@ -223,5 +223,8 @@
   "UseDeconstruction": "SK1070",
   "UseWithExpressionToCopyRecord": "SK1071",
   "RedundantSpreadElement": "SK1072",
-  "UseEventArgsEmptyField": "SK1073"
+  "UseEventArgsEmptyField": "SK1073",
+  "OptionalParameterHierarchyMismatch": "SK2140",
+  "BaseMemberHasParams": "SK2140",
+  "ExplicitCallerInfoArgument": "SK2141"
 }

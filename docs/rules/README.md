@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 229 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 233 ids are allocated.
 
 ## Async
 
@@ -96,6 +96,10 @@
 | [SK2101](SK2101.md) | `[Pure]` is applied to a method that returns nothing | warning | safe | no |
 | [SK2102](SK2102.md) | The `[DebuggerDisplay]` string names a member that does not exist | warning | — | no |
 | [SK2103](SK2103.md) | The attribute is applied twice with the same arguments | warning | review | no |
+| [SK2140](SK2140.md) | The override declares a parameter default or `params` the call site will not use | warning | review | no |
+| [SK2141](SK2141.md) | The argument replaces what the caller-info attribute would have supplied | warning | review | no |
+| [SK2142](SK2142.md) | The value passed for the parameter is overwritten before it is read | warning | — | no |
+| [SK2143](SK2143.md) | Two arguments are passed crosswise to the parameters they are named after | warning | review | no |
 
 ## Design
 

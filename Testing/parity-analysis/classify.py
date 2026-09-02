@@ -186,6 +186,15 @@ HOSTED = {
     "UseIsOperator.1": "IDE0038", "UseIsOperator.2": "IDE0038",
     "MergeIntoPattern": "IDE0078",
     "UseSymbolAlias": "IDE0001",
+    # `PartialMethodParameterNameMismatch` is hosted by the *compiler*, not by an analyzer, and it
+    # lands here rather than in `compiler()` because ReSharper files it under Potential Code Quality
+    # Issues rather than under CompilerWarnings -- so nothing above catches it and it was falling
+    # through to the Uncovered residue, inflating the gap by one. Measured, not assumed: a probe
+    # with mismatched parameter names across partial declarations builds with CS8826 for classic
+    # and extended partial methods alike, including a difference of case alone, and with CS9256 for
+    # partial indexers and partial constructors. Both are on at default warning levels. See
+    # docs/plan/08 for the write-up and for the second thing that probe refuted.
+    "PartialMethodParameterNameMismatch": "CS8826/CS9256",
 }
 HOSTED_BYKEY = bykey(HOSTED)
 
