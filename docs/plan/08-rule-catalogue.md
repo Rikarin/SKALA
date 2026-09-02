@@ -4995,3 +4995,69 @@ feature. The mapping is real; it is the dump that is behind. `SK1004` also carri
 since the export sets the key to `hint` and the rule defaults to `suggestion`: ReSharper shipped the
 inspection quietly because `extension` blocks were days old, and Skala's audience is a model writing
 the superseded dialect on purpose.
+
+### The corpus measurement for `SK1004` and `SK1110`
+
+⚠ **The corpus holds three copies of every file and the copies are what the `CS` count is mostly
+made of.** `Testing/corpus/real` carries `X.cs`, `X.expected.cs` and `X.arranged.cs` side by side —
+70 sources become 211 files for Serilog, 110 become 330 for Newtonsoft, 200 become 600 for Vixen —
+and compiled together every type is declared three times. Swept as-is, Serilog alone reports **7 257**
+`CS` errors; with the two generated copies dropped it reports **1 484**. The errors are `CS0101`, not
+the `CS0111` the dispatch expected, because the duplicates are whole *types* rather than overloads.
+Each library was swept as its own compilation, outside the repository.
+
+⚠ **`ImplicitUsings` is off in the corpus project and turning it on changes the answer**, which is
+the reason it is worth reporting rather than assuming: a rule reading an error type answers "no
+finding" for the wrong reason.
+
+| Tree | files (of 3× copies) | `CS` errors, plain | with implicit usings | all findings, plain | with implicit usings |
+|---|---|---|---|---|---|
+| Serilog | 70 (211) | 1 484 | **938** | 401 | **479** |
+| Newtonsoft.Json | 110 (330) | 2 316 | **2 309** | 977 | **987** |
+| Vixen | 200 (600) | 12 951 | **10 980** | 1 103 | **1 261** |
+
+Adding the implicit global usings recovers **78, 10 and 158** findings across the three trees. That
+is the measurement the instruction exists for: a fifth of Serilog's findings were being suppressed by
+missing usings, and reading the plain column alone would have understated every rule in the
+catalogue, not just these two.
+
+**`SK1004`: 0. `SK1110`: 0. `AD0001`: 0**, on all three trees, in both configurations. ⚠ **Both zeros
+were classified rather than reported**, because a zero from a rule that never ran looks the same:
+
+- **Instrument verified.** A file carrying one positive of each rule was planted into the swept tree
+  and both fired in the same configuration that reports zero on the real code; the file was then
+  removed. ⚠ **The first version of this measurement was worthless and said so only under
+  provocation** — the harness loads its own copy of `Rikarin.Skala.Rules.dll` from its output folder,
+  so it was running an assembly built before either rule existed. It reported 263 analyzers where
+  the tree has 265, and every zero it printed was the absence of the rule rather than the absence of
+  the shape.
+- **`SK1004` — shape absent in two trees, present once and correctly declined in the third.** Serilog
+  and Newtonsoft.Json contain **no** static class holding two or more extension methods. Vixen
+  contains exactly one, and it is declined because a non-extension member is mixed in — the
+  documented restriction, doing what it says.
+- **`SK1110` — shape present twenty-four times and declined twenty-four times.** Counted
+  syntactically without any of the rule's guards: 11 forwarding methods in Serilog, 10 in
+  Newtonsoft.Json, 3 in Vixen. The reasons split as 8 public-or-protected, 8 not-exactly-two
+  overloads, 5 generic, 2 carrying an attribute — every one of them a restriction this rule states.
+- ⚠ **The single Vixen candidate that clears the syntactic bar is the one worth reading, and it
+  proves the semantic constant check.** `TextShaper.ShapeRun(FontFace, string, TextItem)` forwards to
+  the four-argument overload passing `[]`. A collection expression is not a compile-time constant, so
+  `GetConstantValue` declines it — and the decline is *necessary*, not merely cautious: the collapsed
+  signature was compiled and it is **`CS1736`, "default parameter value for 'features' must be a
+  compile-time constant"**. A syntactic check for "looks like a literal" would have emitted a fix
+  that does not build.
+
+⚠ **18 of 20 sabotages turned their fixture red, and both exceptions are findings rather than
+passes.** Removing `IsConvertibleExtensionMethod` from `SK1004`'s member loop does not merely
+un-decline the mixed class — it makes the analyzer **throw**, because the plain static it then admits
+has no parameters and the code indexes `Parameters[0]`. That guard is preventing an
+`IndexOutOfRangeException`, and `RuleFixtureTests`' `AD0001` assertion is what reports it. Removing
+`SK1110`'s choice of the *last* target parameter leaves
+`the-extra-parameter-is-not-last` green, because the positional pass-through check declines that
+fixture first — the fixture pins a real decline, reached through a different guard than its name
+suggests. ⚠ **Three sabotages were mis-aimed before they were right**: external visibility is asked
+of both the source and the target overload, "already optional" is asked of both the symbol and the
+syntax, and a sabotage that removes only one half of a paired guard proves nothing. ⚠ **And
+`a-generic-method` did not reach `SK1004`'s type-parameter guard at all** — its two `IEnumerable<T>`
+receivers are different symbols, so the receiver-type comparison declines it first;
+`a-type-parameter-on-a-plain-receiver` was added to reach the guard the name claimed.
