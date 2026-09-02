@@ -21,8 +21,11 @@ namespace Rikarin.Skala.Rules.Design;
 ///         that the restriction was accidental.
 ///     </para>
 ///     <para>
-///         ⚠ <b>This is the compiler's own variance-safety rule run in reverse, not an approximation
-///         of it.</b> Each occurrence of the parameter is classified by the position it sits in and
+///         ⚠
+///         <b>
+///             This is the compiler's own variance-safety rule run in reverse, not an approximation
+///             of it.
+///         </b> Each occurrence of the parameter is classified by the position it sits in and
 ///         then composed through the declared variance of every generic type enclosing it — flipping
 ///         on a contravariant parameter, collapsing to invariant on an invariant one. That
 ///         composition is the entire content of the rule: it is what separates

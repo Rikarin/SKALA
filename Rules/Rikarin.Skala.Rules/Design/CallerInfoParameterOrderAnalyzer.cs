@@ -22,8 +22,11 @@ namespace Rikarin.Skala.Rules.Design;
 ///         one that disables the other.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The shape the concept is usually described with does not compile, and establishing
-///         that is what made the rule narrow.</b> A caller-info attribute on a parameter without a
+///         ⚠
+///         <b>
+///             The shape the concept is usually described with does not compile, and establishing
+///             that is what made the rule narrow.
+///         </b> A caller-info attribute on a parameter without a
 ///         default value is <c>CS4022</c>, verified against the compiler rather than reasoned about,
 ///         so "a required parameter after a caller-info one" is not a program. Everything after an
 ///         optional parameter is optional or <c>params</c>, and the real defect is two optional

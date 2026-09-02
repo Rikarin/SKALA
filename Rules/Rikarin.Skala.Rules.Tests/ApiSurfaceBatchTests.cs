@@ -188,10 +188,10 @@ public sealed class ApiSurfaceBatchTests {
             """
             + statement
             + """
-                    }
-                }
-            }
-            """,
+                      }
+                  }
+              }
+              """,
             RuleIds.WriteOnlyLocalCollection
         );
 

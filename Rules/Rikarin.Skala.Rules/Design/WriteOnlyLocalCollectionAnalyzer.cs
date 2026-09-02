@@ -189,8 +189,8 @@ public sealed class WriteOnlyLocalCollectionAnalyzer : DiagnosticAnalyzer {
             // assignment is a statement so nothing reads the value back.
             case ElementAccessExpressionSyntax access when access.Expression == reference:
                 return access.Parent is AssignmentExpressionSyntax {
-                        RawKind: (int)SyntaxKind.SimpleAssignmentExpression
-                    } assignment
+                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression
+                } assignment
                     && assignment.Left == access
                     && assignment.Parent is ExpressionStatementSyntax;
 
