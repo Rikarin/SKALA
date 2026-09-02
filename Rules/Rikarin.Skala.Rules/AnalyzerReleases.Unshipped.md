@@ -217,3 +217,8 @@ SK2111 | Skala.Correctness | Warning | The null-forgiving operator suppresses no
 SK2112 | Skala.Correctness | Info | The local is declared nullable and is never null.
 SK2113 | Skala.Correctness | Info | The service resolution is null-forgiven instead of required.
 SK5010 | Skala.Security | Warning | A pattern that can backtrack, run with no timeout.
+SK1090 | Skala.Modernization | Hidden | Use a computed property instead of an auto-property holding a constant.
+SK1091 | Skala.Modernization | Info | The private auto-property is a field.
+SK1092 | Skala.Modernization | Info | Use a tuple literal instead of constructing a `Tuple`.
+SK1093 | Skala.Modernization | Hidden | Express the cast in the declaration instead.
+SK1094 | Skala.Modernization | Warning | Use nullable reference type syntax instead of an annotation attribute.

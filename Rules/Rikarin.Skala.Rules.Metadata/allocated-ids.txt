@@ -258,3 +258,8 @@ SK2111 inert-null-suppression
 SK2112 nullable-local-never-null
 SK2113 null-forgiven-service-resolution
 SK5010 regex-without-timeout
+SK1090 computed-property
+SK1091 private-auto-property
+SK1092 tuple-literal
+SK1093 cast-in-declaration
+SK1094 nullable-annotation-syntax

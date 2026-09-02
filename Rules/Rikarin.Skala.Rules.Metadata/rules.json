@@ -1469,31 +1469,6 @@
       ]
     },
     {
-      "id": "SK5010",
-      "concept": "regex-without-timeout",
-      "title": "A pattern that can backtrack, with nothing bounding how long it may take",
-      "category": "Security",
-      "defaultSeverity": "warning",
-      "scope": "Semantic",
-      "requiresSemantics": true,
-      "hasFix": false,
-      "fixIsSafe": false,
-      "resharperId": null,
-      "supersedes": [],
-      "since": "2.0",
-      "languageVersion": null,
-      "summary": "A nested unbounded quantifier makes a near-match take exponential time, and no timeout means nothing stops it.",
-      "rationale": "A backtracking engine, asked to match `^(a+)+$` against thirty `a`s and a `b`, has to try every way of splitting those thirty characters between the inner `+` and the outer one before it can report failure — and there are 2^29 of them. That is the whole attack: no memory is allocated, no error is logged, nothing looks wrong on a dashboard, and one request holds a thread until the process is restarted. A handful of such requests is a denial of service against a machine that is otherwise idle, which is why this is a vulnerability rather than a performance note. Two things fix it and both are one argument in the same expression as the pattern. A `matchTimeout` bounds the damage without changing which inputs match: the engine throws `RegexMatchTimeoutException` when it has spent too long, and the caller decides what a too-slow input means. `RegexOptions.NonBacktracking` removes the cause instead of bounding it — it selects an automaton-based engine whose running time is linear in the input no matter what the pattern looks like — at the price of refusing lookarounds, backreferences and atomic groups at construction time, so it is the better answer where the pattern does not use them. ⚠ There is no fix on the diagnostic because neither answer can be chosen mechanically: a timeout value is a policy decision about how long this particular call is allowed to take, and `NonBacktracking` throws at run time on a pattern that uses a construct it does not support, so an edit that compiled would not be an edit that worked.",
-      "examples": {
-        "bad": "if (Regex.IsMatch(input, @\"^(\\w+)+$\")) {\n    Accept(input);\n}",
-        "good": "if (Regex.IsMatch(input, @\"^(\\w+)+$\", RegexOptions.None, TimeSpan.FromMilliseconds(100))) {\n    Accept(input);\n}"
-      },
-      "falsePositives": "⚠ The rule is deliberately much narrower than its own title, and the reference trees are why. Sonar's `S6444` reports every regex constructed or matched without a timeout; on this repository's two reference trees that is sixteen findings and not one of them is a vulnerability — twelve are `Assert.Matches(new Regex(@\"MaxLevels\\s*=\\s*4\"))` in Vixen's own tests, matching a fixed pattern against source the tool itself had just produced. A security rule that reports a test assertion is how a reviewer learns to skim past every security finding the tool makes, so this rule reports only a pattern it can read and prove dangerous, and says nothing about the rest. Three conditions must all hold. The pattern must be a compile-time constant, because whether an unknown pattern backtracks is a question about another method — Newtonsoft.Json's `Regex.IsMatch(input, patternText, GetRegexOptions(optionsText))` is silence for that reason, and so is a `RegexOptions` argument that is not constant, because whether it carries `NonBacktracking` is a question about the mitigation. ⚠ The outer quantifier must be *unbounded*, and Serilog is why: `(\\.(?<argument>[A-Za-z0-9]*)){0,1}` in `KeyValuePairSettings` is a quantified group whose body carries a quantifier, which is the shape a naive detector matches, and it cannot blow up because `{0,1}` admits one iteration. ⚠ And the group's body must be exactly one quantified atom — `(a+)+`, `([a-z]*)*`, `((ab)+)+` — which is narrower than \"the body contains a quantifier\" on purpose: `(abc*)+` matches the wider test and is safe, because every iteration must begin with `ab` and there is almost nothing to backtrack through. The cost of the strictness is coverage, stated rather than hidden: `^(\\w+\\s?)*$` is a real ReDoS with two atoms in the body and this rule is silent on it, and an atomic group `(?>…)` and every lookaround are skipped rather than guessed at. ⚠ It ships at `warning` where the rest of this range ships at `error`, and the reason is not that it fires more. The other four are wrong unconditionally — a certificate callback that returns `true`, a DES key, a resolved DTD. This one is a vulnerability only if something an attacker influences reaches it, and the rule does not establish that; a catastrophic pattern matched against a constant is a latent hazard rather than a hole, and failing a build over it would be asserting a fact the rule did not check.",
-      "configuration": [
-        "dotnet_diagnostic.SK5010.severity"
-      ]
-    },
-    {
       "id": "SK6003",
       "concept": "abstract-type-public-constructor",
       "title": "An abstract type has a public constructor",
@@ -5974,6 +5949,31 @@
       ]
     },
     {
+      "id": "SK5010",
+      "concept": "regex-without-timeout",
+      "title": "A pattern that can backtrack, with nothing bounding how long it may take",
+      "category": "Security",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A nested unbounded quantifier makes a near-match take exponential time, and no timeout means nothing stops it.",
+      "rationale": "A backtracking engine, asked to match `^(a+)+$` against thirty `a`s and a `b`, has to try every way of splitting those thirty characters between the inner `+` and the outer one before it can report failure — and there are 2^29 of them. That is the whole attack: no memory is allocated, no error is logged, nothing looks wrong on a dashboard, and one request holds a thread until the process is restarted. A handful of such requests is a denial of service against a machine that is otherwise idle, which is why this is a vulnerability rather than a performance note. Two things fix it and both are one argument in the same expression as the pattern. A `matchTimeout` bounds the damage without changing which inputs match: the engine throws `RegexMatchTimeoutException` when it has spent too long, and the caller decides what a too-slow input means. `RegexOptions.NonBacktracking` removes the cause instead of bounding it — it selects an automaton-based engine whose running time is linear in the input no matter what the pattern looks like — at the price of refusing lookarounds, backreferences and atomic groups at construction time, so it is the better answer where the pattern does not use them. ⚠ There is no fix on the diagnostic because neither answer can be chosen mechanically: a timeout value is a policy decision about how long this particular call is allowed to take, and `NonBacktracking` throws at run time on a pattern that uses a construct it does not support, so an edit that compiled would not be an edit that worked.",
+      "examples": {
+        "bad": "if (Regex.IsMatch(input, @\"^(\\w+)+$\")) {\n    Accept(input);\n}",
+        "good": "if (Regex.IsMatch(input, @\"^(\\w+)+$\", RegexOptions.None, TimeSpan.FromMilliseconds(100))) {\n    Accept(input);\n}"
+      },
+      "falsePositives": "⚠ The rule is deliberately much narrower than its own title, and the reference trees are why. Sonar's `S6444` reports every regex constructed or matched without a timeout; on this repository's two reference trees that is sixteen findings and not one of them is a vulnerability — twelve are `Assert.Matches(new Regex(@\"MaxLevels\\s*=\\s*4\"))` in Vixen's own tests, matching a fixed pattern against source the tool itself had just produced. A security rule that reports a test assertion is how a reviewer learns to skim past every security finding the tool makes, so this rule reports only a pattern it can read and prove dangerous, and says nothing about the rest. Three conditions must all hold. The pattern must be a compile-time constant, because whether an unknown pattern backtracks is a question about another method — Newtonsoft.Json's `Regex.IsMatch(input, patternText, GetRegexOptions(optionsText))` is silence for that reason, and so is a `RegexOptions` argument that is not constant, because whether it carries `NonBacktracking` is a question about the mitigation. ⚠ The outer quantifier must be *unbounded*, and Serilog is why: `(\\.(?<argument>[A-Za-z0-9]*)){0,1}` in `KeyValuePairSettings` is a quantified group whose body carries a quantifier, which is the shape a naive detector matches, and it cannot blow up because `{0,1}` admits one iteration. ⚠ And the group's body must be exactly one quantified atom — `(a+)+`, `([a-z]*)*`, `((ab)+)+` — which is narrower than \"the body contains a quantifier\" on purpose: `(abc*)+` matches the wider test and is safe, because every iteration must begin with `ab` and there is almost nothing to backtrack through. The cost of the strictness is coverage, stated rather than hidden: `^(\\w+\\s?)*$` is a real ReDoS with two atoms in the body and this rule is silent on it, and an atomic group `(?>…)` and every lookaround are skipped rather than guessed at. ⚠ It ships at `warning` where the rest of this range ships at `error`, and the reason is not that it fires more. The other four are wrong unconditionally — a certificate callback that returns `true`, a DES key, a resolved DTD. This one is a vulnerability only if something an attacker influences reaches it, and the rule does not establish that; a catastrophic pattern matched against a constant is a latent hazard rather than a hole, and failing a build over it would be asserting a fact the rule did not check.",
+      "configuration": [
+        "dotnet_diagnostic.SK5010.severity"
+      ]
+    },
+    {
       "id": "SK2120",
       "concept": "bitwise-operation-on-plain-enum",
       "title": "A bitwise operator combines members of a consecutively numbered enum",
@@ -6256,6 +6256,131 @@
       "falsePositives": "⚠ **The generic extension only.** `provider.GetService<T>()` and `GetKeyedService<T>()` on `Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions` are reported, in either call form, because the fix is a rename inside a class the call site has already resolved — so the `using` that made the call compile makes the fix compile. `provider.GetService(typeof(T))!`, the `IServiceProvider` interface method, is **declined**: its `GetRequiredService` counterpart lives in an extension class the file may not have imported, and a fix that does not compile is worse than no fix. ⚠ **The nullable context does not silence this rule.** It reads the `!` token and the callee's symbol, never a flow state, so it reports the same code under `#nullable disable` — where the mistake is identical and the compiler is silent. ⚠ **Only where the `!` is written.** `GetService<T>()` whose result is null-checked, coalesced or assigned to a nullable local is the API used correctly and is never reported. ⚠ A user-defined `GetService<T>` on some other type is not this method and is resolved by containing type rather than by name.",
       "configuration": [
         "dotnet_diagnostic.SK2113.severity"
+      ]
+    },
+    {
+      "id": "SK1090",
+      "concept": "computed-property",
+      "title": "Use a computed property instead of an auto-property holding a constant",
+      "category": "Modernization",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "ReplaceAutoPropertyWithComputedProperty",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "6.0",
+      "summary": "A get-only auto-property is initialized to a compile-time constant and assigned nowhere else, so it is that constant.",
+      "rationale": "An auto-property that can only ever hold one compile-time constant is a constant with storage bolted to it: the type carries a field for it, every instance pays for the field, and every constructor writes the same value into every one of them. `=> expr` says the same thing with no field and no write, and the compiler folds the constant at each read. The `SK1xxx` premise applies directly — the auto-property-with-initializer shape is what most of the training data contains, because it is the shape that has been idiomatic longest.",
+      "examples": {
+        "bad": "sealed class Endpoint {\n    public string Scheme { get; } = \"https\";\n}",
+        "good": "sealed class Endpoint {\n    public string Scheme => \"https\";\n}"
+      },
+      "falsePositives": "⚠ **Only a get-only auto-property (`{ get; }`), and that restriction is the whole reason this rule can exist at all.** An auto-property is part of the type's layout and a serializer or a source generator writes it by reflection with no attribute to announce that it is doing so — Newtonsoft.Json writes a private setter by default — so converting a *settable* auto-property to a computed one silently changes what deserialization produces, and that is the wall this concept has hit before. A get-only auto-property is different in kind rather than in degree: its backing field is emitted `initonly`, .NET Core's `FieldInfo.SetValue` refuses an init-only field, and there is therefore no reflection path that writes it. ⚠ **The initializer must be a compile-time constant**, decided by Roslyn's own constant folding rather than by a shape list. That is what makes re-evaluating it on every read the same program: a constant read twice is the same value and costs nothing, whereas `public List<int> Items { get; } = new();` turned into `=> new()` would hand every caller a different list. A `typeof`, a `static readonly` reference and a call are all declined for the same reason — none of them is a constant. ⚠ **Nothing may assign the property.** A get-only auto-property is assignable from the declaring type's constructors, and the fix would turn that into CS0200, so every assignment in the type is looked for and any one of them withdraws the finding. The containing type must therefore be declared in exactly one file: a `partial` type split across files has assignments this analysis cannot see. ⚠ **Classes only.** In a struct the backing field is the struct's size, and removing it changes `sizeof`, interop marshalling and every blittable assumption made about the layout. Records are excluded on the same principle — the synthesized members are written against the fields. ⚠ A property carrying an attribute, or living in a type carrying `[Serializable]` or `[StructLayout]`, is declined: those are the declarations most likely to be read reflectively. `abstract`, `extern`, `partial` and `required` properties are excluded, as is any span holding a comment or a preprocessor directive.",
+      "configuration": [
+        "dotnet_diagnostic.SK1090.severity"
+      ]
+    },
+    {
+      "id": "SK1091",
+      "concept": "private-auto-property",
+      "title": "The private auto-property is a field",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `private` auto-property generates a backing field, a getter and a setter to do what a field does directly.",
+      "rationale": "A `private` auto-property has no external contract to preserve: nothing outside the type can bind to it, so the property exists only to wrap a field the compiler generated anyway. What the wrapper costs is not the two accessor calls the JIT inlines away — it is that the field is invisible. `readonly` cannot be applied to it, `ref` cannot be taken of it, an `Interlocked` update cannot be written against it, and every one of those is a tool the author gave up without being asked. ⚠ **This is `SK1003` from the other side and the two cannot both fire on one declaration.** `SK1003` starts from a private field with a hand-written property over it and folds the field into the `field` keyword; this starts from a private auto-property with no field at all and turns it into one. `SK1003` requires two bodied accessors and a separate field declaration, neither of which an auto-property has.",
+      "examples": {
+        "bad": "sealed class Cache {\n    private Dictionary<string, int> Entries { get; set; } = new();\n}",
+        "good": "sealed class Cache {\n    private Dictionary<string, int> Entries = new();\n}"
+      },
+      "falsePositives": "⚠ **The fix keeps the name.** Renaming `Entries` to `entries` would be a naming decision this rule does not own and would spread the edit across every use site; leaving the identifier alone makes the rewrite entirely local, which is what `fixIsSafe: true` is claiming. ⚠ **The `private` modifier must be written**, which is also how an explicit interface implementation is excluded — those carry no accessibility modifier and cannot be `private`. An `init` accessor is declined outright, because a field cannot be set by an object initializer the way an `init` property can, and `required` with it. ⚠ **The property must be both read and written somewhere in the type.** A field that is never assigned is CS0649 and one that is assigned and never read is CS0414, so a fix that did not check would turn a silent property into a warning on a `TreatWarningsAsErrors` build — the exact failure `fixIsSafe: true` promises will not happen. ⚠ **A get-only auto-property becomes a `readonly` field**, which preserves the constructor-assignment-only contract the accessor list was expressing. ⚠ Records are excluded: `with` sets members positionally and by name, and the synthesized equality members are written against the fields. A type carrying `[Serializable]` or `[StructLayout]`, a property carrying any attribute, and a type declared across more than one file are all declined — the first two because they mark the declarations most likely to be bound reflectively by name, and the third because the read-and-write census cannot see the other file. ⚠ **Nothing upstream implements this**, so there is no reference behaviour to inherit and no false-positive experience to borrow; every restriction above was derived here.",
+      "configuration": [
+        "dotnet_diagnostic.SK1091.severity"
+      ]
+    },
+    {
+      "id": "SK1092",
+      "concept": "tuple-literal",
+      "title": "Use a tuple literal instead of constructing a `Tuple`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "7.0",
+      "summary": "A local is initialized with `new Tuple<…>(…)` or `Tuple.Create(…)` and is only ever read element by element, so a tuple literal is the same value without the allocation.",
+      "rationale": "`(string name, int age)` is a value type, allocates nothing, and carries element names the reference `Tuple` has no room for. This is squarely the `SK1xxx` premise: `Tuple` predates `ValueTuple` by six years, so a model writes the older dialect because the older dialect is most of what it has read.",
+      "examples": {
+        "bad": "var pair = new Tuple<int, string>(1, \"a\");\nUse(pair.Item1, pair.Item2);",
+        "good": "var pair = (1, \"a\");\nUse(pair.Item1, pair.Item2);"
+      },
+      "falsePositives": "⚠ **`System.Tuple<…>` is a class and `System.ValueTuple<…>` is a struct, so the rewrite changes nullability, equality and allocation all at once** — and `Item1`-style member access works on both, which means the shape alone proves nothing. The rule therefore does not report a `Tuple` construction anywhere it might escape: it reports only a *local declaration*, and only when every reference to that local in the enclosing member is a `t.ItemN` read. A local that is returned, passed as an argument, assigned to anything, compared with `==` (identity on `Tuple`, structural on `ValueTuple`), tested with `is`, cast, or reassigned is left alone, because each of those is a place where the difference between the two types is observable. ⚠ **Arity 2 to 7 only.** `Tuple<T>` has no literal form — `(x)` is a parenthesized expression — and the eighth element is `TRest`, whose nesting the fix does not reproduce. ⚠ **The written type arguments are what the fix reuses**, not a display string derived from the symbol: `Tuple<int, string>` becomes `(int, string)` textually, so a type spelled with a `using` alias or a name only reachable from this file keeps compiling. A named argument is declined, because a tuple literal cannot carry the argument names `Tuple.Create` accepts. ⚠ `System.ValueTuple`2` must exist in the compilation; on a target framework that predates it the fix would not compile. ⚠ `fixIsSafe` is `false` and stays false even under all of the above: the constraints prove the value does not escape *this* declaration, and reviewing a type change from a class to a struct is cheap next to being wrong about it.",
+      "configuration": [
+        "dotnet_diagnostic.SK1092.severity"
+      ]
+    },
+    {
+      "id": "SK1093",
+      "concept": "cast-in-declaration",
+      "title": "Express the cast in the declaration instead",
+      "category": "Modernization",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "CanReplaceCastWithVariableType",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `var` declaration's initializer is a cast that only widens, so the type belongs in the declaration and the cast can go.",
+      "rationale": "`var handle = (IDisposable)new FileStream(path, FileMode.Open);` writes the type in the one place it reads least. The cast is not converting anything — the conversion is implicit and the compiler emits nothing for it — it is there purely to talk `var` into inferring a wider type. Moving the type to the left of the `=` states it once, at the place a reader looks for it, and removes an expression that looks like a runtime check and is not one.",
+      "examples": {
+        "bad": "var writer = (TextWriter)new StringWriter();",
+        "good": "TextWriter writer = new StringWriter();"
+      },
+      "falsePositives": "⚠ **The conversion must be implicit and must not be an identity**, and both halves matter. Implicit is what makes `T x = expr;` compile without the cast — an explicit cast such as `var s = (string)obj;` is a narrowing the declaration cannot express and is never reported. Not-an-identity is what keeps this rule out of `SK0234`'s territory: a cast whose operand already has the cast's type is a redundant cast, `SK0234` owns exactly that case by requiring `IsIdentity`, and this rule requires the opposite, so the two partition the space rather than sharing it. ⚠ **The cast must be the entire initializer.** `var total = (long)count * size;` binds the cast to `count` alone, and moving `long` into the declaration would change which multiplication happens — the guard is that the initializer node is itself the cast, which that expression is not. ⚠ **`SK0202` and this rule cannot argue over the declaration, in either direction.** `SK0202` converts an explicit type to `var` and only that direction; it returns immediately on a declaration that is already `var`, which is the only kind this rule reports, so the two never see the same span before the fix. After the fix the declaration reads `T x = expr;` where `T` is deliberately *not* the initializer's own type, and `SK0202` converts only when the declared type and the initializer's type are identical — so it declines, and there is no cycle to enter. ⚠ Single-declarator local declarations only, never a `const`, `using`, `await`, `ref` or `foreach` binding. `dynamic`, pointer and error types are excluded, as is an initializer with no type of its own.",
+      "configuration": [
+        "dotnet_diagnostic.SK1093.severity"
+      ]
+    },
+    {
+      "id": "SK1094",
+      "concept": "nullable-annotation-syntax",
+      "title": "Use nullable reference type syntax instead of an annotation attribute",
+      "category": "Modernization",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "UseNullableReferenceTypesAnnotationSyntax",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "8.0",
+      "summary": "A `JetBrains.Annotations` `[CanBeNull]` or `[NotNull]` states in an attribute what the nullable context can state in the type.",
+      "rationale": "⚠ This rule exists because of the retirement. A codebase leaving ReSharper is a codebase that has to drop its `JetBrains.Annotations` dependency, and every `[CanBeNull]` in it is a nullability fact that either moves into `?` or is lost — silently, because the attribute stops meaning anything the moment nothing reads it. No other tool reports these, and after the switch-off nothing will. The compiler's own annotation is also strictly stronger: it is checked at every call site rather than by a tool the build does not run.",
+      "examples": {
+        "bad": "[CanBeNull]\npublic string Name { get; set; }",
+        "good": "public string? Name { get; set; }"
+      },
+      "falsePositives": "⚠ **The nullable annotation context is read at the declaration, not from the project.** In a `#nullable disable` file the attribute is the only nullability signal there is, and rewriting `T` to `T?` there produces CS8632 and loses the fact — so the rule withdraws whenever the annotation context at the site is off, whichever way the compilation-level default is set. ⚠ **`JetBrains.Annotations` only.** `System.Diagnostics.CodeAnalysis` attributes are deliberately untouched: `[MaybeNull] T Get<T>()` on an unconstrained `T` says something `T?` genuinely cannot, which is the reason that attribute exists, and a rule that did not know the difference would delete the annotation and the meaning with it. Only reference types are reported for the same reason — an unconstrained type parameter is not one, so it is never matched. ⚠ **`[NotNull]` on a type already written `T?` is declined.** The attribute and the syntax disagree, the repair depends on which of them the author meant, and guessing wrong writes the opposite contract. The three cases that are reported are unambiguous: `[CanBeNull]` on `T` becomes `T?` with the attribute removed, and `[CanBeNull]` on `T?` or `[NotNull]` on `T` is an attribute restating what the type already says, so only the attribute goes. A declaration carrying both attributes is declined outright rather than reported twice with overlapping edits. ⚠ `fixIsSafe` is `false`, against the proposal, and the measurement is the reason: annotating a parameter or a field `T?` is a contract change, and it surfaces the CS8602s that the attribute had been describing all along. Those warnings are the migration doing its job, not the fix misfiring, but they are exactly what `fixIsSafe: true` promises will not appear — so the rule asks to be reviewed rather than lying about it.",
+      "configuration": [
+        "dotnet_diagnostic.SK1094.severity"
       ]
     }
   ]

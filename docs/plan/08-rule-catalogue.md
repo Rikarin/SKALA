@@ -336,6 +336,45 @@ assignments. ADR-008 hosts rather than rebuilds, so no id was allocated. Its two
 `ConvertConstructorToMemberInitializers` and `WithExpressionInsteadOfInitializer`, are different
 concepts and remain uncovered; the second is the *opposite* direction to `SK1071`.
 
+⚠ **`SK1090`–`SK1094` are registered here and the prose pass is owed.** The rows below exist so the
+numbers are taken and readable; the paragraphs that say *why* each one is worth a rule, in the voice
+the rest of this section is written in, have not been written yet.
+
+| ID | Concept | Instead of | Use |
+|---|---|---|---|
+| `SK1090` | `computed-property` | `public string S { get; } = "https";` | `public string S => "https";` |
+| `SK1091` | `private-auto-property` | `private int Total { get; set; }` | `private int Total;` |
+| `SK1092` | `tuple-literal` | `var p = new Tuple<int, string>(1, "a");` | `var p = (1, "a");` |
+| `SK1093` | `cast-in-declaration` | `var w = (TextWriter)new StringWriter();` | `TextWriter w = new StringWriter();` |
+| `SK1094` | `nullable-annotation-syntax` | `[CanBeNull] string Name` | `string? Name` |
+
+⚠ **What makes `SK1090` shippable is one fact rather than a tighter guard.** The concept has failed
+here before, and the wall was always that an auto-property is part of the type's *layout*: a
+serializer or a source generator writes it by reflection with nothing in the source announcing that
+it does, and Newtonsoft.Json writes a private setter by default with no attribute needed. The rule
+reports only a **get-only** auto-property, whose backing field is emitted `initonly` — and .NET
+Core's `FieldInfo.SetValue` refuses an init-only field, so no reflection path writes it and its
+disappearance is not observable from outside the type. The initializer must additionally be a
+compile-time constant by Roslyn's own folding, which is what makes evaluating it per read the same
+program rather than an allocation per caller.
+
+⚠ **`SK1091` is not hosted, and that was measured rather than assumed.** `IDE0032` and `IDE0044` were
+the reason to expect it would be. On a plain `net10.0` project with `EnforceCodeStyleInBuild=true`
+and no `AnalysisMode` raised, neither surfaces at its default severity; forced to `warning` both fire
+— on **fields**, and `IDE0032` fires in the *opposite* direction, folding a field plus a trivial
+property *into* an auto-property. Nothing in the SDK turns a private auto-property back into a field.
+Reporting the zero without forcing the severities first would have been the disabled-check zero doc
+16 warns about.
+
+⚠ **`SK1093` and `SK0202` were checked against `VarRule`'s source, not against `rules.json`'s
+summary — and the summary is wrong.** It says the arrangement rule "would use `var` **or** an
+explicit local type under the configured preference"; `TypeInferenceRules.VarRule` converts explicit
+type → `var` only, and returns on its first line for a declaration already written `var`. Skala has
+no `var` → explicit arrangement rule at all. That settles the overlap in both directions: `SK1093`
+reports only declarations already written `var`, which `VarRule` never looks at, and after the fix
+the declared type is deliberately *not* the initializer's own type, which is the identity `VarRule`
+requires before it converts.
+
 ## SK2000 — Correctness
 
 Where the tool replaces the part of SonarQube people actually care about. Selected for *findings per
@@ -1618,6 +1657,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **268** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **233** | **87.3 %** |
+| Rules this document names | **261** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **226** | **86.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |

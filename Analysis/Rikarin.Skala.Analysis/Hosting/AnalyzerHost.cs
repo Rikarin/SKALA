@@ -169,6 +169,8 @@ public static class AnalyzerHost {
         new SortWithoutOrderingAnalyzer(),
         new ToStringReturnsNullAnalyzer(), new InertNullSuppressionAnalyzer(),
         new NullableLocalNeverNullAnalyzer(), new NullForgivenServiceResolutionAnalyzer(),
+        new ComputedPropertyAnalyzer(), new PrivateAutoPropertyAnalyzer(), new TupleLiteralAnalyzer(),
+        new CastInDeclarationAnalyzer(), new NullableAnnotationSyntaxAnalyzer(),
     ];
 
     /// <summary>

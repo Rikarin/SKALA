@@ -131,6 +131,8 @@ public sealed class RuleFixtureTests {
         new SortWithoutOrderingAnalyzer(),
         new ToStringReturnsNullAnalyzer(), new InertNullSuppressionAnalyzer(),
         new NullableLocalNeverNullAnalyzer(), new NullForgivenServiceResolutionAnalyzer(),
+        new ComputedPropertyAnalyzer(), new PrivateAutoPropertyAnalyzer(), new TupleLiteralAnalyzer(),
+        new CastInDeclarationAnalyzer(), new NullableAnnotationSyntaxAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
