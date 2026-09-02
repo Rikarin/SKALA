@@ -17,11 +17,12 @@ namespace Rikarin.Skala.Rules.Cleanup;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Three shapes: a trailing argument that repeats the parameter's default,
-///         <c>new EventHandler(Foo)</c> where <c>Foo</c> would convert on its own, and explicit lambda
-///         parameter types under a target that already fixes them. The first is the one with teeth — an
-///         argument restating a default is a value that stops tracking the default the day it changes,
-///         which is the hazard <c>optional-and-params-hazards</c> reports from the declaration side.
+///         Four shapes: a trailing argument that repeats the parameter's default,
+///         <c>new EventHandler(Foo)</c> where <c>Foo</c> would convert on its own, explicit lambda
+///         parameter types under a target that already fixes them, and an anonymous method's signature
+///         whose parameters nothing uses. The first is the one with teeth — an argument restating a
+///         default is a value that stops tracking the default the day it changes, which is the hazard
+///         <c>optional-and-params-hazards</c> reports from the declaration side.
 ///     </para>
 ///     <para>
 ///         ⚠
@@ -31,8 +32,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         </b> With <c>Foo(int a, int b = 0)</c> beside <c>Foo(int a)</c>,
 ///         <c>Foo(1, 0)</c> and <c>Foo(1)</c> are calls to different methods, and nothing about the
 ///         argument says so. Every finding here re-binds the shortened call speculatively and withdraws
-///         unless the same symbol comes back. The other two shapes avoid the question instead of
-///         answering it: both are reported only where the target type is written down.
+///         unless the same symbol comes back. The other three shapes avoid the question instead of
+///         answering it: each is reported only where the target type is written down.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -60,6 +61,7 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
         context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
         context.RegisterSyntaxNodeAction(AnalyzeDelegateCreation, SyntaxKind.ObjectCreationExpression);
         context.RegisterSyntaxNodeAction(AnalyzeLambda, SyntaxKind.ParenthesizedLambdaExpression);
+        context.RegisterSyntaxNodeAction(AnalyzeAnonymousMethod, SyntaxKind.AnonymousMethodExpression);
     }
 
     static void AnalyzeInvocation(SyntaxNodeAnalysisContext context) {
@@ -79,9 +81,22 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
             }
         }
 
+        // ⚠ **The bound is on the index, never on the counter.** `Take(1, 2, 3)` against
+        // `Take(int first, params int[] rest)` has three arguments and two parameters, and the old
+        // guard bounded `restated` while indexing at `arguments.Count - 1 - restated` — two numbers
+        // that agree only when the counts do. `method.Parameters[2]` on a two-element array threw
+        // `IndexOutOfRangeException` on *every* expanded `params` call, which is every Serilog and
+        // every `string.Format` call, and an analyzer exception is `AD0001`: invisible in the
+        // harness, and renamed to `SK9030` in a report that still exits 0 (#298, #279, #295).
+        //
+        // ⚠ The pairing is also not merely out of bounds for such a call, it does not exist:
+        // "the parameter the trailing argument fills" is not a fact once arguments outnumber
+        // parameters, which is the same reasoning applied to named arguments above. Bounding on
+        // `min(arguments, parameters)` is what SK2143 does with its own pair loop.
+        var pairs = System.Math.Min(arguments.Count, method.Parameters.Length);
         var restated = 0;
-        while (restated < arguments.Count
-               && restated < method.Parameters.Length
+        while (restated < pairs
+               && arguments.Count - 1 - restated < method.Parameters.Length
                && RestatesItsDefault(
                    context,
                    arguments[arguments.Count - 1 - restated],
@@ -128,8 +143,57 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
         }
 
         var constant = context.SemanticModel.GetConstantValue(argument.Expression, context.CancellationToken);
-        return constant.HasValue && Equals(constant.Value, parameter.ExplicitDefaultValue);
+        return constant.HasValue && SameValue(constant.Value, parameter.ExplicitDefaultValue);
     }
+
+    /// <summary>
+    ///     ⚠ Whether two constants are the same value, and not merely the same boxed type.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <c>Equals</c> on its own compares the box first, so <c>Write(text, 0)</c> against
+    ///         <c>Write(string text, long retries = 0)</c> never matched: the argument's constant is an
+    ///         <c>int</c> and the parameter's default is a <c>long</c>. The same for every
+    ///         <c>long</c>, <c>double</c>, <c>float</c> and <c>decimal</c> default written as a bare
+    ///         <c>0</c> — the widest defaults in the BCL, and exactly the ones a caller restates. It was
+    ///         a miss rather than a false positive and so left no trace at all (#298).
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b><c>char</c> is deliberately not in the numeric set.</b> <c>Take('A')</c> against
+    ///         <c>Take(int code = 65)</c> converts to the same number and is not the same sentence:
+    ///         the author wrote a character, and deleting the argument would delete which of the two
+    ///         they meant.
+    ///     </para>
+    /// </remarks>
+    static bool SameValue(object? argument, object? parameterDefault) {
+        if (Equals(argument, parameterDefault)) {
+            return true;
+        }
+
+        if (argument is null || parameterDefault is null || !IsNumeric(argument) || !IsNumeric(parameterDefault)) {
+            return false;
+        }
+
+        try {
+            return Equals(
+                System.Convert.ChangeType(
+                    argument,
+                    parameterDefault.GetType(),
+                    System.Globalization.CultureInfo.InvariantCulture
+                ),
+                parameterDefault
+            );
+        } catch (System.OverflowException) {
+            return false;
+        } catch (System.InvalidCastException) {
+            return false;
+        } catch (System.FormatException) {
+            return false;
+        }
+    }
+
+    static bool IsNumeric(object value) =>
+        value is sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal;
 
     static bool HasCallerInfo(IParameterSymbol parameter) {
         foreach (var attribute in parameter.GetAttributes()) {
@@ -158,6 +222,12 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
     ) {
         var kept = invocation.ArgumentList.Arguments.Take(invocation.ArgumentList.Arguments.Count - drop);
         var shortened = invocation.WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(kept)));
+
+        // ⚠ The rewrite is bound with no parent, and a member binding's receiver lives in the parent.
+        // The same detached-node hazard that threw a NullReferenceException out of SK0234.
+        if (!SpeculativeBinding.CanBindDetached(shortened)) {
+            return false;
+        }
 
         var speculated = context.SemanticModel.GetSpeculativeSymbolInfo(
             invocation.SpanStart,
@@ -246,6 +316,85 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
             Untyped(parameters),
             "The lambda parameter types are the ones the target already declares"
         );
+    }
+
+    /// <summary>
+    ///     <c>delegate(int a) { … }</c> whose body never mentions <c>a</c>, where <c>delegate { … }</c>
+    ///     is the same thing.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠ <b>A parameterless <c>delegate</c> is convertible to a delegate type only when that
+    ///         type has no <c>out</c> parameter</b>, because the compiler would have nothing to assign
+    ///         through. <c>ref</c> and <c>in</c> are fine; <c>out</c> is refused, and it is the one
+    ///         difference between this rewrite compiling and not.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Dropping the signature also *widens* what the expression converts to — that is the
+    ///         whole point of the feature — so as an argument it can move overload resolution. The
+    ///         target type therefore has to be written down, the same guard the other two conversion
+    ///         shapes here use.
+    ///     </para>
+    /// </remarks>
+    static void AnalyzeAnonymousMethod(SyntaxNodeAnalysisContext context) {
+        var anonymous = (AnonymousMethodExpressionSyntax)context.Node;
+        if (anonymous.ParameterList is not { Parameters.Count: > 0 } list) {
+            return;
+        }
+
+        foreach (var parameter in list.Parameters) {
+            if (parameter.AttributeLists.Count > 0 || parameter.Default is not null) {
+                return;
+            }
+
+            foreach (var modifier in parameter.Modifiers) {
+                if (modifier.IsKind(SyntaxKind.OutKeyword)) {
+                    return;
+                }
+            }
+        }
+
+        if (context.SemanticModel.GetSymbolInfo(anonymous, context.CancellationToken).Symbol
+            is not IMethodSymbol written
+            || context.SemanticModel.GetTypeInfo(anonymous, context.CancellationToken).ConvertedType
+            is not INamedTypeSymbol converted
+            || Invoke(converted) is not { } invoke
+            || invoke.Parameters.Length != list.Parameters.Count
+            || !TargetTypeIs(context, anonymous, converted)) {
+            return;
+        }
+
+        foreach (var parameter in written.Parameters) {
+            if (IsMentioned(context, anonymous.Body, parameter)) {
+                return;
+            }
+        }
+
+        Report(
+            context,
+            list.Span,
+            string.Empty,
+            "The anonymous method's parameters are never used, so its signature says nothing"
+        );
+    }
+
+    /// <summary>Whether a body reads or writes a parameter, asked of the symbol and not of the name.</summary>
+    static bool IsMentioned(SyntaxNodeAnalysisContext context, SyntaxNode body, IParameterSymbol parameter) {
+        foreach (var node in body.DescendantNodes()) {
+            if (node is not IdentifierNameSyntax identifier
+                || !string.Equals(identifier.Identifier.ValueText, parameter.Name, System.StringComparison.Ordinal)) {
+                continue;
+            }
+
+            if (SymbolEqualityComparer.Default.Equals(
+                    context.SemanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol,
+                    parameter
+                )) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>The delegate's <c>Invoke</c>, seeing through <c>Expression&lt;TDelegate&gt;</c>.</summary>
