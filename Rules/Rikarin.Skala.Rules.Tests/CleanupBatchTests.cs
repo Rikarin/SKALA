@@ -51,7 +51,7 @@ public sealed class CleanupBatchTests {
         Assert.All(findings, static diagnostic => Assert.True(diagnostic.Properties.ContainsKey(FixEdits.CountKey)));
     }
 
-    /// <summary>Each of <c>SK0240</c>'s three shapes, named by the sentence it reports.</summary>
+    /// <summary>Each of <c>SK0240</c>'s five shapes, named by the sentence it reports.</summary>
     [Theory]
     [InlineData("catch_sole", "only rethrows")]
     [InlineData("catch_after_another", "only rethrows")]
@@ -63,6 +63,19 @@ public sealed class CleanupBatchTests {
     [InlineData("return_setter", "returns nothing")]
     [InlineData("return_constructor", "returns nothing")]
     [InlineData("default_only_breaks", "`default:` section only breaks")]
+    [InlineData("finally_empty_beside_a_catch", "guarantees that nothing happens")]
+    [InlineData("finally_empty_sole", "guarantees that nothing happens")]
+    [InlineData("case_label_shares_a_default_section", "shares its section with `default:`")]
+    [InlineData("default_section_with_extra_labels_only_breaks", "`default:` section only breaks")]
+    // ⚠ #302. Both of these carry a comment on the line *above* the construct, which the fix's span
+    // begins after. They are positives precisely because the guard that used to withdraw them was
+    // protecting text the fix does not touch.
+    [InlineData("catch_with_a_comment_above_it", "only rethrows")]
+    [InlineData("default_with_a_comment_above_it", "`default:` section only breaks")]
+    // ⚠ One finding for a `try` carrying both shapes. Reporting them separately gives `skala fix`
+    // two edits whose composition is CS1524, and reporting one per pass leaves a finding standing on
+    // the fix's own output.
+    [InlineData("finally_empty_beside_a_rethrowing_catch", "only rethrows")]
     public void SK0240_ReportsTheShapeItMatched(string name, string sentence) {
         var finding = Assert.Single(
             Findings(Path.Combine(RuleFixtures.Root, "SK0240", "positive", name + ".cs"), "SK0240")
@@ -101,6 +114,110 @@ public sealed class CleanupBatchTests {
 
         Assert.Contains("try {", after, StringComparison.Ordinal);
         Assert.DoesNotContain("throw;", after, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The empty <c>finally</c> takes the same two fixes as the rethrowing <c>catch</c>, for the
+    ///     same reason: <c>try { … }</c> on its own is CS1524.
+    /// </summary>
+    [Fact]
+    public void SK0240_DeletesTheEmptyFinallyWhenACatchSurvives() {
+        var path = Path.Combine(RuleFixtures.Root, "SK0240", "positive", "finally_empty_beside_a_catch.cs");
+        var after = CodeOnly(Apply(File.ReadAllText(path), Findings(path, "SK0240")));
+
+        Assert.Contains("try {", after, StringComparison.Ordinal);
+        Assert.Contains("catch (InvalidOperationException e)", after, StringComparison.Ordinal);
+        Assert.DoesNotContain("finally", after, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ A <c>try</c> matching both shapes is one finding whose single edit is the unwrap.
+    /// </summary>
+    /// <remarks>
+    ///     Deleting the rethrowing <c>catch</c> and the empty <c>finally</c> as two edits composes
+    ///     into <c>try { Run(); }</c>, which is CS1524. Neither clause would leave anything standing,
+    ///     so the whole statement is replaced by its block's contents instead — asserted here because
+    ///     "a fix exists" and "the right fix exists" are otherwise the same green.
+    /// </remarks>
+    [Fact]
+    public void SK0240_UnwrapsTheTryWhenTheCatchAndTheFinallyAreBothInert() {
+        var path = Path.Combine(
+            RuleFixtures.Root,
+            "SK0240",
+            "positive",
+            "finally_empty_beside_a_rethrowing_catch.cs"
+        );
+
+        var findings = Findings(path, "SK0240");
+        Assert.Single(findings);
+
+        var after = CodeOnly(Apply(File.ReadAllText(path), findings));
+        Assert.DoesNotContain("try", after, StringComparison.Ordinal);
+        Assert.DoesNotContain("catch", after, StringComparison.Ordinal);
+        Assert.DoesNotContain("finally", after, StringComparison.Ordinal);
+        Assert.Contains("Run();", after, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The whole section, extra labels and all, so the fix's output carries no second finding.
+    /// </summary>
+    [Fact]
+    public void SK0240_DeletesTheWholeSectionWhenItOnlyBreaks() {
+        var path = Path.Combine(
+            RuleFixtures.Root,
+            "SK0240",
+            "positive",
+            "default_section_with_extra_labels_only_breaks.cs"
+        );
+
+        var after = CodeOnly(Apply(File.ReadAllText(path), Findings(path, "SK0240")));
+
+        Assert.DoesNotContain("case 2:", after, StringComparison.Ordinal);
+        Assert.DoesNotContain("default:", after, StringComparison.Ordinal);
+        Assert.Contains("case 1:", after, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SK0240_UnwrapsTheTryWhenTheEmptyFinallyIsTheOnlyClause() {
+        var path = Path.Combine(RuleFixtures.Root, "SK0240", "positive", "finally_empty_sole.cs");
+        var after = CodeOnly(Apply(File.ReadAllText(path), Findings(path, "SK0240")));
+
+        Assert.DoesNotContain("try", after, StringComparison.Ordinal);
+        Assert.DoesNotContain("finally", after, StringComparison.Ordinal);
+        Assert.Contains("Run();", after, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The label goes and the section it shared stays, because the section is what still runs.
+    /// </summary>
+    [Fact]
+    public void SK0240_DeletesOnlyTheCaseLabelAndKeepsTheDefaultSection() {
+        var path = Path.Combine(
+            RuleFixtures.Root,
+            "SK0240",
+            "positive",
+            "case_label_shares_a_default_section.cs"
+        );
+
+        var after = CodeOnly(Apply(File.ReadAllText(path), Findings(path, "SK0240")));
+
+        Assert.DoesNotContain("case 2:", after, StringComparison.Ordinal);
+        Assert.Contains("default:", after, StringComparison.Ordinal);
+        Assert.Contains("case 1:", after, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #302, as an assertion rather than a note: the comment the fix does not delete is still
+    ///     there after the fix, and the finding was made anyway.
+    /// </summary>
+    [Theory]
+    [InlineData("catch_with_a_comment_above_it", "// Reviewed 2026-02: nothing to add here yet.")]
+    [InlineData("default_with_a_comment_above_it", "// Everything else is handled by the outer dispatcher.")]
+    public void SK0240_FiresOverACommentItDoesNotDelete(string name, string comment) {
+        var path = Path.Combine(RuleFixtures.Root, "SK0240", "positive", name + ".cs");
+        var after = Apply(File.ReadAllText(path), Findings(path, "SK0240"));
+
+        Assert.Contains(comment, after, StringComparison.Ordinal);
     }
 
     /// <summary>Each of <c>SK0241</c>'s five keywords, named by the sentence it reports.</summary>
@@ -246,13 +363,52 @@ public sealed class CleanupBatchTests {
         Assert.Contains("a generation later", finding.GetMessage(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     ⚠ Every negative fixture in this family passes if the analyzer <em>crashed</em>, so the
+    ///     crash is asserted against before the count is.
+    /// </summary>
+    /// <remarks>
+    ///     Roslyn turns an exception out of an analyzer into <c>AD0001</c> and carries on, which for a
+    ///     "should not fire" fixture is indistinguishable from the rule correctly declining — a whole
+    ///     negative set goes green while the rule does nothing at all. The fixture harness does not
+    ///     look (#279), so this one does: <c>AD0001</c> is a failure of the run rather than a finding
+    ///     about the file.
+    /// </remarks>
     static Diagnostic[] Findings(string path, string id) {
         var source = File.ReadAllText(path);
-        return RuleFixtures
-            .Analyze(RuleFixtures.Compile(source, path), Analyzers, TestContext.Current.CancellationToken)
-            .Where(diagnostic => diagnostic.Id == id)
-            .ToArray();
+        var all = RuleFixtures.Analyze(
+            RuleFixtures.Compile(source, path),
+            Analyzers,
+            TestContext.Current.CancellationToken
+        );
+
+        var crashes = all.Where(static d => d.Id == "AD0001").ToArray();
+        Assert.True(
+            crashes.Length == 0,
+            $"an analyzer threw while reading {Path.GetFileName(path)}; a crashed analyzer reports nothing, "
+            + "which every negative fixture accepts:\n"
+            + string.Join("\n", crashes.Select(static d => "  " + d.GetMessage()))
+        );
+
+        return all.Where(diagnostic => diagnostic.Id == id).ToArray();
     }
+
+    /// <summary>
+    ///     ⚠ The fixed text with its <c>//</c> comment lines dropped, for an assertion about code.
+    /// </summary>
+    /// <remarks>
+    ///     A fixture explaining why it is the shape it is names that shape in prose —
+    ///     <c>// Deleting only `case 2:` would …</c> — and a bare
+    ///     <c>Assert.DoesNotContain("case 2:", after)</c> then finds the sentence rather than the
+    ///     label and fails on a correct fix. Three of these assertions were written that way and all
+    ///     three went red on their first run, which is the cheap version of the failure: an assertion
+    ///     matching a fixture's commentary passes or fails on what the comment says.
+    /// </remarks>
+    static string CodeOnly(string text) =>
+        string.Join(
+            "\n",
+            text.Split('\n').Where(static line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal))
+        );
 
     static string Apply(string source, IEnumerable<Diagnostic> findings) {
         var text = source;
