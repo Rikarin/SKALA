@@ -246,8 +246,8 @@ public sealed class CopyingPropertyAnalyzer : DiagnosticAnalyzer {
             return true;
         }
 
-        foreach (var @interface in type.AllInterfaces) {
-            if (@interface.SpecialType is SpecialType.System_Collections_IEnumerable
+        foreach (var implemented in type.AllInterfaces) {
+            if (implemented.SpecialType is SpecialType.System_Collections_IEnumerable
                 or SpecialType.System_Collections_Generic_IEnumerable_T) {
                 return true;
             }

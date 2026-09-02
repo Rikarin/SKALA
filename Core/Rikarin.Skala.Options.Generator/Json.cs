@@ -187,7 +187,7 @@ internal readonly struct JsonValue {
     public static readonly JsonValue False = new(JsonKind.Boolean, null, 0, null, null);
 
     readonly JsonKind kind;
-    readonly string? @string;
+    readonly string? text;
     readonly double number;
     readonly Dictionary<string, JsonValue>? members;
     readonly List<JsonValue>? items;
@@ -200,7 +200,7 @@ internal readonly struct JsonValue {
         List<JsonValue>? items
     ) {
         this.kind = kind;
-        @string = text;
+        this.text = text;
         this.number = number;
         this.members = members;
         this.items = items;
@@ -223,7 +223,7 @@ internal readonly struct JsonValue {
 
     public string? AsString() =>
         kind switch {
-            JsonKind.String => @string,
+            JsonKind.String => text,
             JsonKind.Number => number.ToString(CultureInfo.InvariantCulture),
             JsonKind.Boolean => number != 0 ? "true" : "false",
             _ => null

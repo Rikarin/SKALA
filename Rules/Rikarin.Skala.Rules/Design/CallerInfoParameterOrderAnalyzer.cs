@@ -214,8 +214,8 @@ public sealed class CallerInfoParameterOrderAnalyzer : DiagnosticAnalyzer {
             return false;
         }
 
-        foreach (var @interface in containing.AllInterfaces) {
-            foreach (var member in @interface.GetMembers(method.Name)) {
+        foreach (var implemented in containing.AllInterfaces) {
+            foreach (var member in implemented.GetMembers(method.Name)) {
                 if (member is IMethodSymbol candidate
                     && SymbolEqualityComparer.Default.Equals(
                         containing.FindImplementationForInterfaceMember(candidate),

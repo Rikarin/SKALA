@@ -264,8 +264,8 @@ public sealed class RestatedCallerInfoArgumentAnalyzer : DiagnosticAnalyzer {
                 case PropertyDeclarationSyntax property:
                     return property.Identifier.Text;
 
-                case EventDeclarationSyntax @event:
-                    return @event.Identifier.Text;
+                case EventDeclarationSyntax declaredEvent:
+                    return declaredEvent.Identifier.Text;
 
                 case IndexerDeclarationSyntax:
                     return "Item";

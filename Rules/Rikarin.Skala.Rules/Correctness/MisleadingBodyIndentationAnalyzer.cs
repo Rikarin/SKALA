@@ -168,14 +168,14 @@ public sealed class MisleadingBodyIndentationAnalyzer : DiagnosticAnalyzer {
         StatementSyntax? current = null;
         while (true) {
             var inner = statement switch {
-                IfStatementSyntax @if => @if.Else?.Statement ?? @if.Statement,
-                WhileStatementSyntax @while => @while.Statement,
-                ForStatementSyntax @for => @for.Statement,
-                ForEachStatementSyntax @foreach => @foreach.Statement,
+                IfStatementSyntax ifStatement => ifStatement.Else?.Statement ?? ifStatement.Statement,
+                WhileStatementSyntax whileLoop => whileLoop.Statement,
+                ForStatementSyntax forLoop => forLoop.Statement,
+                ForEachStatementSyntax forEachLoop => forEachLoop.Statement,
                 ForEachVariableStatementSyntax deconstructing => deconstructing.Statement,
-                LockStatementSyntax @lock => @lock.Statement,
-                UsingStatementSyntax @using => @using.Statement,
-                FixedStatementSyntax @fixed => @fixed.Statement,
+                LockStatementSyntax lockStatement => lockStatement.Statement,
+                UsingStatementSyntax usingStatement => usingStatement.Statement,
+                FixedStatementSyntax fixedStatement => fixedStatement.Statement,
                 _ => null
             };
 

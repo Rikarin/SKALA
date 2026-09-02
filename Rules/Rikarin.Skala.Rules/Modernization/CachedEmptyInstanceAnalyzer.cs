@@ -89,7 +89,7 @@ public sealed class CachedEmptyInstanceAnalyzer : DiagnosticAnalyzer {
                 ArgumentList: null or { Arguments.Count: 0 },
                 Initializer: null
             } creation => (creation.Type, false),
-            DefaultExpressionSyntax @default => (@default.Type, true),
+            DefaultExpressionSyntax defaultExpression => (defaultExpression.Type, true),
             _ => (null, false)
         };
 

@@ -115,8 +115,8 @@ public sealed class OverriddenParameterDefaultAnalyzer : DiagnosticAnalyzer {
         }
 
         ISymbol? single = null;
-        foreach (var @interface in containing.AllInterfaces) {
-            foreach (var candidate in @interface.GetMembers()) {
+        foreach (var implemented in containing.AllInterfaces) {
+            foreach (var candidate in implemented.GetMembers()) {
                 if (candidate.Kind != member.Kind
                     || !SymbolEqualityComparer.Default.Equals(
                         containing.FindImplementationForInterfaceMember(candidate),

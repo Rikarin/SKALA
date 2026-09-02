@@ -468,7 +468,8 @@ public sealed class CleanupBatchTests {
             .ToArray();
 
     /// <summary>Every run of whitespace as one space, so an indentation difference is not a failure.</summary>
-    static string Squashed(string text) => string.Join(" ", text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+    static string Squashed(string text) =>
+        string.Join(" ", text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
     static Diagnostic[] Findings(string path, string id) {
         var source = File.ReadAllText(path);

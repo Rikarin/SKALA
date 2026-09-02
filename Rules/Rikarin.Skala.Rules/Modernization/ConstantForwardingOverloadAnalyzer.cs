@@ -277,8 +277,8 @@ public sealed class ConstantForwardingOverloadAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool ImplementsAnInterfaceMember(IMethodSymbol method) {
         var containing = method.ContainingType;
-        foreach (var @interface in containing.AllInterfaces) {
-            foreach (var member in @interface.GetMembers(method.Name)) {
+        foreach (var implemented in containing.AllInterfaces) {
+            foreach (var member in implemented.GetMembers(method.Name)) {
                 if (member is IMethodSymbol interfaceMethod
                     && SymbolEqualityComparer.Default.Equals(
                         containing.FindImplementationForInterfaceMember(interfaceMethod),

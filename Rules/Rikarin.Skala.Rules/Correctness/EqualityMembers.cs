@@ -138,9 +138,9 @@ static class EqualityMembers {
                 case MethodDeclarationSyntax method:
                     var name = method.Identifier.ValueText;
                     return name is "Equals" or "GetHashCode" or "CompareTo" or "ReferenceEquals";
-                case OperatorDeclarationSyntax @operator:
-                    return @operator.OperatorToken.IsKind(SyntaxKind.EqualsEqualsToken)
-                        || @operator.OperatorToken.IsKind(SyntaxKind.ExclamationEqualsToken);
+                case OperatorDeclarationSyntax declaredOperator:
+                    return declaredOperator.OperatorToken.IsKind(SyntaxKind.EqualsEqualsToken)
+                        || declaredOperator.OperatorToken.IsKind(SyntaxKind.ExclamationEqualsToken);
                 case ConversionOperatorDeclarationSyntax:
                 case PropertyDeclarationSyntax:
                 case ConstructorDeclarationSyntax:

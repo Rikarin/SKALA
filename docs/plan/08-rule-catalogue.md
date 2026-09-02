@@ -6924,3 +6924,40 @@ outcome #319 itself allows for. Reaching it needs the call graph the issue rules
 reference sniffing #303 decided against and the 31 fixtures now argue against.
 `SK3002/positive/in-a-helper-class-holding-no-test-case.cs` pins the boundary from the reported side
 and `SK3002/negative/in-a-teardown-of-a-test-class.cs` from the excused side.
+
+## `SK2034` on Skala's own source: the count was 33, not ten
+
+⚠ **[#276]'s central number is refuted, and by more than a rounding.** Measured with the shipped rule
+rather than by reading — `skala check Analysis Core Formatting Reporting Rules Tools Distribution
+--load=loose --rules SK2034` — the tree carried **33 findings across 17 files**, not ten across five.
+The issue's table is wrong in three of its five rows: `MetricsAnalyzer.cs` has 5 rather than 4,
+`Async/AsyncVoidAnalyzer.cs` has **0** (the file contains no `@` at all; the intended file is
+`AsyncVoidThrowAnalyzer.cs`), and twelve further files holding 24 findings are missing from it
+entirely — most of them `MisleadingBodyIndentationAnalyzer.cs`, which alone has 7.
+
+**Renamed rather than exempted, which is #276's option (1) and not its option (2).** The issue warns
+against reaching for the rename reflexively, and it is right that contorting a tree to satisfy a rule
+nobody argued for is the same error as calibrating a rule to a tree. But option (2) — "narrow
+`SK2034` to exempt an escaped identifier whose name matches the syntax node type it holds" — is
+*exactly* calibrating the rule to this tree: the exemption would be shaped around Skala's own idiom
+and argued for by nobody outside it, which is the direction CLAUDE.md § 9 names as the more expensive
+mistake. The rule's own argument is general and survives: `@` on a reserved keyword is never a
+disambiguation the language asked for, so the finding is about the name.
+
+The renames follow the rule's own `good` example (`declaredType`, `declaredEvent`): `@event` →
+`declaredEvent`, `@delegate` → `declaredDelegate`, `@operator` → `declaredOperator`, `@interface` and
+`@base` → `implemented`, `@default` → `defaultPath` / `defaultExpression`, `@try` → `enclosingTry`,
+`@string` → `text`, and the seven statement captures in `MisleadingBodyIndentationAnalyzer` →
+`ifStatement`, `whileLoop`, `forLoop`, `forEachLoop`, `lockStatement`, `usingStatement`,
+`fixedStatement` — the `whileLoop` spelling being the convention `StackAllocInLoopAnalyzer` already
+records. 33 declarations and 38 references, 71 tokens. All but one are locals, `foreach` variables or
+pattern captures; the exception is `JsonValue.@string`, a private field, whose rename to `text`
+collided with the constructor parameter already called `text` and became `this.text = text`.
+
+⚠ **The instrument was checked before the zero was believed.** After the renames the same command
+reports **0**; reintroducing a single `@operator` in `MetricsAnalyzer.cs` takes it back to exactly
+**1**, at line 275. A zero from a rule that stopped running and a zero from clean code read the same
+in a report, and the control is the only thing that separates them. (⚠ The obvious control —
+measuring the vendored corpus, which has `@operator` in `QueryExpression.cs` — does *not* work:
+`Testing/` is excluded from `skala check`, which answers `SK9023: no C# files were found` rather than
+zero findings.)

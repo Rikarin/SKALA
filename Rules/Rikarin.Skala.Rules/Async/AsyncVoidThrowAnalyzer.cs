@@ -121,9 +121,9 @@ public sealed class AsyncVoidThrowAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool MayBeCaughtLocally(SyntaxNode node, SyntaxNode owner) {
         for (var current = node; current is not null && !ReferenceEquals(current, owner); current = current.Parent) {
-            if (current.Parent is TryStatementSyntax @try
-                && ReferenceEquals(@try.Block, current)
-                && @try.Catches.Count > 0) {
+            if (current.Parent is TryStatementSyntax enclosingTry
+                && ReferenceEquals(enclosingTry.Block, current)
+                && enclosingTry.Catches.Count > 0) {
                 return true;
             }
         }

@@ -563,8 +563,8 @@ public static class CheckCommand {
             return null;
         }
 
-        var @default = Baseline.DefaultPath(root);
-        return File.Exists(@default) ? @default : null;
+        var defaultPath = Baseline.DefaultPath(root);
+        return File.Exists(defaultPath) ? defaultPath : null;
     }
 
     static void Record(RunReport report, CheckRequest request) {

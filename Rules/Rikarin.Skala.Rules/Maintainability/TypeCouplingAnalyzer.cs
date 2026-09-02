@@ -142,7 +142,7 @@ public sealed class TypeCouplingAnalyzer : DiagnosticAnalyzer {
             IMethodSymbol method => method.ContainingType,
             IPropertySymbol property => property.ContainingType,
             IFieldSymbol field => field.ContainingType,
-            IEventSymbol @event => @event.ContainingType,
+            IEventSymbol declaredEvent => declaredEvent.ContainingType,
             _ => null
         };
 
