@@ -308,3 +308,4 @@ SK1130 | Skala.Modernization | Info | A character span is compared to a constant
 SK0280 | Skala.Cleanup | Warning | The base list names an interface it already has.
 SK0281 | Skala.Cleanup | Warning | The attribute promises to set members that do not exist.
 SK0282 | Skala.Cleanup | Warning | The record writes out the property its parameter generates.
+SK2290 | Skala.Correctness | Info | Every call discards this `out` parameter's value.

@@ -24,6 +24,7 @@
 
 SK0234/negative/type-arguments-inference-would-not-reproduce.cs	SK2212	every path through this body jumps out of the loop, so it runs at most once
 SK0240/negative/catch_rethrows_variable.cs	SK2015	`throw error;` resets the stack trace; use `throw;`
+SK0250/negative/a-var-pattern-belongs-to-SK0217.cs	SK2290	true positive: the fixture needs a private `TryRead` whose one call site writes `out var _`, which is exactly SK2290's shape at the declaration. The two are the boundary they each document — SK0250 declines the discard *spelling*, SK2290 reports the parameter behind it — so the shape has to be present for either file to mean anything.
 SK1004/negative/a-generic-method.cs	SK2212	every path through this body jumps out of the loop, so it runs at most once
 SK1013/negative/float.cs	SK2030	Comparing with NaN using `==` is always false, even for NaN; use `double.IsNaN(a[0])`
 SK1060/negative/a-zero-offset.cs	SK2051	This '-' has no effect: the constant operand decides it
