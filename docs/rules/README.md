@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 229 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 234 ids are allocated.
 
 ## Async
 
@@ -96,6 +96,11 @@
 | [SK2101](SK2101.md) | `[Pure]` is applied to a method that returns nothing | warning | safe | no |
 | [SK2102](SK2102.md) | The `[DebuggerDisplay]` string names a member that does not exist | warning | — | no |
 | [SK2103](SK2103.md) | The attribute is applied twice with the same arguments | warning | review | no |
+| [SK2130](SK2130.md) | A static field initializer reads a field declared below it | warning | — | no |
+| [SK2131](SK2131.md) | The get-only property is never assigned | warning | — | no |
+| [SK2132](SK2132.md) | The accessor uses another property's backing field | warning | review | no |
+| [SK2133](SK2133.md) | The called `partial` method has no implementation | suggestion | — | no |
+| [SK2134](SK2134.md) | Instance code writes to its own type's static field | warning | — | no |
 
 ## Design
 
