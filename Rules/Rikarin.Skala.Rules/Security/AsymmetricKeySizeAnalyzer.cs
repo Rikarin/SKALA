@@ -95,15 +95,21 @@ public sealed class AsymmetricKeySizeAnalyzer : DiagnosticAnalyzer {
     ///     real 1024-bit key. Inverting the clause turned no test red, which is how the hole was found
     ///     rather than the clause being pronounced dead.
     ///     <para>
-    ///         The test that actually separates a key size from <c>RSA.Create(RSAParameters)</c> and
-    ///         <c>RSA.Create(string)</c> is that the <em>first parameter</em> is an <c>int</c>, and every
-    ///         RSA and DSA overload that takes a size takes it first.
+    ///         Every RSA and DSA overload that takes a size takes it first, so the first argument is
+    ///         where to look.
     ///     </para>
     ///     <para>
-    ///         ⚠ The cheap test is asked first on purpose. This action runs on every object creation and
-    ///         every static <c>Create</c> in the compilation, and <c>Family</c> walks a base-type chain;
-    ///         almost nothing passes an <c>int</c> first, so the <c>SpecialType</c> read keeps the walk
-    ///         off the hot path.
+    ///         ⚠
+    ///         <b>
+    ///             The <c>SpecialType</c> test is a cost filter and not a correctness guard, and a second
+    ///             surviving sabotage is how that is known rather than claimed.
+    ///         </b> Deleting it turns no test
+    ///         red, because <see cref="Examine" />'s <c>Value: int bits</c> pattern already declines
+    ///         <c>RSA.Create(RSAParameters)</c> and <c>RSA.Create(string)</c> — a constant string does not
+    ///         match <c>int</c>. What it buys is that this action runs on every object creation and every
+    ///         static <c>Create</c> in the compilation, <c>Family</c> walks a base-type chain, and almost
+    ///         nothing passes an <c>int</c> first: the read keeps the walk off the hot path. Stated
+    ///         plainly so the next reader does not mistake a redundant clause for a load-bearing one.
     ///     </para>
     /// </remarks>
     static void Generated(OperationAnalysisContext context, ImmutableArray<INamedTypeSymbol> families) {

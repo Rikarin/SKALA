@@ -3147,6 +3147,94 @@ are exempt**, by the attribute test five rules already use, because a NIST or RF
 pins the IV *by definition* and a security rule at `error` that breaks a crypto library's own test
 suite is how a reviewer learns to skim past every security finding the tool makes.
 
+#### The sweep, and what its zero is a zero of
+
+The 380 sources of `corpus/real` were staged outside the repository — `SK9023` puts the corpus out of
+`skala check`'s reach — as **one project per vendored tree**, because a single project over all three
+collides. The `.expected.cs` and `.arranged.expected.cs` twins were left behind: the corpus holds
+three copies of every file, and compiling all 1 140 produces about eleven thousand spurious `CS0111`
+that say nothing about anything.
+
+⚠ **The slice omits the generated `ImplicitUsings` file, and that lies in both directions — measured
+this time rather than assumed.** The same 380 files, built twice:
+
+| | `CS` errors |
+|---|---:|
+| `<ImplicitUsings>disable</ImplicitUsings>` | **13 036** |
+| `<ImplicitUsings>enable</ImplicitUsings>` | **10 996** |
+
+⚠ **13 036 is exactly the figure this document records for `SK5010`'s sweep**, which means that
+measurement was made without implicit usings too. Turning them on resolves **2 040** more names —
+almost all `CS0246` — so a semantic rule sees two thousand more bound expressions than the earlier
+sweep gave it. Neither number is "the corpus compiles"; the point is that the earlier one understated
+what the analysis could see.
+
+⚠ **Binlog coverage: `SK9021` is silent.** The build was `--no-incremental` and the check ran
+`--require-fresh-binlog --no-cache`, which rejects a binlog covering under 90 % of the selected
+files. Not one `SK9021` was emitted, so every one of the 380 staged files was in a recorded
+compilation — **100 %**, against the 98 % a complete Vixen build manages and the 1 % an incremental
+one does.
+
+| | `SK5020` | `SK5021` |
+|---|---:|---:|
+| `corpus/real`, 380 files, 16 205 findings in the same run | **0** | **0** |
+| the same run with a `ZzCanary.cs` planted in each of the three projects | **6** | **6** |
+
+⚠ **Both zeros are classified *shape absent*, and neither is evidence about either rule.** The canary
+is what separates a live analysis from a dead one, and it is the only thing that can: the trees hold
+no cipher to configure and no key pair to generate, so there is no "declined correctly" reading
+available. The measurement that decides these two rules is the hand-written
+`Rules/Rikarin.Skala.Rules.Tests/corpus/` pair and the fixture sets, and this document says so rather
+than quoting a corpus zero as though it meant the rules are safe.
+
+#### ⚠ Sixteen sabotages, two survivors, and they survived for opposite reasons
+
+Each clause was removed or inverted in turn and a named test had to turn red. Fourteen did. ⚠ **The
+two that did not are the interesting ones, and telling them apart is the whole point of the
+exercise: one was a hole in the rule and the other is a clause that is genuinely redundant.**
+
+⚠ **`T6` — inverting `arguments.Length != 1` to `> 1` on `SK5021` left the whole suite green, and the
+clause was not dead, it was wrong.** `arguments.IsDefaultOrEmpty` had already rejected the
+zero-argument case one line above, so the arity test's *only* effect was on arity two — where it
+silently declined `new RSACryptoServiceProvider(1024, cspParameters)`. That is a real overload
+carrying a real 1024-bit key, and the rule said nothing about it. Nothing in the fixtures could have
+caught it, because a fixture set written from the same assumption as the rule tests the assumption
+rather than the API. The test that separates a key size from `RSA.Create(RSAParameters)` and
+`RSA.Create(string)` is that the **first parameter is an `int`** — every RSA and DSA overload that
+takes a size takes it first — and the rule now asks that instead, with two fixtures and a corpus pair
+pinning the two-argument spelling.
+
+⚠ **`T2` half-survived, and the reason is a fact about the BCL that the rule's design depends on.**
+Replacing `target.Instance?.Type` with `target.Property.ContainingType` turned `key-size-property`
+red and left `key-size-in-an-initializer` green. Verified by reflection rather than assumed:
+
+| Type | Where `KeySize` is declared |
+|---|---|
+| `RSA`, `DSA`, **`ECDsa`** | `AsymmetricAlgorithm` |
+| `RSACryptoServiceProvider`, `DSACryptoServiceProvider` | themselves — they override it |
+
+So the property's declaring type is `AsymmetricAlgorithm` for the modern factories and the concrete
+type only for the legacy ones. ⚠ **That makes the receiver-type test load-bearing in both
+directions at once**: keyed on the declaring type the rule misses `RSA.Create()` entirely, and
+widening the family set to `AsymmetricAlgorithm` to compensate would sweep in `ECDsa`, where 256 bits
+is correct. Only the receiver's type answers both.
+
+⚠ **`T7` is the opposite result, and it is reported rather than quietly kept.** The clause that
+replaced the arity check — the first parameter must be an `int` — was deleted, and nothing turned
+red. It is redundant for correctness: `Examine`'s `Value: int bits` pattern already declines
+`RSA.Create(RSAParameters)` and `RSA.Create(string)`, because a constant string does not match
+`int`. It is kept anyway, as a **cost filter**: the action runs on every object creation and every
+static `Create` in the compilation and `Family` walks a base-type chain, so the cheap `SpecialType`
+read keeps the walk off the hot path. The remark on the method says exactly that, so the next reader
+does not mistake a redundant clause for a load-bearing one.
+
+⚠ **And one sabotage found a clause with no test at all, before any of this.** Inverting `bits <= 0`
+to `bits < 0` turned nothing red: zero is the "not configured yet" sentinel and reporting it would
+tell a reader their 0-bit key should be 2048 bits, but nothing asserted that. A negative fixture was
+added and the sabotage now fails there. ⚠ Worth keeping beside doc 08's existing note on `SK5010`'s
+four survivors: **a surviving sabotage is a hole in the tests or a hole in the rule, and this batch
+found one of each.**
+
 #### ⚠ #143 is half a rule: the key size ships, the TLS version is already a compiler diagnostic
 
 The key-size half is `SK5021`, and the `CA5385` row above is its entire justification: the SDK covers
