@@ -133,7 +133,7 @@ public sealed class CallerInfoParameterOrderAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, list.Span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, list.Span)) {
             return;
         }
 

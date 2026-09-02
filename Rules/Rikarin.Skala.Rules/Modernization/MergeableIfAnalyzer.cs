@@ -70,11 +70,11 @@ public sealed class MergeableIfAnalyzer : DiagnosticAnalyzer {
 
         // Everything outside the surviving body is rewritten or deleted. A comment there is content
         // and a directive is a second parse of the file.
-        if (RewriteGuards.ContainsCommentOrDirective(
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                 tree,
                 TextSpan.FromBounds(outer.SpanStart, innermost.Statement.SpanStart)
             )
-            || RewriteGuards.ContainsCommentOrDirective(
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                 tree,
                 TextSpan.FromBounds(innermost.Statement.Span.End, outer.Span.End)
             )) {

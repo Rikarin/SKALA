@@ -33,7 +33,7 @@ public sealed class ReturningSwitchExpressionAnalyzer : DiagnosticAnalyzer {
         if (root.Parent is ElseClauseSyntax
             || root.ContainsDiagnostics
             || root.ContainsDirectives
-            || RewriteGuards.ContainsCommentOrDirective(root.SyntaxTree, root.Span)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(root.SyntaxTree, root.Span)
             || root.Else?.Statement is not IfStatementSyntax
             || PatternSafety.Unwrap(root.Condition) is not BinaryExpressionSyntax first
             || !ConstantPatternSafety.IsEquality(model, first, cancellation)

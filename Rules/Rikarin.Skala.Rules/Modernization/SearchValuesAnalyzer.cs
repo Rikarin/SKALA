@@ -31,7 +31,12 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
         var declaration = (FieldDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
-        if (!PrivateFieldUsage.TryRead(
+        // ⚠ The span question, not the node one. Both edits below land inside the declaration's own
+        // span — the declared type and the initializer — so a doc comment above the field is text
+        // this fix never touches. Asking over the full span is what kept this rule silent on every
+        // documented field, through the helper, after #302 believed it had fixed this rule (#325).
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(declaration.SyntaxTree, declaration.Span)
+            || !PrivateFieldUsage.TryRead(
                 model,
                 declaration,
                 cancellation,
@@ -95,7 +100,7 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
             if (expression.Parent is not ArgumentSyntax { NameColon: null } argument
                 || argument.Parent?.Parent is not InvocationExpressionSyntax invocation
                 || invocation.ContainsDirectives
-                || RewriteGuards.ContainsCommentOrDirective(invocation.SyntaxTree, invocation.Span)
+                || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(invocation.SyntaxTree, invocation.Span)
                 || model.GetOperation(invocation, cancellation) is not IInvocationOperation call
                 || call.TargetMethod.Name is not ("IndexOfAny"
                     or "IndexOfAnyExcept"

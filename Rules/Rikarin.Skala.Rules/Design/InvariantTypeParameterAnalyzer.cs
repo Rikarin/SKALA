@@ -126,7 +126,7 @@ public sealed class InvariantTypeParameterAnalyzer : DiagnosticAnalyzer {
         var keyword = occurrences.Covariant ? "out" : "in";
         var span = new TextSpan(syntax.Identifier.SpanStart, 0);
 
-        if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, syntax.Span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, syntax.Span)) {
             return;
         }
 

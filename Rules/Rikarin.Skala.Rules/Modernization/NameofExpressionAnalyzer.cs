@@ -97,7 +97,7 @@ public sealed class NameofExpressionAnalyzer : DiagnosticAnalyzer {
         }
 
         if (NullComparison.InsideExpressionTree(model, access, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(access)) {
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(access.SyntaxTree, access.Span)) {
             return;
         }
 
@@ -141,7 +141,7 @@ public sealed class NameofExpressionAnalyzer : DiagnosticAnalyzer {
 
         if (duplicates != 1
             || NullComparison.InsideExpressionTree(model, invocation, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(invocation)) {
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(invocation.SyntaxTree, invocation.Span)) {
             return;
         }
 
@@ -193,10 +193,16 @@ public sealed class NameofExpressionAnalyzer : DiagnosticAnalyzer {
             }
 
             var name = literal.Token.ValueText;
+            // ⚠ There is deliberately no comment guard here, and the one that stood here was dead.
+            // It asked over `argument`'s FULL span — the #302 over-reach — while the edit below is
+            // `literal.Span`, the span of a single string-literal token. A token's span cannot
+            // contain trivia, so a correctly-scoped guard could never return true and no fixture
+            // could reach it. Deleted rather than narrowed, for the reason SK0261's suffix branch
+            // deleted its own: a guard standing over a fixture that cannot exist reads as checked
+            // and is not.
             if (name.Length == 0
                 || !SyntaxFacts.IsValidIdentifier(name)
-                || SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None
-                || RewriteGuards.ContainsCommentOrDirective(argument)) {
+                || SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None) {
                 continue;
             }
 

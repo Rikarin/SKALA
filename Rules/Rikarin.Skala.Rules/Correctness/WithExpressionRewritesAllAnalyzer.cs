@@ -101,7 +101,7 @@ public sealed class WithExpressionRewritesAllAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(with.SyntaxTree, with.Span)
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(with.SyntaxTree, with.Span)
             || NullComparison.InsideExpressionTree(model, with, cancellation)) {
             return;
         }

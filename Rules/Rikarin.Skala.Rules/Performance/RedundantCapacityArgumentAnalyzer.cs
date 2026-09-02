@@ -53,7 +53,7 @@ public sealed class RedundantCapacityArgumentAnalyzer : DiagnosticAnalyzer {
             || arguments.Arguments[0] is not { Expression: LiteralExpressionSyntax literal } argument
             || !argument.RefKindKeyword.IsKind(SyntaxKind.None)
             || !literal.IsKind(SyntaxKind.NumericLiteralExpression)
-            || RewriteGuards.ContainsCommentOrDirective(arguments)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(arguments.SyntaxTree, arguments.Span)
             || context.SemanticModel.GetSymbolInfo(creation, cancellation).Symbol is not IMethodSymbol {
                 MethodKind: MethodKind.Constructor,
                 Parameters.Length: 1

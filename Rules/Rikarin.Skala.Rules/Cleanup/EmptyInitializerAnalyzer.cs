@@ -108,7 +108,7 @@ public sealed class EmptyInitializerAnalyzer : DiagnosticAnalyzer {
     ) {
         // The braces are deleted wholesale, so anything a person wrote between them would go with
         // them. An empty initializer holding a comment is a note about why it is empty.
-        if (RewriteGuards.ContainsCommentOrDirective(node.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(node.SyntaxTree, span)) {
             return;
         }
 

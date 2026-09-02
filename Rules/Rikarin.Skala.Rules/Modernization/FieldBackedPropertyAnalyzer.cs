@@ -31,7 +31,12 @@ public sealed class FieldBackedPropertyAnalyzer : DiagnosticAnalyzer {
         var declaration = (FieldDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
-        if (declaration.Declaration.Variables.Any(static variable => variable.Initializer is not null)
+        // ⚠ The node question, and this rule is the reason the shared helper no longer asks it for
+        // everyone (#325). The fix deletes the field outright, so a doc comment above it is not
+        // deleted but ORPHANED — left introducing whatever member follows, which is worse than
+        // losing it. `fixtures/SK1003/negative/comments.cs` pins that withdrawal.
+        if (RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(declaration)
+            || declaration.Declaration.Variables.Any(static variable => variable.Initializer is not null)
             || declaration.Parent is not ClassDeclarationSyntax owner
             || !owner.Members.OfType<PropertyDeclarationSyntax>()
                 .Any(static property => property.AccessorList is { Accessors.Count: 2 })
@@ -98,7 +103,7 @@ public sealed class FieldBackedPropertyAnalyzer : DiagnosticAnalyzer {
                 || use.Parent is PrefixUnaryExpressionSyntax prefix
                 && prefix.IsKind(SyntaxKind.AddressOfExpression)
                 || CallerArgumentSafety.CapturesText(model, use, cancellation)
-                || RewriteGuards.ContainsCommentOrDirective(use.SyntaxTree, use.Span)) {
+                || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(use.SyntaxTree, use.Span)) {
                 return;
             }
 

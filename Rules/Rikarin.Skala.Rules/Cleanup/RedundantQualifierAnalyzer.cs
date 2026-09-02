@@ -84,7 +84,7 @@ public sealed class RedundantQualifierAnalyzer : DiagnosticAnalyzer {
 
         if (!speculative.CandidateSymbols.IsEmpty
             || !SymbolEqualityComparer.Default.Equals(speculative.Symbol, bound)
-            || RewriteGuards.ContainsCommentOrDirective(qualified.SyntaxTree, qualified.Span)) {
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(qualified.SyntaxTree, qualified.Span)) {
             return;
         }
 
@@ -181,7 +181,7 @@ public sealed class RedundantQualifierAnalyzer : DiagnosticAnalyzer {
         var qualifier = TextSpan.FromBounds(access.SpanStart, access.Name.SpanStart);
         if (access.Expression is not BaseExpressionSyntax
             || access.Parent is MemberAccessExpressionSyntax { Expression: not BaseExpressionSyntax }
-            || RewriteGuards.ContainsCommentOrDirective(access.SyntaxTree, qualifier)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(access.SyntaxTree, qualifier)
             || context.SemanticModel.GetSymbolInfo(access, context.CancellationToken).Symbol is not { } member) {
             return;
         }

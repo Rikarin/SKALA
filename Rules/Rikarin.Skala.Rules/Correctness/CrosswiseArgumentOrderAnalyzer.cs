@@ -123,7 +123,7 @@ public sealed class CrosswiseArgumentOrderAnalyzer : DiagnosticAnalyzer {
 
             var left = arguments[i].Expression.Span;
             var right = arguments[i + 1].Expression.Span;
-            if (RewriteGuards.ContainsCommentOrDirective(
+            if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                     context.Node.SyntaxTree,
                     TextSpan.FromBounds(
                         left.Start,

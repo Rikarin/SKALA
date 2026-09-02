@@ -93,7 +93,7 @@ public sealed class StaticMemberViaDerivedTypeAnalyzer : DiagnosticAnalyzer {
 
         var replacement = TypeNameWriting.At(declaring, model, access.Expression.SpanStart);
         var span = access.Expression.Span;
-        var properties = RewriteGuards.ContainsCommentOrDirective(access.SyntaxTree, span)
+        var properties = RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(access.SyntaxTree, span)
             ? null
             : FixEdits.Pack((span, replacement));
 

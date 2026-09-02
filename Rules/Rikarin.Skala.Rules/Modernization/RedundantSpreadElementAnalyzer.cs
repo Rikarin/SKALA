@@ -101,8 +101,8 @@ public sealed class RedundantSpreadElementAnalyzer : DiagnosticAnalyzer {
         var last = initializer.Expressions[initializer.Expressions.Count - 1];
         var head = TextSpan.FromBounds(spread.SpanStart, first.SpanStart);
         var tail = TextSpan.FromBounds(last.Span.End, spread.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirective(spread.SyntaxTree, head)
-            || RewriteGuards.ContainsCommentOrDirective(spread.SyntaxTree, tail)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(spread.SyntaxTree, head)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(spread.SyntaxTree, tail)) {
             return;
         }
 

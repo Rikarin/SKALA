@@ -85,7 +85,7 @@ public sealed class UnsignedRightShiftAnalyzer : DiagnosticAnalyzer {
             || InsideChecked(outer)
             || !MayStandUnparenthesised(outer)
             || NullComparison.InsideExpressionTree(model, outer, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(outer)) {
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(outer.SyntaxTree, outer.Span)) {
             return;
         }
 

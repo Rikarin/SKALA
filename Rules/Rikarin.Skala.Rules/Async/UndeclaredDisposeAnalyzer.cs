@@ -198,7 +198,7 @@ public sealed class UndeclaredDisposeAnalyzer : DiagnosticAnalyzer {
     ///         ⚠ A directive anywhere in the header withdraws the finding: the fix inserts at a position
     ///         rather than replacing a node, and under <c>#if</c> the position it names is not the
     ///         position every branch compiles at. Asked with
-    ///         <c>RewriteGuards.ContainsCommentOrDirective(tree, span)</c> over the span the edit lands
+    ///         <c>RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, span)</c> over the span the edit lands
     ///         in — not over the trivia above the declaration, which is what an XML comment on the type
     ///         lives in and has nothing to do with this.
     ///     </para>
@@ -230,7 +230,7 @@ public sealed class UndeclaredDisposeAnalyzer : DiagnosticAnalyzer {
         }
 
         var header = TextSpan.FromBounds(declaration.Identifier.SpanStart, position);
-        return Modernization.RewriteGuards.ContainsCommentOrDirective(declaration.SyntaxTree, header)
+        return Modernization.RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(declaration.SyntaxTree, header)
             ? null
             : position;
     }

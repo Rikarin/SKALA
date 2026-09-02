@@ -82,7 +82,7 @@ public sealed class UsingDeclarationAnalyzer : DiagnosticAnalyzer {
         // — or the reverse — survives that deletion as a file which parses under one symbol set and
         // not the other, which is the one failure mode a safe fix may never have.
         if (HasDirective(statement)
-            || RewriteGuards.ContainsCommentOrDirective(
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                 statement.SyntaxTree,
                 TextSpan.FromBounds(statement.SpanStart, declaration.SpanStart)
             )) {

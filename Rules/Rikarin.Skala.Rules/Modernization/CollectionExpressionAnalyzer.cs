@@ -101,7 +101,7 @@ public sealed class CollectionExpressionAnalyzer : DiagnosticAnalyzer {
         }
 
         var span = TextSpan.FromBounds(value.SpanStart, elements.SpanStart);
-        if (RewriteGuards.ContainsCommentOrDirective(value.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(value.SyntaxTree, span)) {
             return;
         }
 

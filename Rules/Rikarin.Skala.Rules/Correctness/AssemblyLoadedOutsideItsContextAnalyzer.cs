@@ -101,7 +101,7 @@ public sealed class AssemblyLoadedOutsideItsContextAnalyzer : DiagnosticAnalyzer
 
         // ⚠ The edit replaces the `Assembly.LoadFrom` member access with the inherited instance
         // method's name and leaves the argument alone, so the path expression is not moved.
-        var properties = RewriteGuards.ContainsCommentOrDirective(invocation.SyntaxTree, access.Span)
+        var properties = RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(invocation.SyntaxTree, access.Span)
             ? null
             : FixEdits.Pack((access.Span, "LoadFromAssemblyPath"));
 

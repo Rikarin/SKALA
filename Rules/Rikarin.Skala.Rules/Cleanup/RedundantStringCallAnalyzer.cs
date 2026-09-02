@@ -232,7 +232,7 @@ public sealed class RedundantStringCallAnalyzer : DiagnosticAnalyzer {
         != NullableFlowState.MaybeNull;
 
     static void Report(SyntaxNodeAnalysisContext context, TextSpan span, string replacement, string message) {
-        if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span)) {
             return;
         }
 

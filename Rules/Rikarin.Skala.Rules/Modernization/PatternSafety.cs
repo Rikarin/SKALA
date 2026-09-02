@@ -122,7 +122,7 @@ internal static class PatternSafety {
     public static bool CanRewrite(SemanticModel model, BinaryExpressionSyntax binary, CancellationToken cancellation) =>
         !binary.ContainsDiagnostics
         && !binary.ContainsDirectives
-        && !RewriteGuards.ContainsCommentOrDirective(binary.SyntaxTree, binary.Span)
+        && !RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(binary.SyntaxTree, binary.Span)
         && model.GetOperation(binary, cancellation) is IBinaryOperation {
             OperatorMethod: null,
             Type.SpecialType: SpecialType.System_Boolean

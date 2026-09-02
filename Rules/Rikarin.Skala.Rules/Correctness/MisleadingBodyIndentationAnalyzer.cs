@@ -132,7 +132,7 @@ public sealed class MisleadingBodyIndentationAnalyzer : DiagnosticAnalyzer {
 
         // ⚠ Under an `#if` the two statements are not necessarily both in the program, and the
         // indentation of a conditionally compiled region is a convention rather than a claim.
-        if (RewriteGuards.ContainsCommentOrDirective(
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                 header.SyntaxTree,
                 TextSpan.FromBounds(body.Span.End, next.SpanStart)
             )) {

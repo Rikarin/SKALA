@@ -115,7 +115,7 @@ public sealed class CachedEmptyInstanceAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(node)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(node.SyntaxTree, node.Span)) {
             return;
         }
 

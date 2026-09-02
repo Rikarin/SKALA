@@ -59,7 +59,7 @@ internal static class CallShape {
     ///     </para>
     /// </remarks>
     internal static bool ContainsComment(SyntaxNode node) =>
-        Modernization.RewriteGuards.ContainsCommentOrDirective(node.SyntaxTree, node.Span);
+        Modernization.RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(node.SyntaxTree, node.Span);
 
     /// <summary>
     ///     Whether <paramref name="type" /> is the constructed form of the named generic type.

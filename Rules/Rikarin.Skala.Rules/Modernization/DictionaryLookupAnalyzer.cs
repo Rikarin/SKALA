@@ -160,12 +160,12 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(first)
-            || first.HasLeadingTrivia
-            && RewriteGuards.ContainsCommentOrDirective(
-                first.SyntaxTree,
-                first.FullSpan
-            )) {
+        // ⚠ TWO edits, so two questions (#325). The fix deletes the declaration's whole line —
+        // `LineSpanOf`, hence the node question on `first` — and separately rewrites the
+        // `ContainsKey` call into `TryGetValue`, so a comment inside that call is text the second
+        // edit destroys.
+        if (RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(first)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(invocation.SyntaxTree, invocation.Span)) {
             return;
         }
 
@@ -228,7 +228,7 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(statement)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(statement.SyntaxTree, statement.Span)) {
             return;
         }
 

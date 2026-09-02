@@ -74,7 +74,7 @@ public sealed class NullOrEmptyCheckAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(binary)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(binary.SyntaxTree, binary.Span)) {
             return;
         }
 

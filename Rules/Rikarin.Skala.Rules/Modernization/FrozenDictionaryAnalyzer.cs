@@ -31,7 +31,11 @@ public sealed class FrozenDictionaryAnalyzer : DiagnosticAnalyzer {
         var declaration = (FieldDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
-        if (!PrivateFieldUsage.TryRead(
+        // ⚠ The span question, not the node one. Both edits below land inside the declaration's own
+        // span — the declared type and the object creation — so a doc comment above the field is
+        // text this fix never touches (#325).
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(declaration.SyntaxTree, declaration.Span)
+            || !PrivateFieldUsage.TryRead(
                 model,
                 declaration,
                 cancellation,

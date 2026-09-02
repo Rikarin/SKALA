@@ -123,7 +123,7 @@ public sealed class BlockingOnAsyncAnalyzer : DiagnosticAnalyzer {
 
         // The fix exists only where `await` is already legal. See the type's remarks.
         if (AsyncContext.IsInsideAsyncBody(node)
-            && !Modernization.RewriteGuards.ContainsCommentOrDirective(node.SyntaxTree, node.Span)) {
+            && !Modernization.RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(node.SyntaxTree, node.Span)) {
             var replacement = producesValue && AsyncContext.NeedsParentheses(node)
                 ? "(await " + receiverText + ")"
                 : "await " + receiverText;

@@ -54,7 +54,7 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
         if (declaration.Parent is not ClassDeclarationSyntax
             || declaration.Declaration.Variables.Count != 1
             || declaration.AttributeLists.Count != 0
-            || RewriteGuards.ContainsCommentOrDirective(declaration.SyntaxTree, declaration.Span)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(declaration.SyntaxTree, declaration.Span)
             || declaration.Ancestors()
                 .OfType<TypeDeclarationSyntax>()
                 .Any(static type => type.Modifiers.Any(SyntaxKind.PartialKeyword))) {

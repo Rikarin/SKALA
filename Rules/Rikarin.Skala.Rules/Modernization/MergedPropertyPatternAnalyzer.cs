@@ -80,7 +80,7 @@ public sealed class MergedPropertyPatternAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(pattern.SyntaxTree, pattern.Span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(pattern.SyntaxTree, pattern.Span)) {
             return;
         }
 

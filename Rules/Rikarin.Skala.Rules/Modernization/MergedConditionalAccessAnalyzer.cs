@@ -97,8 +97,7 @@ public sealed class MergedConditionalAccessAnalyzer : DiagnosticAnalyzer {
 
         // `?.` is CS8072 inside an expression tree.
         if (NullComparison.InsideExpressionTree(model, conditional, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(conditional)
-            || RewriteGuards.ContainsCommentOrDirective(conditional.SyntaxTree, conditional.FullSpan)) {
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(conditional.SyntaxTree, conditional.Span)) {
             return;
         }
 

@@ -168,7 +168,14 @@ public sealed class NullableAnnotationSyntaxAnalyzer : DiagnosticAnalyzer {
     ///     list holding others, the attribute and one comma go and the brackets stay.
     /// </remarks>
     static TextSpan? Removal(AttributeListSyntax list, AttributeSyntax attribute) {
-        if (RewriteGuards.ContainsCommentOrDirective(list) || list.ContainsDirectives) {
+        // ⚠ The node question, deliberately: the single-attribute branch below deletes
+        // `list.FullSpan`, so the trivia above the list is inside the edit — see
+        // `fixtures/SK1094/negative/a-directive-in-the-attribute-list-trivia.cs`, where a
+        // `#nullable enable` sits there and deleting it would change the context of the whole file.
+        //
+        // ⚠ `|| list.ContainsDirectives` used to follow and was subsumed: every directive that sets
+        // that flag is trivia in the list's full width, so the walk above already visits it.
+        if (RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(list)) {
             return null;
         }
 

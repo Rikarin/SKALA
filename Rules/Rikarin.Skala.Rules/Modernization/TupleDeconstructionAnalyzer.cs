@@ -120,7 +120,7 @@ public sealed class TupleDeconstructionAnalyzer : DiagnosticAnalyzer {
         }
 
         var last = siblings[start + arity - 1];
-        if (RewriteGuards.ContainsCommentOrDirective(
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                 first.SyntaxTree,
                 TextSpan.FromBounds(first.SpanStart, last.FullSpan.End)
             )) {

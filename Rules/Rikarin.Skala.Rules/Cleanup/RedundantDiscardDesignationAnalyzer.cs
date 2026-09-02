@@ -84,7 +84,7 @@ public sealed class RedundantDiscardDesignationAnalyzer : DiagnosticAnalyzer {
         // wrong. The span therefore starts at the end of whatever token preceded the designation —
         // a type name, a closing brace or a closing parenthesis, depending on the shape.
         var span = TextSpan.FromBounds(discard.UnderscoreToken.GetPreviousToken().Span.End, discard.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span)) {
             return;
         }
 

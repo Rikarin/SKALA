@@ -53,7 +53,7 @@ public sealed class NullPatternAnalyzer : DiagnosticAnalyzer {
         // that no longer exists — a silence with no live reason is indistinguishable from a bug.
 
         // A comment inside the comparison is content the replacement would delete.
-        if (RewriteGuards.ContainsCommentOrDirective(binary.SyntaxTree, binary.Span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(binary.SyntaxTree, binary.Span)) {
             return;
         }
 
