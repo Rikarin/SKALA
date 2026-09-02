@@ -98,7 +98,7 @@ def record(arguments: argparse.Namespace) -> int:
         "corpus": arguments.corpus,
         "mode": arguments.mode,
         "commit": arguments.commit or git_head(),
-        "recorded": datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "recorded": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "files": len(located(document)),
         "total": sum(counts.values()),
         "counts": counts,
