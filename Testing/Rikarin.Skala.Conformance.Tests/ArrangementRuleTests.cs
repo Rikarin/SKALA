@@ -421,8 +421,11 @@ public sealed class ArrangementRuleTests {
     /// </summary>
     /// <remarks>
     ///     <c>ObjectCreationRule.TargetTypeOf</c> answered a simple assignment with
-    ///     <c>GetTypeInfo(assignment.Left).Type</c>, and ⚠ <b>a discard infers its type from the
-    ///     right-hand side</b> — so for <c>_ = new Regex(p, o)</c> the model answered <c>Regex</c>, the
+    ///     <c>GetTypeInfo(assignment.Left).Type</c>, and ⚠
+    ///     <b>
+    ///         a discard infers its type from the
+    ///         right-hand side
+    ///     </b> — so for <c>_ = new Regex(p, o)</c> the model answered <c>Regex</c>, the
     ///     "target equals created type" precondition passed, and the rewrite produced <c>_ = new(p, o)</c>:
     ///     <c>CS8754: There is no target type for 'new(string, RegexOptions)'</c>. The question the
     ///     precondition means to ask is what the position <em>imposes</em>, and a discard imposes
