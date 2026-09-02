@@ -530,7 +530,11 @@ for v in universe.values():
 
 if duplicating:
     print()
-    print(f"⚠ ALERT: {len(duplicating)} shipped rule(s) duplicate a diagnostic that is ON at stock:")
+    # ⚠ Rules and rows are counted separately on purpose. One rule can be claimed by several
+    # inspections -- SK1020 is two rows, CA1510 and CA1511 -- and reporting the row count as a
+    # rule count is how "six shipped rules" and "18 rows" got conflated in the first place.
+    print(f"⚠ ALERT: {len({d[0] for d in duplicating})} shipped rule(s) in {len(duplicating)} row(s) "
+          f"duplicate a diagnostic that is ON at stock:")
     for sk, key, why in sorted(duplicating):
         print(f"  {sk:8} {key:66} {why}")
     print("  ADR-008 hosts these. Retire the rule (`retired` in allocated-ids.txt, never deleted --")
