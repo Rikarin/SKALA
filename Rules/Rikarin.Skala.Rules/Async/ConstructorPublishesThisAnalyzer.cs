@@ -22,8 +22,11 @@ namespace Rikarin.Skala.Rules.Async;
 ///         <c>button.Click += OnClick;</c> in a constructor is the overwhelmingly common
 ///         <em>legitimate</em> shape — nearly every UI type ever written contains it — and a rule that
 ///         reports it is worse than no rule at all, because it would be dismissed wholesale and take
-///         the four real shapes with it. So the rule reports only publication whose <em>second
-///         reader is outside the constructor's control</em>: process-wide static state, or a thread
+///         the four real shapes with it. So the rule reports only publication whose
+///         <em>
+///             second
+///             reader is outside the constructor's control
+///         </em>: process-wide static state, or a thread
 ///         the constructor itself starts. Everything else is declined, and the negative fixture set,
 ///         which is more than twice the size of the positive one, is where that promise is kept.
 ///     </para>
@@ -293,8 +296,11 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
     ///     constructor and then looks back for where that thread was made, so the field-and-start-later
     ///     shape is declined by construction rather than by a filter.
     ///     <para>
-    ///         ⚠ <b>And starting a thread as the last act of a <c>sealed</c> type's constructor is not
-    ///         a finding either, because there is nothing left to race.</b> This gate exists because the
+    ///         ⚠
+    ///         <b>
+    ///             And starting a thread as the last act of a <c>sealed</c> type's constructor is not
+    ///             a finding either, because there is nothing left to race.
+    ///         </b> This gate exists because the
     ///         first draft reported <c>VideoPlayer</c> on the reference tree and that finding was
     ///         <em>wrong</em>: <c>Thread.Start</c>, <c>Task.Run</c> and <c>QueueUserWorkItem</c> all
     ///         publish a memory barrier, so everything the constructor wrote before them is visible to
@@ -332,9 +338,9 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
 
         var scheduler = Is(definition, starters.Task) && method.Name is "Run" ? "`Task.Run`"
             : Is(definition, starters.TaskFactory) && method.Name is "StartNew" ? "`Task.Factory.StartNew`"
-            : Is(definition, starters.ThreadPool) && method.Name is "QueueUserWorkItem"
-                ? "`ThreadPool.QueueUserWorkItem`"
-                : null;
+                : Is(definition, starters.ThreadPool) && method.Name is "QueueUserWorkItem"
+                    ? "`ThreadPool.QueueUserWorkItem`"
+                    : null;
 
         if (scheduler is not null) {
             Escapes(context, invocation.ArgumentList.Arguments, invocation, owner, scheduler);
@@ -438,13 +444,13 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
                     ):
                     return declared;
                 case AssignmentExpressionSyntax {
-                        RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
-                        Left: { } target,
-                        Right: ObjectCreationExpressionSyntax assigned
-                    } when SymbolEqualityComparer.Default.Equals(
-                        context.SemanticModel.GetSymbolInfo(target, context.CancellationToken).Symbol,
-                        thread
-                    ):
+                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
+                    Left: { } target,
+                    Right: ObjectCreationExpressionSyntax assigned
+                } when SymbolEqualityComparer.Default.Equals(
+                    context.SemanticModel.GetSymbolInfo(target, context.CancellationToken).Symbol,
+                    thread
+                ):
                     return assigned;
             }
         }

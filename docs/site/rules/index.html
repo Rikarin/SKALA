@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 268 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 271 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -36,6 +36,9 @@
 <tr><td><a href="SK3050.html">SK3050</a></td><td>An exception is thrown out of an <code>async void</code> body</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK3051.html">SK3051</a></td><td>The <code>async</code> method has no <code>CancellationToken</code> to forward</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3052.html">SK3052</a></td><td>The <code>async</code> lambda is converted to a <code>void</code>-returning delegate</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3060.html">SK3060</a></td><td>The lock is entered and not released on every path</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3061.html">SK3061</a></td><td>The <code>lock</code> target is not the object other threads take</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3062.html">SK3062</a></td><td><code>this</code> escapes before the constructor finishes</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>

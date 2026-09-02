@@ -32,8 +32,11 @@ namespace Rikarin.Skala.Rules.Async;
 ///         </item>
 ///     </list>
 ///     <para>
-///         ⚠ <b><c>lock (this)</c>, <c>lock (typeof(T))</c> and locking a string are deliberately not
-///         here.</b> <c>CA2002</c> — *do not lock on objects with weak identity* — already reports all
+///         ⚠
+///         <b>
+///             <c>lock (this)</c>, <c>lock (typeof(T))</c> and locking a string are deliberately not
+///             here.
+///         </b> <c>CA2002</c> — *do not lock on objects with weak identity* — already reports all
 ///         four of those, measured one shape per file on a pristine <c>net10.0</c> classlib: it is
 ///         silent in a default build (its shipped descriptor is
 ///         <c>IsEnabledByDefault=False, DefaultSeverity=Warning</c>) and fires on every one of them once
@@ -44,8 +47,11 @@ namespace Rikarin.Skala.Rules.Async;
 ///         above.
 ///     </para>
 ///     <para>
-///         ⚠ <b><c>SK3040</c>'s types are declined, in both shapes.</b> <c>var s = new SemaphoreSlim(1);
-///         lock (s) { }</c> is a fresh local <em>and</em> a lock over a synchronization primitive, and
+///         ⚠ <b><c>SK3040</c>'s types are declined, in both shapes.</b>
+///         <c>
+/// var s = new SemaphoreSlim(1);
+///         lock (s) { }
+///         </c> is a fresh local <em>and</em> a lock over a synchronization primitive, and
 ///         the second reading is the one that tells the reader what to do. The list is
 ///         <see cref="PrimitiveNames" />, copied from that rule rather than referenced, because a rule
 ///         may not depend on another rule's private judgement of its own scope.
@@ -212,9 +218,9 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
     ) {
         if (local.DeclaringSyntaxReferences.Length != 1
             || local.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
-                is not VariableDeclaratorSyntax declarator
+            is not VariableDeclaratorSyntax declarator
             || declarator.Initializer?.Value
-                is not (ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax)) {
+            is not (ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax)) {
             return;
         }
 
@@ -249,8 +255,11 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
     ///     containing type. A non-private field can be assigned from anywhere in the compilation, so the
     ///     rule would be guessing in both directions at once.
     ///     <para>
-    ///         ⚠ <b>A field assigned only in a constructor or in its own initializer is effectively
-    ///         <c>readonly</c> and is never reported.</b> That shape is common, it is correct, and
+    ///         ⚠
+    ///         <b>
+    ///             A field assigned only in a constructor or in its own initializer is effectively
+    ///             <c>readonly</c> and is never reported.
+    ///         </b> That shape is common, it is correct, and
     ///         reporting it would turn this rule into noise — it is the single most important negative
     ///         in the set and carries more than one fixture.
     ///     </para>

@@ -201,8 +201,11 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
     ///         inner class silence its container.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>A <c>partial</c> type silences the rule outright, and that gate is here because the
-    ///         shape was tested rather than reasoned about.</b> The walk starts from the
+    ///         ⚠
+    ///         <b>
+    ///             A <c>partial</c> type silences the rule outright, and that gate is here because the
+    ///             shape was tested rather than reasoned about.
+    ///         </b> The walk starts from the
     ///         <em>syntactic</em> declaration holding the enter, so it sees one part and not the others
     ///         — and the parts are usually in different files. A partial type with <c>Acquire()</c> in
     ///         one part and <c>Release()</c> in the other produced a false positive;

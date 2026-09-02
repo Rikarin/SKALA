@@ -208,9 +208,7 @@ public sealed class LockLifetimeAndPublicationBatchTests {
                               """;
 
         var compilation = RuleFixtures.Compile(first, "split-one.cs");
-        compilation = compilation.AddSyntaxTrees(
-            RuleFixtures.Compile(second, "split-two.cs").SyntaxTrees
-        );
+        compilation = compilation.AddSyntaxTrees(RuleFixtures.Compile(second, "split-two.cs").SyntaxTrees);
 
         var diagnostics = RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken);
 
