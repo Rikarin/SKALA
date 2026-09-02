@@ -146,6 +146,9 @@ public sealed class RuleFixtureTests {
         new ForwardStaticInitializerAnalyzer(), new UnassignedGetOnlyPropertyAnalyzer(),
         new MismatchedBackingFieldAnalyzer(), new UnimplementedPartialMethodAnalyzer(),
         new InstanceWriteToStaticAnalyzer(),
+        new ForeachElementDowncastAnalyzer(), new GetTypeOnATypeAnalyzer(),
+        new TypeComparedByNameAnalyzer(), new StaticMemberViaDerivedTypeAnalyzer(),
+        new HiddenBaseInterfaceOverloadAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

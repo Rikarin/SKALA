@@ -184,6 +184,9 @@ public static class AnalyzerHost {
         new ForwardStaticInitializerAnalyzer(), new UnassignedGetOnlyPropertyAnalyzer(),
         new MismatchedBackingFieldAnalyzer(), new UnimplementedPartialMethodAnalyzer(),
         new InstanceWriteToStaticAnalyzer(),
+        new ForeachElementDowncastAnalyzer(), new GetTypeOnATypeAnalyzer(),
+        new TypeComparedByNameAnalyzer(), new StaticMemberViaDerivedTypeAnalyzer(),
+        new HiddenBaseInterfaceOverloadAnalyzer(),
     ];
 
     /// <summary>
