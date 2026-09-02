@@ -25,7 +25,7 @@
 <tr><th>Language version floor</th><td>C# 7.0</td></tr>
 <tr><th>Since</th><td>1.2</td></tr>
 <tr><th>ReSharper</th><td><code>MergeCastWithTypeCheck</code> (<code>resharper_merge_cast_with_type_check_highlighting</code>)</td></tr>
-<tr><th>Supersedes</th><td>IDE0019, IDE0020</td></tr>
+<tr><th>Supersedes</th><td>IDE0020</td></tr>
 </tbody>
 </table>
 <h2 id="why">Why</h2>
@@ -41,7 +41,7 @@
     Visit(binary.Left);
 }</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>None known. It requires the cast to be the initializer of the block's <em>first</em> statement — the shape where the declaration already exists, so the fix moves one rather than inventing one — and requires the cast and the test to name the same type by symbol rather than by spelling, since <code>is IList</code> beside <code>(IList&lt;int&gt;)</code> share a prefix and can succeed and fail independently. An explicitly typed declaration is admitted only where its type is the tested type exactly, because a pattern variable is bound to the tested type and <code>object o = (Widget)x;</code> would not survive. It is silent on an <code>if</code> with an <code>else</code>, where the pattern variable is in scope but not definitely assigned; where lifting the name into the enclosing block would collide with another local scope of the member; and inside an expression tree, where a pattern is CS8122.</p>
+<p>None known. It requires the cast to be the initializer of the block's <em>first</em> statement — the shape where the declaration already exists, so the fix moves one rather than inventing one — and requires the cast and the test to name the same type by symbol rather than by spelling, since <code>is IList</code> beside <code>(IList&lt;int&gt;)</code> share a prefix and can succeed and fail independently. An explicitly typed declaration is admitted only where its type is the tested type exactly, because a pattern variable is bound to the tested type and <code>object o = (Widget)x;</code> would not survive. It is silent on an <code>if</code> with an <code>else</code>, where the pattern variable is in scope but not definitely assigned; where lifting the name into the enclosing block would collide with another local scope of the member; and inside an expression tree, where a pattern is CS8122. ⚠ <strong>The `IDE0020` claim is attribution and does not suppress, and that is recorded rather than implied ([#314]).</strong> Measured on one file: <code>IDE0020</code> lands on the declaration <code>var b = (B)x;</code> and this rule reports on the <code>x is B</code> test one statement above it, so <code>Supersession.Apply</code>'s exact <code>(path, line, column)</code> match cannot pair them. The anchor stays on the test — that is where the pattern goes and where the reader needs the squiggle — rather than being moved onto the cast to satisfy a matching heuristic. ⚠ <strong>`IDE0019` is no longer claimed here</strong>: it is the <code>as</code>-plus-null-check shape, which this rule does not match, and it now sits with <code>SK1050</code>.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK1015.severity</code></li>
