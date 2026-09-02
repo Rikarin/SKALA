@@ -27,8 +27,20 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <c>ArgumentOutOfRangeException</c> from their indexers, so the type of the failure survives
 ///         the rewrite. <b>An array does not qualify and is the shape this exclusion exists for</b>:
 ///         <c>array[i]</c> throws <c>IndexOutOfRangeException</c>, so a <c>catch</c> written for one
-///         stops catching. <c>ImmutableArray&lt;T&gt;</c> goes with it, and <c>IList&lt;T&gt;</c> and
-///         <c>IReadOnlyList&lt;T&gt;</c> because an array is a legal value for both.
+///         stops catching. <c>IList&lt;T&gt;</c> and <c>IReadOnlyList&lt;T&gt;</c> go with it, because an
+///         array is a legal value for both.
+///     </para>
+///     <para>
+///         ⚠ <b>
+///             <c>ImmutableArray&lt;T&gt;</c> is refused a guard earlier than that, and the difference
+///             was found by a sabotage that turned nothing red.
+///         </b> <c>System.Linq.ImmutableArrayExtensions</c> declares its own
+///         <c>ElementAt(this ImmutableArray&lt;T&gt;, int)</c>, so the call never binds to
+///         <c>Enumerable.ElementAt</c> and the receiver set is never consulted for it. Adding it to that
+///         set changes nothing, which is exactly what a guard nobody can see looks like. The fixture
+///         that holds the receiver set down is <c>Collection&lt;T&gt;</c>: it binds
+///         <c>Enumerable.ElementAt</c>, it declares an <c>int</c> indexer, and only the closed list
+///         refuses it.
 ///     </para>
 ///     <para>
 ///         ⚠ This is the same receiver set as <c>SK4030</c>, reached from the other direction: that rule
