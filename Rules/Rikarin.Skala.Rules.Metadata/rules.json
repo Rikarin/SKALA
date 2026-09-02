@@ -7730,6 +7730,33 @@
       "configuration": [
         "dotnet_diagnostic.SK2174.severity"
       ]
+    },
+    {
+      "id": "SK5030",
+      "concept": "xml-signature-unverified-key",
+      "title": "An XML signature checked against the key the document carries",
+      "category": "Security",
+      "defaultSeverity": "error",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S6377"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`SignedXml.CheckSignature()` with no argument verifies the document against the key written inside the document.",
+      "rationale": "An XML signature is supposed to answer “who signed this”, and the parameterless overload answers “is this document internally consistent” instead. It takes its key from the signature's own `KeyInfo` element — a part of the document — so an attacker rewrites the payload, signs it with a key pair they generated a second ago, writes their public key into `KeyInfo`, and the check returns `true`. Every document can vouch for itself, which means the check distinguishes nothing. That is the whole of the SAML and XML-DSig signature-bypass family, and it is dangerous precisely because the call site reads like a real validation: there is a `CheckSignature`, it returns a `bool`, and the code branches on it. The fix is to say which key you trust — `CheckSignature(publicKey)` with a key from configuration, or `CheckSignature(certificate, false)` with a certificate you resolved and chain-validated yourself. ⚠ There is no fix on the diagnostic because the edit is a decision rather than a substitution: which key is trusted, and where it comes from, is the question the rule exists to make somebody answer.",
+      "examples": {
+        "bad": "var signed = new SignedXml(document);\nsigned.LoadXml(signatureElement);\nif (signed.CheckSignature()) {\n    Accept(document);\n}",
+        "good": "var signed = new SignedXml(document);\nsigned.LoadXml(signatureElement);\nif (signed.CheckSignature(trustedPublicKey)) {\n    Accept(document);\n}"
+      },
+      "falsePositives": "One fact decides it and the fact is local: an invocation of `CheckSignature` with **zero** arguments whose containing type derives from `System.Security.Cryptography.Xml.SignedXml`. There is no aliasing question and nothing is followed. ⚠ The rule is silent whenever the enclosing operation block mentions `KeyInfo` at all, because there is a correct shape that ends in this call: read `signed.KeyInfo`, check the certificate in it against a trust store, and only then call `CheckSignature()` — by that point the key has been established and the call is sound. The guard is per-block rather than per-object on purpose; proving that two expressions name the same `SignedXml` is alias analysis, and at `error` severity the conservative direction is the one that misses. ⚠ Two neighbouring overloads are deliberately outside the rule rather than forgotten. `CheckSignatureReturningKey(out …)` verifies against the embedded key and then hands it to the caller to judge, so whether it is a bug is a question about the *next* statement. `CheckSignature(certificate, verifySignatureOnly: true)` takes a caller-supplied certificate, and whether skipping chain validation is wrong depends on where that certificate came from. Reporting either would be guessing. ⚠ Known gap, stated rather than hidden: `System.Security.Cryptography.Xml` is a NuGet package and not part of the shared framework, so in a compilation that does not reference it the type lookup returns null and the rule never runs — which is correct, and also means the shape occurs zero times in either reference tree.",
+      "configuration": [
+        "dotnet_diagnostic.SK5030.severity"
+      ]
     }
   ]
 }
