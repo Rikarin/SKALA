@@ -58,7 +58,10 @@ public sealed class IndexOfComparedToPositiveAnalyzer : DiagnosticAnalyzer {
         // int` — a user-defined operator cannot be selected for two `int` operands, and a lifted one
         // would need an `int?` that no covered `IndexOf` returns. Kept as the statement of intent,
         // the way SK2053 keeps its own `IsLifted` clause, and not credited as the thing that works.
-        if (model.GetOperation(binary, cancellation) is not IBinaryOperation { OperatorMethod: null, IsLifted: false }) {
+        if (model.GetOperation(binary, cancellation) is not IBinaryOperation {
+                OperatorMethod: null,
+                IsLifted: false
+            }) {
             return;
         }
 

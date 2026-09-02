@@ -23,8 +23,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     parameters that the body never writes evaluates to the same value on every pass, so the loop
 ///     runs zero times or hangs. The increment that was meant to be there is missing.
 ///     <para>
-///         ⚠ <b>Everything but a local or a parameter is declined, and that is the whole
-///         false-positive story.</b> <c>while (!stopped)</c> on a field, <c>while (queue.Count > 0)</c>,
+///         ⚠
+///         <b>
+///             Everything but a local or a parameter is declined, and that is the whole
+///             false-positive story.
+///         </b> <c>while (!stopped)</c> on a field, <c>while (queue.Count > 0)</c>,
 ///         <c>while (reader.Read())</c> — each reads state another statement, another thread or another
 ///         object changes. Only locals and parameters have a writer set this analysis can enumerate.
 ///     </para>
@@ -122,7 +125,11 @@ public sealed class UnchangingLoopConditionAnalyzer : DiagnosticAnalyzer {
     ///         <c>MemberAccessExpressionSyntax</c> is kept as intent and is not credited.
     ///     </para>
     /// </remarks>
-    static List<ISymbol>? ReadVariables(SemanticModel model, ExpressionSyntax condition, CancellationToken cancellation) {
+    static List<ISymbol>? ReadVariables(
+        SemanticModel model,
+        ExpressionSyntax condition,
+        CancellationToken cancellation
+    ) {
         var result = new List<ISymbol>();
         foreach (var node in condition.DescendantNodesAndSelf()) {
             switch (node) {
@@ -179,15 +186,14 @@ public sealed class UnchangingLoopConditionAnalyzer : DiagnosticAnalyzer {
     /// <summary>Any jump that can end the loop, anywhere in the body.</summary>
     static bool HasExit(StatementSyntax body) =>
         body.DescendantNodesAndSelf()
-            .Any(
-                static node => node.IsKind(SyntaxKind.ReturnStatement)
-                    || node.IsKind(SyntaxKind.ThrowStatement)
-                    || node.IsKind(SyntaxKind.ThrowExpression)
-                    || node.IsKind(SyntaxKind.BreakStatement)
-                    || node.IsKind(SyntaxKind.YieldBreakStatement)
-                    || node.IsKind(SyntaxKind.GotoStatement)
-                    || node.IsKind(SyntaxKind.GotoCaseStatement)
-                    || node.IsKind(SyntaxKind.GotoDefaultStatement)
+            .Any(static node => node.IsKind(SyntaxKind.ReturnStatement)
+                || node.IsKind(SyntaxKind.ThrowStatement)
+                || node.IsKind(SyntaxKind.ThrowExpression)
+                || node.IsKind(SyntaxKind.BreakStatement)
+                || node.IsKind(SyntaxKind.YieldBreakStatement)
+                || node.IsKind(SyntaxKind.GotoStatement)
+                || node.IsKind(SyntaxKind.GotoCaseStatement)
+                || node.IsKind(SyntaxKind.GotoDefaultStatement)
             );
 
     /// <summary>

@@ -28,8 +28,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         length at all.
 ///     </para>
 ///     <para>
-///         ⚠ <b><c>^0</c> is reported only where it indexes an element, never where it bounds a
-///         range.</b> <c>x[..^0]</c> is the whole collection and <c>x[^0..]</c> is an empty slice; both
+///         ⚠
+///         <b>
+///             <c>^0</c> is reported only where it indexes an element, never where it bounds a
+///             range.
+///         </b> <c>x[..^0]</c> is the whole collection and <c>x[^0..]</c> is an empty slice; both
 ///         are legal, measured so on an empty collection too, and both are spellings people choose
 ///         deliberately.
 ///     </para>
@@ -108,7 +111,11 @@ public sealed class InvalidConstantIndexOrRangeAnalyzer : DiagnosticAnalyzer {
     ///     ⚠ Spelled out rather than with a list pattern: this assembly targets <c>netstandard2.0</c>,
     ///     which has no <c>System.Index</c>, and a list pattern needs one to lower.
     /// </remarks>
-    static bool TakesAnInteger(SemanticModel model, ElementAccessExpressionSyntax access, CancellationToken cancellation) {
+    static bool TakesAnInteger(
+        SemanticModel model,
+        ElementAccessExpressionSyntax access,
+        CancellationToken cancellation
+    ) {
         var symbol = model.GetSymbolInfo(access, cancellation).Symbol;
         if (symbol is null) {
             return model.GetTypeInfo(access.Expression, cancellation).Type is IArrayTypeSymbol;
@@ -123,7 +130,11 @@ public sealed class InvalidConstantIndexOrRangeAnalyzer : DiagnosticAnalyzer {
     ///     ⚠ Only the receivers whose <c>Range</c> semantics are the language's own. A type declaring
     ///     its own <c>this[Range]</c> is free to interpret a reversed range however it wishes.
     /// </summary>
-    static bool IsLanguageSliced(SemanticModel model, ElementAccessExpressionSyntax access, CancellationToken cancellation) {
+    static bool IsLanguageSliced(
+        SemanticModel model,
+        ElementAccessExpressionSyntax access,
+        CancellationToken cancellation
+    ) {
         var receiver = model.GetTypeInfo(access.Expression, cancellation).Type;
         return receiver is IArrayTypeSymbol
             || receiver?.SpecialType == SpecialType.System_String
