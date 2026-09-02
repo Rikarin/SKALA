@@ -45,6 +45,15 @@ using System.Globalization;
 //                     obj/, which the loader skips. A tree that sets `ImplicitUsings` binds
 //                     `Dictionary<,>` to an error type without it and most of the semantic rule
 //                     set goes quiet for the wrong reason.
+//   sweep [SKxxxx…]   ⚠ the corpus as an instrument a SEMANTIC rule can be measured with
+//                     (issue #277). One compilation per vendored tree over that tree's own 380
+//                     sources — never the `.expected.cs` twins — with the SDK's implicit global
+//                     usings synthesised in, and the analyzer host told this is not a loose load so
+//                     the `requiresSemantics` rules actually run. Prints the harness's own recall
+//                     against the fixture tree, its CS-error count with and without the usings, and
+//                     its `SK9030` count, beside every finding count. Each id named on the command
+//                     line has its own first positive fixture planted into the same compilation as
+//                     a canary, so that its zero reads as "ran and declined" rather than "never ran".
 //   sample <tree> <n> <dest>
 //                     redraw a corpus sample from a tree, reproducibly: the file is chosen by a
 //                     hash of its path rather than by a seeded sequence, so the same commit and
@@ -186,6 +195,20 @@ switch (args[0]) {
                 auditPaths.Length > 0 ? auditPaths : [Corpus.SetRoot(Corpus.Real)],
                 true,
                 Array.IndexOf(args, "--implicit-usings") >= 0
+            )
+        );
+
+        return 0;
+    }
+    case "sweep": {
+        // Issue #277: a `corpus/real` zero from a semantic rule carried no information, because
+        // `skala check` never reaches those paths and `--load=loose` skips the rule outright. This
+        // is the route that does reach them, with the error bars printed beside the counts.
+        Console.Write(
+            RuleCorpus.Report(
+                [
+                    .. args[1..].Where(static argument => !argument.StartsWith("--", StringComparison.Ordinal))
+                ]
             )
         );
 
