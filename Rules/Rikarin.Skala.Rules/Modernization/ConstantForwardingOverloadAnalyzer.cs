@@ -150,7 +150,8 @@ public sealed class ConstantForwardingOverloadAnalyzer : DiagnosticAnalyzer {
         }
 
         var defaultText = last.Expression.ToString();
-        var targetParameterSyntax = targetSyntax.ParameterList.Parameters[targetSyntax.ParameterList.Parameters.Count - 1];
+        var targetParameterSyntax =
+            targetSyntax.ParameterList.Parameters[targetSyntax.ParameterList.Parameters.Count - 1];
         if (targetParameterSyntax.Default is not null) {
             return;
         }
@@ -209,7 +210,8 @@ public sealed class ConstantForwardingOverloadAnalyzer : DiagnosticAnalyzer {
         var name = call.Expression switch {
             IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
             MemberAccessExpressionSyntax {
-                Expression: ThisExpressionSyntax, Name: IdentifierNameSyntax member
+                Expression: ThisExpressionSyntax,
+                Name: IdentifierNameSyntax member
             } => member.Identifier.ValueText,
             _ => null
         };
