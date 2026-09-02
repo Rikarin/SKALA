@@ -39,8 +39,23 @@ public sealed record HistoryEntry {
     [JsonPropertyName("new")]
     public int New { get; init; }
 
-    [JsonPropertyName("fixable")]
-    public int Fixable { get; init; }
+    /// <summary>
+    ///     ⚠ Two keys, and neither of them is <c>fixable</c>.
+    /// </summary>
+    /// <remarks>
+    ///     The key used to be one <c>fixable</c> counting every finding with a fix, which is not a
+    ///     number any renderer can print beside <c>skala fix</c> — that command defaults to
+    ///     <c>--safe</c>. Recording the total under the ambiguous name is how a future <c>trend</c>
+    ///     column would inherit the same claim, so the ambiguous name is retired rather than redefined:
+    ///     a line written before this change has neither key and reads as zero, which is visibly
+    ///     missing data rather than a wrong count silently spliced into the series.
+    /// </remarks>
+    [JsonPropertyName("fixableSafe")]
+    public int FixableSafe { get; init; }
+
+    /// <summary>Findings whose fix needs <c>--include</c> and a review. See <see cref="FixableSafe" />.</summary>
+    [JsonPropertyName("fixableUnsafe")]
+    public int FixableUnsafe { get; init; }
 
     [JsonPropertyName("files")]
     public int Files { get; init; }
@@ -100,7 +115,8 @@ public static class History {
             Suggestions = report.Count(SkalaSeverity.Info),
             Hints = report.Count(SkalaSeverity.Hidden),
             New = report.HasBaseline || report.ChangedCodeReference is not null ? report.New.Count() : 0,
-            Fixable = report.Fixable.Count(),
+            FixableSafe = report.SafelyFixable.Count(),
+            FixableUnsafe = report.UnsafelyFixable.Count(),
             Files = report.FileCount,
             Lines = report.LineCount,
             Duplication = report.Metrics.Duplication,

@@ -256,6 +256,75 @@ public sealed class ReportingTests {
         Assert.DoesNotContain("::error::gate", passed, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     ⚠ <c>skala fix</c> defaults to <c>--safe</c>, so a total called "fixable" printed beside that
+    ///     command names the fixes the command declines (#334).
+    /// </summary>
+    /// <remarks>
+    ///     What this replaced read <c>1 157 findings · 297 fixable (`skala fix`)</c> on a tree where
+    ///     <c>skala fix --safe --dry-run</c> had nothing to apply: 0 of the 297 were safe. The zero is
+    ///     printed rather than elided, because "0 safe fixes" is the fact that stops the reader typing
+    ///     the bare command.
+    /// </remarks>
+    [Fact]
+    public void Totals_SeparateTheSafeFixesFromTheOnesTheDefaultCommandDeclines() {
+        var report = Sample(
+            Modernization("SK1004", 12, false) with { Fix = [new FixEdit("/tmp/repo/Core/Foo.cs", 0, 1, "a")] },
+            Modernization("SK1083", 20, false) with { Fix = [new FixEdit("/tmp/repo/Core/Foo.cs", 5, 1, "b")] },
+            Modernization("SK2001", 30, false)
+        );
+
+        Assert.Empty(report.SafelyFixable);
+        Assert.Equal(2, report.UnsafelyFixable.Count());
+
+        var totals = ReportTotals.Render(report);
+        Assert.Contains("0 safe fixes (`skala fix`)", totals, StringComparison.Ordinal);
+        Assert.Contains("2 unsafe fixes (`skala fix --include …`, review each)", totals, StringComparison.Ordinal);
+
+        // ⚠ The load-bearing absence: no count is offered under the bare word, in any casing.
+        Assert.DoesNotContain("fixable", totals, StringComparison.OrdinalIgnoreCase);
+
+        // The other direction — a safe fix is still counted, and still against the bare command.
+        var safe = ReportTotals.Render(Sample(Modernization()));
+        Assert.Contains("1 safe fix (`skala fix`)", safe, StringComparison.Ordinal);
+        Assert.DoesNotContain("unsafe", safe, StringComparison.Ordinal);
+
+        // Nothing to fix at all says nothing about fixing.
+        Assert.DoesNotContain(
+            "safe fix",
+            ReportTotals.Render(Sample(Modernization("SK2001", 30, false))),
+            StringComparison.Ordinal
+        );
+    }
+
+    /// <summary>
+    ///     The CI step summary is the surface #334 was reported from, and it had its own copy of the
+    ///     defect: one <c>Fixable | 297 (`skala fix`)</c> row.
+    /// </summary>
+    [Fact]
+    public void StepSummary_CountsTheSafeFixesAndTheUnsafeOnesInSeparateRows() {
+        var report = Sample(
+            Modernization(),
+            Modernization("SK1004", 20, false) with { Fix = [new FixEdit("/tmp/repo/Core/Foo.cs", 0, 1, "a")] }
+        ) with { Gate = GateResult.Pass("ci") };
+
+        var summary = GithubRenderer.StepSummary(report);
+
+        Assert.Contains("| Safe fixes | 1 (`skala fix`) |", summary, StringComparison.Ordinal);
+        Assert.Contains(
+            "| Unsafe fixes | 1 (`skala fix --include …`, review each) |",
+            summary,
+            StringComparison.Ordinal
+        );
+
+        Assert.DoesNotContain("| Fixable |", summary, StringComparison.Ordinal);
+
+        // The unsafe row is conditional; the safe row is not, so "0 (`skala fix`)" is always stated.
+        var safeOnly = GithubRenderer.StepSummary(Sample(Modernization()) with { Gate = GateResult.Pass("ci") });
+        Assert.Contains("| Safe fixes | 1 (`skala fix`) |", safeOnly, StringComparison.Ordinal);
+        Assert.DoesNotContain("Unsafe fixes", safeOnly, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void AgentRenderer_IsBounded() {
         var many = Enumerable.Range(0, 400).Select(static i => Modernization(line: i)).ToArray();

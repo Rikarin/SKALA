@@ -523,23 +523,30 @@ public static class CloneDetector {
             right++;
         }
 
+        var length = minTokens + left + right;
+
+        // ⚠ Spent whether or not the group is reported. A declined table is still covered ground: leaving
+        // its interior unconsumed would hand the same run back one token to the right, for every one of
+        // its windows, and turn the greedy pass quadratic in the length of the list.
+        for (var i = 0; i < positions.Count; i++) {
+            var owner = owners[i];
+            var from = Math.Max(fileStart[owner], positions[i] - left - minTokens + 1);
+            var to = Math.Min(fileStart[owner + 1] - 1, positions[i] + minTokens + right - 1);
+            for (var w = from; w <= to; w++) {
+                consumed[w] = true;
+            }
+        }
+
+        if (IsOneList(positions, owners, files, fileStart, left, length)) {
+            return null;
+        }
+
         var occurrences = ImmutableArray.CreateBuilder<CloneOccurrence>(positions.Count);
         for (var i = 0; i < positions.Count; i++) {
             var owner = owners[i];
             var file = files[owner];
-
-            // Tokens [first, past) are this occurrence; a window [w, w + minTokens) overlaps it for
-            // every w from first - minTokens + 1 to past - 1, clamped to the file.
-            var first = positions[i] - left;
-            var past = positions[i] + minTokens + right;
-            var from = Math.Max(fileStart[owner], first - minTokens + 1);
-            var to = Math.Min(fileStart[owner + 1] - 1, past - 1);
-            for (var w = from; w <= to; w++) {
-                consumed[w] = true;
-            }
-
-            var firstToken = first - fileStart[owner];
-            var lastToken = past - 1 - fileStart[owner];
+            var firstToken = positions[i] - left - fileStart[owner];
+            var lastToken = firstToken + length - 1;
             var start = file.Tokens.Starts[firstToken];
             var end = file.Tokens.Ends[lastToken];
             var startLine = file.Text.Lines.IndexOf(start);
@@ -550,7 +557,58 @@ public static class CloneDetector {
 
         // Positions ascend and files are in path order, so the occurrences are already sorted by path
         // then offset and Occurrences[0] is the first occurrence the finding is reported at.
-        return new(minTokens + left + right, occurrences.ToImmutable());
+        return new(length, occurrences.ToImmutable());
+    }
+
+    /// <summary>
+    ///     Whether every occurrence is a window over one uniform sibling run — <b>issue #333</b>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>A list of similar rows matches itself, shifted, and no amount of extraction removes it.</b>
+    ///     Identifiers normalise to one class, so a 290-element list of <c>new SomeAnalyzer(),</c> is
+    ///     1 450 tokens with a period of five and its first hundred tokens are a verified clone of its
+    ///     second hundred. This is the artefact <b>#323</b> removed for file headers, surviving wherever a
+    ///     file holds a run of similar declarations — and it is why 13 of 26 <c>Formatting/</c> findings
+    ///     were once triaged one at a time as "irreducible option tables" rather than fixed here.
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             The length test against the stride is what keeps real duplication reporting, and it is
+    ///             not a threshold.
+    ///         </b> An occupance longer than the run's period provably spans more than one
+    ///         element, so it is "these rows, then those rows" — nothing to extract. One that fits inside a
+    ///         single element is a match of one element against another, which is a block pasted into a
+    ///         list and is exactly the finding the rule is for. <see cref="TokenStream.Runs" /> records the
+    ///         period rather than a token count so this question needs no number anybody has to choose;
+    ///         raising <c>minTokens</c> instead would silence the 111- and 163-token pairs that are
+    ///         genuine.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Not restricted to one file, deliberately. Two option tables in two files are the same
+    ///         artefact for the same reason as one table against itself: the rows carry no information the
+    ///         normalisation has not already erased, so a cross-file match between them is evidence of
+    ///         nothing. The narrower "same run in the same file" test would have left every one of those
+    ///         findings standing.
+    ///     </para>
+    /// </remarks>
+    static bool IsOneList(
+        List<int> positions,
+        List<int> owners,
+        LexedFile[] files,
+        int[] fileStart,
+        int left,
+        int length
+    ) {
+        for (var i = 0; i < positions.Count; i++) {
+            var tokens = files[owners[i]].Tokens;
+            var first = positions[i] - left - fileStart[owners[i]];
+            var run = tokens.RunCovering(first, first + length);
+            if (run < 0 || length <= tokens.StrideOf(run)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>Whether every occurrence has the same token at <paramref name="offset" /> from its seed.</summary>

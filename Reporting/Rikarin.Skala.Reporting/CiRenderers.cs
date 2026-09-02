@@ -69,7 +69,25 @@ public static class GithubRenderer {
         Row(builder, "Findings", report.Reportable.Count().ToString(CultureInfo.InvariantCulture));
         Row(builder, "Errors", report.Count(SkalaSeverity.Error).ToString(CultureInfo.InvariantCulture));
         Row(builder, "Warnings", report.Count(SkalaSeverity.Warning).ToString(CultureInfo.InvariantCulture));
-        Row(builder, "Fixable", report.Fixable.Count().ToString(CultureInfo.InvariantCulture) + " (`skala fix`)");
+        // ⚠ Two rows, and the word "Fixable" is gone from both. One row saying `Fixable | 297 (skala
+        // fix)` was the CI summary this repository actually printed while `skala fix --safe --dry-run`
+        // had nothing to apply — `skala fix` defaults to `--safe`, so the total counted the fixes the
+        // named command declines. The safe row prints at zero whenever anything carries a fix, because
+        // "0" is the fact the reader needs before typing the command.
+        Row(
+            builder,
+            "Safe fixes",
+            report.SafelyFixable.Count().ToString(CultureInfo.InvariantCulture) + " (`skala fix`)"
+        );
+
+        var needReview = report.UnsafelyFixable.Count();
+        if (needReview > 0) {
+            Row(
+                builder,
+                "Unsafe fixes",
+                needReview.ToString(CultureInfo.InvariantCulture) + " (`skala fix --include …`, review each)"
+            );
+        }
 
         if (report.HasBaseline || report.ChangedCodeReference is not null) {
             Row(builder, "New", report.New.Count().ToString(CultureInfo.InvariantCulture));

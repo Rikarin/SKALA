@@ -54,6 +54,16 @@ public static partial class SkalaCommandLine {
         var output = new Option<string?>("--output", "-o") {
             Description = "Where to write the SARIF. Default .skala/report.sarif."
         };
+
+        // ⚠ A second file, not a narrowing of `--output`. GitHub code scanning does not read SARIF
+        // `suppressions`, so every result the baseline accepts is raised as an open alert; the full
+        // log stays correct and stays what `report`, `trend` and `baseline` read.
+        var unsuppressedOutput = new Option<string?>("--output-unsuppressed") {
+            Description =
+                "Also write a SARIF here with the suppressed results left out, for a code-scanning "
+                + "upload that cannot read `suppressions`."
+        };
+
         var includeHints = new Option<bool>("--include-hints") { Description = "Show hint-level findings too." };
         var noCache = new Option<bool>("--no-cache") {
             Description = "Ignore the incremental cache and re-run every analyzer."
@@ -117,9 +127,9 @@ public static partial class SkalaCommandLine {
         var command = new Command("check", "Run the analyzers and report, with a gate.");
         command.Arguments.Add(paths);
         foreach (var option in new Option[] {
-                     load, binlog, project, requireFresh, gate, format, output, includeHints, noCache, noColor,
-                     showSuppressions, rules, define, noFormatting, since, baseline, noNewSuppressions, record, summary,
-                     duplication, profile
+                     load, binlog, project, requireFresh, gate, format, output, unsuppressedOutput, includeHints,
+                     noCache, noColor, showSuppressions, rules, define, noFormatting, since, baseline,
+                     noNewSuppressions, record, summary, duplication, profile
                  }) {
             command.Options.Add(option);
         }
@@ -145,6 +155,7 @@ public static partial class SkalaCommandLine {
                     Define = ParseDefines(parse.GetValue(define)),
                     IncludeFormatting = !parse.GetValue(noFormatting),
                     Output = parse.GetValue(output),
+                    UnsuppressedOutput = parse.GetValue(unsuppressedOutput),
                     Since = parse.GetValue(since),
 
                     // ⚠ Null and empty mean different things here. `--baseline` with no value is

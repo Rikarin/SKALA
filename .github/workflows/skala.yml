@@ -62,6 +62,7 @@ jobs:
           --duplication
           --format=github
           --output .skala/report.sarif
+          --output-unsuppressed .skala/code-scanning.sarif
 
       # The `ci` gate on master: everything outside the committed baseline has to be clean.
       - name: Check (master)
@@ -75,6 +76,7 @@ jobs:
           --record
           --format=github
           --output .skala/report.sarif
+          --output-unsuppressed .skala/code-scanning.sarif
 
       # ⚠ `if: always()` on everything below. A failing gate is exactly when the report matters, and
       # a workflow that only publishes its findings when there are none is a workflow nobody reads.
@@ -91,21 +93,27 @@ jobs:
       # every alert the last good run raised**. A crash would then silently clear the security
       # surface it crashed before measuring, which is strictly worse than a skipped step. A report
       # that does not exist is reported by the step that failed to produce it.
-      # ⚠ **The file is uploaded whole, and it must stay that way.** It carries every finding the run
-      # produced, and the ones the baseline accepts carry a SARIF `suppressions` entry saying so —
-      # code scanning shows those dismissed rather than open, so the alert list is what the gate above
-      # called new and nothing here has to filter anything to make that true (doc 09 § "The verdict
-      # and the page cannot disagree").
+      # ⚠ **A different file from the one every other step below reads**, and the difference is the
+      # whole point. `--output-unsuppressed` writes a second SARIF from the same run with the
+      # suppressed results left out; `--output` keeps the full one for the artefact and the comment.
       #
-      # ⚠ Do not insert a `jq` step to drop the accepted results. It was the shape of the defect this
-      # replaced, in reverse: a dropped result claims "this run did not find it", which is a different
-      # and false statement from "this repository accepts it" — and the two steps below render the
-      # same file into the PR comment and the kept artefact, so every number on both would move.
+      # ⚠ **The claim that used to stand here — that code scanning shows suppressed results dismissed
+      # rather than open — is false, and it was load-bearing.** GitHub's SARIF support documentation
+      # does not mention `suppressions` at all; the property is simply not consumed. Measured on this
+      # repository: all five open `SK6034` alerts were findings `.skala/baseline.sarif` accepts, and in
+      # one run 1 145 of 1 163 results were baselined — a 98 % noise alert list in which the 18
+      # findings the gate failed on could not be seen. See #332.
+      #
+      # ⚠ Do not insert a `jq` step to drop the accepted results, and do not point this step back at
+      # `.skala/report.sarif`. The narrowing belongs to the tool, where it is tested and where the
+      # `rules` table and the `invocations` entry — the gate verdict, the load summary — survive it; a
+      # `jq` filter over the report would also move every number in the two steps below, which render
+      # the full file into the PR comment and the kept artefact.
       - name: Upload SARIF to code scanning
-        if: always() && hashFiles('.skala/report.sarif') != ''
+        if: always() && hashFiles('.skala/code-scanning.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: .skala/report.sarif
+          sarif_file: .skala/code-scanning.sarif
           category: skala
 
       - name: Keep the report as an artifact
