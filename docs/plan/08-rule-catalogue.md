@@ -6876,3 +6876,51 @@ can never appear as a diagnostic in a build at all, and a Sonar id only appears 
 `SonarAnalyzer.CSharp` is in the same compilation. 11 are `IDE*` and 4 are `CA*`. So the suppression
 job was always the minority case, and reading `supersedes` as "these are suppressed for you" was
 never what the catalogue said — only what it looked like.
+
+## The test-code exemption, and why the helper stays reported
+
+[#319] is right about the mechanism and its proposed remedy does not survive contact. Both halves are
+worth recording, because the refutation is the more useful half.
+
+**Confirmed.** `AsyncContext.IsTestMethod` recognises test code by an attribute on the *enclosing
+method*. `Rules/Rikarin.Skala.Rules.Tests/RuleFixtures.cs:158` blocks on
+`.GetAwaiter().GetResult()`; it is the one method all 346 `[Fact]` callers funnel through and it
+carries no attribute of its own, so the exemption covered every caller and missed the call. Seven
+other call sites consult the same predicate as an exemption — `SK5021`, `SK5020` (twice), `SK3002`,
+`SK3004`, `SK3051`, `SK3050` — and every one of them shares the blind spot. An eighth, `SK8005`
+(`ThreadSleepInTest`), consults it *inverted*, so there the same gap is a false **negative**: a
+`Thread.Sleep` inside a shared `WaitForSettle()` helper is exactly what the rule exists to find and
+it is silently missed. That one is left alone here — widening what a rule reports is a different
+decision from widening what it excuses, and it needs its own fixtures.
+
+⚠ **Refuted, in both halves.** #319 asked for "a non-public helper declared in a test project".
+
+- *Non-public* decides nothing: `RuleFixtures` is a `public static class` and `Analyze` is
+  `public static`, so the narrow test would have left the finding exactly where it was. The issue's
+  own example fails its own criterion.
+- *Declared in a test project* is the compilation-references question, and [#303] already examined
+  and refused it, with `SK2160/positive/a-helper-class-holding-no-test-case.cs` pinning the refusal
+  in prose: a class is not test code "merely for living beside one, referencing xUnit, or being named
+  after tests".
+
+⚠ **And the refusal is now measured rather than argued.** Wiring "the compilation references a test
+framework" in and running the corpus turned **31 positive fixtures silent in one run** — every
+positive of `SK3002`, `SK3004`, `SK3050`, `SK3051`, `SK5020` and `SK5021`. The cause is that
+`RuleFixtures.References` is built from the test host's `TRUSTED_PLATFORM_ASSEMBLIES`, so *every
+fixture in the corpus* references xunit. Six rules would have passed their entire negative sets while
+switched off, which is the "a zero from a disabled check and a zero from clean code are the same
+zero" failure in its purest form. Any future rule that reasons about references has this trap waiting
+for it.
+
+**Shipped instead: the type-level question, which is #303's rule and not a new one.**
+`AsyncContext.IsTestCode` is the enclosing method's attribute *or*
+`TestFrameworks.HoldsATestCase(enclosing type)` — xUnit's own discovery rule, decidable from
+attributes alone. That closes the second blind spot the sweep found and #319 did not name: a fixture
+constructor, an `IDisposable.Dispose` teardown, a field initializer and a lambda inside a real test
+class carry no attribute and were all reported. All seven exemption sites now ask it.
+
+⚠ **So the `SK3002` finding on `RuleFixtures.Analyze` stands**, and baselining it is the honest
+outcome #319 itself allows for. Reaching it needs the call graph the issue rules out, or the
+reference sniffing #303 decided against and the 31 fixtures now argue against.
+`SK3002/positive/in-a-helper-class-holding-no-test-case.cs` pins the boundary from the reported side
+and `SK3002/negative/in-a-teardown-of-a-test-class.cs` from the excused side.

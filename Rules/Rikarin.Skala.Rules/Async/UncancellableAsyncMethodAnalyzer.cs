@@ -172,7 +172,7 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
         // signature the runtime chooses.
         if (method.AttributeLists.Count > 0
             || string.Equals(method.Identifier.ValueText, "Main", StringComparison.Ordinal)
-            || AsyncContext.IsTestMethod(method)) {
+            || AsyncContext.IsTestCode(method, context.SemanticModel, context.CancellationToken)) {
             return;
         }
 

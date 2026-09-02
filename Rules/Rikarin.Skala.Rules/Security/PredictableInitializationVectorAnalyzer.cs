@@ -98,7 +98,7 @@ public sealed class PredictableInitializationVectorAnalyzer : DiagnosticAnalyzer
         var assignment = (ISimpleAssignmentOperation)context.Operation;
         if (assignment.Target is not IPropertyReferenceOperation { Property.Name: "IV" } target
             || !Inherits(target.Property.ContainingType, known.Symmetric)
-            || AsyncContext.IsTestMethod(assignment.Syntax)) {
+            || AsyncContext.IsTestCode(assignment.Syntax, assignment.SemanticModel, context.CancellationToken)) {
             return;
         }
 
@@ -118,7 +118,7 @@ public sealed class PredictableInitializationVectorAnalyzer : DiagnosticAnalyzer
         if (invocation.TargetMethod.Name != "CreateEncryptor"
             || invocation.Arguments.Length != 2
             || !Inherits(invocation.TargetMethod.ContainingType, known.Symmetric)
-            || AsyncContext.IsTestMethod(invocation.Syntax)) {
+            || AsyncContext.IsTestCode(invocation.Syntax, invocation.SemanticModel, context.CancellationToken)) {
             return;
         }
 

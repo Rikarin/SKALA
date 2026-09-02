@@ -51,7 +51,8 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
 
         // ⚠ Cleanup that a cancellation can abort is worse than cleanup that ignores one, and a
         // `catch` or a `finally` is exactly where that cleanup lives.
-        if (IsInsideCleanup(invocation) || AsyncContext.IsTestMethod(invocation)) {
+        if (IsInsideCleanup(invocation)
+            || AsyncContext.IsTestCode(invocation, context.SemanticModel, context.CancellationToken)) {
             return;
         }
 

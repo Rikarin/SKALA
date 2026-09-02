@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Rikarin.Skala.Rules.TestQuality;
 using System;
 using System.Threading;
 
@@ -125,11 +126,81 @@ internal static class AsyncContext {
     ///     Whether this is test code, where blocking on a task is deliberate and harmless.
     /// </summary>
     /// <remarks>
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             The attribute is on the method, and the blocking call is in the helper the test
+    ///             methods share.
+    ///         </b> <see cref="IsTestMethod" /> answers about the <em>enclosing method</em>, so on
+    ///         Skala's own tree it exempted all 346 callers of <c>RuleFixtures.Analyze</c> and missed the
+    ///         one method they funnel through — the method that actually blocks ([#319]). The same walk
+    ///         also declines a fixture constructor, an <c>IDisposable.Dispose</c> teardown and a field
+    ///         initializer inside a real test class, none of which carries an attribute of its own.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>The question is asked of the type, which is [#303]'s rule and not a new one.</b>
+    ///         <see cref="TestFrameworks.HoldsATestCase" /> is xUnit's own discovery rule — a class is a
+    ///         test class when it holds a test case — and it is decidable from attributes alone. Every
+    ///         member of such a class is test code, which is exactly what the constructor, the teardown
+    ///         and the initializer needed.
+    ///     </para>
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             What this deliberately does <em>not</em> do is recognise a helper in a separate
+    ///             class, and that refuses [#319]'s own proposed remedy.
+    ///         </b> #319 asked for "a non-public
+    ///         helper declared in a test project". Neither half survives contact: <c>RuleFixtures</c> is
+    ///         a <c>public static class</c> and <c>Analyze</c> is <c>public static</c>, so an
+    ///         accessibility test would have left the finding exactly where it was — and "declared in a
+    ///         test project" is the compilation-references question that #303 examined and refused, with
+    ///         <c>SK2160/positive/a-helper-class-holding-no-test-case.cs</c> pinning the refusal. ⚠ It
+    ///         was refused for a measured reason and not a stylistic one: the fixture harness hands every
+    ///         fixture the test host's whole assembly closure, so "the compilation references xunit" is
+    ///         true of every fixture in the corpus. Wiring it in turned <b>31 positive fixtures</b>
+    ///         across <c>SK3002</c>, <c>SK3004</c>, <c>SK3050</c>, <c>SK3051</c>, <c>SK5020</c> and
+    ///         <c>SK5021</c> silent in one run — six rules that would have passed their entire negative
+    ///         sets while switched off.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ So the <c>SK3002</c> finding on <c>RuleFixtures.Analyze</c> stands, and baselining it is
+    ///         the honest outcome rather than a workaround. Reaching it needs the call graph #319 rules
+    ///         out, or the reference sniffing #303 already decided against.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Asked only once a rule has a genuine candidate — every caller binds first — so the
+    ///         symbol work runs about as often as a finding is reported, not per node.
+    ///     </para>
+    /// </remarks>
+    public static bool IsTestCode(SyntaxNode node, SemanticModel? model, CancellationToken cancellation) {
+        if (IsTestMethod(node)) {
+            return true;
+        }
+
+        if (model is null || node.FirstAncestorOrSelf<TypeDeclarationSyntax>() is not { } declaration) {
+            return false;
+        }
+
+        return model.GetDeclaredSymbol(declaration, cancellation) is INamedTypeSymbol type
+            && TestFrameworks.HoldsATestCase(type, TestFrameworks.Resolve(model.Compilation));
+    }
+
+    /// <summary>
+    ///     Whether the nearest enclosing method carries a test framework's attribute.
+    /// </summary>
+    /// <remarks>
     ///     ⚠ By attribute rather than by file path. docs/plan/08 scopes the <c>SK8xxx</c> rules to test
     ///     projects "by convention (<c>*.Tests</c>) and by <c>.editorconfig</c> section", and that is
     ///     the right mechanism for a whole category — but a single rule staying silent needs to be
     ///     right in a repository whose tests live somewhere the convention does not name, and the
     ///     attribute is on the method either way.
+    ///     <para>
+    ///         ⚠ It answers about the <em>method</em> and nothing else, which is a narrower question
+    ///         than most callers want: a fixture constructor, an <c>IDisposable.Dispose</c> teardown, a
+    ///         field initializer and a shared helper are all test code and none of them carries the
+    ///         attribute. <see cref="IsTestCode" /> is the question to ask unless the method really is
+    ///         the unit.
+    ///     </para>
     /// </remarks>
     public static bool IsTestMethod(SyntaxNode node) {
         for (var current = node; current is not null; current = current.Parent) {

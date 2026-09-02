@@ -56,7 +56,8 @@ public sealed class AsyncVoidThrowAnalyzer : DiagnosticAnalyzer {
         // belongs to that nested body, not to the method — which is why the owner is taken from
         // `AsyncContext` rather than by walking to the first `MethodDeclarationSyntax`.
         var owner = AsyncContext.NearestAsyncOwner(node);
-        if (!IsAsyncVoidDeclaration(owner) || AsyncContext.IsTestMethod(node)) {
+        if (!IsAsyncVoidDeclaration(owner)
+            || AsyncContext.IsTestCode(node, context.SemanticModel, context.CancellationToken)) {
             return;
         }
 
