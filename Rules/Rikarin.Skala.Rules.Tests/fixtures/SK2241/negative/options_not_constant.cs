@@ -3,7 +3,8 @@ using System.Text.RegularExpressions;
 namespace Fixtures.SK2241;
 
 public static class OptionsNotConstant {
-    // ⚠ The options decide what parses, so a call whose options cannot be folded declines rather than
-    // asking `Regex` a question the program does not ask it.
-    public static Regex Build(RegexOptions options) => new(@"\d+ # trailing", options);
+    // ⚠ The pattern is invalid under `None` and valid under `IgnorePatternWhitespace`, and the options
+    // are a parameter — so which one this is cannot be known here. Asking `Regex` the wrong question
+    // would produce exactly the false positive the bar forbids, so the call is declined.
+    public static Regex Build(RegexOptions options) => new(@"\d+ # (unclosed comment", options);
 }
