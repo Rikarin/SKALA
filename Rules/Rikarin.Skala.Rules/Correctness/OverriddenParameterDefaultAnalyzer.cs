@@ -23,8 +23,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         the caller holds.
 ///     </para>
 ///     <para>
-///         ⚠ <b><c>params</c> does not work like that, and the difference was measured rather than
-///         assumed.</b> An override does not get to change it: dropped, the call still expands through
+///         ⚠
+///         <b>
+///             <c>params</c> does not work like that, and the difference was measured rather than
+///             assumed.
+///         </b> An override does not get to change it: dropped, the call still expands through
 ///         the derived type; added where the base has none, it expands through neither. Roslyn says so
 ///         at the symbol level too — it propagates the base's <c>IsParams</c> onto the override's
 ///         parameter even where no keyword is written — so the comparison below simply cannot fire for
@@ -34,8 +37,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <c>CS1501</c> through the implementing type.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The whole declaration is one finding carrying every edit, and that is required rather
-///         than tidy.</b> C# makes optional parameters a suffix, so repairing one of two redundant
+///         ⚠
+///         <b>
+///             The whole declaration is one finding carrying every edit, and that is required rather
+///             than tidy.
+///         </b> C# makes optional parameters a suffix, so repairing one of two redundant
 ///         defaults on its own leaves <c>(int a = 1, int b)</c> — <c>CS1737</c>. <c>skala fix</c> applies
 ///         one finding at a time, so per-parameter findings would break the build between the first
 ///         edit and the second, on the tool's own advice.

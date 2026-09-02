@@ -22,8 +22,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         author's own names say which way round they meant it and the call says the other.
 ///     </para>
 ///     <para>
-///         ⚠ <b><c>Copy(source, destination)</c> called as <c>Copy(destination, source)</c> is
-///         undetectable in general and this rule does not try.</b> The sound signal is the crosswise
+///         ⚠
+///         <b>
+///             <c>Copy(source, destination)</c> called as <c>Copy(destination, source)</c> is
+///             undetectable in general and this rule does not try.
+///         </b> The sound signal is the crosswise
 ///         name match and nothing looser: adjacent parameters, identical types, plain identifiers, and
 ///         both names at least three characters. <c>Max(y, x)</c> and <c>Add(b, a)</c> are where
 ///         reversal is deliberate, and a one-letter name is no evidence about intent at all.
@@ -120,10 +123,13 @@ public sealed class CrosswiseArgumentOrderAnalyzer : DiagnosticAnalyzer {
 
             var left = arguments[i].Expression.Span;
             var right = arguments[i + 1].Expression.Span;
-            if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, TextSpan.FromBounds(
-                    left.Start,
-                    right.End
-                ))) {
+            if (RewriteGuards.ContainsCommentOrDirective(
+                    context.Node.SyntaxTree,
+                    TextSpan.FromBounds(
+                        left.Start,
+                        right.End
+                    )
+                )) {
                 continue;
             }
 

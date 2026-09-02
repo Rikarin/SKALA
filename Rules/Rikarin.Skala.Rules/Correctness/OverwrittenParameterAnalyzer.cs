@@ -18,8 +18,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         nothing at the call site can show either.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The verdict is Roslyn's data flow rather than a syntactic scan, and that is what makes
-///         the conditional cases right without a guard for each.</b>
+///         ⚠
+///         <b>
+///             The verdict is Roslyn's data flow rather than a syntactic scan, and that is what makes
+///             the conditional cases right without a guard for each.
+///         </b>
 ///         <c>if (f) { x = 1; } Use(x);</c> reads the incoming value on the other path, and
 ///         <c>x += 1</c>, <c>x++</c> and <c>x ??= y</c> all read before they write; every one of them
 ///         puts the parameter in <c>DataFlowsIn</c> and is silent. The finding is exactly "written
