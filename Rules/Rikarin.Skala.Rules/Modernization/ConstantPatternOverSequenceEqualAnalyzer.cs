@@ -77,11 +77,18 @@ public sealed class ConstantPatternOverSequenceEqualAnalyzer : DiagnosticAnalyze
         }
 
         // ⚠ The reduced form is what an extension call binds to; the unreduced one is where the
-        // parameters live. Two parameters exactly — the overload taking an `IEqualityComparer<T>`
-        // has no pattern spelling, and neither does anything else called `SequenceEqual`.
+        // declaring type is read. Anything else called `SequenceEqual` — LINQ's, or one somebody
+        // wrote — has no defined relationship to `is` at all.
+        //
+        // ⚠ **A parameter-count check stood here and was removed as dead.** It was meant to exclude
+        // the `IEqualityComparer<T>` overload, and it never once did: `Operands` already requires
+        // one argument in the extension spelling and two in the static one, so a comparer call is
+        // turned away a step later in both. Deleting the check turned no fixture red, and no
+        // fixture that reaches it can be written — omitting the optional comparer binds to the
+        // two-parameter overload rather than defaulting the three-parameter one. `Operands`' arity
+        // is what carries the concept, and it has its own sabotage.
         var declaration = (method.ReducedFrom ?? method).OriginalDefinition;
-        if (declaration.ContainingType?.ToDisplayString() != "System.MemoryExtensions"
-            || declaration.Parameters.Length != 2) {
+        if (declaration.ContainingType?.ToDisplayString() != "System.MemoryExtensions") {
             return;
         }
 
@@ -92,14 +99,17 @@ public sealed class ConstantPatternOverSequenceEqualAnalyzer : DiagnosticAnalyze
         // ⚠ `Type`, never `ConvertedType`: a `char[]` reaches this method by an implicit span
         // conversion and `a is "abc"` is CS0029, because a pattern has no conversion step.
         //
-        // ⚠ Spelled without a list pattern on purpose — this project targets netstandard2.0, where
-        // `TypeArguments: [...]` is CS0518.
+        // ⚠ **An element-type check stood here and was removed as dead.** It required
+        // `TypeArguments[0]` to be `char`, and nothing can reach it: both parameters of
+        // `SequenceEqual` are `ReadOnlySpan<T>` of the same `T`, and a string constant converts to
+        // `ReadOnlySpan<char>` and to nothing else — so requiring the argument to be a constant
+        // string already fixes `T` at `char`. Deleting it turned no fixture red, and the byte-span
+        // fixture that was written to reach it is declined by the constant check instead, which is
+        // what its comment now says.
         if (model.GetTypeInfo(receiver, cancellation).Type is not INamedTypeSymbol {
                 Name: "Span" or "ReadOnlySpan",
                 ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
-            } span
-            || span.TypeArguments.Length != 1
-            || span.TypeArguments[0].SpecialType != SpecialType.System_Char) {
+            }) {
             return;
         }
 

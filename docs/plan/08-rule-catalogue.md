@@ -6823,3 +6823,61 @@ and every `;`-body form: **zero**. ⚠ **That zero is classified, not bare**: a 
 containing one hand-written instance of all 26 shapes was detected 26 times by the same counter, so
 the corpus zeros are "shape absent", not "the counter did not run". A rule shaped like `S108` would, on
 the entire observable population, fire three times and be wrong three times. **No id allocated.**
+
+### The sabotage pass, and two guards it killed
+
+Eleven sabotages, one guard each. **Nine turn their own named fixture red. Two turned nothing red and
+both were dead code, now deleted** — which is the outcome this pass exists to produce and not a pass
+with two blanks in it.
+
+| guard deleted | fixture that goes red |
+|---|---|
+| declared by `System.MemoryExtensions` | `a-user-defined-sequence-equal` |
+| `GetTypeInfo(...).Type`, not `ConvertedType` | `a-char-array-receiver` |
+| the argument is a constant string | `the-argument-is-not-constant` |
+| `AsSpan()` takes no arguments | `the-argument-is-a-sliced-span` |
+| the receiver is a primary expression | `a-non-primary-span-argument` |
+| the `is` fits the position without parentheses | `a-position-a-pattern-cannot-take` |
+| no comment or directive in the replaced span | `a-comment-inside-the-replaced-span` |
+| operand-split arity, extension spelling | `the-comparer-overload-called-as-an-extension` |
+| operand-split arity, static spelling | `the-comparer-overload` |
+
+⚠ **`declaration.Parameters.Length != 2` was dead and is gone.** It was written to exclude the
+`IEqualityComparer<T>` overload and never once did: the operand split already requires one argument in
+the extension spelling and two in the static one, so a comparer call is refused a step earlier in both.
+No fixture that reaches it can be written, because omitting the optional comparer binds to the
+two-parameter overload rather than defaulting the three-parameter one. ⚠ **The two comparer fixtures
+are not redundant with each other** — the extension spelling passes *two* arguments where the static
+one passes three, so a single arity test would have let one through, and each now has its own
+sabotage.
+
+⚠ **The `char` element-type check was dead and is gone.** Both parameters of `SequenceEqual` are
+`ReadOnlySpan<T>` of one `T`, and a string constant converts to `ReadOnlySpan<char>` and to nothing
+else — so requiring the argument to be a constant string already fixes `T` at `char`. `a-byte-span`
+was written to reach it and is declined by the constant check instead, one step earlier.
+
+⚠ **Two sabotages first reported "turned nothing red" for the opposite reason — the fixtures did not
+reach the guard — and that is a different finding with a different fix.** `a-linq-sequence-equal` has
+a non-span receiver and `the-comparer-overload` the wrong arity, so both were declined before the
+declaring-type check was ever consulted. `a-user-defined-sequence-equal` — a hand-written
+`SequenceEqual` extension *on a `ReadOnlySpan<char>`*, so that every other precondition holds and only
+the declaring type differs — is the input that detects the loss. A table of clean single-reason
+negatives tests nothing about a boundary.
+
+### Zero false positives, argued by superset rather than by a sweep
+
+⚠ **No binlog sweep was run for this rule, and none is needed, because the syntactic superset is
+countable and tiny.** Every `SK1130` finding must be a `SequenceEqual` invocation with a string
+literal argument. A Roslyn counter over the three reference trees and Skala's own source finds
+**exactly two**, both in Vixen, both on one line of `ShaderGraphPreviewRenderer.IsTransform`:
+
+```csharp
+var bare = name.AsSpan()[(name.LastIndexOf('.') + 1)..];
+return bare.SequenceEqual("worldViewProjection") || bare.SequenceEqual("world");
+```
+
+`bare` is a `ReadOnlySpan<char>`, the operands sit under `||` — a position an `is` takes without
+parentheses — and both are genuine findings whose fix is `bare is "worldViewProjection" or "world"`.
+There is nowhere else in either tree for the rule to be wrong, which is a stronger statement than a
+sweep returning zero. ⚠ **Vixen is not a specification** — that it writes this shape is evidence the
+shape exists, never evidence the rule is calibrated correctly.
