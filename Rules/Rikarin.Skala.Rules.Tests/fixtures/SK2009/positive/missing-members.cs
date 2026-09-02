@@ -1,3 +1,9 @@
+// A switch statement that lists two of Color's three values and forgets Blue: the switch is
+// visibly attempting exhaustiveness, so falling out of it is a gap rather than a design.
+//
+// ⚠ The switch *expression* half of this fixture was removed with #280. `c switch { Red => 1,
+// Green => 2 }` is CS8509's, and SK2009 no longer registers for SwitchExpression at all.
+
 enum Color {
     Red,
     Green,
@@ -15,10 +21,4 @@ sealed class Palette {
 
         return 0;
     }
-
-    public int Expression(Color color) =>
-        color switch {
-            Color.Red => 1,
-            Color.Green => 2
-        };
 }

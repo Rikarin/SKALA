@@ -940,7 +940,7 @@
     {
       "id": "SK2009",
       "concept": "enum-switch-missing-members",
-      "title": "An enum switch omits declared members",
+      "title": "An enum switch statement omits declared members",
       "category": "Correctness",
       "defaultSeverity": "warning",
       "scope": "Semantic",
@@ -951,13 +951,13 @@
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
-      "summary": "A switch over a non-flags enum has neither every declared value nor a catch-all arm.",
-      "rationale": "A switch that silently falls through when a new enum member is added turns a closed decision into an accidental default. Listing every value makes the compiler-visible decision explicit and makes future additions show up at the switch that needs a policy.",
+      "summary": "A switch statement over a non-flags enum covers most of it, omits the rest, and has no catch-all.",
+      "rationale": "A switch statement that silently falls through when a new enum member is added turns a closed decision into an accidental default, and unlike a switch expression the compiler says nothing about it. Listing every value makes the decision explicit and makes future additions show up at the switch that needs a policy.",
       "examples": {
-        "bad": "return color switch { Color.Red => 1, Color.Green => 2 };",
-        "good": "return color switch { Color.Red => 1, Color.Green => 2, Color.Blue => 3 };"
+        "bad": "switch (color) {\n    case Color.Red: return 1;\n    case Color.Green: return 2;\n}\n\nreturn 0;",
+        "good": "switch (color) {\n    case Color.Red: return 1;\n    case Color.Green: return 2;\n    case Color.Blue: return 3;\n}\n\nreturn 0;"
       },
-      "falsePositives": "The rule excludes `[Flags]` enums, whose combinations are intentionally open, and any switch with `default`, discard, `var` or declaration catch-all handling. It also skips pattern forms other than constants and `or` combinations rather than guessing which values a relational, negated or recursive pattern covers. Enum aliases are compared by constant value, so handling one alias handles all aliases with that value. No fix is offered because the correct behavior for a missing value is a domain decision.",
+      "falsePositives": "\u26a0 **The switch *expression* is the compiler's and this rule does not look at one.** `CS8509` names the uncovered value and `CS8524` the undeclared one, both on by default, so ADR-008 leaves the form alone \u2014 probed rather than recalled: the expression draws `CS8509`, the identical switch written as a statement draws nothing at all. \u26a0 **A statement covering a minority of the enum is a filter, not a forgotten case** (#280): falling out of a `switch` statement continues at the next statement, which is the design of `switch (modifier.Kind()) { case SyntaxKind.AsyncKeyword: return false; }`. The rule reports only where the omitted values are no more numerous than the handled ones, which on Skala's own tree took the rule from 14 findings to 1 and removed every false positive. \u26a0 The recall this costs is real: a ten-member enum with three handled and seven genuinely forgotten is now silent. The rule also excludes `[Flags]` enums, whose combinations are intentionally open, and any switch with `default`, discard, `var` or declaration catch-all handling. It skips pattern forms other than constants and `or` combinations rather than guessing which values a relational, negated or recursive pattern covers. Enum aliases are compared by constant value, so handling one alias handles all aliases with that value, and aliases count once on both sides of the comparison. No fix is offered because the correct behavior for a missing value is a domain decision.",
       "configuration": [
         "dotnet_diagnostic.SK2009.severity"
       ]

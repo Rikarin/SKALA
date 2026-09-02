@@ -11,8 +11,8 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <p class="crumb"><a href="index.html">Rules</a> / Correctness</p>
-<h1>SK2009 <span class="title">An enum switch omits declared members</span></h1>
-<p class="lede">A switch over a non-flags enum has neither every declared value nor a catch-all arm.</p>
+<h1>SK2009 <span class="title">An enum switch statement omits declared members</span></h1>
+<p class="lede">A switch statement over a non-flags enum covers most of it, omits the rest, and has no catch-all.</p>
 <table class="facts">
 <tbody>
 <tr><th>Category</th><td>Correctness</td></tr>
@@ -27,14 +27,25 @@
 </tbody>
 </table>
 <h2 id="why">Why</h2>
-<p>A switch that silently falls through when a new enum member is added turns a closed decision into an accidental default. Listing every value makes the compiler-visible decision explicit and makes future additions show up at the switch that needs a policy.</p>
+<p>A switch statement that silently falls through when a new enum member is added turns a closed decision into an accidental default, and unlike a switch expression the compiler says nothing about it. Listing every value makes the decision explicit and makes future additions show up at the switch that needs a policy.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
-<pre class="bad"><code>return color switch { Color.Red =&gt; 1, Color.Green =&gt; 2 };</code></pre>
+<pre class="bad"><code>switch (color) {
+    case Color.Red: return 1;
+    case Color.Green: return 2;
+}
+
+return 0;</code></pre>
 <p>Write:</p>
-<pre class="good"><code>return color switch { Color.Red =&gt; 1, Color.Green =&gt; 2, Color.Blue =&gt; 3 };</code></pre>
+<pre class="good"><code>switch (color) {
+    case Color.Red: return 1;
+    case Color.Green: return 2;
+    case Color.Blue: return 3;
+}
+
+return 0;</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>The rule excludes <code>[Flags]</code> enums, whose combinations are intentionally open, and any switch with <code>default</code>, discard, <code>var</code> or declaration catch-all handling. It also skips pattern forms other than constants and <code>or</code> combinations rather than guessing which values a relational, negated or recursive pattern covers. Enum aliases are compared by constant value, so handling one alias handles all aliases with that value. No fix is offered because the correct behavior for a missing value is a domain decision.</p>
+<p>⚠ <strong>The switch *expression* is the compiler's and this rule does not look at one.</strong> <code>CS8509</code> names the uncovered value and <code>CS8524</code> the undeclared one, both on by default, so ADR-008 leaves the form alone — probed rather than recalled: the expression draws <code>CS8509</code>, the identical switch written as a statement draws nothing at all. ⚠ <strong>A statement covering a minority of the enum is a filter, not a forgotten case</strong> (#280): falling out of a <code>switch</code> statement continues at the next statement, which is the design of <code>switch (modifier.Kind()) { case SyntaxKind.AsyncKeyword: return false; }</code>. The rule reports only where the omitted values are no more numerous than the handled ones, which on Skala's own tree took the rule from 14 findings to 1 and removed every false positive. ⚠ The recall this costs is real: a ten-member enum with three handled and seven genuinely forgotten is now silent. The rule also excludes <code>[Flags]</code> enums, whose combinations are intentionally open, and any switch with <code>default</code>, discard, <code>var</code> or declaration catch-all handling. It skips pattern forms other than constants and <code>or</code> combinations rather than guessing which values a relational, negated or recursive pattern covers. Enum aliases are compared by constant value, so handling one alias handles all aliases with that value, and aliases count once on both sides of the comparison. No fix is offered because the correct behavior for a missing value is a domain decision.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK2009.severity</code></li>
