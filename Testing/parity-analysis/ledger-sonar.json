@@ -744,6 +744,10 @@
     "S2222",
     "S7131",
     "S7133"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK3060"
    ]
   },
   {
@@ -758,6 +762,10 @@
     "S2445",
     "S2551",
     "S6507"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK3061"
    ]
   },
   {
@@ -770,6 +778,10 @@
    "proposedFix": "none",
    "rules": [
     "S3366"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK3062"
    ]
   },
   {
