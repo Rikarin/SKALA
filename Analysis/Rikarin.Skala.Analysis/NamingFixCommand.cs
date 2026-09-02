@@ -30,7 +30,27 @@ public sealed record NamingFixOutcome(
 public static class NamingFixCommand {
     const int MaximumRenames = 10_000;
 
+    /// <summary>
+    ///     The one synchronous boundary, for the still-synchronous <see cref="FixCommand" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This is <c>SK3002</c> by construction and deliberately the <em>only</em> one left: every
+    ///     Roslyn call underneath it is awaited. It cannot be removed from here without
+    ///     <c>FixCommand.Run</c>, <c>VerifyCommand.Run</c>, the MCP tool and the CLI's
+    ///     <c>SetAction</c>/<c>ParseResult.Invoke</c> pair all becoming async together — the CLI's
+    ///     entry point calls the synchronous <c>Invoke</c>, so the async form has to arrive from the
+    ///     top down rather than from here up. Blocking once at a boundary is the shape that is safe;
+    ///     blocking twelve times inside the work was not.
+    /// </remarks>
     public static NamingFixOutcome Run(
+        FixRequest request,
+        string repositoryRoot,
+        IReadOnlyCollection<string> reportablePaths,
+        CancellationToken cancellation = default
+    ) =>
+        RunAsync(request, repositoryRoot, reportablePaths, cancellation).GetAwaiter().GetResult();
+
+    public static async Task<NamingFixOutcome> RunAsync(
         FixRequest request,
         string repositoryRoot,
         IReadOnlyCollection<string> reportablePaths,
@@ -76,14 +96,15 @@ public static class NamingFixCommand {
         }
 
         try {
-            return RunCore(
-                request,
-                target,
-                reportablePaths,
-                codeStyle.Analyzers,
-                codeStyle.NamingFixer,
-                cancellation
-            );
+            return await RunCoreAsync(
+                    request,
+                    target,
+                    reportablePaths,
+                    codeStyle.Analyzers,
+                    codeStyle.NamingFixer,
+                    cancellation
+                )
+                .ConfigureAwait(false);
         } catch (Exception exception) when (exception is IOException
                                                 or InvalidOperationException
                                                 or NotSupportedException
@@ -95,7 +116,7 @@ public static class NamingFixCommand {
     }
 
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-    static NamingFixOutcome RunCore(
+    static async Task<NamingFixOutcome> RunCoreAsync(
         FixRequest request,
         string target,
         IReadOnlyCollection<string> reportablePaths,
@@ -108,14 +129,12 @@ public static class NamingFixCommand {
 
         Solution solution;
         if (target.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase)) {
-            solution = workspace.OpenProjectAsync(target, cancellationToken: cancellation)
-                .GetAwaiter()
-                .GetResult()
-                .Solution;
+            var project = await workspace.OpenProjectAsync(target, cancellationToken: cancellation)
+                .ConfigureAwait(false);
+            solution = project.Solution;
         } else {
-            solution = workspace.OpenSolutionAsync(target, cancellationToken: cancellation)
-                .GetAwaiter()
-                .GetResult();
+            solution = await workspace.OpenSolutionAsync(target, cancellationToken: cancellation)
+                .ConfigureAwait(false);
         }
 
         if (workspace.Diagnostics.Any(static diagnostic => diagnostic.Kind == WorkspaceDiagnosticKind.Failure)) {
@@ -129,7 +148,7 @@ public static class NamingFixCommand {
         }
 
         var original = solution;
-        var beforeErrors = CompilerErrors(original, cancellation);
+        var beforeErrors = await CompilerErrorsAsync(original, cancellation).ConfigureAwait(false);
         var comparison = SarifWriter.PathComparison == StringComparison.OrdinalIgnoreCase
             ? StringComparer.OrdinalIgnoreCase
             : StringComparer.Ordinal;
@@ -140,7 +159,8 @@ public static class NamingFixCommand {
         var skipped = ImmutableArray.CreateBuilder<string>();
 
         while (attempted < MaximumRenames) {
-            var next = FindFirst(solution, analyzers, allowed, rejected, cancellation);
+            var next = await FindFirstAsync(solution, analyzers, allowed, rejected, cancellation)
+                .ConfigureAwait(false);
             if (next is null) {
                 break;
             }
@@ -159,7 +179,7 @@ public static class NamingFixCommand {
                 (action, _) => actions.Add(action),
                 cancellation
             );
-            fixer.RegisterCodeFixesAsync(context).GetAwaiter().GetResult();
+            await fixer.RegisterCodeFixesAsync(context).ConfigureAwait(false);
             if (actions.Count == 0) {
                 var span = next.Location.GetLineSpan().StartLinePosition;
                 return new NamingFixOutcome(
@@ -169,14 +189,12 @@ public static class NamingFixCommand {
                 );
             }
 
-            var changed = actions[0]
-                .GetOperationsAsync(cancellation)
-                .GetAwaiter()
-                .GetResult()
-                .OfType<ApplyChangesOperation>()
+            var operations = await actions[0].GetOperationsAsync(cancellation).ConfigureAwait(false);
+            var changed = operations.OfType<ApplyChangesOperation>()
                 .Select(static operation => operation.ChangedSolution)
                 .FirstOrDefault();
-            if (changed is null || ChangedPaths(solution, changed, cancellation).IsEmpty) {
+            if (changed is null
+                || (await ChangedPathsAsync(solution, changed, cancellation).ConfigureAwait(false)).IsEmpty) {
                 return new NamingFixOutcome(applied, [], "Roslyn's IDE1006 rename produced no solution change");
             }
 
@@ -184,7 +202,8 @@ public static class NamingFixCommand {
             // binding. `_ranges` -> `ranges` beside `out var ranges`, for example, produces CS0844.
             // Validate this candidate before adding it to the accumulated solution, reject only that
             // symbol, and continue with the remaining IDE1006 findings.
-            var candidateErrors = IntroducedErrors(solution, changed, cancellation);
+            var candidateErrors = await IntroducedErrorsAsync(solution, changed, cancellation)
+                .ConfigureAwait(false);
             if (!candidateErrors.IsEmpty) {
                 var targetKey = Target(next, cancellation);
                 rejected.Add(targetKey);
@@ -205,7 +224,8 @@ public static class NamingFixCommand {
         }
 
         if (attempted == MaximumRenames
-            && FindFirst(solution, analyzers, allowed, rejected, cancellation) is not null) {
+            && await FindFirstAsync(solution, analyzers, allowed, rejected, cancellation).ConfigureAwait(false)
+                is not null) {
             return new NamingFixOutcome(
                 applied,
                 [],
@@ -213,7 +233,10 @@ public static class NamingFixCommand {
             );
         }
 
-        var introduced = IntroducedErrors(beforeErrors, CompilerErrors(solution, cancellation));
+        var introduced = IntroducedErrors(
+            beforeErrors,
+            await CompilerErrorsAsync(solution, cancellation).ConfigureAwait(false)
+        );
         if (introduced.Length > 0) {
             return new NamingFixOutcome(
                 0,
@@ -223,7 +246,7 @@ public static class NamingFixCommand {
             );
         }
 
-        var changedPaths = ChangedPaths(original, solution, cancellation);
+        var changedPaths = await ChangedPathsAsync(original, solution, cancellation).ConfigureAwait(false);
         foreach (var path in changedPaths) {
             var before = original.GetDocumentIdsWithFilePath(path)
                 .Select(original.GetDocument)
@@ -235,13 +258,11 @@ public static class NamingFixCommand {
                 continue;
             }
 
-            var beforeText = before.GetTextAsync(cancellation).GetAwaiter().GetResult();
+            var beforeText = await before.GetTextAsync(cancellation).ConfigureAwait(false);
             var guard = FixCommand.TagGuard(path, beforeText.ToString());
             if (!guard.IsEmpty
-                && after.GetTextChangesAsync(before, cancellation)
-                    .GetAwaiter()
-                    .GetResult()
-                    .Any(change => guard.Touches(change.Span))) {
+                && (await after.GetTextChangesAsync(before, cancellation).ConfigureAwait(false))
+                .Any(change => guard.Touches(change.Span))) {
                 return new NamingFixOutcome(
                     0,
                     [],
@@ -255,15 +276,15 @@ public static class NamingFixCommand {
                 var document = solution.GetDocumentIdsWithFilePath(path)
                     .Select(solution.GetDocument)
                     .FirstOrDefault(static document => document is not null)!;
-                var text = document.GetTextAsync(cancellation).GetAwaiter().GetResult().ToString();
-                File.WriteAllText(path, text, new UTF8Encoding(false));
+                var text = await document.GetTextAsync(cancellation).ConfigureAwait(false);
+                File.WriteAllText(path, text.ToString(), new UTF8Encoding(false));
             }
         }
 
         return new(applied, changedPaths, Skipped: skipped.ToImmutable());
     }
 
-    static Diagnostic? FindFirst(
+    static async Task<Diagnostic?> FindFirstAsync(
         Solution solution,
         ImmutableArray<DiagnosticAnalyzer> analyzers,
         HashSet<string> allowed,
@@ -271,24 +292,26 @@ public static class NamingFixCommand {
         CancellationToken cancellation
     ) {
         foreach (var project in solution.Projects.OrderBy(static project => project.FilePath, StringComparer.Ordinal)) {
-            if (project.Language != LanguageNames.CSharp
-                || project.GetCompilationAsync(cancellation).GetAwaiter().GetResult() is not { } compilation) {
+            if (project.Language != LanguageNames.CSharp) {
                 continue;
             }
 
-            var diagnostics = compilation.WithAnalyzers(
-                analyzers,
-                new CompilationWithAnalyzersOptions(
-                    project.AnalyzerOptions,
-                    null,
-                    true,
-                    false,
-                    false
+            if (await project.GetCompilationAsync(cancellation).ConfigureAwait(false) is not { } compilation) {
+                continue;
+            }
+
+            var diagnostics = await compilation.WithAnalyzers(
+                    analyzers,
+                    new CompilationWithAnalyzersOptions(
+                        project.AnalyzerOptions,
+                        null,
+                        true,
+                        false,
+                        false
+                    )
                 )
-            )
                 .GetAnalyzerDiagnosticsAsync(cancellation)
-                .GetAwaiter()
-                .GetResult();
+                .ConfigureAwait(false);
 
             var next = diagnostics.Where(static diagnostic => diagnostic.Id == RoslynCodeStyle.NamingDiagnosticId)
                 .Where(diagnostic => diagnostic.Location.SourceTree?.FilePath is { } path
@@ -318,7 +341,7 @@ public static class NamingFixCommand {
         );
     }
 
-    static ImmutableArray<string> IntroducedErrors(
+    static async Task<ImmutableArray<string>> IntroducedErrorsAsync(
         Solution before,
         Solution after,
         CancellationToken cancellation
@@ -328,12 +351,12 @@ public static class NamingFixCommand {
             .Select(static change => change.ProjectId)
             .ToHashSet();
         return IntroducedErrors(
-            CompilerErrors(before, cancellation, affected),
-            CompilerErrors(after, cancellation, affected)
+            await CompilerErrorsAsync(before, cancellation, affected).ConfigureAwait(false),
+            await CompilerErrorsAsync(after, cancellation, affected).ConfigureAwait(false)
         );
     }
 
-    static ImmutableArray<string> CompilerErrors(
+    static async Task<ImmutableArray<string>> CompilerErrorsAsync(
         Solution solution,
         CancellationToken cancellation,
         HashSet<ProjectId>? projects = null
@@ -343,7 +366,7 @@ public static class NamingFixCommand {
                      project.Language == LanguageNames.CSharp
                      && (projects is null || projects.Contains(project.Id))
                  )) {
-            if (project.GetCompilationAsync(cancellation).GetAwaiter().GetResult() is not { } compilation) {
+            if (await project.GetCompilationAsync(cancellation).ConfigureAwait(false) is not { } compilation) {
                 continue;
             }
 
@@ -378,7 +401,7 @@ public static class NamingFixCommand {
         return introduced.ToImmutable();
     }
 
-    static ImmutableArray<string> ChangedPaths(
+    static async Task<ImmutableArray<string>> ChangedPathsAsync(
         Solution original,
         Solution changed,
         CancellationToken cancellation
@@ -392,8 +415,8 @@ public static class NamingFixCommand {
                     continue;
                 }
 
-                var beforeText = before.GetTextAsync(cancellation).GetAwaiter().GetResult();
-                var afterText = after.GetTextAsync(cancellation).GetAwaiter().GetResult();
+                var beforeText = await before.GetTextAsync(cancellation).ConfigureAwait(false);
+                var afterText = await after.GetTextAsync(cancellation).ConfigureAwait(false);
                 if (!beforeText.ContentEquals(afterText)) {
                     paths.Add(Path.GetFullPath(path));
                 }

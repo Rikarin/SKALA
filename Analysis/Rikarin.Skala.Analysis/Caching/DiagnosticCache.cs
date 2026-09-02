@@ -324,7 +324,17 @@ public sealed class DiagnosticCache {
             if (Directory.Exists(directory)) {
                 Directory.Delete(directory, true);
             }
-        } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        } catch (IOException) {
+            // ⚠ Best-effort on purpose, and nothing about correctness rests on the delete
+            // succeeding: an entry is only ever served on an exact <see cref="CacheKey" /> match,
+            // which hashes the file content, the compilation, the rule set, the .editorconfig and
+            // the Skala version. A cache directory left behind by a failed delete therefore cannot
+            // answer a later run, so failing `skala cache clear` over one locked file would be
+            // failing over nothing.
+        } catch (UnauthorizedAccessException) {
+            // The same argument one exception type further out: a directory this process may not
+            // remove still holds entries no later run can read back as fresh.
+        }
     }
 
     static CachedFinding Dehydrate(Finding finding) =>

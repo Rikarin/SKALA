@@ -225,7 +225,14 @@ public static class HostedAnalyzers {
             DiagnosticAnalyzer? instance = null;
             try {
                 instance = Activator.CreateInstance(type) as DiagnosticAnalyzer;
-            } catch (MissingMethodException) { } catch (TargetInvocationException) { }
+            } catch (MissingMethodException) {
+                // A [DiagnosticAnalyzer] with no accessible parameterless constructor is not one
+                // Roslyn's own loader could have built either. Skipping it is what the compiler does.
+            } catch (TargetInvocationException) {
+                // The analyzer's own constructor threw. Hosting the rest of the package is worth
+                // more than losing every rule in it to one type that cannot be constructed; a rule
+                // that never loads reports nothing, which the negative fixtures would not notice.
+            }
 
             if (instance is not null) {
                 yield return instance;
