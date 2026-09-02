@@ -315,3 +315,7 @@ SK2171 variable-length-hex-escape
 SK2172 forgiven-is-operand
 SK2173 negated-empty-pattern
 SK2174 unparenthesised-precedence-mix
+SK1100 single-use-temporary
+SK1101 split-declaration-and-assignment
+SK1102 local-function-before-jump
+SK1103 shared-branch-tail

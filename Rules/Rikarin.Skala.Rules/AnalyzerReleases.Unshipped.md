@@ -274,3 +274,7 @@ SK2171 | Skala.Correctness | Warning | The `\x` escape's length depends on what 
 SK2172 | Skala.Correctness | Warning | A null-forgiving `!` stands where it reads as a negated `is`.
 SK2173 | Skala.Correctness | Warning | `is not { }` is `is null` spelled backwards.
 SK2174 | Skala.Correctness | Info | A shift or bitwise operand groups only by precedence.
+SK1100  | Skala.Modernization | Info | The local names an expression used once, on the next line.
+SK1101  | Skala.Modernization | Info | The local is declared on one line and assigned on the next.
+SK1102  | Skala.Modernization | Hidden | A local function is declared before the jump that ends the block.
+SK1103  | Skala.Modernization | Hidden | Both branches of the `if` end with the same statements.
