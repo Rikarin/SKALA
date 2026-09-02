@@ -13,16 +13,22 @@ namespace Rikarin.Skala.Rules.Correctness;
 /// <remarks>
 ///     docs/plan/08-rule-catalogue.md § "Culture, comparison policy and query shape".
 ///     <para>
-///         ⚠ <b>This is the half <c>SK2010</c> does not do, and the difference is not the method
-///         list.</b> <c>SK2010</c> reports a comparison, whose culture-dependence surfaces as an
+///         ⚠
+///         <b>
+///             This is the half <c>SK2010</c> does not do, and the difference is not the method
+///             list.
+///         </b> <c>SK2010</c> reports a comparison, whose culture-dependence surfaces as an
 ///         answer of the wrong <em>truth value</em> — visibly wrong, at the site that asked. A search
 ///         returns an <em>offset</em>. A <c>LastIndexOf("-")</c> that lands one character out on a
 ///         Turkish machine feeds a <c>Substring</c>, and what arrives at the reader is a truncated
 ///         identifier several frames away with nothing culture-shaped about it.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The method table is the framework's documented behaviour, and most of
-///         <see cref="string" /> is deliberately missing from it.</b> <c>Contains(string)</c>,
+///         ⚠
+///         <b>
+///             The method table is the framework's documented behaviour, and most of
+///             <see cref="string" /> is deliberately missing from it.
+///         </b> <c>Contains(string)</c>,
 ///         <c>IndexOf(char)</c>, <c>LastIndexOf(char)</c>, <c>StartsWith(char)</c> and
 ///         <c>EndsWith(char)</c> are <em>already ordinal</em> on .NET. Reporting them would be advising
 ///         the author to write down the behaviour they already have, which is the shape of finding that

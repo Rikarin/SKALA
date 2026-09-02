@@ -18,8 +18,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         and it is invisible on the developer's machine — it appears in the container.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Skala already holds a position on this and the rule is written from it rather than
-///         from the upstream idea.</b> <c>SarifWriter.PathComparison</c> is
+///         ⚠
+///         <b>
+///             Skala already holds a position on this and the rule is written from it rather than
+///             from the upstream idea.
+///         </b> <c>SarifWriter.PathComparison</c> is
 ///         <c>OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase</c>,
 ///         and <c>CacheKeyPathTests</c> asserts the correct answer on all three platforms rather than
 ///         skipping on two of them. So the guidance is not "stop ignoring case" — it is "compare the
@@ -122,8 +125,8 @@ public sealed class PlatformDependentPathComparisonAnalyzer : DiagnosticAnalyzer
             if (context.SemanticModel.GetSymbolInfo(argument.Expression, context.CancellationToken).Symbol
                 is IFieldSymbol { IsConst: true } member
                 && member.Name is "OrdinalIgnoreCase"
-                    or "InvariantCultureIgnoreCase"
-                    or "CurrentCultureIgnoreCase") {
+                or "InvariantCultureIgnoreCase"
+                or "CurrentCultureIgnoreCase") {
                 return argument.Expression;
             }
         }

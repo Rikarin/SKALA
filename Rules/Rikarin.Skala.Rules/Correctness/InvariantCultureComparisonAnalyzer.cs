@@ -25,8 +25,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         compares equal to nothing at all.
 ///     </para>
 ///     <para>
-///         ⚠ <b><see cref="System.Globalization.CultureInfo" />.InvariantCulture is never reported, and
-///         the exclusion is structural.</b> Invariant culture is <em>correct</em> for round-tripping
+///         ⚠
+///         <b>
+///             <see cref="System.Globalization.CultureInfo" />.InvariantCulture is never reported, and
+///             the exclusion is structural.
+///         </b> Invariant culture is <em>correct</em> for round-tripping
 ///         formatted data, and a rule that could not tell a comparison from a <c>ToString</c> would be
 ///         advising authors to corrupt their own serialisation. This rule keys on the
 ///         <c>System.StringComparison</c> enum, which no formatting or parsing API accepts, so a

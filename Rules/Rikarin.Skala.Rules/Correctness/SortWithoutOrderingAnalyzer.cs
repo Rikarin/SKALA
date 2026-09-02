@@ -20,8 +20,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         successfully, which is what the unit test contains and what production does not.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The question is only decidable for a sealed type, and that is the finding rather than a
-///         limitation to apologise for.</b> <c>Comparer&lt;T&gt;.Default</c> for an unsealed <c>T</c>
+///         ⚠
+///         <b>
+///             The question is only decidable for a sealed type, and that is the finding rather than a
+///             limitation to apologise for.
+///         </b> <c>Comparer&lt;T&gt;.Default</c> for an unsealed <c>T</c>
 ///         builds an <c>ObjectComparer</c> that casts each <em>element</em> to <c>IComparable</c> at run
 ///         time, so a <c>List&lt;Animal&gt;</c> holding <c>Dog : Animal, IComparable&lt;Dog&gt;</c> sorts
 ///         correctly even though <c>Animal</c> implements nothing. A non-sealed class therefore cannot
@@ -203,11 +206,11 @@ public sealed class SortWithoutOrderingAnalyzer : DiagnosticAnalyzer {
         // The decidability gate. Anything whose runtime type may be a subtype is out of reach, and so
         // is anything with no declaration to read.
         if (type.TypeKind is TypeKind.TypeParameter
-                or TypeKind.Interface
-                or TypeKind.Error
-                or TypeKind.Dynamic
-                or TypeKind.Delegate
-                or TypeKind.Array
+            or TypeKind.Interface
+            or TypeKind.Error
+            or TypeKind.Dynamic
+            or TypeKind.Delegate
+            or TypeKind.Array
             || type.SpecialType == SpecialType.System_Object
             || (type.TypeKind == TypeKind.Class && !type.IsSealed)) {
             return false;
