@@ -165,7 +165,6 @@ public static class PairwiseReport {
         builder.AppendLine();
         if (findings.Count == 0) {
             builder.AppendLine("None. Every pair agrees at every corner of its grid.");
-            builder.AppendLine();
         } else {
             builder.AppendLine("| pair | outcome | corners | agreeing | the corners that disagree |");
             builder.AppendLine("|---|---|---:|---:|---|");
@@ -189,9 +188,9 @@ public static class PairwiseReport {
                     + " |"
                 );
             }
-
-            builder.AppendLine();
         }
+
+        builder.AppendLine();
 
         builder.AppendLine("## Per pair");
         builder.AppendLine();
