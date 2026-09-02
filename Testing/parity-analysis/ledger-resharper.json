@@ -82,6 +82,11 @@
     "StructLacksIEquatable.Local",
     "TypeWithSuspiciousEqualityIsUsedInRecord.Global",
     "TypeWithSuspiciousEqualityIsUsedInRecord.Local"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2011",
+    "SK2190"
    ]
   },
   {
@@ -409,7 +414,8 @@
    ],
    "coverage": "partial",
    "coveredBy": [
-    "SK2005"
+    "SK2005",
+    "SK2191"
    ]
   },
   {
@@ -663,6 +669,10 @@
    "inspections": [
     "CapturedPrimaryConstructorParameterIsMutable",
     "PrimaryConstructorParameterCaptureDisallowed"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2194"
    ]
   },
   {
@@ -691,6 +701,10 @@
    "proposedFix": "unsafe",
    "inspections": [
     "resharper_immutable_array_with_collection_initializer_highlighting"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2193"
    ]
   },
   {
@@ -768,6 +782,10 @@
    "proposedFix": "safe",
    "inspections": [
     "StringSpanComparison"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2192"
    ]
   },
   {

@@ -246,5 +246,12 @@
   "ForCanBeConvertedToForeach": "SK1083",
   "LoopCanBePartlyConvertedToQuery": "SK1084",
   "StaticMemberInitializerReferesToMemberBelow": "SK2130",
-  "UnassignedGetOnlyAutoProperty": "SK2131"
+  "UnassignedGetOnlyAutoProperty": "SK2131",
+  "UsageOfDefaultStructEquality": "SK2011",
+  "DefaultStructEqualityIsUsed.Global": "SK2190",
+  "DefaultStructEqualityIsUsed.Local": "SK2190",
+  "PossiblyImpureMethodCallOnReadonlyVariable": "SK2191",
+  "StringSpanComparison": "SK2192",
+  "ImmutableArrayWithCollectionInitializer": "SK2193",
+  "CapturedPrimaryConstructorParameterIsMutable": "SK2194"
 }

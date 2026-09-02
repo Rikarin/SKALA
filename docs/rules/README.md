@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 268 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 273 ids are allocated.
 
 ## Async
 
@@ -124,6 +124,11 @@
 | [SK2162](SK2162.md) | The date or time `TryParse` has an implicit culture | warning | — | no |
 | [SK2163](SK2163.md) | Elapsed time is measured with the wall clock | warning | review | no |
 | [SK2164](SK2164.md) | The assertion's expression has side effects | warning | — | no |
+| [SK2190](SK2190.md) | The struct key has no equality of its own | warning | — | no |
+| [SK2191](SK2191.md) | The struct is copied before the mutation lands | warning | — | no |
+| [SK2192](SK2192.md) | `==` on spans compares memory locations | warning | review | no |
+| [SK2193](SK2193.md) | `ImmutableArray<T>` is built with a collection initializer | error | review | no |
+| [SK2194](SK2194.md) | The captured primary constructor parameter is assigned | warning | — | no |
 
 ## Design
 

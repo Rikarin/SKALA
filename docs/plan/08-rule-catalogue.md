@@ -1775,8 +1775,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **295** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **260** | **88.4 %** |
+| Rules this document names | **300** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **265** | **88.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -3529,3 +3529,92 @@ the declaration or sink the reader, write the implementation or delete the hook,
 per-instance or make the member static — and the finding is precisely the evidence that the author
 knows which and the analyzer does not. `SK2132` is the exception because there the two candidate
 repairs are not symmetric: one of them is a rename of a property that other code already calls.
+
+## `SK2190`–`SK2194` — structs, spans and value semantics
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
+Correctness" only to keep it out of a section several concurrent branches were editing.** What
+follows is the register doing the one job ADR-012 needs it to do — the numbers are taken and written
+down where the next milestone will read them. It is not yet the considered account the sections above
+carry, and it belongs beside `SK2005` and `SK2011`.
+
+Five rules about what a value type does when it is copied, hashed or captured — the three things
+that happen to a struct without anybody writing them down.
+
+⚠ **Three of the five originating issues described shapes that were asserted not to compile, and
+compiling them said otherwise.** That is the measurement this block rests on and it was taken on a
+probe built outside this repository, with empty `Directory.Build.props`/`.targets` above it so that
+this repository's raised `AnalysisMode` could not answer for a consumer's.
+
+- `SK2190` `struct-key-without-equality` — a `Dictionary`, `HashSet` or `ConcurrentDictionary`
+  constructed over a source struct key that declares no equality and is given no comparer, so
+  `ValueType.Equals` and `ValueType.GetHashCode` run by reflection on every insert and every lookup.
+  ⚠ **Issue #4's premise about `SK2011` is refuted, and it was refuted by reading the analyzer rather
+  than the issue.** The issue says `SK2011` reports at the *declaration*; `InheritedValueTypeEquals`
+  registers on `InvocationExpression` and fires at the `.Equals` call site. So the three inspections
+  in that issue about a comparison — `UsageOfDefaultStructEquality` and both
+  `DefaultStructEqualityIsUsed` scopes — are already covered where a comparison is written, and what
+  was left is the use site with no comparison in it at all. ⚠ **`CA1815` was measured and does not
+  host this.** At the SDK's default analysis mode it reports nothing — not at `Hidden` either;
+  nothing appears in the SARIF error log, which is where a hidden diagnostic would show. At
+  `AnalysisMode=All` it reports on the struct's declaration, only for a publicly visible struct, and
+  whether or not anything ever hashes it. Report-only: generating equality members needs to know
+  which fields define identity, and that is the one thing a struct which declared none has not said.
+- `SK2191` `readonly-receiver-mutation` — a struct method that writes its own fields, called through
+  an `in` or `ref readonly` parameter, a `ref readonly` local, or a `foreach` variable. The compiler
+  makes a defensive copy, the method mutates the copy, and the write is discarded in silence. ⚠
+  **Disjoint from `SK2005` by receiver kind, not by a filter.** `SK2005` reports the `readonly`
+  *field* receiver and nothing else — its own `negative/parameter.cs` asserts silence on an `in`
+  parameter, and that fixture is now covered by this rule instead. No receiver is both kinds, so
+  neither rule can be configured into a duplicate of the other, and the shared evidence bar lives in
+  one file so they cannot drift apart. ⚠ **The bar for "mutating" is a write the analysis has read at
+  the top level of the method's own body, never the absence of a `readonly` modifier.** Almost
+  nothing in real code marks struct members `readonly`; the looser test would report most of a
+  repository for a copy that is real and almost always harmless. ⚠ **Nothing in the .NET analyzers
+  covers any of it**, measured at `AnalysisMode=All` and `AnalysisLevel=latest-all`, and the compiler
+  is silent too. This is the rule in the batch with the most value for AI-generated code, which
+  writes non-`readonly` structs and `in` parameters by default and produces the shape without meaning
+  to.
+- `SK2192` `span-reference-comparison` — `==` binding to `Span<T>`'s or `ReadOnlySpan<T>`'s own
+  operator, which is true only when both point at the same memory. ⚠ **It compiles, and the brief
+  that carried the rule said it does not.** `ReadOnlySpan<char> == ReadOnlySpan<char>`,
+  `Span<char> == Span<char>`, `ReadOnlySpan<byte> == ReadOnlySpan<byte>` and
+  `ReadOnlySpan<char> == string` all build clean at `net10.0`, no compiler warning, nothing at
+  `AnalysisMode=All`. ⚠ **What does *not* compile is `span.Equals(span)`** — `CS1503`, because the
+  only `Equals` in reach takes `object` and a span cannot be boxed — so the "`.Equals` where
+  `SequenceEqual` was meant" half of the issue is not a shape that exists and the operator is the
+  whole rule. The fix is bound before it is offered rather than merely composed: `SequenceEqual` is
+  an extension on `System.MemoryExtensions`, and where speculative binding at the comparison's own
+  position does not resolve it there is no finding rather than a fix that breaks the build. ⚠ **The
+  issue proposed `fixIsSafe: true` and it ships `false`**, for the reason `SK2040` gives about the
+  same kind of edit: the fix changes the answer, and changing the answer is the entire point of the
+  finding.
+- `SK2193` `immutable-array-collection-initializer` — `new ImmutableArray<T> { … }`, which calls
+  `Add` on the default value of the struct and throws `NullReferenceException` on the first element.
+  One of the three uncovered inspections the export sets to `error`. ⚠ **An empty initializer is
+  excluded and is a different, weaker defect**: it calls `Add` zero times, does not throw, and yields
+  a `default` array that fails later and somewhere else — reporting it under a message that says the
+  code throws would be saying something untrue about it. ⚠ **The collection-expression spelling
+  `[…]` is deliberately not the fix**, although C# 12 makes it correct on this type: it needs a
+  target type and `var ids = new ImmutableArray<int> { 1 };` has none, so that fix would be right in
+  most places and `CS9176` in the rest. The replacement is `ImmutableArray.Create<T>(…)` built from
+  the type's own spelling, so it binds in exactly the files the original bound in, with the type
+  argument written out because inference from the elements is not the same answer.
+- `SK2194` `mutable-captured-primary-parameter` — a member body assigning a primary constructor
+  parameter, which makes the hidden capture field mutable instance state with no declaration and no
+  modifier. ⚠ **Capture itself is the feature and is never reported**; the second inspection on the
+  issue, `PrimaryConstructorParameterCaptureDisallowed`, asks a project-policy question the export
+  itself ships at `none`. ⚠ **`CS9107` was probed and it is not `CS9124`.** The compiler warns,
+  always on, when a captured parameter's value is *also passed to the base constructor* — and says
+  nothing about one that is merely assigned. That overlap is excluded here rather than reported
+  twice. ⚠ **Records are excluded structurally rather than by a test somebody can forget**: a record
+  is a different syntax node, so the analyzer never sees one. In a positional record the parameter is
+  also where the property is written down, both symbols point at the same `ParameterSyntax`, and a
+  name in a member body resolves to the property — a different analysis with a different answer, and
+  the exact shape that shipped a rule dead earlier in this milestone.
+
+⚠ **Three of the five ship report-only and it is the same reason each time.** Equality members,
+`in`/`readonly` receivers and captured parameters all have two repairs that move the code in opposite
+directions — declare the identity or supply a comparer, drop the modifier or return the value,
+declare the field or delete the write — and the finding is the evidence that the author knows which
+and the analyzer does not.
