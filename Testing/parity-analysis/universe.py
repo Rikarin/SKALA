@@ -31,6 +31,7 @@ W = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(W))
 
 EXPORT = f"{REPO}/editor_config_template"
+TYPES_XML = f"{W}/types-2026.xml"
 
 # --- language partition. Anything whose key names another language is out of scope. ---
 NONCS = ("cpp_", "vb_", "xaml_", "html_", "asp_", "web_", "razor_", "js_", "ts_", "css_",
@@ -46,9 +47,12 @@ def snake(s):
     return s.lower()
 
 
-def build():
-    """The universe, from the two committed inputs. No printing, no writing."""
-    # --- the export: the author's configured severities, and the universe of keys ---
+def export_keys():
+    """`resharper_*_highlighting` key -> the author's configured severity.
+
+    The author's own ReSharper export. This is the **universe**: the set of inspections the
+    parity measurement is taken over.
+    """
     ec = {}
     for line in open(EXPORT, encoding="utf-8-sig"):
         s = line.strip()
@@ -58,6 +62,40 @@ def build():
         k, v = k.strip(), v.strip()
         if k.endswith("_highlighting"):
             ec[k] = v
+    return ec
+
+
+def issue_type_ids():
+    """Every `IssueType/@Id` in `types-2026.xml`, exactly as written.
+
+    ⚠ **Exactly** as written, and the word is load-bearing. #318's first measurement used a
+    substring test and reported `CognitiveComplexity`, `SelfAssignment` and `ReplaceWithOfType`
+    as present, because the file carries `CppClangTidyReadabilityFunctionCognitiveComplexity`,
+    `cplusplus.SelfAssignment` and `ReplaceWithOfType.1`. A substring of an id is not the id:
+    the first two are C++ inspections and the third is a numbered variant. That single
+    instrument error moved the answer by three and sent the issue's central inference the
+    wrong way.
+
+    This is *metadata*, not the universe — it is `jb inspectcode 2025.2.6 --dumpIssuesTypes`,
+    and it is joined onto `export_keys()` by `build()`. It is known-incomplete relative to what
+    ReSharper actually ships: `CommentTypo` is declared by the bundled ReSpeller assembly and
+    is not in here, and the IDE surface carries more still.
+    """
+    if not os.path.exists(TYPES_XML):
+        return set()
+    return {e.attrib["Id"] for e in ET.parse(TYPES_XML).getroot().iter("IssueType")}
+
+
+def key_for(iid):
+    """The `resharper_*_highlighting` spellings an inspection id could take in the export."""
+    b = snake(iid)
+    return (f"resharper_{b}_highlighting", f"resharper_{b}_highlighting_highlighting")
+
+
+def build():
+    """The universe, from the two committed inputs. No printing, no writing."""
+    # --- the export: the author's configured severities, and the universe of keys ---
+    ec = export_keys()
 
     # --- issue-type metadata, keyed back onto export keys ---
     # `types.json` is an optional cached dump from an older jb; the pipeline runs without
@@ -66,14 +104,13 @@ def build():
     sources = []
     if os.path.exists(f"{W}/types.json"):
         sources.append(json.load(open(f"{W}/types.json")))
-    if os.path.exists(f"{W}/types-2026.xml"):
-        sources.append([e.attrib for e in ET.parse(f"{W}/types-2026.xml").getroot().iter("IssueType")])
+    if os.path.exists(TYPES_XML):
+        sources.append([e.attrib for e in ET.parse(TYPES_XML).getroot().iter("IssueType")])
 
     meta = {}
     for src in sources:
         for i in src:
-            for cand in (f"resharper_{snake(i['Id'])}_highlighting",
-                         f"resharper_{snake(i['Id'])}_highlighting_highlighting"):
+            for cand in key_for(i["Id"]):
                 if cand in ec and cand not in meta:
                     meta[cand] = i
 
