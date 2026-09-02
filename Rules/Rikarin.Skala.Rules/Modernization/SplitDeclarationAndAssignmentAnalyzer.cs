@@ -23,11 +23,23 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///             rather than an omission.
 ///         </b> The issue also asks for <c>TooWideLocalVariableScope</c> —
 ///         moving a declaration <em>into</em> the narrower block that uses it. That rewrite moves a
-///         declaration <em>inwards</em>, which is the one direction <see cref="RewriteGuards" /> cannot
-///         check: <c>WouldCollide</c> and <c>DeclaredElsewhereInMember</c> both answer the outward
-///         question, and #304 is a rule from this session that emitted a token-equivalent program
-///         failing <c>CS0136</c> for exactly that blind spot. Shipping half a concept with a guard is
-///         worth more than shipping all of it with a fix that breaks builds.
+///         declaration <em>inwards</em>, which used to be the one direction <see cref="RewriteGuards" />
+///         could not check: <c>WouldCollide</c> and <c>DeclaredElsewhereInMember</c> both answer the
+///         outward question, and #304 is a rule from this session that emitted a token-equivalent
+///         program failing <c>CS0136</c> for exactly that blind spot. Shipping half a concept with a
+///         guard is worth more than shipping all of it with a fix that breaks builds.
+///     </para>
+///     <para>
+///         ⚠ <b>That blocker is gone: <see cref="RewriteGuards.DeclaredWithin" /> is the inward guard,
+///         and it is what the cut half was waiting for.</b> The question
+///         <c>TooWideLocalVariableScope</c> could not ask — does the block I am about to push this
+///         declaration into already declare the name, at any depth — is one call against the
+///         destination block. ⚠ It is <em>not</em> on its own a complete case for shipping the rule:
+///         the other halves of that rewrite, which this note never claimed to have solved, are that
+///         moving a declaration inwards past a <c>goto</c> label or into a loop body changes how often
+///         the initializer runs, and that a <c>ref</c> or <c>using</c> local changes lifetime with its
+///         scope. What has changed is that the blocker named here is answered, so the concept is worth
+///         re-opening rather than being closed on this paragraph (#304, #83).
 ///     </para>
 ///     <para>
 ///         ⚠ <b>No semantic model is needed and that is a fact about C# lookup, not a shortcut.</b> An

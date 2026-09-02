@@ -194,6 +194,58 @@ internal static class RewriteGuards {
         return false;
     }
 
+    /// <summary>
+    ///     Whether anything <em>inside</em> <paramref name="scope" /> declares <paramref name="name" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         The inward question, and the one neither guard above can answer. Both of those were
+    ///         built for a declaration moving <em>outwards</em>.
+    ///     </b>
+    ///     <see cref="WouldCollide" /> asks
+    ///     <c>LookupSymbols</c> at the destination, which by definition cannot see a name scoped to a
+    ///     block nested below that position; <see cref="DeclaredElsewhereInMember" /> skips every node
+    ///     overlapping the span being moved. A rule that introduces a binding into a scope it does not
+    ///     own — a <c>foreach</c> variable around an existing body, a declaration pushed down into the
+    ///     narrower block that uses it — collides in the opposite direction, and both guards pass it.
+    ///     <para>
+    ///         ⚠ <b>The failure is not a false positive, it is a fix that does not compile.</b>
+    ///         <c>SK1083</c> on Serilog's <c>MessageTemplate.GetElementsOfTypeToArray</c> would have
+    ///         written <c>foreach (var token in tokens)</c> around a body already declaring
+    ///         <c>if (tokens[i] is TResult token)</c> — <c>CS0136</c>, and token-equivalent, so
+    ///         <c>SK9099</c>'s promise says nothing about it. Found by a corpus sweep and not by any
+    ///         fixture, because no hand-written fixture happens to declare a name inside the loop it
+    ///         rewrites (#304).
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Named separately rather than folded into the two above</b>, so the direction is
+    ///         visible at the call site instead of being implicit in which helper somebody reached for.
+    ///         A rule introducing a name needs this one; a rule lifting a declaration out needs the
+    ///         other two; a rule doing both — <c>SK1083</c> is one — needs all three.
+    ///     </para>
+    ///     <para>
+    ///         <paramref name="ignore" /> is the span the fix itself deletes, whose declarations are
+    ///         therefore not going to be there to collide with. <c>SK1083</c> passes the <c>for</c>
+    ///         header's own declarator.
+    ///     </para>
+    /// </remarks>
+    public static bool DeclaredWithin(SyntaxNode scope, string name, TextSpan? ignore = null) {
+        foreach (var node in scope.DescendantNodes()) {
+            if (ignore is { } skipped && node.Span.OverlapsWith(skipped)) {
+                continue;
+            }
+
+            foreach (var declared in DeclaredNames(node)) {
+                if (string.Equals(declared, name, System.StringComparison.Ordinal)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Every name a syntax node declares into some local scope.</summary>
     public static IEnumerable<string> DeclaredNames(SyntaxNode node) {
         switch (node) {
