@@ -14,8 +14,11 @@ namespace Rikarin.Skala.Rules.Security;
 ///     Issue #145 arrived as three SonarQube rules and <b>two of the three are refuted by measurement</b>;
 ///     this is the third, narrowed to the one bit that needs no judgement.
 ///     <para>
-///         ⚠ <b>"A temporary file is created in a publicly writable directory" is not decidable from the
-///         source, because the directory is not publicly writable on two of the three platforms.</b>
+///         ⚠
+///         <b>
+///             "A temporary file is created in a publicly writable directory" is not decidable from the
+///             source, because the directory is not publicly writable on two of the three platforms.
+///         </b>
 ///         Measured: <c>Path.GetTempPath()</c> returns a <em>per-user</em> directory on macOS
 ///         (<c>/var/folders/…/T/</c>, mode <c>0700</c>) and on Windows (<c>%LOCALAPPDATA%\Temp</c>). Only
 ///         on Linux with <c>TMPDIR</c> unset is it <c>/tmp</c>. The same source text is a vulnerability or
@@ -23,8 +26,11 @@ namespace Rikarin.Skala.Rules.Security;
 ///         than of the code.
 ///     </para>
 ///     <para>
-///         ⚠ <b>"<c>Path.GetTempFileName</c> is an insecure temporary file creation method" is refuted on
-///         .NET.</b> Measured: it creates the file at mode <c>0600</c> — .NET goes through <c>mkstemp</c>,
+///         ⚠
+///         <b>
+///             "<c>Path.GetTempFileName</c> is an insecure temporary file creation method" is refuted on
+///             .NET.
+///         </b> Measured: it creates the file at mode <c>0600</c> — .NET goes through <c>mkstemp</c>,
 ///         so the file exists, owned and private, before the name is returned, and the create-then-open
 ///         race the rule is written about does not arise. What is left of it is a name-exhaustion limit at
 ///         65 535 files on Windows, which is a robustness bug and not a vulnerability.

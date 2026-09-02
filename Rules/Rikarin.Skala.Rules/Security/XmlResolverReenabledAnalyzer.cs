@@ -17,8 +17,11 @@ namespace Rikarin.Skala.Rules.Security;
 ///     <c>DtdProcessing</c> to <c>Prohibit</c>, so a resolver alone on that type resolves nothing. This
 ///     rule needs <b>one</b> fact, because its receivers have no such second switch to close.
 ///     <para>
-///         ⚠ <b>The receiver set is the whole argument, and it is drawn on where the safe default
-///         lives.</b> <c>XmlDocument</c> (and <c>XmlDataDocument</c> under it) has an
+///         ⚠
+///         <b>
+///             The receiver set is the whole argument, and it is drawn on where the safe default
+///             lives.
+///         </b> <c>XmlDocument</c> (and <c>XmlDataDocument</c> under it) has an
 ///         <c>XmlResolver</c> and no <c>DtdProcessing</c> at all, so the resolver is the only switch
 ///         there is. <c>XmlTextReader</c> has both, and its <c>DtdProcessing</c> defaults to
 ///         <c>Parse</c> — so again the resolver alone decides. On both, <c>XmlResolver</c> has defaulted
