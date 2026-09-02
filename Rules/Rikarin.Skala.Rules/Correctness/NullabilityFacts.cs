@@ -10,16 +10,22 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     The three questions the <c>SK2110</c>–<c>SK2113</c> nullability rules share.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>Annotation and flow state are different questions and confusing them produces a rule that
-///     reports nothing at all.</b> <c>GetTypeInfo</c> on a written <see cref="TypeSyntax" /> answers
+///     ⚠
+///     <b>
+///         Annotation and flow state are different questions and confusing them produces a rule that
+///         reports nothing at all.
+///     </b> <c>GetTypeInfo</c> on a written <see cref="TypeSyntax" /> answers
 ///     <see cref="NullableAnnotation.None" /> for <c>string</c> and for <c>string?</c> alike — the
 ///     annotation of a *type reference* is not the annotation of the *symbol* it names — so a rule that
 ///     compares annotations there is silent on every input and looks exactly like a rule with nothing
 ///     to find. What the rules here ask is <see cref="NullableFlowState" />: what the compiler knows at
 ///     that point in the program.
 ///     <para>
-///         ⚠ <b>Both answers are worthless in a nullable-oblivious context and are not <c>false</c>
-///         there.</b> Under <c>#nullable disable</c> every expression's flow state is
+///         ⚠
+///         <b>
+///             Both answers are worthless in a nullable-oblivious context and are not <c>false</c>
+///             there.
+///         </b> Under <c>#nullable disable</c> every expression's flow state is
 ///         <see cref="NullableFlowState.None" />, which is neither <c>MaybeNull</c> nor <c>NotNull</c>.
 ///         A rule that tests <c>!= MaybeNull</c> silently treats the whole nullable-oblivious world as
 ///         proven non-null; a rule that tests <c>== NotNull</c> withdraws from it. Which of those is

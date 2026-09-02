@@ -17,8 +17,11 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     a spotless false-positive record. The fixture harness does not check for it (issue #279) and
 ///     <c>skala check</c> drops it too (#295), so these tests do.
 ///     <para>
-///         ⚠ The second thing the harness cannot ask is the one this batch turns on: <b>the nullable
-///         context</b>. Every fixture is compiled with <c>NullableContextOptions.Enable</c>, so a rule
+///         ⚠ The second thing the harness cannot ask is the one this batch turns on:
+///         <b>
+///             the nullable
+///             context
+///         </b>. Every fixture is compiled with <c>NullableContextOptions.Enable</c>, so a rule
 ///         whose behaviour depends on the context can only be exercised through <c>#nullable</c>
 ///         directives inside the file — and the compilation-level setting, which is what a real
 ///         project that never migrated actually has, is never seen. These tests compile the same

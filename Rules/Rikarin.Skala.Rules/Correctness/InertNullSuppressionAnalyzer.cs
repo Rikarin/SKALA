@@ -11,8 +11,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <c>SK2111</c> — a <c>!</c> standing where no nullable warning could have been issued.
 /// </summary>
 /// <remarks>
-///     <c>!</c> is the strongest claim a C# author can make — <em>I know better than the compiler
-///     here</em> — and it costs every subsequent reader a stop to work out what was known. Where there
+///     <c>!</c> is the strongest claim a C# author can make —
+///     <em>
+///         I know better than the compiler
+///         here
+///     </em> — and it costs every subsequent reader a stop to work out what was known. Where there
 ///     was no warning to suppress the operator is decoration: it survives every migration untouched and
 ///     it makes a file look as though its nullability was thought about when it was not.
 ///     <para>

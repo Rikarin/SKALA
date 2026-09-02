@@ -18,8 +18,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     is a null check every subsequent line has to justify for nothing, and it teaches the reader to
 ///     stop believing the annotations — which is the whole value of having them.
 ///     <para>
-///         ⚠ <b><c>ReturnTypeCanBeNotNullable</c>, the other half of ReSharper's concept, is cut and the
-///         reason is a defect rather than noise.</b> Narrowing a <em>method's</em> return annotation
+///         ⚠
+///         <b>
+///             <c>ReturnTypeCanBeNotNullable</c>, the other half of ReSharper's concept, is cut and the
+///             reason is a defect rather than noise.
+///         </b> Narrowing a <em>method's</em> return annotation
 ///         propagates to every call site through <c>var</c>: <c>var x = M();</c> infers <c>string?</c>
 ///         today and <c>string</c> afterwards, so a later <c>x = null</c> becomes a new warning in a file
 ///         this analyzer never saw. A <see cref="DiagnosticAnalyzer" /> is handed one syntax tree and
@@ -67,8 +70,9 @@ public sealed class NullableLocalNeverNullAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (context.SemanticModel.GetTypeInfo(nullable.ElementType, context.CancellationToken).Type is not
-            { IsReferenceType: true }) {
+        if (context.SemanticModel.GetTypeInfo(nullable.ElementType, context.CancellationToken).Type is not {
+                IsReferenceType: true
+            }) {
             return;
         }
 
@@ -114,8 +118,11 @@ public sealed class NullableLocalNeverNullAnalyzer : DiagnosticAnalyzer {
                 Descriptor,
                 nullable.QuestionToken.GetLocation(),
                 FixEdits.Pack((nullable.QuestionToken.Span, string.Empty)),
-                "`" + RewriteGuards.Trim(locals[0].Name) + "` is declared `"
-                + nullable + "` and is only ever assigned a value that is not null"
+                "`"
+                + RewriteGuards.Trim(locals[0].Name)
+                + "` is declared `"
+                + nullable
+                + "` and is only ever assigned a value that is not null"
             )
         );
     }
@@ -174,8 +181,12 @@ public sealed class NullableLocalNeverNullAnalyzer : DiagnosticAnalyzer {
         return false;
     }
 
-    static bool Mentions(SemanticModel model, VariableDeclarationSyntax declaration, ILocalSymbol local,
-        CancellationToken token) {
+    static bool Mentions(
+        SemanticModel model,
+        VariableDeclarationSyntax declaration,
+        ILocalSymbol local,
+        CancellationToken token
+    ) {
         foreach (var declarator in declaration.Variables) {
             if (declarator.Initializer is not { } initializer) {
                 continue;
