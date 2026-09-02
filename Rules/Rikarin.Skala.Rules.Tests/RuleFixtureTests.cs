@@ -1,16 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Rikarin.Skala.Rules.Async;
-using Rikarin.Skala.Rules.Cleanup;
-using Rikarin.Skala.Rules.Correctness;
-using Rikarin.Skala.Rules.Design;
-using Rikarin.Skala.Rules.Maintainability;
 using Rikarin.Skala.Rules.Metadata;
-using Rikarin.Skala.Rules.Modernization;
-using Rikarin.Skala.Rules.Performance;
-using Rikarin.Skala.Rules.Security;
-using Rikarin.Skala.Rules.TestQuality;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Tests;
@@ -26,15 +17,16 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class RuleFixtureTests {
     /// <summary>
-    ///     Every shipped analyzer, from the one list <see cref="RuleFixtures.AllAnalyzers" /> holds.
+    ///     The analyzer set <c>skala check</c> runs, not a copy of it.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Shared rather than declared here, because <c>CorpusCrashTests</c> asks the same
-    ///     <c>AD0001</c> question over a different population. Two lists would be two answers to "what
-    ///     ships", and the corpus sweep would go quiet about exactly the analyzer somebody forgot to
-    ///     add to it — a sweep that answers "no crash" because it ran nothing (#315, #279).
+    ///     ⚠ This was a second hand-written list of the same 290 instances that
+    ///     <c>AnalyzerHost.Own</c> holds. They happened to agree, and nothing made them: a rule added
+    ///     to the host and forgotten here is measured against a set that is not the set that ships,
+    ///     and a negative fixture belonging to some other rule then passes because the rule that
+    ///     would have contradicted it was never registered (#297).
     /// </remarks>
-    static ImmutableArray<DiagnosticAnalyzer> Analyzers => RuleFixtures.AllAnalyzers;
+    static ImmutableArray<DiagnosticAnalyzer> Analyzers => SkalaAnalyzers.All;
 
     public static TheoryData<RuleFixture> Fixtures {
         get {
@@ -97,7 +89,57 @@ public sealed class RuleFixtureTests {
                     produced.Select(static d => "  " + d.Location.GetLineSpan() + ": " + d.GetMessage())
                 )
             );
+
+            AssertNoUnrecordedCrossRuleFinding(fixture, all);
         }
+    }
+
+    /// <summary>
+    ///     ⚠ A negative fixture is a claim that the file is correct code. Every rule already ran over
+    ///     it — this asks what the other 289 said instead of throwing it away.
+    /// </summary>
+    /// <remarks>
+    ///     The two directions are asserted together, because only the pair is an instrument. An
+    ///     unrecorded finding is a fixture that may be passing for the wrong reason; a recorded finding
+    ///     that no longer fires is a line that has stopped being true, and a file of those is how an
+    ///     allow-list turns into wallpaper. See <see cref="CrossRuleBaseline" /> for what is measured
+    ///     and why the scope is the two categories it is.
+    /// </remarks>
+    static void AssertNoUnrecordedCrossRuleFinding(RuleFixture fixture, ImmutableArray<Diagnostic> all) {
+        var key = CrossRuleBaseline.Key(fixture.Path);
+        var observed = CrossRuleBaseline.Observed(all, fixture.RuleId);
+        var recorded = CrossRuleBaseline.For(key);
+
+        Assert.True(
+            observed.SetEquals(recorded),
+            $"{fixture}: fixture-cross-rule-baseline.txt disagrees with what ran over this negative fixture.\n"
+            + Describe(
+                "  not recorded, and a negative fixture is a claim this file is correct code",
+                observed.Except(recorded),
+                all
+            )
+            + Describe("  recorded but no longer fires; delete the line", recorded.Except(observed), all)
+        );
+    }
+
+    static string Describe(string heading, IEnumerable<string> rules, ImmutableArray<Diagnostic> all) {
+        var listed = rules.Order(StringComparer.Ordinal).ToArray();
+        if (listed.Length == 0) {
+            return string.Empty;
+        }
+
+        return heading
+            + ":\n"
+            + string.Join(
+                "\n",
+                listed.Select(rule =>
+                    "    "
+                    + rule
+                    + ": "
+                    + (all.FirstOrDefault(diagnostic => diagnostic.Id == rule)?.GetMessage() ?? "(no longer produced)")
+                )
+            )
+            + "\n";
     }
 
     [Theory]

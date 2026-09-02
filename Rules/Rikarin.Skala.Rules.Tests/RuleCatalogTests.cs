@@ -440,12 +440,42 @@ public sealed class RuleCatalogTests {
         );
 
         var shipped = RuleCatalog.All.Select(static rule => rule.Id).ToHashSet(StringComparer.Ordinal);
+
+        // ⚠ This used to read `register.Contains(id)` — a substring match against the whole of
+        // doc 08 — and that is not "an id the register knows". Doc 08 names an id in its **cut**
+        // tables too, in order to record that it will never be built, and the substring match
+        // could not tell the two apart. Five entries went through it that way: `SK2006` (cut, an
+        // unassigned `out` parameter is `CS0177`, a compiler error), `SK8003`/`SK8004` (cut,
+        // xUnit1001 and xUnit1049 host them) and `SK8001` (cut, no mechanical fix and a large
+        // false-positive surface). The map was crediting inspections to rules that had been
+        // measured and declined, which reads as coverage in every number downstream.
+        //
+        // `allocated-ids.txt` is the register ADR-012 actually defines, so it is what this
+        // asserts against. `plannedButUnallocated` carries the ids doc 08 specifies and has
+        // deliberately not allocated — CLAUDE.md forbids allocating ahead of a specification, so
+        // the list is expected to be short, non-empty, and to carry a reason per entry.
+        var allocated = File.ReadAllLines(AllocatedIdsPath)
+            .Where(static line => line.Length > 0 && !line.StartsWith('#'))
+            .Select(static line => line.Split(' ', 2)[0])
+            .ToHashSet(StringComparer.Ordinal);
+        Assert.True(
+            allocated.Count > 100,
+            $"{AllocatedIdsPath} lists {allocated.Count} ids; that is not the register."
+        );
+
+        var plannedButUnallocated = new Dictionary<string, string>(StringComparer.Ordinal) {
+            ["SK1002"] = "doc 08 § SK1000 and § M5: primary constructors are a declaration-shape "
+                + "rewrite with no safe fix — deferred, not declined",
+            ["SK6004"] = "doc 08 § SK6000: 'the other two remain outstanding' — interface with one "
+                + "implementation is specified and not yet allocated",
+        };
+
         var unknown = new List<string>();
         foreach (var (inspection, id) in map) {
             if (!System.Text.RegularExpressions.Regex.IsMatch(id, "^SK[0-9]{4}$")) {
                 unknown.Add($"{inspection} -> '{id}' is not a well-formed rule id");
-            } else if (!shipped.Contains(id) && !register.Contains(id, StringComparison.Ordinal)) {
-                unknown.Add($"{inspection} -> {id}, which neither ships nor is named in doc 08");
+            } else if (!shipped.Contains(id) && !allocated.Contains(id) && !plannedButUnallocated.ContainsKey(id)) {
+                unknown.Add($"{inspection} -> {id}, which neither ships nor is allocated in allocated-ids.txt");
             }
         }
 
@@ -455,7 +485,9 @@ public sealed class RuleCatalogTests {
             + string.Join("\n  ", unknown)
             + "\n\nDirection asserted: every value is allocated, NOT that every value ships. An id doc 08 "
             + "names and nothing implements yet is a legitimate Catalogued mapping — that is what the "
-            + "bucket means — so this is the strongest claim that stays true as the catalogue is built out."
+            + "bucket means — so this is the strongest claim that stays true as the catalogue is built out. "
+            + "⚠ An id doc 08 names only in a CUT table is NOT such a mapping: the concept was measured and "
+            + "declined, so crediting an inspection to it reports coverage that will never exist."
         );
     }
 

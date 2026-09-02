@@ -55,6 +55,57 @@ the SDK's.
 deterministic choice (`supersedes` wins; the superseded one is recorded in the SARIF as suppressed
 with reason `superseded`).
 
+## What a green fixture set does not prove
+
+Read this before concluding a rule is finished. The fixture harness is the rule unit level and it is
+the fastest instrument here, but it measures one compilation shape, and two of the ways it differs
+from a real project have already shipped defects.
+
+⚠ **The fixtures are compiled against the test host's reference set — the TPA list — and a real
+project is compiled against its own.** Where the two differ a rule can be correct on every fixture
+and wrong in production with nothing failing, because overload resolution, `params` binding and shim
+visibility all move with the reference set. Two measured cases, both from
+[#297](https://github.com/Rikarin/SKALA/issues/297):
+
+- `SK1063` **silently declined every `string.Format` call with four or more arguments.** On .NET 9+
+  the `params ReadOnlySpan<object?>` overload wins past the last explicitly typed overload, and
+  Roslyn reports that argument as `ArgumentKind.ParamCollection`, not `ArgumentKind.ParamArray`. The
+  rule tested for `ParamArray`. Against the test host's reference set the same call binds
+  `ParamArray`, so every fixture passed.
+- `SK1060` (`x[^1]`) **fired 16 times on Skala's own netstandard2.0 projects and every one of those
+  fixes failed to compile** with `CS0518`. `System.Memory` ships an *internal* `System.Index` shim:
+  `GetTypeByMetadataName` finds the symbol, so the rule concluded the feature was available, but
+  `x[^1]` is illegal against an inaccessible type. The gate is now `IsSymbolAccessibleWithin`. ⚠ **No
+  regression test pins this and none can** — the harness cannot build a compilation in which
+  `System.Index` is inaccessible.
+
+**Therefore the binlog self-sweep is part of shipping a rule, not an optional extra.** Both defects
+surfaced there and only there, and it is the only check in the repository that sees a real reference
+set at all. A worthwhile third option, not built: a second fixture pass against a `netstandard2.0`
+reference set for rules whose `languageVersion` or API use makes them sensitive to it — that would
+have caught `SK1060` and would not have caught `SK1063`.
+
+⚠ **The registration is no longer a second list.** `RuleFixtureTests` used to hold its own
+hand-written 290 analyzer instances beside `AnalyzerHost.Own`'s. Both now read
+`SkalaAnalyzers.All`, so the set the fixtures measure is the set `skala check` runs; the harness also
+now matches production's `concurrentAnalysis`. The one deliberate difference left is
+`onAnalyzerException: null`, which is what turns an analyzer crash into an `AD0001` the fixture
+assertion can see — production folds it into an `SK9030` notification instead.
+
+**What a fixture *can* now say about its own compilation** is three things, as `// fixture-option:`
+directives in its leading comment block, defaulting to the harness's behaviour
+([#310](https://github.com/Rikarin/SKALA/issues/310),
+[#317](https://github.com/Rikarin/SKALA/issues/317)):
+
+```cs
+// fixture-option: LangVersion = 9              // a guard that only exists below the current version
+// fixture-option: DefineConstants = RELEASE    // production's --define, per fixture
+// fixture-option: AllowUnsafe = false          // unsafe is legal by default; this takes it away
+```
+
+⚠ An unrecognised key or unparseable value throws rather than being ignored, because a dropped
+directive leaves a fixture reading as a measurement it is not.
+
 ## Arrangement
 
 These are the structural-cleanup findings emitted by `verify` from the same fixed-point pipeline as
@@ -89,13 +140,65 @@ the correctness range and already contains allocated rules. The mapping is mecha
 
 ### Redundant expressions — the cheap third of the parity gap
 
-⚠ **The prose pass for this block is owed.** These rows are the allocation register doing its one
-job — recording that a number is taken — written as a rule lands rather than as a considered section.
-They are not arrangement rules: nothing here goes through the `arrange` fixed point, and each is an
-ordinary `DiagnosticAnalyzer` in `Rules/Rikarin.Skala.Rules/Cleanup/` under a new `Cleanup` category.
-They sit in the `SK02xx` band because doc 17 § "Inspection ids are not concepts" puts ReSharper's
-whole *Redundancies in Code* family here, and because `SK0209` — redundant *expression* parentheses,
-governed by `resharper_parentheses_redundancy_style` — was already here to be double-counted against.
+These five are one Skala concept per ReSharper *Redundancies in Code* cluster rather than one id per
+inspection, which is doc 17 § "Inspection ids are not concepts" applied to the largest family the
+export has. They are not arrangement rules: nothing here goes through the `arrange` fixed point, and
+each is an ordinary `DiagnosticAnalyzer` in `Rules/Rikarin.Skala.Rules/Cleanup/` under a new
+`Cleanup` category. They sit in the `SK02xx` band because that is where doc 17 puts the family, and
+because `SK0209` — redundant *expression* parentheses, governed by
+`resharper_parentheses_redundancy_style` — was already here to be double-counted against. ⚠ **That
+double-count was checked rather than assumed.** `RedundantParenthesesRule` matches
+`ParenthesizedExpressionSyntax` and nothing else
+(`Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/RedundancyRules.cs`), while `SK0233`'s three
+parenthesis shapes are an attribute argument list, a lambda parameter list and a parenthesized
+*pattern* — three node kinds that option cannot reach.
+
+⚠ **`SK0233` is the only one of the five that is purely syntactic, and that is the batch's whole
+measurement story rather than an implementation detail.** The other four read the semantic model, so
+on the dependency-less source slices under `Testing/corpus/` every semantic guard withdraws and the
+number they print is the zero of a check that did not run (#277). A corpus figure for `SK0233` is a
+figure; a corpus figure for the other four is not. It is also why `RedundantDiscardDesignation` was
+left out of `SK0233` — and why that refusal turned out to be right for the wrong reason, which
+§ "Cleanup — `SK0250`" below records.
+
+⚠ **Every branch in this batch is guarded by what the *deletion* would mean, and three times the
+shape that looks most obviously safe is the one that is not.** `string.Format("{{0}}")` returns
+`{0}` where the bare literal returns `{{0}}`, so a brace of any kind withdraws `SK0231`'s finding.
+`s.ToString();` as a whole *statement* is the null-check idiom — the result is discarded, the
+dereference is the call, and `s;` is not an expression statement at all. And `x with { }` → `x` is
+not the pure deletion that `new Foo { }` → `new Foo()` is: `with` invokes the record's
+compiler-generated copy constructor, so it allocates a distinct instance and dereferences its
+operand, and removing it aliases a clone somebody wrote in order to mutate it. `SK0230` therefore
+takes the conservative reading — an unsafe fix — for the whole concept rather than splitting one
+concept into two safety classes.
+
+⚠ **`SK0234`'s nullability comparison was wrong twice, in opposite directions, and only measurement
+said so either time.** The first draft compared the cast's operand and target with
+`SymbolEqualityComparer.IncludeNullability` and reported **nothing at all, on any fixture**:
+`GetTypeInfo` on a written `TypeSyntax` returns `NullableAnnotation.None` for `string` and `string?`
+alike, so the comparison rejects every cast including the identity ones. A rule that silently finds
+nothing looks exactly like a rule with nothing to find, and the positive fixtures are what turned
+that clean run into a failure. The replacement reads the written annotation off the syntax, where it
+is unambiguous. Later the *type-argument* branch failed the other way: `SymbolEqualityComparer.Default`
+ignores the annotations on type arguments, so `CreateBuilder<string>` and `CreateBuilder<string?>`
+compared equal and the rule concluded that inference reproduces the written call when it does not —
+four false positives in Skala's own `Analysis/`, every one
+`ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal)`, where inference reaches
+`T = string?` and the deletion is a CS8619. ⚠ **`SK0232` asks the same question and is unaffected —
+refuted, not fixed**: it deletes an argument only where the argument is a constant equal to the
+parameter's own default, and the compiler then supplies that identical value in its place, so
+inference sees the same input either way.
+
+⚠ **Two of these five analyzers were dying on every run, and every negative fixture passed while
+they did.** `SK0232` bounded its scan on the parameter count while indexing into the arguments,
+which is an `IndexOutOfRangeException` on every expanded `params` call (#298); `SK0234` handed
+Roslyn a detached member binding, whose receiver is the conditional access *above* it, so
+`values?.Where(…).Cast<string>()` sent `FindConditionalAccessNodeForBinding` off the top of the
+tree. Roslyn swallows both as `AD0001`, and an analyzer that produces nothing satisfies every
+"should not fire" fixture there is (#279). ⚠ Underneath the first crash was a silent miss rather
+than a false positive: `RestatesItsDefault` compared constants with `Equals`, which compares the box
+first, so `Allow(name, 0)` against a `long` default never matched — nor did any `double`, `float` or
+`decimal` default written as a bare `0`, which is most of the BCL's.
 
 ⚠ **Each row is one concept covering several ReSharper inspections, and none of them covers all of
 its family.** The count in the last column is inspections *retired*, not inspections listed on the
@@ -110,9 +213,44 @@ issue; what was declined and why is in each rule's `falsePositives` in `rules.js
 | `SK0234` | The cast or type argument is redundant | Semantic | [#128](https://github.com/Rikarin/SKALA/issues/128) | 4 of 8 |
 ### Cleanup — `SK0240`–`SK0249`
 
-⚠ **The prose pass on this block is owed.** It is written rule by rule as each one lands, so it
-records what shipped and what was left rather than reading as a considered section; the section
-above is what it should eventually look like.
+⚠ **Each of these five drew its boundary by asking what the *fix* would emit, not by reading the
+inspection list it was scoped from**, and in every one of them that is where the rule's real content
+is. Only the *last* `catch` of a `try` is reported, because deleting an earlier one changes which
+handler an exception reaches. `static` withdraws `SK0241`'s interface half, because a static
+interface member is not implicitly abstract and deleting the keyword leaves a declaration that no
+longer compiles. `SK0242`'s opening state is *inherited* rather than enabled, because whether the
+project already enables annotations is not written in the file. `SK0243`'s `base.` half is not "the
+containing type does not override it", because dropping the qualifier can turn a non-virtual call
+into a virtual one. And `SK0244` leaves a field whose only assignment *is* its initializer alone,
+because CS0649 is silenced by that initializer and deleting it turns a clean file into a warning —
+and a warnings-as-errors build into a failure — on the tool's own advice.
+
+⚠ **One guard was written, committed with a negative fixture, and then refuted by that fixture.**
+`SK0240` carried an iterator exclusion on the belief that a bare `return;` inside an iterator means
+`yield break`. It does not: the compiler rejects it with CS1622, so an iterator cannot contain the
+shape the rule matches and there was nothing to exclude. The guard is gone and `rules.json` records
+why. `SK0241`'s accessor branch was narrowed the same way — CS8664 rejects `readonly` on an
+accessor unless the property has both a get and a set, so the only shape that branch can ever see is
+a get/set property in a `readonly struct`, and the first fixture used a get-only property and did
+not compile.
+
+⚠ **`SK0243` was silenced outright by a comment on the line above the finding, on both of its
+halves, and the four rules in the block above it were not.** It asked `DescendantTrivia` of a
+*node*, and a node's descendant trivia begins with its first token's leading trivia, so a `//` or a
+`///` above a statement beginning with a qualified name — or above a `base.` call — turned the rule
+off. `SK0231`–`SK0234` pass the same probe because they ask the question of the *span* the fix
+rewrites, and a span cannot contain the line above it. That is #302's `SpanContainsComment` defect
+reproduced in a hand-rolled copy of it, which is why grepping for the shared helper's name finds
+nothing in this family. `SK0240` had the same defect in two of its three shapes, measured rather
+than read: a `// deliberate` above the `catch` took the count from 1 to 0, and the same above
+`default:` did too.
+
+⚠ **The `SK0240` extension that followed turned a committed *negative* fixture into a positive.**
+Reporting the `case 2:` of `case 2: default: break;` leaves `default: break;` — this rule's other
+switch shape — standing on its own fix's output, so the whole-section shape is tried first and
+absorbs any extra `case` labels, and the label branch only ever sees a section that does real work.
+The remark that stood here first said the two shapes are exclusive because the label branch requires
+the section to survive; that is true and describes the wrong half.
 
 These are *not* arrangement rules. Arrangement is a formatter pipeline whose findings carry no
 generic `skala fix` edit because several rules contribute to one document rewrite; each of these is
@@ -228,18 +366,25 @@ neither covering it.
 
 ### Finishing the redundancy cleanups: three refutations and no new id
 
-⚠ **This section is owed prose about work that ended in refutations rather than rules, and the owed
-half is the part that has to be written down.** A batch was scoped to close out the remainder of
+**A batch scoped to close out the remainder of
 [#131](https://github.com/Rikarin/SKALA/issues/131),
 [#129](https://github.com/Rikarin/SKALA/issues/129),
 [#130](https://github.com/Rikarin/SKALA/issues/130),
 [#135](https://github.com/Rikarin/SKALA/issues/135) and
-[#178](https://github.com/Rikarin/SKALA/issues/178) with new ids. It shipped **no new id**: two
-shapes belonged inside `SK0240`, which now holds them, and everything else was measured and found
-not to be a rule. What is still owed is the corpus evidence for the shapes nobody has looked at
-(`RedundantIfElseBlock`, `RedundantSwitchExpressionArms`) and a decision on whether `#130`'s
-remainder justifies a *semantic* sibling to `SK0244`, which is the one live option this section did
-not close.
+[#178](https://github.com/Rikarin/SKALA/issues/178) with new ids shipped no new id at all.** Two
+shapes belonged inside `SK0240`, which now holds them; everything else was measured and found not to
+be a rule. That is the shipping bar working rather than the batch falling short — three of the five
+issues are refuted below with the compiler or a ten-shape measurement as the witness, and a
+refutation costs nothing while a rule shipped on a premise nobody checked costs an id permanently
+(ADR-012).
+
+⚠ **What a batch like this still cannot record is that it happened.** `LEDGER.md` and the two
+`ledger-*.json` files distinguish covered from uncovered, and a concept declined on measured grounds
+is written down exactly like one nobody has looked at yet (#301) — so the evidence below lives in
+this document and nowhere the verifier can see it. Two shapes sit in that position:
+`RedundantIfElseBlock` and `RedundantSwitchExpressionArms`, for which there is no corpus evidence in
+either direction. So does the one live option this section did not close — whether `#130`'s
+remainder justifies a *semantic* sibling to `SK0244`.
 
 ⚠ **[#292](https://github.com/Rikarin/SKALA/issues/292) is refuted: `SK0210` already sees the
 global-duplication shape, and the measurement that said otherwise was wrong.** The issue reports
@@ -291,15 +436,24 @@ absent**: all twelve files containing a `finally` have a body in it. ⚠ This is
 rule cannot be measured on this slice at all — a compilation with 9 000 errors answers a symbol
 question with whatever it managed to bind.
 
-⚠ **`RuleFixtures.Compile` does not pass `allowUnsafe`, so no fixture for an `unsafe` shape can
+⚠ **`RuleFixtures.Compile` did not pass `allowUnsafe`, so no fixture for an `unsafe` shape could
 compile.** Found while considering the nested-`unsafe` half of `RedundantUnsafeContext` for
-`SK0241`: `unsafe class C { unsafe void M() { … } }` is CS0227 in the fixture harness. The
+`SK0241`: `unsafe class C { unsafe void M() { … } }` was CS0227 in the fixture harness. The
 nested-context shapes were dropped rather than tested against a compilation that rejects them — the
-trap `SK0240`'s deleted iterator guard was committed into once already.
+trap `SK0240`'s deleted iterator guard was committed into once already. **Fixed
+([#310](https://github.com/Rikarin/SKALA/issues/310)):** `allowUnsafe` now defaults to `true`, as
+`LooseLoader` has always passed in production, and `SK0241`'s nested-context shapes are fixturable.
+⚠ The related claim that this blocked `SK2221` is **refuted**: `[UnsafeAccessor]` requires `extern`,
+not `unsafe`.
 ### Cleanup — `SK0250`
 
-⚠ **The prose pass on this block is owed**, like the two above it: it is written as one rule lands and
-records what was measured rather than reading as a considered section.
+**One rule, and it is here rather than folded into `SK0233` because the two answer to different
+options.** `SK0233` collects the redundant *punctuation* shapes of the `Redundancies in Code` family;
+`SK0250` reports a redundant `_` designation, and the reason it was held back from that block turned
+out to be the wrong reason, recorded below rather than quietly corrected. ⚠ **A block of one is what
+this range looks like when a concept is declined on measurement and then re-admitted on a different
+reading of the same inspection** — the id is new, the inspection is not, and the two readings are
+what the paragraphs below separate.
 
 | ID | Rule | Scope | Floor | Fix |
 |---|---|---|---|---|
@@ -461,9 +615,59 @@ distinction § "What a corpus zero is worth" below now exists to keep.
 | `SK1043` | `for-loop-is-while` | `for (; cond;)` | `while (cond)` |
 | `SK1044` | `null-or-empty-check` | `x == null \|\| x.Length == 0` | `string.IsNullOrEmpty(x)` |
 
-⚠ **`SK1050`–`SK1054` are registered here and the prose pass is owed.** The rows below exist so the
-numbers are taken and readable; the paragraphs that say *why* each one is worth a rule, in the voice
-the rest of this section is written in, have not been written yet.
+**These five are the shapes that sit next to a rule that already shipped, so each one's first job is
+to say what it does not restate.** `SK1015` owns `is T` followed by a cast and `SK1050` is the rest
+of that family; `SK0217` decides how an *existing* discard is spelled and `SK1053` introduces one
+and never restyles one; `SK1033` already reports the `TryGetValue` shape `SK1054` most often appears
+in. Where `SK1040`–`SK1044`'s work was the rewrite, this group's work is the scoping.
+
+⚠ **`SK1050`'s scoping half is the rule and the rewrite is the easy part.** A local declared above
+an `if` is definitely assigned after it and a pattern variable is not, so every reference to the
+local has to be inside the guarded `if` before the declaration may move into its condition, and an
+`else` branch withdraws the finding — a use below the `if` would be CS0165. ⚠ **Two of its four
+shapes emit a `not` pattern and are gated at C# 9 individually, while the rule's declared floor is
+the C# 7 that `is T t` needs.** One floor for the whole rule would either silence the C# 7 shape on
+a C# 7 project or emit C# 9 syntax into one. ⚠ **`SK1015` claimed `IDE0019`, and `IDE0019` is
+`SK1050`'s shape** — an `as` followed by a null check — not `SK1015`'s, which is `IDE0020` (#291).
+The claim was a mislabel with teeth, because `Supersession.Apply` suppresses the superseded finding
+wherever the spans align. It was taken off, and `SK1050` deliberately does not pick it up: probed
+against the SDK, `IDE0019` lands on the *declaration* and `SK1050` reports on the condition below
+it, so the two never share a position and the claim would suppress nothing.
+
+⚠ **`SK1051` is `Semantic` and its proposal assumed `Syntax`, because `not (> 5)` is `<= 5` only
+where the type's order is total.** On `double`, `NaN > 5` is false, so `not (> 5)` matches `NaN` and
+`<= 5` does not; on `int?`, `not (> 5)` matches `null` and `<= 5` does not. Both rewrites look like
+De Morgan's law and neither one is. Cancelling a run of `not` needs none of that proof; only the
+relational inversion does, which is why the inversion reads its input type from the `is` operand or
+the `switch` governing expression and declines a `not` inside a subpattern, where it cannot see what
+is being matched. ⚠ The top of a `not` run owns the finding and an odd residual is folded into the
+inversion, so a triple negation is one edit rather than two overlapping ones — a rule that still
+fires after its own fix turns `skala fix` into a loop.
+
+⚠ **Two of `SK1052`'s negative fixtures were declining for a reason other than the one written on
+them, and a sabotage is what said so.** Disabling the "only a member or an element access may follow
+the `?`" check and the member-type check left every fixture green.
+`describe != null ? describe() : null` is refused by `System.Delegate`'s own `operator ==` long
+before the `describe?()` splice guard is reached — and nothing but a delegate is invocable, so that
+guard is unreachable and stays as belt and braces. `box != null ? box.Count : null` assigned to an
+`int?` is a *target-typed* conditional with no natural type at all, so the rule declines before it
+ever compares the member's type. The guards `SK1052`'s fixtures do hold down are the receiver match
+and the null test's rewritability. The rule's one admitted cost is stated rather than hidden: the
+rewrite reads the receiver once where the original read it twice, and property paths are admitted
+anyway, because excluding them would silence it on `this.Items` and `Options.Map`, which is most of
+its value.
+
+`SK1053` and `SK1054` are each one fact away from being unsound, and both facts are about names.
+⚠ `_` is a discard only where nothing else claims the name: a local, a parameter or a field called
+`_` turns `_ = Foo();` into an assignment to that thing — same shape, different program, no
+diagnostic — so every lookup for `_` at the rewrite position must come back empty, and only
+`out var` is ever replaced, never `out T`, because a discard carries no type and can move an
+overload. ⚠ `SK1054` carries the written type across verbatim for the mirror reason: `out` is
+invariant, so reproducing the declared type leaves overload resolution where it was, and copying the
+*text* rather than the symbol keeps an alias or a `using`-shortened name spelled the way the file
+spells it. Its scope question is answered by position rather than by a table of statement kinds —
+every reference must be inside the statement the `out` argument belongs to, and the argument must
+sit in that statement's own expression.
 
 | ID | Concept | Instead of | Use |
 |---|---|---|---|
@@ -473,9 +677,80 @@ the rest of this section is written in, have not been written yet.
 | `SK1053` | `discard-over-unread-local` | `var ignored = M(out var unused);` | `_ = M(out _);` |
 | `SK1054` | `inline-out-variable` | `int v; if (M(out v))` | `if (M(out int v))` |
 
-⚠ **`SK1060`–`SK1064` are registered here and the prose pass is owed.** The rows below take the
-numbers and say what each rule rewrites; the paragraphs explaining why each is worth a rule, in the
-voice the rest of this section is written in, have not been written yet.
+**This is the batch where the rewrite is an equivalence that has to be proved rather than a shape
+that has to be matched**, and in two of the five the proof is that the rule re-parses its own output
+before it reports. `SK1062` computes a raw-string fence — the longest quote run in the content plus
+one, never fewer than three — and then parses the replacement back and compares its token value
+against the original's, so a wrong fence cannot become a diagnostic, let alone a fix; getting that
+arithmetic wrong does not produce a subtly different literal but a different program, which `SK9099`
+would report as a crash. `SK1063` does the same with interpolation holes. ⚠ **That pattern has a
+cost the batch discovered twice: a sabotage on the arithmetic proves nothing unless the verifier
+goes with it.** Pinning `SK1062`'s fence at three quotes turned nothing red, and removing the
+ascending-order test from `SK1063`'s placeholder bookkeeping turned nothing red, because in both
+cases the parse-back already rejected everything the arithmetic rejected. Both are kept and
+documented as subsumed — they name the reason a shape is declined, where a re-parse reports only
+that it was.
+
+⚠ **`SK1060`'s rule is a type test, not the `Count - 1` shape.** `Dictionary<int, V>` is countable
+and its indexer takes an `int`, so `d[^1]` compiles, lowers to exactly `d[d.Count - 1]` and is the
+*same program* — while reading as an ordinal position the type does not have. A rule keyed on "has a
+`Count` and an `int` indexer" would be right about the program and wrong about the code, so the
+admitted set is read from the type. ⚠ `Span<T>` broke the first draft: it has no `Index` indexer and
+implements no interface at all, being a `ref struct`, yet `span[^1]` compiles through the implicit
+support the rule otherwise declines to trust, so it is named explicitly rather than inferred. ⚠ **And
+the corpus found what no fixture could.** The rule fired sixteen times on Skala's own
+`netstandard2.0` projects and every one of those fixes failed with CS0518, because `System.Memory`
+ships an **internal** `System.Index` shim there: `GetTypeByMetadataName` finds a symbol on a
+framework where `x[^1]` does not compile. Existence was the wrong question and
+`IsSymbolAccessibleWithin` is the compiler's own. Sixteen findings became one, and it compiles.
+
+⚠ **`SK1061`'s general form is unshippable and the restriction is the rule.** A serialization key, a
+JSON property name, a SQL column, an HTTP header and an `.editorconfig` key are all string literals
+that equal an identifier and mean something a rename must *not* follow, and nothing in the syntax
+separates them from a name meant as a name — rewriting one silently changes a wire format. So the
+literal half fires only in two positions whose meaning is defined by the API: a `paramName`
+parameter, and the `PropertyChangedEventArgs` family's `propertyName`. ⚠ The two computed shapes
+each carry a condition a pattern match would miss. ``typeof(List<int>).Name`` is ``List`1`` where
+`nameof(List<int>)` is `List`, `typeof(T).Name` on a type parameter is the *argument's* name at run
+time, and `using Text = System.String;` makes `nameof(Text)` disagree with `typeof(Text).Name` —
+which is caught by requiring the written last identifier to equal the symbol's own name. And
+`enum E { Done = 1, Finished = 1 }` makes `E.Finished.ToString()` return `Done`, because
+`Enum.ToString` answers with the first member declared. ⚠ Shipping it exposed that `SkalaRule.Parse`
+had no "6.0" arm and falls back to `Preview`, so a rule declaring `nameof`'s real floor would have
+been silent on every project rather than on none (#296). ⚠ A sabotage widening the position test to
+"any parameter, not just `paramName`" turned nothing red; the negative fixture that now covers it is
+`ArgumentException(string message)`, the shape most likely to hold a parameter name as prose.
+
+⚠ **The `a""b` example this rule shipped its four-quote claim on was wrong, and the sabotage that
+went green is what withdrew it.** A run of two quotes fits inside a three-quote fence, because the
+fence has to *exceed* the longest run rather than merely differ from it; a content holding three
+consecutive quotes is the real boundary and is now both a fixture and a theory case. ⚠ `SK1062` also
+declares no `languageVersion` at all and gates per shape inside the analyzer: the three raw-string
+shapes need C# 11 and simplifying `\x41` to `A` needs nothing, so a rule-level floor of 11 would
+have silenced that shape on exactly the older projects it is for.
+
+⚠ **`SK1063`'s unsound case is overload resolution, not formatting.** The obvious hazards — a
+repeated or an out-of-order placeholder evaluating an argument twice or in the printed order — are
+refused by requiring `{0}`…`{n-1}`, each used once, ascending. The hazard that actually changes a
+program is that an interpolated string converts to `string`, to `FormattableString` *and* to
+`IFormattable`, where `string.Format`'s result converts only to the first, so a call site offering a
+`FormattableString` overload beside the `string` one rebinds after the rewrite — and in EF Core's
+`FromSql` family that is the difference between a parameterised query and a concatenated one. ⚠ It
+also silently declined every `string.Format` with four or more arguments: on .NET 9 and later the
+call binds a `params ReadOnlySpan<object?>` overload, which Roslyn reports as `ParamCollection` and
+not `ParamArray`, so the rule covered the one-to-three-argument cases and none of the ones worth
+rewriting. ⚠ **The fixture harness could not have found that**, because it compiles against the test
+host's own reference set, where the same four-argument call binds `ParamArray` (#297).
+
+⚠ **`SK1064` is a width proof and it fails at 16 bits.** `(int)((uint)x >> n)` is `x >>> n`; the
+identical-looking `(short)((ushort)x >> n)` is not, because `>>` is defined for `int`, `uint`,
+`long` and `ulong` and for nothing narrower — so `(ushort)x` shifts a zero-extended 32-bit value
+while `x >>> n` on a `short` promotes the *signed* one. For `x = -1` and `n = 4` the first gives
+4095 and the second gives -1, and pattern-matching the cast pair would have shipped that. ⚠ A
+`checked` context breaks the equivalence in both casts — `(uint)x` throws for a negative `x`,
+`(int)u` throws above `int.MaxValue`, and `>>>` never throws — so the rule is silent inside
+`checked` and for the whole compilation when `CheckForOverflowUnderflow` is set, with an `unchecked`
+inside a `checked` restoring it, which is a positive fixture rather than a footnote.
 
 | ID | Concept | Instead of | Use |
 |---|---|---|---|
@@ -484,9 +759,65 @@ voice the rest of this section is written in, have not been written yet.
 | `SK1062` | `escape-free-string-literal` | `"{\"id\":1}"`, `"\x41"` | `"""{"id":1}"""`, `"A"` |
 | `SK1063` | `interpolated-string-form` | `string.Format("{0}", x)`, `$"{x.ToString()}"` | `$"{x}"` |
 | `SK1064` | `unsigned-right-shift` | `(int)((uint)x >> n)` | `x >>> n` |
-⚠ **`SK1070`–`SK1073` are registered here and the prose pass is owed.** The rows below exist so the
-numbers are taken and readable; the paragraphs that say *why* each one is worth a rule, in the voice
-the rest of this section is written in, have not been written yet.
+**Four rewrites that each turn on a fact about a type rather than about the syntax**, and in three
+of them that fact is what keeps the fix compiling. ⚠ `SK1070` requires its receiver to be a *local
+or a parameter*, not merely a side-effect-free path: deconstruction evaluates the receiver once and
+the longhand form evaluates it once per element, so `RewriteGuards.IsPlainNamePath` — which admits
+property access — is not enough here. It admits it on the argument that no rule in that namespace
+moves an expression across a statement boundary, and this rule does exactly that. A local or a
+parameter makes N reads and one read the same program by construction, which deletes the question
+instead of answering it. Only real tuple types qualify: `System.Tuple<T1, T2>` has the same
+`Item1`/`Item2` and deconstructs only through `System.TupleExtensions`, so the same rewrite there
+depends on a `using` the file may not have.
+
+⚠ **`SK1071` shipped dead once, and the reason is a Roslyn property that answers the obvious
+question wrongly.** `IsImplicitlyDeclared` looks like the way to ask whether a property was
+synthesized by the compiler, and it is **false** for a positional record property — the parameter is
+where the property is written down, so both symbols point at the same `ParameterSyntax`. Written as
+`IsImplicitlyDeclared: true` the rule found nothing at all: every negative fixture passed and all
+three positives failed, which is how it was caught. Comparing the two declaring syntaxes is the test
+that is actually true, and it also confines the rule to records declared in source, where a
+synthesized property can be told from a hand-written accessor that would run on the read and not on
+the copy. The rest of the rule is a proof rather than a pattern — `sealed`, no base record, no
+instance field, no instance event, no settable property outside the parameter list — because `with`
+copies *fields* through the copy constructor while the constructor call sets *properties*. ⚠ At
+least one argument must be replaced, which is also what keeps `SK1071` off `SK0230`'s ground: a call
+carrying every member across rewrites to `x with { }`, and the empty `with` is `SK0230`'s finding.
+
+⚠ **`SK1072` requires the spread array's element type and the outer collection's to be the same
+symbol, and that is a conversion count rather than fussiness about a widening nobody would notice.**
+Before the rewrite each element is converted **twice** — to the array's element type, then from
+there to the outer collection's — and after it, once. Two conversions in sequence are not the one
+that replaces them: `new long[] { anInt }` spread into a `double[]` goes `int → long → double` where
+the single step would go `int → double`, and where a user-defined conversion is on either leg the
+single step does not exist at all, because C# never chains two of them. Requiring the two types to
+be equal deletes the question rather than answering it case by case. An empty creation is
+deliberately out of scope: it deletes a separator as well as an element, and the empty-collection
+concept belongs to `SK1073` and to `CA1825`.
+
+⚠ **`SK1073` is a table rather than a pattern, because "this type has a cached instance" does not
+generalize and each entry has to carry its own reason.** `EventArgs` has no instance state and no
+member that could tell one instance from another, so the singleton and a fresh one differ only by
+reference identity; the other three entries are the default value of a struct, where identity is not
+observable at all. ⚠ `default(EventArgs)` is `null` and not `Empty`, which is why the table records
+per entry whether `default(T)` is also the instance instead of inferring it. ⚠ The trap looks
+exactly like the shape that is not: `void M(TimeSpan t = new TimeSpan())` compiles and
+`= TimeSpan.Zero` does not, because a default must be a compile-time constant and a
+`static readonly` field is not one — attribute arguments, constant patterns and `case` labels are
+excluded by position for the same reason. The member is looked up and required to be a public static
+field or property of the type itself before anything is reported, so the rule cannot emit an
+uncompilable fix the day a framework drops one.
+
+⚠ **A sabotage pass over the batch found five guards no fixture was holding down, and three of the
+five were the fixture's fault rather than the rule's.** A record deriving from another record
+re-declared the base's own positional property, so `SK1071`'s per-parameter proof withdrew before
+the base check was reached; a two-receiver copy rewrote to an empty `with` and was refused by the
+`SK0230` guard rather than by the same-receiver check; and `SK1072`'s "empty array" negative was
+spelled `new int[0]`, whose `Initializer` is **null**, so the null test declined it and the
+non-empty test never ran. ⚠ **And that last sabotage did not fail to fail — it crashed.** With the
+non-empty guard removed the analyzer throws on `Expressions[0]`, Roslyn swallows the exception as
+`AD0001`, and an analyzer that produced nothing passes every "should not fire" fixture there is.
+That is #279 seen from the inside.
 
 | ID | Concept | Instead of | Use |
 |---|---|---|---|
@@ -503,9 +834,54 @@ assignments. ADR-008 hosts rather than rebuilds, so no id was allocated. Its two
 `ConvertConstructorToMemberInitializers` and `WithExpressionInsteadOfInitializer`, are different
 concepts and remain uncovered; the second is the *opposite* direction to `SK1071`.
 
-⚠ **`SK1090`–`SK1094` are registered here and the prose pass is owed.** The rows below exist so the
-numbers are taken and readable; the paragraphs that say *why* each one is worth a rule, in the voice
-the rest of this section is written in, have not been written yet.
+**Five rules about what a declaration says against what it stores.** The band's usual argument — the
+code is fine and the language moved — is only half of it here: each of these is a declaration whose
+written form claims storage, a type or an annotation it does not need, and three of them (`SK1090`,
+`SK1092`, `SK1094`) carry `fixIsSafe: false` fixes because the repair changes what the type exposes
+rather than how it is spelled.
+
+⚠ **The batch's largest finding is not in any of the five rules: a documentation comment on the line
+*above* a declaration silenced four of them outright.** `SyntaxNode.DescendantTrivia` covers the
+node's full span, so a comment guard asked of a `PropertyDeclarationSyntax` reads the trivia above
+it — and none of these fixes removes text above the declaration, since `SK1090` rewrites the
+accessor list, `SK1091` removes it, `SK1092` rewrites the declared type and the initializer, and
+`SK1093` rewrites the type and deletes the cast. That is not a conservative guard, it is the wrong
+question, and each now asks `RewriteGuards.ContainsCommentOrDirective(tree, span)` over exactly the
+range it edits. ⚠ **A probe file is what found it, not a reading.** Inserted into the Release binlog
+it produced `SK0001` and CS8933 on its own lines — so the file was compiled and analysed — and
+*none* of the five rules fired on the five shapes it was built to trigger. ⚠ It also invalidated the
+first reading of the self-sweep: `SK1090`'s zero on Skala's own tree was about to be recorded as
+"shape present, constant initializers absent", and Skala documents nearly every member, so the guard
+was answering as well.
+
+⚠ **`SK1091`'s fix has to leave the file compiling on a `TreatWarningsAsErrors` build, which is what
+its two conditions are for.** The property must be both read and written: a field never assigned is
+CS0649 and one assigned and never read is CS0414, either of which the rewrite would introduce on the
+tool's own advice. The fix keeps the identifier, so the rewrite stays local to the declaration.
+
+⚠ **`SK1092` reports a shape that proves nothing on its own.** `Tuple<…>` is a class and
+`ValueTuple<…>` is a struct, and `Item1`-style access works on both, so what makes the rewrite sound
+is not the member access but the fact that the local never escapes — every reference to it must be a
+`t.ItemN` read. ⚠ Its first positive fixture caught the rule declining half the shape it was written
+for: `new System.Tuple<int, string>(…)` is a `QualifiedNameSyntax` and `new Tuple<int, string>(…)` a
+`GenericNameSyntax`, and matching only the second silently passed every fully-qualified spelling.
+That is what positives are for.
+
+⚠ **`SK1094` reads the nullable annotation context at the declaration rather than from the project,
+because under `#nullable disable` the attribute is the only signal there is.** It covers
+JetBrains.Annotations only: `[MaybeNull]` on an unconstrained `T` says something `T?` cannot, which
+is why that attribute exists and why the BCL's nullable-contract attributes are not in scope. ⚠ Its
+`#nullable enable` fixture was written to be a positive and turned out to be a negative, which is
+the finding rather than a mistake — the directive sits in the attribute list's *leading* trivia, so
+the span the fix deletes contains it, and the guard was right about a fixture that was wrong about
+what the shape means. Both spellings ship: the directive around the type is a positive, the
+directive on the line above the attribute is a negative that says why.
+
+⚠ `DeclarationBatchTests` exists because a crashed analyzer passes every negative fixture — Roslyn
+turns the exception into `AD0001` and returns nothing, so the "should not fire" set goes green and
+the failure reads as a rule that does not work. The shared harness does not look at `AD0001` (#279)
+and `skala check` drops it (#295); this one looks, and it measures the three language floors rather
+than trusting that declaring one in `rules.json` wires it up.
 
 | ID | Concept | Instead of | Use |
 |---|---|---|---|
@@ -541,11 +917,60 @@ no `var` → explicit arrangement rule at all. That settles the overlap in both 
 reports only declarations already written `var`, which `VarRule` never looks at, and after the fix
 the declared type is deliberately *not* the initializer's own type, which is the identity `VarRule`
 requires before it converts.
-⚠ **`SK1080`–`SK1084` are registered here and the prose pass is owed.** The rows below take the
-numbers and say what each rule rewrites; the paragraphs explaining why each is worth a rule, in the
-voice the rest of this section is written in, have not been written yet. Every one of them has its
-full false-positive story in `rules.json` in the meantime, which is where the reasoning currently
-lives.
+**Five rules for the dialect a model writes because most of its training data predates the operator
+that says what the chain means.** Three are LINQ shapes and two rewrite control flow, and the split
+is the batch's shape: the LINQ three carry safe fixes because each rewrite is an identity, and the
+two loop rules are `fixIsSafe: false` because what they move is a body.
+
+⚠ **Null is what makes `SK1080`'s two forms identical rather than merely similar.** `x is T` is
+false for null, so nothing null reaches the cast, and `OfType<T>` drops nulls for the same reason.
+The `Select(x => (T)x)` spelling is accepted and `Select(x => x as T)` is not: `as` yields null where
+the cast throws, so on an uncleaned sequence the two differ in length.
+
+⚠ **`SK1081` deletes a call that returns its own argument, and the receiver must be
+`IEnumerable<T>` exactly.** `Enumerable.Cast<T>` opens with `if (source is IEnumerable<T> typed)
+return typed;`, so on an already-typed receiver the deletion preserves reference identity and not
+merely the sequence — but on a `List<T>` it also changes the expression's static type, which is the
+trap `SK0234` records for identity casts.
+
+⚠ **`SK1082` excludes arrays, and that exclusion is the rule rather than fussiness.** `ElementAt`
+throws `ArgumentOutOfRangeException` on every path and an array's indexer throws
+`IndexOutOfRangeException`, so a `catch` written for one stops catching. ⚠ **The negative fixture
+that was supposed to hold the receiver set down held nothing.** Adding `ImmutableArray<T>` to the
+set left every test green, because `System.Linq.ImmutableArrayExtensions` declares its own
+`ElementAt(this ImmutableArray<T>, int)` — so the call binds there and the "must be `Enumerable`'s"
+guard refuses it one step earlier. The fixture's stated reason, the indexer's exception type, was
+true about the type and false about this rule, which is the worst kind of comment: it reads as
+coverage and holds nothing down. `Collection<T>` is the fixture that does hold it, because it binds
+`Enumerable.ElementAt`, declares an `int` indexer, and passes every guard before the closed list.
+
+⚠ **`SK1083` wrote a fix that did not compile, and the corpus sweep is what found it — on the fifth
+finding read.** Serilog's `MessageTemplate.GetElementsOfTypeToArray` loops over `tokens` and its
+body declares `if (tokens[i] is TResult token)`; the rule derived the element name from the
+collection's, picked `token`, and emitted
+`foreach (var token in tokens) { if (token is TResult token) … }` — CS0136 and CS0841. ⚠ **Both of
+`RewriteGuards`' scoping guards are blind to that shape**, because they were built for rules that
+move a declaration *outwards*, where the collision is with an enclosing or neighbouring scope. This
+rule declares a variable in a header whose scope is a body that stays put, so what collides is what
+the *loop itself* declares: `LookupSymbols` at the loop's start cannot see a pattern variable scoped
+to an `if` inside the body, and `DeclaredElsewhereInMember` skips every node overlapping the moved
+span, which is the entire loop. A third scan over the loop's own declarations closes it, and the
+general case is #304. ⚠ The same sweep produced `foreach (var propertie in properties)`: the name
+derivation offered both the "ies" → "y" form and the bare stem, and fell through to the stem when
+`property` was taken. A wrong-looking name is not a compile error and no test would ever have caught
+it — it was read off the sweep.
+
+⚠ **Two beliefs that shaped `SK1084`'s brief turned out to be false, and both are now tests.** A
+`break`, `continue` or `return` in the body does *not* block the rewrite, because only the filter
+moves and the body stays a loop body; and the loop variable's name may be reused as the lambda
+parameter, because the iteration variable's scope does not reach the collection expression —
+`foreach (var x in xs.Where(x => x > 0))` compiles. It ships at `hint`, one notch below anything
+`SK4001` says, which is how the two rules disagree about a loop without racing for its span.
+
+⚠ **One wrong entry was corrected in `catalogued.json` on the way through**: `ReplaceWithOfType` was
+credited to `SK4010`, which folds a `Where` predicate into nine *consuming* operators and declines
+`Cast` explicitly. A map crediting a real inspection to a rule that does not cover it hides the gap
+in both directions, which is the failure class #283 names.
 
 | ID | Concept | Instead of | Use |
 |---|---|---|---|
@@ -616,10 +1041,32 @@ already names in the other direction.
 - `SK2033` `stackalloc-in-loop` — a `stackalloc` a loop re-evaluates.
 - `SK2034` `escaped-keyword` — a declaration named after a reserved keyword and escaped with `@`.
 
-⚠ **The prose pass for the attribute-contradiction batch is owed.** What follows is the allocation
-register entry — enough that the ids are written down and
-`RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister` can see them — not the worked-through
-account the rest of this section carries.
+**What separates this batch from the rest of the correctness range is that the defect is never in
+the code the attribute annotates.** That code compiles, runs, and does what it says; the attribute
+is what is wrong, and it is wrong silently, because an attribute that does nothing throws nothing
+and warns nothing. `SK2100`'s initializer case reads correctly in the debugger on whichever thread
+happens to be attached; `SK2101`'s `[Pure]` is a promise no caller can check; `SK2102`'s
+`[DebuggerDisplay]` hole simply renders as an error string in a window nobody diffs. There is no
+test that fails and no build that breaks, which is why the four are worth an analyzer at all.
+
+⚠ **The attribute-resolution core the batch shares answers every question with three values, not
+two, and the rules report only on "no".** "I do not know" is kept distinct from "no" throughout,
+because an attribute rule that cannot tell an absent member from an *unresolved* one reports every
+source slice with no dependency closure as a defect. Nothing in the core throws on an unresolved
+symbol either, for the reason `AD0001` makes inescapable: Roslyn swallows an analyzer exception, the
+positive fixtures then fail while *every* negative fixture passes, and the failure reads as a rule
+that does not work (#279). `NoAnalyzerThrows_OnAnyFixtureInTheBatch` therefore runs over every
+fixture in the repository rather than only this batch's, because the analyzer that killed a rule the
+round before threw on a fixture belonging to a different one.
+
+⚠ **`SK2100`'s fix was chosen by reasoning and corrected by the harness.** Inserting `static` on a
+non-static `[ThreadStatic]` field is the obvious repair, and on a field with an initializer it
+produces the *other half of this same rule* — so the fix fired the rule again on its own output and
+`skala fix` would have looped. `EveryFix_SilencesTheRuleAndIntroducesNoDiagnostic` caught it on the
+one fixture where both halves are true at once; the shipped fix deletes the attribute instead.
+⚠ `SK2103`'s edit carries the mirror-image hazard and takes its removal span's separator on the
+*right*: taking the left is correct for one deletion and wrong the moment two neighbours in a list
+go at once, because their spans then share the comma and two overlapping edits corrupt the text.
 
 **Four rules, one question asked of one pair of things: read an attribute, read the thing it is on,
 and report where the two disagree.**
@@ -691,9 +1138,27 @@ handled — an enum declaring `None = 0` and `ReadWrite = Read | Write` produced
 any of the three. ADR-008 is host, never rebuild, so no `SK` id was allocated.
 ### `SK2040`–`SK2044` — equality and hashing
 
-⚠ **The prose pass for `SK2040`–`SK2044` is owed.** What follows is the allocation register entry —
-enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
-can see them — not the worked-through account the rest of this section carries.
+**Seven rules read the same handful of members — `SK2004`, `SK2011` and these five — and the seams
+between them are pinned as exact attribution rather than left as a property of the implementation.**
+Disjointness that is only a property of the implementation is disjointness nobody will notice
+losing, so six shapes a reasonable reading would hand to two rules each assert one finding and which
+rule owns it: a mutable member equality ignores, the same member once equality compares it, a typed
+contract with no object equality, a hash that delegates to `object`, an `operator ==` with a
+comparison site in the same file, and two of `SK2044`'s three inconsistencies in one type. A later
+widening that makes two rules argue over one span fails there — rather than in somebody's report,
+where it reads as the tool being noisy instead of as two rules overlapping.
+
+⚠ **The shared core refuses rather than guesses whenever an equality body hands the work to a helper
+it cannot see**, which is what makes the two halves of the hash-code split total rather than
+approximate. ⚠ **And two sabotages over that split failed to fail, both times because of the fixture
+rather than the guard.** `SK2042`'s `equals_calls_a_helper` read no member of its own type before
+calling the helper, so the empty-equality-set withdrawal caught it and the helper withdrawal was
+never exercised; it now reads `Id` first, so only the guard it names can keep `Name` from being
+reported. `SK2044`'s `equatable_without_object_equals_is_sk2004` cannot reach the `SK2004` gate at
+all — with `IEquatable<Self>` present the typed-`Equals` sub-case is mutually exclusive with
+`SK2004` by its own condition — and the one shape that puts a declaration in front of both rules is
+`operator ==` *and* `IEquatable<Self>` *and* no `Equals(object)`, which nothing covered until it was
+written.
 
 **They share one core and stay disjoint by construction rather than by filtering.** `EqualityMembers`
 resolves a type's equality surface once — which equality members it declares, and which of its own
@@ -770,9 +1235,34 @@ things — drop the member from the hash or add it to `Equals`; freeze the state
 as a key — and no signal in the code says which was intended. `SK2040` carries the one fix in the
 batch, rewriting the comparison to `Equals(a, b)`, and it is `fixIsSafe: false` because it changes
 the answer.
-⚠ **The prose pass for `SK2060`–`SK2064` is owed.** What follows is the allocation register entry —
-enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
-can see them — not the worked-through account the rest of this section carries.
+**The one fact that separates the defect from the correct code is different in every one of these
+five, and naming it is most of each rule.** ⚠ **The negative fixture sets run 2.5× to 3.7× the
+positive ones, and for this family that is the evidence rather than an overhead** — 52 files
+documenting why each rule must stay quiet against 19 documenting when it speaks.
+
+⚠ **Two of the batch's guards could never have fired, and one of its exclusions was refuted by its
+own fixture.** `SK2060`'s first draft registered for `ConditionalExpression` and it was dead code:
+assignment binds looser than `?:`, so `x = flag = other ? a : b` parses as
+`x = (flag = (other ? a : b))` and a ternary condition can never *be* a bare assignment — writing
+one needs the parentheses the rule already exempts. A guard that cannot fire is indistinguishable
+from one that works, so the claim is pinned by a named test rather than deleted quietly. `SK2062`
+asked `IsRepeatable` of *both* conditions and the second copy was dead for the same class of reason:
+`IsRepeatable` is a pure function of the syntax and `AreEquivalent` compares the syntax, so two
+conditions equal enough to report always answer it the same way. And `SK2061`'s first draft claimed
+`string == string` was excluded as a user-defined operator — Roslyn models string equality as a
+*built-in* operator with a null `OperatorMethod`, the fixture moved from the negative set to the
+positive one, and then the whole comparison branch went, when `CS1718` was measured instead of
+remembered.
+
+⚠ **`SK2063` kept the wrong one of its two conditions, and eleven sabotages are what said so.**
+Requiring a space before the `=` turned nothing red, because every negative in the set failed one of
+the remaining conditions as well. `x=- 1` groups the operator characters together and pushes the
+operand away exactly as `x =- 1` does, so the asymmetry is the whole signal and a leading space is
+not part of it; `x=- 1` is now reported. The missing fixture the sabotage was really pointing at is
+`x = - 1`, spaces on both sides of the sign, which is the only shape the adjacency test alone
+declines. ⚠ A twelfth sabotage stayed green longer: removing `SK2062`'s head-of-chain guard is
+invisible on a two-rung chain, because starting the walk from a later rung finds nothing new and the
+counts agree. Three rungs is where they diverge, and there was no three-rung fixture.
 
 **`SK2060`–`SK2064` are the family of expressions that read as something they are not**, and every
 one of them has a legitimate form that is textually identical to the defect. That is what makes the
@@ -825,10 +1315,43 @@ hand-written comparer was needed; a text comparison would call `if (a && b)` and
 different and would call two conditions sharing a sub-expression the same.
 ### The collection batch
 
-⚠ **The prose pass on this block is owed.** These rules are entered here because a shipped id that
-this document does not name fails `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`; the
-paragraph that places them against the rest of the range, and against `SK4030`–`SK4033`, has not
-been written yet.
+**These four ask what a collection contains or does; `SK4030`–`SK4034` ask which of its members was
+called.** The distinction is the finding rather than the category: `list.First(p)` where
+`list.Find(p)` would do is the same program written slower, and `set.ExceptWith(set)` is `Clear()`
+written so that nobody reads it as `Clear()`. A degenerate *result* is the entry condition here, not
+an argument that looks odd, which is why `SK2081` sits in the correctness band beside `SK4033`'s
+`ConcurrentDictionary` shapes rather than in the performance one.
+
+⚠ **None of the four has a dataflow analysis under it, and three of them say so out loud.** Roslyn's
+`AnalyzeDataFlow` answers questions about variables, not about a collection's contents or its
+indexed elements, so each rule asks a question it can answer instead — a contiguous run of element
+writes for `SK2082`, exhaustion over every reference to a local for `SK2083`, constant keys under a
+decidable default equality for `SK2080` — and withdraws on the first thing it cannot decide rather
+than stepping over it. All four therefore ship **fixless**. `SK2080`'s reason is that deleting the
+duplicate entry and correcting its key are different programs, and deleting it discards a value
+expression that may have side effects; `SK2081`'s is the shape of the defect, which is almost always
+one identifier, and naming the collection that was meant is not a decision an analyzer can make.
+
+⚠ **A probe file dropped into a real project found what nineteen green fixtures did not.** The
+`SK2080` fixtures spelled the set case `new HashSet<string> { "a", "b", "a" }` — a collection
+*initializer* — and the probe spelled it `HashSet<string> s = ["a", "b", "a"]`, a collection
+**expression**, which is a different node kind and the spelling most new C# now uses. A rule
+registered only on `ObjectCreationExpression` says nothing about it while every test stays green.
+⚠ The first attempt to normalise the two spellings into one list used `SyntaxFactory.SeparatedList`
+over the existing nodes, which produces a *detached* fragment: the semantic model answers nothing
+about a node that is not in its tree, `GetConstantValue` on a reparented node just says "no
+constant", and the positive fixture failed silently — which is the failure mode that looks exactly
+like a declined shape. The original nodes are handed back now.
+
+⚠ **The self-gate found three `SK7020` duplications inside these four analyzers that neither the
+fixtures nor `format --check` could see, and the third one is not the batch's — measured rather than
+argued.** `CollectionShape` now holds the compilation-start type-table resolution and the
+constant-key normalisation and same-storage walk that were each about to exist twice, and `SK2081`'s
+receiver table is a cross product instead of ten `ISet<T>` members spelled once for `HashSet<T>` and
+again for `SortedSet<T>`. The third finding stands either way:
+`skala check Rules/Rikarin.Skala.Rules --load=loose --duplication --rules SK7020` reports **35**
+with these five files present and **35** with them moved aside, because the block it names is the
+analyzer preamble every rule in the project shares.
 
 - `SK2080` `duplicate-initializer-key` — a set or dictionary initializer that writes the same
   constant key twice. ⚠ **The comparer is not resolved: the rule declines whenever the constructor
@@ -901,9 +1424,51 @@ that reports something nobody can write differently is the failure mode `SK2034`
 names. There is no rule here to build.
 ### Format strings, log templates and invisible characters
 
-⚠ **The prose pass on this block is owed.** The rows below are the allocation register doing its one
-job — recording that a number is taken — written as each rule landed rather than as a considered
-section.
+**These four rules read the contents of a string literal, which is the part of a C# program nothing
+type-checks.** A template, an escape and a format string are text the compiler copies through
+untouched and a library interprets at run time, so a hole count that does not match, a property name
+written twice, or a zero-width space inside an identifier is a defect with no diagnostic anywhere
+between the author and production. That is the boundary against the rest of the `SK20xx` band: those
+rules read expressions, and these read the string the expressions are handed.
+
+⚠ **`SK2070` counts supplied values by parameter ordinal and never by asking which arguments look
+like values**, which is the trap the obvious implementation walks into. A reduced extension-method
+invocation carries its own `this ILogger` receiver as `Arguments[0]` with a real parameter symbol, so
+a filter discarding arguments whose type does not resemble a logged value counts the logger as a
+supplied value and reports every correct call as one argument too many. `SK2071` makes the
+complementary decision about *where* a finding lands: on the template argument rather than on the
+repeated name, because a hole's offset is known within the template's **value**, and value and source
+spelling diverge at the first escape sequence — a span computed from the value is one character short
+after a single `\n`, which is quietly wrong inside a baseline fingerprint.
+
+⚠ **`SK2072`'s fixtures cannot be hand-written, and the generator that writes them is committed
+beside them for that reason**: the byte that makes a positive fixture positive is invisible in every
+editor somebody would use to add one, so the script is the reviewable record of what each file is
+meant to contain and `InvisibleCharacterFixtureTests` is what holds the files to it. The rule then
+found fourteen of the shape in Skala's own source — `U+0001` between the fields of a baseline
+fingerprint, `U+0000` inside a lock-pair dedup key, raw byte order marks in three mutators — every
+one a true positive, all fourteen repaired by the rule's own `skala fix --safe`, which is the fix
+validated end to end on production code rather than only on its fixtures.
+
+⚠ **This batch is where the fixture harness's blind spot was found, and that is worth more than any
+of the four rules.** `Rule_FiresExactlyWhereTheFixtureSaysItShould` filtered diagnostics down to the
+fixture's own id, so an analyzer that *threw* was invisible in both directions. Sabotaging the
+template parser with an unbounded index gives five failures across the positive fixtures and
+**twenty-one passes** across every "should not fire" fixture for both rules — a dead analyzer showing
+a perfect false-positive record, and a reviewer reading the negative column sees the cleanest
+possible sheet ([#279](https://github.com/Rikarin/SKALA/issues/279)). `LoggingBatchTests` asserts no
+`AD0001` over twenty-four degenerate templates, with an anti-vacuity companion, because an analyzer
+set that never runs also never crashes.
+
+⚠ **Two of `SK2073`'s sabotages failed to fail, each because one guard sat underneath another.** The
+exception-argument guard is unreachable for every positional `Error(ex, template, …)`, because the
+first-argument guard declines those first; the event-id guard was hidden the other way round, its
+fixture also passing an exception so that the exception guard declined it before the event-id guard
+was reached. Neither fixture was testing what its name said. The shape that separates them is a
+template written first *with* the exception supplied — named arguments — and it is also why only the
+`Log*(template, values…)` form is reported at all: `Microsoft.Extensions.Logging` orders its event-id
+overload `(EventId, Exception, string)`, so an exception prepended in front of an event id does not
+bind, and `skala fix` would have broken the build on the tool's own advice.
 
 - `SK2070` `log-template-argument-count` — a Serilog template with a different number of holes than
   the call supplies values. ([#20](https://github.com/Rikarin/SKALA/issues/20))
@@ -944,9 +1509,31 @@ concept unowned for `Microsoft.Extensions.Logging` as well as for Serilog.
 
 ### Culture, comparison policy and query shape
 
-⚠ **The prose pass on this block is owed.** The rows below are the allocation register doing its one
-job — recording that a number is taken — written as each rule landed rather than as a considered
-section.
+**Every rule in this block reports a default that something other than the author chose.**
+`IndexOf(string)` takes the current culture, a hard-coded case policy takes some other file system's
+answer, an overload set picks `Enumerable` over `Queryable`, and `Comparer<T>.Default` picks a
+comparer at run time — in each case the call site reads as a decision and is not one, and what comes
+back depends on a locale, a platform or a binding nobody wrote down. `SK2151` is the one inversion in
+the set: there the policy *was* stated, and stated wrong.
+
+⚠ **`SK2151` keys on the `System.StringComparison` enum, which makes the
+`CultureInfo.InvariantCulture` exclusion structural rather than a filter.** Invariant is the correct
+choice for round-tripping formatted data, and no formatting or parsing API accepts the enum — so a
+rule that reads the enum cannot reach the legitimate use and needs no exemption list to avoid it.
+`Compare` and `CompareTo` are excluded for the complementary reason: ordering is where linguistic
+collation legitimately lives, which leaves the equality-shaped operations and nothing else.
+
+⚠ **`SK2152` requires an operand to be *provably* path-valued, and a parameter named `filePath` is
+not a proof.** It has to come out of `System.IO.Path` or off a `FileSystemInfo`. Name-based path
+detection is how a rule of this kind acquires its false positives, and the recall given up is stated
+here rather than discovered later.
+
+⚠ **The four inspections this batch moved out of the parity residue were sitting in `Uncovered`
+because nothing had been mapped, not because nothing covered them.**
+`StringLastIndexOfIsCultureSpecific.1`, `.2` and `.3` and `PossibleUnintendedQueryableAsEnumerable`
+were each grep-verified against `types-2026.xml` and against the export before being added, and none
+is shadowed by `classify.py`'s hosted map — the direction of error that inflates the residue rather
+than hiding a gap, which is the cheaper one to be wrong in and still a direction.
 
 - `SK2150` `implicit-string-search-culture` — a `string` `IndexOf`, `LastIndexOf`, `StartsWith` or
   `EndsWith` taking a string and no `StringComparison`.
@@ -1091,9 +1678,33 @@ clean zero, an absent one.
 
 ### Disposal contracts and async shape — the ids this batch allocated
 
-⚠ **The prose pass is owed for this block.** What follows is the register doing the one job ADR-012
-needs it to do — the number is taken, and it is written down where the next milestone will read it.
-It is not yet the considered account the sections above carry.
+**Five rules across two id ranges, because the batch was cut from issues rather than from a band.**
+What binds them is that each reports a construct the type system has already accepted: a `Dispose`
+that is declared, written, and releases nothing; an override that satisfies `IAsyncDisposable` and
+never reaches the implementation it replaced; an ownership no interface records; an iterator that is
+called and never starts; and a state machine that exists to hand back a task the method already had.
+None of the five reads as an unfinished edit — each looks complete to the compiler, to a reviewer,
+and to every tool that checks for the declaration instead of for the work.
+
+⚠ **`SK3530`'s disjointness from `SK3502` was believed proved and the first sabotage did not fail.**
+Removing the `Implements(owner, IDisposable)` test changed nothing, because every `SK3502` fixture
+also lacks a `Dispose()` method and `DisposeBodyOf` was doing the separating on its own.
+`a-dispose-method-without-the-interface.cs` — a `Dispose()` and no interface — is the shape that
+makes the predicate load-bearing, and with it present the same sabotage reports twice on one field. A
+disjointness claim whose sabotage passes is a claim about the fixture set and not about the rules.
+
+⚠ **`SK3532` proves ownership from a direct object creation and from nothing else**, read from the
+two places a `ref struct` can put one: the field's initializer, or a constructor. A field assigned
+from a constructor parameter is borrowed and is never reported. That is `SK3502`'s own proof applied
+to a declaration `SK3502` cannot see, which is what makes the pair answer one question about two
+shapes rather than approximate each other.
+
+⚠ **`SK3531`'s two guards are what make its findings provable, and they buy that with a stated
+miss.** The overridden method must be declared in this compilation and its body must invoke
+something — so a framework base with a working `DisposeAsyncCore` in another assembly is not covered
+at all, and a base whose body is `default` or `ValueTask.CompletedTask` loses nothing by being
+skipped. The alternative was a rule whose findings are a guess about code it never reads, and in a
+family where every other member reports a leak, a guess is the one thing that discredits the rest.
 
 - `SK3530` `disposable-field-not-disposed` — the type implements `IDisposable`, constructs a
   disposable field, and nothing in it ever disposes the field. ⚠ **This is the half of the ownership
@@ -1152,9 +1763,35 @@ return type; `SK3031` removes a state machine and keeps the signature. Issue #55
 and they are not.
 ### `SK3040`– — the locking band
 
-⚠ **The prose pass for this block is owed.** These entries are the register doing its minimum job —
-recording that the number is spent and on what — and not the written-through account the rest of this
-document gives. Whoever writes it should read the analyzers, not this list.
+**Every rule in this band reports code written by somebody who was thinking about concurrency.** A
+`volatile` keyword, a double-checked initialization, a second lock field, a field guarded nine times
+out of ten — each is the mark of an author who considered threading and got one detail wrong, and
+that is precisely the code the next reader trusts and stops checking. It is also why the band is
+`warning` throughout and why none of it has a fix: the edit that repairs a concurrency finding is a
+decision about what the type's contract is, and [16](16-risks-and-open-questions.md) § R3 prices a
+wrong finding here as the most expensive reading there is.
+
+⚠ **`SK3041` ships fixless against the issue that proposed it, and any one of the four obstacles
+would have been enough.** [#58](https://github.com/Rikarin/SKALA/issues/58) asked for
+`fixIsSafe: false` rather than for no fix; `Interlocked.Increment(ref f)` on a `volatile` field is
+**CS0420**, so the obvious edit puts a compiler warning into code that had none. The decision is
+recorded in this document rather than only in a commit message, because ADR-012 makes the shipped
+shape permanent.
+
+⚠ **`SK3044`'s foreign-synchronization gate matches on the written name, which is right here and is
+usually wrong.** The gate scans a type for `Interlocked`, `Volatile`, `Monitor`, a semaphore, a
+reader-writer lock or a `Lazy`, and a name match there can only *silence* the rule — so a collision
+with somebody's own type called `Monitor` costs a finding and can never manufacture one. Every other
+gate in the batch buys precision at the cost of recall knowingly; this is the one place where the
+cheap test is also the sound one.
+
+⚠ **The batch's sabotage pass was run per gate rather than per rule**, each gate proved by its own
+fixture and every sabotage reverted: lowering `SK3044`'s finding threshold turns all three positives
+red, dropping the write requirement and the lambda withdrawal turns the read and lambda negatives
+red, widening reachability turns the private-helper and called-under-lock negatives red, and
+disabling the foreign-synchronization scan turns that negative red. A gate whose sabotage turns
+nothing red is not a guard but untested code, and this band deleted one — `SK3043`'s containing-type
+guard, below.
 
 - `SK3040` `lock-over-synchronization-primitive` — a `lock` statement taken over a `SemaphoreSlim`, a
   `ReaderWriterLockSlim`, or anything below `WaitHandle`. Every reference type carries a monitor, so
@@ -1224,9 +1861,50 @@ section falls. The pattern is now established enough to say so once rather than 
 
 ### `SK3060`– — entering, leaving, and escaping
 
-⚠ **The prose pass for this block is owed.** The entries below are the register doing its minimum
-job — recording that a number is spent and on what — and not the written-through account the rest of
-this document gives. Whoever writes it should read the analyzers, not this list.
+**`SK3060`–`SK3062` are about the boundary of a critical section rather than about what is inside
+it** — entering without a guaranteed exit, entering a monitor no other thread can take, and letting
+the object out before its constructor has finished. That is the line against `SK3040`–`SK3044`, which
+read the primitive and the field: these read the edges, and all three failures are invisible in the
+method that contains them because the harm arrives in a frame somewhere else.
+
+⚠ **Two of the three shipped with a defect a later probe found, and in both cases the shipped rule
+was narrower than its own prose claimed.** `SK3061` was written to leave `CA2002`'s types alone and
+left too many of them: re-probed on a pristine `net10.0` library at `AnalysisMode=All`, `CA2002`
+fires on `lock (this)`, `lock (typeof(T))`, a string literal, a **mutable** `string` field, a
+**readonly** `string` field, a `string` local, a `Thread` field and a `MemberInfo` field, and is
+silent on a fresh local, a `readonly object` field and a mutable `object` field.
+[#307](https://github.com/Rikarin/SKALA/issues/307) named only the mutable `string` field; the
+exclusion is now a type test up the base chain, applied to the lock target *before* either shape is
+consulted, rather than a clause inside one of them.
+
+⚠ **`SK3061` could not see a top-level program at all, and how the gap was under-counted is the more
+useful half.** The synthesized `Program` type's `DeclaringSyntaxReferences` hand back the
+`CompilationUnitSyntax` rather than a `TypeDeclarationSyntax`, so an `OfType<TypeDeclarationSyntax>()`
+filter dropped the whole file in silence — probed with the same three locks written twice, once at
+top level and once inside a class, the top-level answer went from `SK3040` alone to `SK3040` and
+`SK3061`. ⚠ **`SK3060` has the same blindness and #307 did not name it**: it declines through a
+different and deliberate mechanism, its `Body` walk returning `null` at a type declaration, which is
+what makes a field initializer decline too, so it is a separate repair. ⚠ **`SK3044`, which #307
+*did* name, has an empty gap and is refuted** — it reports on a *field*, top-level statements declare
+only locals, and a type declared beside them gets its own symbol action with a real
+`TypeDeclarationSyntax`, so there is no finding to lose. ⚠ The reading the gap used to carry — that a
+top-level file "is a script rather than a shared-state type" — was the wrong reading of the same
+fact. A top-level program is exactly the shape a model writes first, which is the population
+[00](00-vision-and-principles.md) says Skala exists for.
+
+⚠ **`SK3062`'s shape C never looked at the right-hand side**, so `Clock.Tick += StaticHandler;` and a
+non-capturing lambda on `AppDomain.CurrentDomain.ProcessExit` were both reported and neither
+publishes anything; the missing test was `Reaches`, shape D's own, already in the same file. The
+static-*receiver* half is earned and stays — it catches the `AppDomain.CurrentDomain` /
+`SystemEvents` / `NetworkChange` family and declines `Singleton.Instance.Inner.Changed` two hops out.
+Underneath it sat a second defect: a static **property** fell through both `SK3062` and `SK2134`,
+because `InstanceWriteToStaticAnalyzer` binds the assignment target and gives up on
+`is not IFieldSymbol field`, while `SK3062`'s shape A excluded *any* static member of the
+constructor's own type on the ground that `SK2134` had it. ⚠ **The repair moves no number on either
+reference tree, and that is the honest report**: `SK3062` is 0 before and 0 after on Skala's own tree
+and 1 before and 1 after on Vixen, where the single finding really does reach `this`. The
+false-positive class is a whole shape rather than an edge — it happens not to occur in either tree,
+which is a fact about the trees.
 
 ⚠ **This block was cut from five proposed issues and spends three numbers, because two of the five
 are refuted rather than deferred.** The refutations are written out below the rules; they are the
@@ -1376,9 +2054,28 @@ rules for less.
 
 ### `SK3050`–`SK3052` — async void wearing three disguises
 
-⚠ **The prose pass on this block is owed.** The rows below are the allocation register doing its one
-job — recording that a number is taken — written as the three rules landed rather than as a
-considered section.
+**The three disguises the heading names are `SK3001`'s written keyword pair and the two shapes it
+cannot see.** `SK3001` matches a `MethodDeclarationSyntax` whose return type is spelled `void`, which
+leaves the event handler it correctly declines still ending the process when it rethrows, and leaves
+the lambda that writes no return type at all — so `SK3050` and `SK3052` exist because the keyword
+search is not the concept. `SK3051` is in this block because it shipped in the same batch, not
+because it is a disguise: its argument is about a parameter that was never accepted rather than about
+a return type that was.
+
+⚠ **`SK3050` is `scope: Syntax` and `SK3052` is `Semantic`, and the delegate is the whole of the
+difference.** A `throw` inside a body whose declaration writes `async void` is visible in the tree,
+while deciding that `Register(async () => await X())` is `async void` means binding the target
+delegate to learn that it returns `void`. Both ship fixless for one shared reason — the remedy
+`SK3001` offers, return `Task`, is unavailable to a handler whose signature an event declares and to
+a lambda that has no signature of its own.
+
+⚠ **Every disjointness test in this batch edits a single source file rather than comparing two.**
+Two files that differ in shape prove only that the shapes differ, which stays true whether or not
+either rule is running; one file satisfying both rules' predicates, with one keyword moving it
+between them, is the only version that fails on the day a rule stops firing. Three of the batch's
+negative fixtures are those pins rather than exclusions — an `async` lambda that throws belongs to
+`SK3052` and not `SK3050`, an `async void` method the other way round, and a body with exactly one
+`CancellationToken` in scope belongs to `SK3004` and not `SK3051`.
 
 - `SK3050` `async-void-throw` — a `throw` inside an `async void` method or local function that
   nothing between it and the body's edge can catch. **Fixless.**
@@ -1482,8 +2179,32 @@ new concept takes a new number rather than the nearest tidy one. Folding
 
 ### Performance a declaration states, rather than a body measures
 
-⚠ **The prose pass is owed for this block.** These are recorded here because the register requires
-it; the surrounding sections carry an argument and this one carries a list.
+⚠ **This batch declines more than it reports, and two of the exclusions are decisions rather than
+deferrals.** `SK4022` leaves `record struct` alone because `readonly` there turns the positional
+`set` accessors into `init` — a public API change, and a different question from the one the rule
+asks. `SK4023` reads a closed table of six framework types rather than a heuristic on a parameter
+name: "the default capacity" is a fact about `List`, `Dictionary`, `HashSet`, `Queue` and `Stack` at
+0 and `StringBuilder` at 16, while a type of the author's own may document any default and change it
+next commit, so a name match would delete an argument on the strength of a coincidence. Only a
+numeric literal is reported for the same reason — `new List<string>(DefaultCapacity)` states an
+intent that happens to equal the default today, and deleting it decouples the call site from the name
+silently.
+
+⚠ **`SK4022`'s fix is source-compatible and is still not a no-op**, which is why it ships at
+`suggestion`: an `in` parameter stops copying, so a member that returned a value derived from a stale
+copy now returns the current one. That is the bug the defensive copies were hiding, and it arrives as
+a behaviour change on the day somebody applies a modifier the compiler accepts without complaint.
+
+⚠ **`SK4020` and `SK4002` are asserted never to fire on the same declaration.** One reports a capture
+and the other the absence of every capture; they are complements, and a report carrying both would be
+one decision billed twice. The assertion lives in the batch tests rather than in a `supersedes`
+claim, because there is no finding to suppress — only a pair that cannot both be true.
+
+⚠ **The batch found a defect in the register's own machinery that had been passing for a feature.**
+`RuleInfo.SnakeCase` treated a dot as an ordinary character, so `SK4021`'s
+`MemberCanBeMadeStatic.Local` derived to `..._static._local_highlighting` — a ReSharper severity key
+JetBrains never emits. A mapping that looks like a feature and behaves like a comment; dots are word
+boundaries now.
 
 Concepts whose whole decision is visible in one declaration and what its body touches, so none of
 them needs a profile to justify the edit.
@@ -1506,9 +2227,29 @@ them needs a profile to justify the edit.
   that is a memory change nobody measured.
 ### `SK4030`–`SK4034` — call shapes decided by the receiver's static type
 
-⚠ **The prose pass for this block is owed.** The entries below are the register doing its job —
-naming the numbers so they cannot be handed out twice — and not the considered write-up the rest of
-this document carries.
+⚠ **`SK4034` is the only rewrite in the batch that moves an asymptotic term rather than an allocation
+count, and its correctness rests entirely on `OrderBy` being a *stable* sort.** A stable sort leaves
+equal keys in source order and `Where` preserves relative order, so filtering before sorting emits
+exactly the sequence filtering after it does. Were the sort unstable the two spellings would differ
+for equal keys and the rule would be wrong. That is a property of the framework rather than of the
+analysis, and it is written down because nothing in the code says so.
+
+⚠ **The indexed `Where(Func<T, int, bool>)` is refused, and parameter count does not distinguish it.**
+After the sort the index is a position in sorted order and before it a position in source order, so
+the two overloads mean different things and only the predicate's shape separates them — which is the
+same lesson as `SK4033`'s `dict.Keys.Contains(k)` decline below: an operator that looks
+substitutable is not substitutable until the thing it reads is identical.
+
+⚠ **Exactly one of `SK4010` and `SK4034` may speak on `xs.OrderBy(k).Where(p).First()`**, and the
+reason is the fix rather than the finding: both are right, their edit spans *overlap*, and two
+findings would be two repairs that cannot both be applied. `SK4010` keeps it — folding the predicate
+into `First` lets the search stop at the first match — and `SK4034` withdraws where one of
+`SK4010`'s nine consumers follows. Both directions are pinned, including that `SK4034` still speaks
+before a `ToList()`, which `SK4010` does not fold. ⚠ Recorded rather than guarded: after the swap the
+predicate runs in source order instead of sorted order and the key selector runs only on survivors,
+so a key selector that threw for a filtered-out element no longer throws, and the expression's static
+type widens from `IEnumerable<T>` to `IOrderedEnumerable<T>` — accepted everywhere the first was, and
+still inferable by a `var` and resolvable on by an overload set.
 
 `SK4030` the collection's own `Find`/`Exists`/`TrueForAll`/`Contains` where the LINQ extension was
 called · `SK4031` a `foreach` over `dict.Keys` that indexes the dictionary with the key it is already
@@ -1639,9 +2380,36 @@ so that `skala explain` prints it.
   (`OrderClass`, `PointStruct`).
 - `SK6023` `empty-type` — a type with no members, no base and no attributes.
 
-⚠ **The prose pass for `SK6040`–`SK6049` is owed.** What follows is the allocation record only, written
-so that no number below is handed out twice; the paragraphs that explain the batch the way the rest of
-this section is explained have not been written yet.
+**Both rules report a declaration wider than what the code does with it** — a name bound for a value
+nothing reads, and a type wider than the elements the collection already knows. Neither needs a call
+graph and neither changes what the program computes: `out _` still receives the callee's write, and a
+narrowed `foreach` variable still binds the same element. That is the line against the other eight
+inspections issue [#121](https://github.com/Rikarin/SKALA/issues/121) groups, which is written out
+below.
+
+⚠ **`SK6041` shipped dead once, and every one of its nine negative fixtures passed.**
+`Compilation.IsSymbolAccessibleWithin` throws on a symbol that is not a type or an assembly, and the
+first draft handed it the containing *method*: the analyzer threw on every loop, Roslyn swallowed the
+exception as an `AD0001` nobody reads, all four positive fixtures went quiet, and all nine negatives
+passed for the wrong reason. ⚠ **A rule can be entirely dead and look like a rule with a clean
+negative set** — the fixture harness filtered diagnostics to the fixture's own id before looking at
+them, so the `AD0001` was thrown away ([#279](https://github.com/Rikarin/SKALA/issues/279)). It is
+the same failure the logging batch later measured deliberately; here it happened first and by
+accident.
+
+⚠ **Two of `SK6040`'s guards were written against measurement rather than intuition, and one of them
+replaced a guard that would have been dead code.** `IArgumentOperation.Parameter` belongs to the
+*constructed* method, so reading the parameter type for an unsubstituted `T` answers nothing; the
+question that has to be asked instead is whether the source wrote the type arguments at all, because
+an explicitly typed `out int x` takes part in inference and `out _` is then **CS8183**. And a member
+containing a preprocessor directive is skipped outright: disabled text is trivia, so a reference
+inside `#if DEBUG` is invisible to the operation tree and to the token scan alike.
+
+⚠ **`SK6040`'s analysis runs over operations *and* over tokens, and the redundancy is the point.**
+"Is this name read" is a question about a symbol, so the operation tree answers it; before reporting,
+the member is then scanned for any identifier spelling the same name, which withdraws the finding for
+`nameof(x)` and for anything a future Roslyn stops surfacing as a local reference. Being wrong in
+that direction costs one finding. Being wrong in the other costs a build.
 
 ⚠ **`SK6040` is one ninth of the concept issue #121 named, and the other eight are deliberately not
 shipped.** "The local declaration is never used" groups nine ReSharper inspections. Only
@@ -1685,10 +2453,41 @@ for a `public` one. ⚠ `catalogued.json` maps `MemberCanBeInternal.Global` to
 `SK6002`, which this document allocates to *"public member exposing a mutable array or `List<T>`"* — a
 different concept. **That mapping is wrong and should be re-pointed at whichever id #114 eventually
 takes**, or dropped; it is left alone here rather than corrected by an agent that is not shipping #114.
-⚠ **The prose pass for `SK6030`–`SK6034` is owed.** What follows is the allocation record and the
-one-line reason for each; the paragraphs that explain the batch the way `SK6020`'s and `SK6022`'s are
-explained above have not been written. Each rule's `falsePositives` in `rules.json` carries the full
-argument in the meantime, and `skala explain SK6030` prints it.
+⚠ **`SK6032` fired on a closed hierarchy, and the sweep found it rather than the design.** Running
+the five new rules over their own sibling fixtures — the verify-the-instrument step, before anything
+was measured — reported `SK6032` on `SK6033`'s negative fixture `an-abstract-closed-hierarchy.cs`: an
+`abstract class Shape` with a private constructor and two `sealed` nested subclasses in its body.
+That is how C# spells a closed hierarchy, and it carries no `abstract` member, no `virtual` member
+and nothing `protected` — because the derived types are right there, which is the plainest derivation
+surface there is. A nested type naming its container in its base list is now an exemption, matched on
+the written name so the rule stays syntactic. ⚠ **It reached a green fixture run first**: `SK6032`'s
+own fixtures did not contain the shape, so nothing in the batch would have caught it, and what did
+catch it was another rule's negative set.
+
+⚠ **`SK6031` would have reported the fix's own advice if it had asked the obvious question.**
+`ImmutableArray<T>`, `ImmutableList<T>` and `ReadOnlyCollection<T>` all implement `IList<T>` —
+explicitly, throwing from every mutator — so "does the field's type implement `ICollection<T>`" flags
+exactly the types somebody is being told to switch to. The rule matches a named set resolved through
+the semantic model instead, and buys a miss on a user-defined mutable type;
+`an-immutable-array-implements-ilist.cs` is the fixture that holds the line. ⚠ Concurrent collections
+are outside the set for a different reason: a shared `ConcurrentDictionary` exists to be written
+through by many callers at once, so a non-reassignable field is the whole of what `readonly` ever
+claimed there, and reporting it would be reporting a design for working as designed.
+
+⚠ **`SK6033`'s first draft had the direction of nesting backwards**, and the fixture harness is what
+refused it. Nesting opens access inward and not outward: a nested builder calling `new Pipeline(…)`
+is legal, while a container calling a *nested* type's private constructor is **CS0122**. The claim
+was caught because the fixture asserting it would not compile — which is the whole reason fixtures
+must compile — and it is corrected in the analyzer, in `falsePositives`, and by the fixture that
+replaced it.
+
+⚠ **`SK6032` is `scope: Syntax` against its proposal's `Semantic`, and the base-list exemption is
+what makes it so.** An abstract class with a base list may inherit unimplemented abstract members or
+carry unimplemented interface members — both genuine things to implement, both living outside the
+declaration — so declining every one of them removes the only question that needed a symbol, and the
+rule then runs under `--load=loose`. `SK6030` is syntactic for the same kind of reason: which
+namespace a type sits in is the declaration's parent node, and loose is where an agent-generated tree
+with no project files actually gets checked.
 
 **`SK6030`–`SK6034` are declarations that promise something they do not deliver.** A modifier, a
 namespace, a keyword or an accessibility that a reader takes as a guarantee and that provides none.
@@ -1712,10 +2511,44 @@ declaring `hasFix: true` carries edits — so a rule offers a fix for all of its
 `fixIsSafe: false` because the breakage it can cause — an attribute argument, a parameter default, a
 `case` label — lands in files the edit does not touch.
 
-⚠ **The prose pass for `SK6050`–`SK6053` is owed.** What follows is the allocation record and the
-one-line reason for each; the paragraphs that explain the batch the way `SK6020`'s and `SK6022`'s are
-explained above have not been written. Each rule's `falsePositives` in `rules.json` carries the full
-argument in the meantime, and `skala explain SK6050` prints it.
+⚠ **`SK6051` shipped with four fewer guards than it was specified to have, because a sabotage pass
+proved none of the four can fail.** One base-type walk decides all of them: it starts one link above
+the tested type and only ever visits classes, so `sealed` is excluded because nothing derives from a
+sealed type, an interface and a struct have no class in the chain above them, identity is excluded by
+where the walk starts, and a type in metadata cannot derive from a source type while `this` only
+exists in source. ⚠ **The guard specified most explicitly was found unreachable by the negative
+fixture written to exercise it** — the fixture declined for an entirely different reason, having
+named a sibling rather than a subclass. A guard no fixture can exercise reads as care and is untested
+code; what is left in the analyzer each turns a specific fixture red when removed.
+
+⚠ **`SK6052`'s first draft could never decline, and its negative fixture is what caught it.** It read
+the nullable annotation off `GetTypeInfo` of the return *type syntax*, which carries no nullable
+annotation at all, so the guard saw `None` for `IEnumerable<T>` and `IEnumerable<T>?` alike and
+reported both. It reads `IMethodSymbol.ReturnNullableAnnotation` now, and
+`TypeArgumentNullableAnnotations` for the `async` case where the `?` belongs to the argument inside
+the task. A guard whose fixture had been written to pass would have shipped silently wrong.
+
+⚠ **`SK6053`'s severity was decided by a number, and the first number came from a loader that had not
+bound.** `--load=workspace` over Skala's own tree yields **4 375** `CS` errors; under it
+`Xunit.FactAttribute` does not resolve, the test-method exclusion silently does nothing, and the rule
+reported ten — eight of them test methods a fresh Release binlog correctly declines. The binlog run
+reports **1**, and widening the rule to every asynchronous method regardless of name gives **5** on
+Skala's first-party source, four of those already suffixed. ⚠ **A population of five cannot calibrate
+a naming convention**, and a low count on a reference tree is evidence that the tree already writes
+the suffix rather than evidence the rule is quiet — so it ships at `none`, opt-in per path, the way
+`SK7010` and `SK7101` are.
+
+⚠ **`SK6050`'s `private` restriction is the boundary of what it can prove, not a conservative default
+to widen later.** The legitimate forms of "takes arguments, reads none, returns a constant"
+outnumber the defective ones and every one of them is reached from outside the type — an interface
+implementation, a `virtual` hook, a test double, a strategy that genuinely is constant. A private
+member is the only case where every caller is in one file, and therefore the only case where "the
+arguments are computed and thrown away" is a statement about the program rather than about one
+declaration. ⚠ The recall cost is the entire public and internal surface, which is exactly where an
+AI-written stub is most likely to be, and it is stated rather than hidden. A method group withdraws
+the finding for the same reason nothing in the declaration would have:
+`private static bool Always(Item i) => true;` handed to `Where` is a predicate whose whole point is
+that it ignores its input.
 
 **`SK6050`–`SK6053` are members and signatures whose shape contradicts what they say.** A body that
 does not do what the parameters promise, a base type that asks what it is, a sequence contract that
@@ -1786,10 +2619,28 @@ trees are the argument for it — across all three there is exactly **one** `got
 `SK7073` an empty `#region` · `SK7074` a `goto` to a label (`goto case` and `goto default` are
 not reported).
 
-⚠ **The block below is the register entry for `SK7090`–`SK7093` and the prose pass on it is owed.**
-It records what shipped and the position each rule takes, written by the agent that built them; it has
-not been through the editorial pass the rest of this section has had, and it should be read as notes
-that are accurate rather than as finished catalogue prose.
+**All four report a member taking a decision that was not its to take.** A thrown
+`NotImplementedException` defers the work to nobody; `Environment.Exit` ends a process on behalf of a
+caller who did not choose to abandon its cleanup; a `catch` that logs and rethrows writes a record
+the frame above it is going to write again; and a `Console.Write` beside an injected `ILogger`
+overrides a routing decision the code has already made two lines away. That is why all four ship
+`hasFix: false` at `warning` — in each case the repair *is* the decision the member declined to make,
+and no edit makes it.
+
+⚠ **The two `OutputKind` refusals below are one measurement used twice, and neither is caution.**
+`SK7091` and `SK7093` were both proposed around a library-versus-application distinction, and
+`LooseLoader` builds every loose compilation as `OutputKind.DynamicallyLinkedLibrary` — so "this is a
+library" and "no project file was loaded" are the same observation, and loose is the mode
+[00](00-vision-and-principles.md) says Skala exists for. Each rule found a narrower fact that holds
+under every load mode instead, and that is the pattern rather than the coincidence: where the
+question a proposal asks is undecidable in the loading mode that matters, the answer is to find the
+decidable question underneath it, not to defer the id until the loader changes.
+
+⚠ **`Environment.ExitCode` is an assignment and not a call, so `SK7091` never sees it — and it is the
+repair rather than the finding.** With the `FailFast` exclusion recorded below, what the rule reports
+is exactly the shape that destroys somebody else's cleanup without saying so; both spellings that end
+a process deliberately fall outside it by construction rather than through a filter somebody has to
+maintain.
 
 **`SK7090` is `SK7040`'s requirement on the form that compiles.** `SK7040` asks a `TODO` to name the
 issue that owns it; `SK7090` asks the same of a thrown `NotImplementedException`, and the two accept
@@ -1906,9 +2757,41 @@ are not redundant, so it is not built and the number stays free. ⚠ Note for wh
 `❌ SPURIOUS`, "Skala moved and the oracle did not", so the tier is about fidelity to `jb cleanupcode`
 rather than about whether the shape is reached. It is reached, which is all this refutation needs; the
 divergence against the oracle is a separate question and is not disturbed here.
-⚠ **`SK7100` and `SK7101` are appended here with the prose pass owed.** The rows below are the
-register entry ADR-012 requires and no more; the paragraph placing them beside `SK7010`, and
-recording why the second ships at `none`, has not been written.
+**`SK7100` and `SK7101` sit either side of `SK7010`, and each is a different answer to the same
+objection.** `SK7010` asks the public surface for documentation; `SK7101` is that predicate with
+`IsPublicApi` negated, so the two partition one population and no declaration can be reported by both
+or missed by both because they disagree about what is documentable. `SK7100` asks the opposite
+question of documentation that already exists — whether it is a copy with no mechanism keeping it
+true.
+
+⚠ **`SK7101`'s severity was decided by a count, and the count is an argument for caution rather than
+for volume.** `InternalOrPrivateMemberNotDocumented` is the highest-firing uncovered inspection in
+the whole parity measurement at **3 408** findings, and `SK7010` — the same predicate over the public
+surface alone — already produces **1 868** on `Testing/corpus` at `warning`. So it ships disabled at
+`defaultSeverity: none`, opt-in per path through `dotnet_diagnostic.SK7101.severity` in a scoped
+`.editorconfig` section, which is how `SK7010` is meant to be used and what
+[17](17-inspection-parity.md) names as the clearest example of the case. ⚠ It inherits every one of
+`SK7010`'s exclusions, and the largest matters far more here than there — **fields are excluded**,
+and private fields outnumber every other kind of non-public member.
+
+⚠ **`SK7101` is a separate analyzer rather than a branch of `MetricsAnalyzer`, and the severity is
+why.** That class exists to compute the metrics in one visit instead of seven, which is right for
+rules that always run — but Roslyn does not run an analyzer whose every diagnostic is suppressed, so
+as its own analyzer this costs nothing in the repositories that have not asked for it, where inside
+`MetricsAnalyzer` it would cost a predicate on every member of every compilation.
+
+⚠ **`SK7100`'s two guards exist because of what its fix is rather than what it detects.** The fix
+replaces a span, so a member documented in more than one block is left alone — an ordinary comment
+standing between two blocks would be deleted along with them — and the block's own line break is
+carried into the replacement, because without it the declaration runs onto the end of the comment, is
+swallowed by it, and the result still parses. The round-trip test catches that second one only
+because the vanished member leaves a **CS0534** behind. ⚠ A member implementing *two* interface
+members resolves to no base at all and is never reported: `<inheritdoc />` would have to pick one,
+and picking is not a mechanical edit. ⚠ The one real behaviour change is downstream of the compiler
+and is carried in `falsePositives` — `csc` writes `<inheritdoc />` into the generated XML literally
+rather than expanding it, so generators and the IDE resolve it and a bespoke XML post-processor may
+not. That is why it ships at `suggestion` and carries a `resharperNote`: the export sets the
+inspection to `none`.
 
 `SK7100` a documentation comment that is word for word the one on the member it overrides or
 implements — reported only where the two are *identical*, because a similarity threshold is what
@@ -1919,8 +2802,22 @@ measurement and that is an argument for caution rather than for volume.
 
 ### Logging declarations — `SK7110`–`SK7119`
 
-⚠ **The prose pass on this block is owed.** The row below is the allocation register doing its one
-job, written as the rule landed rather than as a considered section.
+**The band exists because the defect is in a declaration and not in a call.** `SK2070`–`SK2073`, the
+logging rules that shipped in the same merge, all read a logging *call*: how many holes the template
+has, whether it names a property twice, whether an invisible character got into the literal, whether
+the caught exception reached the exception parameter. Every one of them can point at the argument
+that is wrong. `SK7110` can point at nothing at any call site, because every call site is correct —
+the template binds, the arguments match, the message is written and delivered. What is wrong is the
+*category* it is filed under, decided once at the declaration and inherited by every message the type
+will ever write, so a filter selecting this class misses them and one selecting the other collects
+messages it never sent. Nothing fails and nothing is slow; every log query about either class is
+quietly wrong, which is worse than noise because noise is visible.
+
+⚠ **The first draft accepted every `ParameterSyntax` and fired on a method that only forwards a
+logger.** A method parameter typed `ILogger<Other>` is a *use* of somebody else's logger and says
+nothing about the category the enclosing type writes under; only a constructor parameter — ordinary
+or primary — becomes a member. The negative fixture written for exactly that shape is what caught it,
+and the rule now reads fields, properties and constructor parameters and nothing else.
 
 - `SK7110` `logger-declared-for-another-type` — a type declaring an `ILogger<T>` field, property or
   constructor parameter whose `T` is neither itself nor one of its base types, so every message it
@@ -1941,9 +2838,21 @@ by grep and by a probe file that made the rule fire the moment it was inserted �
 show the rule is noisy in either direction. What settles the severity is that the finding is not a
 preference: `SK7010` and `SK7101` are at `none` because a reader may reasonably disagree with them,
 and nobody reasonably wants their messages filed under another class's name.
-⚠ **The prose pass for `SK7080`–`SK7084` is owed.** What follows is the allocation register entry —
-enough that the id is written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
-can see it — not the worked-through account the rest of this section carries.
+**Four measurements ship, and two of them ask a question the family's existing counters cannot.**
+`SK7002`–`SK7006` and `SK7030` count what a single syntax tree already holds — statements, members,
+parameters, nesting depth, lines — and answer without anything being bound. `SK7080` and `SK7081`
+measure a type's *position in a design* rather than its size: how far up its base chain goes, and how
+many other types it names. Neither fact exists until symbols resolve, which is why both declare
+`Semantic`, and it is also why each of their corpus zeros is a **declined measurement** rather than a
+clean one — an unresolved base or reference is skipped, never counted. `SK7082` and `SK7083` stay
+`Syntax`, because a nest of conditional expressions and a literal written five times are both visible
+in the text.
+
+⚠ **The fifth concept in this batch was built, measured and cut, and that is the most useful result
+in the block.** The account is at the end of this section. What it is worth reading for is that no
+amount of exemption tuning was going to rescue the rule, and the prototype had to exist before anyone
+could know that — a refutation this expensive is exactly the kind that gets re-proposed if it is not
+written down.
 
 **`SK7080`–`SK7084` extend the threshold family `SK7001`–`SK7006` and `SK7030` established**, and
 they extend the same machinery: one `MetricThresholds` record read once per file from
@@ -2011,9 +2920,53 @@ for ever in exchange for nothing.
 `SK8005` `Thread.Sleep` in a test · `SK8006` test that is `[Skip]`ped without a reason ·
 `SK8007` non-deterministic input (`DateTime.Now`, `Guid.NewGuid`, `Random`) in an assertion path.
 
-⚠ **`SK8020`–`SK8022` are appended here with the prose pass owed.** The rows below are the register
-entry ADR-012 requires and no more; the paragraph that explains what the three add to this range, and
-how they relate to the `SK8001`–`SK8004` cuts above, has not been written.
+**The three answer a question `SK8005`–`SK8007` do not ask: whether the test ran at all, and whether
+what it printed when it failed was true.** The rules already in this range read a test that executes —
+it sleeps, it is skipped without a reason, it asserts against a clock or a `Guid`. ⚠ **`SK8020` and
+`SK8021` report the failure mode that has no symptom.** MSTest's discoverer enumerates types carrying
+`[TestClass]` and only then reads their methods, so a class without the attribute contributes zero
+tests and reports nothing — not a skip, not a warning, not a line in the summary. A suite that was
+never run and a suite that passed are the same colour. `SK8021` is that same silence from the other
+side: the runner opens the type, finds nothing to run, and prints nothing, so a fixture that lost its
+last test to a refactor looks exactly like a fixture that passes. `SK8022` reports a test that runs
+and that passes and fails on precisely the inputs it should; what is wrong is the diagnosis, because
+`Assert.Equal(count, 3)` with `count` at 0 fails with "Expected: 0, Actual: 3" — the exact opposite of
+what happened — and the reader who trusts it goes looking in the wrong half of the program.
+
+⚠ **`SK8022` is the narrower rule the `SK8002` cut explicitly did not dispose of, and the guard that
+keeps it out of that territory is the parameter types.** `SK8002` broke on its rewrite:
+`Assert.NotEqual(0, flags & Member)` cannot infer `T` once the implicit constant conversion the `0`
+carried is dropped. This rule requires the two parameters to have the *same* type, and overload
+resolution and generic inference over two arguments of one parameter type are symmetric — so the
+reversed call provably binds to the same method with the same type argument. That, plus a constant
+having no side effect to reorder, is why its fix is the one marked safe. It matches on parameter
+**names** rather than on a list of signatures — exactly two parameters called `expected` and `actual`
+on one of the four assertion classes — which reaches `Equal`, `NotEqual`, `StrictEqual`, `Same`,
+`AreEqual`, `AreNotEqual` and `AreSame` without naming any of them, and which is the same guard that
+excludes NUnit's `Assert.That(actual, Is.EqualTo(expected))`: the opposite order, and correct.
+
+⚠ **`SK8001`'s territory was reached from the other side twice, and declined once and accepted once.**
+The half of `SK8020`'s upstream concept that says "a public method in a `[TestClass]` carries no test
+attribute" is **declined rather than deferred**: a public helper, a public fixture property, a
+constructor and a hook spelled through somebody's own attribute are all legitimate, so the rule would
+fire on the ordinary shape of every test file. `SK8021` is what survives of that neighbourhood, and it
+survives because it asks whether any method on the type *or on a base type* carries a test attribute —
+a question about attributes, answered without following anything — rather than `SK8001`'s question of
+whether a method asserts, which an assertion inside a helper makes undecidable.
+
+⚠ **`SK8020`'s fix is one token and is still `fixIsSafe: false`, for a reason that is not
+uncertainty.** Its effect is that tests which have never executed begin executing, and the first run
+after it may be red. That is the rule finishing its sentence, and it is still something a person reads
+before it happens. `SK8021` has no fix at all and no version of it does: the two repairs are to write
+the missing test and to delete the class, and choosing between them is the entire content of the
+finding.
+
+⚠ **One sabotage in this batch passed and proved nothing, which is the record worth keeping.**
+Inverting `SK8021`'s "is it marked" guard left every positive green — the MSTest stubs each fixture
+declares are themselves unmarked classes with no tests, and they fired in place of the subject.
+Inverting the `abstract` guard instead put all three positives red and made the abstract negative
+fire, which is what a working sabotage looks like. `SK8020` and `SK8022` each bit on the first
+attempt, on the abstract guard and on the asymmetry respectively.
 
 `SK8020` a class with `[TestMethod]` members and no `[TestClass]` — MSTest only, because xUnit has no
 class attribute to be missing and NUnit 3 made `[TestFixture]` optional. ·
@@ -2047,7 +3000,7 @@ export carries ~2 000 keys Skala will never implement and the user wrote nothing
 *is* in the registry, the configured value was discarded, and the code is formatted against a value
 nobody chose. The message names the key, the value, the domain and **what is in force instead** ·
 `SK9010` file did not parse · `SK9011` unbalanced preprocessor
-structure, not formatted · `SK9007` `skala.jsonc` is not valid JSON · `SK9020` binlog stale for a file · `SK9021` binlog missing a file · `SK9022` no binary log found · `SK9023` no C# files under the requested paths · `SK9024` no solution or project to load · `SK9025` load mode produced no compilation, fell back · `SK9015` a file could not be read or written ·
+structure, not formatted · `SK9007` `skala.jsonc` is not valid JSON · `SK9020` binlog stale for a file · `SK9021` binlog missing a file · `SK9022` no binary log found · `SK9023` no C# files under the requested paths · `SK9024` no solution or project to load · `SK9025` load mode produced no compilation, fell back · `SK9026` the `--rules` filter names an id no loaded analyzer can satisfy · `SK9027` a compilation unit was cancelled, so the run examined part of the tree · `SK9028` a gate input was unavailable (unresolvable `--since`, missing or unreadable baseline) · `SK9015` a file could not be read or written ·
 `SK9030` analyzer threw · `SK9031` analyzer failed to load ·
 `SK9095` an arrangement rule threw and was skipped; the rest of the catalogue still ran — ⚠ the
 sibling of `SK9030`, and allocated for the same reason: a rule that throws must cost its own rewrite
@@ -2562,9 +3515,41 @@ final audit was about 1.35 s, not a performance guarantee.
 
 ### Arithmetic, shift widths and constant-valued comparisons
 
-⚠ **The prose pass over this section is owed.** It was written alongside the five analyzers and
-records what they do; it has not been read back against the rest of this document, and the
-surrounding sections have not been reconciled with it.
+**Read back against the rest of this document, one thing in this section is load-bearing elsewhere,
+two of its claims were refuted after it was written, and one is still owed to somebody else.**
+
+⚠ **`SK2053`'s stand-down became a pattern the document argues from rather than a detail about one
+rule.** § "`SK2120`–`SK2121`" reaches for it by name: `SK2009`'s six false positives on Skala's own
+source are switch *statements* used as filters, `CS8524` and `CS8509` already own every switch
+**expression**, and the recommendation there is that `SK2009` stand down on expressions exactly as
+`SK2053` stands down where `SK2001`'s type-range answer already decides. What is described below as a
+boundary between two rules is the general disposal that document proposes for a rule overlapping a
+diagnostic somebody else already emits.
+
+⚠ **The stand-down had nothing asserting it, and a sabotage is what found that out.** Deleting the
+check left every test green. `values.Length >= int.MinValue` is the case it exists for and is now
+`SK2053/negative/sk2001_owns_the_type_range.cs`, which turns red when the stand-down is removed and
+was silent before. ⚠ **The same round refuted a claim this section's own rule made about a different
+guard.** `SK2053`'s `IsLifted: false` clause was documented as what declines `list?.Count >= 0`; it is
+not — the non-negativity proof does not see through a conditional access, and `int?` is not a
+fixed-width integral type, so two other guards decide that case first. The clause is kept as a
+statement of intent and its comment now says it is not what works, rather than claiming a role a
+sabotage refuted. ⚠ Unwrapping the conditional access to make the guard load-bearing was tried and
+was wrong twice over: it did not make the guard bite, and `items?.Count` is *absent* rather than
+non-negative, so the proof would have handed a caller a range the value does not have.
+
+⚠ **`SK2051`'s eight Vixen findings are deliberately absent from § "Decisions that rest on a
+reference-tree count".** That table holds decisions that would change if the count changed, and
+nothing here would: the count was reported and the rule was left alone. It is the same instruction
+read the other way round — eight findings on an idiom is no more evidence the rule is wrong than zero
+would have been evidence it is right.
+
+⚠ **The parity-map claim below was re-checked rather than repeated, and it is still open.**
+`catalogued.json` maps `PossibleLossOfFraction` to `SK2050`, `UselessBinaryOperation` to `SK2051` and
+the three shift inspections to `SK2052`, which is the narrow credit this section claims;
+`UselessComparisonToIntegralConstant` appears in no mapping at all, while `ledger-resharper.json`
+still records it under issue #8 with `coveredBy: ["SK2001"]`. The mis-credit is unchanged and still
+belongs to whoever owns the parity map.
 
 `SK2050`, `SK2051`, `SK2052`, `SK2053` and `SK2054` now ship:
 
@@ -2908,11 +3893,28 @@ path is unaffected because the per-file cache means the taint rules see only the
 
 ### ⚠ `SK5010`, and the four security proposals measured against the SDK and refuted
 
-⚠ **Owed prose: this section records one rule shipped and four `rule-proposal` issues refuted, and
-every refutation below is a measurement rather than a judgement about taste.** The batch was five
-SonarQube-derived proposals — issues #152, #146, #148, #140, #153 — chosen because each *looked*
-decidable from a call site without taint analysis. That was a hypothesis, and it survived for one of
-them.
+**One rule out of five proposals, and every refutation here is a measurement rather than a judgement
+about taste.** The batch was five SonarQube-derived proposals — issues #152, #146, #148, #140 and
+#153 — chosen because each *looked* decidable from a call site without taint analysis. That was a
+hypothesis and it survived for exactly one: **#152 ships as `SK5010`**, and even that ships narrower
+than the proposal, reporting a pattern the rule can read and prove catastrophic rather than every
+regex written without a timeout.
+
+**What refuted the other four, by issue.** ⚠ **#146** — a process started by an unqualified name — is
+refuted by Skala's own tree: six non-test call sites start `git` or `dotnet` through `PATH` and every
+one of them is correct, because hard-coding a path across three operating systems is what would
+actually be wrong. Whether `PATH` is attacker-controlled is a property of the *environment* and not of
+the call site, which falsifies for this one the very premise that put the batch on the shortlist; the
+dangerous half already ships as `SK5002`. ⚠ **#148** — a debugging feature enabled unconditionally —
+is refuted because most of the concept is not in C# at all: `<DebugType>`, `<Optimize>` and the launch
+profile are MSBuild and JSON, which an analyzer over a compilation cannot see, and the one API left,
+`UseDeveloperExceptionPage`, is routinely guarded one frame away. ⚠ **#140** — a predictable generator
+producing security-sensitive values — is refuted twice: `CA5394` hosts the shape, and narrowing it
+would mean deciding whether some bytes become a token, which is the identifier-name judgement this
+document already refused when it cut `SK5008`. ⚠ **#153** — reflection reaching a non-public member —
+is refuted by a false-positive rate of 100 %: `BindingFlags.NonPublic` appears in 26 files across the
+reference trees and in none of Skala's own, and every one of the 26 is a serializer, a test or a
+diagnostics overlay — populations the proposal itself names as legitimate.
 
 ⚠ **The first measurement was not of Skala but of the SDK, and it is the part worth keeping.** This
 repository raises `AnalysisMode` in `Directory.Build.props`, so measuring here answers a different
@@ -3047,12 +4049,36 @@ and 26 false ones. That is the range's stated bar failing closed, and it is the 
 
 ### ⚠ `SK5030`, and the protocol/deserialization batch: one rule out of five, and a corrected reading of the SDK
 
-⚠ **Owed prose: this section records one rule shipped and four `rule-proposal` issues refuted, and it
-also corrects a claim made by the batch above.** The five were issues #144, #147, #149, #150 and
-#151 — JWT validation, anonymous LDAP bind, clear-text protocols, polymorphic deserialization and
-XML signature validation. Four of them fail, and three fail for three *different* reasons, which is
-the part worth keeping: one is hosted by the SDK, one is undecidable at a call site, one is
-undecidable in the configuration object, and one is a decision rather than a defect.
+**One rule out of five proposals, and a correction to the batch above.** The five were issues #144,
+#147, #149, #150 and #151 — JWT validation, anonymous LDAP bind, clear-text protocols, polymorphic
+deserialization and XML signature validation. **#151 ships as `SK5030`**; the other four fail, and
+three of them fail for three *different* reasons, which is the part worth keeping.
+
+**What refuted each, by issue.** ⚠ **#150** — deserialization accepting any type the payload names —
+is refuted as **hosted, and hosted better than Skala could manage**: `CA2326` and `CA2327` between
+them catch seven of the eight `TypeNameHandling` shapes probed, including the member-property
+assignment and the inter-procedural case Skala's intra-procedural engine cannot reach. The rest of
+what the issue names is not refuted so much as **gone** — `BinaryFormatter` is removed from .NET 9+
+and the `System.Web` formatters cannot be named from a `net10.0` compilation at all. ⚠ **#144** —
+insecure JWT signing or validation — is refuted by a fact about the library that would have made the
+obvious rule *wrong*: `ValidateIssuerSigningKey` governs validation of the **key** rather than of the
+signature, and **its default is `false`**, so a rule firing on it would report code that writes the
+framework's own default, at `error`, as a vulnerability it is not. ⚠ **#149** — a protocol
+transmitting in clear text — is refuted at the call site by its own false-positive population: XML
+namespace identifiers are *specified* to be exactly those characters and are never fetched, nothing
+local separates them from an endpoint, and `http://www.w3.org/2005/08/addressing` is both at once.
+⚠ **#147** — an anonymous LDAP bind — is refuted because the code is not what decides it: RFC 4513
+makes anonymous bind a legitimate mechanism and whether it is wrong is a fact about the *directory*,
+while on `LdapConnection`, the type a `net10.0` program actually has, anonymity requires writing
+`AuthType.Anonymous` on purpose — reporting a decision somebody already made and wrote down.
+
+⚠ **The correction is to the section above, and it is about an instrument rather than about a rule.**
+That section reported the default state of every security `CA*` in its area as "off". For roughly a
+third of the family that is wrong, and the difference between `IsEnabledByDefault = false` and enabled
+at `DefaultSeverity: Hidden` is the difference between a rule a consumer turns on with one
+`.editorconfig` line and one they must reach `AnalysisMode` for. The corrected reading, and the
+measurement showing that the instrument the brief prescribed for telling the two apart does not work,
+is immediately below.
 
 #### ⚠ The SDK reading, corrected: "off" and "Hidden" are not the same state, and the table above conflates them
 
@@ -3258,13 +4284,34 @@ actually has, anonymity requires writing `AuthType.Anonymous` on purpose. **No `
 and there is no version of the rule that is both decidable and about a defect.
 ### ⚠ `SK5020`/`SK5021`, and the three proposals the SDK or the compiler already answers
 
-⚠ **Owed prose: this section records two rules shipped and three `rule-proposal` issues refuted, and
-its main deliverable is not either rule — it is the table below, of what fifteen security `CA*`
-diagnostics do *behaviourally* rather than what their titles say.** The batch was five
-SonarQube-derived proposals — issues #138, #139, #141, #142, #143 — and the hypothesis was that a
-secrets-and-cryptography finding is decidable at a call site. It survived for two of them, and for
-one and a half of the two the reason is that the host does something different from what it is
-named.
+**Two rules out of five proposals, and the section's main deliverable is neither rule.** It is the
+table below, of what fifteen security `CA*` diagnostics do *behaviourally* rather than what their
+titles say. The batch was five SonarQube-derived proposals — issues #138, #139, #141, #142 and #143 —
+and the hypothesis was that a secrets-and-cryptography finding is decidable at a call site. It
+survived for two: **#142 ships as `SK5020`** and **the key-size half of #143 ships as `SK5021`**. ⚠
+**Both survive because the host reports something other than what it is named.** `CA5401` reports
+`aes.IV = RandomNumberGenerator.GetBytes(16)` — the *correct* code — so it cannot be enabled in place
+of `SK5020`; `CA5385` reports `new RSACryptoServiceProvider(1024)` and nothing else, missing
+`RSA.Create(1024)` and missing `rsa.KeySize = 1024` on the very type its own message names, which is
+the whole of `SK5021`'s justification.
+
+**What refuted the other three, and the other half of #143.** ⚠ **#138** — a hard-coded credential —
+was already refuted by this document, as the cut `SK5006`: entropy does not separate a credential from
+a GUID, a base64 asset, a test vector or a hash constant, and ADR-012 forbids reusing the id for the
+narrower thing anyway. What the measurement adds is who owns the one decidable slice — `CA5390` hosts
+a constant `byte[]` reaching `SymmetricAlgorithm.Key`, so a Skala rule for it would be a rebuild — and
+how much narrower that host is than its title. ⚠ **#139** — a weak key derivation — splits, and each
+half fails for a reason written down once already: the fast-hash half needs to know that a parameter
+*named* `password` holds a password, which is the judgement that cut `SK5008`, and the salt half is
+genuinely unhosted but cannot be measured at all, because the reference trees hold no cryptography.
+⚠ **#141** — a hand-written cryptographic algorithm — is unhosted and measured to be, and is refuted
+anyway by the argument that cut `SK5005`'s hash half: `HashAlgorithm` is the base class CRC32, xxHash,
+MurmurHash and FNV are routinely written against, so deriving from it says which interface a type
+implements and not what the type is for. ⚠ Its false-positive rate is **unmeasurable rather than
+measured**, and this range's bar is not satisfiable by an argument alone. ⚠ **The TLS-version half of
+#143** is refuted by the plain build rather than by the `All` build: `SYSLIB0039`, `CS0618` and
+`SYSLIB0014` already report it with no analyzer involved, so a rule there would be the third copy of a
+diagnostic the consumer receives without configuring anything.
 
 ⚠ **Do not re-measure this by reading descriptors.** Nine of the eighteen rows below say something
 that no published rule description implies, and four of them are the reason a proposal was decided
@@ -3719,11 +4766,30 @@ One source, three surfaces — the same rule the option registry follows.
 
 ## `SK2090`–`SK2093` — what a handler does with the exception it was handed
 
-⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
-Correctness" only to keep it out of a section nine concurrent branches were editing.** What follows
-is the register doing the one job ADR-012 needs it to do — the numbers are taken and written down
-where the next milestone will read them. It is not yet the considered account the sections above
-carry, and it belongs beside `SK2013`–`SK2017`.
+**This block belongs beside `SK2013`–`SK2017`, and the line between the two groups is what each
+reports about a handler.** Those five report what a handler *says*: an exception constructed and
+dropped, an empty `catch`, `throw ex;` resetting a stack trace, a message interpolated before it is
+logged, a `nameof` naming a parameter that does not exist. These four report what a handler
+*destroys* — the throw that ends the process from the finalizer thread, the `throw` in a `finally`
+that replaces the exception already in flight, the `catch` clause naming `NullReferenceException`,
+and the handler that throws a new exception and never passes on the one it was handed.
+
+⚠ **The boundary that had to be drawn rather than assumed is `SK2093`'s, and it runs in two
+directions.** It is not `SK2014`, which requires the block to be *empty* — `SK2093`'s block is full,
+which is exactly why the shape looks like diligence and is the commonest of the three. And it is
+disjoint from `SK7092` **by construction rather than by filter**: `SK7092` requires the clause to
+propagate what it caught and `SK2093` requires that it does not, so the two conditions are negations
+and no clause can produce both.
+
+⚠ **The test asserting that disjointness could not see it break, and a sabotage is what found out.**
+Deleting the propagation check — the whole of the boundary — left
+`SK2093_AndSK7092_NeverBothFireOnOneClause` green on every row, and only an unrelated fixture went red,
+by accident. Three of the test's four rows were proving that the two *shapes* differ, which they do
+whether or not either rule looks: a clause holding only `throw;` has no `throw new` for `SK2093` to
+match, and one holding only `throw new` has no propagation for `SK7092` to match. Only a clause
+holding **both** forms can double-report, and that row was missing. It is there now — logged, wrapped
+on one path and propagated on the other — and it fails under the same sabotage and passes with the
+guard restored.
 
 Four rules about the same seam: the point where a program decides what to do with a failure it did
 not want. Each one reports a place where that decision destroys the evidence.
@@ -3773,10 +4839,30 @@ justify an id.
 
 ## `SK2120`–`SK2121` — switches, enums and conditions the compiler already decided
 
-⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
-Correctness" only to keep it out of a section nine concurrent branches were editing.** What follows
-is the register doing the one job ADR-012 needs it to do — the numbers are taken and written down
-where the next milestone will read them. It belongs beside `SK2001` and `SK2009`.
+**This block belongs beside `SK2001` and `SK2009`, and against both it is the same distinction
+twice.** `SK2001` folds a relational comparison the operand *type's* range already decides, and
+`SK2009` reports an enum `switch` that omits declared members; both reason about the set of values a
+type permits. These two reason about a *declaration* instead — the numbering an enum's author did or
+did not write down, and a conversion the type hierarchy has already fixed — so neither needs a range,
+and neither could have been a syntactic rule pretending to one.
+
+⚠ **`SK2053`'s stand-down against `SK2001` is the mechanism this batch turns back on `SK2009`, and
+the recommendation is below rather than on the issue.** `SK2009`'s six false positives on Skala's own
+source are switch *statements* used as filters; `CS8524` and `CS8509` already own every switch
+**expression**, so `SK2009` could stand down on expressions and lose nothing. That is the same "stand
+down where another diagnostic has the answer" disposal, one concept over.
+
+⚠ **Two of six sabotages against this batch turned nothing red, and neither was a false alarm.**
+Inverting `SK2120`'s `[Flags]` guard left all 67 tests green, because every `[Flags]` fixture also
+wrote its values down — so the numbering guard declined those enums first and the attribute check was
+never reached. **Two guards masking each other reads exactly like one guard working.** The missing
+shape is a `[Flags]` enum left to the compiler to number, which is legal, correct and `CA2217`-clean
+and is the only thing separating it from the positive fixture; with that fixture written, the sabotage
+bites. ⚠ **The other survivor was genuinely dead and was deleted.** The `OperatorMethod: null` guard
+can never decline anything: C# will not let an operator be declared on an enum type, and an enum
+converts implicitly to nothing that could declare one, so a `|` whose operand type is an enum can
+never resolve to a user-defined method and the operand-type check was doing the whole job. The comment
+claiming the guard was load-bearing is replaced by the finding.
 
 Two rules shipped out of five issues, and ⚠ **the three that did not ship are the more useful half of
 the result.** The batch was opened on issues #16, #28, #29, #1 and #169; three of them turned out to
@@ -3874,11 +4960,33 @@ omission.** Both declare `requiresSemantics: true`, so `AnalyzerHost.SkippedFor`
 Skala's tree actually compiles.
 ## Nullability — `SK2110`–`SK2113`
 
-⚠ **The prose pass on this block is owed.** The rows below are the allocation register doing its one
-job — the numbers are taken and written down where the next milestone will read them — and they were
-written as each rule landed rather than as the considered account the sections above carry. They
-belong beside § "SK2000 — Correctness" and are appended here only to keep out of a section several
-concurrent branches were editing.
+**Four rules about nullability, and every one is cut down to what a single syntax tree can prove.**
+That is the boundary against the compiler and it is the reason the band is this small: `CS8602`,
+`CS8600`, `CS8604` and `CS8629` already report a null dereference wherever nullable reference types
+are on, so what is left for a rule here is either a shape the compiler is silent about by design —
+`override string? ToString() => null;` is legal, because `object.ToString()` is itself annotated
+`string?` — or a shape in a nullable-oblivious file, where the compiler's flow analysis has not run at
+all and there is nothing to read.
+
+⚠ **Two of the four ship half of their issue, and both halves were cut for a defect rather than for
+noise.** `SK2111` drops `S8969` — a `!` on an expression the compiler already proves non-null —
+because a `!` may be suppressing a *nested* nullability warning (`List<string?> a = b!;` suppresses
+`CS8619`) that the operand's own flow state says nothing about, and because removing one `!` can make
+another necessary: in `x!.A(); x!.B();` the second operand is non-null **because of** the first
+suppression, so a rule reporting both hands `skala fix` a pair of edits that together reintroduce the
+warning. `SK2112` drops `ReturnTypeCanBeNotNullable` because narrowing a *method's* return annotation
+propagates through `var` into call sites in files the analyzer never sees; a `DiagnosticAnalyzer` is
+handed one syntax tree and cannot enumerate callers, which is the solution-wide index ReSharper has
+and Skala has not at analysis time.
+
+⚠ **One of nine sabotages turned nothing red, and the cause was two guards masking each other rather
+than a dead clause.** Deleting `SK2112`'s `AnnotationsEnabledAt` left every fixture green, because in
+a fully disabled context the flow state is `None` and the `== NotNull` test declines anyway. ⚠ **The
+context that separates them is `#nullable disable annotations`**, which the fixture set did not have:
+there the flow analysis still runs, so the initialiser really is `NotNull`, while the `?` is
+meaningless and already `CS8632` — a rule reading only the flow state fires there and offers to remove
+a `?` the compiler is already complaining about. With the fixture in place both guards are live and
+the rule's withdrawal is a fact rather than a coincidence of two overlapping declines.
 
 ⚠ **Every one of these carries the same trap and it is worth stating once.** `GetTypeInfo` on a
 written `TypeSyntax` answers `NullableAnnotation.None` for `string` and for `string?` alike — the
@@ -3993,13 +5101,36 @@ rule declaring `requiresSemantics`, and all four of these do (#277). A loose run
 four zeros that mean "the analysis never ran". The false-positive evidence for this batch is
 therefore its negative fixture set (9, 8, 10 and 9 files) and the probe, and not a corpus count.
 ## `SK2140`–`SK2143` — what a parameter promises and what the call site does
-## `SK2130`–`SK2134` — members, backing fields, and the order things are initialized in
 
-⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
-Correctness" only to keep it out of a section several concurrent branches were editing.** What
-follows is the register doing the one job ADR-012 needs it to do — the numbers are taken and written
-down where the next milestone will read them. It is not yet the considered account the sections above
-carry, and it belongs beside `SK2013`–`SK2017`.
+**This block belongs beside `SK2013`–`SK2017` and reports a different silence.** Those rules report a
+handler that destroys the evidence of a failure; these four report a *parameter list* that says one
+thing while the call site does another, with nothing anywhere complaining. ⚠ **The compiler is the
+boundary and it is loud in precisely the wrong place**: `CS1066` reports a parameter default on an
+*explicit* interface implementation — a member that can never be called with optional arguments at all
+— and says nothing about an override or an implicit implementation, which are the two cases that
+actually diverge. Measured on a probe build rather than assumed.
+
+⚠ **The issue proposing `SK2140` had `params` backwards, and both answers were read off a build
+rather than argued.** An override cannot change `params`: dropped, the call still expands through the
+derived type; added where the base has none, it expands through neither. Roslyn agrees at the symbol
+level, propagating the base's `IsParams` onto the override's parameter even where no keyword is
+written. So the `params` half of the rule reports interface implementations only, where nothing is
+inherited and the divergence is real.
+
+⚠ **All four walk a parameter list against an argument list, which is the exact shape that has
+already crashed an analyzer in this repository, so the misalignments got a compilation of their own.**
+Expanded `params`, omitted optionals, named arguments out of order, byref and inline-declared
+arguments, reduced and unreduced extension calls, delegate invocation, generic inference, indexer and
+constructor argument lists, and a `[CallerArgumentExpression]` naming a parameter that does not exist.
+⚠ **The reason that is a test and not a precaution is that a crashed analyzer reads as a clean
+false-positive record**: the positives fail, which looks like a wrong rule, and every negative passes,
+which looks like proof. The harness does not check for `AD0001` (#279) and `skala check` drops it
+(#295) — and `SK0232`, whose `RedundantArgumentAnalyzer` is issue #298, is the rule that actually fell
+into this.
+
+⚠ **The `SK2141`/`SK0232` disjointness is asserted over one file with both sides asserted non-empty
+first**, because two disjoint empty sets are also disjoint, and that is the version of the test that
+proves nothing.
 
 Four rules about one seam: the gap between what a parameter list declares and what the compiler
 actually does with it at the call site. The declaration is the thing everybody reads; the call site
@@ -4071,12 +5202,36 @@ defining declaration's: `Take(defining: 1)` compiles and `Take(implementing: 1)`
 is what the issue itself said and the opposite of what the brief asserted.
 ## `SK2160`–`SK2164` — time, clocks and the assertion that changes the program
 
-⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
-Correctness" only to keep it out of a section several concurrent branches were editing.** What follows
-is the register doing the one job ADR-012 needs it to do — the numbers are taken and written down where
-the next milestone will read them — together with the measurements that decided two of the five. It is
-not yet the considered account the sections above carry, and it belongs beside `SK2010`, which is the
-rule this batch most often argues from.
+**This block belongs beside `SK2010`, and `SK2010` is the argument two of the five reuse verbatim.**
+`SK2010` reports a string comparison whose culture policy nobody stated, and ships report-only because
+*which* policy the author meant is the entire content of the finding. `SK2162` is that finding one API
+over, on `DateTime.TryParse`. `SK2161` is the same shape with a time zone instead of a culture: a
+value whose zone nobody stated is not wrong while it is only compared with others of the same unstated
+zone, and it goes wrong at the point something converts it into a fixed moment and supplies an offset
+it was never given. In both the repair is to *name* what was left implicit, and naming it is the
+decision the rule exists to force. `SK2163` is the exception and the only one in the batch with a fix,
+because there the repair is mechanical rather than a choice: a `Stopwatch` in place of two clock reads.
+
+⚠ **`SK2162` is a quarter of its issue, and the boundary was measured on a pristine `net10.0` project
+rather than on this repository, which raises `AnalysisMode`.** `CA1305` is enabled by default at
+`Hidden`, reports every `Parse` and `ToString` form, and reports **no `TryParse` form at all**. So
+`S6585` is hosted in full, no id was allocated for it, and `SK2162` is that gap and nothing else.
+
+⚠ **A hypothesis about `SK2160` was written down, measured and refuted, and the refutation matters
+more than the change it prompted.** Serilog ships `namespace System; abstract class TimeProvider`
+under `#if !NET8_0_OR_GREATER`, and it was assumed this makes the name ambiguous, that
+`GetTypeByMetadataName` returns null, and that `SK2160` therefore withdrew from the whole tree.
+**Measured, false**: the singular lookup returns the source symbol and the plural returns two. What had
+actually produced the zero was a measurement harness that built its own compilation options and
+omitted the opt-in that enables a `none`-severity rule — **the disabled-check zero, met inside the very
+investigation that exists to catch it.** `GetTypesByMetadataName` is kept for the exclusion rather than
+for the guard, and the comment now says what is true.
+
+⚠ **`SK2160` ships at `none` because nothing available measures the case that would decide it.**
+Skala's own tree gives six findings, which cannot calibrate anything and is written down as that rather
+than used as a justification — the `SK6053` trap, avoided by naming it. Vixen gives 38, every one a true
+positive and 22 of them in `*.Tests` projects, in helpers xUnit gives no attribute to exclude; and Vixen
+is a test subject that does not set a severity either.
 
 ⚠ **All five are `Correctness`, and four of the five issues proposed `SK1000`–`SK1999` instead.** The
 band decides the category, and on reflection the band is right: none of these reports code that is
@@ -4241,11 +5396,33 @@ and `try-parse-exact-has-a-provider`, `SK2163` on `the-start-is-not-a-clock-read
 to a valid one**: replacing a condition with `if (false)` fails the build under `TreatWarningsAsErrors`
 (`CS0162`), so the run went red with *zero* failing tests. A non-zero exit code is not evidence that a
 sabotage worked, and the count of failures is what has to be read.
-down where the next milestone will read them — plus, for three of the five, the measurement that
-decided what the rule is *for*, because in this batch that measurement is most of the content. It is
-not yet the considered account the sections above carry, and it belongs beside `SK2030`–`SK2034`.
+
+## `SK2130`–`SK2134` — members, backing fields, and the order things are initialized in
+
+⚠ **This block's own opening paragraph was destroyed by a merge and is rewritten here, which is why
+it was invisible to the prose-pass census**: the surviving fragment began mid-sentence and no longer
+contained the words the census greps for, so a block owing prose was not counted as owing any. Its
+heading had been carried up the document as well, landing between the `SK2140`–`SK2143` heading and
+the `SK2140` body — two headings adjacent, one section's content under the other's name — and both
+halves are repaired together.
 
 **Five rules about storage: where a value comes from, when it arrives, and who else can see it.**
+
+This block belongs beside `SK2030`–`SK2034`, and the line between the two groups is what the finding
+rests on. Those five report a written operation that is wrong wherever it appears: comparing with
+`NaN`, discarding a setter's `value`, a `stackalloc` inside a loop. Every one of them is decided by
+the statement it sits on. The five here are decided by a *relationship between declarations* — which
+field is declared above which, which property a backing field belongs to, whether a `partial`
+declaration has a partner, which type a static field is written from — so all five are `Semantic`
+where three of `SK2030`–`SK2034` are `Syntax`, and none of them can be read off the line it reports.
+
+⚠ **That is also why only `SK2132` carries a fix, and why it is the one fix in the batch marked
+unsafe.** The other four report a value that is permanently wrong, and the value it should have held
+instead is the one thing the declarations do not contain: reordering two fields, writing the missing
+constructor assignment, implementing the `partial` method or deleting its call, and moving a static
+write are each a decision rather than an edit. `SK2132` is the exception because the crossed name is
+the repair — and its fix changes what the program computes, which is exactly the point of the
+finding rather than a hazard beside it.
 
 ⚠ **Three of the five were narrowed by a probe rather than by argument, and the probe is what makes
 them worth an id at all.** A single file compiled at `AnalysisMode=All` was read for what the
@@ -4345,11 +5522,23 @@ repairs are not symmetric: one of them is a rename of a property that other code
 
 ## `SK2180`–`SK2184` — type identity, conversion and which member the call actually reaches
 
-⚠ **The prose pass is owed for this block, and it is appended here rather than merged into §
-"SK2000 — Correctness" only to keep it out of a section several concurrent branches were editing.**
-What follows is the allocation register doing the one job ADR-012 needs of it: the numbers are taken
-and written down where the next milestone will read them. The block belongs beside `SK2121`, which
-is the rule every one of these is measured against.
+**Five rules on one edge, and the edge is `SK2121`'s.** `SK2121` folds a conversion the type hierarchy
+has already decided *succeeds*, and it is the only rule in either batch that removes an operator.
+Every rule here reports something the hierarchy leaves open instead: which element type a sequence
+actually yields, what a receiver's own `GetType()` returns, whether a string is a name or a type, which
+of two spellings of a static member the line uses, and which of two overloads a call reached. That is
+why the batch is measured against `SK2121` throughout rather than against the arithmetic and range
+rules, and why the disposal that fits one of these five never fits the next.
+
+⚠ **Nothing in this block rests on a description, and that is the batch's method rather than its
+manners.** Every "the compiler already owns this" claim was compiled — `CS0030`, `CS0184`, `CS0183`,
+`CS0039`, `CS8121`, `CS0229`, `CS0121`, `CS0060` and `CS0012` were all read off builds — and every "no
+`CA` covers this" claim came from a probe built **outside this repository**, with empty
+`Directory.Build.props`/`.targets` above it and a known-firing shape planted alongside to prove the
+instrument was live. ⚠ **The one place that discipline changed the prose rather than the rule is
+`SK2183`**, whose accessibility guard was written against a shape that cannot be built; the guard was
+kept for a different, defensive reason and the paragraph explaining it was corrected instead of the
+fixture being deleted.
 
 **Five issues, five rules — and the shape of the result is that four of the eight upstream
 inspections behind them turned out to be compiler diagnostics.** The batch was opened on issues #2,
@@ -4490,10 +5679,32 @@ how it survived. None of the
 five analyzers in this batch appears in that list.
 ## `SK6060`–`SK6062` — the shape of a declaration, and three questions that stop at the assembly edge
 
-⚠ **The prose pass is owed for this block.** What follows is the register doing the job ADR-012 needs
-it to do — the numbers are taken and written down where the next milestone will read them — together
-with the measurements that decided the batch. It is not yet the considered account the sections above
-carry, and it belongs beside `SK6040`/`SK6041`, which are the rules it most often argues from.
+**What holds these three together is not a subject but a boundary: each asks a question that stops at
+the edge of the assembly, and each ships only the part of its concept that stays inside.**
+`SK6040`/`SK6041` are the rules this batch argues from because they settled the same question first —
+a declaration's shape is answerable from the declaration, and what anybody *does* with it is not.
+`SK6060` and `SK6061` are pure declaration-shape rules and never look at a use at all; `SK6062` is
+usage-based and buys its answer by narrowing the subject to a **local**, every reference to which is
+inside the member that declares it. ⚠ **That restriction is not only what makes it decidable, it is
+what made it measurable**, which the brief expected to be impossible: a rule asking about a field on
+a vendored source slice measures the vendoring rather than the code, and `SK6062` asks about nothing
+that can leave the file.
+
+⚠ **Five concepts in, three out, and not one id was allocated against either casualty** — which is
+the register doing the more valuable half of its job.
+[#113](https://github.com/Rikarin/SKALA/issues/113) is `IDE0130` and its stated reason for a rebuild
+is false; [#116](https://github.com/Rikarin/SKALA/issues/116) is refuted from both ends at once, the
+public half by the contract and the non-public half by a shipped analyzer arguing the opposite
+direction; and the `.Global` and public halves of
+[#123](https://github.com/Rikarin/SKALA/issues/123) hit the same assembly edge that closed #114 and
+#119. ⚠ **The severities record where the certainty is and not where the harm is.** `SK6061` is the
+only `warning` of the three, because a caller-info parameter that is not last is a *wrong* signature
+and reads no other way; `SK6060` and `SK6062` ship `suggestion`, because a missing variance
+annotation and an unread local are both code that works. ⚠ **`SK6061` is also the only one of the
+three sourced from Sonar rather than ReSharper** — it declares no `resharperId` and supersedes
+`S3343` — which matters because its sweep zero is the one that says nothing: the reference trees
+contain no caller-info attribute at all, so its whole false-positive story is the fixture set and the
+planted probe.
 
 ⚠ **Five concepts were briefed and three ship. The two that do not are the more useful result**, and
 both were closed by measurement rather than by argument.
@@ -4690,11 +5901,27 @@ same property that makes the rule decidable across the assembly boundary makes i
 incomplete tree. `SK6060` and `SK6061` are declaration-shape questions and were never usage-based.
 ## `SK2190`–`SK2194` — structs, spans and value semantics
 
-⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
-Correctness" only to keep it out of a section several concurrent branches were editing.** What
-follows is the register doing the one job ADR-012 needs it to do — the numbers are taken and written
-down where the next milestone will read them. It is not yet the considered account the sections above
-carry, and it belongs beside `SK2005` and `SK2011`.
+**The organizing fact of this batch is that a struct's expensive and surprising behaviour is never
+written down in the file that pays for it.** `SK2005` and `SK2011` are the rules it is measured
+against and both report an operation the author *wrote*: `SK2011` fires at a `.Equals` call site,
+`SK2005` at a mutating call on a `readonly` field receiver. Everything here reports a place where the
+costly or lossy thing happens with nothing on the line to show it — a dictionary constructed over a
+key type that declared no equality, a method reached through an `in` parameter, an `==` that binds to
+a memory comparison, an initializer calling `Add` on a `default` struct, and an assignment to a
+parameter that has no declaration anywhere.
+
+⚠ **`SK2190` is the only one of the five with no upstream inspection, and that is because it is
+exactly what was left over.** Issue #4's three comparison inspections are covered where a comparison
+is written, once `SK2011` was read rather than taken from the issue's description of it; the residue
+is the use site with no comparison in it at all, which nobody upstream has a name for. ⚠ **Three of
+the five issues asserted that a shape does not compile and the compiler disagreed — and the fourth
+refutation ran the other way**, since `span.Equals(span)` is `CS1503` and is therefore not a shape
+any rule can have. Both directions had to be executed before either could be relied on, which is the
+batch's own lesson about specifications written from inspection names. ⚠ **`SK2193` is the batch's
+only `error`, and the reason is totality**: every other rule here reports a program that is wrong for
+some inputs, and `new ImmutableArray<T> { x }` throws on the first element for all of them.
+`SK2194` carries a `languageVersion` floor of `12.0`, which keeps it silent on a dialect in which its
+shape cannot be spelled at all.
 
 Five rules about what a value type does when it is copied, hashed or captured — the three things
 that happen to a struct without anybody writing them down.
@@ -4811,11 +6038,26 @@ the direction doc 17 records; it does not make the slice a compiling tree. Zero 
 but the finding that matters is Vixen's.
 ## `SK3540`–`SK3542` — resource and handle lifetime
 
-⚠ **The prose pass is owed for this block, and it is appended here rather than into §
-"`SK3000` — Async, concurrency, lifetime" only to keep it out of a section several concurrent
-branches were editing.** What follows is the register doing the one job ADR-012 needs it to do — the
-numbers are taken and written down where the next milestone will read them. It is not yet the
-considered account the sections above carry, and it belongs beside `SK3530`–`SK3532`.
+**What this batch adds to `SK3530`–`SK3532` is the case where the *declaration* is the defect rather
+than the code path.** The earlier lifetime rules follow a resource and report the release that does
+not happen. These three read what a type *says* about a resource and find the rest of the file
+contradicting it: a `Dispose()` the base list does not admit to, a `using` that is right for every
+disposable except this one, and a `DangerousGetHandle` in a type that never took a reference. ⚠
+**`SK3541` is the inversion the family had not previously carried** — every other rule in the range
+reports a release that is missing and this one reports a release that is present, correct-looking,
+and the defect — which is exactly why it could not ship as an exception inside any of them.
+
+⚠ **Two of the three carry no ReSharper id and supersede a Sonar rule instead** — `SK3540` `S2953`,
+`SK3542` `S3869` — so for those two the parity map contributes nothing and the evidence is the
+fixture set and the boundary tests. ⚠ **Only `SK3540` ships a fix, and the disposition across the
+batch is one argument made three times**: the finding *is* the ambiguity. Adding `IDisposable` to a
+base list is a certain edit with an uncertain consequence, so it ships unsafe; replacing a per-call
+`HttpClient` and bracketing a `DangerousGetHandle` are both decisions about where a type gets its
+dependencies, and neither has a form the source picks out. ⚠ **Two further concepts were refuted and
+neither took an id — and in one of them the compiler's version is the *more precise* one.** Roslyn
+deliberately exempts the `Interlocked` family from `CS0420`, which is the one place a `ref` to a
+`volatile` field is correct, so a Skala rule written from the inspection's description would have
+reported it and the compiler does not.
 
 Three rules about the same seam from three sides: what a type *declares* about a resource's lifetime
 versus what actually happens to it.
@@ -4882,10 +6124,25 @@ Both were hosted by something already on, measured rather than assumed:
   pair**, which is a different concept and needs its own issue before it gets a number.
 ## `SK4040`–`SK4041` — collections copied on every read, and buffers nobody reads
 
-⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK4000 —
-Performance" only to keep it out of a section several concurrent branches were editing.** What
-follows is the register doing the one job ADR-012 needs it to do — the numbers are taken and written
-down where the next milestone will read them. It belongs beside `SK4030`–`SK4034`.
+**Both rules report work that is real, paid for and thrown away, which is what separates them from
+`SK4030`–`SK4034`, where the work is real and merely done a more expensive way.** The earlier
+performance rules propose a cheaper spelling of the same computation. These two say the computation
+had no consumer at all: a property that copies a collection every time a caller reads it as though it
+were a field, and a `StringBuilder` filled and dropped. ⚠ **Neither concept is ReSharper's**, which
+is why `types-2026.xml` has no key for either and why the batch's `CA*` probe rather than the parity
+map was the deciding instrument; both supersede a Sonar rule instead — `S2365` and `S3063`.
+
+⚠ **The two dispositions disagree in a way that looks backwards and is not.** `SK4040` has a fix and
+ships at `suggestion`; `SK4041` has no fix and ships at `warning`. The copy is certainly *there* and
+may be certainly *wanted* — a deliberate defensive copy has exactly this shape and nothing in the
+source separates the two — so the rule is confident about the shape and diffident about the verdict.
+The unread builder is the opposite: there is no reading of it that is correct, and the repair is the
+line the author did not write, which no analyzer can supply. ⚠ **The batch's most durable finding is
+neither rule.** `catalogued.json` credited ReSharper's `PossibleMultipleEnumeration` to `SK4006`, and
+the two do not merely differ: on a file satisfying both, taking `SK4006`'s advice deletes the only
+thing keeping a second walk off the source and makes the multiple enumeration worse. A map recording
+the opposite of what the tool says is worse than a map with a hole in it, and the four shapes now
+pinned in `CollectionCopyAndBufferBatchTests` are what stops it being reintroduced.
 
 **Two rules shipped out of five issues, and ⚠ the three that did not ship are the more useful half of
 the result.** The batch was opened on issues #203, #185, #69, #72 and #267. Three of them turned out
@@ -5050,12 +6307,26 @@ after any experiment on a rule's source needs the tool rebuilt first, and the ch
 `--no-cache` plus a rebuild, not one or the other.**
 ## `SK2200`–`SK2202` — events, delegates and effects that do not happen
 
-⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
-Correctness" only to keep it out of a section several concurrent branches were editing.** What follows
-is the register doing the one job ADR-012 needs it to do — the numbers are taken and written down
-where the next milestone will read them — together with the measurements that disposed of two of the
-five issues the batch was given. It is not yet the considered account the sections above carry, and it
-belongs beside `SK2013` and `SK2031`.
+**Three rules about an effect the source writes down plainly and the program does not perform**,
+which is the seam `SK2013` and `SK2031` already work — a constructed exception nobody throws, a
+returned value nobody keeps. What is added here is that the effect is not merely discarded: it is
+*overwritten* before anything reads it, *removed from nothing*, or *skipped* because a null test
+reached further than the line suggests. In all three the code reads as though it worked, and in all
+three there is a second statement somewhere in the file that says what was meant.
+
+⚠ **The batch's governing finding is about how its issues were written rather than about any of the
+three rules.** Each was drafted by joining an inspection id to a category and then explaining, in
+prose, why Skala should have the rule — and in two of the five that explanatory sentence described a
+wider concept than the inspection did, in the one place a specification is least likely to be re-read
+against the source. `SK2201` is the `-=` and not the `+=`, because delegate removal compares
+invocation-list entries by target and method and so needs no lifetime proof, while the `+=` half
+needs one nobody can produce. `SK2202` is the modification inside a `?.` and not `&&`, `||` or `??`,
+because short-circuiting is what those operators are *for*. ⚠ **`SK2202` is the batch's only
+`Syntax`-scope rule**, so it is the only one of the three that fires under `--load=loose` — which is
+the mode an agent's scratch file is analysed in, and therefore the mode this catalogue exists for. ⚠
+**`SK2200` carries the batch's only safe fix, and it is safe only because of the guard that looks
+like caution**: the fix deletes the initializer, so a side-effecting one is declined rather than
+reported, which is precisely the ground `SK2013` and `CA1806` argue over.
 
 Three rules from five issues, and the split is the interesting part. ⚠ **Two of the issue texts are
 wider than the inspections they cite, and in both cases the inspection is the decidable half.** The
@@ -5209,9 +6480,22 @@ run they crash in. That is a pre-existing defect on `master` and is written down
 fixed in this batch. None of `SK2200`–`SK2202` appears in any `SK9030`.
 ## `SK2170`–`SK2174` — statements and literals that read as something else
 
-⚠ **The prose pass for `SK2170`–`SK2174` is owed.** What follows is the allocation register entry —
-enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
-can see them — not the worked-through account the rest of this section carries.
+**Three of the five are Skala's own concepts rather than a re-implementation of anything upstream** —
+`SK2170`, `SK2173` and `SK2174` declare no `resharperId` at all — and that is a consequence of how
+the batch was cut rather than of ambition. Its two issues each named several inspections, most of
+which turned out to belong to the compiler; what shipped is the residue plus two shapes neither issue
+described. `SK2170` is the *indentation* half of #38, which the issue did not raise and which no
+compiler can see, and it exists precisely because `CS0642` already covers the half the issue did.
+
+⚠ **The scope split decides where each rule can be believed, and it is not cosmetic.** Four of the
+five are `Syntax` and run under `--load=loose`; `SK2172` is `Semantic` for one reason only — to be
+disjoint from `SK2111` by construction — and that single choice is what makes its corpus zero
+worthless, since no semantic rule fires under a loose load at all. Buying disjointness with a scope
+declaration costs a measurement, and the trade is written down here so it is not rediscovered as a
+gap. ⚠ **`SK2174` ships at `suggestion` where the other four ship at `warning`**, because adding
+parentheses changes nothing the program does; its finding is entirely about what a reader will
+conclude. It is also the only rule of the five that found a live defect in a reference tree, which is
+the pairing worth noticing: the lowest-severity rule in the batch is the one that caught something.
 
 **`SK2170`–`SK2174` extend the `SK2060`–`SK2064` family**: an expression or a statement whose shape
 on the page says one thing and whose grammar says another. What separates the two batches is where
@@ -5392,9 +6676,28 @@ about overload resolution rather than about how a literal reads, and it is a dif
 
 ## `SK1100`–`SK1103` — statements that move
 
-⚠ **The prose pass for `SK1100`–`SK1103` is owed.** What follows is the allocation register entry —
-enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
-can see them — not the worked-through account the rest of this section carries.
+**The four are graded by how much of the program the fix can be proved not to touch, and the register
+shows the grading.** `SK1100` and `SK1101` ship at `suggestion`, `SK1102` and `SK1103` at `hint`;
+three of the four fixes are marked safe and `SK1103`'s is not. That ordering is not a judgement about
+how bad the code is — all four are tidy-ups — it is a statement about how much of each move the
+analysis can see. `SK1102` relocates a jump and introduces and removes no name at all, so it cannot
+produce `CS0136` in any program; `SK1103` deletes one copy of a run of statements and writes the
+other back, which changes the shape of a member and wants a reader on it.
+
+⚠ **Every guard in the batch is about names or about comments, and neither is what the rules are
+nominally about.** A statement leaving a branch leaves that branch's scope, so `SK1103` collects
+every name either block declares and withdraws on a mention of one — over-bailing on names in a
+branch's own lambda that could never conflict, because over-bailing costs findings where the
+alternative costs builds. That is the same instinct that cut `TooWideLocalVariableScope` from
+[#83](https://github.com/Rikarin/SKALA/issues/83): narrowing a scope moves a declaration *inwards*,
+which is the one direction `RewriteGuards` cannot check, and
+[#304](https://github.com/Rikarin/SKALA/issues/304) is a rule that shipped a token-equivalent program
+failing `CS0136` through exactly that blind spot. ⚠ **The comment rule is uniform across the four and
+was worth stating once**: text inside a span the fix *copies* survives, text inside a span the fix
+*deletes* withdraws the finding — written against the raw text rather than the trivia list, because
+`DescendantTrivia` reaches into a node's leading trivia
+([#302](https://github.com/Rikarin/SKALA/issues/302)) and would silently answer about a region nobody
+asked about.
 
 **These four are the first rules in the catalogue whose fix moves a statement**, rather than
 rewriting an expression in place, and that is what the batch is actually about. Every earlier
@@ -5509,11 +6812,28 @@ first local function's **full** span — above its documentation comment rather 
 comment and the declaration — and only a comment written above the jump itself withdraws it.
 ## `SK2210`–`SK2213` — indices, loops and the shape of the thing that cannot be valid
 
-⚠ **The prose pass is owed for this block, and it is appended here rather than merged into §
-"SK2000 — Correctness" only to keep it out of a section several concurrent branches were editing.**
-What follows is the allocation register doing the one job ADR-012 needs of it: the numbers are taken
-and written down where the next milestone will read them. The block belongs beside `SK2001` and
-`SK2053`, which are the two rules every one of these is measured against.
+**All four report a shape that cannot be valid, and the boundary against `SK2001` and `SK2053` is
+which fact settles it.** `SK2001` decides a comparison from the operand *type's* range; `SK2053`
+decides one from a framework *contract*, that a count is never negative. These four decide from
+something narrower in each case: `SK2210` from constants that no length can rescue, `SK2211` from
+definite assignment, `SK2212` from control flow, and `SK2213` from a documented return value. ⚠
+**`SK2213` is the carve-out `SK2053` names and declines, now shipped** — `IndexOf` is the framework
+member whose negative result carries information, which is exactly why the rule that trusts
+non-negativity had to exclude it by name, and why the two can never report one expression.
+
+⚠ **Three of the four ship report-only and the fourth's fix was downgraded from what its issue
+proposed**, which is this batch's disposition in a line. `SK2213`'s issue asked for
+`fixIsSafe: true`; it ships `false`, because `IndexOf(x) > 0` is the *correct* test when "found, but
+not at the start" is meant and nothing on the line separates the two readings. The escape hatch is
+the unambiguous spelling — `>= 1` says the same thing with no second reading and is deliberately
+never reported — so a codebase that means it says so once. ⚠ **The two concepts the brief expected to
+need a value lattice needed none**, and neither did the fifth issue need a rule:
+[#21](https://github.com/Rikarin/SKALA/issues/21) is `CA2022` at *stock* settings, which is the
+strongest of the three states a hosted analyzer can be in and the only one that asks nothing of a
+consumer's `.editorconfig`. ⚠ **`SK2213`'s corpus zero is the one in the batch that is worth
+nothing**, and it is recorded that way rather than counted: not one `IndexOf` compared to a constant
+occurs anywhere in the corpus, even matched by name alone, so its fixtures are the whole of what is
+known about its false-positive rate.
 
 **Five issues, four rules — and the shape of the result is that the batch's hardest-looking concept
 was the one already shipping in the box.** The batch was opened on issues #10, #14, #156, #184 and
@@ -5633,9 +6953,27 @@ instrument. Both are fixed, both have a regression fixture, and the second bough
 it needed anyway.
 ## `SK2220`–`SK2222` — declarations, operators and conditional compilation
 
-⚠ **The prose pass for `SK2220`–`SK2222` is owed.** What follows is the allocation register entry —
-enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
-can see them — not the worked-through account the rest of this section carries.
+**None of the three declares a `resharperId`, and for `SK2222` that is a decision rather than an
+absence.** `OperatorWithoutMatchedCheckedOperator` reports every operator with no checked
+counterpart; this rule reports only the *inconsistent* subset, so claiming the inspection in
+`catalogued.json` would credit Skala with coverage it does not have and quietly move that inspection
+out of the measured residue. It stays counted as uncovered, which is the direction a hand-written map
+must be wrong in. `SK2220` and `SK2221` have no upstream inspection at all. What unites the three is
+that each reads a decision the source has *already made* — a preprocessor branch that was taken, an
+accessor declaration that names its target, a `checked` operator that exists — and finds the rest of
+the file contradicting it.
+
+⚠ **`SK2221` is the batch's only `error`, and the severity rests on an executed probe rather than on
+the attribute's documentation.** ⚠ **The exceptions the probe observed are more specific than the
+sentence below, and they are worth having exactly**: on .NET 10 a name the target does not declare
+throws `MissingFieldException` — *Field not found: 'Target._buffer'* — a `Field` kind naming a method
+throws the same, and `UnsafeAccessorKind.Constructor` with `Name = "Create"` throws
+**`BadImageFormatException`, "Invalid usage of UnsafeAccessorAttribute"**, which is harsher still.
+The correctly spelled field accessor and the unnamed constructor accessor both succeeded in the same
+run, so the probe was measuring the rule's subject and not a broken harness. ⚠ **`SK2222` carries a
+`languageVersion` floor of `11.0`**, since user-defined `checked` operators do not exist below it —
+a different mechanism from the opt-in predicate the widening measurement below is about, and the one
+that keeps the rule off every money type written in an older dialect.
 
 **Five issues went into this batch and three rules came out.** The two that did not ship are recorded
 below with what refuted them, because a refutation is the register entry too: an id must not be
@@ -5831,9 +7169,24 @@ nothing; the fixture now names members that do not, and the guards are the only 
 rule quiet.
 ## `SK2240`–`SK2242` — patterns, initializers and deferred checks
 
-⚠ **The prose pass for `SK2240`–`SK2242` is owed.** What follows is the allocation register entry —
-enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
-can see them — not the worked-through account the rest of this section carries.
+**This is the batch chosen to be hard to *place* rather than hard to implement.** Three of its five
+concepts sat directly on top of rules already shipping, so the deliverable is a set of boundaries:
+`SK2240` against `SK1071` and `SK0230`, `SK2241` against `SK5010`, and the refuted fifth against
+`SK6050`. ⚠ **The live hazard turned out not to be a false positive but a fix loop, and it is the
+catalogue's first.** `SK2240`'s output for `x with { X = x.X, Y = b }` is *precisely* `SK1071`'s
+input, so without a guard the two rules would rewrite one expression back and forth inside a single
+`skala fix` run. It is closed by a fixture rather than by a sentence, and asserted from both ends.
+
+⚠ **Only `SK2240` carries a fix, and the other two report-only dispositions have the same shape as
+each other**: `SK2241` knows the pattern will not parse and not what it was meant to be, and
+`SK2242` knows the guard is deferred and not what the second method should be called. ⚠ **`SK2241`'s
+oracle is `Regex` itself, and that is the decision that let the rule ship at all** — issue #48
+assumed a regex parser would have to be written; constructing the pattern with the call's own options
+means the analyzer cannot disagree with the runtime whose behaviour it predicts, and construction
+parses without matching, so no pattern can make it backtrack. `RegexOptions.Compiled` is stripped
+first because it emits IL and cannot change whether a pattern parses. ⚠ **`SK2240` carries a
+`languageVersion` floor of `9.0`**, below which a `with` expression has no spelling and the rule has
+no subject.
 
 **Five concepts were taken and three shipped.** The batch was chosen so that three of its five sat
 directly on top of already-shipped rules, and working out where each boundary actually falls was
@@ -6034,9 +7387,28 @@ recorded here instead is the attribution: this batch adds one duplication findin
 analyzer in the project already produces, and no new metric finding at all.
 ## `SK1004` and `SK1110` — the declaration-shape batch, and the three that Roslyn already owns
 
-⚠ **The prose pass for `SK1004` and `SK1110` is owed.** What follows is the allocation register entry
-— enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
-can see them — not the worked-through account the rest of this section carries.
+**Two rules that look unrelated and share the single property that decides both their dispositions:
+each fix is source-compatible and neither is binary-compatible.** `SK1004` folds a static class into
+a C# 14 `extension` block, whose members are emitted through a different metadata shape; `SK1110`
+deletes a forwarding overload, and an optional parameter's default is compiled into every call site
+rather than read from the callee. Both therefore ship `suggestion` with `fixIsSafe: false`, and in
+both the thing a reviewer must confirm is not that the edit compiles — within the assembly the
+compiler proves that — but that nothing outside the assembly was relying on the declaration that goes
+away. It is also why `SK1110` **refuses** the public half of
+[#112](https://github.com/Rikarin/SKALA/issues/112) rather than deferring it.
+
+⚠ **The premise this batch was dispatched on is refuted, and that is the finding most easily lost.**
+Converting a constructor with `IDE0290` was expected to manufacture exactly the mutable-capture shape
+`SK2194` reports; it does not. The shipped fixer keeps a real field and initialises it from the
+parameter in every one of four measured shapes, and `SK2194` excludes field initializers by
+construction, so the two never meet — verified by running Skala's analyzers over the fixer's output
+in a compilation where a planted positive *did* report. ⚠ **`SK1004` carries a `languageVersion`
+floor of `14.0`, and a floor is the one piece of metadata whose absence is silent in both
+directions**: below C# 14 the same text does not report the missing feature, it recovers as a
+constructor named `extension` and then fails with `CS1513`, so a missing floor would have surfaced
+only as "the fixture does not compile" — and a floor set too high silences the rule on every real
+project rather than on none, which is why `SkalaRule.Parse`'s handling of `"14.0"` was checked rather
+than assumed.
 
 This batch was dispatched as five rules and ships **two**. The other three were measured to be owned
 by a Roslyn `IDE*` analyzer, and ADR-008 hosts rather than rebuilds. ⚠ **The measurement is the
@@ -6234,9 +7606,26 @@ baseline was deliberately **not** updated: doc CLAUDE.md's rule is that it settl
 merge, and refreshing it here would bake those 82 in as accepted on one agent's authority.
 ## `SK1120`–`SK1123` — expression-level modernization, and what the issues got wrong
 
-⚠ **The prose pass for `SK1120`–`SK1123` is owed.** What follows is the allocation register entry —
-enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
-can see them — not the worked-through account the rest of this section carries.
+**The batch splits cleanly along scope, and that split is what its safety answers are made of.**
+`SK1121` and `SK1123` are `Syntax` rules whose fixes are marked safe: merging two `try` statements
+and merging two property patterns are rewrites whose whole justification is on the page. `SK1120` and
+`SK1122` are `Semantic` and neither fix is safe — and in both cases the unsafety is the one thing
+that *survived* the refutation that removed everything else. ⚠ **For `SK1120`, fourteen executed
+shapes agreed with the operator and one did not**: a null receiver, where `x.GetType()` throws and
+`x is T` is merely `false`. A rule carries one safety answer, so the pair takes the weaker one even
+though the other half is exactly total. ⚠ **For `SK1122` the fix changes the runtime type on
+purpose**, which is the point of the finding; member order is observable through `ToString()` and
+through anything that serialises the object, so "the two become one type" is not a proof that nothing
+moved.
+
+⚠ **`SK1120` is one id standing for two ReSharper inspections** — it declares
+`CanSimplifyIsInstanceOfType` and supersedes `CanSimplifyIsAssignableFrom` — which is why its single
+safety answer has to cover both call shapes at once, and why the null-receiver divergence in one of
+them settles the disposition for both. ⚠ **Three of the four ship at `hint`, the lowest severity the
+catalogue uses, and `SK1123`'s census says that is right rather than timid**: zero `or`-alternations
+of property patterns in 4 459 corpus files and none in Skala's own compiled code. The upstream
+inspection ships at `HINT` for the same reason, so agreeing with it here is a measurement rather than
+deference.
 
 **Five issues went into this batch and four rules came out**, and the gap is the interesting part:
 in three separate places the *issue* was wrong about the transformation it proposed, and the
@@ -6526,9 +7915,26 @@ batch's to fix**:
   here touches `.editorconfig`, and re-freezing the corpus is a reviewed commit of its own.
 ## `SK2230`–`SK2233` — SQL text, load contexts and the `Type` an API was handed
 
-⚠ **The prose pass for `SK2230`–`SK2233` is owed.** What follows is the allocation register entry —
-enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
-can see them — not the worked-through account the rest of this section carries.
+**Only `SK2233` re-implements an existing inspection, and one of the other three declares no
+supersession on purpose.** `SK2232` implements the sound core of `S3885` and deliberately does not
+claim it: "`Assembly.Load` should be used", reported everywhere, would report every plugin host in
+existence, and which context an assembly belongs in is intent rather than a fact in the file.
+Claiming the Sonar rule would credit Skala with the broad reading it refuses to ship, so the
+supersedes list is empty and the inspection stays in the measured residue. `SK2230` does supersede
+`S2857`; `SK2231` answers to nothing upstream at all.
+
+⚠ **`SK2230` is the batch's only `Syntax` rule and the issue proposed it as `Semantic`.** Every one
+of its conditions is a fact about literal text, so it runs under `--load=loose` where a semantic rule
+fires nothing at all (#277) — which is the difference between a rule an agent's scratch file is
+checked by and one it is not. ⚠ **The fix column divides on whether the file contains the repair.**
+`SK2230` and `SK2232` carry fixes, both unsafe: a space and a swapped load call are each one certain
+edit with a behaviour change behind it. `SK2231` and `SK2233` carry none, for the reason `SK5001`
+carries none — supplying a missing command parameter means choosing a value, and correcting a
+mistaken `typeof` means choosing a type, and neither is written anywhere in the file. ⚠ **`SK2231`'s
+restrictions are the rule and not caution around it, and the planted probe is what turned that from a
+claim into an observation**: the probe took the command as a *parameter* and the rule declined it,
+which is the registry's stated restriction behaving as documented in a pipeline that had never
+exercised it.
 
 **Four rules from five issues, and the fifth is refuted.** What holds the four together is that each
 one reads a *contract stated in the file itself* and finds the code contradicting it: SQL grammar in

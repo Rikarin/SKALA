@@ -75,8 +75,109 @@
     <None Include="content/skala.editorconfig" Pack="true" PackagePath="content/" />
     <None Include="content/skala.jsonc" Pack="true" PackagePath="content/" />
     <None Include="build/Rikarin.Skala.Sdk.targets" Pack="true" PackagePath="build/" />
+    <None Include="build/Rikarin.Skala.Sdk.RuleIds.props" Pack="true" PackagePath="build/" />
     <None Include="buildTransitive/Rikarin.Skala.Sdk.targets" Pack="true" PackagePath="buildTransitive/" />
   </ItemGroup>
+
+  <!--
+    ⚠ `<SkalaRuleIds>` is generated, and this target is the generator. It was a hand-typed
+    semicolon-separated line for the whole of the catalogue's growth, and it failed in three
+    distinct ways in one session: it sat at 36 ids while rules.json shipped 101; a merge produced
+    two `<SkalaRuleIds>` elements, still well-formed XML, with MSBuild silently taking one; and it
+    drifted on every single rule merge, so with ten concurrent branches it was both guaranteed to
+    conflict and guaranteed to be stale in between. `rules.json` was already the single source for
+    five other consumers. This is the sixth.
+
+    ⚠ The regex is anchored at the start of a line rather than matching `"id"` anywhere, and that
+    is the difference between a measurement and a coincidence: `rules.json` is pretty printed one
+    property per line, `"resharperId"` does not match a pattern that requires the quote directly
+    before `id`, and an `"id"` appearing inside a `rationale` string is escaped as a backslash quote
+    and cannot start a line. Checked against a real JSON parse of the same file: the two agree on
+    all 325 ids, in order.
+
+    ⚠ Zero ids is an error, not an empty list. An empty `$(SkalaRuleIds)` produces a
+    `WarningsNotAsErrors` that silences nothing, which turns the SkalaRulesAsErrors default —
+    the flag-day escape hatch this package exists for — off, in silence, in every consumer.
+  -->
+  <UsingTask TaskName="SkalaGenerateRuleIdsTask"
+             TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <RulesJson ParameterType="System.String" Required="true" />
+      <Destination ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Using Namespace="System.Collections.Generic" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+var source = File.ReadAllText(RulesJson);
+var ids = new SortedSet<string>(StringComparer.Ordinal);
+
+foreach (Match match in Regex.Matches(source, "^[ \t]*\"id\"[ \t]*:[ \t]*\"(SK[0-9]+)\"", RegexOptions.Multiline))
+{
+    var id = match.Groups[1].Value;
+
+    // SK0xxx is the formatter and SK9xxx is the tool talking about itself; neither reaches csc as
+    // an analyzer diagnostic, so neither belongs in a warnaserror exclusion list.
+    if (id.StartsWith("SK0", StringComparison.Ordinal) || id.StartsWith("SK9", StringComparison.Ordinal))
+    {
+        continue;
+    }
+
+    ids.Add(id);
+}
+
+if (ids.Count == 0)
+{
+    Log.LogError("SkalaGenerateRuleIds read no rule ids out of " + RulesJson + ". An empty <SkalaRuleIds> makes WarningsNotAsErrors silence nothing, which turns off the SkalaRulesAsErrors escape hatch in every consumer without saying so.");
+}
+else
+{
+    var lines = new[]
+    {
+        "<Project>",
+        "",
+        "  <!--",
+        "    ⚠ GENERATED. Every build of Distribution/Rikarin.Skala.Sdk rewrites this file from",
+        "    Rules/Rikarin.Skala.Rules.Metadata/rules.json — see the SkalaGenerateRuleIds target in",
+        "    Rikarin.Skala.Sdk.csproj, and the comment above the import in build/Rikarin.Skala.Sdk.targets",
+        "    for why the value is a list of ids at all. An edit here survives until the next build.",
+        "",
+        "    ⚠ It is a file of its own so that the list cannot be hand-maintained and cannot be merged",
+        "    twice. Both have happened: the list sat at 36 ids while rules.json shipped 101, and a merge",
+        "    once produced two SkalaRuleIds elements — well-formed XML, MSBuild silently taking one.",
+        "    SdkAdoptionTests.RuleIds_MatchRulesJson and TheRuleIdList_IsDeclaredExactlyOnce assert both.",
+        "  -->",
+        "",
+        "  <PropertyGroup>",
+        "    <SkalaRuleIds>" + string.Join(";", new List<string>(ids).ToArray()) + "</SkalaRuleIds>",
+        "  </PropertyGroup>",
+        "",
+        "</Project>",
+        ""
+    };
+
+    // \n on every platform. The file is committed, git normalises this tree to LF, and a CRLF
+    // rewrite on a Windows build would show the generated file as modified on every build.
+    var generated = string.Join("\n", lines);
+
+    if (!File.Exists(Destination) || !string.Equals(File.ReadAllText(Destination), generated, StringComparison.Ordinal))
+    {
+        File.WriteAllText(Destination, generated, new UTF8Encoding(false));
+        Log.LogMessage(MessageImportance.High, "Skala: regenerated " + Destination + " with " + ids.Count + " rule ids from rules.json. Commit it.");
+    }
+}
+]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="SkalaGenerateRuleIds" BeforeTargets="BeforeBuild;SkalaValidatePackagedMSBuildFiles">
+    <SkalaGenerateRuleIdsTask RulesJson="$(MSBuildThisFileDirectory)../../Rules/Rikarin.Skala.Rules.Metadata/rules.json"
+                              Destination="$(MSBuildThisFileDirectory)build/Rikarin.Skala.Sdk.RuleIds.props" />
+  </Target>
 
   <!--
     ⚠ The two .targets are copied into the package verbatim and are never parsed by this build, so
@@ -86,6 +187,7 @@
   -->
   <ItemGroup>
     <SkalaPackagedMSBuildFile Include="build/Rikarin.Skala.Sdk.targets" />
+    <SkalaPackagedMSBuildFile Include="build/Rikarin.Skala.Sdk.RuleIds.props" />
     <SkalaPackagedMSBuildFile Include="buildTransitive/Rikarin.Skala.Sdk.targets" />
   </ItemGroup>
 

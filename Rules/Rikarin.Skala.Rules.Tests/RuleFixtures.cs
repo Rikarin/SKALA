@@ -77,14 +77,43 @@ public static class RuleFixtures {
     ///     A compilation over the running framework's reference set, which is what loose mode gives a
     ///     rule and therefore the least the rule may assume.
     /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         The reference set is the test host's, not a project's, and that is a blind spot rather
+    ///         than a detail.
+    ///     </b> A real project is compiled against its own reference assemblies, and where
+    ///     the two differ a rule can be correct on every fixture and wrong in production with nothing
+    ///     failing — overload resolution, <c>params</c> binding and shim visibility all move with the
+    ///     reference set. Two measured examples (#297): <c>SK1063</c> declined every
+    ///     <c>string.Format</c> call with four or more arguments, because on .NET 9+ the
+    ///     <c>params ReadOnlySpan&lt;object?&gt;</c> overload wins and Roslyn reports the argument as
+    ///     <c>ParamCollection</c> rather than <c>ParamArray</c>; and <c>SK1060</c> proposed 16 fixes
+    ///     that did not compile on <c>netstandard2.0</c>, where <c>System.Index</c> exists but is
+    ///     inaccessible. Neither was reachable from here.
+    ///     <b>
+    ///         The binlog self-sweep, not this harness, is
+    ///         the only check that sees a real reference set
+    ///     </b>, which is why it is part of shipping a rule.
+    ///     <para>
+    ///         What the harness <em>can</em> express per fixture is the rest of the compilation:
+    ///         <see cref="FixtureCompilation" /> reads <c>// fixture-option:</c> directives for
+    ///         <c>LangVersion</c>, <c>DefineConstants</c> and <c>AllowUnsafe</c>, so a rule whose
+    ///         territory is below the current language version or inside an <c>#if</c> can be fixtured
+    ///         (#317), and <c>unsafe</c> compiles (#310).
+    ///     </para>
+    /// </remarks>
     public static CSharpCompilation Compile(
         string source,
         string path,
-        LanguageVersion version = LanguageVersion.Preview
+        LanguageVersion? version = null
     ) {
+        var options = FixtureCompilation.From(source);
         var tree = CSharpSyntaxTree.ParseText(
             SourceText.From(source),
-            new CSharpParseOptions(version).WithDocumentationMode(DocumentationMode.Parse),
+            new CSharpParseOptions(version ?? options.LanguageVersion)
+                .WithDocumentationMode(DocumentationMode.Parse)
+                .WithPreprocessorSymbols(options.PreprocessorSymbols),
             path
         );
 
@@ -94,6 +123,7 @@ public static class RuleFixtures {
             References,
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
+                allowUnsafe: options.AllowUnsafe,
                 nullableContextOptions: NullableContextOptions.Enable,
                 specificDiagnosticOptions: OptIn
             )
@@ -123,173 +153,6 @@ public static class RuleFixtures {
         return builder.ToImmutable();
     }
 
-    /// <summary>
-    ///     Every analyzer this repository ships, as one list.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ <b>One list, because a second one would go quiet rather than fail.</b> Both
-    ///     <c>RuleFixtureTests</c> and <c>CorpusCrashTests</c> run this set and assert no
-    ///     <c>AD0001</c>. An analyzer missing from a private copy of the list is an analyzer whose
-    ///     crash that harness cannot see, and the harness still reports success — the same
-    ///     "answers confidently when it did not run" shape as #279 and #295. Adding an analyzer here
-    ///     enrols it in every crash sweep at once.
-    /// </remarks>
-    public static ImmutableArray<DiagnosticAnalyzer> AllAnalyzers { get; } = [
-        new FieldBackedPropertyAnalyzer(), new SearchValuesAnalyzer(), new FrozenDictionaryAnalyzer(),
-        new ReadonlyStructMutationAnalyzer(), new ParamsSpanOverloadAnalyzer(),
-        new DedicatedLockAnalyzer(), new FloatingPointEqualityAnalyzer(), new ConstrainedBoxingAnalyzer(),
-        new LargeStructArgumentAnalyzer(), new CommentedCodeAnalyzer(),
-        new SharedLazyAnalyzer(), new HotPathLinqAnalyzer(), new LoopClosureAnalyzer(),
-        new ImmediateMaterializationAnalyzer(), new NondeterministicAssertionAnalyzer(),
-        new ReturningSwitchExpressionAnalyzer(), new ListPatternAnalyzer(), new Utf8LiteralAnalyzer(),
-        new ConstantRangeComparisonAnalyzer(), new SelfPropertyOperationAnalyzer(),
-        new RelationalPatternAnalyzer(), new PropertyPatternAnalyzer(), new SpanDecodingAnalyzer(),
-        new ConfigureAwaitAnalyzer(), new FileLengthAnalyzer(),
-        new FileScopedNamespaceAnalyzer(), new NullPatternAnalyzer(), new ThrowIfNullAnalyzer(),
-        new NullCoalescingAssignmentAnalyzer(),
-        new CountPropertyAnalyzer(), new EnumGetValuesAnalyzer(), new DiscardedExceptionAnalyzer(),
-        new RethrowAnalyzer(), new CollectionModifiedAnalyzer(), new EnumSwitchExhaustivenessAnalyzer(),
-        new DiscardedPureResultAnalyzer(), new IncompleteEqualityContractAnalyzer(), new CapturedLoopVariableAnalyzer(),
-        new ImplicitStringCultureAnalyzer(), new InheritedValueTypeEqualsAnalyzer(),
-        new EmptyCatchAnalyzer(), new InterpolatedLoggerMessageAnalyzer(),
-        new WrongArgumentNameAnalyzer(),
-        new AsyncVoidAnalyzer(), new BlockingOnAsyncAnalyzer(), new CancellationTokenForwardingAnalyzer(),
-        new FireAndForgetTaskAnalyzer(), new TaskReturnedFromUsingAnalyzer(), new UndisposedLocalAnalyzer(),
-        new OwnedDisposableFieldAnalyzer(),
-        new SynchronousAsyncDisposalAnalyzer(), new RedundantDisposeAnalyzer(), new UsingResourceInitializerAnalyzer(),
-        new UsingVariableReturnedAnalyzer(), new NullTaskReturnAnalyzer(),
-        new SpinLockInReadonlyFieldAnalyzer(), new MetricsAnalyzer(),
-        new WhereBeforeOperatorAnalyzer(), new AbstractTypeConstructorAnalyzer(),
-        new ExtensionMethodOnObjectAnalyzer(), new ThreadSleepInTestAnalyzer(),
-        new TodoWithoutIssueAnalyzer(), new PragmaWithoutJustificationAnalyzer(),
-        new SuppressMessageWithoutJustificationAnalyzer(), new ObsoleteWithoutMessageAnalyzer(),
-        new ExcludeFromCodeCoverageWithoutJustificationAnalyzer(), new EmptySuppressionRegionAnalyzer(),
-        new EmptyRegionAnalyzer(), new UnstructuredGotoAnalyzer(),
-        new SkippedTestWithoutReasonAnalyzer(),
-        new SqlInjectionAnalyzer(), new ProcessArgumentInjectionAnalyzer(), new WeakCipherAnalyzer(),
-        new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(), new RegexTimeoutAnalyzer(),
-        new CollectionExpressionAnalyzer(), new UsingDeclarationAnalyzer(), new TypePatternAnalyzer(),
-        new NullConditionalAssignmentAnalyzer(), new DictionaryLookupAnalyzer(),
-        new NanComparisonAnalyzer(), new UnusedValueParameterAnalyzer(),
-        new RedundantSuppressFinalizeAnalyzer(), new StackAllocInLoopAnalyzer(),
-        new EscapedKeywordAnalyzer(),
-        new EnumConstraintAnalyzer(), new ExceptionNameAnalyzer(), new TypeKindSuffixAnalyzer(),
-        new EmptyTypeAnalyzer(),
-        new NullableShortFormAnalyzer(), new CompoundAssignmentAnalyzer(), new MergeableIfAnalyzer(),
-        new ForAsWhileAnalyzer(), new NullOrEmptyCheckAnalyzer(),
-        new UnusedOutVariableAnalyzer(), new WiderForeachVariableTypeAnalyzer(),
-        new NoncapturingLambdaAnalyzer(), new StatelessPrivateMethodAnalyzer(), new ImmutableStructAnalyzer(),
-        new RedundantCapacityArgumentAnalyzer(), new ForcedGarbageCollectionAnalyzer(),
-        new NotImplementedMemberAnalyzer(), new ProcessExitAnalyzer(), new LoggedAndRethrownAnalyzer(),
-        new ConsoleInsteadOfLoggerAnalyzer(),
-        new CollectionOwnMethodAnalyzer(), new DictionaryKeyRelookupAnalyzer(),
-        new SubstringBeforeSearchAnalyzer(), new ConcurrentDictionaryMemberAnalyzer(),
-        new SortBeforeFilterAnalyzer(),
-        new GlobalNamespaceTypeAnalyzer(),
-        new ReadonlyMutableFieldAnalyzer(),
-        new AbstractTypeWithoutAbstractionAnalyzer(),
-        new PrivateConstructorOnlyAnalyzer(),
-        new PublicConstantAnalyzer(),
-        new UndisposedOwnedFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
-        new RefStructOwnedDisposableAnalyzer(), new AsyncIteratorNotEnumeratedAnalyzer(),
-        new AsyncOnlyToAwaitAnalyzer(),
-        new EmptyInitializerAnalyzer(), new RedundantStringCallAnalyzer(),
-        new RedundantArgumentAnalyzer(), new RedundantSyntaxAnalyzer(),
-        new RedundantCastAnalyzer(),
-        new MissingTestClassAttributeAnalyzer(), new EmptyTestClassAnalyzer(),
-        new SwappedAssertionArgumentsAnalyzer(),
-        new DuplicatedBaseDocumentationAnalyzer(), new UndocumentedNonPublicMemberAnalyzer(),
-        new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
-        new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
-        new RedundantDiscardDesignationAnalyzer(),
-        new RedundantDeclarationAnalyzer(),
-        new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(),
-        new MergedConditionalAccessAnalyzer(), new DiscardAssignmentAnalyzer(),
-        new InlineOutVariableAnalyzer(),
-        new LockOverSynchronizationPrimitiveAnalyzer(), new NonAtomicVolatileUpdateAnalyzer(),
-        new DoubleCheckedLockingAnalyzer(), new LockOrderAnalyzer(),
-        new InconsistentlySynchronizedFieldAnalyzer(),
-        new InheritanceDepthAnalyzer(), new TypeCouplingAnalyzer(), new NestedConditionalAnalyzer(),
-        new RepeatedStringLiteralAnalyzer(),
-        new IntegerDivisionFractionAnalyzer(), new FixedResultArithmeticAnalyzer(), new MaskedShiftCountAnalyzer(),
-        new NonnegativeSizeComparisonAnalyzer(), new SignedModulusEqualityAnalyzer(),
-        new ThrowingFinalizerAnalyzer(), new ThrowInFinallyAnalyzer(),
-        new CaughtNullReferenceAnalyzer(), new DiscardedCaughtExceptionAnalyzer(),
-        new IneffectiveThreadStaticAnalyzer(), new PureAttributeOnVoidAnalyzer(),
-        new DebuggerDisplayMissingMemberAnalyzer(), new DuplicatedAttributeAnalyzer(),
-        new UnintendedReferenceComparisonAnalyzer(),
-        new BaseEqualityCallAnalyzer(),
-        new UncomparedHashMemberAnalyzer(),
-        new MutableHashMemberAnalyzer(),
-        new InconsistentEqualityMembersAnalyzer(),
-        new AssignmentInConditionAnalyzer(), new IdenticalOperandsAnalyzer(), new RepeatedConditionAnalyzer(),
-        new MisleadingOperatorSequenceAnalyzer(), new NonShortCircuitBooleanAnalyzer(),
-        new ConstantReturningMethodAnalyzer(), new DerivedTypeTestOnThisAnalyzer(),
-        new NullSequenceReturnAnalyzer(), new AsyncSuffixAnalyzer(),
-        new DuplicateInitializerKeyAnalyzer(), new SelfCollectionArgumentAnalyzer(),
-        new OverwrittenElementAnalyzer(), new EmptyCollectionLoopAnalyzer(),
-        new IndexFromEndAnalyzer(), new NameofExpressionAnalyzer(), new EscapeFreeStringLiteralAnalyzer(),
-        new InterpolatedStringFormAnalyzer(), new UnsignedRightShiftAnalyzer(),
-        new TupleDeconstructionAnalyzer(), new WithExpressionCopyAnalyzer(),
-        new RedundantSpreadElementAnalyzer(), new CachedEmptyInstanceAnalyzer(),
-        new LogTemplateArgumentCountAnalyzer(), new LogTemplateDuplicatePropertyAnalyzer(),
-        new InvisibleCharacterAnalyzer(), new CaughtExceptionNotLoggedAnalyzer(),
-        new LoggerForAnotherTypeAnalyzer(),
-        new PlainEnumBitwiseAnalyzer(), new AlwaysSucceedingAsAnalyzer(),
-        new ImplicitStringSearchCultureAnalyzer(), new InvariantCultureComparisonAnalyzer(),
-        new PlatformDependentPathComparisonAnalyzer(), new QueryableDegradedToEnumerableAnalyzer(),
-        new SortWithoutOrderingAnalyzer(),
-        new ToStringReturnsNullAnalyzer(), new InertNullSuppressionAnalyzer(),
-        new NullableLocalNeverNullAnalyzer(), new NullForgivenServiceResolutionAnalyzer(),
-        new ComputedPropertyAnalyzer(), new PrivateAutoPropertyAnalyzer(), new TupleLiteralAnalyzer(),
-        new CastInDeclarationAnalyzer(), new NullableAnnotationSyntaxAnalyzer(),
-        new AsyncVoidThrowAnalyzer(), new UncancellableAsyncMethodAnalyzer(),
-        new AsyncVoidLambdaAnalyzer(),
-        new OverriddenParameterDefaultAnalyzer(), new RestatedCallerInfoArgumentAnalyzer(),
-        new OverwrittenParameterAnalyzer(), new CrosswiseArgumentOrderAnalyzer(),
-        new StaticClockReadAnalyzer(), new UnspecifiedDateTimeKindAnalyzer(),
-        new ImplicitDateParseCultureAnalyzer(), new WallClockElapsedAnalyzer(),
-        new SideEffectInAssertionAnalyzer(),
-        new OfTypeChainAnalyzer(), new RedundantSequenceCallAnalyzer(),
-        new IndexerOverElementAtAnalyzer(), new ForeachOverIndexedForAnalyzer(),
-        new LoopFilterAsQueryAnalyzer(),
-        new ForwardStaticInitializerAnalyzer(), new UnassignedGetOnlyPropertyAnalyzer(),
-        new MismatchedBackingFieldAnalyzer(), new UnimplementedPartialMethodAnalyzer(),
-        new InstanceWriteToStaticAnalyzer(),
-        new UnreleasedLockAnalyzer(), new IneffectiveLockTargetAnalyzer(),
-        new ConstructorPublishesThisAnalyzer(),
-        new ForeachElementDowncastAnalyzer(), new GetTypeOnATypeAnalyzer(),
-        new TypeComparedByNameAnalyzer(), new StaticMemberViaDerivedTypeAnalyzer(),
-        new HiddenBaseInterfaceOverloadAnalyzer(),
-        new InvariantTypeParameterAnalyzer(), new CallerInfoParameterOrderAnalyzer(),
-        new WriteOnlyLocalCollectionAnalyzer(),
-        new StructKeyWithoutEqualityAnalyzer(), new ReadonlyReceiverMutationAnalyzer(),
-        new SpanReferenceComparisonAnalyzer(), new ImmutableArrayCollectionInitializerAnalyzer(),
-        new MutableCapturedPrimaryParameterAnalyzer(),
-        new UndeclaredDisposeAnalyzer(), new ShortLivedHttpClientAnalyzer(), new DangerousHandleAnalyzer(),
-        new CopyingPropertyAnalyzer(), new UnreadStringBuilderAnalyzer(),
-        new OverwrittenFieldInitializerAnalyzer(), new AnonymousUnsubscriptionAnalyzer(),
-        new ConditionalInvocationSideEffectAnalyzer(),
-        new MisleadingBodyIndentationAnalyzer(), new VariableLengthHexEscapeAnalyzer(),
-        new ForgivenIsOperandAnalyzer(), new NegatedEmptyPatternAnalyzer(),
-        new UnparenthesisedPrecedenceMixAnalyzer(),
-        new XmlSignatureAnalyzer(),
-        new PredictableInitializationVectorAnalyzer(), new AsymmetricKeySizeAnalyzer(),
-        new SingleUseTemporaryAnalyzer(), new SplitDeclarationAndAssignmentAnalyzer(),
-        new LocalFunctionBeforeJumpAnalyzer(), new SharedBranchTailAnalyzer(),
-        new InvalidConstantIndexOrRangeAnalyzer(), new UnchangingLoopConditionAnalyzer(),
-        new SingleIterationLoopAnalyzer(), new IndexOfComparedToPositiveAnalyzer(),
-        new DeadConditionalCallAnalyzer(), new UnsafeAccessorTargetAnalyzer(),
-        new PartiallyCheckedOperatorAnalyzer(),
-        new WithExpressionRewritesAllAnalyzer(), new MalformedRegexPatternAnalyzer(),
-        new DeferredArgumentCheckAnalyzer(),
-        new UngroupedExtensionMethodsAnalyzer(), new ConstantForwardingOverloadAnalyzer(),
-        new ReflectiveTypeTestAnalyzer(), new MergeableTryAnalyzer(),
-        new ReorderedAnonymousTypeAnalyzer(), new MergedPropertyPatternAnalyzer(),
-        new SqlFragmentsRunTogetherAnalyzer(), new CommandParameterNotSuppliedAnalyzer(),
-        new AssemblyLoadedOutsideItsContextAnalyzer(), new MistakenTypeArgumentAnalyzer(),
-    ];
-
     public static ImmutableArray<MetadataReference> References { get; } = Build();
 
     static ImmutableArray<MetadataReference> Build() {
@@ -312,6 +175,27 @@ public static class RuleFixtures {
     }
 
     /// <summary>Every diagnostic Skala's own analyzers produce for one compilation.</summary>
+    /// <remarks>
+    ///     The settings track <c>AnalyzerHost</c>'s, which is what <c>skala check</c> runs, with one
+    ///     deliberate exception (#297):
+    ///     <list type="bullet">
+    ///         <item>
+    ///             ⚠ <c>onAnalyzerException: null</c>, where production installs a handler that records
+    ///             <c>SK9030</c> and continues. Null is what turns an analyzer crash into an
+    ///             <c>AD0001</c> in the returned diagnostics, and <c>AD0001</c> is the only thing that
+    ///             can tell a rule that <em>declined</em> from a rule that <em>threw</em> — production's
+    ///             handler swallows it into a SARIF notification no test can see. The difference is
+    ///             deliberate and runs in the direction of catching more.
+    ///         </item>
+    ///         <item>
+    ///             <c>concurrentAnalysis: true</c>, as in production. Every Skala analyzer calls
+    ///             <c>EnableConcurrentExecution</c>, so running fixtures serially measured a threading
+    ///             model no user gets; a rule holding state across callbacks would have been correct on
+    ///             every fixture and racy in the field.
+    ///         </item>
+    ///         <item><c>reportSuppressedDiagnostics: true</c>, as in production.</item>
+    ///     </list>
+    /// </remarks>
     public static ImmutableArray<Diagnostic> Analyze(
         CSharpCompilation compilation,
         ImmutableArray<DiagnosticAnalyzer> analyzers,
@@ -323,7 +207,7 @@ public static class RuleFixtures {
                 new CompilationWithAnalyzersOptions(
                     new AnalyzerOptions([], new FixtureOptionsProvider()),
                     null,
-                    false,
+                    true,
                     false,
                     true
                 )
@@ -346,22 +230,8 @@ public static class RuleFixtures {
         readonly Dictionary<string, string> values = new(StringComparer.OrdinalIgnoreCase);
 
         public FixtureOptions(string source) {
-            foreach (var line in SourceText.From(source).Lines) {
-                var trimmed = line.ToString().Trim();
-                if (!trimmed.StartsWith("//", StringComparison.Ordinal)) {
-                    break;
-                }
-
-                const string prefix = "// analyzer-option:";
-                if (!trimmed.StartsWith(prefix, StringComparison.Ordinal)) {
-                    continue;
-                }
-
-                var assignment = trimmed[prefix.Length..];
-                var separator = assignment.IndexOf('=');
-                if (separator > 0) {
-                    values[assignment[..separator].Trim()] = assignment[(separator + 1)..].Trim();
-                }
+            foreach (var (key, value) in FixtureCompilation.Directives(source, "// analyzer-option:")) {
+                values[key] = value;
             }
         }
 

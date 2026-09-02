@@ -1,0 +1,87 @@
+# Cross-rule findings on negative fixtures — a to-do list, not an approval list.
+#
+# ⚠ Every line records a Correctness- or Security-class rule that fires on a NEGATIVE fixture
+# belonging to some other rule: a file whose whole purpose is to be correct code that its own rule
+# declines. Each is a true positive of the rule named in the second column. Some are deliberate —
+# the fixture exists to show that its own rule stops where the neighbouring rule starts, and the
+# neighbour's shape has to be present for that to mean anything. Some are incidental, and those are
+# the weak fixtures #285 is about: a negative fixture carrying an unrelated bug can pass for the
+# wrong reason, and it teaches the next reader that the shape is fine.
+#
+# ⚠ This file was written from a measurement, not from an audit of all 64. The two the issue names
+# were audited and are annotated below. Removing a line is how a repaired fixture is recorded; the
+# test asserts EQUALITY, so a line that no longer fires fails just as loudly as a finding with no
+# line. Adding one is a decision that has to be defended in review.
+#
+# Scope, and why: the same sweep over every category produces 18 042 findings, of which 11 687 are
+# SK7101/SK7010 documentation and 4 134 are SK6030 — style rules firing on deliberately minimal
+# snippets, which says nothing about the fixture's soundness. Correctness and Security are the
+# categories where "this file contains the defect another rule reports" is a statement about the
+# fixture rather than about its brevity. Positive fixtures are excluded because a positive fixture's
+# purpose is to contain a defect.
+#
+# Format: <fixture path relative to fixtures/> <TAB> <rule id> <TAB> <what that rule says>
+SK0234/negative/type-arguments-inference-would-not-reproduce.cs	SK2212	every path through this body jumps out of the loop, so it runs at most once
+SK0240/negative/catch_rethrows_variable.cs	SK2015	`throw error;` resets the stack trace; use `throw;`
+SK1004/negative/a-generic-method.cs	SK2212	every path through this body jumps out of the loop, so it runs at most once
+SK1013/negative/float.cs	SK2030	Comparing with NaN using `==` is always false, even for NaN; use `double.IsNaN(a[0])`
+SK1060/negative/a-zero-offset.cs	SK2051	This '-' has no effect: the constant operand decides it
+SK1062/negative/a-hex-escape-that-swallows-the-next-digit.cs	SK2171	`\x41B` takes up to four hex digits and stopped at 3 because of what follows it; write `\u041B`
+SK1091/negative/a-never-written-property.cs	SK2131	`Total` has no setter, no initializer and no constructor that assigns it, so it holds `default` for the life of every instance
+SK1093/negative/an-as-expression.cs	SK2121	`System.IO.StringWriter` always converts to `System.IO.TextWriter`, so this `as` returns its operand and can yield null only where the operand is null
+SK1120/negative/get_type_on_a_type_is_sk2181.cs	SK2181	`System.Type` is already a type, so this returns the runtime type of the `Type` object rather than the type it describes
+SK2002/negative/void-call.cs	SK2101	AUDITED (#285): SK2002's guard is `ReturnsVoid: false`, so pinning it needs a [Pure] void method, which is exactly the shape SK2101 owns. The overlap is unavoidable, not sloppy.
+SK2003/negative/nan-infinity.cs	SK2030	Comparing with NaN using `==` is always false, even for NaN; use `double.IsNaN(x + y)`
+SK2005/negative/init_accessor.cs	SK2031	The `init` accessor never reads `value`, so every assignment through it is discarded
+SK2005/negative/parameter.cs	SK2191	`Increment` writes struct state through the `in` parameter `counter`, so the write is discarded
+SK2005/negative/static_write.cs	SK2134	the instance member `Increment` updates the static field `Value`, which every instance and every thread shares
+SK2008/negative/custom-increment.cs	SK2212	every path through this body jumps out of the loop, so it runs at most once
+SK2008/negative/no-change.cs	SK2212	every path through this body jumps out of the loop, so it runs at most once
+SK2011/negative/typed.cs	SK2044	`Point` declares Equals(Point) and does not implement IEquatable<Point>, so generic comparers never find it
+SK2033/negative/break_first_iteration.cs	SK2212	every path through this body jumps out of the loop, so it runs at most once
+SK2033/negative/returns_first_iteration.cs	SK2212	every path through this body jumps out of the loop, so it runs at most once
+SK2043/negative/uncompared_member_is_the_other_rules.cs	SK2042	the hash code reads `Holder` and no Equals compares it, so two equal instances can hash differently
+SK2044/negative/equatable_ordering_without_object_equals.cs	SK2004	`Revision` implements typed equality but not object equality; align Equals(object) and GetHashCode
+SK2044/negative/equatable_without_object_equals_is_sk2004.cs	SK2004	`Handle` implements typed equality but not object equality; align Equals(object) and GetHashCode
+SK2050/negative/divided_by_one.cs	SK2051	This '/' has no effect: the constant operand decides it
+SK2053/negative/sk2001_owns_the_type_range.cs	SK2001	This comparison is always true when evaluated: the operand has type int
+SK2053/negative/type_range_belongs_to_sk2001.cs	SK2001	This comparison is always true when evaluated: the operand has type byte
+SK2054/negative/floating_point.cs	SK2003	Exact equality of a floating-point arithmetic result can expose rounding; review the intended comparison
+SK2060/negative/assignment_statements.cs	SK2142	The value passed for 'a' is overwritten before anything reads it
+SK2060/negative/comparison.cs	SK2211	nothing in this loop changes 'ready', 'pending'
+SK2060/negative/ternary_condition.cs	SK2142	The value passed for 'flag' is overwritten before anything reads it
+SK2064/negative/mixed_precedence.cs	SK2174	`&` binds tighter than `^`, so this operand is `a & b`; parenthesise it
+SK2070/negative/duplicate-name-is-not-a-mismatch.cs	SK2071	the template names `Count` more than once; one key cannot hold two values, so a sink keeps one and discards the other
+SK2071/negative/an-unterminated-hole-is-not-a-hole.cs	SK2070	the template has 0 holes and the call supplies 1 value
+SK2090/negative/the-throw-does-not-escape.cs	SK2014	empty `catch` silently discards the exception
+SK2090/negative/there-is-no-finalizer.cs	SK2032	`GC.SuppressFinalize` has nothing to suppress: `NoFinalizer` is sealed, declares no finalizer and inherits none
+SK2093/negative/the-neighbouring-rules-own-these.cs	SK2014	empty `catch` silently discards the exception
+SK2093/negative/the-neighbouring-rules-own-these.cs	SK2015	`throw error;` resets the stack trace; use `throw;`
+SK2111/negative/service_resolution_is_sk2113.cs	SK2113	`GetService<IClock>()!` should be `GetRequiredService`
+SK2113/negative/suppression_on_something_else.cs	SK2111	nullable warnings are off here, so `!` suppresses nothing
+SK2150/negative/explicit-policy.cs	SK2151	`EndsWith` is asked for StringComparison.InvariantCulture, which still runs the full linguistic comparison; an equality test on an identifier, key or path wants StringComparison.Ordinal
+SK2152/negative/case-sensitive.cs	SK2151	`Equals` is asked for StringComparison.InvariantCulture, which still runs the full linguistic comparison; an equality test on an identifier, key or path wants StringComparison.Ordinal
+SK2161/negative/a-clock-read-carries-its-kind.cs	SK2160	`DateTime.UtcNow` reads the machine clock from a static, so no caller and no test can give this code a different time; take a `TimeProvider` instead
+SK2161/negative/the-local-is-reassigned.cs	SK2160	`DateTime.UtcNow` reads the machine clock from a static, so no caller and no test can give this code a different time; take a `TimeProvider` instead
+SK2163/negative/an-age-computation.cs	SK2160	`DateTime.UtcNow` reads the machine clock from a static, so no caller and no test can give this code a different time; take a `TimeProvider` instead
+SK2163/negative/the-operands-are-reversed.cs	SK2160	`DateTime.UtcNow` reads the machine clock from a static, so no caller and no test can give this code a different time; take a `TimeProvider` instead
+SK2163/negative/the-start-is-a-field.cs	SK2160	`DateTime.UtcNow` reads the machine clock from a static, so no caller and no test can give this code a different time; take a `TimeProvider` instead
+SK2163/negative/the-start-is-not-a-clock-read.cs	SK2160	`DateTime.UtcNow` reads the machine clock from a static, so no caller and no test can give this code a different time; take a `TimeProvider` instead
+SK2163/negative/the-start-is-read-twice.cs	SK2160	`DateTime.UtcNow` reads the machine clock from a static, so no caller and no test can give this code a different time; take a `TimeProvider` instead
+SK2163/negative/two-declarators.cs	SK2160	`DateTime.UtcNow` reads the machine clock from a static, so no caller and no test can give this code a different time; take a `TimeProvider` instead
+SK2172/negative/value_type_operand_is_sk2111.cs	SK2111	`Int32` is a value type and cannot be null
+SK2172/negative/warnings_disabled_is_sk2111.cs	SK2111	nullable warnings are off here, so `!` suppresses nothing
+SK2174/negative/comparison_operand_is_sk2064.cs	SK2064	`&` on booleans always evaluates the right operand; use `&&`
+SK2190/negative/a-typed-equals-belongs-to-sk2044.cs	SK2044	`Cell` declares Equals(Cell) and does not implement IEquatable<Cell>, so generic comparers never find it
+SK2190/negative/an-explicit-comparer-is-the-repair.cs	SK2174	`*` binds tighter than `^`, so this operand is `cell.Row * 397`; parenthesise it
+SK2190/negative/the-struct-implements-equatable.cs	SK2174	`*` binds tighter than `^`, so this operand is `Row * 397`; parenthesise it
+SK2191/negative/a-readonly-field-receiver-is-sk2005.cs	SK2005	This struct call writes to a defensive copy, not the readonly field `counter`
+SK2191/negative/the-receiver-is-a-property-or-a-call.cs	SK2131	`Current` has no setter, no initializer and no constructor that assigns it, so it holds `default` for the life of every instance
+SK2200/negative/a-static-field.cs	SK2134	the instance constructor `.ctor` writes the static field `seen`, which every instance and every thread shares
+SK3009/negative/thread-static.cs	SK2100	AUDITED (#285): the shape is genuinely broken and SK2100 is right — but SK3009 reads the field INITIALIZER, so a [ThreadStatic] Lazy without one never reaches the guard this fixture pins and the fixture would pass vacuously. The defect is what the guard is about.
+SK3062/negative/the-own-types-static-field.cs	SK2134	the instance constructor `.ctor` writes the static field `current`, which every instance and every thread shares
+SK4032/negative/a-computed-search-argument.cs	SK2150	`IndexOf` with no StringComparison searches using the ambient culture, so the offset it returns depends on a process setting nothing here mentions; pass StringComparison.Ordinal
+SK5010/negative/unbalanced-pattern.cs	SK2241	`Regex` will reject this pattern the first time this line runs: Invalid pattern '^(a+$' at offset 5. Not enough )'s.
+SK7090/negative/constructed-and-not-thrown.cs	SK2014	empty `catch` silently discards the exception
+SK7101/negative/public-api-is-sk7010s.cs	SK2131	`Count` has no setter, no initializer and no constructor that assigns it, so it holds `default` for the life of every instance
+SK7101/negative/the-repaired-shape.cs	SK2131	`Count` has no setter, no initializer and no constructor that assigns it, so it holds `default` for the life of every instance

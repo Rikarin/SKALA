@@ -120,8 +120,11 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>An <c>async</c> method that survived every local guard, pending the name check.</summary>
     /// <remarks>
-    ///     ⚠ A class rather than a positional record: this assembly is <c>netstandard2.0</c> (ADR-006)
-    ///     and <c>init</c> accessors need an <c>IsExternalInit</c> the target framework does not carry.
+    ///     ⚠ A class rather than a positional record, and <b>the reason written here was false</b> —
+    ///     the same refuted claim <c>AsyncVoidAnalyzer.Candidate</c> carried. <c>Compat.cs</c> in this
+    ///     assembly declares <c>IsExternalInit</c>, so <c>init</c> accessors and positional records
+    ///     compile; measured, not assumed. The class stays, its stated justification does not. See
+    ///     doc 02 § "What netstandard2.0 costs a rule author".
     /// </remarks>
     sealed class Candidate {
         public Candidate(string name, string callee, Location location, ImmutableDictionary<string, string?> fix) {

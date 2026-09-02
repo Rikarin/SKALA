@@ -141,10 +141,11 @@ public sealed class CorpusCrashTests {
     ///     ⚠ Every analyzer, not the one a file is about — a corpus file is about no rule.
     /// </summary>
     /// <remarks>
-    ///     The set comes from <see cref="RuleFixtures.AllAnalyzers" /> rather than from a list here, so
-    ///     that a newly shipped analyzer is enrolled in this sweep by the same edit that enrols it in
-    ///     the fixture harness. A private second list is how a sweep goes quiet about exactly the
-    ///     analyzer nobody remembered to add to it.
+    ///     The set is <see cref="SkalaAnalyzers.All" /> — the one <c>skala check</c> actually runs,
+    ///     not a copy of it — so an analyzer is enrolled in this sweep by the same edit that ships it.
+    ///     ⚠ A private second list is how a crash sweep goes quiet about exactly the analyzer nobody
+    ///     remembered to add to it: the sweep reports no crash because it ran nothing, which is the
+    ///     failure this file exists to catch, one level up (#297, #315).
     /// </remarks>
     [Theory]
     [MemberData(nameof(Files))]
@@ -152,7 +153,7 @@ public sealed class CorpusCrashTests {
         var compilation = RuleFixtures.Compile(File.ReadAllText(file.Path), file.Path);
 
         var crashes = RuleFixtures
-            .Analyze(compilation, RuleFixtures.AllAnalyzers, TestContext.Current.CancellationToken)
+            .Analyze(compilation, SkalaAnalyzers.All, TestContext.Current.CancellationToken)
             .Where(static diagnostic => diagnostic.Id == "AD0001")
             .ToArray();
 

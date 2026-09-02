@@ -39,7 +39,22 @@ internal sealed class CloneIndex {
     const uint Magic = 0x4C43_4B53;
 
     /// <summary>⚠ Bump when the normalisation or the layout changes. An old index is discarded, not read.</summary>
-    const int FormatVersion = 1;
+    const int FormatVersion = 2;
+
+    /// <summary>
+    ///     What produced this index: the tool version, and a fingerprint of the tokeniser itself.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The tool version alone was not enough, and the gap was silent</b> — issue #322.
+    ///     <see cref="SkalaVersion.Value" /> is the assembly version to three parts, so it does not move
+    ///     between two builds of the same working tree, and neither the content hash nor
+    ///     <see cref="FormatVersion" /> moves when <see cref="TokenStream.Lex" /> is edited. Every file was
+    ///     therefore served the <i>previous</i> tokeniser's stream, and a change to duplication detection
+    ///     measured itself as a non-event: 12.89 % warm versus 6.9 % cold, from one binary over one tree,
+    ///     with identical finding sets and no warning. <see cref="TokenStream.Fingerprint" /> is derived
+    ///     from what the lexer does rather than declared beside it, so it moves on its own.
+    /// </remarks>
+    static string Stamp { get; } = SkalaVersion.Value + "/" + TokenStream.Fingerprint;
 
     readonly string path;
     readonly ConcurrentDictionary<string, Entry> loaded = new(StringComparer.Ordinal);
@@ -90,7 +105,7 @@ internal sealed class CloneIndex {
             entries.Sort(static (left, right) => string.CompareOrdinal(left.Path, right.Path));
 
             var payload = WritePayload(entries);
-            var version = Encoding.UTF8.GetBytes(SkalaVersion.Value);
+            var version = Encoding.UTF8.GetBytes(Stamp);
             var header = new byte[20 + version.Length + 16];
             BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(0), Magic);
             BinaryPrimitives.WriteInt32LittleEndian(header.AsSpan(4), FormatVersion);
@@ -129,14 +144,15 @@ internal sealed class CloneIndex {
             }
 
             var versionLength = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(8));
-            if (versionLength is < 0 or > 64 || bytes.Length < 20 + versionLength + 16) {
+            if (versionLength is < 0 or > 128 || bytes.Length < 20 + versionLength + 16) {
                 changed = true;
                 return;
             }
 
             var version = Encoding.UTF8.GetString(bytes, 12, versionLength);
-            if (!string.Equals(version, SkalaVersion.Value, StringComparison.Ordinal)) {
-                // A different build may normalise differently. Its streams are not this build's.
+            if (!string.Equals(version, Stamp, StringComparison.Ordinal)) {
+                // ⚠ A different build, or the same build with a different tokeniser, does normalise
+                // differently. Its streams are not this build's.
                 changed = true;
                 return;
             }
@@ -180,6 +196,7 @@ internal sealed class CloneIndex {
     static Entry ReadEntry(ref Cursor cursor) {
         var path = cursor.ReadString();
         var contentHash = cursor.ReadString();
+        var headerLines = cursor.ReadVarInt();
         var count = cursor.ReadVarInt();
 
         var codes = new ushort[count];
@@ -198,7 +215,7 @@ internal sealed class CloneIndex {
             previousEnd = end;
         }
 
-        return new(path, contentHash, TokenStream.FromArrays(codes, starts, ends));
+        return new(path, contentHash, TokenStream.FromArrays(codes, starts, ends, headerLines));
     }
 
     static byte[] WritePayload(List<Entry> entries) {
@@ -213,6 +230,10 @@ internal sealed class CloneIndex {
             writer.WriteString(entry.ContentHash);
 
             var tokens = entry.Tokens;
+
+            // ⚠ The header line count is derived from tokens that are no longer in the stream, so it
+            // cannot be re-derived from one. It is part of the entry or it is lost on the warm run.
+            writer.WriteVarInt(tokens.HeaderLines);
             writer.WriteVarInt(tokens.Count);
             for (var i = 0; i < tokens.Count; i++) {
                 writer.WriteUInt16(tokens.Codes[i]);
