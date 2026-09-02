@@ -45,7 +45,7 @@ public sealed class SecurityCorpusTests {
     /// <summary>The security analyzers, and only those — the corpus is about this range.</summary>
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new SqlInjectionAnalyzer(), new ProcessArgumentInjectionAnalyzer(), new WeakCipherAnalyzer(),
-        new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer()
+        new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(), new RegexTimeoutAnalyzer()
     ];
 
     static string Root { get; } = Path.Combine(
@@ -105,6 +105,7 @@ public sealed class SecurityCorpusTests {
     [InlineData(RuleIds.WeakCipherAlgorithm, 6)]
     [InlineData(RuleIds.CertificateValidationDisabled, 5)]
     [InlineData(RuleIds.XmlExternalEntityResolution, 2)]
+    [InlineData(RuleIds.RegexWithoutTimeout, 2)]
     public void TheVulnerableHalf_ProducesExactlyTheKnownCount(string ruleId, int expected) {
         var findings = Analyze("vulnerable").Where(finding => finding.Id == ruleId).ToArray();
 
@@ -112,6 +113,32 @@ public sealed class SecurityCorpusTests {
             findings.Length == expected,
             $"{ruleId}: expected {expected} finding(s) in corpus/vulnerable, got {findings.Length}:\n"
             + string.Join("\n", findings.Select(Describe))
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ No security analyzer threw on either half of the corpus.
+    /// </summary>
+    /// <remarks>
+    ///     Roslyn swallows an analyzer exception as <c>AD0001</c> and lets the analyzer produce nothing
+    ///     for the rest of the compilation — so a crash makes
+    ///     <see cref="TheSafeHalf_ProducesNoFindingAtAll" /> pass perfectly and turns
+    ///     <see cref="TheVulnerableHalf_ProducesExactlyTheKnownCount" /> into a count of zero that
+    ///     somebody has to notice. Nothing else in this class can tell a clean run from a dead one, and
+    ///     the fixture harness filters diagnostics down to the rule under test, which drops
+    ///     <c>AD0001</c> before anybody sees it.
+    /// </remarks>
+    [Theory]
+    [InlineData("safe")]
+    [InlineData("vulnerable")]
+    public void NoSecurityAnalyzerCrashed_OnEitherHalf(string half) {
+        var crashes = Analyze(half).Where(static finding => finding.Id == "AD0001").ToArray();
+
+        Assert.True(
+            crashes.Length == 0,
+            $"an analyzer threw on corpus/{half} and Roslyn swallowed it as AD0001, so every count in "
+            + "this class is measuring a rule that stopped running:\n"
+            + string.Join("\n", crashes.Select(static finding => "  " + finding.GetMessage()))
         );
     }
 

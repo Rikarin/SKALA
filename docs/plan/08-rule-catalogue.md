@@ -1011,7 +1011,8 @@ input · `SK5003` path built from user input without `Path.GetFullPath` containm
 `SK5004` deserialization of untrusted input with a polymorphic serializer · `SK5005` weak
 hash/cipher (`MD5`, `SHA1`, `DES`, ECB) · `SK5006` hardcoded credential or key material by shape and
 entropy · `SK5007` certificate validation disabled · `SK5008` `Random` used for a token or key ·
-`SK5009` XML reader with DTD processing enabled.
+`SK5009` XML reader with DTD processing enabled · `SK5010` a pattern that can backtrack, run with
+no timeout.
 
 Taint-tracked rules (`SK5001`–`SK5004`) are built on Roslyn's `ControlFlowGraph` +
 `DataFlowAnalysis` with intra-procedural propagation and a declared source/sink/sanitizer table in
