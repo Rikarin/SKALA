@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Modernization;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Cleanup;
@@ -11,8 +12,29 @@ namespace Rikarin.Skala.Rules.Cleanup;
 /// <summary><c>SK0240</c> — control flow that transfers to where control was already going.</summary>
 /// <remarks>
 ///     <para>
-///         Three shapes, one concept: a jump whose target is the next thing that would have happened
-///         anyway, a <c>default:</c> section that only breaks, and a <c>catch</c> that only rethrows.
+///         Five shapes, one concept: a jump whose target is the next thing that would have happened
+///         anyway, a <c>default:</c> section that only breaks, a <c>case</c> label sharing its section
+///         with <c>default:</c>, a <c>catch</c> that only rethrows, and an empty <c>finally</c>.
+///     </para>
+///     <para>
+///         ⚠
+///         <b>
+///             The comment guards ask about the span the fix <em>deletes</em>, never about the node's
+///             leading trivia, and getting that wrong cost this rule two of its own shapes.
+///         </b> The
+///         first version asked <c>DescendantTrivia</c> of the <c>catch</c> clause and of the
+///         <c>default:</c> section — and a node's descendant trivia begins with its first token's
+///         <em>leading</em> trivia, which is the comment written on the line <em>above</em> it. The fix
+///         deletes <c>clause.Span</c> and <c>section.Span</c>, both of which start at the keyword, so
+///         that comment was never at risk; the guard withdrew a correct finding to protect text the fix
+///         does not touch. Measured, not read: a <c>// deliberate</c> above the <c>catch</c> took the
+///         count from 1 to 0, and the same above <c>default:</c> did too. This is the shape recorded as
+///         [#302], and the two branches here now ask
+///         <see cref="RewriteGuards.ContainsCommentOrDirective(SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan)" />
+///         over the deleted span instead. ⚠ The sibling rules were probed the same way and are clean:
+///         <c>SK0241</c> deletes from a keyword to the next token and guards only that keyword's
+///         <em>trailing</em> trivia, and <c>SK0244</c> deletes a declaration's <em>full</em> span, so
+///         its leading-trivia guard covers exactly what it removes.
 ///     </para>
 ///     <para>
 ///         ⚠ <b>The <c>catch (X) { throw; }</c> member is the one that matters</b> and the other two are
@@ -138,40 +160,102 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
         || accessor.Keyword.IsKind(SyntaxKind.RemoveKeyword);
 
     /// <summary>
-    ///     A <c>default:</c> section whose only statement is <c>break;</c>.
+    ///     Two shapes in one <c>switch</c>: a <c>default:</c> section whose only statement is
+    ///     <c>break;</c>, and a <c>case</c> label sharing its section with <c>default:</c>.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <c>goto default;</c> anywhere in the same switch withdraws the finding. The section is the
-    ///     jump's target, so deleting it turns a redundancy into CS0159 — a fix that does not compile is
-    ///     the one failure a fixing tool may not have.
+    ///     ⚠ <c>goto default;</c> anywhere in the same switch withdraws the first finding and
+    ///     <c>goto case X;</c> withdraws the second. The label is the jump's target, so deleting it
+    ///     turns a redundancy into CS0159 — a fix that does not compile is the one failure a fixing
+    ///     tool may not have.
+    ///     <para>
+    ///         ⚠ <b>The two shapes are exclusive by construction and that is deliberate.</b> A
+    ///         <c>default:</c> section that only breaks is deleted whole, so reporting a
+    ///         <c>case</c> label inside it as well would be two edits over one span; the label branch
+    ///         therefore requires the section to survive, which is exactly the case the first branch
+    ///         declines.
+    ///     </para>
     /// </remarks>
     static void AnalyzeSwitch(SyntaxNodeAnalysisContext context) {
         var statement = (SwitchStatementSyntax)context.Node;
+        var tree = context.Node.SyntaxTree;
         foreach (var section in statement.Sections) {
-            if (section.Labels.Count != 1
-                || !section.Labels[0].IsKind(SyntaxKind.DefaultSwitchLabel)
-                || section.Statements.Count != 1
-                || !section.Statements[0].IsKind(SyntaxKind.BreakStatement)
-                || !HasNoCommentOrDirective(section)
-                || HasGotoDefault(statement)) {
+            if (!HasDefaultLabel(section)) {
                 continue;
             }
 
-            context.ReportDiagnostic(
-                Diagnostic.Create(
-                    Descriptor,
-                    section.GetLocation(),
-                    FixEdits.Pack((section.Span, string.Empty)),
-                    "the `default:` section only breaks, which is what a `switch` with no matching section "
-                    + "already does"
-                )
-            );
+            // ⚠ The whole section goes first, extra labels and all, and that ordering is what makes
+            // the fix converge in one pass. Reporting the `case` label of `case 2: default: break;`
+            // leaves `default: break;` behind — which is this rule's *other* switch shape, so the
+            // fix's own output still carries a finding. Deleting the section answers both at once,
+            // and it is behaviour-preserving for the same reason the single-label case is: every
+            // value the section named now falls off the end of the switch, which is what `break` did.
+            if (section.Statements.Count == 1 && section.Statements[0].IsKind(SyntaxKind.BreakStatement)) {
+                if (!RewriteGuards.ContainsCommentOrDirective(tree, section.Span)
+                    && HasNoDirective(section)
+                    && !HasGoto(statement, SyntaxKind.GotoDefaultStatement)
+                    && (section.Labels.Count == 1 || !HasGoto(statement, SyntaxKind.GotoCaseStatement))) {
+                    context.ReportDiagnostic(
+                        Diagnostic.Create(
+                            Descriptor,
+                            section.GetLocation(),
+                            FixEdits.Pack((section.Span, string.Empty)),
+                            "the `default:` section only breaks, which is what a `switch` with no matching section "
+                            + "already does"
+                        )
+                    );
+                }
+
+                continue;
+            }
+
+            // ⚠ Any `goto case` withdraws every label in the switch rather than only the matching
+            // one. Matching the jump's expression to the label's would mean comparing two constant
+            // expressions without a semantic model — `goto case Colour.Red;` against `case Red:` —
+            // and being wrong there produces CS0159 from a fix marked safe.
+            if (HasGoto(statement, SyntaxKind.GotoCaseStatement)) {
+                continue;
+            }
+
+            foreach (var label in section.Labels) {
+                if (label.IsKind(SyntaxKind.DefaultSwitchLabel)
+                    || RewriteGuards.ContainsCommentOrDirective(tree, LabelSpan(label))
+                    || !HasNoDirective(label)) {
+                    continue;
+                }
+
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        Descriptor,
+                        label.GetLocation(),
+                        FixEdits.Pack((LabelSpan(label), string.Empty)),
+                        "the label shares its section with `default:`, which every value reaches anyway, so "
+                        + "naming this one selects nothing"
+                    )
+                );
+            }
         }
     }
 
-    static bool HasGotoDefault(SwitchStatementSyntax statement) {
+    /// <summary>
+    ///     The label and the whitespace up to the next token, so deleting it does not orphan a line.
+    /// </summary>
+    static TextSpan LabelSpan(SwitchLabelSyntax label) =>
+        TextSpan.FromBounds(label.SpanStart, label.GetLastToken().GetNextToken().SpanStart);
+
+    static bool HasDefaultLabel(SwitchSectionSyntax section) {
+        foreach (var label in section.Labels) {
+            if (label.IsKind(SyntaxKind.DefaultSwitchLabel)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static bool HasGoto(SwitchStatementSyntax statement, SyntaxKind kind) {
         foreach (var node in statement.DescendantNodes()) {
-            if (node.IsKind(SyntaxKind.GotoDefaultStatement)) {
+            if (node.IsKind(kind)) {
                 return true;
             }
         }
@@ -193,32 +277,115 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static void AnalyzeTry(SyntaxNodeAnalysisContext context) {
         var statement = (TryStatementSyntax)context.Node;
-        if (statement.Catches.Count == 0) {
+        if (ReportRethrowingCatch(context, statement)) {
             return;
+        }
+
+        ReportEmptyFinally(context, statement);
+    }
+
+    /// <summary>Whether the statement's last <c>catch</c> was reported as an inert rethrow.</summary>
+    static bool ReportRethrowingCatch(SyntaxNodeAnalysisContext context, TryStatementSyntax statement) {
+        if (statement.Catches.Count == 0) {
+            return false;
         }
 
         var clause = statement.Catches[statement.Catches.Count - 1];
         if (clause.Filter is not null
             || clause.Block.Statements.Count != 1
             || clause.Block.Statements[0] is not ThrowStatementSyntax { Expression: null }
-            || !HasNoCommentOrDirective(clause)) {
+            || !HasNoDirective(clause)) {
+            return false;
+        }
+
+        var tree = context.Node.SyntaxTree;
+        if (RewriteGuards.ContainsCommentOrDirective(tree, clause.Span)) {
+            return false;
+        }
+
+        // ⚠ An empty `finally` on the same `try` is the *other* shape of this rule, and the two have
+        // to be answered together. Reported separately they are two findings whose edits compose into
+        // `try { … }` — CS1524 — and reported one-per-pass the fix's own output still carries a
+        // finding, which is what `FixRoundTripTests` calls an edit that did not address the finding.
+        // So the clause that survives decides one composite edit here.
+        var emptyFinally = IsDeletableEmptyFinally(tree, statement) ? statement.Finally : null;
+
+        (TextSpan Span, string Text)[] edits;
+        if (statement.Catches.Count > 1) {
+            edits = emptyFinally is null
+                ? [(clause.Span, string.Empty)]
+                : [(clause.Span, string.Empty), (emptyFinally.Span, string.Empty)];
+        } else if (statement.Finally is not null && emptyFinally is null) {
+            // A `finally` that does work survives, so `try { … } finally { … }` still parses.
+            edits = [(clause.Span, string.Empty)];
+        } else if (CanUnwrap(statement) && !LosesText(tree, statement)) {
+            edits = [(statement.Span, BlockContents(context, statement))];
+        } else {
+            return false;
+        }
+
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                Descriptor,
+                clause.CatchKeyword.GetLocation(),
+                FixEdits.Pack(edits),
+                "the `catch` only rethrows, so it handles nothing and resets nothing — the exception "
+                + "propagates exactly as it would with no `catch` at all"
+            )
+        );
+
+        return true;
+    }
+
+    /// <summary>Whether the statement's <c>finally</c> is one this rule may delete.</summary>
+    static bool IsDeletableEmptyFinally(SyntaxTree tree, TryStatementSyntax statement) =>
+        statement.Finally is { Block.Statements.Count: 0 } clause
+        && HasNoDirective(clause)
+        && !RewriteGuards.ContainsCommentOrDirective(tree, clause.Span);
+
+    /// <summary>The text between the try block's braces, which is what an unwrap leaves behind.</summary>
+    static string BlockContents(SyntaxNodeAnalysisContext context, TryStatementSyntax statement) =>
+        context.Node.SyntaxTree.GetText(context.CancellationToken)
+            .ToString(
+                TextSpan.FromBounds(
+                    statement.Block.OpenBraceToken.Span.End,
+                    statement.Block.CloseBraceToken.SpanStart
+                )
+            );
+
+    /// <summary>
+    ///     A <c>finally { }</c> with nothing in it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>An empty <c>finally</c> is the <c>catch</c>'s mirror image and it is the member of
+    ///     [#131]'s thirteen that the shipped rule's own accounting had lost.</b> It reads as a
+    ///     guarantee — this runs whatever happens — and there is nothing to run, so every question it
+    ///     raises has the answer "nothing happens here".
+    ///     <para>
+    ///         ⚠ <b>Never reported on a <c>try</c> whose <c>catch</c> was already reported</b>, and that
+    ///         is a correctness constraint rather than tidiness. The two edits are separate spans, so
+    ///         nothing stops <c>skala fix</c> applying both — and applying both to
+    ///         <c>try { A } catch (E) { throw; } finally { }</c> leaves <c>try { A }</c>, which is
+    ///         CS1524. One finding per <c>try</c> per pass; the second shape is reported by the next
+    ///         pass over the fixed text, which is a convergent sequence rather than a loop.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Where the <c>finally</c> is the only clause the whole statement has to be replaced by
+    ///         its block's contents, under exactly <see cref="CanUnwrap" />'s conditions — the same
+    ///         CS1524 and the same escaping locals as the sole-<c>catch</c> case.
+    ///     </para>
+    /// </remarks>
+    static void ReportEmptyFinally(SyntaxNodeAnalysisContext context, TryStatementSyntax statement) {
+        var tree = context.Node.SyntaxTree;
+        if (!IsDeletableEmptyFinally(tree, statement) || statement.Finally is not { } clause) {
             return;
         }
 
-        TextSpan span;
-        string replacement;
-        if (statement.Catches.Count > 1 || statement.Finally is not null) {
-            span = clause.Span;
-            replacement = string.Empty;
-        } else if (CanUnwrap(statement)) {
-            span = statement.Span;
-            replacement = context.Node.SyntaxTree.GetText(context.CancellationToken)
-                .ToString(
-                    TextSpan.FromBounds(
-                        statement.Block.OpenBraceToken.Span.End,
-                        statement.Block.CloseBraceToken.SpanStart
-                    )
-                );
+        (TextSpan Span, string Text) edit;
+        if (statement.Catches.Count > 0) {
+            edit = (clause.Span, string.Empty);
+        } else if (CanUnwrap(statement) && !LosesText(tree, statement)) {
+            edit = (statement.Span, BlockContents(context, statement));
         } else {
             return;
         }
@@ -226,13 +393,33 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
-                clause.CatchKeyword.GetLocation(),
-                FixEdits.Pack((span, replacement)),
-                "the `catch` only rethrows, so it handles nothing and resets nothing — the exception "
-                + "propagates exactly as it would with no `catch` at all"
+                clause.FinallyKeyword.GetLocation(),
+                FixEdits.Pack(edit),
+                "the `finally` block is empty, so it guarantees that nothing happens — which is what "
+                + "happens with no `finally` at all"
             )
         );
     }
+
+    /// <summary>
+    ///     ⚠ Whether unwrapping a <c>try</c> would delete text a person wrote.
+    /// </summary>
+    /// <remarks>
+    ///     The unwrap keeps the block's <em>contents</em> verbatim, so a comment inside the block
+    ///     survives and must not withdraw the finding — checking the whole replaced span, which is what
+    ///     the deletion cases check, would silence the rule on every commented <c>try</c> body. What is
+    ///     actually lost is the header up to the block's <c>{</c> and the tail from its <c>}</c>
+    ///     onwards, so those two spans are the ones asked about.
+    /// </remarks>
+    static bool LosesText(SyntaxTree tree, TryStatementSyntax statement) =>
+        RewriteGuards.ContainsCommentOrDirective(
+                tree,
+                TextSpan.FromBounds(statement.SpanStart, statement.Block.OpenBraceToken.Span.End)
+            )
+            || RewriteGuards.ContainsCommentOrDirective(
+                tree,
+                TextSpan.FromBounds(statement.Block.CloseBraceToken.SpanStart, statement.Span.End)
+        );
 
     /// <summary>
     ///     Whether <c>try { A } catch { throw; }</c> may be replaced by <c>A</c>.
@@ -278,21 +465,4 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
         return true;
     }
 
-    /// <summary>
-    ///     ⚠ A comment inside the span withdraws the finding, because the fix deletes the span and the
-    ///     comment with it. <c>default: break; // nothing to do for the rest</c> is the author answering
-    ///     the question the reader was about to ask, and a cleanup that silently deletes prose has made
-    ///     the file worse than it found it.
-    /// </summary>
-    static bool HasNoCommentOrDirective(SyntaxNode node) {
-        foreach (var trivia in node.DescendantTrivia(descendIntoTrivia: true)) {
-            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                || trivia.IsDirective) {
-                return false;
-            }
-        }
-
-        return HasNoDirective(node);
-    }
 }
