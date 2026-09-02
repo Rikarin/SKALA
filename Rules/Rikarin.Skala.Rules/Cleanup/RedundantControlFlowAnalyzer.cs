@@ -169,11 +169,18 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///     turns a redundancy into CS0159 — a fix that does not compile is the one failure a fixing
     ///     tool may not have.
     ///     <para>
-    ///         ⚠ <b>The two shapes are exclusive by construction and that is deliberate.</b> A
-    ///         <c>default:</c> section that only breaks is deleted whole, so reporting a
-    ///         <c>case</c> label inside it as well would be two edits over one span; the label branch
-    ///         therefore requires the section to survive, which is exactly the case the first branch
-    ///         declines.
+    ///         ⚠
+    ///         <b>
+    ///             The two shapes are exclusive, the whole-section one wins, and that ordering is what
+    ///             makes the fix converge in one pass.
+    ///         </b> A section that only breaks is deleted entire —
+    ///         extra <c>case</c> labels and all — rather than having its labels reported one at a
+    ///         time, because deleting the <c>case 2:</c> of <c>case 2: default: break;</c> leaves
+    ///         <c>default: break;</c>, which is this rule's <em>other</em> switch shape: the fix's own
+    ///         output would still carry a finding. Deleting the section answers both at once and is
+    ///         behaviour-preserving for the same reason the single-label case is — every value the
+    ///         section named now falls off the end of the switch, which is what <c>break</c> did. The
+    ///         label branch therefore only ever sees a section that does real work.
     ///     </para>
     /// </remarks>
     static void AnalyzeSwitch(SyntaxNodeAnalysisContext context) {
