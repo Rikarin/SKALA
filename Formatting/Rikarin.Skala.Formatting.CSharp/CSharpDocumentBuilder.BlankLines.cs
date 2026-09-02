@@ -1100,9 +1100,6 @@ public sealed partial class CSharpDocumentBuilder {
                 case SwitchStatementSyntax when options.IndentSwitchLabels:
                     level++;
                     break;
-
-                default:
-                    break;
             }
         }
 

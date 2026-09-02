@@ -30,7 +30,7 @@ public static class XmlDoc {
 
     public static FormatResult Run(string source, params (string Key, string Value)[] overrides) {
         var options = Resolve(overrides);
-        return CSharpFormatter.Format("Test.cs", SourceText.From(source), options, null, null, true);
+        return CSharpFormatter.Format("Test.cs", SourceText.From(source), options);
     }
 
     public static string Text(string source, params (string Key, string Value)[] overrides) =>

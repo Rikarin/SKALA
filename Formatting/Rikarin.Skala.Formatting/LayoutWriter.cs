@@ -238,9 +238,6 @@ public sealed class LayoutWriter {
                         // for why the group's own width is not the whole measurement.
                         fitter.Enter(node, CurrentColumn(), ContinuationColumn(slot.Arg1), TrailingWidth(stack));
                         break;
-
-                    default:
-                        break;
                 }
             }
 

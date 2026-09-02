@@ -72,7 +72,8 @@ public static class SarifWriter {
             }
         );
 
-        using var writer = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
+        using var writer = new StringWriter(CultureInfo.InvariantCulture);
+        writer.NewLine = "\n";
         serializer.Serialize(writer, log);
         return writer.ToString();
     }
