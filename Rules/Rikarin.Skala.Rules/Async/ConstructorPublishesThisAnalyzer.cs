@@ -53,12 +53,16 @@ namespace Rikarin.Skala.Rules.Async;
 ///         </item>
 ///     </list>
 ///     <para>
-///         ⚠ <b>Shape A stops at the constructor's own type, and the boundary is <c>SK2134</c>.</b>
-///         <c>current = this;</c> in a constructor, writing this type's own static field, is the
-///         canonical shape of <c>instance-write-to-static</c> and is already reported there. Two rules
-///         on one line is a double-report, and the reader who has to decide which of two findings to
-///         act on acts on neither. <c>SK3062/negative/the-own-types-static-field.cs</c> is what holds
-///         the exclusion.
+///         ⚠ <b>Shape A stops at the constructor's own static <em>field</em>, and the boundary is
+///         <c>SK2134</c>.</b> <c>current = this;</c> in a constructor, writing this type's own static
+///         field, is the canonical shape of <c>instance-write-to-static</c> and is already reported
+///         there. Two rules on one line is a double-report, and the reader who has to decide which of
+///         two findings to act on acts on neither.
+///         <c>SK3062/negative/the-own-types-static-field.cs</c> is what holds the exclusion.
+///         ⚠ A static <em>property</em> is not excluded (#306): <c>SK2134</c> gives up on
+///         <c>is not IFieldSymbol field</c> and never reports one, so the own type's static property
+///         used to fall through both rules. <c>SK3062/positive/the-own-types-static-property.cs</c> is
+///         the closing of that gap.
 ///     </para>
 ///     <para>
 ///         Report-only. Every repair — a factory method that constructs and then publishes, a separate
@@ -130,7 +134,7 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
 
                     break;
                 case AssignmentExpressionSyntax assignment when assignment.IsKind(SyntaxKind.AddAssignmentExpression):
-                    SubscribedToALongLivedEvent(context, assignment);
+                    SubscribedToALongLivedEvent(context, assignment, owner);
 
                     break;
                 case InvocationExpressionSyntax invocation:
@@ -151,6 +155,14 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
     ///     calls it the canonical shape of its own concept, so admitting the own type here would put two
     ///     findings on one line. The exclusion costs nothing in coverage: a type storing itself in its
     ///     own static slot is already told about it, in the vocabulary of the rule that owns that shape.
+    ///     <para>
+    ///         ⚠ <b>But <c>SK2134</c> only reports a <em>field</em></b> (#306). It binds the assignment
+    ///         target and gives up on <c>is not IFieldSymbol field</c>, so
+    ///         <c>MyType.Current = this;</c> where <c>Current</c> is this type's own static
+    ///         <em>property</em> was excluded here and invisible there — a gap between two rules that
+    ///         each believed the other had it. The exclusion is therefore narrowed to static fields, and
+    ///         it creates no double-report, because <c>SK2134</c> cannot reach the property either way.
+    ///     </para>
     /// </remarks>
     static void StoredInStaticState(
         SyntaxNodeAnalysisContext context,
@@ -164,7 +176,8 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
         var target = context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol;
         if (target is not (IFieldSymbol { IsStatic: true } or IPropertySymbol { IsStatic: true })
             || target.ContainingType is not { } holder
-            || SymbolEqualityComparer.Default.Equals(holder.OriginalDefinition, owner.OriginalDefinition)) {
+            || target is IFieldSymbol
+            && SymbolEqualityComparer.Default.Equals(holder.OriginalDefinition, owner.OriginalDefinition)) {
             return;
         }
 
@@ -245,10 +258,25 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
     ///         special case: <c>this</c> is not static state, and an object subscribing to its own event
     ///         has published nothing.
     ///     </para>
+    ///     <para>
+    ///         ⚠ <b>The receiver is half the question; the handler is the other half</b> (#306). The
+    ///         shape shipped without looking at the right-hand side at all, so
+    ///         <c>Clock.Tick += StaticHandler;</c> and
+    ///         <c>AppDomain.CurrentDomain.ProcessExit += (s, e) =&gt; Console.WriteLine("bye");</c> were
+    ///         both reported and neither publishes anything. That is a whole class rather than an edge:
+    ///         every constructor subscribing a static handler or a non-capturing lambda to a static event
+    ///         drew a finding. <c>Reaches</c> — shape D's own test, unchanged — is what the handler now
+    ///         has to satisfy.
+    ///     </para>
     /// </remarks>
-    static void SubscribedToALongLivedEvent(SyntaxNodeAnalysisContext context, AssignmentExpressionSyntax assignment) {
+    static void SubscribedToALongLivedEvent(
+        SyntaxNodeAnalysisContext context,
+        AssignmentExpressionSyntax assignment,
+        INamedTypeSymbol owner
+    ) {
         if (context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol
-            is not IEventSymbol published) {
+            is not IEventSymbol published
+            || !Reaches(context, assignment.Right, owner)) {
             return;
         }
 

@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Async;
+using Rikarin.Skala.Rules.Correctness;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Tests;
@@ -213,5 +214,68 @@ public sealed class LockLifetimeAndPublicationBatchTests {
         var diagnostics = RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain(diagnostics, static diagnostic => diagnostic.Id == "AD0001");
+    }
+
+    /// <summary>
+    ///     ⚠ <b>Shape A's exclusion is a static <em>field</em>, because that is all <c>SK2134</c> can
+    ///     see</b> (#306).
+    /// </summary>
+    /// <remarks>
+    ///     <c>SK3062</c> stepped aside for any static member of the constructor's own type, to keep two
+    ///     findings off one line. <c>SK2134</c> (<c>instance-write-to-static</c>) binds the assignment
+    ///     target and gives up on <c>is not IFieldSymbol field</c>, so a static <em>property</em> fell
+    ///     through both. The two directions are asserted together and both matter: the field must stay
+    ///     <c>SK2134</c>'s alone, and the property must now be <c>SK3062</c>'s alone. Asserting either
+    ///     on its own would pass while the other rule had silently taken the line over.
+    /// </remarks>
+    [Fact]
+    public void TheOwnTypesStaticProperty_IsSK3062sAlone_AndTheFieldStaysSK2134s() {
+        ImmutableArray<DiagnosticAnalyzer> both = [
+            new ConstructorPublishesThisAnalyzer(), new InstanceWriteToStaticAnalyzer()
+        ];
+
+        const string property = """
+                                public sealed class Session {
+                                    public Session(string user) {
+                                        Current = this;
+                                        User = user;
+                                    }
+
+                                    public static Session? Current { get; private set; }
+
+                                    public string User { get; }
+                                }
+                                """;
+        var onProperty = RuleFixtures.Analyze(
+            RuleFixtures.Compile(property, "property.cs"),
+            both,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Contains(onProperty, static diagnostic => diagnostic.Id == "SK3062");
+        Assert.DoesNotContain(onProperty, static diagnostic => diagnostic.Id == "SK2134");
+
+        const string field = """
+                             public sealed class Session {
+                                 static Session? current;
+
+                                 public Session(string user) {
+                                     current = this;
+                                     User = user;
+                                 }
+
+                                 public static Session? Current => current;
+
+                                 public string User { get; }
+                             }
+                             """;
+        var onField = RuleFixtures.Analyze(
+            RuleFixtures.Compile(field, "field.cs"),
+            both,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Contains(onField, static diagnostic => diagnostic.Id == "SK2134");
+        Assert.DoesNotContain(onField, static diagnostic => diagnostic.Id == "SK3062");
     }
 }
