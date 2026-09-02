@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 334 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 336 ids are allocated.
 
 ## Async
 
@@ -51,6 +51,7 @@
 | [SK0280](SK0280.md) | The base list names an interface it already has | warning | safe | no |
 | [SK0281](SK0281.md) | The attribute promises to set members that do not exist | warning | safe | no |
 | [SK0282](SK0282.md) | The record writes out the property its parameter generates | warning | safe | no |
+| [SK0290](SK0290.md) | The explicit `Nullable<T>` construction converts nothing | warning | safe | no |
 
 ## Correctness
 
@@ -165,6 +166,7 @@
 | [SK2240](SK2240.md) | The `with` expression rewrites every member | warning | review | no |
 | [SK2241](SK2241.md) | The regular expression pattern does not parse | warning | — | no |
 | [SK2242](SK2242.md) | The argument check does not run until the result is enumerated | warning | — | no |
+| [SK2290](SK2290.md) | Every call discards this `out` parameter's value | suggestion | — | no |
 
 ## Design
 

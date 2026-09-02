@@ -451,7 +451,6 @@ trap `SK0240`'s deleted iterator guard was committed into once already. **Fixed
 `LooseLoader` has always passed in production, and `SK0241`'s nested-context shapes are fixturable.
 ⚠ The related claim that this blocked `SK2221` is **refuted**: `[UnsafeAccessor]` requires `extern`,
 not `unsafe`.
-trap `SK0240`'s deleted iterator guard was committed into once already.
 
 ### Cleanup — `SK0260`
 
@@ -3446,8 +3445,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **360** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **324** | **90.8 %** |
+| Rules this document names | **362** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **326** | **90.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, then withdrawn or never built | **3** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
