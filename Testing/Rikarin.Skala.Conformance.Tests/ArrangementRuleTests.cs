@@ -77,12 +77,17 @@ public sealed class ArrangementRuleTests {
         var text = SourceText.From(source);
         var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, path);
 
-        // ⚠ The kind is chosen from the file, exactly as `RuleFixtures.Compile` chose it in #314. A
-        // probe holding top-level statements is an executable; compiled as a library it draws
-        // `CS8805` — "Program using top-level statements must be an executable" — which is present
-        // before and after the rewrite and so cancels out of the safety layer's `appeared` set. The
-        // probe would still be a probe, but of a compilation no `skala arrange` run ever sees, and
-        // SK0213's regression case is precisely about the top-level shape.
+        // The kind is chosen from the file, as `RuleFixtures.Compile` chose it in #314: a probe
+        // holding top-level statements is an executable, and compiled as a library it draws
+        // `CS8805` — "Program using top-level statements must be an executable".
+        //
+        // ⚠ Measured, and it is NOT what lets `NamespaceBody_IsLeftAloneInATopLevelProgram` catch
+        // the bug; believing it was is the claim this comment used to make, and it is refuted.
+        // `CS8805` is present before *and* after the rewrite, so it cancels out of the safety
+        // layer's appeared-set: with the old library-only kind restored, that fixture still goes red
+        // on `CS8956` alone. What this buys is that the probe binds the compilation a real
+        // `skala arrange` run binds, instead of one carrying an error no user's build has — which
+        // matters for the next top-level fixture, not for this one.
         var topLevel = tree.GetRoot() is CompilationUnitSyntax unit
             && unit.Members.Any(static member => member is GlobalStatementSyntax);
 
@@ -530,12 +535,13 @@ public sealed class ArrangementRuleTests {
     ///         <c>SK9098</c> separates "the rule declined" from "the rule tried and was caught".
     ///     </para>
     ///     <para>
-    ///         ⚠ This fixture was impossible before #314. Every arrangement probe compiled as a
-    ///         <see cref="OutputKind.DynamicallyLinkedLibrary" />, which answers top-level statements
-    ///         with <c>CS8805</c> — present before and after, so it cancels out of the safety layer's
-    ///         appeared-set and the probe measures a compilation no real run produces.
-    ///         <see cref="Attempt" /> now picks the kind from the file the same way
-    ///         <c>RuleFixtures.Compile</c> does.
+    ///         ⚠ The issue expected this fixture to be impossible before #314's <c>OutputKind</c>
+    ///         selection, and <b>that is refuted</b> — measured by restoring the library-only kind with
+    ///         the guard sabotaged, where the case still goes red on <c>CS8956</c>. #314's constraint
+    ///         was the analyzer harness's, where <c>CS8805</c> makes a fixture "does not compile" and
+    ///         is rejected outright; here <c>CS8805</c> merely appears before <em>and</em> after and
+    ///         cancels out of the appeared-set. <see cref="Attempt" /> picks the kind from the file
+    ///         anyway, so the probe binds what a real run binds.
     ///     </para>
     /// </remarks>
     [Fact]
