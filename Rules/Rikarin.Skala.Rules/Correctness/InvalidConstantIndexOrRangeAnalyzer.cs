@@ -194,6 +194,15 @@ public sealed class InvalidConstantIndexOrRangeAnalyzer : DiagnosticAnalyzer {
     ///     ⚠ A dictionary is excluded outright: <c>map[-1]</c> is an ordinary key lookup and not an
     ///     out-of-range access. A user-defined indexer outside these contracts is free to give a
     ///     negative argument any meaning it likes.
+    ///     <para>
+    ///         ⚠ <b>The <see cref="IsKeyed" /> test is the statement of intent and is not what works.</b>
+    ///         A sabotage removed it and no fixture went red: <c>Dictionary&lt;int, V&gt;</c> implements
+    ///         <c>IDictionary</c> and <c>IReadOnlyDictionary</c> and neither <c>IList</c> nor
+    ///         <c>IReadOnlyList</c>, so the positive test below already declines it. It is kept because
+    ///         a type implementing both would be admitted the day one exists, and because a guard that
+    ///         says what the rule means costs nothing — but it is not credited, the way SK2053 does not
+    ///         credit its own <c>IsLifted</c> clause.
+    ///     </para>
     /// </remarks>
     static bool IsPositionallyIndexed(ITypeSymbol receiver) {
         if (receiver.SpecialType == SpecialType.System_String) {

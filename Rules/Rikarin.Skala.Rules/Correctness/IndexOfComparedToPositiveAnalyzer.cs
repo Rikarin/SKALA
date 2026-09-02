@@ -51,6 +51,13 @@ public sealed class IndexOfComparedToPositiveAnalyzer : DiagnosticAnalyzer {
 
         // A user-defined `>` is somebody else's semantics, and a lifted one can be neither true nor
         // false in the way the rewrite assumes.
+        //
+        // ⚠ Both clauses are unreachable, and a sabotage is what proved it rather than reasoning
+        // afterwards: removing them turned no fixture red. The search must return `System.Int32` and
+        // the constant must be the literal `0`, so the comparison is always the *built-in* `int >
+        // int` — a user-defined operator cannot be selected for two `int` operands, and a lifted one
+        // would need an `int?` that no covered `IndexOf` returns. Kept as the statement of intent,
+        // the way SK2053 keeps its own `IsLifted` clause, and not credited as the thing that works.
         if (model.GetOperation(binary, cancellation) is not IBinaryOperation { OperatorMethod: null, IsLifted: false }) {
             return;
         }

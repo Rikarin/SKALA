@@ -97,6 +97,12 @@ public sealed class SingleIterationLoopAnalyzer : DiagnosticAnalyzer {
         };
 
     /// <summary>An empty body has no jump in it, and an empty loop is a different finding.</summary>
+    /// <remarks>
+    ///     ⚠ <b>Statement of intent, not the mechanism.</b> A sabotage removed it and no fixture went
+    ///     red: control falls straight off the end of an empty block, so <c>EndPointIsReachable</c> is
+    ///     already <c>true</c> and the flow test declines it a step later. Kept because it says what
+    ///     the rule means and saves the analysis, not because anything depends on it.
+    /// </remarks>
     static bool HasStatements(StatementSyntax body) =>
         body is not EmptyStatementSyntax && (body is not BlockSyntax block || block.Statements.Count > 0);
 

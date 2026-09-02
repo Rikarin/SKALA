@@ -111,6 +111,16 @@ public sealed class UnchangingLoopConditionAnalyzer : DiagnosticAnalyzer {
     ///     ⚠ A method call, a property, an element access, a field, <c>this</c> and an <c>await</c> each
     ///     withdraw the finding rather than being skipped over. The proof is "this expression has one
     ///     value for the whole loop", and every one of those reads state whose writers are not in view.
+    ///     <para>
+    ///         ⚠ <b>Three guards here cover for each other, and sabotage is what showed it.</b> A
+    ///         field-only condition is declined by the <c>MemberAccessExpressionSyntax</c> case when it
+    ///         is spelled <c>this.stopped</c>, by the <c>IFieldSymbol</c> case when it is spelled
+    ///         <c>stopped</c>, and by the empty-list test in the caller when both are removed — because
+    ///         a walk that collects nothing has nothing to prove. Removing any one of them left every
+    ///         fixture green. The identifier switch is the one that carries the concept, and the fixture
+    ///         that isolates it mixes a local with a field so that neither of the other two can reach.
+    ///         <c>MemberAccessExpressionSyntax</c> is kept as intent and is not credited.
+    ///     </para>
     /// </remarks>
     static List<ISymbol>? ReadVariables(SemanticModel model, ExpressionSyntax condition, CancellationToken cancellation) {
         var result = new List<ISymbol>();
