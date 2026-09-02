@@ -80,7 +80,6 @@ public static class ArrangeCommand {
         var range = ParseRange(request.Range);
 
         var changed = 0;
-        var failures = 0;
         var syntacticOnly = 0;
         var diagnostics = new List<SkalaDiagnostic>();
         var applied = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -149,7 +148,6 @@ public static class ArrangeCommand {
                     File.WriteAllText(file, final, text.Encoding ?? new UTF8Encoding(false));
                 }
             } catch (IOException exception) {
-                failures++;
                 diagnostics.Add(
                     new SkalaDiagnostic(FormatDiagnosticIds.FileIoFailed, SkalaSeverity.Error, exception.Message, file)
                 );
@@ -193,7 +191,22 @@ public static class ArrangeCommand {
             }
         }
 
-        var exit = failures > 0
+        // ⚠ #326 (4). Every error-severity diagnostic arrangement can emit says "this is a Skala
+        // bug": SK9098 and SK9096, the two safety-layer reverts; SK9097, a rule and the formatter
+        // that will not converge; and the I/O failure. So the failure test is the severity, and the
+        // count that used to stand here was the I/O failure and nothing else.
+        //
+        // ⚠ A revert exited **0**, measured. It writes a reproduction under `.skala/crash/`, prints
+        // an `error` line, applies no edit — and so bumps neither the old counter nor `changed`,
+        // which is the only other thing the exit code reads. `Lint` runs `arrange --check` and would
+        // have gone green over both bugs #326 reports. They surfaced because a person read the
+        // output, not because anything failed; the issue asked whether a gate should catch this, and
+        // the answer had to start by refuting that one already did.
+        //
+        // ⚠ `format` has had this the whole time — `FormatOutcome.VerificationFailed` sets
+        // `FileOutcome.Failed` and exits `InternalError`, so SK9099 fails a gate and SK9098 did not.
+        // Same promise, same shape, one of the two commands enforcing it.
+        var exit = diagnostics.Exists(static diagnostic => diagnostic.Severity >= SkalaSeverity.Error)
             ? ExitCodes.InternalError
             : (request.Check || request.Diff) && changed > 0
                 ? ExitCodes.FormattingNeeded
