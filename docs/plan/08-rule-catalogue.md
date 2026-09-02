@@ -1775,8 +1775,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **295** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **260** | **88.4 %** |
+| Rules this document names | **298** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **263** | **88.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -3529,3 +3529,107 @@ the declaration or sink the reader, write the implementation or delete the hook,
 per-instance or make the member static — and the finding is precisely the evidence that the author
 knows which and the analyzer does not. `SK2132` is the exception because there the two candidate
 repairs are not symmetric: one of them is a rename of a property that other code already calls.
+
+## `SK2200`–`SK2202` — events, delegates and effects that do not happen
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
+Correctness" only to keep it out of a section several concurrent branches were editing.** What follows
+is the register doing the one job ADR-012 needs it to do — the numbers are taken and written down
+where the next milestone will read them — together with the measurements that disposed of two of the
+five issues the batch was given. It is not yet the considered account the sections above carry, and it
+belongs beside `SK2013` and `SK2031`.
+
+Three rules from five issues, and the split is the interesting part. ⚠ **Two of the issue texts are
+wider than the inspections they cite, and in both cases the inspection is the decidable half.** The
+issues were written from an inspection id joined to a category, and the widening happened in the
+sentence explaining why Skala should have the rule — which is exactly the place a specification is
+least likely to be re-read against the source.
+
+- `SK2200` **the field initializer is overwritten by every constructor** ([#12](https://github.com/Rikarin/SKALA/issues/12), `MemberInitializerValueIgnored`). A
+  private instance field is given a value at its declaration, and every constructor that runs field
+  initializers assigns it again before anything reads it. Two values are written down for one field
+  and only one of them is ever true. ⚠ **The load-bearing guard is the `override` one and it is not
+  visible from the shape.** Field initializers run *before* the base constructor call, so a base
+  constructor that calls a virtual member this type overrides reads the initialized value — and in
+  that program the initializer is not dead at all. The rule declines any field named inside an
+  `override` member, loosely, because every shape that test recognises produces silence and none of
+  them can produce a finding. ⚠ **Only constructors that actually run field initializers count**: a
+  `this(…)` chain does not run them, so a delegating constructor is evidence of nothing and is
+  skipped rather than treated as a counterexample. Records, primary constructors and any implicitly
+  declared constructor stop the walk for the whole type. The write must be the constructor's *first*
+  contact with the field, which means every preceding statement must neither mention it nor contain
+  an invocation, an object creation, `this` or `base` — each of which could read it without spelling
+  it. ⚠ **The initializer must be side-effect free, because the fix deletes it**; `= new List<int>()`
+  is declined rather than reported, since an allocation whose constructor registers something is
+  precisely what `SK2013` and `CA1806` argue about. Fix, `fixIsSafe: true`.
+- `SK2201` **the unsubscription passes an anonymous function** ([#18](https://github.com/Rikarin/SKALA/issues/18), `EventUnsubscriptionViaAnonymousDelegate`).
+  ⚠ **The issue reads as "the `+=` can never be undone", and that question needs a lifetime proof
+  nobody can produce.** A subscription that lives exactly as long as its subscriber is the
+  overwhelmingly common case and it is correct; separating it from the leak needs to know that the
+  publisher outlives the subscriber, which is not decidable from the subscribing line. **The
+  inspection the issue cites is about the `-=`, and that one needs no proof at all.** Delegate
+  removal compares invocation-list entries by target and method, and an anonymous function written
+  at one syntax site is a different instance from one written at any other — so `changed -= (s, e)
+  => Redraw();` removes nothing, in every program, whatever was subscribed. The `+=` half of the
+  concept is not shipped and the fixtures say so in a file of their own. A method group is correct
+  and is never reported. Report-only: the repair is to name the delegate and store it where both
+  sides can see it, which is a change to the subscribing method and usually to the type's fields —
+  three edits away, in places the diagnostic cannot see.
+- `SK2202` **the modification sits inside a conditional invocation** ([#42](https://github.com/Rikarin/SKALA/issues/42),
+  `PossiblyUnintendedSideEffectsInsideConditionalInvocation`). ⚠ **The issue reads as `?.`, `??` and
+  `&&` together, and three of those four have no sound rule in them.** Short-circuiting is what
+  `&&`, `||`, `??` and `?:` are *for*: `x != null && x.Consume()` is the idiom rather than the
+  defect, and no condition separates the deliberate case from the accidental one. **ReSharper's own
+  description is narrower than the issue and is decidable**: "Possibly unintended *modification*
+  inside *conditional invocation*" — an assignment, a `++` or a `--` inside the part of a `?.` or
+  `?[` that runs only when the receiver is not null. `logger?.Log(sequence++)` stops advancing the
+  counter the moment `logger` is null, and nothing on the line says the increment was conditional;
+  the null test is about the *receiver*, and the arguments fall inside its reach through precedence
+  rather than because anybody asked. Only a modification counts — an invocation does not, because
+  `logger?.Log(Format(value))` is ordinary code. Report-only: hoisting the modification out turns an
+  intermittent effect into an unconditional one, which is a behaviour change and not a cleanup.
+
+⚠ **`SK2202` and `SK2064` take opposite sides of the same fact and cannot meet.** `SK2064` reports
+`&` written where `&&` was meant and *declines* any right operand with a side effect, because a side
+effect there is the documented reason to reach for the non-short-circuiting operator. `SK2202` reports
+a side effect that is skipped. If the two ever overlapped one of them would be wrong; they do not,
+because neither `&` nor `&&` appears anywhere in `SK2202`'s shape and `?.` appears nowhere in
+`SK2064`'s. A batch test asserts that on a file carrying both rather than trusting the argument.
+
+### ⚠ Two issues closed as hosted, and `CA1806` is on by default rather than off
+
+⚠ **[#50](https://github.com/Rikarin/SKALA/issues/50) — "the constructed object is discarded" — is `CA1806`, and no id was allocated for it.**
+Measured on a probe built outside this repository with empty `Directory.Build.props`/`.targets` above
+it, on SDK 10.0.400: at **stock settings, with no `AnalysisMode` and no `.editorconfig`**, `CA1806`
+reports every `new Foo();` in statement position — `isEnabledByDefault: true`, `defaultLevel: note`.
+It fires on the plain case, on the case with constructor arguments, on `new
+InvalidOperationException(…)`, **and on `new Timer(…)`** — the "constructor with side effects"
+exemption the issue asks for does not exist in `CA1806` either. `_ = new Widget();` is correctly
+silent. `IDE0058` reports the same four lines once code style is enforced. There is no residue: the
+concept is the whole of `CA1806`'s object-creation branch, and `SK2013` already covers the exception
+subset with the fix `CA1806` does not have. ⚠ **ReSharper ships `RemoveConstructorInvocation` at
+`DO_NOT_SHOW`**, which is the same verdict from the other direction.
+
+⚠ **[#12](https://github.com/Rikarin/SKALA/issues/12)'s main shape — "the assigned value is never read" — is `IDE0059`, and only its fourth
+inspection survived as `SK2200`.** `IDE0059` reports every local-assignment shape the issue names, at
+the same lines, with a fix. Its measured state is the middle one and worth writing down: the
+descriptor says `isEnabledByDefault: true, defaultLevel: note`, tagged
+`EnforceOnBuild_HighlyRecommended` — but on the probe, `EnforceCodeStyleInBuild=true` **alone produced
+no `IDE0059` at all**, and it appeared only once `dotnet_diagnostic.IDE0059.severity` was raised in an
+`.editorconfig`. Enabled, and silent in a build until somebody asks for it. ⚠ **What no `CA*` or
+`IDE*` reports is the field-initializer shape**, `MemberInitializerValueIgnored`: at
+`AnalysisMode=All` with every style rule at `warning`, the probe's overwritten initializers drew
+nothing. That residue is `SK2200`.
+
+### ⚠ `S3172` is refuted rather than narrowed, and `SK2201` is the only decidable part of it
+
+[#165](https://github.com/Rikarin/SKALA/issues/165) proposes Sonar's `S3172`, "delegates should not be subtracted": `d -= h` on a multicast
+delegate removes the last matching contiguous run rather than every occurrence, and removes nothing
+at all when the run was combined differently. ⚠ **The general form reports correct code and there is
+no narrowing that saves it.** `subscribers -= handler` is what every `Remove` method and every
+`Dispose` in event-driven C# is made of; whether `handler` is itself multicast is a fact about a value
+that arrived as a parameter, and it cannot be decided from the subtraction. The one shape that *is*
+decidable — subtracting a delegate combined literally on the line, `d -= (Action)(a + b)` — occurs
+nowhere in either reference tree and is not a shape anybody writes. What remains of the concept after
+that is the anonymous-function case, which is `SK2201`, so the rule is not lost: it is the same defect
+approached from the operand rather than from the operator. No id is allocated for the general form.

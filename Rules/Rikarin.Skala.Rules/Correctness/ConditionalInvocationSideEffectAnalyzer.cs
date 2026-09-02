@@ -24,9 +24,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     </para>
 ///     <para>
 ///         ⚠ It walks up from the modification rather than down from the conditional access, which is
-///         what makes <c>a?.Prop = 1</c> a non-match by construction: there the assignment is the
-///         <em>parent</em> of the conditional access, so the walk never finds a conditional part
-///         containing it.
+///         what keeps the walk cheap and bounded — but it does <em>not</em> make <c>a?.Prop = 1</c> a
+///         non-match on its own. C# 14's null-conditional assignment parses with the assignment
+///         <em>as</em> the conditional part rather than as the parent of the conditional access, which
+///         is the opposite of what the line reads like, and a fixture is what refuted the assumption.
+///         The modification being the conditional part itself is therefore an explicit exclusion.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -78,6 +80,15 @@ public sealed class ConditionalInvocationSideEffectAnalyzer : DiagnosticAnalyzer
             }
 
             if (current.Parent is ConditionalAccessExpressionSyntax access && access.WhenNotNull == current) {
+                // ⚠ `box?.Value = 1` is C# 14's null-conditional assignment, and it parses with the
+                // assignment *as* the conditional part rather than inside it — the opposite of what
+                // the shape looks like on the page, and a false positive the fixture caught. There
+                // the conditional write is the whole point of the line, so the modification being
+                // the conditional part itself is the one arrangement that is never reported.
+                if (current == modification) {
+                    return;
+                }
+
                 context.ReportDiagnostic(
                     Diagnostic.Create(
                         Descriptor,

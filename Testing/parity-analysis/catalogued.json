@@ -246,5 +246,8 @@
   "ForCanBeConvertedToForeach": "SK1083",
   "LoopCanBePartlyConvertedToQuery": "SK1084",
   "StaticMemberInitializerReferesToMemberBelow": "SK2130",
-  "UnassignedGetOnlyAutoProperty": "SK2131"
+  "UnassignedGetOnlyAutoProperty": "SK2131",
+  "MemberInitializerValueIgnored": "SK2200",
+  "EventUnsubscriptionViaAnonymousDelegate": "SK2201",
+  "PossiblyUnintendedSideEffectsInsideConditionalInvocation": "SK2202"
 }

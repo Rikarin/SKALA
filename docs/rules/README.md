@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 268 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 271 ids are allocated.
 
 ## Async
 
@@ -124,6 +124,9 @@
 | [SK2162](SK2162.md) | The date or time `TryParse` has an implicit culture | warning | — | no |
 | [SK2163](SK2163.md) | Elapsed time is measured with the wall clock | warning | review | no |
 | [SK2164](SK2164.md) | The assertion's expression has side effects | warning | — | no |
+| [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | safe | no |
+| [SK2201](SK2201.md) | The unsubscription passes an anonymous function | warning | — | no |
+| [SK2202](SK2202.md) | The modification sits inside a conditional invocation | warning | — | yes |
 
 ## Design
 
