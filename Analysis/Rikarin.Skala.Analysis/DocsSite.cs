@@ -366,7 +366,7 @@ public static class DocsSite {
             Fact(
                 builder,
                 "Default",
-                option.Default is { Length: > 0 } value ? "<code>" + Esc(value) + "</code>" : "—"
+                option.Default is { Length: > 0 } value ? Code(value) : "—"
             );
             Fact(builder, "Default known from", DefaultSourceText(option.DefaultSource));
             Fact(builder, "Tier", TierText(option.Tier));
@@ -376,7 +376,7 @@ public static class DocsSite {
                 Fact(
                     builder,
                     "Also spelled",
-                    string.Join(", ", option.Aliases.Select(static alias => "<code>" + Esc(alias) + "</code>"))
+                    string.Join(", ", option.Aliases.Select(static alias => Code(alias)))
                 );
             }
 
@@ -393,7 +393,7 @@ public static class DocsSite {
             }
 
             if (option.Oracle is { Length: > 0 } oracle) {
-                Fact(builder, "Oracle fixture", "<code>" + Esc(oracle) + "</code>");
+                Fact(builder, "Oracle fixture", Code(oracle));
             }
 
             var readers = links.RulesReading(option.Key);
@@ -475,6 +475,15 @@ public static class DocsSite {
     /// <summary>
     ///     HTML-escapes, and drops <c>\r</c>.
     /// </summary>
+    /// <summary>One escaped span of code, which is seven of this file's eight <c>&lt;code&gt;</c> tags.</summary>
+    /// <remarks>
+    ///     ⚠ Extracted because <c>SK7083</c> reported the literal eight times against a threshold of
+    ///     five, and the honest answer to Skala's own rule is the rule's own remedy rather than a
+    ///     baseline entry. The eighth is <see cref="Anchors" />' <c>Append</c> pair, which writes a
+    ///     substring of an already-escaped buffer and so cannot call this.
+    /// </remarks>
+    static string Code(string text) => "<code>" + Esc(text) + "</code>";
+
     /// <remarks>
     ///     ⚠ The dropped carriage return is the second half of the CRLF hazard the stylesheet's remarks
     ///     describe, and this is the choke point for it: <c>rules.json</c> and <c>options.json</c> reach
@@ -597,7 +606,7 @@ public static class DocsSite {
         var values = OptionEnums.ValuesOf(option.EnumName ?? string.Empty);
         var rendered = string.Join(
             ", ",
-            values.Select(static value => "<code>" + Esc(value) + "</code>")
+            values.Select(static value => Code(value))
         );
         var prefix = option.Kind == OptionValueKind.Flags
             ? "any combination, comma-separated, of "
@@ -726,7 +735,7 @@ public static class DocsSite {
         /// <summary>An anchor to the key's entry on its construct page.</summary>
         public string KeyLink(string key, string root) {
             if (!constructOf.TryGetValue(key, out var construct)) {
-                return "<code>" + Esc(key) + "</code>";
+                return Code(key);
             }
 
             return "<a href=\""
@@ -801,13 +810,13 @@ public static class DocsSite {
             }
 
             if (RuleIdIn(text) is { } id) {
-                var rendered = "<code>" + Esc(text) + "</code>";
+                var rendered = Code(text);
                 return string.Equals(id, selfId, StringComparison.Ordinal)
                     ? rendered
                     : "<a href=\"" + root + "rules/" + id + """.html">""" + rendered + "</a>";
             }
 
-            return code ? "<code>" + Esc(text) + "</code>" : Esc(text);
+            return code ? Code(text) : Esc(text);
         }
 
         /// <summary>The canonical key for any spelling ReSharper accepts, or null.</summary>
