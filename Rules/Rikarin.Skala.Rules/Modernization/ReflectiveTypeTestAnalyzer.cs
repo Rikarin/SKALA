@@ -18,14 +18,20 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     is the spelling a reader recognises, and it composes with a pattern — <c>x is T t</c> — where
 ///     the reflection call needs a second cast nobody checks.
 ///     <para>
-///         ⚠ <b>The two shapes are one concept and they are <em>not</em> equally safe, which is why
-///         the rule ships <c>fixIsSafe: false</c> although one half of it is exactly total.</b>
+///         ⚠
+///         <b>
+///             The two shapes are one concept and they are <em>not</em> equally safe, which is why
+///             the rule ships <c>fixIsSafe: false</c> although one half of it is exactly total.
+///         </b>
 ///         Fourteen shapes were compiled and run for <c>IsInstanceOfType</c> — null, a boxed value
 ///         type, a non-null and a null <c>int?</c>, an interface, a covariant interface, array
 ///         covariance, an array through <c>IList&lt;T&gt;</c>, an enum boxed as itself and as its
 ///         underlying <c>int</c> — and the reflection call and the operator agree on every one.
-///         <c>IsAssignableFrom(x.GetType())</c> agrees on six of the same shapes and <b>diverges on
-///         the seventh</b>: <c>x.GetType()</c> throws <c>NullReferenceException</c> where
+///         <c>IsAssignableFrom(x.GetType())</c> agrees on six of the same shapes and
+///         <b>
+///             diverges on
+///             the seventh
+///         </b>: <c>x.GetType()</c> throws <c>NullReferenceException</c> where
 ///         <c>x is T</c> is <c>false</c>. A rule carries one safety answer, so the pair takes the
 ///         weaker one.
 ///     </para>
@@ -40,8 +46,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         ⚠ <b>Three types make <c>typeof(T)</c> compile and <c>x is T</c> not compile</b>, and all
 ///         three were confirmed against the compiler rather than assumed: a static class, a
 ///         <c>ref struct</c>, and an unbound generic such as <c>typeof(List&lt;&gt;)</c>. Each is a
-///         legal reflection call and an uncompilable pattern, so each is declined. ⚠ <b>The
-///         <c>ref struct</c> arm is kept although it is currently masked</b>: removing it alone
+///         legal reflection call and an uncompilable pattern, so each is declined. ⚠
+///         <b>
+///             The
+///             <c>ref struct</c> arm is kept although it is currently masked
+///         </b>: removing it alone
 ///         turns no fixture red, because a <c>ref struct</c> cannot be boxed and so
 ///         <c>ClassifyConversion</c> already reports no conversion from any reference-typed operand.
 ///         Removing <em>both</em> turns <c>ref_struct_target</c> red, which is what established that
@@ -167,9 +176,8 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
         receiver = expression;
         if (expression is not InvocationExpressionSyntax {
                 ArgumentList.Arguments.Count: 0,
-                Expression: MemberAccessExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-                } access
+                Expression:
+                MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access
             } call
             || !string.Equals(access.Name.Identifier.ValueText, "GetType", System.StringComparison.Ordinal)) {
             return false;
@@ -205,7 +213,8 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
     ///     unbound generic. A rule that emitted any of them would produce a fix that does not build.
     /// </remarks>
     static bool IsPatternableTarget(ITypeSymbol? type) {
-        if (type is null || type.TypeKind is TypeKind.Error or TypeKind.Dynamic or TypeKind.Pointer
+        if (type is null
+            || type.TypeKind is TypeKind.Error or TypeKind.Dynamic or TypeKind.Pointer
             or TypeKind.FunctionPointer) {
             return false;
         }

@@ -14,8 +14,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     members, and are therefore two types.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>The premise was established by compiling and running it, and half of what the inspection
-///     name suggests turned out to be a no-op the compiler already performs.</b> Two anonymous object
+///     ⚠
+///     <b>
+///         The premise was established by compiling and running it, and half of what the inspection
+///         name suggests turned out to be a no-op the compiler already performs.
+///     </b> Two anonymous object
 ///     creations with the same member names, the same member types <em>and the same order</em> are
 ///     already <b>one</b> type — the same <c>Type</c> instance, across methods, within an assembly —
 ///     so "reuse the nearby anonymous type" has nothing to do there and this rule is silent.

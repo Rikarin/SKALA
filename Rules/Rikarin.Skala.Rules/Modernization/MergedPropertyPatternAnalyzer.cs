@@ -17,16 +17,22 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     predicate with the subject written once, and it is the form the property extends to — a third
 ///     alternative adds a word rather than a clause.
 ///     <para>
-///         ⚠ <b>The merge is exact and needs no semantic model, because the shape it matches has no
-///         type in it.</b> A property pattern with no type resolves its member against the pattern's
+///         ⚠
+///         <b>
+///             The merge is exact and needs no semantic model, because the shape it matches has no
+///             type in it.
+///         </b> A property pattern with no type resolves its member against the pattern's
 ///         <em>input</em> type, which is the same input on both sides of an <c>or</c>. Admitting a
 ///         type — <c>Draft { Status: A } or Review { Status: B }</c> — would be two different
 ///         members that happen to share a name, so both sides are required to be typeless and the
 ///         rule stays <c>Syntax</c>.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The designation guard this rule was written with is refuted, and the compiler is what
-///         refutes it.</b> CS8780 — "a variable may not be declared within a 'not' or 'or' pattern" —
+///         ⚠
+///         <b>
+///             The designation guard this rule was written with is refuted, and the compiler is what
+///             refutes it.
+///         </b> CS8780 — "a variable may not be declared within a 'not' or 'or' pattern" —
 ///         makes <c>{ A: int i } or { A: 2 }</c> and <c>{ A: 1 } x or { A: 2 }</c> both uncompilable,
 ///         confirmed by compiling both. No program this rule can run on carries a pattern variable
 ///         there, so the guard was unreachable; and the one designation that <em>is</em> legal under

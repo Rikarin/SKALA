@@ -12,8 +12,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     <c>SK1121</c> — a <c>try</c>/<c>catch</c> that is the entire body of a <c>try</c>/<c>finally</c>.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>Only one of the two nestings can be merged, and issue #109's own headline example is the
-///     other one.</b> The issue proposes
+///     ⚠
+///     <b>
+///         Only one of the two nestings can be merged, and issue #109's own headline example is the
+///         other one.
+///     </b> The issue proposes
 ///     <c>try { try { … } finally { … } } catch { … }</c> → one statement. Compiled and run, that
 ///     rewrite reverses the order of two side effects:
 ///     <code>
@@ -22,8 +25,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     </code>
 ///     .NET's two-pass exception handling runs the inner <c>finally</c> while unwinding to a handler
 ///     that has already been located, so <c>F</c> precedes <c>C</c>; a merged <c>finally</c> runs
-///     after its own <c>catch</c>. ⚠ <b>ReSharper's inspection describes the sound nesting and the
-///     issue transcribed it backwards</b> — the export reads
+///     after its own <c>catch</c>. ⚠
+///     <b>
+///         ReSharper's inspection describes the sound nesting and the
+///         issue transcribed it backwards
+///     </b> — the export reads
 ///     <c>"try-catch and try-finally statements can be merged"</c>, which is <c>catch</c> on the
 ///     <em>inner</em> statement and <c>finally</c> on the outer.
 ///     <para>
@@ -33,8 +39,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         confirm it — <c>body → catch → finally → escaped</c> either way.
 ///     </para>
 ///     <para>
-///         ⚠ <b>An outer <c>catch</c> is never merged, and that is the same finding from the other
-///         side.</b> Sibling <c>catch</c> clauses do not chain: where the nested form lets an
+///         ⚠
+///         <b>
+///             An outer <c>catch</c> is never merged, and that is the same finding from the other
+///             side.
+///         </b> Sibling <c>catch</c> clauses do not chain: where the nested form lets an
 ///         exception thrown <em>by</em> the inner handler reach the outer one, the merged form lets it
 ///         escape. Measured: <c>body → inner → outer</c> becomes <c>body → inner → escaped</c>.
 ///         <c>SK0240</c> owns the neighbouring question of a <c>catch</c> that only rethrows.
