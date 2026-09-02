@@ -110,21 +110,12 @@ public sealed class UnsafeAccessorTargetAnalyzer : DiagnosticAnalyzer {
         // unset or the literal `.ctor`, and anything else is a name that will never be looked for.
         // This needs no member list, so it holds for a target in any assembly.
         var declaredName = attribute.NamedArguments
-            .FirstOrDefault(pair => pair.Key == "Name")
+            .FirstOrDefault(static pair => pair.Key == "Name")
             .Value.Value
             as string;
 
         if (kind == AccessorKind.Constructor) {
-            if (declaredName is not null && declaredName != ".ctor") {
-                Report(
-                    context,
-                    accessor,
-                    "`UnsafeAccessorKind.Constructor` ignores every name but `.ctor`, so `Name = \""
-                    + declaredName
-                    + "\"` names nothing the runtime will look for"
-                );
-            }
-
+            AnalyzeConstructor(context, accessor, declaredName);
             return;
         }
 
@@ -149,26 +140,50 @@ public sealed class UnsafeAccessorTargetAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var otherKind = Members(target, name, !wantsField).Any();
+        Report(context, accessor, Message(target, name, wantsField, Members(target, name, !wantsField).Any()));
+    }
+
+    /// <summary>
+    ///     ⚠ <c>UnsafeAccessorKind.Constructor</c> is answered without any member lookup, so this one
+    ///     part holds for a target in any assembly.
+    /// </summary>
+    /// <remarks>
+    ///     The runtime looks for <c>.ctor</c> and nothing else — measured by running it: an accessor
+    ///     carrying <c>Name = "Create"</c> throws <c>BadImageFormatException</c> at the call.
+    /// </remarks>
+    static void AnalyzeConstructor(SymbolAnalysisContext context, IMethodSymbol accessor, string? declaredName) {
+        if (declaredName is null || declaredName == ".ctor") {
+            return;
+        }
+
         Report(
             context,
             accessor,
-            otherKind
-                ? "`"
-                + target.Name
-                + "` has no "
-                + (wantsField ? "field" : "method")
-                + " named `"
-                + name
-                + "` — the member of that name is a "
-                + (wantsField ? "method" : "field")
-                + ", so the runtime binds nothing and the first call throws"
-                : "`"
+            "`UnsafeAccessorKind.Constructor` ignores every name but `.ctor`, so `Name = \""
+            + declaredName
+            + "\"` names nothing the runtime will look for"
+        );
+    }
+
+    /// <summary>Which of the two things went wrong, said in the words of the kind that was asked for.</summary>
+    static string Message(INamedTypeSymbol target, string name, bool wantsField, bool otherKind) {
+        if (!otherKind) {
+            return "`"
                 + target.Name
                 + "` declares no member named `"
                 + name
-                + "`, so the first call to this accessor throws at run time"
-        );
+                + "`, so the first call to this accessor throws at run time";
+        }
+
+        return "`"
+            + target.Name
+            + "` has no "
+            + (wantsField ? "field" : "method")
+            + " named `"
+            + name
+            + "` — the member of that name is a "
+            + (wantsField ? "method" : "field")
+            + ", so the runtime binds nothing and the first call throws";
     }
 
     static System.Collections.Generic.IEnumerable<ISymbol> Members(

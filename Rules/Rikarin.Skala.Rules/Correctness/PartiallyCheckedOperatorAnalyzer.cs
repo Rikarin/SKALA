@@ -100,7 +100,7 @@ public sealed class PartiallyCheckedOperatorAnalyzer : DiagnosticAnalyzer {
                 continue;
             }
 
-            if (declaredChecked.Any(candidate => Matches(candidate, pair.Checked, method))) {
+            if (declaredChecked.Exists(candidate => Matches(candidate, pair.Checked, method))) {
                 continue;
             }
 
