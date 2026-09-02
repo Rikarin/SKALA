@@ -3636,3 +3636,44 @@ which is a defensible reading of `SK4000`–`SK4999`, and SonarSource classifies
 smell rather than a bug. The number was allocated from this batch's reserved range and ADR-012 makes
 it permanent either way; recording the discrepancy here is what stops it being rediscovered as a
 mistake.
+
+**The measurement.** Both rules were swept over Skala's own source through a fresh Release binlog —
+`dotnet build Skala.slnx -c Release --no-incremental -bl:`, then `check --load=binlog
+--require-fresh-binlog`. ⚠ **The `--no-incremental` half is not optional and the flags are what make
+the number readable**: an incremental build's binlog is not stale, it is *partial*, and
+`--require-fresh-binlog` is what turns that into an error rather than a plausible answer from a
+fraction of the tree. `SK9021` reports **590 of 592 selected files, 100 % coverage** — the two
+uncovered files are in no compilation — with **11 CS diagnostics in the load** (`CS9335` × 10,
+`CS8933` × 1) and **zero CS errors**, over 1 457 findings in total.
+
+The instrument was verified before either zero was believed. A probe file planting one
+`IReadOnlyList<string> Items => entries.ToList();` and one filled-and-dropped `StringBuilder` into
+`Rikarin.Skala.Core` made both rules fire through the same binlog pipeline, at the right lines and
+with the right messages, which is the only check that sees a real reference set rather than the
+fixture harness's. ⚠ **The probe had to be edited before it would build, and the reason is the one the
+CA-probing rule is about**: `CA1822` rejected the method as an *error* under this repository's raised
+`AnalysisMode`. That is why the `CA*` probes for this batch were built outside the repository with
+empty `Directory.Build.props`/`.targets` beside them. The probe was then deleted and the binlog
+rebuilt.
+
+- **`SK4040` reports zero, and the shape is absent.** Relaxing *both* discriminating guards — the
+  plain-name-path test and the conversion test — and re-sweeping still finds nothing: Skala's source
+  contains no property whose whole getter is a materializing call. A grep for the arrow form
+  corroborates it, returning 21 hits of which every one is a rule fixture, a batch-test string literal
+  or `rules.json` prose. ⚠ **This is the weakest of the three kinds of zero and it is reported as
+  such**: it is evidence the rule does not over-fire and no evidence at all about how often the shape
+  occurs in the wild.
+- **`SK4041`'s shape is present 147 times and declined 147 times.** Relaxing the rule to report every
+  `StringBuilder` local with at least one append — the whole population — finds 147 in Skala's source,
+  and the shipped rule reports none of them. Spot-checked rather than assumed:
+  `DiagnosticCache.CompilationFingerprint` returns `builder.ToString()` and is declined by the read;
+  `BaselineCommand` hands its builder to `Describe(builder, …)` and is declined by the escape. ⚠ **147
+  declined and zero reported is the number that says the rule is worth having**, because it is the
+  count of times the analysis had to be right.
+
+⚠ **The sweep also turned up something that is not this batch's**: `SK9030` records that
+`RedundantArgumentAnalyzer` (`SK0232`) throws `AD0001` and is disabled for the rest of the run,
+seventeen times. That is issue #298 still live, and it is invisible in the terminal report because
+`skala check` writes `SK9030` only into the SARIF's `toolExecutionNotifications` and does not fail the
+gate (#295). Neither of this batch's analyzers throws, asserted in
+`CollectionCopyAndBufferBatchTests.NoAnalyzerThrows` rather than left to the same silence.
