@@ -321,7 +321,7 @@ internal sealed class RuleModel {
             LanguageVersion = entry["languageVersion"].AsString(),
             Summary = String(entry, "summary"),
             Rationale = String(entry, "rationale"),
-            FalsePositives = String(entry, "falsePositives"),
+            FalsePositives = String(entry, "falsePositives")
         };
 
         rule.BadExample = String(entry["examples"], "bad");
