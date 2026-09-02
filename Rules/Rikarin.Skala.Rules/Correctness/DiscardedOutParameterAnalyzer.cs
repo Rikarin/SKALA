@@ -97,6 +97,13 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
                     OperationKind.DynamicInvocation
                 );
 
+                // ⚠ Guard 5, and the corpus sweep is what found it. Text a `#if` switched off is
+                // trivia: it carries no nodes, no operations and no symbols, so a call site inside it
+                // is invisible to everything above — and under another `DefineConstants` it is a call
+                // site that reads the value. Every word in every disabled region joins the same
+                // withdrawal set, which is coarse on purpose: it costs findings, never correctness.
+                start.RegisterSyntaxTreeAction(context => RecordDisabledText(context, referenced));
+
                 start.RegisterSyntaxNodeAction(
                     context => Collect(context, candidates),
                     SyntaxKind.MethodDeclaration
@@ -181,11 +188,62 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
+    ///     Every identifier-shaped word inside text a <c>#if</c> switched off, as a reference.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>This guard is the corpus sweep's finding, not a precaution.</b> The rule's one
+    ///     false positive over the three reference trees was <c>Newtonsoft.Json</c>'s
+    ///     <c>TryParseMicrosoftDate</c>: two call sites, one discarding <c>offset</c> and one reading
+    ///     it, and the reading one sits inside <c>#if HAVE_DATE_TIME_OFFSET</c>. The finding was true
+    ///     of the configuration compiled and false of the library's own build, and no amount of care
+    ///     in the operation tree could have seen it — disabled text is trivia, with no nodes, no
+    ///     operations and no symbols in it at all.
+    ///     <para>
+    ///         Deliberately word-level rather than parsed. Disabled text need not be valid C#, so
+    ///         there is nothing to bind and nothing to walk; splitting on what cannot appear in an
+    ///         identifier is the whole analysis. It over-withdraws — a comment inside a disabled
+    ///         region silences the rule for a method of that name — and that direction costs findings
+    ///         rather than correctness. Trees with no directives at all are skipped, which is nearly
+    ///         all of them.
+    ///     </para>
+    /// </remarks>
+    static void RecordDisabledText(
+        SyntaxTreeAnalysisContext context,
+        ConcurrentDictionary<string, byte> referenced
+    ) {
+        var root = context.Tree.GetRoot(context.CancellationToken);
+        if (!root.ContainsDirectives) {
+            return;
+        }
+
+        foreach (var trivia in root.DescendantTrivia(descendIntoTrivia: true)) {
+            if (!trivia.IsKind(SyntaxKind.DisabledTextTrivia)) {
+                continue;
+            }
+
+            var text = trivia.ToString();
+            var start = -1;
+            for (var i = 0; i <= text.Length; i++) {
+                var identifier = i < text.Length && (char.IsLetterOrDigit(text[i]) || text[i] == '_');
+                if (identifier && start < 0) {
+                    start = i;
+                } else if (!identifier && start >= 0) {
+                    referenced.TryAdd(text.Substring(start, i - start), 0);
+                    start = -1;
+                }
+            }
+        }
+    }
+
+    /// <summary>
     ///     A <c>private</c> ordinary method declaring at least one <c>out</c> parameter.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>There is no <c>virtual</c>/<c>abstract</c>/<c>override</c> guard, and its absence is a
-    ///     measurement rather than an oversight.</b> At <c>private</c> accessibility all three are
+    ///     ⚠
+    ///     <b>
+    ///         There is no <c>virtual</c>/<c>abstract</c>/<c>override</c> guard, and its absence is a
+    ///         measurement rather than an oversight.
+    ///     </b> At <c>private</c> accessibility all three are
     ///     compile errors — <c>private virtual</c> and <c>private abstract</c> are <b>CS0621</b>, and
     ///     <c>private override</c> draws <b>CS0507</b> on top of it, because nothing a base type can
     ///     declare is both private and virtual. A guard against them could never be reached by
@@ -273,8 +331,11 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>Whether the argument passed to an <c>out</c> parameter is a discard.</summary>
     /// <remarks>
-    ///     ⚠ <b>One test, and the second one that was written here was dead code — measured, not
-    ///     assumed.</b> The draft also unwrapped an <see cref="IDeclarationExpressionOperation" />
+    ///     ⚠
+    ///     <b>
+    ///         One test, and the second one that was written here was dead code — measured, not
+    ///         assumed.
+    ///     </b> The draft also unwrapped an <see cref="IDeclarationExpressionOperation" />
     ///     looking for a discard inside it, because <c>out var _</c> and <c>out int _</c> are
     ///     <see cref="DeclarationExpressionSyntax" /> nodes and <c>out _</c> is not. In the operation
     ///     tree they are not distinguishable: all three arrive as a bare
@@ -295,9 +356,7 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
         ConcurrentDictionary<string, byte> referenced
     ) {
         // One pass over the bag, so a compilation with many call sites does not become quadratic.
-        var seen = new Dictionary<ISymbol, Dictionary<int, (int Total, int Discarded)>>(
-            SymbolEqualityComparer.Default
-        );
+        var seen = new Dictionary<ISymbol, Dictionary<int, (int Total, int Discarded)>>(SymbolEqualityComparer.Default);
 
         foreach (var call in calls) {
             if (!candidates.ContainsKey(call.Method)) {
@@ -347,10 +406,10 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
                         + parameter.Name
                         + "`, and "
                         + (counts.Total == 1
-                            ? "its one call site discards it"
-                            : "all "
-                            + counts.Total.ToString(CultureInfo.InvariantCulture)
-                            + " of its call sites discard it")
+                                ? "its one call site discards it"
+                                : "all "
+                                + counts.Total.ToString(CultureInfo.InvariantCulture)
+                                + " of its call sites discard it")
                     )
                 );
             }
