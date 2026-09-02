@@ -347,6 +347,30 @@ wearing a redundancy's clothes.
 ⚠ **`!(x == null)` is `SK1010`'s span and is handed to it** rather than reported twice — the
 `SK0244`/`SK6023` collision, avoided by reading the neighbour before allocating rather than after.
 
+**Corpus: 0 findings, and every one of the nine candidates is accounted for.** Measured over the 380
+real corpus sources with the 760 `.expected.cs` copies excluded and `ImplicitUsings` on — the two
+things that otherwise manufacture `CS0111`/`CS0101` and strip the `using`s, turning a semantic
+measurement into a clean-looking zero. A hand count of the shapes finds **nine** candidate lines for
+the equality shape and **none at all** for the other four, so `!!x`, `!(a == b)`, `? true : false` and
+`&& true` are **shape absent** across all three reference trees. Of the nine:
+
+- **five** are `x?.M() == true` — a conditional access is `bool?`, which is precisely the false
+  positive this rule is built around, and they are the correctly declined majority of the real-world
+  population;
+- **two** are in `CustomerDataSet.cs`, which **binds cleanly** and whose members carry
+  `[GeneratedCodeAttribute]`; they are declined by `ConfigureGeneratedCodeAnalysis`, verified with a
+  two-way planted probe where the same expression fired in a plain method and stayed silent under the
+  attribute;
+- **one** is inside a string literal — `@"$.[?(@.Valid === true)]"` — so it is text a grep finds and
+  not a syntax node;
+- ⚠ **one is a floor artefact and is recorded as one.** `resolvedSchema.Required != true` in
+  `JsonSchemaGenerator.cs` is declined because that file has **92 binding errors**: `JsonSchema` is
+  not among the four Schema types the corpus vendors. It is not known whether the rule would fire on
+  it, and a semantic corpus count is a floor for exactly this reason.
+
+⚠ **The zero was proved live before it was believed.** Planting one positive of each of the five
+shapes inside the corpus tree produced five findings; deleting the file returned the count to zero.
+
 What #131 has left after this: `RedundantIfElseBlock`, whose fix moves a block's statements into the
 enclosing scope and so has to answer the name-collision question `RewriteGuards.WouldCollide` exists
 for, and `RedundantSwitchExpressionArms`, which needs the exhaustiveness model none of these shapes
@@ -386,6 +410,15 @@ that does not reach it. The `[AttributeUsage]` branch spans several tokens and k
 
 ⚠ Only a **simple** name is reported: a qualified `[System.SerializableAttribute]` carries a second
 redundancy in its qualifier, and that is `SK0243`'s span and concept.
+
+**Corpus: 0 findings, and both shapes are *shape absent*.** Over the same 380 real sources, a hand
+count finds **no** attribute written with a redundant `Attribute` suffix, **no** `Inherited = true`
+and **no** `AllowMultiple = false`. The suffix search is worth stating precisely, because the
+neighbouring result invites the wrong conclusion: `SK0233` reports `[global::System.Serializable()]`
+in newtonsoft, which is the empty *argument list*, and that attribute is written **without** the
+suffix — so it is not evidence for this shape. As with `SK0260`, the zero was proved live first:
+planted positives of both shapes fired inside the corpus tree and the count returned to zero when the
+file was deleted.
 
 ### Cleanup — `SK0250`
 
