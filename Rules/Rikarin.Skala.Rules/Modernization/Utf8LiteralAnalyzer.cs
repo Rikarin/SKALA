@@ -40,18 +40,8 @@ public sealed class Utf8LiteralAnalyzer : DiagnosticAnalyzer {
 
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
-        var encoding = model.Compilation.GetTypeByMetadataName("System.Text.Encoding");
-        if (encoding is null
-            || encoding.Locations.Any(static location => location.IsInSource)
-            || model.GetOperation(invocation, cancellation) is not IInvocationOperation call
-            || !SymbolEqualityComparer.Default.Equals(call.TargetMethod.ContainingType, encoding)
-            || call.TargetMethod.Parameters.Length != 1
+        if (Utf8EncodingCall.Bind(model, invocation, cancellation) is not { } call
             || call.TargetMethod.Parameters[0].Type.SpecialType != SpecialType.System_String
-            || call.Instance is not IPropertyReferenceOperation {
-                Property.Name: "UTF8",
-                Property.IsStatic: true
-            } receiver
-            || !SymbolEqualityComparer.Default.Equals(receiver.Property.ContainingType, encoding)
             || model.GetConstantValue(invocation.ArgumentList.Arguments[0].Expression, cancellation) is not {
                 HasValue: true,
                 Value: string text

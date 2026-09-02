@@ -42,21 +42,11 @@ public sealed class SpanDecodingAnalyzer : DiagnosticAnalyzer {
 
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
-        var encoding = model.Compilation.GetTypeByMetadataName("System.Text.Encoding");
-        if (encoding is null
-            || encoding.Locations.Any(static location => location.IsInSource)
-            || model.GetOperation(invocation, cancellation) is not IInvocationOperation call
-            || !SymbolEqualityComparer.Default.Equals(call.TargetMethod.ContainingType, encoding)
-            || call.TargetMethod.Parameters.Length != 1
+        if (Utf8EncodingCall.Bind(model, invocation, cancellation) is not { } call
             || call.TargetMethod.Parameters[0].Type is not IArrayTypeSymbol {
                 ElementType.SpecialType: SpecialType.System_Byte,
                 Rank: 1
             }
-            || call.Instance is not IPropertyReferenceOperation {
-                Property.Name: "UTF8",
-                Property.IsStatic: true
-            } receiver
-            || !SymbolEqualityComparer.Default.Equals(receiver.Property.ContainingType, encoding)
             || model.GetOperation(copy, cancellation) is not IInvocationOperation allocation
             || allocation.TargetMethod.Name != "ToArray"
             || allocation.Arguments.Length != 0
@@ -73,7 +63,10 @@ public sealed class SpanDecodingAnalyzer : DiagnosticAnalyzer {
                 SpeculativeBindingOption.BindAsExpression
             ).Symbol
             is not IMethodSymbol replacementMethod
-            || !SymbolEqualityComparer.Default.Equals(replacementMethod.ContainingType, encoding)
+            || !SymbolEqualityComparer.Default.Equals(
+                replacementMethod.ContainingType,
+                call.TargetMethod.ContainingType
+            )
             || replacementMethod.Parameters.Length != 1
             || !IsByteSpan(replacementMethod.Parameters[0].Type, model.Compilation)) {
             return;

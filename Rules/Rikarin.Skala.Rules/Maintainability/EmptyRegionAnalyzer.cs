@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 

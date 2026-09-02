@@ -5,7 +5,6 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System;
 using System.Collections.Immutable;
-using System.Linq;
 
 namespace Rikarin.Skala.Rules.TestQuality;
 
@@ -36,17 +35,11 @@ public sealed class SkippedTestWithoutReasonAnalyzer : DiagnosticAnalyzer {
 
     static void Analyze(SyntaxNodeAnalysisContext context, INamedTypeSymbol? fact, INamedTypeSymbol? theory) {
         var attribute = (AttributeSyntax)context.Node;
-        if (context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol
-            is not IMethodSymbol constructor
-            || (!SymbolEqualityComparer.Default.Equals(constructor.ContainingType, fact)
-                && !SymbolEqualityComparer.Default.Equals(constructor.ContainingType, theory))) {
+        if (!AttributeBinding.Matches(context, attribute, fact, theory)) {
             return;
         }
 
-        var skip = attribute.ArgumentList?.Arguments.FirstOrDefault(static argument =>
-            argument.NameEquals?.Name.Identifier.ValueText == "Skip"
-        );
-        if (skip is null) {
+        if (AttributeBinding.NamedArgument(attribute, "Skip") is not { } skip) {
             return;
         }
 

@@ -39,20 +39,8 @@ public sealed class ConstantRangeComparisonAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var value = binary.Left;
-        var kind = binary.Kind();
-        if (!IntegralDomain.TryConstant(model, binary.Right, cancellation, out var bound)) {
-            if (!IntegralDomain.TryConstant(model, binary.Left, cancellation, out bound)) {
-                return;
-            }
-
-            value = binary.Right;
-            kind = kind switch {
-                SyntaxKind.LessThanExpression => SyntaxKind.GreaterThanExpression,
-                SyntaxKind.LessThanOrEqualExpression => SyntaxKind.GreaterThanOrEqualExpression,
-                SyntaxKind.GreaterThanExpression => SyntaxKind.LessThanExpression,
-                _ => SyntaxKind.LessThanOrEqualExpression
-            };
+        if (!IntegralDomain.TryNormalise(model, binary, cancellation, out var value, out var kind, out var bound)) {
+            return;
         }
 
         var type = model.GetTypeInfo(value, cancellation).Type;
