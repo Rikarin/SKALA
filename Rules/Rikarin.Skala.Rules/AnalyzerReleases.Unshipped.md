@@ -293,3 +293,7 @@ SK2241 | Skala.Correctness | Warning | The regular expression pattern does not p
 SK2242 | Skala.Correctness | Warning | The argument check does not run until the result is enumerated.
 SK1004  | Skala.Modernization | Info | Use an `extension` block instead of a static class of extension methods.
 SK1110  | Skala.Modernization | Info | A non-public overload forwards to a longer one with a constant.
+SK1120 | Skala.Modernization | Info | A reflection call asks what `is` answers.
+SK1121 | Skala.Modernization | Hidden | A `try`/`catch` is the whole body of a `try`/`finally`.
+SK1122 | Skala.Modernization | Hidden | A nearby anonymous type has the same members in another order.
+SK1123 | Skala.Modernization | Hidden | Two `or` alternatives test the same property.

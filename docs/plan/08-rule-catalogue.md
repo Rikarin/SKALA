@@ -2101,6 +2101,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **343** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **309** | **90.4 %** |
+| Rules this document names | **329** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **294** | **89.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
@@ -6232,3 +6234,295 @@ committed `.skala/baseline.sarif`: this batch contributes **one** result, `SK100
 one each of `SK3511`, `IDE1006` and `SK6030`. A `note` cannot fail a gate keyed on errors. The
 baseline was deliberately **not** updated: doc CLAUDE.md's rule is that it settles after the *last*
 merge, and refreshing it here would bake those 82 in as accepted on one agent's authority.
+## `SK1120`–`SK1123` — expression-level modernization, and what the issues got wrong
+
+⚠ **The prose pass for `SK1120`–`SK1123` is owed.** What follows is the allocation register entry —
+enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+**Five issues went into this batch and four rules came out**, and the gap is the interesting part:
+in three separate places the *issue* was wrong about the transformation it proposed, and the
+correction was reached by compiling and running the two forms rather than by reading them.
+
+`SK1120` `reflective-type-test` — `typeof(T).IsInstanceOfType(x)` and
+`typeof(T).IsAssignableFrom(x.GetType())`, both of which spell `x is T` as a `Type` load and a
+virtual call. · `SK1121` `mergeable-try` — a `try`/`catch` that is the entire body of a
+`try`/`finally`. · `SK1122` `reordered-anonymous-type` — two anonymous object creations in one
+member with the same members in a different order. · `SK1123` `merged-property-pattern` —
+`x is { A: p } or { A: q }`, which asks one question about one property in the shape of two.
+
+### ⚠ Three claims refuted, each by running the program rather than reading it
+
+**`SK1120`: the nullable-value-type divergence does not exist.** The brief for this batch, and the
+rule's own first draft, both held that `IsAssignableFrom` and `is` disagree for nullable value
+types. They agree. `Type.IsAssignableFrom` documents a special case for a nullable value type and
+its underlying type, and the probe confirms it: `typeof(int?).IsAssignableFrom(typeof(int))` is
+`true` and `(object)someInt is int?` is `true`. **Fourteen shapes were run for `IsInstanceOfType`** —
+`null`, a boxed value type, a non-null and a null `int?`, an interface, a covariant interface, array
+covariance, an array through `IList<T>`, an enum boxed as itself and as its underlying `int`, and a
+wrong type — **and the reflection call and the operator agree on every one.** ⚠ **The one real
+divergence is the null receiver of the other shape**: `x.GetType()` throws `NullReferenceException`
+where `x is T` is `false`. That single result is why the rule ships `fixIsSafe: false` although one
+half of it is exactly total — a rule carries one safety answer and the pair takes the weaker one.
+
+**`SK1121`: issue #109's headline example is the nesting that cannot be merged.** The issue proposes
+`try { try { … } finally { … } } catch { … }` → one statement. Compiled and run, that rewrite
+reverses the order of two side effects: the nested form logs `body → finally → catch` and the merged
+form logs `body → catch → finally`. .NET's two-pass exception handling runs the inner `finally`
+while unwinding to a handler it has *already located*, so the `finally` precedes the `catch`; a
+merged `finally` runs after its own `catch`. ⚠ **ReSharper's inspection describes the sound nesting
+and the issue transcribed it backwards** — the export reads *"try-catch and try-finally statements
+can be merged"*, `catch` on the **inner** statement and `finally` on the outer. That is the
+direction `SK1121` ships, and it is exact in both directions of abrupt completion: an outer
+`finally` already covers the inner `catch` bodies, so a rethrowing handler logs
+`body → catch → finally → escaped` either way.
+
+**`SK1122`: half of what "reuse the nearby anonymous type" suggests is a no-op the compiler already
+performs.** Two anonymous object creations with the same member names, the same member types **and
+the same order** are already **one** type — the same `Type` instance, across methods, within an
+assembly. ⚠ **Order is the whole finding**: `new { X = 1, Y = "s" }` compiles to
+`<>f__AnonymousType0` and `new { Y = "s", X = 1 }` to `<>f__AnonymousType1`, and the two are
+distinct at run time, so every dictionary, `Distinct` and `Union` over the pair keys separately. A
+creation in a **different assembly** is a different type whatever its shape, confirmed in the same
+run and out of reach of any edit. The rule therefore reports *only* the reordering, which is the one
+case an edit can fix, and issue #111's own body — which says the same thing — is right where the
+inspection's name is misleading.
+
+### ⚠ `SK1123`'s designation guard was written, and the compiler refuted it
+
+The first draft declined any designation inside either alternative, on the reasoning that C# forbids
+a pattern variable under `or`. It does — CS8780, confirmed by compiling both
+`d is { Status: int i } or { Status: 2 }` and `d is { Status: 1 } x or { Status: 2 }`, and both are
+errors. ⚠ **Which makes the guard unreachable: no program this rule can run on carries a pattern
+variable there.** And its only *reachable* effect was wrong — a **discard** is legal under `or`, and
+it merges perfectly well: `{ Payload: string _ } or { Payload: 2 }` and the
+`{ Payload: string _ or 2 }` it merges to both compile. The guard was removed and
+`SK1123/+/discard_designation` pins the case it used to decline. This is the same shape of defect as
+`SK2170`'s empty-body exemption: a guard whose removal turns nothing red, hiding a case it should
+have reported.
+
+### ⚠ Two rules refused, and the id range is not the reason
+
+**`TailRecursiveCall` (#106) is refuted rather than deferred**, and the evidence is three
+counter-examples that were run rather than argued. The transformation is a whole-method rewrite, and
+`EveryModernizationRule_HasAFix` means a rule in this range must produce it:
+
+| What the rewrite must preserve | Recursive | Naive loop |
+|---|---|---|
+| **simultaneous parameter assignment** — `Recursive(n - 1, b, a)` | `ba` | `bb` |
+| **virtual dispatch** — an unqualified self-call in a `virtual` method runs the most derived override | `DBD` | `BBB` |
+| **`finally` ordering** — a `return F(…)` inside a `try` is not in tail position at all | `end:00123` | `end:21000` |
+
+Each column is a live program in the probe, and each is a silent wrong answer rather than a crash.
+⚠ **The second row is the one that decides it**: `return F(x)` inside a `virtual` method is a
+*virtual* call, so the loop that replaces it can only ever run the body it is written in. A fix that
+has to be reviewed line by line for three independent hazards adds nothing over the finding, and the
+inspection is `HINT`. ⚠ **A report-only form is possible and belongs outside this range** — the
+concept is "a stack overflow waiting for a large enough input", which is `Correctness` or
+`Performance`, and those categories carry no fix invariant. That id is not this batch's to allocate.
+
+**`RedundantIsBeforeRelationalPattern` (part of #92) is refused because it contradicts two rules
+that already ship.** It rewrites `x is > 5` to `x > 5`. ⚠ **`SK1051`'s own documented good example
+is `count is <= 5`** — the output of its `not (> 5)` inversion — so this rule would immediately undo
+the shape `SK1051` had just produced, on the same file, in the same `skala fix` run. And the
+conjunction case oscillates against `SK1014`: `x is > 5 && x is < 10` → `x > 5 && x < 10` →
+`SK1014` → `x is > 5 and < 10`. ⚠ **`SK1014` cannot fire on a lone comparison** — it is registered
+only on `LogicalAndExpression` and `LogicalOrExpression`, so the single-pattern case converges — but
+the catalogue's settled direction of travel is comparisons *into* patterns, and a rule pointing the
+other way is a disagreement rather than a rewrite. **`ReplaceObjectPatternWithVarPattern` is refused
+separately**: every reading of *"replace object pattern not performing any additional checks with
+`var` pattern"* turns a pattern that rejects `null` into one that accepts it, which is a behaviour
+change with no guard that recovers it. **`ReplaceSequenceEqualWithConstantPattern` stays
+outstanding** — it is a real and narrow rewrite (`span.SequenceEqual("abc")` → `span is "abc"`) and
+it was not reached in this batch.
+
+⚠ **All four of #92's remaining inspections are C#, and that had to be checked rather than assumed.**
+The `jb` export carries **no `Language` attribute at all** — the whole 3 086-entry list is one
+alphabetical run with C#, VB and C++ interleaved, and VB ids are not prefixed. Language is readable
+only from the feature each description names, and relational patterns, the `var` pattern, property
+patterns and constant patterns are all C#-only constructs. ⚠ `RedundantIsBeforeRelationalPattern`
+sits three lines from `RedundantMeQualifier`, which is Visual Basic; alphabetical neighbourhood
+proves nothing.
+
+### ⚠ Nothing in the shipped toolchain reports any of these four concepts
+
+Measured rather than assumed, in a probe built **outside this repository** with empty
+`Directory.Build.props`/`.targets` above it. ⚠ **Three states, and the middle one is where the first
+attempt stopped.** At `AnalysisMode=All`, `AnalysisLevel=latest-all` and
+`EnforceCodeStyleInBuild=true`, **no `IDE*` diagnostic appeared at all** — they ship enabled and
+`Hidden`, and `EnforceCodeStyleInBuild` alone does not raise them. Only after
+`dotnet_analyzer_diagnostic.category-Style.severity = warning` did the instrument become capable of
+printing a non-zero. ⚠ **It was then verified rather than trusted**: planted shapes produce
+`IDE0059` and `IDE0090`, and the same build reports `CA1304`, `CA1311`, `CA1862` and `CA1822`. On
+the four concepts under test, the only diagnostics that land are `IDE0055` (formatting), `IDE0022`
+(expression body), `IDE0046`, `CA1062`, `CA1303` and `CA1051` — none of which is about any of them.
+So all four zeros are **shape present and correctly not reported by anyone else**, not shape absent
+and not an instrument that never ran.
+
+### Sabotage
+
+Each guard was removed in turn and the batch's fixtures re-run. ⚠ **Four of the twenty-four turned
+nothing red, and all four were defects rather than passes** — two fixtures that never reached the
+guard they were written for, one guard subsumed by another, and one guard that was simply dead.
+
+| Guard removed | What went red |
+|---|---|
+| `SK1120`'s static-class exclusion | `SK1120/−/static_class_target` |
+| `SK1120`'s unbound-generic exclusion | `SK1120/−/unbound_generic_target` |
+| `SK1120`'s `ref struct` exclusion | ⚠ **nothing** — subsumed; see below |
+| `SK1120`'s `ref struct` **and** conversion guard together | `SK1120/−/ref_struct_target`, `SK1120/−/unrelated_type_is_cs8121` |
+| `SK1120`'s CS8121 conversion guard | `SK1120/−/unrelated_type_is_cs8121` |
+| `SK1120`'s reference-type operand test | `SK1120/−/value_operand_would_be_cs0183` |
+| `SK1120`'s `SK2181` handover | ⚠ **nothing** — dead; guard removed, see below |
+| `SK1120`'s primary-operand test | `SK1120/−/conditional_operand_is_not_primary` |
+| `SK1120`'s comment check | `SK1120/−/comment_inside_the_call` |
+| `SK1120`'s parenthesisation | ⚠ nothing in the **parse** test; `SK1120/+/negated_needs_parentheses` in the **re-binding** test |
+| `SK1121`'s outer-`catch` exclusion | ⚠ nothing until a reaching fixture existed; then `SK1121/−/outer_catch_beside_the_finally` |
+| `SK1121`'s single-statement test (`try` first) | `SK1121/−/statement_after_the_inner_try` |
+| `SK1121`'s single-statement test (`try` last) | `SK1121/−/two_statements_in_the_outer_block` |
+| `SK1121`'s inner-shape test | `SK1121/−/inner_has_its_own_finally`, `SK1121/−/inner_try_has_no_catch` |
+| `SK1121`'s comment/directive check | `SK1121/−/comment_between_the_braces`, `SK1121/−/directive_before_the_inner_try` |
+| `SK1122`'s identical-order exclusion | `SK1122/−/identical_order_already_unifies` |
+| `SK1122`'s member-type equality | `SK1122/−/different_member_type` |
+| `SK1122`'s side-effect test | `SK1122/−/initializer_calls_a_method` |
+| `SK1122`'s same-member scope | `SK1122/−/another_member_entirely` |
+| `SK1122`'s comment check | `SK1122/−/comment_inside_the_creation` |
+| `SK1123`'s typeless requirement | `SK1123/−/typed_alternatives` |
+| `SK1123`'s positional-clause exclusion | ⚠ nothing until the fixture carried both clauses; then `SK1123/−/positional_clause` |
+| `SK1123`'s single-subpattern requirement | `SK1123/−/more_than_one_subpattern` |
+| `SK1123`'s plain-`Name:` requirement | `SK1123/−/extended_property_path` |
+| `SK1123`'s same-property test | `SK1123/−/different_properties` |
+| `SK1123`'s comment check | `SK1123/−/comment_inside_the_pattern` |
+
+⚠ **`SK1120`'s `SK2181` handover was dead, and what replaced it is a better fact than the guard
+was.** The rule declined a `GetType()` whose receiver is already a `Type`, on the reasoning that
+`typeof(Type).IsAssignableFrom(t.GetType())` satisfies both rules' shapes and the two would offer
+contradictory edits. Removing it turned nothing red, and asking the semantic model directly says
+why: **`System.Type` declares its own `public new Type GetType()`**, so `t.GetType()` on a `Type`
+receiver binds to `System.Type.GetType()` — containing type `System.Type`, special type `None` — and
+never to `object.GetType()`. The rule already required `object`'s, so the two are disjoint *by the
+BCL's own declaration* rather than by agreement. The guard is gone and the disjointness test stays.
+
+⚠ **`SK1121`'s outer-`catch` fixtures did not reach the guard they were written for.** Both unsound
+nestings — issue #109's example, and two chained `catch` clauses — have an outer `catch` and **no
+outer `finally`**, so the "the outer must have a `finally`" requirement declines them several lines
+earlier and the outer-`catch` guard is never asked. The guard is reachable only where the outer
+statement has *both*, which no fixture had. `outer_catch_beside_the_finally` is that shape, and the
+sabotage turns it red. ⚠ **Exactly the `SK2170` empty-body lesson**: a guard whose removal turns
+nothing red is either dead or untested, and the two look identical from the outside.
+
+⚠ **`SK1123`'s positional fixture had the same defect.** `p is (1, _) or { First: 2 }` never reaches
+the positional guard, because a bare positional pattern carries no property clause and the "exactly
+one property subpattern" requirement declines it first. A recursive pattern may carry both clauses
+at once — `p is (1, _) { First: 2 } or { First: 3 }` — and only that shape tests the guard; merging
+it would silently drop the `(1, _)` test.
+
+⚠ **`SK1120`'s parenthesisation is the batch's clearest demonstration of #304.** With the
+parentheses suppressed, `!typeof(Stream).IsInstanceOfType(source)` fixes to `!source is Stream`,
+which **parses** — `!source` is a well-formed unary expression and `is Stream` follows it — and does
+not **bind**: `!` cannot be applied to an `object`. `EveryFix_ProducesTextThatStillParses` stays
+green on all 3 482 cases and `EveryFix_SilencesTheRuleAndIntroducesNoDiagnostic` fails on exactly
+one. A fix that is checked by parsing alone is not checked.
+
+⚠ **`SK1120`'s `ref struct` arm is kept although it is masked, and the two-guard sabotage is what
+established that it is subsumed rather than wrong.** A `ref struct` cannot be boxed, so
+`ClassifyConversion` already reports no conversion from any reference-typed operand and declines the
+shape first. Removing both guards together turns `ref_struct_target` red, which distinguishes
+"another guard catches this" from "nothing catches this".
+
+### The measurement, and every zero classified
+
+**Skala's own tree**, `--load=binlog --require-fresh-binlog --no-cache` over a Release build made
+with `--no-incremental`, which produced **0 CS diagnostics** and a binlog covering **633 of 635
+selected files (100 %)** — the two missing are `build/Build.cs` and `build/Configuration.cs`, which
+`Skala.slnx` does not contain, the same pair as the `SK2170` batch. 1 498 findings from 41 rules,
+607 of them from **22 distinct `Semantic` rules**, which is what proves the semantic half ran. No
+`SK9030`: nothing in the run crashed.
+
+**The corpus**, `--load=loose` over the 4 459-file tree copied outside the repository because
+`SK9023` makes it unreachable in place. 3 666 findings — of which **3 660 are `Syntax` and 6 are
+tool diagnostics, and not one comes from any of the catalogue's semantic rules.** That reconfirms
+the `SK2172` finding: under a loose load the semantic half does not run at all.
+
+⚠ **The instrument was verified in both pipelines before any zero was believed, and the plant is
+what corrected a misreading.** A file carrying one of each shape was planted into
+`Rikarin.Skala.Analysis`, the binlog rebuilt, and the run reports `SK1120` ×2, `SK1121`, `SK1122`
+and `SK1123` ×1 each; the file was then deleted and the binlog rebuilt clean. The same for the loose
+pipeline: a planted file in the corpus copy reports `SK1121` and `SK1123` and, correctly, neither
+semantic rule. ⚠ **`--include-hints` gates the console reporter and not the SARIF** — reading the
+console first suggested the three `hint` rules had been filtered out of the measurement, and
+comparing the two SARIFs refuted it: both carry all four, and 14 `hint`-severity rules contribute
+853 of the own-tree run's 1 498 findings.
+
+| Rule | Own tree | Corpus | Classification |
+|---|---:|---:|---|
+| `SK1120` | 0 | 0 | own tree **shape present and correctly declined**; corpus ⚠ **the analysis never ran** |
+| `SK1121` | 0 | 0 | own tree **shape absent**; corpus **shape present and correctly declined** |
+| `SK1122` | 0 | 0 | own tree **shape present and correctly declined**; corpus ⚠ **the analysis never ran** |
+| `SK1123` | 0 | 0 | **shape absent** in both |
+
+- **`SK1120`** — Skala's own source makes **six** `typeof(X).IsAssignableFrom(<a Type variable>)`
+  calls (`Hosting/RoslynCodeStyle.cs:73`, `Hosting/HostedAnalyzers.cs:220`, `AnalysisTests.cs:50`,
+  `FixRoundTripTests.cs:38` among them). Every one is the two-type question with no value in it,
+  which has no `is` spelling, and every one is correctly declined. ⚠ **Neither *reportable* shape
+  occurs in compiled code**: a census of the same 635 files reports two `IsInstanceOfType` and three
+  `IsAssignableFrom(x.GetType())`, and all five are inside **this batch's own doc comments and test
+  string literals** — a rule's prose contaminating a census of its own subject, which is worth
+  knowing before the next batch measures itself.
+- **`SK1121`** — 230 `try` tokens in Skala's compiled source and **not one nested `try`**: the three
+  the census finds are again this batch's own doc comments and one test's raw-string source. On the
+  corpus, **386 `try` tokens and 7 nested `try` statements**, none of them the mergeable nesting, so
+  that zero is a decline rather than an absence.
+- **`SK1122`** — 14 anonymous object creations in Skala's own source, three files holding two or
+  more, and no pair that differs only in order.
+- **`SK1123`** — **zero** `or`-alternations of property patterns in 4 459 corpus files, and none in
+  Skala's own compiled code either. The shape is genuinely rare, which is consistent with the
+  inspection shipping at `HINT`.
+
+⚠ **The `ImplicitUsings` exercise moves far more here than it did for the `SK2170` batch, and the
+difference is the slice rather than the flag.** Compiled as one project over `real/vixen` with the
+`.expected.cs` duplicates excluded — 200 files — the slice reports **9 534 CS errors with
+`ImplicitUsings` disabled and 8 218 with it enabled**, a fall of 1 316 (13.8 %). The `SK2170` batch
+measured `real/newtonsoft` and saw 1 808 → 1 806, and both numbers are right: Newtonsoft targets old
+frameworks and writes every `using` out, while Vixen is modern C# that leans on the implicit set.
+⚠ **Neither slice compiles either way** — the residue is 7 856 `CS0246` for types the corpus simply
+does not carry — so no semantic rule can be measured on the corpus at all, and that is why
+`SK1120`'s and `SK1122`'s corpus zeros are classified as the analysis never running rather than as
+clean code.
+
+### The three gates
+
+`./build.sh Lint` was red once and for exactly the expected reason: `skala format --check Rules`
+named **the four new analyzers and nothing else** — 356 files left alone, so no pre-existing file
+had drifted. Formatted, and green.
+
+The self-gate reported **one** new finding attributable to this batch: `SK7002`, cognitive
+complexity 18 against a threshold of 15, on `ReflectiveTypeTestAnalyzer.Analyze`. ⚠ **Split rather
+than baselined**, following `SK2200`: recognising the call syntactically and testing whether the
+rewrite is admissible are two questions, and `TryReadCall` now answers the first. It returns the
+`typeof` and the operand as a nullable tuple rather than through `out` parameters, because
+netstandard2.0 has no `NotNullWhen` and the `out` form produced a CS0165/CS8604 pair at the call
+site.
+
+⚠ **The self-gate is still red, and none of it is this batch's.** With `--baseline` (which the
+command in `CLAUDE.md` omits, and which must be passed explicitly — "empty uses
+`.skala/baseline.sarif` when it exists") **731 findings survive a 433-entry baseline**, and **not one
+is located in a file this batch created**. The `SK7020` rows that name the new analyzers name them
+as *secondary* members of a cluster whose primary is a pre-existing file — the `using`-and-
+`Initialize` header every analyzer in the tree shares. The baseline predates both this batch and the
+merges that landed beside it, which is the state `CLAUDE.md` describes: the baseline settles after
+the **last** merge, not the first, so it is deliberately left for the integrator rather than updated
+from inside one of ten concurrent worktrees.
+
+`./build.sh` compiles and passes every suite except five tests, and **none of the five is this
+batch's to fix**:
+
+- `SdkAdoptionTests.RuleIds_MatchRulesJson` and `DocsSiteTests.Site_IsUpToDateWithTheSources` are
+  the two **expected** failures: `Rikarin.Skala.Sdk.targets` is not edited here (#290) and
+  `skala docs site` is not run here, so `<SkalaRuleIds>` and `docs/site/` stay a merge step.
+- `ProvenanceTests` (×2) and `FrozenSweepTests` fail on an `.editorconfig` hash the formatter corpus
+  no longer matches — **2 814 of 2 814 committed fixtures**, which is the signature of a repository-
+  wide drift rather than of anything one batch did. ⚠ **Proved inherited rather than asserted**: the
+  file hashes `sha256:e256d0b9ed35b14f` at this batch's merge-base and the identical
+  `sha256:e256d0b9ed35b14f` at its tip, while the corpus records `sha256:1db666f69fec005d`. Nothing
+  here touches `.editorconfig`, and re-freezing the corpus is a reviewed commit of its own.

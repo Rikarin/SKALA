@@ -22,8 +22,6 @@
   "ConvertToPrimaryConstructor": "SK1002",
   "ReplaceWithPrimaryConstructorParameter": "SK1002",
   "ConvertToExtensionBlock": "SK1004",
-  "RedundantOverload.Local": "SK1110",
-  "IntroduceOptionalParameters.Local": "SK1110",
   "MoveToExtensionBlock": "SK1004",
   "ReplaceWithFieldKeyword": "SK1003",
   "ConvertToUsingDeclaration": "SK1006",
@@ -270,6 +268,8 @@
   "PossiblyUnintendedSideEffectsInsideConditionalInvocation": "SK2202",
   "VariableLengthStringHexEscapeSequence": "SK2171",
   "SuppressNullableWarningExpressionAsInvertedIsExpression": "SK2172",
+  "RedundantOverload.Local": "SK1110",
+  "IntroduceOptionalParameters.Local": "SK1110",
   "InlineTemporaryVariable": "SK1100",
   "JoinDeclarationAndInitializer": "SK1101",
   "MoveLocalFunctionAfterJumpStatement": "SK1102",
@@ -280,5 +280,10 @@
   "ZeroIndexFromEnd": "SK2210",
   "LoopVariableIsNeverChangedInsideLoop": "SK2211",
   "WithExpressionModifiesAllMembers": "SK2240",
-  "RegExpInspections": "SK2241"
+  "RegExpInspections": "SK2241",
+  "CanSimplifyIsInstanceOfType": "SK1120",
+  "CanSimplifyIsAssignableFrom": "SK1120",
+  "TryStatementsCanBeMerged": "SK1121",
+  "SimilarAnonymousTypeNearby": "SK1122",
+  "ExtractCommonPropertyPattern": "SK1123"
 }

@@ -175,6 +175,8 @@ public sealed class RuleFixtureTests {
         new WithExpressionRewritesAllAnalyzer(), new MalformedRegexPatternAnalyzer(),
         new DeferredArgumentCheckAnalyzer(),
         new UngroupedExtensionMethodsAnalyzer(), new ConstantForwardingOverloadAnalyzer(),
+        new ReflectiveTypeTestAnalyzer(), new MergeableTryAnalyzer(),
+        new ReorderedAnonymousTypeAnalyzer(), new MergedPropertyPatternAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

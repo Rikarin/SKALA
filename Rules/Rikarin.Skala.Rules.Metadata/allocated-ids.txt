@@ -334,3 +334,7 @@ SK2241 malformed-regex-pattern
 SK2242 deferred-argument-check
 SK1004 ungrouped-extension-methods
 SK1110 constant-forwarding-overload
+SK1120 reflective-type-test
+SK1121 mergeable-try
+SK1122 reordered-anonymous-type
+SK1123 merged-property-pattern

@@ -213,6 +213,8 @@ public static class AnalyzerHost {
         new WithExpressionRewritesAllAnalyzer(), new MalformedRegexPatternAnalyzer(),
         new DeferredArgumentCheckAnalyzer(),
         new UngroupedExtensionMethodsAnalyzer(), new ConstantForwardingOverloadAnalyzer(),
+        new ReflectiveTypeTestAnalyzer(), new MergeableTryAnalyzer(),
+        new ReorderedAnonymousTypeAnalyzer(), new MergedPropertyPatternAnalyzer(),
     ];
 
     /// <summary>
