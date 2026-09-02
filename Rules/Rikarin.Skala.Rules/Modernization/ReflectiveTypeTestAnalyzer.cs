@@ -40,7 +40,12 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         ⚠ <b>Three types make <c>typeof(T)</c> compile and <c>x is T</c> not compile</b>, and all
 ///         three were confirmed against the compiler rather than assumed: a static class, a
 ///         <c>ref struct</c>, and an unbound generic such as <c>typeof(List&lt;&gt;)</c>. Each is a
-///         legal reflection call and an uncompilable pattern, so each is declined.
+///         legal reflection call and an uncompilable pattern, so each is declined. ⚠ <b>The
+///         <c>ref struct</c> arm is kept although it is currently masked</b>: removing it alone
+///         turns no fixture red, because a <c>ref struct</c> cannot be boxed and so
+///         <c>ClassifyConversion</c> already reports no conversion from any reference-typed operand.
+///         Removing <em>both</em> turns <c>ref_struct_target</c> red, which is what established that
+///         it is subsumed rather than wrong.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -178,16 +183,14 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
             return false;
         }
 
-        // ⚠ `SK2181` owns a `GetType()` whose receiver is already a `Type`, and that overlap is
-        // real rather than theoretical: `typeof(Type).IsAssignableFrom(t.GetType())` satisfies both
-        // shapes at once. It is a defect there — the call returns `System.RuntimeType` for every
-        // input — not an opportunity to modernise, and the two rules offer contradictory edits, so
-        // this one declines and leaves the expression to the rule that reports what is wrong with it.
-        if (model.GetTypeInfo(access.Expression, cancellation).Type is { } receiverType
-            && IsSystemType(receiverType)) {
-            return false;
-        }
-
+        // ⚠ The `SpecialType.System_Object` requirement above is what hands `SK2181`'s shape over,
+        // and an explicit handover guard written here was removed as unreachable — removing it
+        // turned no fixture red, and this is why. ⚠ **`System.Type` declares its own
+        // `public new Type GetType()`**, so `t.GetType()` on a `Type` receiver binds to
+        // `System.Type.GetType()` and never to `object.GetType()`: asked directly, the model
+        // answers `System.Type.GetType()` with containing type `System.Type` and special type
+        // `None`. The two rules are disjoint by the BCL's own declaration rather than by agreement,
+        // and `TheGetTypeOnATypeThatSK2181Owns_IsDeclinedBySK1120` pins it.
         receiver = access.Expression;
         return true;
     }

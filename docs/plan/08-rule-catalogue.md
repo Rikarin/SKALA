@@ -5020,3 +5020,74 @@ the four concepts under test, the only diagnostics that land are `IDE0055` (form
 (expression body), `IDE0046`, `CA1062`, `CA1303` and `CA1051` — none of which is about any of them.
 So all four zeros are **shape present and correctly not reported by anyone else**, not shape absent
 and not an instrument that never ran.
+
+### Sabotage
+
+Each guard was removed in turn and the batch's fixtures re-run. ⚠ **Four of the twenty-four turned
+nothing red, and all four were defects rather than passes** — two fixtures that never reached the
+guard they were written for, one guard subsumed by another, and one guard that was simply dead.
+
+| Guard removed | What went red |
+|---|---|
+| `SK1120`'s static-class exclusion | `SK1120/−/static_class_target` |
+| `SK1120`'s unbound-generic exclusion | `SK1120/−/unbound_generic_target` |
+| `SK1120`'s `ref struct` exclusion | ⚠ **nothing** — subsumed; see below |
+| `SK1120`'s `ref struct` **and** conversion guard together | `SK1120/−/ref_struct_target`, `SK1120/−/unrelated_type_is_cs8121` |
+| `SK1120`'s CS8121 conversion guard | `SK1120/−/unrelated_type_is_cs8121` |
+| `SK1120`'s reference-type operand test | `SK1120/−/value_operand_would_be_cs0183` |
+| `SK1120`'s `SK2181` handover | ⚠ **nothing** — dead; guard removed, see below |
+| `SK1120`'s primary-operand test | `SK1120/−/conditional_operand_is_not_primary` |
+| `SK1120`'s comment check | `SK1120/−/comment_inside_the_call` |
+| `SK1120`'s parenthesisation | ⚠ nothing in the **parse** test; `SK1120/+/negated_needs_parentheses` in the **re-binding** test |
+| `SK1121`'s outer-`catch` exclusion | ⚠ nothing until a reaching fixture existed; then `SK1121/−/outer_catch_beside_the_finally` |
+| `SK1121`'s single-statement test (`try` first) | `SK1121/−/statement_after_the_inner_try` |
+| `SK1121`'s single-statement test (`try` last) | `SK1121/−/two_statements_in_the_outer_block` |
+| `SK1121`'s inner-shape test | `SK1121/−/inner_has_its_own_finally`, `SK1121/−/inner_try_has_no_catch` |
+| `SK1121`'s comment/directive check | `SK1121/−/comment_between_the_braces`, `SK1121/−/directive_before_the_inner_try` |
+| `SK1122`'s identical-order exclusion | `SK1122/−/identical_order_already_unifies` |
+| `SK1122`'s member-type equality | `SK1122/−/different_member_type` |
+| `SK1122`'s side-effect test | `SK1122/−/initializer_calls_a_method` |
+| `SK1122`'s same-member scope | `SK1122/−/another_member_entirely` |
+| `SK1122`'s comment check | `SK1122/−/comment_inside_the_creation` |
+| `SK1123`'s typeless requirement | `SK1123/−/typed_alternatives` |
+| `SK1123`'s positional-clause exclusion | ⚠ nothing until the fixture carried both clauses; then `SK1123/−/positional_clause` |
+| `SK1123`'s single-subpattern requirement | `SK1123/−/more_than_one_subpattern` |
+| `SK1123`'s plain-`Name:` requirement | `SK1123/−/extended_property_path` |
+| `SK1123`'s same-property test | `SK1123/−/different_properties` |
+| `SK1123`'s comment check | `SK1123/−/comment_inside_the_pattern` |
+
+⚠ **`SK1120`'s `SK2181` handover was dead, and what replaced it is a better fact than the guard
+was.** The rule declined a `GetType()` whose receiver is already a `Type`, on the reasoning that
+`typeof(Type).IsAssignableFrom(t.GetType())` satisfies both rules' shapes and the two would offer
+contradictory edits. Removing it turned nothing red, and asking the semantic model directly says
+why: **`System.Type` declares its own `public new Type GetType()`**, so `t.GetType()` on a `Type`
+receiver binds to `System.Type.GetType()` — containing type `System.Type`, special type `None` — and
+never to `object.GetType()`. The rule already required `object`'s, so the two are disjoint *by the
+BCL's own declaration* rather than by agreement. The guard is gone and the disjointness test stays.
+
+⚠ **`SK1121`'s outer-`catch` fixtures did not reach the guard they were written for.** Both unsound
+nestings — issue #109's example, and two chained `catch` clauses — have an outer `catch` and **no
+outer `finally`**, so the "the outer must have a `finally`" requirement declines them several lines
+earlier and the outer-`catch` guard is never asked. The guard is reachable only where the outer
+statement has *both*, which no fixture had. `outer_catch_beside_the_finally` is that shape, and the
+sabotage turns it red. ⚠ **Exactly the `SK2170` empty-body lesson**: a guard whose removal turns
+nothing red is either dead or untested, and the two look identical from the outside.
+
+⚠ **`SK1123`'s positional fixture had the same defect.** `p is (1, _) or { First: 2 }` never reaches
+the positional guard, because a bare positional pattern carries no property clause and the "exactly
+one property subpattern" requirement declines it first. A recursive pattern may carry both clauses
+at once — `p is (1, _) { First: 2 } or { First: 3 }` — and only that shape tests the guard; merging
+it would silently drop the `(1, _)` test.
+
+⚠ **`SK1120`'s parenthesisation is the batch's clearest demonstration of #304.** With the
+parentheses suppressed, `!typeof(Stream).IsInstanceOfType(source)` fixes to `!source is Stream`,
+which **parses** — `!source` is a well-formed unary expression and `is Stream` follows it — and does
+not **bind**: `!` cannot be applied to an `object`. `EveryFix_ProducesTextThatStillParses` stays
+green on all 3 482 cases and `EveryFix_SilencesTheRuleAndIntroducesNoDiagnostic` fails on exactly
+one. A fix that is checked by parsing alone is not checked.
+
+⚠ **`SK1120`'s `ref struct` arm is kept although it is masked, and the two-guard sabotage is what
+established that it is subsumed rather than wrong.** A `ref struct` cannot be boxed, so
+`ClassifyConversion` already reports no conversion from any reference-typed operand and declines the
+shape first. Removing both guards together turns `ref_struct_target` red, which distinguishes
+"another guard catches this" from "nothing catches this".
