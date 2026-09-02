@@ -329,8 +329,8 @@ HOSTED_BYKEY = bykey(HOSTED)
 #   package     the test framework's own analyzer package, present exactly when the consumer
 #               already references the framework.
 #
-# ⚠ **43 of the 65 entries above name a diagnostic that produces nothing in a default build**
-# (7 `opt-in` + 36 `code-style`). That is the size of what "exists" was hiding.
+# ⚠ **45 of the 65 entries above name a diagnostic that produces nothing in a default build**
+# (7 `opt-in` + 38 `code-style`). That is the size of what "exists" was hiding.
 #
 # ⚠ **Two of the three enabled-and-visible states are `Info`**, which is `note` in SARIF and
 # produces **zero console lines** at `-v n`. `Info` still counts as `on` here because it is in the

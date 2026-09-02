@@ -3133,14 +3133,14 @@ keyed to measured behaviour rather than to the descriptor:
 
 | State | Meaning | Entries |
 |---|---|---:|
-| `on` | in a stock build's error log with nothing configured | 19 |
+| `on` | in a stock build's error log with nothing configured | 17 |
 | `opt-in` | nothing at stock; **one** `dotnet_diagnostic.<id>.severity` line makes it visible | 7 |
-| `code-style` | an `IDE*`: a severity line is not enough, it also needs `EnforceCodeStyleInBuild=true`. ⚠ `AnalysisMode=All` reaches **no** `IDE*` at all — 96 results, zero of them IDE | 36 |
+| `code-style` | an `IDE*`: a severity line is not enough, it also needs `EnforceCodeStyleInBuild=true`. ⚠ `AnalysisMode=All` reaches **no** `IDE*` at all — 96 results, zero of them IDE | 38 |
 | `compiler` | a `CS####` the compiler emits unconditionally | 3 |
 | `package` | the test framework's own analyzer, present exactly when the consumer references the framework | — |
 
-⚠ **43 of the 65 entries name a diagnostic that produces nothing in a default build** (7 `opt-in`
-plus 36 `code-style`). That is the size of what "exists" was hiding, and it is why nine shipped rules
+⚠ **45 of the 65 entries name a diagnostic that produces nothing in a default build** (7 `opt-in`
+plus 38 `code-style`). That is the size of what "exists" was hiding, and it is why nine shipped rules
 were being counted as duplicates of a diagnostic that says nothing.
 
 ⚠ **Three of the five states are the same three [#299](https://github.com/Rikarin/SKALA/issues/299)
