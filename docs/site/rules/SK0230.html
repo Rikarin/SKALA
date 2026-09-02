@@ -28,6 +28,7 @@
 </table>
 <h2 id="why">Why</h2>
 <p>Empty braces read as a list somebody is about to fill in and stay in the file for years after nobody is. <code>new Foo { }</code> is two characters of ceremony over <code>new Foo()</code>. <code>x with { }</code> is more than ceremony — <code>with</code> invokes the record's compiler-generated copy constructor, so it allocates a whole instance in order to produce a value equal to the one it was given.</p>
+<p>⚠ ReSharper rates <code>RedundantWithExpression</code> a <em>suggestion</em> and <code>RedundantEmptyObjectOrCollectionInitializer</code> a <em>warning</em>; Skala reports one concept at <code>warning</code> and reading <code>resharper_redundant_with_expression_highlighting</code> therefore lowers both. The severity split is the same observation this rule's <code>fixIsSafe: false</code> records: the empty initializer is nothing, and the empty <code>with</code> is an allocation somebody may have meant.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
 <pre class="bad"><code>var options = new JsonSerializerOptions { };
@@ -35,8 +36,6 @@ var copy = original with { };</code></pre>
 <p>Write:</p>
 <pre class="good"><code>var options = new JsonSerializerOptions();
 var copy = original;</code></pre>
-<h2 id="resharper">The ReSharper mapping</h2>
-<p>⚠ ReSharper rates <code>RedundantWithExpression</code> a <em>suggestion</em> and <code>RedundantEmptyObjectOrCollectionInitializer</code> a <em>warning</em>; Skala reports one concept at <code>warning</code> and reading <code>resharper_redundant_with_expression_highlighting</code> therefore lowers both. The severity split is the same observation this rule's <code>fixIsSafe: false</code> records: the empty initializer is nothing, and the empty <code>with</code> is an allocation somebody may have meant.</p>
 <h2 id="false-positives">When it does not fire</h2>
 <p>⚠ <strong>The fix is declared unsafe, and the empty `with` is the whole reason.</strong> <code>new Foo { }</code> → <code>new Foo()</code> is a pure deletion with no observable effect at all, but <code>x with { }</code> → <code>x</code> is not: the copy constructor produces a <em>distinct</em> instance, so removing it aliases a clone the author may have written in order to mutate it, and it removes the <code>NullReferenceException</code> a null operand would have thrown. Splitting one concept into two safety classes would have been the alternative; the conservative reading of the whole rule is the cheaper mistake. ⚠ Only the two initializer kinds that mean &quot;and then set these members&quot; are matched. An empty array initializer belongs to an <code>ArrayCreationExpression</code>, which this rule never sees — <code>new int[] { }</code> cannot lose its braces and still compile. An anonymous type is a different node again: <code>new { }</code> has no <code>new ()</code> to become. ⚠ A creation with no argument list <em>grows</em> one, because <code>new Foo</code> is not an expression; a creation that already has arguments keeps them, and <code>new()</code> target-typed creation is matched through the same path. ⚠ A comment or a preprocessor directive between the braces withdraws the finding: an empty initializer holding a note is a note about why it is empty, and the fix deletes the braces wholesale.</p>
 <h2 id="configuration">Configuration</h2>

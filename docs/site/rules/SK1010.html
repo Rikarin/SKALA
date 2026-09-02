@@ -37,8 +37,6 @@
 <pre class="good"><code>if (source is not null) {
     Use(source);
 }</code></pre>
-<h2 id="resharper">The ReSharper mapping</h2>
-<p>⚠ A choice, not a derivation. The author's export carries at least six inspections over this ground at four severities: merge_into_pattern (suggestion), arrange_null_checking_pattern (hint), convert_type_check_to_null_check (warning), convert_type_check_pattern_to_null_check (warning), join_null_check_with_usage (suggestion), use_null_propagation (hint). MergeIntoPattern is the closest and the mapping is recorded rather than computed. docs/plan/16 § Q5.</p>
 <h2 id="false-positives">When it does not fire</h2>
 <p>The rule is silent unless the semantic model resolves the non-null operand's type and that type declares no <code>operator ==</code>/<code>operator !=</code>, directly or on any base type. It is silent on unconstrained type parameters (where <code>== null</code> has its own lifted meaning), on <code>dynamic</code>, on pointer types, on any operand whose type could not be resolved, and inside an expression tree, where the pattern form does not compile.</p>
 <h2 id="configuration">Configuration</h2>

@@ -36,8 +36,6 @@
 }</code></pre>
 <p>Write:</p>
 <pre class="good"><code>ArgumentNullException.ThrowIfNull(source);</code></pre>
-<h2 id="resharper">The ReSharper mapping</h2>
-<p>⚠ The export set <code>resharper_use_throw_if_null_method_highlighting = none</code>. While Skala honoured those keys, reading them as authoritative would have switched this rule off in the repository Skala was built for — which is why that bridge was opt-in, and in the end why it was removed: an export's severities were chosen for ReSharper's inspections, not for Skala's rules. This rule is retired in any case; <code>CA1510</code> covers it at stock settings.</p>
 <h2 id="false-positives">When it does not fire</h2>
 <p>Requires <code>System.ArgumentNullException.ThrowIfNull</code> to exist in the compilation, so a project on an older target framework is silent rather than offered an uncompilable fix. Only fires when the guard is an <code>if</code> whose condition is exactly <code>x is null</code> or <code>x == null</code> (with the same operator-== check SK1010 makes) and whose body is exactly one <code>throw new ArgumentNullException(nameof(x))</code> with no message argument and no other statement — a guard that also logs, or that throws a derived exception, or that passes a custom message, is a deliberate choice and is left alone.</p>
 <h2 id="configuration">Configuration</h2>

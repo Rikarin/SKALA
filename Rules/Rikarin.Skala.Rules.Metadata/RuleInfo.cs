@@ -62,8 +62,7 @@ public enum RuleScope {
 ///         <c>resharper_*_highlighting</c> severity bridge. One field named one inspection while a
 ///         rule routinely covers several, so <c>resharper_&lt;x&gt;_highlighting = none</c> either
 ///         silenced a rule covering ten other concepts or was inert for the other ten — it could not
-///         mean what a reader expected. <see cref="ReSharperNote" /> stays: it is prose about how a
-///         concept lines up against ReSharper's, not a machine-readable mapping.
+///         mean what a reader expected. /// concept lines up against ReSharper's, not a machine-readable mapping.
 ///     </para>
 /// </remarks>
 public sealed record RuleInfo(
@@ -85,8 +84,7 @@ public sealed record RuleInfo(
     string BadExample,
     string GoodExample,
     string FalsePositives,
-    IReadOnlyList<string> Configuration,
-    string? ReSharperNote) {
+    IReadOnlyList<string> Configuration) {
     /// <summary>Whether the rule can run at all under <c>--load=loose</c>.</summary>
     public bool RunsWithoutAProject => !RequiresSemantics && Scope != RuleScope.Compilation;
 

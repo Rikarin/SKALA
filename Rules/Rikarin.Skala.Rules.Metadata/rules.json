@@ -572,7 +572,7 @@
       "since": "0.6",
       "languageVersion": "10.0",
       "summary": "A file with exactly one block-scoped namespace and nothing beside it can use `namespace X;`.",
-      "rationale": "One level of indentation across every file in the repository, for no expressive gain. The configuration this tool serves already says `csharp_style_namespace_declarations = file_scoped`; the rule is what makes that true in code an agent wrote rather than only in code the IDE touched.",
+      "rationale": "One level of indentation across every file in the repository, for no expressive gain. The configuration this tool serves already says `csharp_style_namespace_declarations = file_scoped`; the rule is what makes that true in code an agent wrote rather than only in code the IDE touched.\n\nReSharper has no inspection id for this: it drives the conversion from `csharp_style_namespace_declarations = file_scoped:suggestion` and reports the result under `resharper_arrange_namespace_body_highlighting = hint`. Two mechanisms, two severities, one concept — so this rule maps to no key at all. docs/plan/16 § Q5.",
       "examples": {
         "bad": "namespace Vixen.Core {\n    public sealed class Archetype;\n}",
         "good": "namespace Vixen.Core;\n\npublic sealed class Archetype;"
@@ -581,8 +581,7 @@
       "configuration": [
         "csharp_style_namespace_declarations",
         "dotnet_diagnostic.SK1005.severity"
-      ],
-      "resharperNote": "ReSharper has no inspection id for this: it drives the conversion from `csharp_style_namespace_declarations = file_scoped:suggestion` and reports the result under `resharper_arrange_namespace_body_highlighting = hint`. Two mechanisms, two severities, one concept — so this rule maps to no key at all. docs/plan/16 § Q5."
+      ]
     },
     {
       "id": "SK1006",
@@ -632,8 +631,7 @@
       "falsePositives": "The rule is silent unless the semantic model resolves the non-null operand's type and that type declares no `operator ==`/`operator !=`, directly or on any base type. It is silent on unconstrained type parameters (where `== null` has its own lifted meaning), on `dynamic`, on pointer types, on any operand whose type could not be resolved, and inside an expression tree, where the pattern form does not compile.",
       "configuration": [
         "dotnet_diagnostic.SK1010.severity"
-      ],
-      "resharperNote": "⚠ A choice, not a derivation. The author's export carries at least six inspections over this ground at four severities: merge_into_pattern (suggestion), arrange_null_checking_pattern (hint), convert_type_check_to_null_check (warning), convert_type_check_pattern_to_null_check (warning), join_null_check_with_usage (suggestion), use_null_propagation (hint). MergeIntoPattern is the closest and the mapping is recorded rather than computed. docs/plan/16 § Q5."
+      ]
     },
     {
       "id": "SK1015",
@@ -685,8 +683,7 @@
       "falsePositives": "Requires `System.ArgumentNullException.ThrowIfNull` to exist in the compilation, so a project on an older target framework is silent rather than offered an uncompilable fix. Only fires when the guard is an `if` whose condition is exactly `x is null` or `x == null` (with the same operator-== check SK1010 makes) and whose body is exactly one `throw new ArgumentNullException(nameof(x))` with no message argument and no other statement — a guard that also logs, or that throws a derived exception, or that passes a custom message, is a deliberate choice and is left alone.",
       "configuration": [
         "dotnet_diagnostic.SK1020.severity"
-      ],
-      "resharperNote": "⚠ The export set `resharper_use_throw_if_null_method_highlighting = none`. While Skala honoured those keys, reading them as authoritative would have switched this rule off in the repository Skala was built for — which is why that bridge was opt-in, and in the end why it was removed: an export's severities were chosen for ReSharper's inspections, not for Skala's rules. This rule is retired in any case; `CA1510` covers it at stock settings."
+      ]
     },
     {
       "id": "SK1030",
@@ -785,8 +782,7 @@
       "falsePositives": "Only fires when the invoked method is exactly `System.Linq.Enumerable.Count()` or `Enumerable.Any()` with no argument, the receiver's type has an accessible instance `Count` (or `Length`) property of type `int`, and the receiver expression is a plain identifier or member-access chain with no invocation in it — so `GetItems().Any()` is left alone, because reading `.Count` on it would still call `GetItems()` and the rewrite is only obviously equivalent when the receiver is a variable. Silent on `IQueryable`, where `Any()` is a database round-trip and `Count` is not the same query.",
       "configuration": [
         "dotnet_diagnostic.SK1034.severity"
-      ],
-      "resharperNote": "Three inspections cover this ground: use_collection_count_property, replace_with_single_call_to_any and replace_with_single_call_to_count, all `suggestion` in the export. The first is recorded; the mapping is many-to-one from ReSharper's side. docs/plan/16 § Q5."
+      ]
     },
     {
       "id": "SK1035",
@@ -1100,8 +1096,7 @@
       "falsePositives": "⚠ **The rule ships disabled — `defaultSeverity: none` — and this is the interesting part of its story rather than a hedge.** It is silent on anything that could be an event handler or is bound to a delegate: an `override`, a `virtual` or `new` method (whose return type binds every override below it), any method implementing an interface member, any method whose name begins `On`, any method with the `(object, EventArgs)` shape, any method carrying an attribute, a partial method, and — the check that costs the most — every method whose name appears anywhere in the compilation in a position other than a direct invocation, which covers `+=` subscription, a method group passed as an argument and a delegate construction. That last check is why the rule is compilation-scoped and can never be served from the per-file incremental cache.\n\n⚠ **One measurement decides the default, and it is not a finding count.** M6 stacked two reasons and docs/plan/16 § \"The reference trees are a test subject\" struck one of them: \"the rule fires zero times on both reference trees\" is a fact about those trees, never a reason to disable a rule that is right. What survives is the cost. A compilation-scoped rule's answer for one file depends on files that file's cache key does not name, so enabling it sends every run with a change down the cold path — measured at M9 over Skala's own tree with `skala check --profile`, **8.5 s against a warm 6.9 s**, with the analyzer phase going from a single tree to all of them. Charging that to every repository for a rule whose benefit is unmeasured is the trade docs/plan/08 § \"Reasons that justify a cut\" calls reason 2, so the rule ships off and a repository that has `async void` turns it on deliberately.\n\n⚠ **Turning it on does not currently work the way this field used to say it did.** `IncrementalAnalysis` decides whether the warm path is available by reading `descriptor.IsEnabledByDefault`, which comes from this file and which an `.editorconfig` severity does not change — while Roslyn's driver filters on the effective severity and runs the analyzer anyway. An opted-in repository therefore keeps the warm path, and the cache drops uncacheable rule ids from what it stores, so this rule reports correctly on a cold run and silently reports nothing for unchanged files on a warm one. docs/plan/16 § \"The opt-in that does not cost what it says\" is the record; until it is fixed, opting in wants `--no-cache` beside it.",
       "configuration": [
         "dotnet_diagnostic.SK3001.severity (`none` by default; set it to `warning` to enable — ⚠ the rule is compilation-scoped, so it is meant to disable the incremental cache's warm path, and until the guard reads the effective severity rather than the default it does not: pair it with `--no-cache` or expect nothing on unchanged files, docs/plan/16 § \"The opt-in that does not cost what it says\")"
-      ],
-      "resharperNote": "⚠ The export sets `resharper_async_void_method_highlighting = suggestion` and this rule defaults to `none`. ReSharper's inspection fires on every `async void` including the event handlers, so a low severity is how it stays usable; this rule excludes the event-handler cases by analysis instead, and ships off for the cost reason its `falsePositives` field explains rather than for a noise reason. Reading the ReSharper key — off by default, doc 03 § \"Severities\" — would turn it on at suggestion."
+      ]
     },
     {
       "id": "SK3002",
@@ -1149,8 +1144,7 @@
       "falsePositives": "⚠ **Only an *omitted optional* parameter is reported.** The called method must declare a `CancellationToken` parameter that has a default value and that this call site supplied no argument for, positionally or by name — so a method with no such parameter, an overload pair the rule would have to choose between, and a call that already passes a token are all invisible to it. A call that passes `CancellationToken.None` or `default` **explicitly** is left alone: writing the token out is how an author says the call is deliberately not cancellable, and a rule that overrides that is arguing with a decision rather than finding an omission. ⚠ **Calls inside a `catch` or a `finally` are excluded**, because cleanup that a cancellation can abort is worse than cleanup that ignores it, and that is where the exception is legitimate. Test methods are excluded for the same reason `SK3002` excludes them. The enclosing body must have exactly one `CancellationToken` in scope; with two, which one to forward is a question the rule cannot answer, so it does not ask it. The fix appends a **named** argument, which is correct whether or not the intervening optional parameters were supplied, and is marked unsafe because passing a token makes a call cancellable that previously was not — a behaviour change the author should see.",
       "configuration": [
         "dotnet_diagnostic.SK3004.severity"
-      ],
-      "resharperNote": "⚠ The export sets `resharper_method_supports_cancellation_highlighting = suggestion` and this rule defaults to `warning`. ReSharper's inspection fires on every call with an unsupplied `CancellationToken` parameter, including the ones this rule excludes — cleanup in a `finally`, a call that already passes `None` deliberately, a body with two tokens in scope — so a low severity is how it stays usable. This rule reaches those cases by analysis instead, and takes its band's default. Reading the ReSharper key (off by default, doc 03 § \"Severities\") would demote it to `suggestion`."
+      ]
     },
     {
       "id": "SK3005",
@@ -1270,8 +1264,7 @@
       "falsePositives": "⚠ **Only where `await using` compiles, which is a narrower place than where the pattern is wrong.** The nearest enclosing method, local function or lambda must already be `async`, and the `using` must not sit in a position where `await` is illegal — a `lock` body, a constructor, an operator, an initializer, a query clause, an `unsafe` block, an expression tree. A `using` in a synchronous method is not reported at all, because making that method `async` changes its signature and is a refactor rather than an edit. ⚠ The disposed type must implement `System.IAsyncDisposable` as resolved by the semantic model, never be guessed from a `DisposeAsync` member of the right name. ⚠ **What the rule cannot know is whether this particular type's `Dispose` is a complete implementation**, and for several BCL types it is; those findings are correct and are not necessarily worth acting on, which is what a baseline entry is for rather than a reason to lower the severity. The fix inserts one keyword and is marked unsafe because `await using` introduces a suspension point where there was none, and a suspension changes when the code after it runs.",
       "configuration": [
         "dotnet_diagnostic.SK3503.severity"
-      ],
-      "resharperNote": "⚠ The export sets `resharper_use_await_using_highlighting = suggestion` and this rule defaults to `warning`. ReSharper treats it as a style preference; doc 08 puts the id in the disposal-and-lifetime band, where the default is `warning`, and doc 00's ninth non-negotiable says a severity comes from what the rule means rather than from how loud it is. Reading the ReSharper key (off by default, doc 03 § \"Severities\") would demote it to `suggestion`."
+      ]
     },
     {
       "id": "SK4010",
@@ -2788,7 +2781,6 @@
         "good": "sealed class Reader : IDisposable {\n    public void Dispose() => stream.Dispose();\n}"
       },
       "falsePositives": "Reported only for `GC.SuppressFinalize(this)` written as a statement directly inside a block, in a sealed class that derives straight from object and declares no finalizer in a single non-partial declaration. Every part of that is load-bearing. ⚠ An unsealed type is excluded because a derived type may declare a finalizer, which makes the base's call the thing that suppresses it; a type with any base class other than object is excluded for the same reason one level up. A partial or multi-file declaration is excluded so the answer stays decidable from the file the finding is in, which is what `scope: Semantic` promises the cache. Structs are excluded: they cannot have finalizers at all, so the call is redundant there too, but it also boxes and that is a different finding. An argument that is not literally `this`, a call in an expression-bodied member, and a call as an embedded statement under an `if` are all excluded, because the fix is a deletion and each of those has no statement to delete or leaves a construct behind that does not compile. Reflection or a runtime-registered finalizer is outside the proof.",
-      "resharperNote": "The export sets `resharper_gc_suppress_finalize_for_type_without_destructor_highlighting` to `warning` and Skala defaults the rule to `suggestion`. The lower default is deliberate: the call is harmless at runtime, so this is source noise rather than a defect, and a gate that fails on it would fail on tidiness.",
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2837,7 +2829,6 @@
         "good": "void Register(Type declaredType, EventInfo declaredEvent) { }"
       },
       "falsePositives": "⚠ **Reserved keywords only, and that is what keeps the rule off load-bearing escapes.** Every `@` a language feature can *require* is on a contextual keyword — `@field` once `field` became the backing-field keyword, `@value` in an accessor, `@extension`, `@record`, `@var`, `@async`, `@await` — and a contextual keyword is a legal identifier without the escape, so an escape on one is disambiguation rather than a name to change. None of them is reported. Only the declaring identifier is reported, never a reference to it: a name that comes from another assembly must be escaped at every use site and the author cannot rename it, so reporting uses would be reporting something nobody can fix, and it would multiply one finding by its call count. Constructors and destructors are skipped because their identifier repeats the type's, which is already reported once. Namespace name parts and query continuations are not examined. Verbatim strings, interpolated verbatim strings and `@` inside documentation or comments are not identifiers and are never seen.",
-      "resharperNote": "⚠ ReSharper publishes this one as an `.editorconfig` key with no inspection id in its issue-type dump, and the key is `resharper_escaped_keyword_highlighting`, which the export sets to `warning`. Skala defaults the rule to `suggestion`, deliberately: an escaped keyword compiles and runs correctly, and the cost is entirely to the reader.",
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2990,8 +2981,7 @@
       "since": "2.0",
       "configuration": [
         "dotnet_diagnostic.SK1041.severity"
-      ],
-      "resharperNote": "The export sets `resharper_convert_to_compound_assignment_highlighting = hint` while this rule defaults to `suggestion`. The lower ReSharper severity is not followed: ReSharper treats the long form as a cosmetic preference, and Skala treats it as the shape a half-finished rename hides in."
+      ]
     },
     {
       "id": "SK1042",
@@ -3263,8 +3253,7 @@
       "falsePositives": "⚠ The rule reports only what it can prove, and every unproven shape is declined. The body is walked in full — including nested lambdas, local functions and query clauses — and any of the following withholds the finding: `this` or `base`; a local, parameter or range variable declared outside the reported declaration, which includes a primary constructor parameter and the implicit `value` of a setter; an instance field, property, event or method reached without a receiver; a call to a local function declared outside, whose own captures this rule cannot see; and any name the semantic model does not resolve, so a file with errors reports nothing rather than guessing. Names that cannot capture are admitted: types, namespaces, aliases, labels, discards, static members, and everything inside `nameof`. Lambdas converted to an expression tree rather than to a delegate are excluded, as is any lambda nested inside one. A declaration already marked `static` is not reported, and neither is anything below C# 9. ⚠ **Disjoint from `SK4002` by construction**: that rule reports a delegate capturing iteration-local storage, and a declaration this rule reports captures nothing at all, so no declaration can produce both. ⚠ The fix does not claim an allocation was measured — it claims the allocation is now impossible.",
       "configuration": [
         "dotnet_diagnostic.SK4020.severity"
-      ],
-      "resharperNote": "The export sets `resharper_lambda_expression_can_be_made_static_highlighting = none`, so a repository that reads ReSharper's key gets this rule switched off. Skala ships it at `suggestion`: the inspection is quiet in the export because JetBrains treats it as a style opportunity, and the parity measurement makes it the highest-volume quiet inspection in the whole survey."
+      ]
     },
     {
       "id": "SK4021",
@@ -3845,7 +3834,6 @@
         "good": "Task<int> ReadAsync(Stream source) {\n    return source.ReadAsync(buffer);\n}"
       },
       "falsePositives": "⚠ **The fix is unsafe and the reason is not the edit.** Eliding the `await` moves exceptions from the returned task to the call — a method that used to fault its task now throws synchronously, at a place the caller may not be catching — and drops the method from every stack trace the task carries. Both are behaviour, both are usually acceptable, and neither is a decision a tool makes. ⚠ **It is outright wrong inside a `using`, which is what `SK3007` reports, and the two are disjoint by construction.** The body matched here must be a *single* statement that is the `return await`, or a single expression body: a `using` declaration needs a statement before the return, and a `using` statement makes the block's one statement a `using` rather than a `return`, so no shape this rule reports can contain one. `supersedes` would be the wrong instrument regardless — `Supersession.Apply` suppresses the *superseded* finding, which is the one carrying the remedy. ⚠ **The operand's type must be the declared return type, not merely awaitable to it.** `await GetValueTask()` inside an `async Task<int>` is legal and `return GetValueTask()` is not; the same test is what excludes `.ConfigureAwait(false)`, whose type is a configured awaitable rather than a task. ⚠ **A nested `await` in the operand withdraws it**: `return await Read(await Open());` would leave an `await` in a method that is no longer `async`, which is CS4032 — a fix that parses and does not compile. ⚠ Only ordinary methods and local functions; `partial`, `abstract` and `extern` are skipped, and lambdas are not matched at all. ⚠ A comment between `async` and the return type, or between `await` and its operand, withdraws the finding rather than being deleted with the keyword.",
-      "resharperNote": "⚠ The export sets `resharper_replace_async_with_task_return_highlighting = none` and this rule defaults to `suggestion`. ReSharper ships the inspection switched off, which is a reasonable default for a change that moves where exceptions surface; doc 00's ninth non-negotiable says a severity comes from what the rule means rather than from how loud it is, and what this one means is \"there is machinery here doing nothing\" — a suggestion. Reading the ReSharper key (off by default, doc 03 § \"Severities\") would silence it.",
       "configuration": [
         "dotnet_diagnostic.SK3031.severity"
       ]
@@ -3860,12 +3848,11 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperNote": "⚠ ReSharper rates `RedundantWithExpression` a *suggestion* and `RedundantEmptyObjectOrCollectionInitializer` a *warning*; Skala reports one concept at `warning` and reading `resharper_redundant_with_expression_highlighting` therefore lowers both. The severity split is the same observation this rule's `fixIsSafe: false` records: the empty initializer is nothing, and the empty `with` is an allocation somebody may have meant.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
       "summary": "A pair of initializer braces that sets nothing: `new Foo { }` is `new Foo()`, and `x with { }` copies a record and changes nothing.",
-      "rationale": "Empty braces read as a list somebody is about to fill in and stay in the file for years after nobody is. `new Foo { }` is two characters of ceremony over `new Foo()`. `x with { }` is more than ceremony — `with` invokes the record's compiler-generated copy constructor, so it allocates a whole instance in order to produce a value equal to the one it was given.",
+      "rationale": "Empty braces read as a list somebody is about to fill in and stay in the file for years after nobody is. `new Foo { }` is two characters of ceremony over `new Foo()`. `x with { }` is more than ceremony — `with` invokes the record's compiler-generated copy constructor, so it allocates a whole instance in order to produce a value equal to the one it was given.\n\n⚠ ReSharper rates `RedundantWithExpression` a *suggestion* and `RedundantEmptyObjectOrCollectionInitializer` a *warning*; Skala reports one concept at `warning` and reading `resharper_redundant_with_expression_highlighting` therefore lowers both. The severity split is the same observation this rule's `fixIsSafe: false` records: the empty initializer is nothing, and the empty `with` is an allocation somebody may have meant.",
       "examples": {
         "bad": "var options = new JsonSerializerOptions { };\nvar copy = original with { };",
         "good": "var options = new JsonSerializerOptions();\nvar copy = original;"
@@ -3933,12 +3920,11 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "⚠ ReSharper rates `RedundantAttributeParentheses` a *hint* and rates `RedundantAnonymousTypePropertyName`, one of the other eight shapes under this id, a *warning*. Skala reports the concept at `suggestion`, so reading `resharper_redundant_attribute_parentheses_highlighting` raises the whole concept to whatever that one key says.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
       "summary": "Nine token-level deletions: an empty attribute argument list, a single lambda parameter's parentheses, parentheses around a whole pattern, a semicolon after a braced declaration, braces around a one-argument collection element, an anonymous-type property name that restates the expression, `ascending`, a range bound that is already the default, and an empty property pattern under a type.",
-      "rationale": "Each one is a token the grammar allows and the reader has to account for. None of them is a judgement call: the deletion is proved by the shape, there is no semantic component at all, and the fix is the shortest edit in the catalogue. Doc 17 § \"A large share of the 580 is cheap\" is about exactly this family — the mechanical cleanups a Rider user does not notice they rely on until they are gone.",
+      "rationale": "Each one is a token the grammar allows and the reader has to account for. None of them is a judgement call: the deletion is proved by the shape, there is no semantic component at all, and the fix is the shortest edit in the catalogue. Doc 17 § \"A large share of the 580 is cheap\" is about exactly this family — the mechanical cleanups a Rider user does not notice they rely on until they are gone.\n\n⚠ ReSharper rates `RedundantAttributeParentheses` a *hint* and rates `RedundantAnonymousTypePropertyName`, one of the other eight shapes under this id, a *warning*. Skala reports the concept at `suggestion`, so reading `resharper_redundant_attribute_parentheses_highlighting` raises the whole concept to whatever that one key says.",
       "examples": {
         "bad": "[Obsolete()]\npublic static int Count(IEnumerable<int> values) =>\n    values.Where((v) => v is (> 0)).ToArray()[0..^0];",
         "good": "[Obsolete]\npublic static int Count(IEnumerable<int> values) =>\n    values.Where(v => v is > 0).ToArray()[..];"
@@ -4058,7 +4044,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "⚠ The export sets `resharper_inheritdoc_consider_usage_highlighting = none` and this rule defaults to `suggestion`. Reading the ReSharper key — off by default, doc 03 § \"Severities\" — switches it off. The difference is deliberate rather than an oversight: this rule fires only where the two comments are *identical*, which ReSharper's inspection does not require, so the finding it produces is narrower and does not need the low severity that keeps the wider one usable. docs/plan/16 § Q5.",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4127,8 +4112,7 @@
       "falsePositives": "⚠ **Only the last `catch` of a `try` is ever reported, and that is correctness rather than caution.** Deleting an earlier one changes which handler an exception reaches: in `try { … } catch (IOException) { throw; } catch (Exception e) { Log(e); }` the first clause is what stops an `IOException` being logged, so removing it is a behaviour change wearing a redundancy's clothes. Removing the *last* clause can only leave the exception propagating, which is what the rethrow already did. A `catch` carrying a `when` filter is never reported: the filter runs code, and a filter that returns false leaves the exception to a later clause. ⚠ **Where the rethrowing `catch` is the only one and there is no `finally`, the fix has to replace the whole `try` by its block's contents** — `try { … }` alone is CS1524 — and that is offered only when the block declares nothing, because unwrapping a scope moves every local, local function and label it holds into the enclosing scope where a name that was never in conflict can now collide. A try block that declares a local is left alone rather than fixed badly, and so the finding is withheld. The same is true when the `try` is an embedded statement rather than a statement in a block, because the splice would have more than one statement and nowhere to put it. ⚠ **`goto default;` anywhere in the switch withdraws the `default:` finding**, because the section is the jump's target and deleting it turns a redundancy into CS0159. A `default:` sharing its section with a `case` label is a different shape and is not matched. ⚠ **The `return;` half reads the written return type and never a symbol**, so it matches the `void` keyword, constructors, destructors and `set`/`init`/`add`/`remove` accessors. `async Task` is the same redundancy and is deliberately not matched: `Task` is a name that can be aliased, and answering it needs a semantic model this rule does not ask for. ⚠ **There is no iterator guard, and the belief that one was needed is refuted.** A bare `return;` inside an iterator is not legal C# and does not mean `yield break`: the compiler rejects it with CS1622. The guard was written, committed with a negative fixture, and the fixture failed to compile — an iterator cannot contain the shape this rule matches, so nothing has to exclude it. ⚠ **A comment or a preprocessor directive inside the span withdraws the finding.** The fix deletes the span, `default: break; // nothing to do for the rest` is the author answering the question the reader was about to ask, and a cleanup that silently deletes prose has made the file worse than it found it. ⚠ The boolean-expression members of this family — `RedundantBoolCompare`, `DoubleNegationOperator`, `NegativeEqualityExpression`, `RedundantTernaryExpression`, `RedundantLogicalConditionalExpressionOperand` — are **not** covered. Each needs to know an operand's type before it is redundant rather than meaningful (`x == true` is not redundant for a `bool?`, and `!` may be overloaded), which would make this rule semantic and stop it running on a loose file. `RedundantIfElseBlock`, `RedundantCaseLabel` and `RedundantEnumCaseLabelForDefaultSection` are not covered either. ⚠ **The `else` shape is decided by the *then* branch and the test is syntactic**: a block whose last statement is a jump cannot fall out of its end, so a `true` here is always right and everything else is declined — an `if`/`else` where both arms return, a `while (true)`, an exhaustive `switch` are all missed rather than wrong. A directive anywhere inside the then branch withdraws the finding, because `#if TRACE return; #endif` ends in a jump in one configuration and falls through in the other and the parse the analyzer sees is one of the two. The `else` block is unwrapped only when it declares no local, local function or label — the same escaping-scope rule as the sole-`catch` unwrap — and only when the `if` itself sits directly in a block, because a parent that is not a block has exactly one embedded statement position. ⚠ **The switch-expression shape reports only the unbroken run of agreeing arms directly above a total `_` arm**, as one finding carrying one deletion per arm. Reporting each separately gives `skala fix` several edits for one finding; reporting only the lowest leaves a finding standing on the fix's own output. An arm with a `when` clause is not inert even when its value agrees, and a pattern that binds a name makes two syntactically identical expressions mean different things — both withdraw. ⚠ The whole-switch collapse ReSharper also offers is deliberately not done: replacing the switch with the value stops evaluating the governing expression.",
       "configuration": [
         "dotnet_diagnostic.SK0240.severity"
-      ],
-      "resharperNote": "⚠ **Seven ReSharper inspections, one concept**, and the last two were measured against `jb inspectcode` 2025.2.6 rather than read off the export. `RedundantIfElseBlock` is a *hint* there and `RedundantSwitchExpressionArms` a *warning*; Skala reports the concept at `warning`. ⚠ `RedundantSwitchExpressionArms` does not mean what its name suggests: `b switch { true => 1, false => 2, _ => 3 }` is **CS8510, a compiler error**, and a non-exhaustive switch whose arms all agree is **CS8509** — what ReSharper reports is an arm whose value the arm below it repeats. ⚠ Nothing in the SDK hosts either: absent from all 442 descriptors read out of SDK 10.0.400's analyzer assemblies, and silent in a probe with all 120 `IDE` and all 320 `CA` ids at `warning` where `IDE0055`, `IDE0160`, `IDE0290`, `IDE0380` and `CA1051` fired and no `AD0001` was raised. `IDE0046` is a different concept — it wants the `if`/`else` rewritten as a conditional expression, and it declined the throwing shape entirely."
+      ]
     },
     {
       "id": "SK0241",
@@ -4832,7 +4816,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperNote": "The export carries two inspections for this concept — `ThreadStaticAtInstanceField` and `ThreadStaticFieldHasInitializer` — both at `warning`, and Skala reports them as one rule because they are one question asked of one declaration. The second has no separate Skala id and never will.",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -5465,7 +5448,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "⚠ The export sets `resharper_use_string_interpolation_when_possible_highlighting` to `hint` and this rule defaults to `suggestion`. ReSharper's inspection covers the whole `string.Format` surface, including the argument shapes whose rewrite is not sound, so a low severity is how it stays usable; this rule declines those shapes by analysis instead and can afford to be seen. Reading the ReSharper key would lower it. docs/plan/16 § Q5.",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "6.0",
@@ -5524,7 +5506,6 @@
         "good": "var pair = Split(text);\nvar (key, value) = pair;"
       },
       "falsePositives": "⚠ **Deconstruction evaluates the receiver once and the longhand form evaluates it once per element, so the receiver has to be something re-reading cannot observe.** The rule requires it to be a single identifier naming a *local or a parameter*: reading one N times and reading it once are then the same program by construction, which is a stronger claim than the usual \"no invocation in the path\" and is the reason no property or field receiver is matched. ⚠ **A partial deconstruction is not this rule.** Every element of the tuple must be read, exactly once, in positional order, by consecutive single-declarator statements — `var a = t.Item1;` on its own is one variable with a name, not a deconstruction missing three quarters of itself. ⚠ **Every declaration must be `var`.** `var (a, b) = t;` gives each variable the element's type; a written type on one of the longhand declarations means the author asked for a different type, and reproducing that needs the typed deconstruction form the fix does not emit. ⚠ Only real tuple types — `System.ValueTuple` and its language syntax — are matched. `System.Tuple<T1, T2>` deconstructs only through the `System.TupleExtensions` extension methods, so the rewrite would depend on a `using` the file may not have. ⚠ Declarations carrying modifiers, attributes, `const`, `using`, `await` or `ref` are excluded, as is any run whose span holds a comment or a preprocessor directive, because the fix deletes those lines.",
-      "resharperNote": "⚠ The export sets `resharper_use_deconstruction_highlighting = hint` and this rule defaults to `suggestion`. Reading the ReSharper key therefore *lowers* the rule below its default, and a repository importing an untouched ReSharper export will see it dimmed. The default is deliberate: JetBrains rates it a hint because it is a style nicety in an IDE that offers the rewrite under a keystroke, and Skala's audience is an agent writing the longhand form into a file nobody is going to press a keystroke in. `SwapViaDeconstruction`, `UsePositionalDeconstructionPattern` and `MoveToExistingPositionalDeconstructionPattern` are three further inspections in the same family and none of them is covered here.",
       "configuration": [
         "dotnet_diagnostic.SK1070.severity"
       ]
@@ -5887,7 +5868,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperNote": "⚠ The export sets `resharper_possible_unintended_queryable_as_enumerable_highlighting = suggestion` and this rule defaults to `warning`. ReSharper reports the whole family of implicit `IQueryable` → `IEnumerable` conversions, including the deliberate ones, so a low severity is how that inspection stays usable; this rule reports only a *composable* operator that bound to `Enumerable`, which is never deliberate, so it can afford the severity the consequence deserves. docs/plan/16 § Q5.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -5988,7 +5968,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "⚠ The export sets `resharper_variable_can_be_not_nullable_highlighting = warning` and this rule defaults to `suggestion`. ReSharper reports the whole family — locals, parameters and return types — from a solution-wide index; this rule reports only the local, whose annotation nothing outside the method can depend on, so a lower default is the honest one for a narrower claim. Reading the ReSharper key — off by default, doc 03 § \"Severities\" — raises it. docs/plan/16 § Q5.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6167,7 +6146,6 @@
         "good": "async void OnSaveClicked(object sender, EventArgs e) {\n    try {\n        await SaveAsync();\n    } catch (IOException ex) {\n        logger.LogError(ex, \"save failed\");\n        ShowError(ex);\n    }\n}"
       },
       "falsePositives": "⚠ **Event handlers are reported, and that is the decision rather than an oversight.** `SK3001` excludes them because its remedy — return `Task` — is not available to a method whose signature an event declares. This rule's remedy is different and is available to every `async void` there is: handle the exception where it is thrown. Excluding handlers would exclude the one place `async void` is legitimate and therefore the place this defect actually reaches production. ⚠ **Lambdas are not matched at all**, which is what makes the rule disjoint from `SK3052` by construction: an `async` lambda converted to a `void` delegate is `async void` too, and it is reported once, at the conversion, by `SK3052` — which is where the remedy is. The owner must be a declaration that writes `void` in its own source. ⚠ **A `throw` an enclosing `try` in the same body could catch is not reported**, and the test is deliberately over-broad: any `catch` at all on an enclosing `try` silences the finding, even one whose filter could not possibly match. A `throw` written *inside* a `catch` clause is not silenced by that clause's own `try`, because the clause it is written in does not catch it — that rethrow is the shape the rule exists for. Test methods are excluded for the same reason `SK3002` excludes them, and generated code is excluded. **No fix is offered**: deleting the `throw` swallows the exception, wrapping the body changes what the method does, and turning the method into `async Task` is `SK3001`'s edit and a caller-wide refactor. The finding is true and the repair is a decision.",
-      "resharperNote": "⚠ The export sets `resharper_async_void_throw_exception_highlighting = suggestion` and this rule defaults to `warning`. ReSharper files it under \"Potential Code Quality Issues\"; the consequence is not potential and not a quality issue — an exception on a captured context with no handler ends the process — and doc 00's ninth non-negotiable takes a severity from what the rule means rather than from what the reference tool set. Reading the ReSharper key (off by default, doc 03 § \"Severities\") would demote it to `suggestion`.",
       "configuration": [
         "dotnet_diagnostic.SK3050.severity"
       ]
@@ -6570,8 +6548,7 @@
       "falsePositives": "⚠ **`Where` is lazy, and that is the whole equivalence argument rather than a detail of it.** `Where`'s `MoveNext` pulls one element, evaluates the predicate and yields, so the predicate for element *n* runs after the body for element *n-1* and immediately before the body for element *n* — the same interleaving, in the same order, the same number of times, as the `if` it replaced. A condition that reads state the body mutates therefore still sees exactly what it saw. ⚠ **A `break`, a `continue` or a `return` in the body does not prevent this rewrite, and the belief that it does is what kept the shape looking unshippable.** Only the *filter* moves; the body stays a loop body, so `continue` still advances the same `foreach` and `break` still leaves it. What a `break` does change is how many times the predicate runs — it stops early either way, at the same element. ⚠ The body must be exactly one `if` with no `else` and no other statement, and the condition must mention the loop variable, or the \"filter\" is a constant the reader would rather see hoisted. ⚠ **The condition has to be liftable into a lambda, which is a compile question and is asked as one**: a condition declaring a pattern variable the body then uses is refused, because the declaration would move out of scope, and so is one that reads a `ref`, `out` or `in` parameter, a ref local, a `ref struct` local, `stackalloc`, a pointer, or `this` inside a struct — each of those is a lambda the compiler rejects, and a fix that does not compile is worse than the shape it replaced. `await` and `yield` in the condition are impossible by construction and are excluded anyway. ⚠ `System.Linq` must already be imported: the fix does not add a using directive, so a file without one is left alone rather than broken. An `await foreach` is a different operator and is not covered. ⚠ **It is the one rule in this range that suggests LINQ, so it declares the interaction rather than leaving it to be discovered.** `SK4006` reports a materialization consumed by `foreach` and this fix produces no materialization, so it cannot feed that rule; `SK4001` reports LINQ in a configured hot path, and there the two genuinely disagree — which is settled by this rule shipping at `hint`, one step below anything `SK4001` says, so a repository that configures a hot path keeps the loop. ⚠ `fixIsSafe` is false: the rewrite allocates an iterator and a delegate the loop did not, and that is a decision about the call site rather than about the shape.",
       "configuration": [
         "dotnet_diagnostic.SK1084.severity"
-      ],
-      "resharperNote": "⚠ The export sets `resharper_loop_can_be_partly_converted_to_query_highlighting = none`, so a repository reading ReSharper's severities turns this rule off entirely, where Skala's own default is `hint`. That is the right disagreement to have and it is deliberate: JetBrains ships the inspection disabled because suggesting LINQ is a taste call it does not want to make by default, and `hint` is Skala saying the same thing one notch louder. ⚠ It also means a `none` read from the export is not evidence the shape is absent — the parity measurement found 44 inspections sitting at `none` that fired the moment they were enabled, and this is one of them."
+      ]
     },
     {
       "id": "SK2130",
@@ -6607,7 +6584,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperNote": "The export carries six inspections for issue #24's concept — `UnassignedField.Global`, `UnassignedField.Local`, `UnassignedReadonlyField`, `UnassignedGetOnlyAutoProperty`, `NotNullOrRequiredMemberIsNotInitialized` and `PropertyFieldKeywordIsNeverAssigned`. Skala ships the fourth and only the fourth, and the reason is measured rather than a matter of taste: the three field inspections describe what `CS0649` already reports. The others have no Skala id and none is proposed until somebody can say what they would add to the compiler.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6711,12 +6687,11 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "⚠ ReSharper rates this a *suggestion* and Skala matches it. The neighbouring inspection `resharper_csharp_prefer_explicit_discard_declaration` is **not** this key: that one is the `out var _` ⇔ `out _` style choice, it is a tier-A option, and Skala already performs it through `SK0217`. Reading the two as one concept is how this id would have become a double-count.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "9.0",
       "summary": "A pattern whose match is designated `_` — `o is string _`, `o is Point { X: 1 } _` — where the designation declares nothing and the pattern means the same without it.",
-      "rationale": "A designation is the reader's answer to \"what is this match called\", and `_` is the answer \"it is not called anything\" written down. Deleting it removes a question rather than an answer: `o is string _` makes a reader look for the `_` further along the expression, and `o is string` does not. It is also the shape a model reaches for by habit, because `case string _:` was the only spelling C# had before type patterns arrived in C# 9 and most of the training data predates them.",
+      "rationale": "A designation is the reader's answer to \"what is this match called\", and `_` is the answer \"it is not called anything\" written down. Deleting it removes a question rather than an answer: `o is string _` makes a reader look for the `_` further along the expression, and `o is string` does not. It is also the shape a model reaches for by habit, because `case string _:` was the only spelling C# had before type patterns arrived in C# 9 and most of the training data predates them.\n\n⚠ ReSharper rates this a *suggestion* and Skala matches it. The neighbouring inspection `resharper_csharp_prefer_explicit_discard_declaration` is **not** this key: that one is the `out var _` ⇔ `out _` style choice, it is a tier-A option, and Skala already performs it through `SK0217`. Reading the two as one concept is how this id would have become a double-count.",
       "examples": {
         "bad": "if (value is string _) {\n    return 1;\n}\n\nreturn value switch {\n    int _ => 2,\n    Point { X: 0 } _ => 3,\n    _ => 0\n};",
         "good": "if (value is string) {\n    return 1;\n}\n\nreturn value switch {\n    int => 2,\n    Point { X: 0 } => 3,\n    _ => 0\n};"
@@ -6889,7 +6864,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "⚠ The export sets `resharper_access_to_static_member_via_derived_type_highlighting` to `warning` and this rule defaults to `suggestion`, so reading the ReSharper key changes behaviour. The lower default is deliberate: the two spellings resolve to the same member, so nothing the program does is wrong — what is wrong is what the line says. docs/plan/16 § Q5.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6988,7 +6962,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperNote": "⚠ The export sets `resharper_collection_never_queried_local_highlighting` to `warning` and this rule defaults to `suggestion`, so importing the key raises it. The gap is deliberate: ReSharper answers the question across a whole solution and can see the reader this analyzer cannot, so its confidence is not available here. What ships is the slice one compilation can prove — a local, every one of whose references is a discarded write — and a slice that is narrower than the inspection it maps to does not inherit the inspection's severity.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7531,7 +7504,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "The export sets `InlineTemporaryVariable` to `hint`, and Skala ships this at `suggestion`. Reading the ReSharper key therefore lowers the rule to Roslyn `Hidden`, where only `--include-hints` shows it. The higher default is deliberate: ReSharper's inspection covers every single-use temporary, most of which are separated from their use by other statements and are genuinely a matter of taste, while this rule only reports the adjacent case, where the two lines are one statement written as two.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7874,7 +7846,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperNote": "⚠ **The export sets `resharper_convert_to_extension_block_highlighting` to `hint` and this rule defaults to `suggestion`**, so reading the key lowers the severity. The gap is deliberate and it is about how new the syntax is rather than about how much the concept is worth: ReSharper shipped the inspection at `hint` in 2025.2 because `extension` blocks were days old and it did not want to light up every extension class in every solution at once. Skala's audience is a model writing the older dialect on purpose, which is exactly the population the concept is for, so it is reported at `suggestion`. ⚠ **The inspection id is also not in `types-2026.xml`.** `ConvertToExtensionBlock` appears in the `editor_config_template` export and *not* in `jb inspectcode --dumpIssuesTypes`, which is what `RuleCatalogTests.EveryDeclaredReSharperKey_ExistsInTheExport` reads — the two exports disagree because the issue-types dump predates the feature. The mapping is real and settable; it is the dump that is behind.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "14.0",
@@ -8195,7 +8166,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "⚠ Five ReSharper inspections, one concept: `RedundantBoolCompare`, `DoubleNegationOperator`, `NegativeEqualityExpression`, `RedundantTernaryExpression` and `RedundantLogicalConditionalExpressionOperand`. ReSharper rates the first four a *warning* and the last a *suggestion*; Skala reports the concept at `warning`.\n\n⚠ **Two of the five are hosted by Roslyn and three are not, and that was measured rather than assumed.** Reflecting over `Microsoft.CodeAnalysis.CodeStyle` in SDK 10.0.400 — 440 descriptors, read out of the assemblies because an error log cannot tell `Hidden` from absent — `IDE0100` (\"remove redundant equality\") covers `x == true` and `x != false`, and `IDE0075` (\"simplify conditional expression\") covers `c ? true : false`. **Both are `IsEnabledByDefault: true` with `DefaultSeverity: Hidden`**, so a plain `dotnet build` emits neither: the code-style analyzers are not loaded at all without `EnforceCodeStyleInBuild`, and even then a `Hidden` rule needs an explicit `dotnet_diagnostic.IDExxxx.severity` line before it says anything. Skala ships over them on the reasoning `SK1005` already uses for `IDE0161`. ⚠ **The other three are verified zeros, not unchecked ones**: with all 120 `IDE` ids forced to `warning` and `IDE0055`, `IDE0161`, `IDE0100`, `IDE0075` and `IDE0380` all firing on the same compilation, nothing reported `!!x`, `!(a == b)` or `x && true` — and there was no `AD0001`, so no analyzer crashed silently past them.",
       "supersedes": [
         "DoubleNegationOperator",
         "NegativeEqualityExpression",
@@ -8205,7 +8175,7 @@
       "since": "2.0",
       "languageVersion": null,
       "summary": "A boolean expression that restates its own operand: a comparison against `true` or `false`, a double negation, a negated equality, a conditional returning the two boolean literals, or a `&&`/`||` operand that cannot change the result.",
-      "rationale": "Each shape asks the reader to evaluate a boolean twice. `flag == true` is `flag` with a comparison in front of it, and the comparison is the part a reader has to check is not `=`; `!!ready` reads as a typo until it is proved not to be; `!(a == b)` makes the reader invert an operator the language already has; `found ? true : false` is a conditional whose branches are the answer to the condition it was given; and `enabled && true` is an operand that was written to be true and stayed. ⚠ The shapes matter disproportionately for generated code: a model that assembles a condition from parts emits `&& true` as the identity element of a fold, and emits `? true : false` because most of its training data predates the habit of returning the condition.",
+      "rationale": "Each shape asks the reader to evaluate a boolean twice. `flag == true` is `flag` with a comparison in front of it, and the comparison is the part a reader has to check is not `=`; `!!ready` reads as a typo until it is proved not to be; `!(a == b)` makes the reader invert an operator the language already has; `found ? true : false` is a conditional whose branches are the answer to the condition it was given; and `enabled && true` is an operand that was written to be true and stayed. ⚠ The shapes matter disproportionately for generated code: a model that assembles a condition from parts emits `&& true` as the identity element of a fold, and emits `? true : false` because most of its training data predates the habit of returning the condition.\n\n⚠ Five ReSharper inspections, one concept: `RedundantBoolCompare`, `DoubleNegationOperator`, `NegativeEqualityExpression`, `RedundantTernaryExpression` and `RedundantLogicalConditionalExpressionOperand`. ReSharper rates the first four a *warning* and the last a *suggestion*; Skala reports the concept at `warning`.\n\n⚠ **Two of the five are hosted by Roslyn and three are not, and that was measured rather than assumed.** Reflecting over `Microsoft.CodeAnalysis.CodeStyle` in SDK 10.0.400 — 440 descriptors, read out of the assemblies because an error log cannot tell `Hidden` from absent — `IDE0100` (\"remove redundant equality\") covers `x == true` and `x != false`, and `IDE0075` (\"simplify conditional expression\") covers `c ? true : false`. **Both are `IsEnabledByDefault: true` with `DefaultSeverity: Hidden`**, so a plain `dotnet build` emits neither: the code-style analyzers are not loaded at all without `EnforceCodeStyleInBuild`, and even then a `Hidden` rule needs an explicit `dotnet_diagnostic.IDExxxx.severity` line before it says anything. Skala ships over them on the reasoning `SK1005` already uses for `IDE0161`. ⚠ **The other three are verified zeros, not unchecked ones**: with all 120 `IDE` ids forced to `warning` and `IDE0055`, `IDE0161`, `IDE0100`, `IDE0075` and `IDE0380` all firing on the same compilation, nothing reported `!!x`, `!(a == b)` or `x && true` — and there was no `AD0001`, so no analyzer crashed silently past them.",
       "examples": {
         "bad": "if (ready == true) { }\nif (!!ready) { }\nif (!(left == right)) { }\n\nvar found = index >= 0 ? true : false;\nvar ok = ready && true;",
         "good": "if (ready) { }\nif (ready) { }\nif (left != right) { }\n\nvar found = index >= 0;\nvar ok = ready;"
@@ -8225,14 +8195,13 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "⚠ Two ReSharper inspections, one concept: `RedundantAttributeSuffix` (a *warning*) and `RedundantAttributeUsageProperty` (a *suggestion*). Skala reports the concept at `warning`.\n\n⚠ **Neither is hosted, and both zeros are verified rather than assumed.** Reflecting over SDK 10.0.400's analyzer assemblies gives 440 descriptors and none of them is either shape; a probe with all 120 `IDE` ids forced to `warning`, `AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on `[SerializableAttribute]` or on `Inherited = true`, on a compilation where `IDE0055`, `IDE0161`, `IDE0100`, `IDE0075` and `IDE0380` all fired and no `AD0001` was raised. Neither shape is a compiler warning either.",
       "supersedes": [
         "RedundantAttributeUsageProperty"
       ],
       "since": "2.0",
       "languageVersion": null,
       "summary": "An attribute written with the `Attribute` suffix the language appends for you, or an `[AttributeUsage]` argument that restates that attribute's own default.",
-      "rationale": "`[SerializableAttribute]` and `[Serializable]` are the same attribute, and the suffix is the part the language was designed to let you leave out — writing it makes a reader check whether this is the type they know under the short name. `Inherited = true` and `AllowMultiple = false` are worse than noise: they are the defaults written out, so a reader who has learned to read the argument list as \"the decisions this attribute made\" is handed two decisions that were never taken. ⚠ Both are shapes a model reaches for, because the fully-spelled form is what the framework reference documentation shows.",
+      "rationale": "`[SerializableAttribute]` and `[Serializable]` are the same attribute, and the suffix is the part the language was designed to let you leave out — writing it makes a reader check whether this is the type they know under the short name. `Inherited = true` and `AllowMultiple = false` are worse than noise: they are the defaults written out, so a reader who has learned to read the argument list as \"the decisions this attribute made\" is handed two decisions that were never taken. ⚠ Both are shapes a model reaches for, because the fully-spelled form is what the framework reference documentation shows.\n\n⚠ Two ReSharper inspections, one concept: `RedundantAttributeSuffix` (a *warning*) and `RedundantAttributeUsageProperty` (a *suggestion*). Skala reports the concept at `warning`.\n\n⚠ **Neither is hosted, and both zeros are verified rather than assumed.** Reflecting over SDK 10.0.400's analyzer assemblies gives 440 descriptors and none of them is either shape; a probe with all 120 `IDE` ids forced to `warning`, `AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on `[SerializableAttribute]` or on `Inherited = true`, on a compilation where `IDE0055`, `IDE0161`, `IDE0100`, `IDE0075` and `IDE0380` all fired and no `AD0001` was raised. Neither shape is a compiler warning either.",
       "examples": {
         "bad": "[SerializableAttribute]\n[AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]\nclass MarkerAttribute : Attribute { }",
         "good": "[Serializable]\n[AttributeUsage(AttributeTargets.Class)]\nclass MarkerAttribute : Attribute { }"
@@ -8276,12 +8245,11 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "⚠ **Narrower than ReSharper's inspection, and the difference is a correctness argument rather than a scope cut.** `RedundantExtendsListEntry` reports two shapes and `jb inspectcode` 2025.2.6 was run on both: an interface implied by another *interface* in the same list (`class C : IDerived, IBase`), and an interface implied by the *base class* (`class D : B, IBase` where `B : IBase`). Skala ships only the first. Re-listing an interface on a derived class makes that class re-implement it, so the interface mapping is recomputed there — a member declared `new` in the derived class becomes the implementation instead of the base's, and deleting the entry silently changes which method an interface call reaches.\n\n⚠ **Nothing in the SDK hosts either shape, and the zero was measured.** Reading `IsEnabledByDefault`/`DefaultSeverity` out of SDK 10.0.400's analyzer assemblies gives 442 descriptors and none of them is this; a probe with all 120 `IDE` ids and all 320 `CA` ids forced to `warning`, `EnforceCodeStyleInBuild=true`, `AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on `class C : IDerived, IBase`, on a compilation where `IDE0055`, `IDE0160`, `IDE0380` and `CA1051` all fired and there was no `AD0001`.\n\n⚠ `class C : object` is **not** this finding. ReSharper does not report it either — probed in the same run.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
       "summary": "A base list naming an interface that another entry in the same list already brings in.",
-      "rationale": "`class Buffer : IList<byte>, IEnumerable<byte>` says the same thing twice, and the second saying is the expensive one: a reader who knows `IList<T>` extends `IEnumerable<T>` has to stop and work out whether the author knew it too, or whether the second entry is there because something about this type is different. Nothing about it is. ⚠ The shape belongs disproportionately to generated code, because a model that has been asked for \"a list that can be enumerated\" writes down both nouns it was given.",
+      "rationale": "`class Buffer : IList<byte>, IEnumerable<byte>` says the same thing twice, and the second saying is the expensive one: a reader who knows `IList<T>` extends `IEnumerable<T>` has to stop and work out whether the author knew it too, or whether the second entry is there because something about this type is different. Nothing about it is. ⚠ The shape belongs disproportionately to generated code, because a model that has been asked for \"a list that can be enumerated\" writes down both nouns it was given.\n\n⚠ **Narrower than ReSharper's inspection, and the difference is a correctness argument rather than a scope cut.** `RedundantExtendsListEntry` reports two shapes and `jb inspectcode` 2025.2.6 was run on both: an interface implied by another *interface* in the same list (`class C : IDerived, IBase`), and an interface implied by the *base class* (`class D : B, IBase` where `B : IBase`). Skala ships only the first. Re-listing an interface on a derived class makes that class re-implement it, so the interface mapping is recomputed there — a member declared `new` in the derived class becomes the implementation instead of the base's, and deleting the entry silently changes which method an interface call reaches.\n\n⚠ **Nothing in the SDK hosts either shape, and the zero was measured.** Reading `IsEnabledByDefault`/`DefaultSeverity` out of SDK 10.0.400's analyzer assemblies gives 442 descriptors and none of them is this; a probe with all 120 `IDE` ids and all 320 `CA` ids forced to `warning`, `EnforceCodeStyleInBuild=true`, `AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on `class C : IDerived, IBase`, on a compilation where `IDE0055`, `IDE0160`, `IDE0380` and `CA1051` all fired and there was no `AD0001`.\n\n⚠ `class C : object` is **not** this finding. ReSharper does not report it either — probed in the same run.",
       "examples": {
         "bad": "interface IReader {\n    int Read();\n}\n\ninterface ISeekableReader : IReader {\n    void Seek(int offset);\n}\n\nsealed class FileReader : ISeekableReader, IReader {\n    public int Read() => 0;\n\n    public void Seek(int offset) { }\n}",
         "good": "sealed class FileReader : ISeekableReader {\n    public int Read() => 0;\n\n    public void Seek(int offset) { }\n}"
@@ -8301,12 +8269,11 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "⚠ **Not hosted, and the zero was measured rather than assumed.** Reading `IsEnabledByDefault`/`DefaultSeverity` out of SDK 10.0.400's analyzer assemblies gives 442 descriptors and none of them is this shape — an error log could not have answered it, because a `Hidden` rule and an absent one produce the same empty log. A behavioural probe with all 120 `IDE` ids and all 320 `CA` ids forced to `warning`, `EnforceCodeStyleInBuild=true`, `AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on a `[SetsRequiredMembers]` constructor of a type with no required members, on a compilation where `IDE0055`, `IDE0160`, `IDE0290`, `IDE0380` and `CA1051` all fired and no analyzer crashed. `jb inspectcode` 2025.2.6 reports it on the same file, and correctly declines the type that does have a required member.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
       "summary": "`[SetsRequiredMembers]` on a constructor of a type that declares and inherits no `required` member.",
-      "rationale": "The attribute is a promise to the compiler — this constructor assigns every `required` member, so a caller need not use an object initializer. Against an empty set it promises nothing, and it is worse than noise in two directions: it tells a reader that requiredness is in play on this type when it is not, and it keeps compiling silently on the day somebody adds a `required` member that the constructor does not assign, which is the exact case the attribute exists to make loud. ⚠ Models apply it defensively, because it is the documented way to make a constructor and `required` coexist and the constructor is the part they were asked for.",
+      "rationale": "The attribute is a promise to the compiler — this constructor assigns every `required` member, so a caller need not use an object initializer. Against an empty set it promises nothing, and it is worse than noise in two directions: it tells a reader that requiredness is in play on this type when it is not, and it keeps compiling silently on the day somebody adds a `required` member that the constructor does not assign, which is the exact case the attribute exists to make loud. ⚠ Models apply it defensively, because it is the documented way to make a constructor and `required` coexist and the constructor is the part they were asked for.\n\n⚠ **Not hosted, and the zero was measured rather than assumed.** Reading `IsEnabledByDefault`/`DefaultSeverity` out of SDK 10.0.400's analyzer assemblies gives 442 descriptors and none of them is this shape — an error log could not have answered it, because a `Hidden` rule and an absent one produce the same empty log. A behavioural probe with all 120 `IDE` ids and all 320 `CA` ids forced to `warning`, `EnforceCodeStyleInBuild=true`, `AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on a `[SetsRequiredMembers]` constructor of a type with no required members, on a compilation where `IDE0055`, `IDE0160`, `IDE0290`, `IDE0380` and `CA1051` all fired and no analyzer crashed. `jb inspectcode` 2025.2.6 reports it on the same file, and correctly declines the type that does have a required member.",
       "examples": {
         "bad": "using System.Diagnostics.CodeAnalysis;\n\nsealed class Options {\n    [SetsRequiredMembers]\n    public Options(string path) => Path = path;\n\n    public string Path { get; init; }\n}",
         "good": "sealed class Options {\n    public Options(string path) => Path = path;\n\n    public string Path { get; init; }\n}"
@@ -8326,12 +8293,11 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperNote": "⚠ **Not hosted, measured the same way as `SK0280` and `SK0281`**: absent from all 442 descriptors read out of SDK 10.0.400's analyzer assemblies, and silent in a probe with all 120 `IDE` ids and all 320 `CA` ids at `warning` on a compilation where `IDE0055`, `IDE0160`, `IDE0290`, `IDE0380` and `CA1051` fired and no analyzer crashed. `jb inspectcode` 2025.2.6 reports it on the same file.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
       "summary": "A property in a record body that restates, initializer included, the one its positional parameter already generates.",
-      "rationale": "`record Point(int X, int Y) { public int X { get; init; } = X; }` writes out character for character what the positional parameter already produces, and it costs a reader the same question every time: is this one different? ⚠ It belongs disproportionately to generated code — \"declare the properties\" is what most of a model's training data does, and the positional record is newer than most of that data, so the two forms arrive together.",
+      "rationale": "`record Point(int X, int Y) { public int X { get; init; } = X; }` writes out character for character what the positional parameter already produces, and it costs a reader the same question every time: is this one different? ⚠ It belongs disproportionately to generated code — \"declare the properties\" is what most of a model's training data does, and the positional record is newer than most of that data, so the two forms arrive together.\n\n⚠ **Not hosted, measured the same way as `SK0280` and `SK0281`**: absent from all 442 descriptors read out of SDK 10.0.400's analyzer assemblies, and silent in a probe with all 120 `IDE` ids and all 320 `CA` ids at `warning` on a compilation where `IDE0055`, `IDE0160`, `IDE0290`, `IDE0380` and `CA1051` fired and no analyzer crashed. `jb inspectcode` 2025.2.6 reports it on the same file.",
       "examples": {
         "bad": "record Point(int X, int Y) {\n    public int X { get; init; } = X;\n}",
         "good": "record Point(int X, int Y);"

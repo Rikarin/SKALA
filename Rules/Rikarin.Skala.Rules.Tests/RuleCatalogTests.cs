@@ -434,13 +434,6 @@ public sealed class RuleCatalogTests {
                     $"docs/rules/{rule.Id}.md does not carry the rule's {name} from rules.json. Run `skala rules docs`."
                 );
             }
-
-            if (rule.ReSharperNote is { Length: > 0 } note) {
-                Assert.True(
-                    page.Contains(Normalise(note), StringComparison.Ordinal),
-                    $"docs/rules/{rule.Id}.md does not carry the rule's ReSharper note. Run `skala rules docs`."
-                );
-            }
         }
     }
 

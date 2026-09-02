@@ -38,8 +38,6 @@
 <pre class="good"><code>if (items.Count &gt; 0) {
     Consume(items);
 }</code></pre>
-<h2 id="resharper">The ReSharper mapping</h2>
-<p>Three inspections cover this ground: use_collection_count_property, replace_with_single_call_to_any and replace_with_single_call_to_count, all <code>suggestion</code> in the export. The first is recorded; the mapping is many-to-one from ReSharper's side. docs/plan/16 § Q5.</p>
 <h2 id="false-positives">When it does not fire</h2>
 <p>Only fires when the invoked method is exactly <code>System.Linq.Enumerable.Count()</code> or <code>Enumerable.Any()</code> with no argument, the receiver's type has an accessible instance <code>Count</code> (or <code>Length</code>) property of type <code>int</code>, and the receiver expression is a plain identifier or member-access chain with no invocation in it — so <code>GetItems().Any()</code> is left alone, because reading <code>.Count</code> on it would still call <code>GetItems()</code> and the rewrite is only obviously equivalent when the receiver is a variable. Silent on <code>IQueryable</code>, where <code>Any()</code> is a database round-trip and <code>Count</code> is not the same query.</p>
 <h2 id="configuration">Configuration</h2>

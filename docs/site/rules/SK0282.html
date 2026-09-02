@@ -28,6 +28,7 @@
 </table>
 <h2 id="why">Why</h2>
 <p><code>record Point(int X, int Y) { public int X { get; init; } = X; }</code> writes out character for character what the positional parameter already produces, and it costs a reader the same question every time: is this one different? ⚠ It belongs disproportionately to generated code — &quot;declare the properties&quot; is what most of a model's training data does, and the positional record is newer than most of that data, so the two forms arrive together.</p>
+<p>⚠ <strong>Not hosted, measured the same way as `SK0280` and `SK0281`</strong>: absent from all 442 descriptors read out of SDK 10.0.400's analyzer assemblies, and silent in a probe with all 120 <code>IDE</code> ids and all 320 <code>CA</code> ids at <code>warning</code> on a compilation where <code>IDE0055</code>, <code>IDE0160</code>, <code>IDE0290</code>, <code>IDE0380</code> and <code>CA1051</code> fired and no analyzer crashed. <code>jb inspectcode</code> 2025.2.6 reports it on the same file.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
 <pre class="bad"><code>record Point(int X, int Y) {
@@ -35,8 +36,6 @@
 }</code></pre>
 <p>Write:</p>
 <pre class="good"><code>record Point(int X, int Y);</code></pre>
-<h2 id="resharper">The ReSharper mapping</h2>
-<p>⚠ <strong>Not hosted, measured the same way as `SK0280` and `SK0281`</strong>: absent from all 442 descriptors read out of SDK 10.0.400's analyzer assemblies, and silent in a probe with all 120 <code>IDE</code> ids and all 320 <code>CA</code> ids at <code>warning</code> on a compilation where <code>IDE0055</code>, <code>IDE0160</code>, <code>IDE0290</code>, <code>IDE0380</code> and <code>CA1051</code> fired and no analyzer crashed. <code>jb inspectcode</code> 2025.2.6 reports it on the same file.</p>
 <h2 id="false-positives">When it does not fire</h2>
 <p>⚠ <strong>Which accessor pair is generated depends on the record kind, and getting it wrong deletes a property that was doing something.</strong> A <code>record class</code> and a <code>readonly record struct</code> generate <code>{ get; init; }</code>; a mutable <code>record struct</code> generates <code>{ get; set; }</code>. So <code>{ get; init; }</code> written on a mutable record struct is <em>not</em> redundant — it makes the property init-only, which the generated one is not — and it is declined. ⚠ <strong>The initializer must be present and must be the parameter itself, asked of the symbol rather than of the spelling.</strong> A hand-written positional property with no <code>= X</code> is not assigned by the generated constructor at all, so deleting it changes what the record stores; and <code>= X</code> binding to anything other than the primary constructor's parameter is a different program. ⚠ <strong>An attribute, an accessor modifier, an accessor body, an expression body, a non-`public` or extra modifier, or a parameter carrying a default or an attribute all withdraw the finding</strong>: the generated property has none of those, so anything written there is the author's. ⚠ The whole declaration is deleted with its leading trivia, so a documentation comment on it is a reason to leave it alone rather than something to remove.</p>
 <h2 id="configuration">Configuration</h2>

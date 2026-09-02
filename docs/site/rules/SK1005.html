@@ -29,6 +29,7 @@
 </table>
 <h2 id="why">Why</h2>
 <p>One level of indentation across every file in the repository, for no expressive gain. The configuration this tool serves already says <code>csharp_style_namespace_declarations = file_scoped</code>; the rule is what makes that true in code an agent wrote rather than only in code the IDE touched.</p>
+<p>ReSharper has no inspection id for this: it drives the conversion from <code>csharp_style_namespace_declarations = file_scoped:suggestion</code> and reports the result under <code>resharper_arrange_namespace_body_highlighting = hint</code>. Two mechanisms, two severities, one concept — so this rule maps to no key at all. docs/plan/16 § Q5.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
 <pre class="bad"><code>namespace Vixen.Core {
@@ -38,8 +39,6 @@
 <pre class="good"><code>namespace Vixen.Core;
 
 public sealed class Archetype;</code></pre>
-<h2 id="resharper">The ReSharper mapping</h2>
-<p>ReSharper has no inspection id for this: it drives the conversion from <code>csharp_style_namespace_declarations = file_scoped:suggestion</code> and reports the result under <code>resharper_arrange_namespace_body_highlighting = hint</code>. Two mechanisms, two severities, one concept — so this rule maps to no key at all. docs/plan/16 § Q5.</p>
 <h2 id="false-positives">When it does not fire</h2>
 <p>Only fires when the compilation unit contains exactly one namespace declaration, that namespace is the only member of the unit, it is block-scoped, it contains no nested namespace declaration, and it has no attribute lists or extern aliases after it. A file with two namespaces cannot be converted at all and is not reported; a file whose namespace declaration carries a <code>#if</code> inside its braces is skipped, because the conversion moves a brace the disabled branch may own.</p>
 <h2 id="configuration">Configuration</h2>

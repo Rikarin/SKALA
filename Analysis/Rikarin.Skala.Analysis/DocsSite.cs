@@ -281,11 +281,6 @@ public static class DocsSite {
             }
         }
 
-        if (rule.ReSharperNote is { Length: > 0 } note) {
-            builder.Append("<h2 id=\"resharper\">The ReSharper mapping</h2>\n");
-            Prose(builder, note);
-        }
-
         builder.Append("<h2 id=\"false-positives\">When it does not fire</h2>\n");
         Prose(builder, rule.FalsePositives);
 

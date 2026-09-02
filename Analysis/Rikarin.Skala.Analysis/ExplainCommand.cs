@@ -212,10 +212,6 @@ public static class ExplainCommand {
             builder.AppendLine("configuration: " + string.Join(", ", rule.Configuration));
         }
 
-        if (rule.ReSharperNote is { Length: > 0 } note) {
-            builder.AppendLine(Wrap(note, 78));
-        }
-
         if (rule.Supersedes.Count > 0) {
             builder.AppendLine("supersedes: " + string.Join(", ", rule.Supersedes));
         }
@@ -302,13 +298,6 @@ public static class ExplainCommand {
                 builder.AppendLine("```");
                 builder.AppendLine();
             }
-        }
-
-        if (rule.ReSharperNote is { Length: > 0 } note) {
-            builder.AppendLine("## The ReSharper mapping");
-            builder.AppendLine();
-            builder.AppendLine(note);
-            builder.AppendLine();
         }
 
         builder.AppendLine("## When it does not fire");

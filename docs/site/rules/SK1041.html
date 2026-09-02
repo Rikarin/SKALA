@@ -33,8 +33,6 @@
 <pre class="bad"><code>count = count + 1;</code></pre>
 <p>Write:</p>
 <pre class="good"><code>count += 1;</code></pre>
-<h2 id="resharper">The ReSharper mapping</h2>
-<p>The export sets <code>resharper_convert_to_compound_assignment_highlighting = hint</code> while this rule defaults to <code>suggestion</code>. The lower ReSharper severity is not followed: ReSharper treats the long form as a cosmetic preference, and Skala treats it as the shape a half-finished rename hides in.</p>
 <h2 id="false-positives">When it does not fire</h2>
 <p>The direction is safe and the reverse is not: C# defines <code>x op= y</code> as <code>x = (T)(x op y)</code> with an explicit conversion back to the target's type, which the long form lacks — <code>byte b; b = b + 1;</code> does not compile at all, so the rule never sees the shapes where the conversion differs. A cast on the right-hand side is therefore never unwrapped: <code>long l; l = (int)(l + 1);</code> truncates and <code>l += 1</code> does not. Only whole expression statements are reported, the target must be a chain of plain names so that the two forms evaluate it the same number of times, and the binary operator's left operand must be that same target textually — which excludes <code>x = x + a + b</code>, whose left operand is <code>x + a</code>. <code>&amp;&amp;</code> and <code>||</code> have no compound spelling and are excluded. Comments and preprocessor directives between the target and the operator are excluded because the fix deletes that text.</p>
 <h2 id="configuration">Configuration</h2>

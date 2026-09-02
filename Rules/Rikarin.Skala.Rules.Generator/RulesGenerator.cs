@@ -163,10 +163,7 @@ public sealed class RulesGenerator : IIncrementalGenerator {
             builder.Append("            BadExample: ").Append(Literal(rule.BadExample)).AppendLine(",");
             builder.Append("            GoodExample: ").Append(Literal(rule.GoodExample)).AppendLine(",");
             builder.Append("            FalsePositives: ").Append(Literal(rule.FalsePositives)).AppendLine(",");
-            builder.Append("            Configuration: ").Append(StringArray(rule.Configuration)).AppendLine(",");
-            builder.Append("            ReSharperNote: ")
-                .Append(rule.ReSharperNote is null ? "null" : Literal(rule.ReSharperNote))
-                .AppendLine();
+            builder.Append("            Configuration: ").AppendLine(StringArray(rule.Configuration));
             builder.AppendLine("        ),");
         }
 
@@ -298,7 +295,6 @@ internal sealed class RuleModel {
     public string GoodExample { get; private set; } = string.Empty;
     public string FalsePositives { get; private set; } = string.Empty;
     public List<string> Configuration { get; } = new();
-    public string? ReSharperNote { get; private set; }
 
     public static List<RuleModel> ReadAll(JsonValue root) {
         var result = new List<RuleModel>();
@@ -326,7 +322,6 @@ internal sealed class RuleModel {
             Summary = String(entry, "summary"),
             Rationale = String(entry, "rationale"),
             FalsePositives = String(entry, "falsePositives"),
-            ReSharperNote = entry["resharperNote"].AsString()
         };
 
         rule.BadExample = String(entry["examples"], "bad");
