@@ -8,10 +8,14 @@ standard [`README.md`](README.md) sets for the rest of this directory.
 
 | File | What it records |
 |---|---|
-| `ledger-resharper.json` | 136 proposed concepts covering 493 inspections, and 97 inspections excluded with a written reason each |
+| `ledger-resharper.json` | 138 concepts covering 508 inspections, and 97 inspections excluded with a written reason each |
 | `ledger-sonar.json` | 110 proposed concepts covering 156 rules, and 325 rules resolved as shipped, tracked, hosted, decided or out of scope |
 | `ledger-sonar.json` § `ideas` | 28 proposed concepts covering 32 of upstream's **open, unimplemented** rule ideas, and 79 resolved |
-| `verify_ledger.py` | Asserts that neither ledger can lose a rule, and that no shipped rule can go unrecorded |
+| `verify_ledger.py` | Asserts that neither ledger can lose a rule, that no shipped rule can go unrecorded, and that every concept carries a `state` with evidence where one is owed |
+
+⚠ **A run that could not perform a check exits 2 and says which one**, rather than printing
+`0 failures` as it did when its inputs were gitignored (#311). Read the `checks: N run, M skipped`
+line before quoting anything below it.
 
 ⚠ The three counts above are what `verify_ledger.py` prints today, not what this file said before.
 The previous row read *137 concepts / 494 inspections / 94 excluded* and every one of the three was
