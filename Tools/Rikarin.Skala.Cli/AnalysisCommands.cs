@@ -118,8 +118,8 @@ public static partial class SkalaCommandLine {
         command.Arguments.Add(paths);
         foreach (var option in new Option[] {
                      load, binlog, project, requireFresh, gate, format, output, includeHints, noCache, noColor,
-                     showSuppressions, rules, define, noFormatting, since, baseline,
-                     noNewSuppressions, record, summary, duplication, profile
+                     showSuppressions, rules, define, noFormatting, since, baseline, noNewSuppressions, record, summary,
+                     duplication, profile
                  }) {
             command.Options.Add(option);
         }
