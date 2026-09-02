@@ -371,6 +371,18 @@ the equality shape and **none at all** for the other four, so `!!x`, `!(a == b)`
 ⚠ **The zero was proved live before it was believed.** Planting one positive of each of the five
 shapes inside the corpus tree produced five findings; deleting the file returned the count to zero.
 
+**Sabotage: eight guards, sixteen fixtures red, none silent.** Each guard was removed and the
+fixture suite re-run against a 12 375-test green baseline. `plain-boolean` →
+`nullable_bool_compared_to_true`, `nullable_bool_compared_to_false`, `nullable_bool_double_negation`,
+`custom_type_compared_to_a_literal`, `conditional_condition_has_operator_true`;
+`builtin-operator` → `user_defined_equality_negated`; `null-operand` → `negated_equality_with_null`,
+`negated_equality_with_null_on_the_left`; `parent-precedence` →
+`negated_equality_under_a_tighter_operator`; `replaceable` → `comment_inside_the_comparison`,
+`directive_inside_the_logical_operand`; `outermost-negation` →
+`triple_negation_reports_the_outer` (the *positive*, through the fix round trip, because the run
+would otherwise report itself twice); `neutral-operand` → `and_false`, `or_true`,
+`false_on_the_left_of_and`; `branches-differ` → `conditional_branches_are_the_same_literal`.
+
 What #131 has left after this: `RedundantIfElseBlock`, whose fix moves a block's statements into the
 enclosing scope and so has to answer the name-collision question `RewriteGuards.WouldCollide` exists
 for, and `RedundantSwitchExpressionArms`, which needs the exhaustiveness model none of these shapes
@@ -419,6 +431,19 @@ in newtonsoft, which is the empty *argument list*, and that attribute is written
 suffix — so it is not evidence for this shape. As with `SK0260`, the zero was proved live first:
 planted positives of both shapes fired inside the corpus tree and the count returned to zero when the
 file was deleted.
+
+**Sabotage: five guards, five fixtures red.** `suffix-length` → `the_name_is_exactly_the_suffix`;
+`shortened-keyword` → `shortening_leaves_a_keyword`; `short-name-lookup` →
+`a_type_answers_to_the_short_name`; `attribute-usage-identity` (the namespace half) →
+`another_types_attribute_usage`; `argument-trivia` → `comment_inside_the_deleted_argument_span`.
+
+⚠ **Two guards here are asserted by a fixture but were not sabotage-tested, and saying so is the
+point.** The `Name: "AttributeUsageAttribute"` half of the identity check was not removed separately
+— only its namespace half was — so `an_unrelated_attribute_with_an_inherited_property` stayed green
+through the batch. And the `is not IdentifierNameSyntax` restriction that
+`qualified_name_belongs_to_sk0243` covers cannot be removed without restructuring the method around a
+different node type, so no sabotage was run for it. Both fixtures assert the behaviour; neither has
+been shown to be the thing that produces it.
 
 ### Cleanup — `SK0250`
 
