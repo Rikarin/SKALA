@@ -457,7 +457,10 @@ public sealed class RuleCatalogTests {
             .Where(static line => line.Length > 0 && !line.StartsWith('#'))
             .Select(static line => line.Split(' ', 2)[0])
             .ToHashSet(StringComparer.Ordinal);
-        Assert.True(allocated.Count > 100, $"{AllocatedIdsPath} lists {allocated.Count} ids; that is not the register.");
+        Assert.True(
+            allocated.Count > 100,
+            $"{AllocatedIdsPath} lists {allocated.Count} ids; that is not the register."
+        );
 
         var plannedButUnallocated = new Dictionary<string, string>(StringComparer.Ordinal) {
             ["SK1002"] = "doc 08 § SK1000 and § M5: primary constructors are a declaration-shape "
