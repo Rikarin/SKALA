@@ -85,6 +85,9 @@ public static class FreshKeyMaterial {
 
     public static DSA Dsa() => DSA.Create(3072);
 
+    public static RSA WithCspParameters(CspParameters parameters) =>
+        new RSACryptoServiceProvider(2048, parameters);
+
     public static ECDsa Curve() {
         var signer = ECDsa.Create();
         signer.KeySize = 256;

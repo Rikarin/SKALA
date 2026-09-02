@@ -83,7 +83,29 @@ public sealed class AsymmetricKeySizeAnalyzer : DiagnosticAnalyzer {
         );
     }
 
-    /// <summary><c>RSA.Create(1024)</c>, <c>DSA.Create(1024)</c>, <c>new RSACryptoServiceProvider(1024)</c>.</summary>
+    /// <summary>
+    ///     <c>RSA.Create(1024)</c>, <c>DSA.Create(1024)</c>, <c>new RSACryptoServiceProvider(1024)</c> and
+    ///     <c>new RSACryptoServiceProvider(1024, cspParameters)</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The arity is deliberately not pinned at one, and a surviving sabotage is why.</b> This
+    ///     method first read <c>arguments.Length != 1</c>, which rejected nothing that
+    ///     <c>IsDefaultOrEmpty</c> had not already rejected — and for arity two it silently declined
+    ///     <c>new RSACryptoServiceProvider(1024, cspParameters)</c>, which is a real overload holding a
+    ///     real 1024-bit key. Inverting the clause turned no test red, which is how the hole was found
+    ///     rather than the clause being pronounced dead.
+    ///     <para>
+    ///         The test that actually separates a key size from <c>RSA.Create(RSAParameters)</c> and
+    ///         <c>RSA.Create(string)</c> is that the <em>first parameter</em> is an <c>int</c>, and every
+    ///         RSA and DSA overload that takes a size takes it first.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The cheap test is asked first on purpose. This action runs on every object creation and
+    ///         every static <c>Create</c> in the compilation, and <c>Family</c> walks a base-type chain;
+    ///         almost nothing passes an <c>int</c> first, so the <c>SpecialType</c> read keeps the walk
+    ///         off the hot path.
+    ///     </para>
+    /// </remarks>
     static void Generated(OperationAnalysisContext context, ImmutableArray<INamedTypeSymbol> families) {
         var (type, arguments) = context.Operation switch {
             IObjectCreationOperation creation => (creation.Type, creation.Arguments),
@@ -92,14 +114,17 @@ public sealed class AsymmetricKeySizeAnalyzer : DiagnosticAnalyzer {
             _ => (null, default)
         };
 
-        if (type is null
-            || arguments.IsDefaultOrEmpty
-            || arguments.Length != 1
+        if (type is null || arguments.IsDefaultOrEmpty) {
+            return;
+        }
+
+        var size = arguments[0];
+        if (size.Parameter?.Type.SpecialType != SpecialType.System_Int32
             || Family(type, families) is not { } family) {
             return;
         }
 
-        Examine(context, family, arguments[0].Value);
+        Examine(context, family, size.Value);
     }
 
     /// <summary><c>rsa.KeySize = 1024</c>, including inside an object initialiser.</summary>

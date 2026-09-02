@@ -52,6 +52,9 @@ public static class KeyMaterial {
 
     public static DSA SmallDsa() => DSA.Create(1024);
 
+    public static RSA SmallWithCspParameters(CspParameters parameters) =>
+        new RSACryptoServiceProvider(1024, parameters);
+
     public static RSA SmallByProperty() {
         var signer = RSA.Create();
         signer.KeySize = 1024;

@@ -108,7 +108,7 @@ public sealed class SecurityCorpusTests {
     [InlineData(RuleIds.XmlExternalEntityResolution, 2)]
     [InlineData(RuleIds.RegexWithoutTimeout, 2)]
     [InlineData(RuleIds.PredictableCipherInitializationVector, 6)]
-    [InlineData(RuleIds.UndersizedAsymmetricKey, 3)]
+    [InlineData(RuleIds.UndersizedAsymmetricKey, 4)]
     public void TheVulnerableHalf_ProducesExactlyTheKnownCount(string ruleId, int expected) {
         var findings = Analyze("vulnerable").Where(finding => finding.Id == ruleId).ToArray();
 
