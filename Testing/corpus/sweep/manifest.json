@@ -1,9 +1,9 @@
 {
   "Provenance": {
     "ReSharperVersion": "2025.2.6",
-    "ConfigDigest": "1db666f69fec005d",
-    "Commit": "0eadefdaa8e4f25f2739043a23ae029f46b129e0",
-    "Frozen": "2026-08-30",
+    "ConfigDigest": "e256d0b9ed35b14f",
+    "Commit": "13c20222a76040339e5a5c890aaec68bcc57965c",
+    "Frozen": "2026-09-02",
     "Sweep": "conformance-sweep.json"
   },
   "Outputs": [

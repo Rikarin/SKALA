@@ -93,8 +93,8 @@ public sealed class XmlDocOracleTests {
         // ⚠ Tier D has three honest causes here and this assertion used to admit one, then two. The
         // fixture pins the *export's* configuration; the key-flip sweep flips the key. A key can
         // reproduce its doc-comment fixture byte for byte and still diverge at another value — every
-        // one of the six demoted at c0691cb7 does exactly that — and demanding `row.Agrees == false`
-        // of those turns a correct demotion into a test failure. What must still be caught is the
+        // one of the six demoted at c0691cb7 does exactly that — and demanding `!row.Agrees` of
+        // those turns a correct demotion into a test failure. What must still be caught is the
         // stale reason: Tier D with no evidence behind it from any instrument.
         if (Unswept.Contains(row.Key)) {
             // ⚠ The third cause, and the one this file had no room for. These keys were fixed and
@@ -129,7 +129,7 @@ public sealed class XmlDocOracleTests {
         }
 
         Assert.True(
-            row.Agrees == false || SweepVerdicts.Unsubstantiated().Contains(row.Key),
+            !row.Agrees || SweepVerdicts.Unsubstantiated().Contains(row.Key),
             $"{row.Key} is Tier {tier}, Skala reproduces its doc-comment fixture byte for byte, and the "
             + "committed key-flip sweep does not contradict it either. Tier D in this family means "
             + "'measured against the oracle, and disagreeing' — by the fixture, or by the sweep at a value "

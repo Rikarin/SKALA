@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaFormatOnly generated=2026-08-29
+// skala-oracle: resharper=2025.2.6 config=sha256:e256d0b9ed35b14f profile=SkalaFormatOnly generated=2026-09-02
 public class AlignDeclaration {
     // `align_multiple_declaration`: the second and later declarators of a *local* declaration take
     // the first declarator's column rather than a continuation level. The key is false in the

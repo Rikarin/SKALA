@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaFormatOnly generated=2026-08-30
+// skala-oracle: resharper=2025.2.6 config=sha256:e256d0b9ed35b14f profile=SkalaFormatOnly generated=2026-09-02
 // resharper_csharp_blank_lines_around_single_line_property = 0.
 //
 // ⚠ THE CLAIM THIS FILE USED TO CARRY IS REFUTED. It said `public int X => 1;` is the single-line

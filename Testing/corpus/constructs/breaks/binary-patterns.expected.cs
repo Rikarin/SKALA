@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaFormatOnly generated=2026-08-29
+// skala-oracle: resharper=2025.2.6 config=sha256:e256d0b9ed35b14f profile=SkalaFormatOnly generated=2026-09-02
 // resharper_csharp_wrap_before_binary_pattern_op = true: the break belongs before the operator, so a
 // break the author wrote *before* one is kept and one written *after* is re-joined. Both directions,
 // because one alone cannot tell "the break is before the operator" from "the break is preserved".

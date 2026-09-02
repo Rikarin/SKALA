@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaCleanup generated=2026-08-30
+// skala-oracle: resharper=2025.2.6 config=sha256:e256d0b9ed35b14f profile=SkalaCleanup generated=2026-09-02
 // csharp_style_namespace_declarations = file_scoped. ⚠ The oracle performs this under
 // `ArrangeNamespaces`, a cleanup task the M4 profile sweep did not find; until it was added the
 // reference tool left every block-scoped namespace alone.
