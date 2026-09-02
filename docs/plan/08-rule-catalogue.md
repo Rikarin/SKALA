@@ -707,6 +707,102 @@ worth an id is the half `CA2017` has never heard of.
 every `CA` rule measured, in every analysis mode — which is what leaves the duplicate-property
 concept unowned for `Microsoft.Extensions.Logging` as well as for Serilog.
 
+### Culture, comparison policy and query shape
+
+⚠ **The prose pass on this block is owed.** The rows below are the allocation register doing its one
+job — recording that a number is taken — written as each rule landed rather than as a considered
+section.
+
+- `SK2150` `implicit-string-search-culture` — a `string` `IndexOf`, `LastIndexOf`, `StartsWith` or
+  `EndsWith` taking a string and no `StringComparison`.
+  ([#51](https://github.com/Rikarin/SKALA/issues/51))
+- `SK2151` `invariant-culture-comparison` — an equality-shaped string operation given
+  `StringComparison.InvariantCulture`, which is culture-*stable* and not culture-*free*.
+  ([#252](https://github.com/Rikarin/SKALA/issues/252))
+- `SK2152` `platform-dependent-path-comparison` — a provably path-valued string compared with a
+  hard-coded case-insensitive policy. ([#260](https://github.com/Rikarin/SKALA/issues/260))
+- `SK2153` `queryable-degraded-to-enumerable` — a deferred LINQ operator bound to `Enumerable` on an
+  `IQueryable` receiver. ([#37](https://github.com/Rikarin/SKALA/issues/37))
+- `SK2154` `sort-without-ordering` — a sort falling back to a `Comparer<T>.Default` that throws.
+  ([#251](https://github.com/Rikarin/SKALA/issues/251))
+
+⚠ **`SK2150` and `SK2151` were expected to close as hosted and did not, and the measurement is the
+finding.** A probe project built at *default* analysis level — no `AnalysisMode`, no `AnalysisLevel`,
+nothing but `dotnet build` on `net10.0` under SDK 10.0.400 — produces **zero** `CA` diagnostics over
+a file containing every shape in this block. The same file at `AnalysisMode=All` produces 60. So the
+`CA` rules exist, they are correct, and no consumer has them on:
+
+| Concept | Host | Default | Recommended | All |
+|---|---|---|---|---|
+| Search with no `StringComparison` ([#51](https://github.com/Rikarin/SKALA/issues/51)) | `CA1310` | **no** | yes | yes |
+| Equality with no `StringComparison` | `CA1307` | **no** | **no** | yes |
+| `InvariantCulture` where ordinal was meant ([#252](https://github.com/Rikarin/SKALA/issues/252)) | `CA1309` | **no** | yes | yes |
+| Missing `CultureInfo` | `CA1304` | **no** | yes | yes |
+| Missing `IFormatProvider` | `CA1305` | **no** | yes | yes |
+| Parameterless `ToLower`/`ToUpper` | `CA1311` | **no** | yes | yes |
+
+⚠ **`CA1307` is off even at `Recommended`**, which is the row that would have been missed by asking
+whether the rule exists rather than what it is set to. ADR-008's corollary — "Skala must be *worth
+using with nothing hosted*" — is what these six rows decide, and they decide it the other way from
+`CA2017`, which really is on by default and really did retire half of [#20](https://github.com/Rikarin/SKALA/issues/20).
+
+⚠ **`SK2150` is the search half and `SK2010` is the comparison half, and the difference is not the
+method list.** A comparison returns a truth value at the site that asked; a search returns an
+*offset*, which a `Substring` then slices on, so the same culture-dependence arrives at the reader as
+a truncated identifier several frames away. `CultureAndQueryShapeBatchTests` asserts the two rules
+are disjoint in both directions rather than describing it.
+
+⚠ **`SK2150`'s method table excludes most of `System.String` on purpose.** `Contains(string)` and
+every `char` overload of the four names are *already ordinal* on .NET. Reporting them would be
+advising the author to write down the behaviour they already have — and it is what a rule built from
+the inspection titles rather than from the framework's documented behaviour would do.
+
+⚠ **The issue for #51 says the fix is "the same fix `SK2010` already emits". `SK2010` emits no
+fix at all** — it is `hasFix: false`, because for a comparison there is no way to choose between
+ordinal, invariant and user-culture semantics. Search is different only because an offset into a
+string is an ordinal question by construction, so `SK2150` does carry a fix; it is `fixIsSafe: false`
+against the issue's proposal, because appending `StringComparison.Ordinal` changes what the program
+computes and that is the whole point of the finding.
+
+⚠ **`SK2152` is written from Skala's own position rather than from the upstream idea.**
+`SarifWriter.PathComparison` is already
+`OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase`, and
+`CacheKeyPathTests` asserts the correct answer on all three platforms rather than skipping on two of
+them. So the guidance is not "stop ignoring case" — it is "compare the path the way this file system
+compares it", and the negative fixture for the rule is Skala's own idiom. An operand must be
+*provably* a path — out of `System.IO.Path`, or off a `FileSystemInfo` — because name-based path
+detection is how this kind of rule acquires its false positives.
+
+⚠ **`SK2154` answers its issue's open question with a no: the sort is decidable only for a sealed
+type.** `Comparer<T>.Default` for an unsealed `T` builds an `ObjectComparer` that casts each
+*element* to `IComparable` at run time, so a `List<Animal>` holding a comparable `Dog` sorts
+correctly even though `Animal` implements nothing. A type parameter is substituted at every call
+site and is further out of reach still. And `Nullable<T>` implements neither interface itself while
+`List<int?>.Sort()` works — through a dedicated `NullableComparer` — which is the false positive the
+rule would otherwise have shipped with.
+
+⚠ **Two of this batch shipped `hasFix: false`, and for `SK2153` the absence is the design.** The
+repair for a degraded query is to change a delegate's declared type to `Expression<…>` at another
+declaration, or to accept the materialisation by writing `.AsEnumerable()`. Inserting
+`.AsEnumerable()` would silence the rule while keeping the defect, which is the one fix `skala fix`
+must never have.
+
+⚠ **`SK2153`'s first version reported `.AsEnumerable()` itself, and the rule's own prose had already
+claimed that could not happen.** The claim was that the deliberate form is excluded "by construction,
+not by a filter" — true of everything chained *after* the call, whose receiver is then an
+`IEnumerable<T>`, and false of the call, which is an `Enumerable` extension returning
+`IEnumerable<T>` on an `IQueryable` receiver and therefore the rule's exact shape. A rule that
+reports its own escape hatch reports its own fix. The negative fixture caught it; the claim in
+`rules.json` is corrected rather than deleted.
+
+⚠ **`SK2154`'s LINQ arm shipped inverted and green, and no positive fixture could have seen it.** It
+counted parameters against the *reduced* extension method, where `OrderBy(key)` presents one and
+`OrderBy(key, comparer)` presents two — so a count of two selected exactly the overload that
+*supplies* the ordering and missed every overload that does not. Every positive fixture stayed green
+because `List<T>.Sort()` covered them: a positive fixture passes on one finding and never asks which
+arm produced it. `CultureAndQueryShapeBatchTests` asserts counts for that reason, and carries the
+`AD0001` check the fixture harness still omits ([#279](https://github.com/Rikarin/SKALA/issues/279)).
+
 ## SK3000 — Async, concurrency, lifetime
 
 `SK3001` `async void` outside an event handler · `SK3002` blocking on async (`.Result`, `.Wait()`,
@@ -1519,8 +1615,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **256** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **221** | **86.7 %** |
+| Rules this document names | **261** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **226** | **86.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |

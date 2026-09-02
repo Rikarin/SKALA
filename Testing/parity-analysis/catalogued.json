@@ -223,5 +223,9 @@
   "UseDeconstruction": "SK1070",
   "UseWithExpressionToCopyRecord": "SK1071",
   "RedundantSpreadElement": "SK1072",
-  "UseEventArgsEmptyField": "SK1073"
+  "UseEventArgsEmptyField": "SK1073",
+  "StringLastIndexOfIsCultureSpecific.1": "SK2150",
+  "StringLastIndexOfIsCultureSpecific.2": "SK2150",
+  "StringLastIndexOfIsCultureSpecific.3": "SK2150",
+  "PossibleUnintendedQueryableAsEnumerable": "SK2153"
 }
