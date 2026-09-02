@@ -158,28 +158,47 @@ public sealed class RegexTimeoutAnalyzer : DiagnosticAnalyzer {
         var unknownOptions = false;
 
         foreach (var argument in arguments) {
-            if (argument.Parameter is not { } parameter || argument.ArgumentKind == ArgumentKind.DefaultValue) {
-                continue;
-            }
-
-            if (timeSpan is not null
-                && SymbolEqualityComparer.Default.Equals(parameter.Type.OriginalDefinition, timeSpan)) {
-                bounded = true;
-            } else if (parameter.Name == "pattern" && parameter.Type.SpecialType == SpecialType.System_String) {
-                if (argument.Value.ConstantValue is { HasValue: true, Value: string text }) {
-                    pattern = text;
-                }
-            } else if (parameter.Type.Name == "RegexOptions") {
-                if (argument.Value.ConstantValue is not { HasValue: true, Value: int options }) {
-                    unknownOptions = true;
-                } else if ((options & NonBacktracking) != 0) {
-                    bounded = true;
-                }
-            }
+            Classify(argument, timeSpan, ref pattern, ref bounded, ref unknownOptions);
         }
 
         if (!bounded && !unknownOptions && pattern is not null && Backtracks(pattern)) {
             context.ReportDiagnostic(Diagnostic.Create(Descriptor, location, Advice));
+        }
+    }
+
+    /// <summary>
+    ///     What one argument says about the pattern and about whether anything bounds it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The parameter's <em>type</em> decides, not its position, so the overload that takes a
+    ///     culture where another takes a timeout is read correctly and a new overload arrives covered.
+    ///     An argument the caller did not write — <c>ArgumentKind.DefaultValue</c> — is not a mitigation
+    ///     the caller chose.
+    /// </remarks>
+    static void Classify(
+        IArgumentOperation argument,
+        INamedTypeSymbol? timeSpan,
+        ref string? pattern,
+        ref bool bounded,
+        ref bool unknownOptions
+    ) {
+        if (argument.Parameter is not { } parameter || argument.ArgumentKind == ArgumentKind.DefaultValue) {
+            return;
+        }
+
+        if (timeSpan is not null
+            && SymbolEqualityComparer.Default.Equals(parameter.Type.OriginalDefinition, timeSpan)) {
+            bounded = true;
+        } else if (parameter.Name == "pattern" && parameter.Type.SpecialType == SpecialType.System_String) {
+            if (argument.Value.ConstantValue is { HasValue: true, Value: string text }) {
+                pattern = text;
+            }
+        } else if (parameter.Type.Name == "RegexOptions") {
+            if (argument.Value.ConstantValue is not { HasValue: true, Value: int options }) {
+                unknownOptions = true;
+            } else if ((options & NonBacktracking) != 0) {
+                bounded = true;
+            }
         }
     }
 
@@ -313,13 +332,7 @@ public sealed class RegexTimeoutAnalyzer : DiagnosticAnalyzer {
 
         switch (pattern[at]) {
             case '\\':
-                // `\p{L}` and `\P{L}` carry a braced name; every other escape is two characters.
-                if (at + 2 < end && (pattern[at + 1] == 'p' || pattern[at + 1] == 'P') && pattern[at + 2] == '{') {
-                    var close = pattern.IndexOf('}', at + 2);
-                    return close < 0 || close >= end ? -1 : close + 1;
-                }
-
-                return at + 2 > end ? -1 : at + 2;
+                return EscapeEnd(pattern, at, end);
 
             case '[':
                 var classEnd = ClassEnd(pattern, at);
@@ -340,6 +353,20 @@ public sealed class RegexTimeoutAnalyzer : DiagnosticAnalyzer {
             default:
                 return at + 1;
         }
+    }
+
+    /// <summary>Where the escape sequence starting at <paramref name="at" /> ends, or <c>-1</c>.</summary>
+    /// <remarks>
+    ///     ⚠ <c>\p{L}</c> and <c>\P{L}</c> carry a braced Unicode category name and are the only escapes
+    ///     longer than two characters. Reading one as two would leave the scanner inside the brace.
+    /// </remarks>
+    static int EscapeEnd(string pattern, int at, int end) {
+        if (at + 2 < end && (pattern[at + 1] == 'p' || pattern[at + 1] == 'P') && pattern[at + 2] == '{') {
+            var close = pattern.IndexOf('}', at + 2);
+            return close < 0 || close >= end ? -1 : close + 1;
+        }
+
+        return at + 2 > end ? -1 : at + 2;
     }
 
     /// <summary>The index of the <c>)</c> closing the group opened at <paramref name="open" />, or <c>-1</c>.</summary>

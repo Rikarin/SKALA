@@ -21,21 +21,21 @@ public sealed class RegexTimeoutTests {
 
     /// <summary>Patterns whose shape is the nested unbounded quantifier the rule exists for.</summary>
     [Theory]
-    [InlineData(@"^(a+)+$")]
-    [InlineData(@"^(a*)*$")]
-    [InlineData(@"^(a?)+$")]
-    [InlineData(@"^(a+)*$")]
-    [InlineData(@"([A-Za-z]+)*")]
+    [InlineData("^(a+)+$")]
+    [InlineData("^(a*)*$")]
+    [InlineData("^(a?)+$")]
+    [InlineData("^(a+)*$")]
+    [InlineData("([A-Za-z]+)*")]
     [InlineData(@"(\w+)+")]
     [InlineData(@"(\d{2,})+")]
-    [InlineData(@"((ab)+)+")]
-    [InlineData(@"(x+){2,}")]
-    [InlineData(@"(?:a+)+")]
-    [InlineData(@"(?<name>a+)+")]
+    [InlineData("((ab)+)+")]
+    [InlineData("(x+){2,}")]
+    [InlineData("(?:a+)+")]
+    [InlineData("(?<name>a+)+")]
     [InlineData(@"(\p{L}+)+")]
-    [InlineData(@"prefix(a+)+suffix")]
-    [InlineData(@"(a+)+?")]
-    [InlineData(@"([^x]+)+")]
+    [InlineData("prefix(a+)+suffix")]
+    [InlineData("(a+)+?")]
+    [InlineData("([^x]+)+")]
     public void TheScanner_ReadsTheNestedQuantifier(string pattern) => Assert.Single(Findings(pattern));
 
     /// <summary>
@@ -43,31 +43,31 @@ public sealed class RegexTimeoutTests {
     ///     each is a shape a looser detector reports and none of them can backtrack super-linearly.
     /// </summary>
     [Theory]
-    [InlineData(@"(a+)?", "an outer `?` admits one iteration")]
-    [InlineData(@"(a+){1,3}", "an outer `{n,m}` has a ceiling")]
-    [InlineData(@"(a+){0,1}", "Serilog's shape, reduced")]
-    [InlineData(@"(a+){3}", "an exact count is not a repetition to explore")]
-    [InlineData(@"(abc*)+", "the body is three atoms; each iteration must start with `ab`")]
-    [InlineData(@"(a+b)+", "the body is two atoms")]
-    [InlineData(@"(abc)+", "a fixed-width body repeats linearly")]
-    [InlineData(@"(a|b)+", "an alternation is not a quantifier, and these are disjoint")]
+    [InlineData("(a+)?", "an outer `?` admits one iteration")]
+    [InlineData("(a+){1,3}", "an outer `{n,m}` has a ceiling")]
+    [InlineData("(a+){0,1}", "Serilog's shape, reduced")]
+    [InlineData("(a+){3}", "an exact count is not a repetition to explore")]
+    [InlineData("(abc*)+", "the body is three atoms; each iteration must start with `ab`")]
+    [InlineData("(a+b)+", "the body is two atoms")]
+    [InlineData("(abc)+", "a fixed-width body repeats linearly")]
+    [InlineData("(a|b)+", "an alternation is not a quantifier, and these are disjoint")]
     [InlineData(@"^\w+\s*\d+$", "sequential quantifiers, none nested")]
-    [InlineData(@"(?<name>[^:]+)::(?<member>[A-Za-z0-9]*)", "no group is repeated")]
-    [InlineData(@"[(*+]+", "`(` and `*` inside a class are literals")]
+    [InlineData("(?<name>[^:]+)::(?<member>[A-Za-z0-9]*)", "no group is repeated")]
+    [InlineData("[(*+]+", "`(` and `*` inside a class are literals")]
     [InlineData(@"\(a+\)+", "escaped parentheses are not a group")]
-    [InlineData(@"[]()]+", "a `]` straight after `[` is a literal, so the class runs to the second one")]
+    [InlineData("[]()]+", "a `]` straight after `[` is a literal, so the class runs to the second one")]
     // ⚠ The three below were added because sabotaging the escape skip, the class skip and the
     // leading-`]` rule each left every other case in this class green. In all three the scanner would
     // read a group that is not there and report a pattern that cannot backtrack. They are the only
     // cases that fail when those clauses are removed, and without them the clauses read as dead code.
     [InlineData(@"\(a+)+", "the `(` is escaped, so the `)` closes nothing")]
-    [InlineData(@"[(]+)+", "the `(` is inside a class, so the `)` closes nothing")]
-    [InlineData(@"[](a+)+]", "a leading `]` is a literal, so the whole pattern is one class")]
-    [InlineData(@"(?>a+)+", "an atomic group cannot be backtracked into")]
-    [InlineData(@"(?=a+)b+", "a lookaround is skipped rather than modelled")]
-    [InlineData(@"^(a+$", "unbalanced: the scanner fails closed")]
-    [InlineData(@"", "the empty pattern")]
-    [InlineData(@"[a-z]+", "no group at all")]
+    [InlineData("[(]+)+", "the `(` is inside a class, so the `)` closes nothing")]
+    [InlineData("[](a+)+]", "a leading `]` is a literal, so the whole pattern is one class")]
+    [InlineData("(?>a+)+", "an atomic group cannot be backtracked into")]
+    [InlineData("(?=a+)b+", "a lookaround is skipped rather than modelled")]
+    [InlineData("^(a+$", "unbalanced: the scanner fails closed")]
+    [InlineData("", "the empty pattern")]
+    [InlineData("[a-z]+", "no group at all")]
     public void TheScanner_DeclinesWhatCannotBlowUp(string pattern, string why) =>
         Assert.True(Findings(pattern).Length == 0, $"reported `{pattern}`, but {why}.");
 
@@ -103,15 +103,15 @@ public sealed class RegexTimeoutTests {
     ///     that threw on the first character. This is the only assertion that separates the two.
     /// </summary>
     [Theory]
-    [InlineData(@"(a+)+")]
-    [InlineData(@"^(a+$")]
-    [InlineData(@"[")]
-    [InlineData(@"(")]
-    [InlineData(@"(?")]
-    [InlineData(@"(?<")]
+    [InlineData("(a+)+")]
+    [InlineData("^(a+$")]
+    [InlineData("[")]
+    [InlineData("(")]
+    [InlineData("(?")]
+    [InlineData("(?<")]
     [InlineData(@"\")]
-    [InlineData(@"(a+){")]
-    [InlineData(@"[^")]
+    [InlineData("(a+){")]
+    [InlineData("[^")]
     [InlineData(@"(\p{")]
     public void TheScanner_DoesNotThrow_OnAPatternItCannotParse(string pattern) {
         var crashes = Analyze(pattern).Where(static d => d.Id == "AD0001").ToArray();
