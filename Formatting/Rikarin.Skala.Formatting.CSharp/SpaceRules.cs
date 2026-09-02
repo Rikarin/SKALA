@@ -457,9 +457,6 @@ public static class SpaceRules {
                 // about it and closing it up produces `new(string Name, int Value)[]`, which reads
                 // as an implicit object creation and is not one.
                 return next.Parent is TupleTypeSyntax || o.SpaceBeforeNewParentheses;
-
-            default:
-                break;
         }
 
         if (prev.Text is "nameof") {

@@ -240,6 +240,9 @@ public sealed class LayoutWriter {
                         break;
 
                     default:
+                        // Concat, Fill and IfBroken are descended into below rather than written
+                        // here — ChildrenOf covers the first two and IfBroken picks its branch —
+                        // so this section is the catch-all that says so, not dead control flow.
                         break;
                 }
             }

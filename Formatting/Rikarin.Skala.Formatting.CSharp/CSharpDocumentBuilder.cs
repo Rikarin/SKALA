@@ -2070,12 +2070,12 @@ public sealed partial class CSharpDocumentBuilder {
 
         switch (style) {
             case PreprocessorIndentStyle.UsualIndent:
-                doc.Verbatim(text, span, VerbatimFlags.None);
+                doc.Verbatim(text, span);
                 return;
 
             case PreprocessorIndentStyle.Outdent:
                 OpenIndent(IndentKind.Outdent);
-                doc.Verbatim(text, span, VerbatimFlags.None);
+                doc.Verbatim(text, span);
                 CloseIndent(IndentKind.Outdent);
                 return;
 
