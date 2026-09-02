@@ -5061,3 +5061,38 @@ syntax, and a sabotage that removes only one half of a paired guard proves nothi
 `a-generic-method` did not reach `SK1004`'s type-parameter guard at all** — its two `IEnumerable<T>`
 receivers are different symbols, so the receiver-type comparison declines it first;
 `a-type-parameter-on-a-plain-receiver` was added to reach the guard the name claimed.
+
+#### The self-gate, and the one true positive on Skala's own tree
+
+Release built with `-bl:artifacts/skala.binlog --no-incremental`, then
+`check --load=binlog --require-fresh-binlog --gate=ci --duplication`. **`SK9021`: zero** — no `.cs`
+file under the repository is missing from a recorded compilation, so the binlog covers the tree and
+the finding counts below are not a partial view.
+
+⚠ **`SK1004` fires exactly once on Skala's own source, and it is right.**
+`Reporting/Rikarin.Skala.Reporting/Renderers.cs:479` declares
+
+```csharp
+static class Lines {
+    internal static StringBuilder Line(this StringBuilder builder) => builder.Append('\n');
+
+    internal static StringBuilder Line(this StringBuilder builder, string text) => builder.Append(text).Append('\n');
+}
+```
+
+— two extension methods, one receiver type, one receiver name, no type parameters, nothing else in
+the class. It is the shape, and it is the only instance of it in the repository. `SK1110` finds
+nothing on Skala's own tree.
+
+⚠ **The finding is left standing rather than fixed, and the rule's own metadata is the reason.**
+`SK1004` is `fixIsSafe: false`, which is the promise that a person reviews the edit before it lands.
+Applying it unreviewed, to a file this batch does not own, during a session with nine other agents in
+flight, would contradict the thing the rule says about itself.
+
+⚠ **The self-gate is red, and not because of this batch.** Counted from `report.sarif` against the
+committed `.skala/baseline.sarif`: this batch contributes **one** result, `SK1004` at `note`, while
+**82 error-severity results from twelve other rules** are outside the baseline already — `SK3002` 17,
+`SK2014` 16, `SK2009` 14, `SK0232` 13, `SK0243` 5, `SK0240` 4, `SK0234` 4, `SK6031` 3, `SK0231` 3, and
+one each of `SK3511`, `IDE1006` and `SK6030`. A `note` cannot fail a gate keyed on errors. The
+baseline was deliberately **not** updated: doc CLAUDE.md's rule is that it settles after the *last*
+merge, and refreshing it here would bake those 82 in as accepted on one agent's authority.
