@@ -20,8 +20,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         and negates as <c>is not</c> without a <c>!</c> in front of a long receiver.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The two spellings agree on every input, and that was measured rather than reasoned
-///         about.</b> Fourteen inputs were compiled and run — an exact match, longer and shorter spans,
+///         ⚠
+///         <b>
+///             The two spellings agree on every input, and that was measured rather than reasoned
+///             about.
+///         </b> Fourteen inputs were compiled and run — an exact match, longer and shorter spans,
 ///         an empty span, <c>default(ReadOnlySpan&lt;char&gt;)</c>, a span over a null string, two
 ///         sliced spans, a case difference, and a <c>Span&lt;char&gt;</c> from <c>stackalloc</c> — and
 ///         the pattern and the call returned the same <c>bool</c> for all of them. The empty constant
@@ -192,7 +195,8 @@ public sealed class ConstantPatternOverSequenceEqualAnalyzer : DiagnosticAnalyze
         var expression = PatternSafety.Unwrap(argument);
         if (expression is InvocationExpressionSyntax {
                 ArgumentList.Arguments.Count: 0,
-                Expression: MemberAccessExpressionSyntax {
+                Expression:
+                MemberAccessExpressionSyntax {
                     RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
                     Name.Identifier.ValueText: "AsSpan"
                 } asSpan

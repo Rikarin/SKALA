@@ -326,6 +326,5 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
     ///     Lives on <see cref="PatternSafety" /> because <c>SK1130</c> moves an expression into the
     ///     same position and needs the same answer.
     /// </remarks>
-    static bool IsPatternSafeContext(ExpressionSyntax expression) =>
-        PatternSafety.IsPatternSafeContext(expression);
+    static bool IsPatternSafeContext(ExpressionSyntax expression) => PatternSafety.IsPatternSafeContext(expression);
 }
