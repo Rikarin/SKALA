@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 268 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 273 ids are allocated.
 
 ## Async
 
@@ -124,6 +124,11 @@
 | [SK2162](SK2162.md) | The date or time `TryParse` has an implicit culture | warning | — | no |
 | [SK2163](SK2163.md) | Elapsed time is measured with the wall clock | warning | review | no |
 | [SK2164](SK2164.md) | The assertion's expression has side effects | warning | — | no |
+| [SK2170](SK2170.md) | The indentation says the statement is in the body and it is not | warning | — | yes |
+| [SK2171](SK2171.md) | The `\x` escape's length is decided by what follows it | warning | safe | yes |
+| [SK2172](SK2172.md) | The `!` before `is` reads as a negated `is` | warning | — | no |
+| [SK2173](SK2173.md) | `is not { }` is a null check written backwards | warning | safe | yes |
+| [SK2174](SK2174.md) | The shift or bitwise operand relies on precedence to group | suggestion | safe | yes |
 
 ## Design
 

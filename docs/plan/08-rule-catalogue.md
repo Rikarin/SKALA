@@ -1775,8 +1775,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **295** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **260** | **88.4 %** |
+| Rules this document names | **300** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **265** | **88.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -3529,3 +3529,186 @@ the declaration or sink the reader, write the implementation or delete the hook,
 per-instance or make the member static — and the finding is precisely the evidence that the author
 knows which and the analyzer does not. `SK2132` is the exception because there the two candidate
 repairs are not symmetric: one of them is a rename of a property that other code already calls.
+
+## `SK2170`–`SK2174` — statements and literals that read as something else
+
+⚠ **The prose pass for `SK2170`–`SK2174` is owed.** What follows is the allocation register entry —
+enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+**`SK2170`–`SK2174` extend the `SK2060`–`SK2064` family**: an expression or a statement whose shape
+on the page says one thing and whose grammar says another. What separates the two batches is where
+the misreading lives. `SK2060`–`SK2064` read *operators* — an `=` that should have been `==`, two
+operands that are the same expression, an `=` written hard against a `-`. These five read *layout,
+spelling and pattern shape*: how far a line is indented, how many digits an escape took, which side
+of an `is` a `!` sits on, and a pattern that is a null check written inside out.
+
+⚠ **Three of the five concepts the issues describe turned out to belong to the compiler, and the
+probe that established it reached further than doc 17 supposed.** Nine shapes were compiled on
+SDK 10.0.400 and the warnings read off the build:
+
+- **`CS0642`, "possible mistaken empty statement", covers the whole of `MisleadingBodyLikeStatement`
+  (#38's first inspection).** It fires for `if`, `else`, `lock`, `do`, `using` and `fixed` outright,
+  and for `while`, `for` and `foreach` *exactly when a block follows the `;`*. That last clause is
+  the point: `while (Step()) ;` standing alone is the idiomatic spin loop and is silent, and the
+  same line followed by `{ … }` warns. The compiler is quiet precisely where the shape is harmless
+  and loud precisely where it misleads, so there was nothing for a rule to add. `SK2170` ships the
+  *indentation* half of #38 instead, which the issue did not describe and which no compiler sees.
+- **`CS0078` covers `LongLiteralEndingLowerL` (#39's first inspection)** — "the 'l' suffix is easily
+  confused with the digit '1'", on by default, firing on `1l` and on `1lu` and silent on `1ul`.
+- **`CS8518` makes `is not { }` uncompilable on a non-nullable value type** — "an expression of type
+  'int' can never match the provided pattern", and likewise for a `T` constrained to `struct`. That
+  is not a rule the compiler took away; it is a *guarantee handed to `SK2173`*. There is no
+  compiling program in which `is not { }` stands on something `is null` would reject, so the rewrite
+  is total and the rule needs no semantic model to know it.
+
+Both hosted inspections are now recorded in `classify.py`'s `HOSTED` map against the compiler
+warning that owns them, beside `PartialMethodParameterNameMismatch`; each had been falling through
+to the Uncovered residue and inflating the gap by one.
+
+`SK2170` `misleading-body-indentation` — an `if`, `else`, `while`, `for`, `foreach`, `lock`, `using`
+or `fixed` with a single unbraced statement as its body, followed by a statement indented to exactly
+the body's column. ⚠ **The second place in this catalogue where trivia rather than structure decides
+a correctness finding, and `SK2063` is the first.** Indentation is not structure anywhere in C#, so
+nothing but a formatter is looking at it. ⚠ **Prefix comparison, never a column count** — one tab
+and one space are the same column and different indentation, so a line that mixes them fails the
+prefix test and is declined rather than guessed at. Report-only: bracing the body and outdenting the
+statement are different programs. · `SK2171` `variable-length-hex-escape` — a `\x` escape with one,
+two or three hex digits, whose length the character after it decides. ⚠ **`\x` is the only escape in
+C# without a fixed length**, so appending a letter to a string ending in `\x41` silently changes its
+last character; `\u` cannot do this, which is why the fix is a spelling change and nothing else. ·
+`SK2172` `forgiven-is-operand` — `x! is T`, where the `!` reads as an inverted `is` and suppresses
+nothing. ⚠ **`is` never issues a nullability warning about its own operand**, measured by compiling
+`if (s! is object) { }` followed by `s.Length` with and without the `!`: both report `CS8602`, at
+the same position. That measurement *refuted* the reason this rule was first going to ship a fix —
+the suppression was assumed to carry into the flow state, and does not — and it is report-only for
+the other reason instead, that `x is not T` and `x is T` are both plausible readings of `x! is T`
+and are opposite programs. · `SK2173` `negated-empty-pattern` — `not { }` with no type, no
+positional clause, no subpattern and no designation, which matches exactly the null values. ·
+`SK2174` `unparenthesised-precedence-mix` — an operand of a shift or bitwise operator that is itself
+an unparenthesised binary expression of a different precedence family.
+
+⚠ **`SK2174` could not ship until the `SK0209` boundary was settled, and it is settled by
+construction rather than by agreement.** `skala arrange` removes redundant parentheses;
+`ParenthesesRedundancy.MayRemove` refuses unconditionally when the parent is a shift or a bitwise
+operator, because `resharper_parentheses_non_obvious_operations` names exactly those. Every pair of
+parentheses `SK2174` adds has such a parent, so the arranger will never take one back and
+`skala fix` and `skala arrange --aggressive` cannot fight. ⚠ **The other direction was checked
+too**: `CodeCleanupTask_AddMissingParentheses` exists in the oracle and **no committed profile
+enables it**, so the formatter is not already doing this.
+
+⚠ **Three of `SK2174`'s drafted rows are gone, each for a different reason.** A *comparison* operand
+under `&` or `|` only compiles when every operand is `bool`, which is `SK2064`'s subject — it
+reports it and offers `&&`, so reporting it here as well would be two rules on one token. Since
+arithmetic and shift operands are never `bool`, the two rules end up disjoint *by construction*:
+`SK2064` fires only on `bool` operands and `SK2174` only on integral ones, and no expression can
+satisfy both. A **`?:` operand** describes no program at all — the conditional operator binds looser
+than every binary operator, so it can never *be* an unparenthesised binary operand, and the only
+reachable nesting is `a ? b : c ? d : e`, the chained-ternary idiom every reader parses correctly. A
+**shift under a bitwise operator** is bit packing — `key << 8 | digest[i]` — and the corpus is what
+cut it: the rule without that exclusion reports the shape on Skala's own `CorpusSample.KeyOf` and in
+`pathological/operators-crammed-together.cs`, and both are the idiom rather than the hazard.
+
+⚠ **`SK2172` is `Semantic` for one reason only: to be disjoint from `SK2111` by construction.**
+`SK2111` owns the `!` that is inert because nullable warnings are off at that position or because
+the operand is a non-nullable value type; `SK2172` declines both, so no `!` in the catalogue can be
+reported twice. Two fixtures — `value_type_operand_is_sk2111.cs` and
+`warnings_disabled_is_sk2111.cs` — satisfy *both* rules' shapes, which is the only kind of fixture
+that tests disjointness at all: a fixture proving the two shapes merely differ proves nothing,
+because they differ whether or not either rule looks.
+
+### ⚠ Two guards the corpus bought, and one instrument caught lying
+
+**The measurement.** `--load=loose` over the 4 459-file corpus, copied outside the repository
+because `SK9023` makes it unreachable in place; and `--load=binlog --require-fresh-binlog` over
+Skala's own tree, from a `--no-incremental` Release build that produced **0 CS diagnostics** and a
+binlog covering **592 of 594** selected files (100 %; the two are `build/Build.cs` and
+`build/Configuration.cs`, which `Skala.slnx` does not contain). Shipped, all five report **zero** on
+Skala's tree; on the corpus four report zero and `SK2174` reports **6**.
+
+⚠ **One of those six is a genuine defect in a reference tree, and it is the best thing in the
+batch.** `real/newtonsoft/Newtonsoft.Json/Utilities/DateTimeUtils.cs:812` writes
+`int m = n >> 5 + 1;` two lines below a comment that says `n >> 5` is the conservative estimate for
+the month. `+` binds tighter than `>>`, so the code shifts by six. Three of the six findings are
+that one line in its `real/`, `collapse/` and `scramble/` copies; the other three are
+`pathological/operators-crammed-together.cs`, a file whose whole purpose is crammed operators. ⚠
+**The fix parenthesises what the code does now**, not what the comment says it meant, which is the
+only thing a `fixIsSafe` edit may do — it makes the sentence unambiguous and leaves the decision to
+a person.
+
+⚠ **Every zero classified, and one of them is not a zero.** `SK2171` and `SK2172` are **shape
+absent**: widened to report *every* `\x` escape including the four-digit ones, `SK2171` finds
+nothing in 4 459 corpus files or Skala's 592, and a `!` immediately left of an `is` occurs nowhere in
+either tree. `SK2170` and `SK2173` are **shape present and correctly declined**, in quantity. ⚠
+**But `SK2172`'s corpus zero is neither — it is the analysis never running.** Under `--load=loose`
+**no `Semantic`-scope rule fires at all**: 1 109 of that run's 1 115 findings are `Syntax` and the
+remaining 6 are tool diagnostics, and *zero* come from any of the catalogue's 100-odd semantic
+rules. A planted `x! is string`, with and without a `#nullable enable` directive above it, produces
+nothing there. `SK2172`'s only real measurement is the binlog one, where 589 findings from 22
+distinct semantic rules prove the semantic half ran.
+
+⚠ **`SK2170` shipped with a guard the first draft did not have, and the corpus bought it.** Asking
+for the following statement to be indented *at least as deep* as the body reports **4** times on
+`unformatted/scramble/`, a slice whose whitespace is randomised on purpose; there the following
+statement lands 2, 4 or 6 columns *past* the body, which reads as mangled or as a continuation
+rather than as a sibling. Asking instead for the column a reader would actually see — exact
+alignment — declines all four and costs nothing real. **A rule that reads whitespace for meaning
+meets machine-mangled whitespace sooner than most**, which is the sentence `SK2063` earned first.
+
+⚠ **`SK2173`'s designation guard is the largest single thing standing between this batch and a
+catastrophe, and the number is not close.** Widened by dropping *only* the "no designation"
+requirement, `SK2173` reports **203** findings on Skala's own tree and **39** on the corpus, of
+which **13 distinct occurrences are in `real/vixen`**. Every one is `x is not { } bound`: the
+idiomatic C# null-check-and-bind, which is not a null check at all because it binds. The shipped
+rule declines all of them and reports zero. ⚠ **Skala's own analyzers are among the 203** — the file
+implementing `SK2170` contains four of them.
+
+⚠ **The `ImplicitUsings` exercise moved almost nothing here, and the reason is worth writing down.**
+Compiled as a project over `real/newtonsoft` with the `.expected.cs` duplicates excluded, the slice
+reports **1 808** CS errors with `ImplicitUsings` disabled and **1 806** with it enabled — Newtonsoft
+targets old frameworks and writes every `using` out. The slice does not compile either way, so no
+semantic rule can be measured on it; that is why `SK2172` is measured on the binlog load instead,
+and why the other four are `Syntax` and bind nothing.
+
+### Sabotage
+
+Each guard was removed in turn and the fixture suite re-run. ⚠ **Two of the eleven turned nothing
+red, and both were defects rather than passes.**
+
+| Guard removed | What went red |
+|---|---|
+| `SK2170`'s exact-alignment test | `SK2170/−/deeper_than_the_body` |
+| `SK2170`'s empty-body/block exclusion | `SK2170/−/empty_body_then_block_is_cs0642` |
+| `SK2170`'s directive check | `SK2170/−/directive_between` |
+| `SK2171`'s four-digit ceiling | `SK2171/−/four_digits` |
+| `SK2171`'s `\\` consumption | `SK2171/−/escaped_backslash` |
+| `SK2172`'s nullable-context check | `SK2172/−/warnings_disabled_is_sk2111` |
+| `SK2172`'s value-type check | `SK2172/−/value_type_operand_is_sk2111` |
+| `SK2173`'s designation check | `SK2173/−/not_empty_in_the_four_ways` |
+| `SK2173`'s comment check | `SK2173/−/comment_inside_the_pattern` |
+| `SK2174`'s bit-packing exclusion | `SK2174/−/bit_packing` |
+| `SK2174`'s different-family test | `SK2174/−/one_family_throughout` |
+
+⚠ **`SK2170`'s empty-body exemption declined every empty statement, and removing it turned nothing
+red.** The reason is that `while (x) ;` puts the `;` on the header's own line, which the line test
+already declines — so the exemption was unreachable through the fixtures. Widening the sabotage
+showed it was also *wrong*: `while (x)`, then `;` on its own line, then a statement aligned with the
+`;` is a true finding that `CS0642` does not report, because the compiler reports an empty loop body
+only when a block follows. The guard now declines exactly that overlap, and two new fixtures reach
+it from both sides. This is the same shape of defect `SK2063`'s removed third condition was.
+
+⚠ **`SK2170`'s directive fixture put the reported statement *inside* the `#if`.** With the symbol
+undefined that statement is disabled text, so the block held one statement, no pair was compared,
+and removing the directive check changed nothing. The region has to sit *between* two live
+statements for the guard to be reachable at all. Repaired; the sabotage now turns it red. ⚠ **A
+fixture whose interesting half is inside an inactive `#if` tests the preprocessor, not the rule.**
+
+⚠ **`EmptyStatement` — #38's second inspection, a stray `;` standing alone between two statements —
+is deliberately left uncovered and is not in the parity map.** `CS0642` does *not* reach it (the
+probe confirms a lone `;` in a block warns about nothing), and nothing in Skala covers it either. It
+is redundancy rather than correctness: a `;` on its own line misleads no one. Leaving it out of
+`catalogued.json` inflates the measured gap by one, which is the safe direction for a hand-written
+map to be wrong in. `ConfusingCharAsIntegerInConstructor` — #39's third inspection, a `char`
+argument widening to an `int` parameter — is uncovered for a different reason: it is a question
+about overload resolution rather than about how a literal reads, and it is a different rule from
+`SK2171`.
