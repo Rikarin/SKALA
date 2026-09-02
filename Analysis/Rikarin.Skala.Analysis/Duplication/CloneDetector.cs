@@ -571,8 +571,11 @@ public static class CloneDetector {
     ///     file holds a run of similar declarations — and it is why 13 of 26 <c>Formatting/</c> findings
     ///     were once triaged one at a time as "irreducible option tables" rather than fixed here.
     ///     <para>
-    ///         ⚠ <b>The length test against the stride is what keeps real duplication reporting, and it is
-    ///         not a threshold.</b> An occupance longer than the run's period provably spans more than one
+    ///         ⚠
+    ///         <b>
+    ///             The length test against the stride is what keeps real duplication reporting, and it is
+    ///             not a threshold.
+    ///         </b> An occupance longer than the run's period provably spans more than one
     ///         element, so it is "these rows, then those rows" — nothing to extract. One that fits inside a
     ///         single element is a match of one element against another, which is a block pasted into a
     ///         list and is exactly the finding the rule is for. <see cref="TokenStream.Runs" /> records the

@@ -160,8 +160,11 @@ internal sealed class TokenStream {
     ///     — <b>issue #333</b>.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>A list of similar rows matches itself, shifted, and that is the normalisation and not
-    ///     duplication.</b> Every identifier is one class here, so
+    ///     ⚠
+    ///     <b>
+    ///         A list of similar rows matches itself, shifted, and that is the normalisation and not
+    ///         duplication.
+    ///     </b> Every identifier is one class here, so
     ///     <c>new FieldBackedPropertyAnalyzer(), new SearchValuesAnalyzer(),</c> and the two rows under it
     ///     are the <i>same</i> five-token sequence repeated: a 290-element analyzer list is 1 450 tokens
     ///     with a period of 5, so its first hundred tokens are a verified token-for-token clone of its
@@ -553,8 +556,11 @@ internal sealed class TokenStream {
     ///     <paramref name="limit" />.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>The separator after the last element belongs to the run, and leaving it out was an
-    ///     off-by-one with real consequences.</b> A list of 60 four-token elements is 299 tokens to the end
+    ///     ⚠
+    ///     <b>
+    ///         The separator after the last element belongs to the run, and leaving it out was an
+    ///         off-by-one with real consequences.
+    ///     </b> A list of 60 four-token elements is 299 tokens to the end
     ///     of the last one and 300 with its trailing comma, so the third 100-token window over it ran one
     ///     token past the recorded span, came back uncovered, and was reported as duplication — the exact
     ///     finding this exists to decline, surviving in the one window that reaches the end of the table.
