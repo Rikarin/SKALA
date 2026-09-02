@@ -10,8 +10,11 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     The switch, enum and type-check batch: <c>SK2120</c> and <c>SK2121</c>.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>Three of the five issues this batch was opened for are refuted here rather than shipped,
-///     and the refutations are tests rather than prose.</b> Issue #29 (an unreachable switch arm) and
+///     ⚠
+///     <b>
+///         Three of the five issues this batch was opened for are refuted here rather than shipped,
+///         and the refutations are tests rather than prose.
+///     </b> Issue #29 (an unreachable switch arm) and
 ///     the always-false half of issue #1 (a constant type check) are compiler diagnostics — several
 ///     of them errors — and the switch-expression half of issue #28 is <c>CS8524</c>. A claim of the
 ///     form "the compiler already covers this" is worth nothing written down: the tests below make the
@@ -19,8 +22,11 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     <para>
 ///         ⚠ <c>NoFixture_CrashesAnAnalyzer</c> is the one that decides whether anything else here
 ///         means anything. Roslyn swallows an analyzer exception as <c>AD0001</c> and the analyzer then
-///         produces nothing at all, so a crashed rule fails its positives and <em>passes every
-///         negative</em> — which reads in a report as a half-working rule rather than a dead one.
+///         produces nothing at all, so a crashed rule fails its positives and
+///         <em>
+///             passes every
+///             negative
+///         </em> — which reads in a report as a half-working rule rather than a dead one.
 ///     </para>
 /// </remarks>
 public sealed class EnumAndTypeCheckBatchTests {
@@ -110,16 +116,16 @@ public sealed class EnumAndTypeCheckBatchTests {
 
         // The flow-proven range is the residue, and nothing reports it today.
         const string flow = """
-            class C {
-                int M(int x) {
-                    if (x is >= 0 and <= 10) {
-                        switch (x) { case 20: return 1; default: return 0; }
-                    }
+                            class C {
+                                int M(int x) {
+                                    if (x is >= 0 and <= 10) {
+                                        switch (x) { case 20: return 1; default: return 0; }
+                                    }
 
-                    return -1;
-                }
-            }
-            """;
+                                    return -1;
+                                }
+                            }
+                            """;
         Assert.DoesNotContain(Compiler(flow), static diagnostic => diagnostic.Id is "CS8120" or "CS8510");
     }
 
@@ -170,12 +176,12 @@ public sealed class EnumAndTypeCheckBatchTests {
     [Fact]
     public void TheCompilerOwns_TheNonExhaustiveSwitchExpression() {
         const string exhaustiveNoDefault = """
-            enum Color { Red, Green, Blue }
+                                           enum Color { Red, Green, Blue }
 
-            class C {
-                int M(Color c) => c switch { Color.Red => 1, Color.Green => 2, Color.Blue => 3 };
-            }
-            """;
+                                           class C {
+                                               int M(Color c) => c switch { Color.Red => 1, Color.Green => 2, Color.Blue => 3 };
+                                           }
+                                           """;
         Assert.Contains(Compiler(exhaustiveNoDefault), static diagnostic => diagnostic.Id == "CS8524");
 
         // ⚠ And SK2009 is silent there, so the compiler is not doubling anything Skala says.
@@ -183,22 +189,25 @@ public sealed class EnumAndTypeCheckBatchTests {
 
         // The statement form draws nothing from the compiler — and is the SK2009 false-positive shape.
         const string statement = """
-            enum Color { Red, Green, Blue }
+                                 enum Color { Red, Green, Blue }
 
-            class C {
-                int M(Color c) {
-                    switch (c) { case Color.Red: return 1; case Color.Green: return 2; case Color.Blue: return 3; }
+                                 class C {
+                                     int M(Color c) {
+                                         switch (c) { case Color.Red: return 1; case Color.Green: return 2; case Color.Blue: return 3; }
 
-                    return 0;
-                }
-            }
-            """;
+                                         return 0;
+                                     }
+                                 }
+                                 """;
         Assert.DoesNotContain(Compiler(statement), static diagnostic => diagnostic.Id is "CS8524" or "CS8509");
     }
 
     /// <summary>
-    ///     ⚠ <b><c>SK2120</c> is provably disjoint from <c>CA1027</c>, by arithmetic and not by a
-    ///     filter.</b> <c>CA1027</c> was probed against the SDK at <c>AnalysisMode=All</c>: it needs at
+    ///     ⚠
+    ///     <b>
+    ///         <c>SK2120</c> is provably disjoint from <c>CA1027</c>, by arithmetic and not by a
+    ///         filter.
+    ///     </b> <c>CA1027</c> was probed against the SDK at <c>AnalysisMode=All</c>: it needs at
     ///     least three distinct non-zero values that are all powers of two, and it is silent on
     ///     <c>{ A, B, C }</c> and <c>{ A, B, C, D }</c>. Consecutive numbering from zero reaches a third
     ///     non-zero value only at <c>3</c>, which is not a power of two — so no declaration
@@ -223,8 +232,8 @@ public sealed class EnumAndTypeCheckBatchTests {
         }
 
         // The two halves of the boundary, each demonstrated once rather than only ruled out.
-        Assert.Equal(2, Enumerable.Range(1, 2).Count());   // three members: only 1 and 2, too few values
-        Assert.False((3 & 2) == 0);                        // four members onward: 3 is not a power of two
+        Assert.Equal(2, Enumerable.Range(1, 2).Count()); // three members: only 1 and 2, too few values
+        Assert.False((3 & 2) == 0); // four members onward: 3 is not a power of two
     }
 
     /// <summary>
@@ -240,12 +249,12 @@ public sealed class EnumAndTypeCheckBatchTests {
         Assert.DoesNotContain(Findings(combine), static d => d.Id == "SK2009");
 
         const string partialSwitch = """
-            enum Color { Red, Green, Blue }
+                                     enum Color { Red, Green, Blue }
 
-            class C {
-                int M(Color c) => c switch { Color.Red => 1, Color.Green => 2 };
-            }
-            """;
+                                     class C {
+                                         int M(Color c) => c switch { Color.Red => 1, Color.Green => 2 };
+                                     }
+                                     """;
         Assert.Single(Findings(partialSwitch), static d => d.Id == "SK2009");
         Assert.DoesNotContain(Findings(partialSwitch), static d => d.Id == "SK2120");
     }
@@ -326,8 +335,7 @@ public sealed class EnumAndTypeCheckBatchTests {
     static ImmutableArray<Diagnostic> Analyze(CSharpCompilation compilation) =>
         RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken);
 
-    static ImmutableArray<Diagnostic> Findings(string source) =>
-        Analyze(RuleFixtures.Compile(source, "test.cs"));
+    static ImmutableArray<Diagnostic> Findings(string source) => Analyze(RuleFixtures.Compile(source, "test.cs"));
 
     static ImmutableArray<Diagnostic> Compiler(string source) =>
         RuleFixtures.Compile(source, "test.cs").GetDiagnostics(TestContext.Current.CancellationToken);

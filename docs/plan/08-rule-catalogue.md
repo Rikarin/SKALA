@@ -2640,3 +2640,27 @@ and lose nothing — which alone removes the shape from a third of the false-pos
 same "stand down where another diagnostic has the answer" mechanism `SK2053` uses against `SK2001`.
 Whichever is chosen, #280 is right that it needs a negative fixture built from a real `SyntaxKind`
 filter.
+
+**The measurement.** Both rules were swept over Skala's own source through a fresh Release binlog
+(`--load=binlog`, **10 CS diagnostics in the load**, 1 286 results in total). Both report **zero**,
+and ⚠ **neither zero is the absence of the shape and neither is the analysis failing to run.**
+
+- The instrument was verified before the zero was believed. A probe file planting one `ProbeColor
+  left | right` and one `derived as ProbeBase` into `Rikarin.Skala.Core` made both rules fire through
+  the same binlog pipeline, at the right lines, with the right messages — which is the only check
+  that sees a real reference set rather than the fixture harness's (#297). The probe was then deleted
+  and the binlog rebuilt.
+- `SK2120`'s shape is **present 37 times and declined 37 times**. Relaxing both guards and re-sweeping
+  found 37 bitwise-operations-on-an-enum in Skala's source; the shipped rule reports none of them.
+  Spot-checked rather than assumed: `RegexOptions` and `StringSplitOptions` are `[Flags]` enums from
+  metadata, and `BraceOwners` is a `[Flags]` enum with explicit values whose flagged site is its own
+  `All = Types | Methods | …` composite — declined by both guards independently.
+- `SK2121`'s shape is **present 199 times and declined 199 times**. Every `as` in Skala's source is a
+  narrowing — `ISymbol` to `IFieldSymbol`, `SyntaxNode` to a specific node type — which is what the
+  operator is for.
+
+⚠ **There is no corpus evidence for either rule, and that is a property of the rules rather than an
+omission.** Both declare `requiresSemantics: true`, so `AnalyzerHost.SkippedFor` drops them under
+`--load=loose` (#277), and `Testing/corpus` neither compiles nor is reachable through `skala check`
+(`SK9023`). The self-sweep is the measurement, and #280 argues it is the stronger one anyway, because
+Skala's tree actually compiles.
