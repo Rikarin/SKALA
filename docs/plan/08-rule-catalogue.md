@@ -3057,8 +3057,9 @@ undecidable in the configuration object, and one is a decision rather than a def
 #### ⚠ The SDK reading, corrected: "off" and "Hidden" are not the same state, and the table above conflates them
 
 ⚠ **The section above says the default state of every `CA*` in this area is "off". For roughly a
-third of the family that is wrong, and the difference is the difference between a rule a consumer
-can turn on with one `.editorconfig` line and one they must reach `AnalysisMode` for.** The claim
+third of the family that is wrong — though ⚠ **not for the reason this paragraph gave**, which
+§ "The reconciliation" below refutes with the measurement: both groups are one `.editorconfig` line
+from visible, and neither needs `AnalysisMode`.** The claim
 that `analysislevelsecurity_10_default.globalconfig` carries no rule entries is **confirmed** — it
 holds a header, `is_global` and `global_level` and nothing else — and `analysislevel_10_default`
 holds exactly one (`CA1516 = none`). So the default state of a security `CA` really is whatever its
@@ -3080,6 +3081,76 @@ entirely** when an `.editorconfig` forces it to `silent`. Hidden diagnostics do 
 log at all, so a SARIF zero and an absent analyzer look identical. The descriptor dump is the only
 instrument that answers the question, and every state below comes from it rather than from a build's
 silence.
+
+##### ⚠ The reconciliation, and the half of the correction above that is itself wrong
+
+The two readings above look contradictory — eleven security ids are `IsEnabledByDefault = true,
+DefaultSeverity = Hidden` *by descriptor*, and yet **no `CA5xxx` appears in a default build's SARIF
+at any level**. They are not. **Descriptor state and shipped default are two different
+measurements**, and both are right:
+
+1. **Nothing overrides the descriptor.** The csc command line at stock carries exactly one injected
+   globalconfig, `Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig`
+   — twelve lines, one `CA` entry, `CA1516 = none`. `analysislevelsecurity_10_default.globalconfig`
+   is empty **and is never passed to csc at all** in a default build; the per-category configs appear
+   only when a category-specific `AnalysisMode<Category>` is set. So the effective severity of these
+   eleven is their descriptor default, `Hidden`.
+2. **An error log cannot represent `Hidden`.** Proved twice, once on a 26-hit rule: `CA1822`
+   (enabled/`Info`) is 26 `note` results at stock, 26 warnings when raised, and **0** at `silent` and
+   **0** at `none`. `CA1401` behaves identically at one hit. Hidden and off are byte-for-byte
+   indistinguishable in SARIF. The console is weaker still — those 26 `note` results produce **zero**
+   console lines at `-v n`, and 52 once raised to `warning`.
+
+⚠ **The explanation that is *not* the answer, tested rather than assumed: the analyzers are loaded.**
+The stock `/analyzer:` list carries both `Microsoft.CodeAnalysis.NetAnalyzers.dll` and
+`Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll`, and there is no separate
+`Microsoft.NetCore.Analyzers.dll` anywhere in the SDK — the security analyzers are merged into the
+first of those. "The SDK references only some of the assemblies" cannot be the mechanism.
+
+⚠ **And the sentence this section opens with is wrong.** It says the descriptor split is "the
+difference between a rule a consumer can turn on with one `.editorconfig` line and one they must
+reach `AnalysisMode` for". Measured at stock `AnalysisLevel`, with no `AnalysisMode` and no property
+changes: ten of the eleven `Hidden` ids fire from a single `dotnet_diagnostic.<id>.severity = warning`
+line, with exactly the counts `AnalysisMode=All` produces — **and so do `CA5390` and `CA5394`, which
+are `IsEnabledByDefault = false`.** One `.editorconfig` line lifts both groups. So
+`enabled + Hidden` and `disabled` are **not two states a consumer can distinguish**, and recording
+them apart credits the ledger with a difference the shipped product does not have. (`CA3075` is
+excluded from this: seventeen candidate shapes across `net10.0` and `netstandard2.0` produced
+nothing even under `All` with it raised, while `CA3076` and `CA5372` fired in the same probe. Whether
+that is a bad shape or a framework gate was not established.)
+
+⚠ **`IsEnabledByDefault = true` also overstates "already running".** The analyzer is *loaded and
+available* in every consumer build and does no measurable work until something raises it:
+`ReportAnalyzer` total analyzer time is 0.010 s at stock against 0.033 s with the eleven raised, and
+the four analyzers that produce findings go from `<1 %` to 1–9 % of the total. Weak evidence — the
+timing resolution is coarse — and reported as such.
+
+##### What the hosted map records now
+
+`Testing/parity-analysis/classify.py` recorded only that a `CA*`/`IDE*` **exists**. It now records
+the weakest configuration a consumer needs before that diagnostic says anything, in five states
+keyed to measured behaviour rather than to the descriptor:
+
+| State | Meaning | Entries |
+|---|---|---:|
+| `on` | in a stock build's error log with nothing configured | 19 |
+| `opt-in` | nothing at stock; **one** `dotnet_diagnostic.<id>.severity` line makes it visible | 7 |
+| `code-style` | an `IDE*`: a severity line is not enough, it also needs `EnforceCodeStyleInBuild=true`. ⚠ `AnalysisMode=All` reaches **no** `IDE*` at all — 96 results, zero of them IDE | 36 |
+| `compiler` | a `CS####` the compiler emits unconditionally | 3 |
+| `package` | the test framework's own analyzer, present exactly when the consumer references the framework | — |
+
+⚠ **43 of the 65 entries name a diagnostic that produces nothing in a default build** (7 `opt-in`
+plus 36 `code-style`). That is the size of what "exists" was hiding, and it is why nine shipped rules
+were being counted as duplicates of a diagnostic that says nothing.
+
+⚠ **Three of the five states are the same three [#299](https://github.com/Rikarin/SKALA/issues/299)
+proposed, and the partition is not.** That issue proposed on-and-visible / on-but-hidden /
+off-until-opted-in, split on the descriptor. The measurement above collapses the last two into
+`opt-in` and splits `code-style` out of them instead — because `EnforceCodeStyleInBuild` is a real
+consumer-visible difference and the descriptor's `Hidden`/`disabled` distinction is not. ⚠ **Two of
+the `on` states are `Info`**, i.e. `note` in SARIF and invisible on the console; they count as `on`
+because they are in the error log, an IDE shows them, and Skala's own equivalents ship at
+`suggestion` — the same visibility. What they are not is a warning anybody sees scroll past.
 
 | `CA*` | Behavioural coverage — what it actually caught | Measured default state |
 |---|---|---|

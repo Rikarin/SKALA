@@ -164,8 +164,16 @@ HOSTED = {
     "MergeSequentialChecks": "IDE0020/IDE0038",
     "UseNameofExpression": "IDE0280",
     "UseNullPropagation": "IDE0031",
-    "ConvertToNullCoalescingCompoundAssignment": "IDE0074",
-    "ConvertIfStatementToNullCoalescingAssignment": "IDE0074",
+    # ⚠ These two said `IDE0074` and `IDE0074` is a **phantom**: it is in the tool's supported-rule
+    # list, with the identical title "Use compound assignment", and it is never emitted. Measured
+    # against six canonical `x = x ?? y` shapes -- local, instance field, static field, property,
+    # `this.`-qualified, string-with-literal -- with `dotnet_diagnostic.IDE0074.severity = warning`
+    # *and* `dotnet_style_prefer_compound_assignment = true:warning` *and* `AnalysisMode=All` *and*
+    # `EnforceCodeStyleInBuild=true`: all six reported **IDE0054**, none reported IDE0074. So the
+    # concept is hosted and the id crediting it reported nothing, which is the worst of both -- the
+    # row bucketed `Hosted` on a diagnostic that does not exist in practice. See #281.
+    "ConvertToNullCoalescingCompoundAssignment": "IDE0054",
+    "ConvertIfStatementToNullCoalescingAssignment": "IDE0054",
     "ConvertIfStatementToNullCoalescingExpression": "IDE0029",
     "ConvertSwitchStatementToSwitchExpression": "IDE0066",
     "ConvertToUsingDeclaration": "IDE0063",
@@ -174,7 +182,13 @@ HOSTED = {
     "SuggestVarOrType_SimpleTypes": "IDE0007/IDE0008",
     "InconsistentNaming": "IDE1006",
     "RedundantNameQualifier": "IDE0001",
-    "SimplifyLinqExpressionUseAll": "CA1868-adjacent",
+    # ⚠ `CA1868-adjacent` was a hedge and the measurement replaces it with the real host. `CA1868`
+    # is the `Contains` guard on a set and fires on its own shape in the same compilation; it
+    # reports **0 of 4** of `SK4010`'s positives. `IDE0120` "Simplify LINQ expression" reports
+    # **4 of 4** -- and only with `EnforceCodeStyleInBuild=true` plus an explicit severity, so it
+    # is `code-style` and says nothing in a default build. Same correction for
+    # `LoopCanBeConvertedToQuery`, whose `IDE0270-adjacent` hedge names a null-check rule.
+    "SimplifyLinqExpressionUseAll": "IDE0120",
     # ⚠ Measured, not assumed, and it removed a branch from a rule that was being written.
     # Both shapes were compiled on SDK 10.0.400 with `AnalysisMode=All` and the warning read
     # off the build: `xs.Count() > 0` and `xs.LongCount() > 0` report CA1827, and
@@ -186,11 +200,18 @@ HOSTED = {
     "UseMethodAny.3": "CA1827", "UseMethodAny.4": "CA1827", "UseMethodAny.5": "CA1827",
     "CanSimplifySetAddingWithSingleCall": "CA1868",
     "UseCollectionCountProperty": "CA1860",
-    "ReplaceWithSingleCallToCount": "CA1829",
+    # ⚠ This said `CA1829` and `CA1829` is the wrong rule for it -- a near-miss that mattered,
+    # because `CA1829` is `on` at stock and the entry therefore filed `SK4010` as duplicating
+    # something every consumer already has. Measured: `CA1829` ("use the `Length`/`Count`
+    # property, not the `Count()` method") reports **0 of 4** of `SK4010`'s positives and is
+    # provably live in the same compilation, firing on `SK1034`'s `count-call.cs`. It declines
+    # correctly -- `values.Where(p)` returns an iterator, which has no `Count` property to prefer.
+    # The inspection is `xs.Where(p).Count()` -> `xs.Count(p)`, and its host is `IDE0120`.
+    "ReplaceWithSingleCallToCount": "IDE0120",
     "ReplaceWithStringIsNullOrEmpty": "CA1806-adjacent",
     "UseArrayEmptyMethod": "CA1825",
     "UseStringInterpolation": "CA1863-adjacent",
-    "LoopCanBeConvertedToQuery": "IDE0270-adjacent",
+    "LoopCanBeConvertedToQuery": "IDE0120",
     "UseThrowIfNullMethod": "CA1510",
     "UseArgumentExceptionThrowIfMethod": "CA1511",
     "UseIsOperator.1": "IDE0038", "UseIsOperator.2": "IDE0038",
@@ -278,6 +299,92 @@ HOSTED = {
 }
 HOSTED_BYKEY = bykey(HOSTED)
 
+# ---------------------------------------------------------------- what "hosted" is worth
+# ⚠ The map above recorded only that a `CA*`/`IDE*` **exists**. That is the wrong question, and
+# recording it made 18 rows claim two incompatible things at once: `hosted()` runs before
+# `catalogued()` and `break`s, so an inspection in both maps bucketed `Hosted` and the shipped
+# Skala rule crediting it was silently shadowed. Nine shipped rules were in that state (#281).
+# `RuleCatalogTests.TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule` could not see
+# it: it asserts the *entry exists* in catalogued.json, never that this pipeline reaches it. The
+# map was correct and inert.
+#
+# ADR-008 is "host, never rebuild", and its corollary is that Skala must be *worth using with
+# nothing hosted*. Those two sentences give opposite answers for a diagnostic nobody has turned
+# on, so the state is what decides a row and existence never could. Measured on SDK 10.0.400,
+# outside this repository, with empty Directory.Build.props/.targets above the probe:
+#
+#   on          the diagnostic is in a stock build's error log with nothing configured --
+#               `IsEnabledByDefault` and a `DefaultSeverity` above `Hidden`. ADR-008 hosts it and
+#               a Skala rule for the same concept is a duplicate.
+#   opt-in      nothing at stock; **one `dotnet_diagnostic.<id>.severity` line** makes it visible.
+#               ⚠ This is one state and not two: `enabled + Hidden` and `IsEnabledByDefault=False`
+#               are indistinguishable to a consumer -- both produce nothing at stock and both are
+#               lifted by the same single line -- so recording them apart would credit the ledger
+#               with a distinction the shipped product does not have. #299 proposed three states
+#               on the descriptor split; the measurement refuted the split, not the idea.
+#   code-style  an `IDE*`: nothing at stock, and a severity line is **not enough** -- it also needs
+#               `EnforceCodeStyleInBuild=true`, an MSBuild property change. ⚠ `AnalysisMode=All`
+#               reaches **no** `IDE*` diagnostic at all, measured: 96 results, zero of them IDE.
+#   compiler    a CS#### the compiler emits unconditionally.
+#   package     the test framework's own analyzer package, present exactly when the consumer
+#               already references the framework.
+#
+# ⚠ **43 of the 65 entries above name a diagnostic that produces nothing in a default build**
+# (7 `opt-in` + 36 `code-style`). That is the size of what "exists" was hiding.
+#
+# ⚠ **Two of the three enabled-and-visible states are `Info`**, which is `note` in SARIF and
+# produces **zero console lines** at `-v n`. `Info` still counts as `on` here because it is in the
+# error log, an IDE shows it, and Skala's own equivalents ship at `suggestion` -- the same
+# visibility. What it is not is a warning anybody sees scroll past.
+ON, OPT_IN, CODE_STYLE, COMPILER, PACKAGE = "on", "opt-in", "code-style", "compiler", "package"
+
+# Bare Roslyn id -> state. `CA*` from reflecting `IsEnabledByDefault`/`DefaultSeverity` out of
+# SDK 10.0.400's `Microsoft.CodeAnalysis.NetAnalyzers.dll` and
+# `Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll`; `IDE*` are uniformly `code-style` by the
+# behavioural probe above. ⚠ Reflection needs `Roslyn/bincore/Microsoft.CodeAnalysis.dll` loaded
+# first and an `AssemblyResolve` handler, or `GetTypes()` throws and every id reads absent --
+# which is indistinguishable from the ids not existing.
+HOST_STATE = {
+    "CA1000": OPT_IN,   # on/Hidden
+    "CA1031": OPT_IN,   # off/Warning
+    "CA1304": OPT_IN,   # on/Hidden
+    "CA1305": OPT_IN,   # on/Hidden
+    "CA1307": OPT_IN,   # off/Warning -- ⚠ off even at AnalysisMode=Recommended
+    "CA1310": OPT_IN,   # on/Hidden
+    "CA1510": ON,       # on/Info
+    "CA1511": ON,       # on/Info
+    "CA1806": ON,       # on/Info
+    "CA1825": ON,       # on/Info
+    "CA1827": ON,       # on/Info
+    "CA1829": ON,       # on/Info
+    "CA1860": ON,       # on/Info
+    "CA1863": OPT_IN,   # on/Hidden
+    "CA1868": ON,       # on/Info
+    "CA2013": ON,       # on/Warning
+    "CA2022": ON,       # on/Warning
+    "CA2214": OPT_IN,   # off/Warning
+    "CA2252": ON,       # on/Error
+    "CA2254": ON,       # on/Info
+}
+
+
+def host_state(label):
+    """The weakest configuration a consumer needs before `label`'s diagnostic says anything.
+
+    A label naming several ids takes the most visible of them: `CA1307/CA1310` is reachable at
+    all only through `CA1310`, and reporting the pair as `opt-in` is the honest reading either
+    way. An unknown `CA` is `opt-in` rather than `on`, because the failure that matters is
+    crediting a host nobody has switched on.
+    """
+    ids = re.findall(r"\b(?:CA|IDE|CS)\d{4}\b", label or "")
+    if not ids:
+        return PACKAGE
+    if any(i.startswith("IDE") for i in ids):
+        return CODE_STYLE
+    if all(i.startswith("CS") for i in ids):
+        return COMPILER
+    return ON if any(HOST_STATE.get(i) == ON for i in ids) else OPT_IN
+
 
 def hosted(v):
     iid = v["id"] or ""
@@ -334,13 +441,34 @@ def catalogued(v):
 
 # ---------------------------------------------------------------- run
 rows = []
+shadowed = []
 for v in universe.values():
     r = dict(v)
     for name, fn in (("Out of scope", out_of_scope), ("Compiler", compiler), ("Hosted", hosted)):
         why = fn(v)
-        if why:
-            r["bucket"], r["reason"] = name, why
-            break
+        if not why:
+            continue
+        if name == "Hosted":
+            state = host_state(why)
+            r["hostState"] = state
+            # ⚠ A host nobody has turned on does not shadow a rule that ships. `Hosted` and
+            # `Catalogued` are different claims about who covers a concept, and for an `opt-in`
+            # or `code-style` diagnostic the honest answer is *both*: Roslyn owns the concept and
+            # Skala is the one reporting it in a build with nothing configured. ADR-008's
+            # corollary -- Skala must be worth using with nothing hosted -- is the tie-break, and
+            # it lived only in doc 08's prose until this branch existed, which is why nine
+            # shipped rules were being counted as duplicates of a diagnostic that says nothing.
+            #
+            # ⚠ `package` stays on the `Hosted` side deliberately: a consumer running NUnit has
+            # NUnit.Analyzers, which is the reasoning doc 08 already used to cut SK8003/SK8004.
+            if state in (OPT_IN, CODE_STYLE) and catalogued(v):
+                shadowed.append((v["key"], why, state, catalogued(v)))
+                # ⚠ `continue`, not `break`, and the difference is the whole fix. `Hosted` is the
+                # last test in this tuple, so falling out of the loop normally is what runs the
+                # `else` branch below and lets `catalogued()` be reached at all.
+                continue
+        r["bucket"], r["reason"] = name, why
+        break
     else:
         o = option(v)
         c = catalogued(v)
@@ -369,3 +497,41 @@ print()
 opt = [r for r in rows if r["bucket"] == "Option"]
 print("Option bucket by tier:",
       dict(collections.Counter(r.get("optionTier") for r in opt)))
+
+print()
+print("Hosted bucket by state:",
+      dict(collections.Counter(r.get("hostState") for r in rows if r["bucket"] == "Hosted")))
+# ⚠ Printed rather than silently applied. These are the rows where both maps make a claim and the
+# host's is the weaker one; #281 is the record of them being adjudicated, and a row appearing here
+# for the first time is a new adjudication somebody owes rather than a number that just moved.
+print(f"Yielded to Catalogued -- host is opt-in/code-style ({len(shadowed)}):")
+for key, why, state, sk in sorted(shadowed, key=lambda t: (str(t[3]), t[0])):
+    print(f"  {str(sk):8} {key:66} {why:18} {state}")
+
+# ⚠ The residue of #281, and the only part of it that is still a defect. A row the *hosted* map
+# claims with a diagnostic that is `on` in a stock build, which `catalogued.json` also credits to a
+# rule that ships, is a rule duplicating something every consumer already has -- ADR-008's "host,
+# never rebuild" with nothing to weigh against it, because the corollary about being worth using
+# with nothing hosted has no purchase on a diagnostic that is switched on. Printed rather than
+# silently bucketed, because the fix is to retire the rule and that is a decision with a baseline
+# consequence in every repository holding one, not a number for this script to move.
+shipped_ids = {r["id"] for r in json.load(
+    open(f"{REPO}/Rules/Rikarin.Skala.Rules.Metadata/rules.json"))["rules"]}
+duplicating = []
+for v in universe.values():
+    if out_of_scope(v) or compiler(v):
+        continue
+    why = hosted(v)
+    if not why or host_state(why) not in (ON, COMPILER):
+        continue
+    sk = catalogued(v)
+    if sk in shipped_ids:
+        duplicating.append((sk, v["key"], why))
+
+if duplicating:
+    print()
+    print(f"⚠ ALERT: {len(duplicating)} shipped rule(s) duplicate a diagnostic that is ON at stock:")
+    for sk, key, why in sorted(duplicating):
+        print(f"  {sk:8} {key:66} {why}")
+    print("  ADR-008 hosts these. Retire the rule (`retired` in allocated-ids.txt, never deleted --")
+    print("  ADR-012 makes the id permanent) or refute the hosting with a measurement. See #281.")
