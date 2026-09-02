@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Modernization;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Cleanup;
@@ -34,6 +35,19 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         non-virtual call to <c>A.M</c> into a virtual one that reaches <c>C.M</c>. The member
 ///         therefore has to be one nothing can override further, or the containing type has to be
 ///         <c>sealed</c>.
+///     </para>
+///     <para>
+///         ⚠
+///         <b>
+///             Both halves used to ask a <em>node</em> whether it carried a comment, and that is the
+///             defect #302 describes rather than a guard.
+///         </b> <c>DescendantTrivia</c> on a node includes
+///         the leading trivia of its first token, so a <c>//</c> or a <c>///</c> on the line
+///         <em>above</em> — text no fix would touch — turned the rule off. Probed rather than read:
+///         a positive fixture with a comment one line above the finding failed on both the qualified
+///         name and the <c>base.</c> shape, and no other rule in the <c>SK023x</c> family failed the
+///         same probe, because they ask the question of the <em>span</em> the fix deletes. So does
+///         this one now.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -69,7 +83,8 @@ public sealed class RedundantQualifierAnalyzer : DiagnosticAnalyzer {
         );
 
         if (!speculative.CandidateSymbols.IsEmpty
-            || !SymbolEqualityComparer.Default.Equals(speculative.Symbol, bound)) {
+            || !SymbolEqualityComparer.Default.Equals(speculative.Symbol, bound)
+            || RewriteGuards.ContainsCommentOrDirective(qualified.SyntaxTree, qualified.Span)) {
             return;
         }
 
@@ -146,7 +161,7 @@ public sealed class RedundantQualifierAnalyzer : DiagnosticAnalyzer {
             }
         }
 
-        return HasNoCommentOrDirective(qualified);
+        return true;
     }
 
     /// <summary>
@@ -163,9 +178,10 @@ public sealed class RedundantQualifierAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static void AnalyzeBaseAccess(SyntaxNodeAnalysisContext context) {
         var access = (MemberAccessExpressionSyntax)context.Node;
+        var qualifier = TextSpan.FromBounds(access.SpanStart, access.Name.SpanStart);
         if (access.Expression is not BaseExpressionSyntax
             || access.Parent is MemberAccessExpressionSyntax { Expression: not BaseExpressionSyntax }
-            || !HasNoCommentOrDirective(access.Expression)
+            || RewriteGuards.ContainsCommentOrDirective(access.SyntaxTree, qualifier)
             || context.SemanticModel.GetSymbolInfo(access, context.CancellationToken).Symbol is not { } member) {
             return;
         }
@@ -198,7 +214,7 @@ public sealed class RedundantQualifierAnalyzer : DiagnosticAnalyzer {
             Diagnostic.Create(
                 Descriptor,
                 access.Expression.GetLocation(),
-                FixEdits.Pack((TextSpan.FromBounds(access.Expression.SpanStart, access.Name.SpanStart), string.Empty)),
+                FixEdits.Pack((qualifier, string.Empty)),
                 "`base.` reaches the same member as no qualifier at all: nothing in this type hides `"
                 + name
                 + "` and nothing can override it"
@@ -209,21 +225,4 @@ public sealed class RedundantQualifierAnalyzer : DiagnosticAnalyzer {
     static bool CanBeOverriddenFurther(ISymbol member) =>
         (member.IsVirtual || member.IsAbstract || member.IsOverride) && !member.IsSealed;
 
-    static bool HasNoCommentOrDirective(SyntaxNode node) {
-        foreach (var trivia in node.DescendantTrivia(descendIntoTrivia: true)) {
-            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                || trivia.IsDirective) {
-                return false;
-            }
-        }
-
-        foreach (var trivia in node.GetTrailingTrivia()) {
-            if (!trivia.IsKind(SyntaxKind.WhitespaceTrivia)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
 }
