@@ -131,6 +131,78 @@ public sealed class DuplicationTests {
     }
 
     /// <summary>
+    ///     ⚠ <b>One list is not two clones of itself</b> — issue #333.
+    /// </summary>
+    /// <remarks>
+    ///     Every identifier normalises to one class, so a list of 60 <c>new Kind()</c> elements is 300
+    ///     tokens with a period of 5 and its first hundred tokens are a verified, token-for-token clone of
+    ///     its second hundred. Nothing can be extracted from it; the "duplication" is the list being a
+    ///     list. This is <b>#323</b>'s file-header artefact surviving wherever a file holds a run of
+    ///     similar declarations, and it was 39 of 79 open code-scanning alerts.
+    ///     <para>
+    ///         ⚠ The fixture has to be a real list and not a periodic token run, because the test the
+    ///         detector applies is structural: one <c>CollectionExpressionSyntax</c> whose elements lex
+    ///         alike at a constant stride. A block that merely repeats is still duplication.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void Detect_WhenOneListMatchesItselfShifted_ReportsNothing() {
+        var table = UniformList(60);
+        Assert.True(TokenCount(table) > 2 * MinTokens, "the list has to hold two disjoint windows");
+
+        var result = Detect([Production("/repo/Table.cs", table)]);
+
+        Assert.Empty(result.Groups);
+        Assert.Equal(0, result.DuplicatedLines);
+    }
+
+    /// <summary>
+    ///     ⚠ The other direction, in one corpus: the table is silent and the copy-paste beside it is not.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A test that only asserted the silence would pass just as well if <c>SK7020</c> had stopped
+    ///     working altogether, which is the shape of failure that survives longest. The genuine pairs this
+    ///     stands for are real ones: <c>PairwiseReport</c>/<c>SweepReport</c> at 163 tokens and
+    ///     <c>AnalysisCommands</c>/<c>GateCommands</c> at 111, both of which a higher <c>minTokens</c>
+    ///     would have silenced along with the table.
+    /// </remarks>
+    [Fact]
+    public void Detect_WhenATableSitsBesideARealClone_ReportsOnlyTheClone() {
+        var block = Block(120);
+
+        var result = Detect(
+            [
+                Production("/repo/Alpha.cs", Alpha(block)), Production("/repo/Beta.cs", Beta(block)),
+                Production("/repo/Table.cs", UniformList(60))
+            ]
+        );
+
+        var group = Assert.Single(result.Groups);
+        Assert.Equal(120, group.TokenLength);
+        Assert.Equal("/repo/Alpha.cs", group.Occurrences[0].Path);
+        Assert.Equal("/repo/Beta.cs", group.Occurrences[1].Path);
+        Assert.Equal(2, group.Occurrences.Length);
+    }
+
+    /// <summary>
+    ///     ⚠ <b>Siblings longer than the window are still duplication</b>, and this is the assertion that
+    ///     keeps the decline from swallowing them.
+    /// </summary>
+    /// <remarks>
+    ///     Three identical method bodies in one class are three copies of a block that happen to be
+    ///     siblings, and extracting them is exactly what <c>SK7020</c> is for. The detector separates them
+    ///     from a table by the run's <i>period</i> and not by any threshold: a match longer than one
+    ///     element spans rows, and a match that fits inside one element is a copy of that element.
+    /// </remarks>
+    [Fact]
+    public void Detect_WhenThreeSiblingMembersAreEachLongerThanAWindow_StillReportsThem() {
+        var result = Detect([Production("/repo/Holder.cs", Members(Block(120), 3))]);
+
+        var group = Assert.Single(result.Groups);
+        Assert.Equal(3, group.Occurrences.Length);
+    }
+
+    /// <summary>
     ///     <c>SK7020</c>'s <c>falsePositives</c>: "the match is verified exactly rather than trusted from
     ///     the rolling hash, so a hash collision cannot produce a finding".
     /// </summary>
@@ -725,6 +797,42 @@ public sealed class DuplicationTests {
     // their epilogue with a different keyword (`return`, `throw`, `checked`), so a group's greedy
     // extension stops exactly at the block. Alpha is in every multi-file fixture, because it is the
     // one whose `;` stops a left extension that Beta and Gamma would agree on.
+    /// <summary>
+    ///     A collection expression of <paramref name="count" /> identical elements: four tokens each and a
+    ///     stride of five.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Every element is spelled with a different name and they are all one token sequence, which is
+    ///     the whole artefact — <c>new Kind0(),</c> and <c>new Kind1(),</c> are indistinguishable once
+    ///     identifiers normalise, so the list is a periodic token stream that matches itself shifted by any
+    ///     multiple of five.
+    /// </remarks>
+    static string UniformList(int count) {
+        var builder = new StringBuilder("class Table {\n    static readonly object[] All = [\n");
+        for (var i = 0; i < count; i++) {
+            builder.Append(CultureInfo.InvariantCulture, $"        new Kind{i}(),\n");
+        }
+
+        return builder.Append("    ];\n}\n").ToString();
+    }
+
+    /// <summary>
+    ///     <paramref name="count" /> members of one class, each holding the same block.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Sibling members that lex alike, exactly like <see cref="UniformList" /> — and unlike it, real
+    ///     duplication, because each element is longer than the detection window. The two fixtures differ
+    ///     in nothing but the size of a row, which is the line the detector has to draw.
+    /// </remarks>
+    static string Members(string block, int count) {
+        var builder = new StringBuilder("class Holder {\n");
+        for (var i = 0; i < count; i++) {
+            builder.Append(CultureInfo.InvariantCulture, $"    void Run{i}() {{\n{block}    }}\n");
+        }
+
+        return builder.Append("}\n").ToString();
+    }
+
     static string Alpha(string block) =>
         "class Alpha {\n    void Run() {\n        double seed = 3.5;\n" + block + "        return;\n    }\n}\n";
 
