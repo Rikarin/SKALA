@@ -21,15 +21,21 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     mutable instance state that appears in no declaration, has no name a reader can search for,
 ///     carries no modifier, and is invisible to every rule that reasons about fields.
 ///     <para>
-///         ⚠ <b><c>CS9107</c> was probed and covers a different overlap, and it is not
-///         <c>CS9124</c>.</b> The compiler warns — always on, no analyzer package — when a captured
+///         ⚠
+///         <b>
+///             <c>CS9107</c> was probed and covers a different overlap, and it is not
+///             <c>CS9124</c>.
+///         </b> The compiler warns — always on, no analyzer package — when a captured
 ///         parameter's value is <em>also passed to the base constructor</em>, because the base may
 ///         capture it too. It says nothing about a parameter that is merely assigned. That case is
 ///         excluded here rather than reported twice.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Records are excluded, and the reason is the trap this repository has already paid
-///         for.</b> In a positional record the parameter is also where the property is written down,
+///         ⚠
+///         <b>
+///             Records are excluded, and the reason is the trap this repository has already paid
+///             for.
+///         </b> In a positional record the parameter is also where the property is written down,
 ///         the two symbols point at the same <c>ParameterSyntax</c>, and a name in a member body
 ///         resolves to the property rather than to the capture. That is a different analysis with a
 ///         different answer, and guessing at it from the parameter's shape is how a rule ships dead.

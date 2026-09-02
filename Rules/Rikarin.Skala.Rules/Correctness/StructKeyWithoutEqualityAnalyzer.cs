@@ -12,8 +12,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     equality at all, so every lookup goes through the reflection fallback.
 /// </summary>
 /// <remarks>
-///     ⚠ <b><c>SK2011</c> was read before this was written, and the issue proposing the rule had it
-///     backwards.</b> Issue #4 says <c>SK2011</c> reports at the <em>declaration</em>; it does not —
+///     ⚠
+///     <b>
+///         <c>SK2011</c> was read before this was written, and the issue proposing the rule had it
+///         backwards.
+///     </b> Issue #4 says <c>SK2011</c> reports at the <em>declaration</em>; it does not —
 ///     <c>InheritedValueTypeEqualsAnalyzer</c> registers on <c>InvocationExpression</c> and fires on
 ///     the <c>.Equals</c> call site. So the three inspections in that issue about a comparison
 ///     (<c>UsageOfDefaultStructEquality</c> and both <c>DefaultStructEqualityIsUsed</c> scopes) are
@@ -109,8 +112,11 @@ public sealed class StructKeyWithoutEqualityAnalyzer : DiagnosticAnalyzer {
     ///     <c>operator ==</c>, and no typed <c>Equals</c> either.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>A typed <c>Equals(Self)</c> with no <c>IEquatable&lt;Self&gt;</c> withdraws the type
-    ///     rather than confirming the finding, and that is a deliberate concession.</b>
+    ///     ⚠
+    ///     <b>
+    ///         A typed <c>Equals(Self)</c> with no <c>IEquatable&lt;Self&gt;</c> withdraws the type
+    ///         rather than confirming the finding, and that is a deliberate concession.
+    ///     </b>
     ///     <c>EqualityComparer&lt;T&gt;.Default</c> would indeed ignore that method and fall back to
     ///     reflection, so the defect is real — and it is already <c>SK2044</c>'s finding, reported on
     ///     the declaration where the missing interface can be added. Two rules arguing over one

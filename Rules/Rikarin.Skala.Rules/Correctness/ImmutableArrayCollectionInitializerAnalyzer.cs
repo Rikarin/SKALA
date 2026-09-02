@@ -24,8 +24,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         <c>new ImmutableArray&lt;T&gt; { }</c> calls <c>Add</c> zero times and therefore does not
 ///         throw; it silently produces a <c>default</c> array whose <c>IsDefault</c> is true, which
 ///         fails later and somewhere else. Reporting it under this rule's message — which says the
-///         code throws — would be saying something untrue about it. ⚠ <b>The parser is what excludes
-///         it, and the element count below is not.</b> A sabotage run found this: an empty brace pair
+///         code throws — would be saying something untrue about it. ⚠
+///         <b>
+///             The parser is what excludes
+///             it, and the element count below is not.
+///         </b> A sabotage run found this: an empty brace pair
 ///         is ambiguous between the two initializer forms and Roslyn classifies it
 ///         <c>ObjectInitializerExpression</c>, so a <c>CollectionInitializerExpression</c> with zero
 ///         expressions does not exist and relaxing the count changes nothing. The count stays as a
@@ -60,7 +63,8 @@ public sealed class ImmutableArrayCollectionInitializerAnalyzer : DiagnosticAnal
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var creation = (ObjectCreationExpressionSyntax)context.Node;
         if (creation.Initializer is not {
-                RawKind: (int)SyntaxKind.CollectionInitializerExpression, Expressions.Count: > 0
+                RawKind: (int)SyntaxKind.CollectionInitializerExpression,
+                Expressions.Count: > 0
             } initializer
             || initializer.Expressions.Any(static element => element is InitializerExpressionSyntax)
             || context.SemanticModel.GetSymbolInfo(creation.Type, context.CancellationToken).Symbol

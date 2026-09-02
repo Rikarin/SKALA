@@ -13,8 +13,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     actually write its own instance state?
 /// </summary>
 /// <remarks>
-///     ⚠ <b>The evidence bar is deliberately "a direct write in the body", not "the method is not
-///     <c>readonly</c>".</b> Almost no struct in real code marks its members <c>readonly</c>, so
+///     ⚠
+///     <b>
+///         The evidence bar is deliberately "a direct write in the body", not "the method is not
+///         <c>readonly</c>".
+///     </b> Almost no struct in real code marks its members <c>readonly</c>, so
 ///     treating an unmarked member as mutating would report every property read through every
 ///     <c>in</c> parameter in the repository — a defensive copy that is real, invisible, and almost
 ///     always harmless. What is *not* harmless is a write that is discarded, and a write is something
@@ -55,7 +58,7 @@ static class StructMutation {
                     == "System.Diagnostics.ConditionalAttribute"
                 )
             || method.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is not MethodDeclarationSyntax
-                declaration) {
+            declaration) {
             return false;
         }
 
@@ -68,9 +71,8 @@ static class StructMutation {
 
                 return target is IFieldReferenceOperation {
                     Field.IsStatic: false,
-                    Instance: IInstanceReferenceOperation {
-                        ReferenceKind: InstanceReferenceKind.ContainingTypeInstance
-                    }
+                    Instance:
+                    IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance }
                 };
             }
         );
@@ -78,8 +80,8 @@ static class StructMutation {
 
     static IEnumerable<ExpressionSyntax> TopLevelExpressions(MethodDeclarationSyntax declaration) =>
         declaration.Body is { } body
-            ? body.Statements.OfType<ExpressionStatementSyntax>().Select(static statement => statement.Expression)
-            : declaration.ExpressionBody is { } arrow
-                ? new[] { arrow.Expression }
-                : Enumerable.Empty<ExpressionSyntax>();
+        ? body.Statements.OfType<ExpressionStatementSyntax>().Select(static statement => statement.Expression)
+        : declaration.ExpressionBody is { } arrow
+            ? new[] { arrow.Expression }
+            : Enumerable.Empty<ExpressionSyntax>();
 }

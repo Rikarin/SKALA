@@ -202,7 +202,8 @@ public sealed class StructValueSemanticsBatchTests {
                  }) {
             Assert.True(
                 diagnostics.Any(diagnostic => diagnostic.Id == id),
-                id + " did not fire on a compilation written to contain its shape, so every other "
+                id
+                + " did not fire on a compilation written to contain its shape, so every other "
                 + "assertion in this file is about an analyzer that is not running."
             );
         }

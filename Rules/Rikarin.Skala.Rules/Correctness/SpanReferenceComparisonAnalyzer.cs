@@ -16,8 +16,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 /// <remarks>
 ///     ⚠ <b>It compiles, and the brief that carried this rule said it does not.</b> Measured on a
 ///     probe built outside this repository: <c>ReadOnlySpan&lt;char&gt; == ReadOnlySpan&lt;char&gt;</c>,
-///     <c>Span&lt;char&gt; == Span&lt;char&gt;</c>, <c>ReadOnlySpan&lt;byte&gt; ==
-///     ReadOnlySpan&lt;byte&gt;</c> and <c>ReadOnlySpan&lt;char&gt; == string</c> all build clean at
+///     <c>Span&lt;char&gt; == Span&lt;char&gt;</c>,
+///     <c>
+/// ReadOnlySpan&lt;byte&gt; ==
+///     ReadOnlySpan&lt;byte&gt;
+///     </c> and <c>ReadOnlySpan&lt;char&gt; == string</c> all build clean at
 ///     <c>net10.0</c> with no compiler warning and nothing from the analyzers at
 ///     <c>AnalysisMode=All</c> — the span types carry their own <c>operator ==</c>. What does *not*
 ///     compile is <c>span.Equals(span)</c>: <c>CS1503</c>, because the only <c>Equals</c> in scope
@@ -93,7 +96,7 @@ public sealed class SpanReferenceComparisonAnalyzer : DiagnosticAnalyzer {
         expression is LiteralExpressionSyntax {
             RawKind: (int)SyntaxKind.DefaultLiteralExpression or (int)SyntaxKind.NullLiteralExpression
         }
-        or DefaultExpressionSyntax;
+            or DefaultExpressionSyntax;
 
     /// <summary>
     ///     ⚠ The left operand becomes a receiver, and an operand that binds looser than member access
