@@ -1,6 +1,9 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Cleanup;
+using Rikarin.Skala.Rules.Correctness;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Tests;
@@ -374,6 +377,99 @@ public sealed class CleanupBatchTests {
     ///     look (#279), so this one does: <c>AD0001</c> is a failure of the run rather than a finding
     ///     about the file.
     /// </remarks>
+    /// <summary>
+    ///     ⚠ <c>SK0240</c> and <c>SK2009</c> read an empty <c>default:</c> section in opposite
+    ///     directions, and this is the assertion that they no longer hand work to each other ([#321]).
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Both directions in one test, because neither is visible alone. <see cref="Analyzers" />
+    ///         holds only the <c>SK024x</c> family and <see cref="RuleFixtureTests" />'s round-trip asks
+    ///         only whether <em>the same</em> rule still fires after its own fix — so a fix that creates
+    ///         a <em>different</em> rule's finding passes every test this project had. The #321 batch
+    ///         measured itself as "9 errors cleared" while quietly adding a tenth, and only a set-diff
+    ///         of the before/after SARIF caught it.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The "after" text is computed here by deleting the <c>default:</c> section rather than
+    ///         read from the second fixture, and then <em>compared</em> against it. Reading it would
+    ///         let the two fixtures drift into two unrelated files that each pass their own half.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void SK0240AndSK2009_DoNotHandTheEnumSwitchBackAndForth() {
+        var kept = Path.Combine(
+            RuleFixtures.Root,
+            "SK0240",
+            "negative",
+            "default_legitimises_a_nonexhaustive_enum_switch.cs"
+        );
+        var source = File.ReadAllText(kept);
+
+        // Direction one: as written, the section keeps SK2009 quiet and SK0240 stands down for it.
+        Assert.Empty(Interacting(source, kept, "SK0240"));
+        Assert.Empty(Interacting(source, kept, "SK2009"));
+
+        // Direction two: SK0240's fix was to delete that section, and this is what it left behind.
+        var section = CSharpSyntaxTree.ParseText(source, cancellationToken: TestContext.Current.CancellationToken)
+            .GetRoot(TestContext.Current.CancellationToken)
+            .DescendantNodes()
+            .OfType<SwitchSectionSyntax>()
+            .Single(static candidate => candidate.Labels.Any(static label => label is DefaultSwitchLabelSyntax));
+        var after = source[..section.Span.Start] + source[section.Span.End..];
+
+        var reported = Assert.Single(Interacting(after, kept, "SK2009"));
+        Assert.Contains("omits `Fill`, `IfBroken`", reported.GetMessage(), StringComparison.Ordinal);
+        Assert.Empty(Interacting(after, kept, "SK0240"));
+
+        // ⚠ And the second fixture really is that text, so the pair cannot drift apart.
+        var fixture = File.ReadAllText(
+            Path.Combine(RuleFixtures.Root, "SK2009", "positive", "sk0240_fix_output_omits_members.cs")
+        );
+
+        Assert.Equal(Squashed(CodeOnly(after)), Squashed(CodeOnly(fixture)));
+    }
+
+    /// <summary>
+    ///     ⚠ The stand-down is narrow: an <em>exhaustive</em> enum switch's empty <c>default:</c> is
+    ///     still reported, and taking the fix still introduces no <c>SK2009</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Without this half, "<c>SK0240</c> declines an empty default on an enum switch" and
+    ///     "<c>SK0240</c> declines an empty default" are the same green run, and the second is a rule
+    ///     two thirds switched off.
+    /// </remarks>
+    [Fact]
+    public void SK0240_StillDeletesAnEmptyDefaultWhenTheEnumSwitchIsExhaustive() {
+        var path = Path.Combine(
+            RuleFixtures.Root,
+            "SK0240",
+            "positive",
+            "default_only_breaks_on_an_exhaustive_enum_switch.cs"
+        );
+        var source = File.ReadAllText(path);
+
+        var finding = Assert.Single(Interacting(source, path, "SK0240"));
+        var after = Apply(source, [finding]);
+
+        Assert.DoesNotContain("default:", CodeOnly(after), StringComparison.Ordinal);
+        Assert.Empty(Interacting(after, path, "SK2009"));
+    }
+
+    /// <summary>Both sides of the [#321] interaction in one analyzer set, which is the only way to see it.</summary>
+    static Diagnostic[] Interacting(string source, string path, string id) =>
+        RuleFixtures
+            .Analyze(
+                RuleFixtures.Compile(source, path),
+                [new RedundantControlFlowAnalyzer(), new EnumSwitchExhaustivenessAnalyzer()],
+                TestContext.Current.CancellationToken
+            )
+            .Where(diagnostic => diagnostic.Id == id)
+            .ToArray();
+
+    /// <summary>Every run of whitespace as one space, so an indentation difference is not a failure.</summary>
+    static string Squashed(string text) => string.Join(" ", text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
     static Diagnostic[] Findings(string path, string id) {
         var source = File.ReadAllText(path);
         var all = RuleFixtures.Analyze(

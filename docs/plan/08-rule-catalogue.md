@@ -6735,3 +6735,73 @@ the continuation list, so it is declined a guard earlier.
 failed.** It read the fixture name out of the xUnit display name, which truncates the path, so its
 first full run reported "red: (none)" for all twenty — a measurement printing exactly what it prints
 on the day it does not run. It reads the assertion message now.
+
+## `SK0240` × `SK2009` — who owns an empty `default:` section
+
+⚠ **Two individually defensible rules were a fix loop on one shape, and this is the decision that
+settled it** ([#321]). `SK2009` counts a `default:` section as the catch-all legitimising a
+non-exhaustive enum switch. `SK0240` counts an *empty* one as dead control flow, because a `switch`
+with no matching section already does nothing. Deleting `default: break;` from
+`LayoutWriter.cs:242` cleared the `SK0240` and immediately produced
+`SK2009: switch over `DocKind` omits `Concat`, `Fill`, `IfBroken`` at the same switch. ⚠ **`SK0240`
+ships a fix, so taking it handed the author a finding they did not have.**
+
+⚠ **The batch that found it measured itself as "9 errors cleared" while quietly adding a tenth.**
+The totals moved in the direction that looks like success, and only a set-diff of the before/after
+SARIF caught it. Any repair measured by a count rather than by a diff of the finding *set* has this
+failure mode.
+
+**`SK0240` stands down; `SK2009` keeps the shape.** The ground for choosing that direction is not
+conflict-avoidance, it is that on a switch omitting enum members the section is **not dead**: it is
+the author's written statement that the rest of the enum is deliberately ignored, which is precisely
+the signal `SK2009` reads. Deleting it removes information rather than removing nothing, so `SK0240`
+was the rule that was wrong about this shape.
+
+The alternative the issue offered — `SK0240` keeps reporting but ships **no fix** here — was
+rejected. It de-automates the contradiction without settling it: an author who takes the advice by
+hand still lands on the `SK2009`, and docs/plan/10's own standard is that a finding nobody can act
+on teaches an agent to ignore the tool. It would also leave `SK0240` reporting a redundancy that is
+not one.
+
+**Mechanism.** The exhaustiveness question moved out of `EnumSwitchExhaustivenessAnalyzer` into
+`EnumSwitchCoverage.Gap`, which takes a section to answer *as though it were already deleted*.
+`SK2009` asks it with `null`; `SK0240` asks it with the section its fix would delete and stands down
+where the answer is a finding. Shared rather than duplicated for the same reason `AsyncContext` is —
+two copies of "where `SK2009` would fire" would drift and re-open the loop.
+
+⚠ **The stand-down is narrow, and one of the two positive fixtures exists to keep it narrow.**
+Because the question asked is `SK2009`'s own predicate, an *exhaustive* enum switch's empty
+`default:` is still reported and still fixed
+(`SK0240/positive/default_only_breaks_on_an_exhaustive_enum_switch.cs`), and so are the three sites
+the #321 batch deleted for real: `SpaceRules.cs` switches over `SyntaxKind` where `SK2009` declines
+as a minority filter, `CSharpDocumentBuilder.BlankLines.cs` switches over `SyntaxNode` type patterns,
+and the `int` switches in the fixture set. "`SK0240` declines an empty default on an enum switch" and
+"`SK0240` declines an empty default" are otherwise the same green run, and the second is a rule two
+thirds switched off.
+
+⚠ **The guard is opportunistic, not required, and that is deliberate.** `SK0240` stays
+`scope: Syntax` / `requiresSemantics: false`, because its member that matters — `catch (X) { throw; }`
+— is purely syntactic and `requiresSemantics: true` would stop the whole rule running without a
+project (`RuleInfo.RunsWithoutAProject`). In loose mode an enum from an unreferenced assembly does
+not resolve, the gap is empty, and `SK0240` reports exactly as before; `SK2009` is
+`requiresSemantics` and is not running there either, so the two still agree about the file in front
+of them.
+
+⚠ **Pinned from both sides, in the pattern `SK2240`/`SK1071` established, because a test running one
+rule at a time cannot see any of this.** `SK0240/negative/default_legitimises_a_nonexhaustive_enum_switch.cs`
+is the shape as written — neither rule speaks. `SK2009/positive/sk0240_fix_output_omits_members.cs`
+is that same file with the section deleted, which is literally what `SK0240`'s fix used to emit —
+`SK2009` fires and names `Fill` and `IfBroken`.
+`CleanupBatchTests.SK0240AndSK2009_DoNotHandTheEnumSwitchBackAndForth` runs both analyzers in one
+set, computes the "after" text by deleting the section rather than reading the second fixture, and
+then compares the two so the pair cannot drift into two unrelated files that each pass their own
+half.
+
+⚠ **`RuleFixtureTests.EveryFix_SilencesTheRuleAndIntroducesNoDiagnostic` could not have caught this
+and still cannot catch the general case.** It re-runs the analyzers after a fix but filters to
+`diagnostic.Id == fixture.RuleId`, so a fix that creates a *different* Skala rule's finding is green.
+Its `introduced` check covers compiler diagnostics only. A cross-rule version of that assertion over
+the whole fixture corpus is the general instrument and is not written; until it is, every rule pair
+that reads one construct in two directions needs its own paired fixtures.
+
+[#321]: https://github.com/Rikarin/SKALA/issues/321

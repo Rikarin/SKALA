@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
+using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Modernization;
 using System.Collections.Immutable;
@@ -201,7 +202,8 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
                 if (!RewriteGuards.ContainsCommentOrDirective(tree, section.Span)
                     && HasNoDirective(section)
                     && !HasGoto(statement, SyntaxKind.GotoDefaultStatement)
-                    && (section.Labels.Count == 1 || !HasGoto(statement, SyntaxKind.GotoCaseStatement))) {
+                    && (section.Labels.Count == 1 || !HasGoto(statement, SyntaxKind.GotoCaseStatement))
+                    && !IsWhatKeepsSK2009Quiet(context, statement, section)) {
                     context.ReportDiagnostic(
                         Diagnostic.Create(
                             Descriptor,
@@ -243,6 +245,57 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
             }
         }
     }
+
+    /// <summary>
+    ///     ⚠ Whether this empty <c>default:</c> section is the only thing keeping <c>SK2009</c> quiet.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             This rule and <c>SK2009</c> read the same construct in opposite directions, and
+    ///             without this guard they are a fix loop.
+    ///         </b> <c>SK2009</c> counts a <c>default:</c>
+    ///         section as the catch-all that legitimises a non-exhaustive enum switch; this rule counts
+    ///         an <em>empty</em> one as dead control flow and offers to delete it. Deleting it cleared
+    ///         the <c>SK0240</c> and immediately produced <c>SK2009: switch over `DocKind` omits …</c> at
+    ///         the same switch ([#321]) — a fix that hands the author a finding they did not have.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>This rule stands down and <c>SK2009</c> keeps the shape</b>, on the ground that
+    ///         decides which of two defensible readings is right: where members are unhandled the
+    ///         section is <em>not</em> dead. It is the author's written statement that the rest of the
+    ///         enum is deliberately ignored, which is exactly the signal <c>SK2009</c> reads, so
+    ///         deleting it removes information rather than removing nothing. The alternative — report
+    ///         with no fix — de-automates the contradiction without settling it: an author taking the
+    ///         advice by hand still lands on the <c>SK2009</c>.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Narrow by construction.</b> The question asked is <c>SK2009</c>'s own predicate with
+    ///         this section removed, so an <em>exhaustive</em> enum switch's empty <c>default:</c> is
+    ///         still reported, and so is one over <c>int</c>, over <c>SyntaxKind</c> where the switch is
+    ///         a minority filter, and over type patterns. Those are the shapes the #321 batch deleted
+    ///         and they stay deleted.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The answer is opportunistic rather than required: this rule is <c>scope: Syntax</c> and
+    ///         runs in loose mode, where an enum from an unreferenced assembly does not resolve and the
+    ///         guard says nothing. <c>SK2009</c> is <c>requiresSemantics</c> and is not running there
+    ///         either, so the two still agree about the file in front of them.
+    ///     </para>
+    /// </remarks>
+    static bool IsWhatKeepsSK2009Quiet(
+        SyntaxNodeAnalysisContext context,
+        SwitchStatementSyntax statement,
+        SwitchSectionSyntax section
+    ) =>
+        EnumSwitchCoverage.Gap(
+            context.SemanticModel,
+            statement,
+            context.Compilation.GetTypeByMetadataName("System.FlagsAttribute"),
+            section,
+            context.CancellationToken
+        ) is not null;
 
     /// <summary>
     ///     The label and the whitespace up to the next token, so deleting it does not orphan a line.
