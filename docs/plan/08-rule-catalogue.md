@@ -5091,3 +5091,63 @@ established that it is subsumed rather than wrong.** A `ref struct` cannot be bo
 `ClassifyConversion` already reports no conversion from any reference-typed operand and declines the
 shape first. Removing both guards together turns `ref_struct_target` red, which distinguishes
 "another guard catches this" from "nothing catches this".
+
+### The measurement, and every zero classified
+
+**Skala's own tree**, `--load=binlog --require-fresh-binlog --no-cache` over a Release build made
+with `--no-incremental`, which produced **0 CS diagnostics** and a binlog covering **633 of 635
+selected files (100 %)** — the two missing are `build/Build.cs` and `build/Configuration.cs`, which
+`Skala.slnx` does not contain, the same pair as the `SK2170` batch. 1 498 findings from 41 rules,
+607 of them from **22 distinct `Semantic` rules**, which is what proves the semantic half ran. No
+`SK9030`: nothing in the run crashed.
+
+**The corpus**, `--load=loose` over the 4 459-file tree copied outside the repository because
+`SK9023` makes it unreachable in place. 3 666 findings — of which **3 660 are `Syntax` and 6 are
+tool diagnostics, and not one comes from any of the catalogue's semantic rules.** That reconfirms
+the `SK2172` finding: under a loose load the semantic half does not run at all.
+
+⚠ **The instrument was verified in both pipelines before any zero was believed, and the plant is
+what corrected a misreading.** A file carrying one of each shape was planted into
+`Rikarin.Skala.Analysis`, the binlog rebuilt, and the run reports `SK1120` ×2, `SK1121`, `SK1122`
+and `SK1123` ×1 each; the file was then deleted and the binlog rebuilt clean. The same for the loose
+pipeline: a planted file in the corpus copy reports `SK1121` and `SK1123` and, correctly, neither
+semantic rule. ⚠ **`--include-hints` gates the console reporter and not the SARIF** — reading the
+console first suggested the three `hint` rules had been filtered out of the measurement, and
+comparing the two SARIFs refuted it: both carry all four, and 14 `hint`-severity rules contribute
+853 of the own-tree run's 1 498 findings.
+
+| Rule | Own tree | Corpus | Classification |
+|---|---:|---:|---|
+| `SK1120` | 0 | 0 | own tree **shape present and correctly declined**; corpus ⚠ **the analysis never ran** |
+| `SK1121` | 0 | 0 | own tree **shape absent**; corpus **shape present and correctly declined** |
+| `SK1122` | 0 | 0 | own tree **shape present and correctly declined**; corpus ⚠ **the analysis never ran** |
+| `SK1123` | 0 | 0 | **shape absent** in both |
+
+- **`SK1120`** — Skala's own source makes **six** `typeof(X).IsAssignableFrom(<a Type variable>)`
+  calls (`Hosting/RoslynCodeStyle.cs:73`, `Hosting/HostedAnalyzers.cs:220`, `AnalysisTests.cs:50`,
+  `FixRoundTripTests.cs:38` among them). Every one is the two-type question with no value in it,
+  which has no `is` spelling, and every one is correctly declined. ⚠ **Neither *reportable* shape
+  occurs in compiled code**: a census of the same 635 files reports two `IsInstanceOfType` and three
+  `IsAssignableFrom(x.GetType())`, and all five are inside **this batch's own doc comments and test
+  string literals** — a rule's prose contaminating a census of its own subject, which is worth
+  knowing before the next batch measures itself.
+- **`SK1121`** — 230 `try` tokens in Skala's compiled source and **not one nested `try`**: the three
+  the census finds are again this batch's own doc comments and one test's raw-string source. On the
+  corpus, **386 `try` tokens and 7 nested `try` statements**, none of them the mergeable nesting, so
+  that zero is a decline rather than an absence.
+- **`SK1122`** — 14 anonymous object creations in Skala's own source, three files holding two or
+  more, and no pair that differs only in order.
+- **`SK1123`** — **zero** `or`-alternations of property patterns in 4 459 corpus files, and none in
+  Skala's own compiled code either. The shape is genuinely rare, which is consistent with the
+  inspection shipping at `HINT`.
+
+⚠ **The `ImplicitUsings` exercise moves far more here than it did for the `SK2170` batch, and the
+difference is the slice rather than the flag.** Compiled as one project over `real/vixen` with the
+`.expected.cs` duplicates excluded — 200 files — the slice reports **9 534 CS errors with
+`ImplicitUsings` disabled and 8 218 with it enabled**, a fall of 1 316 (13.8 %). The `SK2170` batch
+measured `real/newtonsoft` and saw 1 808 → 1 806, and both numbers are right: Newtonsoft targets old
+frameworks and writes every `using` out, while Vixen is modern C# that leans on the implicit set.
+⚠ **Neither slice compiles either way** — the residue is 7 856 `CS0246` for types the corpus simply
+does not carry — so no semantic rule can be measured on the corpus at all, and that is why
+`SK1120`'s and `SK1122`'s corpus zeros are classified as the analysis never running rather than as
+clean code.
