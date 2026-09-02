@@ -580,4 +580,64 @@ public sealed class RuleCatalogTests {
             Assert.NotEqual(RuleScope.Syntax, rule.Scope);
         }
     }
+
+    /// <summary>
+    ///     A hosted diagnostic belongs to at most one rule's <c>supersedes</c>.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠ <c>Supersession</c>'s map is a <c>Dictionary&lt;superseded, winner&gt;</c> built by
+    ///         <c>map[superseded] = rule.Id</c>, so it <em>structurally cannot hold two owners</em>: a
+    ///         second claimant silently overwrites the first, and which one wins is catalogue order.
+    ///         Nothing else in the build notices, which is why the invariant the data structure already
+    ///         assumes is asserted here rather than left to reading.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ It is scoped to <c>IDE*</c> and <c>CA*</c> deliberately. A Skala id may legitimately be
+    ///         superseded by more than one rule — <c>SK4033</c> claims <c>SK1034</c> — and that is a
+    ///         different relationship from hosting an analyzer nobody else may claim.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ This assertion was written for #291 and <b>would not have caught it</b>: <c>SK1015</c>
+    ///         claimed <c>IDE0019</c> alone, so there was no duplicate to see. It guards the direction
+    ///         the map cannot express, not the direction #291 failed in.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void EveryHostedDiagnostic_IsClaimedByAtMostOneRule() {
+        var owners = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var rule in RuleCatalog.All) {
+            foreach (var superseded in rule.Supersedes) {
+                if (!superseded.StartsWith("IDE", StringComparison.Ordinal)
+                    && !superseded.StartsWith("CA", StringComparison.Ordinal)) {
+                    continue;
+                }
+
+                if (!owners.TryGetValue(superseded, out var claimants)) {
+                    claimants = [];
+                    owners[superseded] = claimants;
+                }
+
+                claimants.Add(rule.Id);
+            }
+        }
+
+        var contested = owners
+            .Where(static entry => entry.Value.Count > 1)
+            .OrderBy(static entry => entry.Key, StringComparer.Ordinal)
+            .Select(static entry => entry.Key + " ← " + string.Join(", ", entry.Value))
+            .ToArray();
+
+        Assert.True(
+            contested.Length == 0,
+            "A hosted diagnostic is claimed by more than one rule's `supersedes`. `Supersession` keeps "
+            + "one winner per superseded id, so the later claimant silently replaces the earlier and the "
+            + "finding is attributed to a rule that did not produce it:\n  "
+            + string.Join("\n  ", contested)
+        );
+
+        // ⚠ And the claims are not vacuous: something has to be claimed, or the assertion above passes
+        // on an empty map for as long as nobody notices `supersedes` stopped being read.
+        Assert.NotEmpty(owners);
+    }
 }

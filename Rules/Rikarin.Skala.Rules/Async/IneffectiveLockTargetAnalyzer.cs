@@ -64,11 +64,40 @@ namespace Rikarin.Skala.Rules.Async;
 ///         fixture <c>a-private-readonly-field.cs</c> is what holds it.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Known gap: a <c>lock</c> in a top-level program is never examined.</b> The synthesized
-///         <c>Program</c> type's <c>DeclaringSyntaxReferences</c> are not
-///         <c>TypeDeclarationSyntax</c>, so the symbol walk below drops it. A top-level statement file
-///         is a script, not a shared-state type, and the shape is not worth a second registration that
-///         could double-report; recorded rather than hidden.
+///         ⚠ <b>A <c>lock</c> in a top-level program is examined, and used not to be</b> (#307). The
+///         synthesized <c>Program</c> type's <c>DeclaringSyntaxReferences</c> hand back the
+///         <c>CompilationUnitSyntax</c> rather than a <c>TypeDeclarationSyntax</c>, so an
+///         <c>OfType&lt;TypeDeclarationSyntax&gt;()</c> filter dropped the whole file in silence. A
+///         top-level program is exactly the shape a model writes first, which is the population this
+///         tool exists for, so "it is a script rather than a shared-state type" was the wrong reading of
+///         the same fact. No second registration was needed: the symbol action already fires for the
+///         synthesized type, and <see cref="EnclosingFunction" /> already resolved a
+///         <c>GlobalStatementSyntax</c> to the compilation unit so that consecutive top-level statements
+///         share one body.
+///     </para>
+///     <para>
+///         ⚠ <b><c>SK3060</c> has the same blindness and this change does not repair it</b>, measured
+///         rather than read: three locks in a top-level program drew <c>SK3040</c> and nothing else
+///         before this change and <c>SK3040</c> plus <c>SK3061</c> after, while the same source inside a
+///         class draws <c>SK3040</c>, <c>SK3060</c> and <c>SK3061</c>. <c>SK3060</c> declines through a
+///         different and deliberate mechanism — its <c>Body</c> walk returns <c>null</c> at a type
+///         declaration, which is what makes a field initializer decline too — so it is a separate
+///         repair. ⚠ And <c>SK3044</c>, which #307 named alongside this rule, has an <em>empty</em> gap:
+///         it reports on a field, top-level statements declare only locals, and a type declared beside
+///         them gets its own symbol action with a real <c>TypeDeclarationSyntax</c>.
+///     </para>
+///     <para>
+///         ⚠ <b>The weak-identity types are <c>CA2002</c>'s and are excluded here</b> (#307). Shape 2
+///         asked whether a field was mutable and never what type it was, so a private <c>string</c> gate
+///         reassigned outside a constructor carried both findings. Re-probed on a pristine
+///         <c>net10.0</c> library at <c>AnalysisMode=All</c>: <c>CA2002</c> fires on <c>lock (this)</c>,
+///         <c>lock (typeof(T))</c>, a string literal, a mutable <c>string</c> field, a <c>readonly</c>
+///         <c>string</c> field, a <c>string</c> local, a <c>Thread</c> field and a <c>MemberInfo</c>
+///         field, and is silent on a fresh local, a <c>readonly object</c> field and a mutable
+///         <c>object</c> field. ⚠ The overlap was wider than #307 said: the same types reach shape 1
+///         through a local, and <c>Thread</c>, <c>MemberInfo</c>, <c>ParameterInfo</c> and
+///         <c>MarshalByRefObject</c> overlap alongside <c>string</c>, so the exclusion is on the lock
+///         target's type before either shape rather than one clause inside <c>ExamineField</c>.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -88,6 +117,24 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
         "System.Threading.Barrier"
     };
 
+    /// <summary>
+    ///     The weak-identity types <c>CA2002</c> owns, resolved the same way and matched up the base
+    ///     chain (#307).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ ADR-008 is host, never rebuild, and the overlap here was a shipped double-report: a private
+    ///     <c>string</c> gate reassigned outside a constructor drew both. <c>System.String</c> is sealed
+    ///     but the other four are matched through their bases, which is how a <c>MethodInfo</c> field or
+    ///     a remoting proxy is reached. ⚠ <c>ExecutionEngineException</c>, <c>OutOfMemoryException</c> and
+    ///     <c>StackOverflowException</c> are on <c>CA2002</c>'s documented list and are left off this one:
+    ///     locking one is not a shape a repository writes, and every name added here is recall this rule
+    ///     gives up.
+    /// </remarks>
+    static readonly string[] WeakIdentityNames = {
+        "System.String", "System.MarshalByRefObject", "System.Reflection.MemberInfo", "System.Reflection.ParameterInfo",
+        "System.Threading.Thread"
+    };
+
     static readonly DiagnosticDescriptor Descriptor = SkalaRule.Descriptor(RuleIds.IneffectiveLockTarget);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);
@@ -96,10 +143,16 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start => {
-                var primitives = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
+                var hosted = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
                 foreach (var name in PrimitiveNames) {
                     if (start.Compilation.GetTypeByMetadataName(name) is { } type) {
-                        primitives.Add(type);
+                        hosted.Add(type);
+                    }
+                }
+
+                foreach (var name in WeakIdentityNames) {
+                    if (start.Compilation.GetTypeByMetadataName(name) is { } type) {
+                        hosted.Add(type);
                     }
                 }
 
@@ -107,7 +160,7 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
                 // There the list *is* the rule and an empty one means there is nothing to find; here it
                 // is only an exclusion, so returning would switch the rule off wherever
                 // `System.Threading` is unavailable — a silence indistinguishable from clean code.
-                var resolved = primitives.ToImmutable();
+                var resolved = hosted.ToImmutable();
                 start.RegisterSymbolAction(context => Analyze(context, resolved), SymbolKind.NamedType);
             }
         );
@@ -118,14 +171,19 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
     ///     field, and a type is partial across files: <c>rules.json</c> declares this rule
     ///     <c>scope: Compilation</c> for that reason.
     /// </summary>
-    static void Analyze(SymbolAnalysisContext context, ImmutableArray<INamedTypeSymbol> primitives) {
+    static void Analyze(SymbolAnalysisContext context, ImmutableArray<INamedTypeSymbol> hosted) {
         if (context.Symbol is not INamedTypeSymbol owner) {
             return;
         }
 
+        // ⚠ `CompilationUnitSyntax` alongside `TypeDeclarationSyntax`, and it is the whole of #307's
+        // second half: the synthesized `Program` of a top-level program declares itself at the
+        // compilation unit, so an `OfType<TypeDeclarationSyntax>()` filter dropped every `lock` in the
+        // file without a trace. Nothing else reaches here through a compilation unit — an ordinary
+        // type's references are its own declarations — so no type is examined twice.
         var declarations = owner.DeclaringSyntaxReferences
             .Select(reference => reference.GetSyntax(context.CancellationToken))
-            .OfType<TypeDeclarationSyntax>()
+            .Where(static node => node is TypeDeclarationSyntax or CompilationUnitSyntax)
             .ToArray();
 
         // ⚠ The cheap gate, and it is not tidiness: everything below needs a semantic model, and a
@@ -140,7 +198,7 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
         var model = new ModelCache(context.Compilation);
         var reassigned = new Dictionary<ISymbol, bool>(SymbolEqualityComparer.Default);
         foreach (var statement in locks) {
-            Examine(context, statement, owner, bodies, model, primitives, reassigned);
+            Examine(context, statement, owner, bodies, model, hosted, reassigned);
         }
     }
 
@@ -150,12 +208,12 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
         INamedTypeSymbol owner,
         IReadOnlyList<SyntaxNode> bodies,
         ModelCache model,
-        ImmutableArray<INamedTypeSymbol> primitives,
+        ImmutableArray<INamedTypeSymbol> hosted,
         Dictionary<ISymbol, bool> reassigned
     ) {
         var expression = statement.Expression;
         if (model.Of(expression).GetTypeInfo(expression, context.CancellationToken).Type is INamedTypeSymbol type
-            && IsPrimitive(type, primitives)) {
+            && IsHosted(type, hosted)) {
             return;
         }
 
@@ -344,10 +402,18 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
     static void Report(SymbolAnalysisContext context, ExpressionSyntax expression, string message) =>
         context.ReportDiagnostic(Diagnostic.Create(Descriptor, expression.GetLocation(), message));
 
-    static bool IsPrimitive(INamedTypeSymbol type, ImmutableArray<INamedTypeSymbol> primitives) {
+    /// <summary>Whether another rule or another analyzer already owns a lock over this type.</summary>
+    /// <remarks>
+    ///     ⚠ Two lists, one test, and the two are not the same claim. <see cref="PrimitiveNames" /> is
+    ///     <c>SK3040</c>'s: <c>lock (semaphore)</c> is a finding there, and the reading that tells the
+    ///     reader what to do. <see cref="WeakIdentityNames" /> is <c>CA2002</c>'s, and locking one of
+    ///     those is a finding the SDK already makes (#307). Both answers are "say nothing here", and
+    ///     merging them costs a distinction only this comment has to carry.
+    /// </remarks>
+    static bool IsHosted(INamedTypeSymbol type, ImmutableArray<INamedTypeSymbol> hosted) {
         for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType) {
             var definition = current.OriginalDefinition;
-            foreach (var primitive in primitives) {
+            foreach (var primitive in hosted) {
                 if (SymbolEqualityComparer.Default.Equals(definition, primitive)) {
                     return true;
                 }
@@ -420,7 +486,7 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
     ///     mistakes point opposite ways — a nested lock would be examined against the outer type's
     ///     fields, and the nested type gets its own symbol action anyway.
     /// </remarks>
-    static IEnumerable<SyntaxNode> Own(TypeDeclarationSyntax declaration) =>
+    static IEnumerable<SyntaxNode> Own(SyntaxNode declaration) =>
         declaration.DescendantNodes(node => node == declaration || node is not TypeDeclarationSyntax);
 
     /// <summary>One semantic model per tree, for the life of one type's analysis.</summary>

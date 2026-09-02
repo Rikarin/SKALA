@@ -58,7 +58,7 @@
 | [SK2005](SK2005.md) | Do not mutate a copy of a readonly struct field | warning | — | no |
 | [SK2007](SK2007.md) | The collection being enumerated is modified inside the loop | warning | review | no |
 | [SK2008](SK2008.md) | A stored delegate captures a changing loop variable | warning | — | no |
-| [SK2009](SK2009.md) | An enum switch omits declared members | warning | — | no |
+| [SK2009](SK2009.md) | An enum switch statement omits declared members | warning | — | no |
 | [SK2010](SK2010.md) | A string comparison has an implicit culture policy | warning | — | no |
 | [SK2011](SK2011.md) | A struct uses inherited ValueType.Equals | warning | — | no |
 | [SK2012](SK2012.md) | Review a self-operation on an automatic property | warning | — | no |

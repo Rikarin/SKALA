@@ -30,6 +30,9 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     </para>
 /// </remarks>
 public sealed class EnumAndTypeCheckBatchTests {
+    /// <summary>⚠ Named because #280 pushed the literal past SK7083's threshold in this file.</summary>
+    const string EnumSwitch = "SK2009";
+
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new PlainEnumBitwiseAnalyzer(), new AlwaysSucceedingAsAnalyzer(),
         new EnumSwitchExhaustivenessAnalyzer(), new ConstantRangeComparisonAnalyzer(),
@@ -185,7 +188,7 @@ public sealed class EnumAndTypeCheckBatchTests {
         Assert.Contains(Compiler(exhaustiveNoDefault), static diagnostic => diagnostic.Id == "CS8524");
 
         // ⚠ And SK2009 is silent there, so the compiler is not doubling anything Skala says.
-        Assert.DoesNotContain(Findings(exhaustiveNoDefault), static diagnostic => diagnostic.Id == "SK2009");
+        Assert.DoesNotContain(Findings(exhaustiveNoDefault), static diagnostic => diagnostic.Id == EnumSwitch);
 
         // The statement form draws nothing from the compiler — and is the SK2009 false-positive shape.
         const string statement = """
@@ -200,6 +203,80 @@ public sealed class EnumAndTypeCheckBatchTests {
                                  }
                                  """;
         Assert.DoesNotContain(Compiler(statement), static diagnostic => diagnostic.Id is "CS8524" or "CS8509");
+
+        // ⚠ #280's stand-down, and the half of it that is free. A switch expression missing a
+        // *declared* value draws CS8509, so SK2009 no longer registers for the form at all — and
+        // the assertion is on both halves at once, because a rule that stopped running would pass
+        // the second one on its own.
+        const string incompleteExpression = """
+                                            enum Color { Red, Green, Blue }
+
+                                            class C {
+                                                int M(Color c) => c switch { Color.Red => 1, Color.Green => 2 };
+                                            }
+                                            """;
+        Assert.Contains(Compiler(incompleteExpression), static diagnostic => diagnostic.Id == "CS8509");
+        Assert.DoesNotContain(Findings(incompleteExpression), static diagnostic => diagnostic.Id == EnumSwitch);
+
+        // …and the same omission written as a statement is un-hosted and still reported, so the
+        // stand-down is scoped to the form rather than having retired the rule.
+        const string incompleteStatement = """
+                                           enum Color { Red, Green, Blue }
+
+                                           class C {
+                                               int M(Color c) {
+                                                   switch (c) { case Color.Red: return 1; case Color.Green: return 2; }
+
+                                                   return 0;
+                                               }
+                                           }
+                                           """;
+        Assert.DoesNotContain(Compiler(incompleteStatement), static d => d.Id is "CS8524" or "CS8509");
+        Assert.Single(Findings(incompleteStatement), static diagnostic => diagnostic.Id == EnumSwitch);
+    }
+
+    /// <summary>
+    ///     ⚠
+    ///     <b>
+    ///         <c>SK2009</c> reports a switch statement only where it already covers most of the
+    ///         enum
+    ///     </b> (#280).
+    /// </summary>
+    /// <remarks>
+    ///     A <c>switch</c> statement is under no obligation to be exhaustive — falling out of it
+    ///     continues at the next statement — so the shape worth reporting is the one that visibly meant
+    ///     to list everything and missed a value, not the one selecting a few values out of many. The
+    ///     boundary is <c>missing &lt;= handled</c> over distinct declared <em>values</em>.
+    ///     <para>
+    ///         ⚠ The two boundaries #280 offered instead are refuted here rather than argued away. "Every
+    ///         arm produces the same value" does not hold: two of the twelve false positives on Skala's
+    ///         own tree mix a <c>return</c> section with a section that assigns and breaks. A member-count
+    ///         threshold does not hold either: the <c>JsonValueKind</c> walker is a filter over an
+    ///         eight-member enum.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void SK2009_ReportsTheStatementThatMeantToBeExhaustive_AndNotTheFilter() {
+        const string prefix =
+            "enum Wide { A, B, C, D, E, F, G, H }\n\nclass C {\n    int M(Wide w) {\n        switch (w) {\n";
+        const string suffix = "        }\n\n        return 0;\n    }\n}\n";
+
+        // Five of eight handled, three missing: 3 <= 5, an attempt at exhaustiveness.
+        const string majority = prefix
+            + "            case Wide.A: case Wide.B: case Wide.C: case Wide.D: case Wide.E: return 1;\n"
+            + suffix;
+        Assert.Single(Findings(majority), static diagnostic => diagnostic.Id == EnumSwitch);
+
+        // Four of eight handled, four missing: 4 <= 4, still an attempt. The boundary is inclusive
+        // deliberately, and this is the case that pins which side of it the tie falls on.
+        const string half = prefix
+            + "            case Wide.A: case Wide.B: case Wide.C: case Wide.D: return 1;\n"
+            + suffix;
+        Assert.Single(Findings(half), static diagnostic => diagnostic.Id == EnumSwitch);
+
+        // Three of eight handled, five missing: 5 > 3, a selection.
+        const string minority = prefix + "            case Wide.A: case Wide.B: case Wide.C: return 1;\n" + suffix;
+        Assert.DoesNotContain(Findings(minority), static diagnostic => diagnostic.Id == EnumSwitch);
     }
 
     /// <summary>
@@ -246,16 +323,23 @@ public sealed class EnumAndTypeCheckBatchTests {
     public void SK2120_AndSK2009_AnswerDifferentQuestions() {
         const string combine = "enum Color { Red, Green, Blue } class C { Color M() => Color.Green | Color.Blue; }";
         Assert.Single(Findings(combine), static d => d.Id == "SK2120");
-        Assert.DoesNotContain(Findings(combine), static d => d.Id == "SK2009");
+        Assert.DoesNotContain(Findings(combine), static d => d.Id == EnumSwitch);
 
+        // ⚠ A statement, not an expression: #280 stood SK2009 down on the expression form, where
+        // CS8509 already names the missing value. Written as an expression this snippet asserted
+        // SK2009 fires and would have gone red on the stand-down.
         const string partialSwitch = """
                                      enum Color { Red, Green, Blue }
 
                                      class C {
-                                         int M(Color c) => c switch { Color.Red => 1, Color.Green => 2 };
+                                         int M(Color c) {
+                                             switch (c) { case Color.Red: return 1; case Color.Green: return 2; }
+
+                                             return 0;
+                                         }
                                      }
                                      """;
-        Assert.Single(Findings(partialSwitch), static d => d.Id == "SK2009");
+        Assert.Single(Findings(partialSwitch), static d => d.Id == EnumSwitch);
         Assert.DoesNotContain(Findings(partialSwitch), static d => d.Id == "SK2120");
     }
 

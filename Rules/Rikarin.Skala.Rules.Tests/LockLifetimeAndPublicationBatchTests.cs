@@ -1,6 +1,8 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Async;
+using Rikarin.Skala.Rules.Correctness;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Tests;
@@ -213,5 +215,139 @@ public sealed class LockLifetimeAndPublicationBatchTests {
         var diagnostics = RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain(diagnostics, static diagnostic => diagnostic.Id == "AD0001");
+    }
+
+    /// <summary>
+    ///     ⚠ <b>A <c>lock</c> in a top-level program is examined</b> (#307), and the two rules that are
+    ///     still blind to one are named by measurement rather than by reading.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The synthesized <c>Program</c> type declares itself at the <c>CompilationUnitSyntax</c>,
+    ///         so <c>SK3061</c>'s <c>OfType&lt;TypeDeclarationSyntax&gt;()</c> filter dropped the whole
+    ///         file. ⚠ It cannot be a fixture: the harness compiles a <c>DynamicallyLinkedLibrary</c> and
+    ///         top-level statements in one are <c>CS8805</c>, so the fixture would fail to compile and
+    ///         prove nothing. The compilation is built here with <c>ConsoleApplication</c> instead.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The same source is run twice, once at top level and once inside a class, and the two
+    ///         results are compared rather than each asserted alone. A single assertion would pass on the
+    ///         day the rule stopped firing anywhere.
+    ///     </para>
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             <c>SK3060</c> is blind to the same file and is deliberately not asserted either
+    ///             way.
+    ///         </b> It declines through a different mechanism — its <c>Body</c> walk returns
+    ///         <c>null</c> at a type declaration, which is what makes a field initializer decline too —
+    ///         so pinning its silence here would turn a recorded gap into a promise. ⚠ <c>SK3044</c>,
+    ///         which #307 named alongside <c>SK3061</c>, has an <em>empty</em> gap: it reports on a
+    ///         field, and top-level statements declare only locals.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void SK3061_ExaminesALockInATopLevelProgram() {
+        const string body = """
+                            var gate = new object();
+
+                            lock (gate) {
+                                System.Console.WriteLine("one monitor per invocation");
+                            }
+                            """;
+
+        var top = Ids(TopLevel(body));
+        var inside = Ids(
+            RuleFixtures.Compile("static class Runner { static void Go() { " + body + " } }", "inside.cs")
+        );
+
+        Assert.Contains("SK3061", inside);
+        Assert.Contains("SK3061", top);
+    }
+
+    static string[] Ids(Compilation compilation) =>
+        RuleFixtures.Analyze(
+            (CSharpCompilation)compilation,
+            Analyzers,
+            TestContext.Current.CancellationToken
+        )
+            .Select(static diagnostic => diagnostic.Id)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+    /// <summary>The same compilation the fixture harness builds, as an executable.</summary>
+    static CSharpCompilation TopLevel(string source) =>
+        CSharpCompilation.Create(
+            "top-level",
+            [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Preview), "top.cs")],
+            RuleFixtures.References,
+            new CSharpCompilationOptions(OutputKind.ConsoleApplication)
+        );
+
+    /// <summary>
+    ///     ⚠
+    ///     <b>
+    ///         Shape A's exclusion is a static <em>field</em>, because that is all <c>SK2134</c> can
+    ///         see
+    ///     </b> (#306).
+    /// </summary>
+    /// <remarks>
+    ///     <c>SK3062</c> stepped aside for any static member of the constructor's own type, to keep two
+    ///     findings off one line. <c>SK2134</c> (<c>instance-write-to-static</c>) binds the assignment
+    ///     target and gives up on <c>is not IFieldSymbol field</c>, so a static <em>property</em> fell
+    ///     through both. The two directions are asserted together and both matter: the field must stay
+    ///     <c>SK2134</c>'s alone, and the property must now be <c>SK3062</c>'s alone. Asserting either
+    ///     on its own would pass while the other rule had silently taken the line over.
+    /// </remarks>
+    [Fact]
+    public void TheOwnTypesStaticProperty_IsSK3062sAlone_AndTheFieldStaysSK2134s() {
+        ImmutableArray<DiagnosticAnalyzer> both = [
+            new ConstructorPublishesThisAnalyzer(), new InstanceWriteToStaticAnalyzer()
+        ];
+
+        const string property = """
+                                public sealed class Session {
+                                    public Session(string user) {
+                                        Current = this;
+                                        User = user;
+                                    }
+
+                                    public static Session? Current { get; private set; }
+
+                                    public string User { get; }
+                                }
+                                """;
+        var onProperty = RuleFixtures.Analyze(
+            RuleFixtures.Compile(property, "property.cs"),
+            both,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Contains(onProperty, static diagnostic => diagnostic.Id == "SK3062");
+        Assert.DoesNotContain(onProperty, static diagnostic => diagnostic.Id == "SK2134");
+
+        const string field = """
+                             public sealed class Session {
+                                 static Session? current;
+
+                                 public Session(string user) {
+                                     current = this;
+                                     User = user;
+                                 }
+
+                                 public static Session? Current => current;
+
+                                 public string User { get; }
+                             }
+                             """;
+        var onField = RuleFixtures.Analyze(
+            RuleFixtures.Compile(field, "field.cs"),
+            both,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Contains(onField, static diagnostic => diagnostic.Id == "SK2134");
+        Assert.DoesNotContain(onField, static diagnostic => diagnostic.Id == "SK3062");
     }
 }

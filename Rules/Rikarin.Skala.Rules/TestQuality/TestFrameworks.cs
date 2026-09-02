@@ -117,6 +117,43 @@ sealed class TestFrameworks {
     public static bool Carries(ISymbol symbol, INamedTypeSymbol? root) =>
         root is not null && Carries(symbol, new[] { root });
 
+    /// <summary>
+    ///     Whether a type holds a test case, which is how xUnit itself decides a class is a test class.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>xUnit gives a test class no attribute to read</b> (#303), so a rule excluding
+    ///     <em>all</em> test code by attribute cannot see an xUnit fixture at all — and its helpers,
+    ///     which carry nothing of their own, are reported. MSTest has <c>[TestClass]</c> and NUnit has
+    ///     <c>[TestFixture]</c>; xUnit's discoverer looks for a method carrying <c>[Fact]</c> or
+    ///     <c>[Theory]</c>, and that is what this reproduces. It is decidable from attributes alone: no
+    ///     naming convention, no reference sniffing, and it works identically for the other two
+    ///     frameworks.
+    ///     <para>
+    ///         ⚠ <b>It is not free, and the cost is stated rather than discovered later.</b> A class
+    ///         holding one <c>[Fact]</c> and several production helpers has all of them excluded. That is
+    ///         the price of treating "lives beside a test" as "is test code", and the shape it buys — a
+    ///         settle loop polling a wall-clock deadline in a fixture — is 22 of the 38 findings
+    ///         <c>SK2160</c> makes on the reference tree.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ It answers only for the type it is given. A helper in a <em>separate</em> class that
+    ///         holds no test case is still not test code by this test, however plainly it lives in a test
+    ///         project. Recognising that needs the compilation's references, which is a different and
+    ///         coarser question, and this does not pretend to answer it.
+    ///     </para>
+    /// </remarks>
+    public static bool HoldsATestCase(INamedTypeSymbol type, TestFrameworks frameworks) {
+        foreach (var member in type.GetMembers()) {
+            if (member is IMethodSymbol
+                && (Carries(member, frameworks.TestMethodAttributes)
+                    || Carries(member, frameworks.LifecycleAttributes))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     static bool DerivesFromAny(INamedTypeSymbol? attribute, IReadOnlyList<INamedTypeSymbol> roots) {
         for (var current = attribute; current is not null; current = current.BaseType) {
             foreach (var root in roots) {
