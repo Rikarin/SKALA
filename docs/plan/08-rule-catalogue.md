@@ -3629,3 +3629,43 @@ an unreferenced assembly is `CS0012`. The guard is kept — it is the one call i
 throw, since `Compilation.IsSymbolAccessibleWithin` raises for a `within` argument that is neither a
 type nor an assembly — but it is documented as defensive and has no fixture, and the fixture written
 for it now says the opposite of what it was written to say.
+
+**The measurement.** All five rules were swept over Skala's own source through a fresh Release binlog
+(`--load=binlog --require-fresh-binlog`, **11 CS diagnostics in the load** — `CS9335` ×10 and
+`CS8933` ×1 — 1 451 results in total). All five report **zero**, and ⚠ **none of the five zeros is
+the analysis failing to run**, which was established before any of them was believed.
+
+- **The instrument was verified first.** A probe file planting one shape per rule into
+  `Rikarin.Skala.Core` — a narrowing `foreach`, a `GetType()` on a `Type`, a
+  `GetType().Name == "ProbeOrder"`, a `ProbeLeaf.Count`, and a call through an interface hiding a
+  better overload — made **all five** fire through the same binlog pipeline, at the right lines and
+  with the right messages. That is the only check that sees a real reference set rather than the
+  fixture harness's (#297). The probe was deleted and the binlog rebuilt.
+- `SK2180`'s shape is **present 9 times and declined 9 times.** Relaxing the `object` exclusion and
+  the reference/unboxing restriction and re-sweeping found nine narrowing `foreach` statements in
+  Skala's source, and ⚠ **every one of them is the shape the exclusion was written for**:
+  `foreach (Match m in Regex.Matches(…))`, where the loop binds the non-generic enumerator and the
+  sequence therefore yields `object`. The shipped rule reports none of them.
+- `SK2184`'s shape is **present once and declined once.** Relaxing the betterness test found
+  `IEnumerable.GetEnumerator()` sitting behind `IEnumerable<T>.GetEnumerator()` in `BreakPlan.cs`.
+  It is declined by construction rather than by a filter: the call takes no arguments, so no
+  parameter conversion can be non-identity and no overload can be "better".
+- `SK2181`, `SK2182` and `SK2183` are **shape absent.** Each was relaxed in the direction that would
+  count the raw shape — every `GetType()` on a `Type` receiver, every `GetType().Name` compared to
+  any literal whether it resolves or not, and every static member reached through a type qualifier
+  that is not its declaring type — and each still reported **zero** across the whole tree.
+
+⚠ **There is no corpus evidence for any of the five, and that is a property of the rules rather than
+an omission.** All five declare `requiresSemantics: true`, so `AnalyzerHost.SkippedFor` drops them
+under `--load=loose` (#277), and `Testing/corpus` neither compiles nor is reachable through
+`skala check` (`SK9023`). The self-sweep is the measurement.
+
+⚠ **The sweep also found a crash that is not this batch's.**
+`Rikarin.Skala.Rules.Cleanup.RedundantArgumentAnalyzer` throws `IndexOutOfRangeException` **17
+times** on Skala's own tree and is disabled for the rest of the run each time, so its rule is
+measuring nothing over most of the source. That is issue **#298**, already filed and already
+diagnosed — a loop that bounds its counter by the parameter count and then indexes by the argument
+position — and this sweep is the first count of how often it actually fires: 17. It reaches the
+SARIF only as an `SK9030` `toolExecutionNotification` and does not fail the gate (#295), which is
+how it survived. None of the
+five analyzers in this batch appears in that list.
