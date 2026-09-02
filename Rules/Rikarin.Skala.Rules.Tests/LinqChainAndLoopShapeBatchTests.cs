@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Modernization;
 using Rikarin.Skala.Rules.Performance;
@@ -219,6 +220,134 @@ public sealed class LinqChainAndLoopShapeBatchTests {
         List<int> list = [1, 2, 3];
         Assert.Throws<ArgumentOutOfRangeException>(() => _ = list[7]);
         Assert.Throws<ArgumentOutOfRangeException>(() => _ = list[7]);
+    }
+
+    /// <summary>
+    ///     ⚠ The fix would hand the author an <c>SK2212</c>, and only a cross-rule test can see it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b><c>EveryFix_SilencesTheRuleAndIntroducesNoDiagnostic</c> is blind to this class (#321),
+    ///     because it filters the post-fix diagnostics to the fixture's own rule id</b> — so the rewrite
+    ///     could go on producing a single-iteration loop and every existing test would stay green. This
+    ///     one runs <c>SK2212</c> over both halves: the source is silent before, and the rewrite the fix
+    ///     would have produced is not.
+    /// </remarks>
+    [Fact]
+    public void TheRewriteOfAJumpOnlyBody_WouldBeAnSk2212AndIsDeclined() {
+        const string before = """
+                              using System.Collections.Generic;
+                              using System.Linq;
+
+                              public sealed class Guardrail {
+                                  public static string? FirstError(IEnumerable<int> severities) {
+                                      foreach (var severity in severities) {
+                                          if (severity > 0) {
+                                              return null;
+                                          }
+                                      }
+
+                                      return "clean";
+                                  }
+                              }
+                              """;
+
+        var source = WithSingleIterationLoop(before);
+        Assert.DoesNotContain(source, static d => d.Id == RuleIds.LoopFilterAsQuery);
+        Assert.DoesNotContain(source, static d => d.Id == RuleIds.SingleIterationLoop);
+
+        // ⚠ Anti-vacuity: the rewrite this rule declines to make really is the other rule's finding,
+        // so the decline is buying something rather than describing a shape nobody would produce.
+        var rewritten = before.Replace(
+            """
+                    foreach (var severity in severities) {
+                        if (severity > 0) {
+                            return null;
+                        }
+                    }
+            """.TrimEnd(),
+            """
+                    foreach (var severity in severities.Where(severity => severity > 0)) {
+                        return null;
+                    }
+            """.TrimEnd(),
+            StringComparison.Ordinal
+        );
+
+        Assert.NotEqual(before, rewritten);
+        Assert.Contains(WithSingleIterationLoop(rewritten), static d => d.Id == RuleIds.SingleIterationLoop);
+    }
+
+    /// <summary>
+    ///     ⚠ <c>SK2212</c> is run beside this batch here only, and not added to
+    ///     <see cref="Analyzers" /> — the overlap tests in this class assert what does <em>not</em> fire
+    ///     over their sources, and widening the shared set would change what those assertions mean.
+    /// </summary>
+    static ImmutableArray<Diagnostic> WithSingleIterationLoop(string source) =>
+        RuleFixtures.Analyze(
+            RuleFixtures.Compile(source, "Guardrail.cs"),
+            [new LoopFilterAsQueryAnalyzer(), new SingleIterationLoopAnalyzer()],
+            TestContext.Current.CancellationToken
+        );
+
+    /// <summary>
+    ///     ⚠ The narrowing guard reads the compiler's flow state, so the same syntax decides both ways.
+    /// </summary>
+    /// <remarks>
+    ///     Two sources differing in one character — <c>string</c> against <c>string?</c> — and the
+    ///     condition, the body and the loop are identical. A guard written against the syntax would
+    ///     answer the same for both, and that is the version that shipped the CS8604 (#329).
+    /// </remarks>
+    [Fact]
+    public void TheNarrowingGuard_SeparatesTwoSourcesThatDifferOnlyInNullability() {
+        const string template = """
+                                using System.Collections.Generic;
+                                using System.Linq;
+
+                                public sealed class Option {
+                                    public string@ Default { get; init; } = "";
+                                }
+
+                                public sealed class Generator {
+                                    public static string Strip(string text) => text;
+
+                                    public static void Emit(IEnumerable<Option> options) {
+                                        foreach (var option in options) {
+                                            if (option.Default is not null) {
+                                                System.Console.WriteLine(Strip(option.Default));
+                                            }
+                                        }
+                                    }
+                                }
+                                """;
+
+        var nullable = template.Replace("string@", "string?", StringComparison.Ordinal);
+        var plain = template.Replace("string@", "string", StringComparison.Ordinal);
+
+        Assert.DoesNotContain(Analyze(nullable, "Nullable.cs"), static d => d.Id == RuleIds.LoopFilterAsQuery);
+        Assert.Contains(Analyze(plain, "Plain.cs"), static d => d.Id == RuleIds.LoopFilterAsQuery);
+    }
+
+    /// <summary>
+    ///     ⚠ A <c>[NotNullWhen]</c> method narrows too, which reading only <c>!= null</c> would miss.
+    /// </summary>
+    [Fact]
+    public void AConditionThatNarrowsThroughNotNullWhen_IsDeclined() {
+        const string source = """
+                              using System.Collections.Generic;
+                              using System.Linq;
+
+                              public sealed class Names {
+                                  public static void Render(IEnumerable<string?> names) {
+                                      foreach (var name in names) {
+                                          if (!string.IsNullOrEmpty(name)) {
+                                              System.Console.WriteLine(name.Length);
+                                          }
+                                      }
+                                  }
+                              }
+                              """;
+
+        Assert.DoesNotContain(Analyze(source, "Names.cs"), static d => d.Id == RuleIds.LoopFilterAsQuery);
     }
 
     static ImmutableArray<Diagnostic> Findings(RuleFixture fixture) =>
