@@ -68,7 +68,12 @@ public sealed class CodeScanningSarifTests : IDisposable {
         var baseline = scratch.Run("baseline", "create", "--load=loose", "--apply", ".");
         Assert.True(
             File.Exists(Path.Combine(scratch.Root, ".skala", "baseline.sarif")),
-            $"baseline create wrote nothing. exit={baseline.ExitCode}\n{baseline.StandardOutput}\n{baseline.StandardError}"
+            "baseline create wrote nothing. exit="
+            + baseline.ExitCode
+            + "\n"
+            + baseline.StandardOutput
+            + "\n"
+            + baseline.StandardError
         );
 
         // Added after the baseline, so its findings are the only ones outside it.
@@ -89,9 +94,19 @@ public sealed class CodeScanningSarifTests : IDisposable {
             "."
         );
 
+        var missing = (File.Exists(full) ? string.Empty : "report.sarif ")
+            + (File.Exists(upload) ? string.Empty : "code-scanning.sarif");
+
         Assert.True(
-            File.Exists(full) && File.Exists(upload),
-            $"check wrote {(File.Exists(full) ? "" : "no report.sarif ")}{(File.Exists(upload) ? "" : "no code-scanning.sarif")}. exit={run.ExitCode}\n{run.StandardOutput}\n{run.StandardError}"
+            missing.Length == 0,
+            "check did not write "
+            + missing
+            + "exit="
+            + run.ExitCode
+            + "\n"
+            + run.StandardOutput
+            + "\n"
+            + run.StandardError
         );
 
         var kept = Fingerprints(full);

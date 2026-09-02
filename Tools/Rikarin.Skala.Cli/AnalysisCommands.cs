@@ -60,7 +60,8 @@ public static partial class SkalaCommandLine {
         // log stays correct and stays what `report`, `trend` and `baseline` read.
         var unsuppressedOutput = new Option<string?>("--output-unsuppressed") {
             Description =
-                "Also write a SARIF here with the suppressed results left out, for a code-scanning upload that cannot read `suppressions`."
+                "Also write a SARIF here with the suppressed results left out, for a code-scanning "
+                + "upload that cannot read `suppressions`."
         };
 
         var includeHints = new Option<bool>("--include-hints") { Description = "Show hint-level findings too." };
