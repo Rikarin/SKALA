@@ -75,10 +75,13 @@ public static class RuleCoverage {
         Cut,
 
         /// <summary>
-        ///     ⚠ Allocated, superseded by a live id, and never to be built. Distinct from
-        ///     <see cref="Cut" /> because nothing was decided against the *rule* — the id was a
-        ///     duplicate. Counting it as outstanding would put work on the roadmap that must never
-        ///     happen; counting it as cut would file a clerical error under "decisions".
+        ///     ⚠ Allocated and then disposed of — either superseded by a live id and never built
+        ///     (<c>SK6001</c>), or built, shipped and withdrawn (<c>SK1020</c>, <c>SK1034</c>, #281).
+        ///     Distinct from <see cref="Cut" /> because nothing was decided against the *concept*: in
+        ///     the first case the id was a duplicate, in the second the concept turned out to be
+        ///     hosted by a diagnostic that is on at stock. Counting either as outstanding would put
+        ///     work on the roadmap that must never happen; counting either as cut would file a
+        ///     disposal under "decisions we took about what to build".
         /// </summary>
         Retired,
 
@@ -113,8 +116,11 @@ public static class RuleCoverage {
     /// <param name="catalogue">The full text of <c>docs/plan/08-rule-catalogue.md</c>.</param>
     /// <param name="rules">Every rule in <c>rules.json</c>; retired ones are dropped here.</param>
     /// <remarks>
-    ///     ⚠ <b>This overload exists so the filter cannot be applied in one caller and forgotten in
-    ///     the other.</b> There are exactly two callers — the <c>skala rules docs</c> generator and
+    ///     ⚠
+    ///     <b>
+    ///         This overload exists so the filter cannot be applied in one caller and forgotten in
+    ///         the other.
+    ///     </b> There are exactly two callers — the <c>skala rules docs</c> generator and
     ///     the test that asserts the generated block — and when a rule was first retired after
     ///     shipping, only the test was updated. The generator went on counting the withdrawn rule as
     ///     shipped, so the block it wrote and the block the test expected disagreed by two, and the

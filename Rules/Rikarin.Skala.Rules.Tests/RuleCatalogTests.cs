@@ -160,8 +160,11 @@ public sealed class RuleCatalogTests {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>This test used to assert that a retired id was absent from rules.json, and that was
-    ///         only ever true by accident.</b> It was written when <c>SK6001</c> was the only retirement
+    ///         ⚠
+    ///         <b>
+    ///             This test used to assert that a retired id was absent from rules.json, and that was
+    ///             only ever true by accident.
+    ///         </b> It was written when <c>SK6001</c> was the only retirement
     ///         and <c>SK6001</c> was retired <em>before it was ever built</em>, so it had no
     ///         <c>rules.json</c> row to be present in. Generalising from that one case produced a rule
     ///         that flatly contradicted <see cref="RuleIds_AreAppendOnly" />'s own failure message and
@@ -169,8 +172,11 @@ public sealed class RuleCatalogTests {
     ///         withdrawn rule <c>retired: true</c> — which requires the entry to still be there.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>The <c>retired: true</c> field was the built answer all along and had simply never
-    ///         been used.</b> <c>RuleInfo.Retired</c> is read by five places:
+    ///         ⚠
+    ///         <b>
+    ///             The <c>retired: true</c> field was the built answer all along and had simply never
+    ///             been used.
+    ///         </b> <c>RuleInfo.Retired</c> is read by five places:
     ///         <c>SkalaRule.Build</c> clears <c>IsEnabledByDefault</c>, <c>AnalyzerHost</c> drops the
     ///         rule from the semantic set, <c>DocsSite</c> renders a retired tag in the index and a
     ///         tombstone banner on the page, <c>RuleFixtures</c> exempts it from the severity check, and

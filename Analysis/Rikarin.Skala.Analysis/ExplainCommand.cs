@@ -368,14 +368,14 @@ public static class ExplainCommand {
                     .Append(rule.Title.Replace("|", "\\|", StringComparison.Ordinal))
                     // ⚠ Without this the index lists a withdrawn rule as an ordinary shipping one at
                     // its old severity, which is the row somebody reads when deciding what Skala does.
-                    .Append(rule.Retired ? " **(retired)**" : string.Empty)
-                    .Append(" | ")
-                    .Append(rule.Retired ? "—" : rule.DefaultSeverity.ToString().ToLowerInvariant())
-                    .Append(" | ")
-                    .Append(rule.HasFix ? rule.FixIsSafe ? "safe" : "review" : "—")
-                    .Append(" | ")
-                    .Append(rule.RunsWithoutAProject ? "yes" : "no")
-                    .AppendLine(" |");
+                        .Append(rule.Retired ? " **(retired)**" : string.Empty)
+                        .Append(" | ")
+                        .Append(rule.Retired ? "—" : rule.DefaultSeverity.ToString().ToLowerInvariant())
+                        .Append(" | ")
+                        .Append(rule.HasFix ? rule.FixIsSafe ? "safe" : "review" : "—")
+                        .Append(" | ")
+                        .Append(rule.RunsWithoutAProject ? "yes" : "no")
+                        .AppendLine(" |");
             }
 
             builder.AppendLine();

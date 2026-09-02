@@ -288,9 +288,9 @@ quoting one without the other is how a rule's zero comes to mean the wrong thing
 | `SK0003` | Doc comment is not well-formed XML | hint | — | ✅ | **2** | — | — | — |
 | `SK1005` | Use a file-scoped namespace | suggestion | safe | ✅ | **27** | **27** | 0 | 0 |
 | `SK1010` | `is null` / `is not null` | suggestion | safe | — | 0 † | **114** | **38** | **41** |
-| `SK1020` | `ArgumentNullException.ThrowIfNull` | suggestion | safe | — | 0 † | **2** | 0 | 0 |
+| `SK1020` | `ArgumentNullException.ThrowIfNull` | ⚠ **retired** (#281) | safe | — | 0 † | **2** | 0 | 0 |
 | `SK1030` | Use `??=` | suggestion | safe | ✅ | **0** | 0 | 0 | 0 |
-| `SK1034` | `Count` over `Count()`/`Any()` | suggestion | safe | — | 0 † | 0 | 0 | 0 |
+| `SK1034` | `Count` over `Count()`/`Any()` | ⚠ **retired** (#281) | safe | — | 0 † | 0 | 0 | 0 |
 | `SK1035` | `Enum.GetValues<T>()` | suggestion | safe | — | 0 † | 0 | 0 | 0 |
 | `SK2013` | Exception constructed and discarded | warning | safe | — | 0 † | 0 | 0 | 0 |
 | `SK2015` | `throw ex;` resets the stack trace | warning | safe | ✅ | **0** | 0 | 0 | 0 |
@@ -343,7 +343,13 @@ before**.
 ⚠ **A low finding count on a reference tree is not evidence that a rule is good.** It is a fact about
 the tree. **Seven of the twenty-one shipped analyzers and metrics fire zero times on both trees** —
 `SK1030`, `SK1034`, `SK1035`, `SK2013`, `SK2015`, `SK3001`, `SK4010` — and an eighth, `SK7010`, ships
-disabled so its zero is a configuration fact rather than a measurement. Their evidence is their
+disabled so its zero is a configuration fact rather than a measurement.
+
+⚠ **`SK1020` and `SK1034` are retired (#281), and the rows above are why the caution cuts both
+ways.** Their corpus counts were 2 and 0, and the question nobody asked at the time was what *was*
+reporting those shapes. `CA1510`, `CA1860` and `CA1829` were, at `note`, enabled by default in every
+consumer's build. A near-zero count is not evidence a rule is bad either — but it is a prompt to
+check whether the host already covers the concept, which is the check that retired these two. Their evidence is their
 fixtures and nothing else: a rule with no corpus occurrences has a false-positive rate *measured* at
 zero and *tested* at nothing. That is a reason to be careful and never a reason to cut, demote or
 disable. **Where Vixen does not follow a rule, Vixen changes**

@@ -76,7 +76,8 @@ public static partial class SkalaCommandLine {
         };
 
         // ⚠ Off by default. docs/plan/16 § Q5: the severities in a Rider export were chosen for
-        // ReSharper's inspections, and the author's own export would switch SK1020 off.
+        // ReSharper's inspections, and the author's own export would have switched SK1020 off.
+        // ⚠ SK1020 is retired (#281); the argument stands, the worked example no longer fires.
         var resharperSeverities = new Option<bool>("--resharper-severities") {
             Description =
                 "Let a resharper_*_highlighting key set a Skala rule's severity. dotnet_diagnostic.SK… still wins."

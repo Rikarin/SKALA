@@ -681,8 +681,8 @@ findings are:
 1. **Many-to-many in both directions.** The null-check neighbourhood alone carries six inspections at
    four severities (`merge_into_pattern` suggestion, `join_null_check_with_usage` suggestion,
    `convert_type_check_to_null_check` warning, `convert_type_check_pattern_to_null_check` warning,
-   `arrange_null_checking_pattern` hint, `use_null_propagation` hint), and `SK1034` covers what three
-   `replace_with_single_call_to_*` inspections split. So the table is a **recorded choice** — one key
+   `arrange_null_checking_pattern` hint, `use_null_propagation` hint), and `SK1034` covered what three
+   `replace_with_single_call_to_*` inspections split (⚠ retired, #281; the shape is unchanged). So the table is a **recorded choice** — one key
    per rule in `rules.json`, with a `resharperNote` naming what was passed over — and never a
    derivation. The safe direction is the one the guess named: rule → at most one key, never the
    reverse.
@@ -697,9 +697,12 @@ findings are:
    build for it.
 4. ⚠ **The decisive one.** The export sets
    `resharper_use_throw_if_null_method_highlighting = none`, so reading these keys as authoritative
-   would switch `SK1020` off in the repository Skala was built for, without anyone deciding to. The
-   912 values in an export were chosen for ReSharper's inspections; a value nobody has looked at is
-   not consent.
+   would have switched `SK1020` off in the repository Skala was built for, without anyone deciding
+   to. The 912 values in an export were chosen for ReSharper's inspections; a value nobody has
+   looked at is not consent. ⚠ **`SK1020` is retired (#281), so the only rule this was ever
+   demonstrated on no longer fires.** The reasoning is generic and stands; re-measuring it against a
+   live rule is owed, and until somebody does, this section rests on an example rather than a
+   current measurement.
 
 **So the mechanism ships opt-in** — `skala check --resharper-severities`, or
 `"analysis": { "resharperSeverities": true }` — with the predicted precedence:

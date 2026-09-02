@@ -62,8 +62,14 @@ public sealed record CheckRequest {
     /// <remarks>
     ///     ⚠ Off by default, and docs/plan/16 § Q5 records the measurement that decided it: the author's
     ///     own export sets <c>resharper_use_throw_if_null_method_highlighting = none</c>, so reading
-    ///     these keys as authoritative would switch SK1020 off in the repository the tool was built for,
-    ///     without anyone deciding to. <c>dotnet_diagnostic.SK…</c> always wins over it.
+    ///     these keys as authoritative would have switched SK1020 off in the repository the tool was
+    ///     built for, without anyone deciding to. The reasoning does not depend on the example — a
+    ///     severity chosen for a ReSharper inspection is not consent for a Skala rule — but ⚠
+    ///     <b>
+    ///         the
+    ///         one worked example is now a retired rule
+    ///     </b> (#281), and nobody has re-measured which
+    ///     <em>live</em> rule that export would silence. <c>dotnet_diagnostic.SK…</c> always wins over it.
     /// </remarks>
     public bool ReadReSharperSeverities { get; init; }
 

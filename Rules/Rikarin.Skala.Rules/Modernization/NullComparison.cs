@@ -6,8 +6,8 @@ using System.Threading;
 namespace Rikarin.Skala.Rules.Modernization;
 
 /// <summary>
-///     The one question <c>SK1010</c> and <c>SK1020</c> both have to answer: is <c>x == null</c> the
-///     same program as <c>x is null</c> here?
+///     The one question <c>SK1010</c> has to answer: is <c>x == null</c> the same program as
+///     <c>x is null</c> here? (<c>SK1020</c> asked it too, until #281 retired it.)
 /// </summary>
 /// <remarks>
 ///     ⚠ It is not, in general. <c>==</c> calls whatever <c>operator ==</c> the operand's type

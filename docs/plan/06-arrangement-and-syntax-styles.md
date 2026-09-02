@@ -371,7 +371,7 @@ a judgement call more often than a body-style conversion does:
 | File-scoped namespace | `csharp_style_namespace_declarations = file_scoped:suggestion` | `SK1005` |
 | `using` declaration | `convert_to_using_declaration` (suggestion) | `SK1006` |
 | Pattern matching over `if`/`is`/cast | several | `SK1010`–`SK1015` |
-| `ArgumentNullException.ThrowIfNull` | — | `SK1020` |
+| `ArgumentNullException.ThrowIfNull` | — | `SK1020` ⚠ retired (#281), hosted by `CA1510` |
 | `[GeneratedRegex]` over `new Regex` | — | `SK1021` |
 | `SearchValues<T>` over `IndexOfAny(char[])` | — | `SK1022` |
 | `System.Threading.Lock` over `lock(object)` | — | `SK1023` |
