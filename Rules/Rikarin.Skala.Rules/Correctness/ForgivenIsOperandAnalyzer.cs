@@ -31,8 +31,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         programs.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Disjoint from <c>SK2111</c> by construction, which is the only reason this rule is
-///         <c>Semantic</c>.</b> <c>SK2111</c> owns the <c>!</c> that is inert because nullable warnings
+///         ⚠
+///         <b>
+///             Disjoint from <c>SK2111</c> by construction, which is the only reason this rule is
+///             <c>Semantic</c>.
+///         </b> <c>SK2111</c> owns the <c>!</c> that is inert because nullable warnings
 ///         are off at that position or because the operand is a non-nullable value type. Both are
 ///         declined here, so no <c>!</c> can be reported twice and neither rule needs to know about the
 ///         other's message.

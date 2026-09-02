@@ -31,8 +31,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         the build. There was nothing left to add, so that half is not here.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Indentation is not structure anywhere in C#, so nothing but a formatter looks at
-///         it.</b> This rule reads the leading whitespace of three lines and compares them as strings —
+///         ⚠
+///         <b>
+///             Indentation is not structure anywhere in C#, so nothing but a formatter looks at
+///             it.
+///         </b> This rule reads the leading whitespace of three lines and compares them as strings —
 ///         a question no semantic model can be asked, and the second place in the catalogue where
 ///         trivia rather than structure decides a correctness finding. <c>SK2063</c> is the first.
 ///     </para>
@@ -73,7 +76,12 @@ public sealed class MisleadingBodyIndentationAnalyzer : DiagnosticAnalyzer {
         }
     }
 
-    static void Compare(SyntaxNodeAnalysisContext context, SourceText text, StatementSyntax header, StatementSyntax next) {
+    static void Compare(
+        SyntaxNodeAnalysisContext context,
+        SourceText text,
+        StatementSyntax header,
+        StatementSyntax next
+    ) {
         if (TrailingBody(header) is not { } body || body is BlockSyntax) {
             return;
         }

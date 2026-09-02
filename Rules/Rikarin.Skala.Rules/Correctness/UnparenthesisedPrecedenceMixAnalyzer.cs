@@ -20,8 +20,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     between arithmetic and comparison in a table nobody has memorised. There is no defect here to
 ///     find — only a sentence that can be written so it cannot be misread.
 ///     <para>
-///         ⚠ <b>The boundary against <c>SK0209</c> is settled by construction, and settling it was the
-///         condition on shipping this at all.</b> <c>skala arrange</c> removes redundant parentheses,
+///         ⚠
+///         <b>
+///             The boundary against <c>SK0209</c> is settled by construction, and settling it was the
+///             condition on shipping this at all.
+///         </b> <c>skala arrange</c> removes redundant parentheses,
 ///         and <c>ParenthesesRedundancy.MayRemove</c> refuses unconditionally when the parent is a shift
 ///         or a bitwise operator, because <c>resharper_parentheses_non_obvious_operations</c> names
 ///         exactly those. Every pair of parentheses this rule adds has such a parent, so the arranger
@@ -36,8 +39,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         expression can satisfy both.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The <c>?:</c> row this rule was drafted with is gone, because the grammar makes it
-///         unreachable.</b> A conditional expression binds looser than every binary operator, so it can
+///         ⚠
+///         <b>
+///             The <c>?:</c> row this rule was drafted with is gone, because the grammar makes it
+///             unreachable.
+///         </b> A conditional expression binds looser than every binary operator, so it can
 ///         never <em>be</em> an unparenthesised binary operand; the only reachable nesting is
 ///         <c>a ? b : c ? d : e</c>, the chained-ternary idiom every C# reader parses correctly.
 ///     </para>

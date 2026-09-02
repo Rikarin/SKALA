@@ -23,8 +23,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         without review.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The two neighbouring inspections this concept was drawn from are not here, and both were
-///         measured out.</b> <c>1l</c> is <c>CS0078</c>, on by default; a probe on SDK 10.0.400 confirms
+///         ⚠
+///         <b>
+///             The two neighbouring inspections this concept was drawn from are not here, and both were
+///             measured out.
+///         </b> <c>1l</c> is <c>CS0078</c>, on by default; a probe on SDK 10.0.400 confirms
 ///         it fires on <c>1l</c> and on <c>1lu</c> and stays silent on <c>1ul</c>. A <c>char</c> argument
 ///         widening to an <c>int</c> parameter is a question about overload resolution rather than about
 ///         how a literal reads, and it is a different rule.
@@ -122,6 +125,5 @@ public sealed class VariableLengthHexEscapeAnalyzer : DiagnosticAnalyzer {
         );
     }
 
-    static bool IsHex(char c) =>
-        c is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F';
+    static bool IsHex(char c) => c is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F';
 }

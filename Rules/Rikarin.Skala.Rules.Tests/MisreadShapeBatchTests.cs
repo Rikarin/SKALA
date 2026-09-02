@@ -105,8 +105,11 @@ public sealed class MisreadShapeBatchTests {
                               """;
 
         var produced = RuleFixtures
-            .Analyze(RuleFixtures.Compile(source, "disjoint.cs"), Both(new InertNullSuppressionAnalyzer()),
-                TestContext.Current.CancellationToken)
+            .Analyze(
+                RuleFixtures.Compile(source, "disjoint.cs"),
+                Both(new InertNullSuppressionAnalyzer()),
+                TestContext.Current.CancellationToken
+            )
             .ToArray();
 
         Assert.Equal(2, produced.Count(static d => d.Id == "SK2111"));
@@ -133,8 +136,11 @@ public sealed class MisreadShapeBatchTests {
                               """;
 
         var produced = RuleFixtures
-            .Analyze(RuleFixtures.Compile(source, "operators.cs"), Both(new NonShortCircuitBooleanAnalyzer()),
-                TestContext.Current.CancellationToken)
+            .Analyze(
+                RuleFixtures.Compile(source, "operators.cs"),
+                Both(new NonShortCircuitBooleanAnalyzer()),
+                TestContext.Current.CancellationToken
+            )
             .Where(static d => d.Id is "SK2064" or "SK2174")
             .ToArray();
 

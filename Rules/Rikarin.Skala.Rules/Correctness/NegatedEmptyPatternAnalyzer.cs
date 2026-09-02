@@ -17,13 +17,19 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     the page is <c>not</c>, the reader takes it as "has something", and the pattern means "has
 ///     nothing".
 ///     <para>
-///         ⚠ <b><c>{ }</c> matches a boxed struct and a non-null <c>Nullable&lt;T&gt;</c> as well as a
-///         reference, and the rewrite keeps all of it</b> — <c>is null</c> on a <c>T?</c> is
+///         ⚠
+///         <b>
+///             <c>{ }</c> matches a boxed struct and a non-null <c>Nullable&lt;T&gt;</c> as well as a
+///             reference, and the rewrite keeps all of it
+///         </b> — <c>is null</c> on a <c>T?</c> is
 ///         <c>!HasValue</c>, which is exactly what <c>is not { }</c> was already testing.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The one shape that would break the rewrite cannot be written, and the compiler is what
-///         guarantees it.</b> <c>int value</c> in <c>value is not { }</c> is <c>CS8518</c> — "an
+///         ⚠
+///         <b>
+///             The one shape that would break the rewrite cannot be written, and the compiler is what
+///             guarantees it.
+///         </b> <c>int value</c> in <c>value is not { }</c> is <c>CS8518</c> — "an
 ///         expression of type 'int' can never match the provided pattern" — and so is a <c>T</c>
 ///         constrained to <c>struct</c>. There is no compiling program in which <c>is not { }</c> stands
 ///         on something <c>is null</c> would reject, so the rule needs no semantic model to know it.
