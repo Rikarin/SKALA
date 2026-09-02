@@ -6958,6 +6958,60 @@
       "configuration": [
         "dotnet_diagnostic.SK2134.severity"
       ]
+    },
+    {
+      "id": "SK4040",
+      "concept": "copying-property",
+      "title": "The property copies a collection it could have returned unchanged",
+      "category": "Performance",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2365"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A property's getter is a single call that allocates a fresh copy of a collection whose own type the property already accepts, so every read walks the source and allocates again.",
+      "rationale": "Property syntax reads as a field read. That is the whole of the convention and it is why callers put a property inside a loop, inside a condition and inside an interpolation without thinking about it — and why `Items.Count` followed by `Items[0]` is two copies of the collection rather than one. The cost is invisible at the call site, it is proportional to the collection, and it is paid at a frequency the declaration cannot see. ⚠ **The reported shape is narrower than \"a property that copies\": the copy has to be one the property could simply have skipped.** Where the source's own type already converts to the property's type by identity or by reference, the materializing call is doing nothing but copying, and removing it is an edit that keeps the signature. Where it also converts — `int[] Items => list.ToArray();` — the call is doing work the type demands, there is no edit that keeps the declared type, and a finding with no available answer is one the reader argues with instead of acting on.",
+      "examples": {
+        "bad": "public IReadOnlyList<Entry> Items => entries.ToList();",
+        "good": "public IReadOnlyList<Entry> Items => entries; // or: public IReadOnlyList<Entry> GetItemsSnapshot() => entries.ToList();"
+      },
+      "falsePositives": "⚠ **A deliberate defensive copy has exactly this shape and no analysis tells the two apart.** That is not a hole to be closed later: whether a caller is meant to see later mutations is a decision about the API, held nowhere in the source. It is why the rule is a `suggestion` rather than the `warning` the proposal asked for, and why the fix carries `fixIsSafe: false` — the right answer to a deliberate copy is often to keep it and move it behind a method, whose parentheses admit the work, and that is an edit only a person can choose. ⚠ **`CA1819` is a different question, and it was probed rather than assumed.** It was measured `enabledByDefault: false, defaultSeverity: Warning` against the 10.0.400 SDK, so it is silent until a repository raises `AnalysisMode`; and it asks about the property's *type*, not about copying. It reports `int[] P => field;`, which copies nothing, and it is silent on `IReadOnlyList<T> P => xs.ToList();`, which is the whole of this concept. The two overlap on `T[] P => array.ToArray();` and say two different true things about it. ⚠ **Only a getter that is one expression.** `=> e`, `get => e` and `get { return e; }` are the same shape; a getter with a second statement is computing something and the rule has no claim on it. A cached copy — `copy ??= items.ToList()` — is not this shape and is declined by construction rather than by a filter, because the getter is then a coalescing assignment and not a materializer. ⚠ **The source must be a path of names.** `items.Where(p).ToList()` is a computed property whose operators already admit the work, and the fix would have to leave a pipeline whose type is not the property's; a rule that reported it would be reporting \"this property computes\", which is not a defect. ⚠ **A constructor is admitted only when its one parameter is a sequence**, so `new List<T>(items)` is a copy and `new List<T>(capacity)` is not — the discriminator is the parameter's type, because the two are spelled identically. ⚠ **Indexers are not reported.** An indexer's brackets are a call and carry no promise of cheapness; the convention this rule enforces is the property's. ⚠ The fix removes the copy and therefore hands callers the live collection: that is a change to what the property means, which is what `fixIsSafe: false` is for.",
+      "configuration": [
+        "dotnet_diagnostic.SK4040.severity"
+      ]
+    },
+    {
+      "id": "SK4041",
+      "concept": "unread-string-builder",
+      "title": "The `StringBuilder` is filled and never read",
+      "category": "Performance",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3063"
+      ],
+      "since": "1.3",
+      "languageVersion": null,
+      "summary": "A local `StringBuilder` is constructed and appended to, and nothing in the member ever reads its text or hands it to anything that could.",
+      "rationale": "Every `Append` copies characters into a buffer, grows it when it runs out, and the whole of it is then collected. The work is real and the result is discarded. ⚠ **It is almost never a performance mistake by intent — it is a missing line.** The usual cause is a `return builder.ToString();` that was never written, or a caller that was deleted while the code filling the buffer stayed; both compile, both pass every test that does not assert on the output, and neither the compiler nor the SDK analyzers say a word, because appending to a local and dropping it is legal in exactly the way appending to a local and using it is.",
+      "examples": {
+        "bad": "void Report(IEnumerable<Entry> entries) {\n    var builder = new StringBuilder();\n    foreach (var entry in entries) {\n        builder.AppendLine(entry.Name);\n    }\n}",
+        "good": "string Report(IEnumerable<Entry> entries) {\n    var builder = new StringBuilder();\n    foreach (var entry in entries) {\n        builder.AppendLine(entry.Name);\n    }\n\n    return builder.ToString();\n}"
+      },
+      "falsePositives": "⚠ **A `StringBuilder` handed to anything else escapes, and the rule stands down at the first sign of it rather than reasoning about it.** A method taking one may read it, store it or return its text, and nothing in this compilation is obliged to say so. So an argument, an assignment, a `return`, a second local aliasing it, or any reference at all inside a lambda or a local function ends the analysis for that local. The default is \"this is a read\": only nine mutating members are recognised as writes, so a member added to `StringBuilder` in a later framework silences the rule instead of making it wrong. ⚠ **`Length` and `Capacity` are reads.** Setting `Length` truncates the buffer and is a write, and reading it is a read, and the name alone does not say which — so both are treated as reads and the rule is silent on a builder whose length is inspected. ⚠ **The initializer has to be `new StringBuilder(…)`**, in either the explicit or the target-typed spelling. A builder taken from a pool or a factory is shared with whoever handed it over, and \"nothing in this method reads it\" says nothing at all about it. ⚠ **The scan covers the whole member body, not the enclosing block**: a builder filled inside an `if` and read after it is read, and a scan that stopped at the block would report it. ⚠ **No fix, and the reason is the finding.** The edit that repairs this is the read that was never written, and nothing here knows what the author meant to do with the text. Deleting the builder is the other candidate and is wrong whenever an append's argument has side effects — `builder.Append(Next())` — so the rule reports and stops, as `SK4024` does. ⚠ **Nothing in the .NET SDK reports this shape.** A probe at `AnalysisMode=All` against the 10.0.400 SDK produced only `CA1834` on the same code, which is about `Append(char)` versus `Append(string)` and fires whether or not the buffer is ever read.",
+      "configuration": [
+        "dotnet_diagnostic.SK4041.severity"
+      ]
     }
   ]
 }

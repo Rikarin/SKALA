@@ -244,3 +244,5 @@ SK2131 | Skala.Correctness | Warning | A get-only auto-property nothing ever ass
 SK2132 | Skala.Correctness | Warning | An accessor reaches for another property's backing field.
 SK2133 | Skala.Correctness | Info | A called `partial void` with no implementing declaration.
 SK2134 | Skala.Correctness | Warning | Instance code assigns its own type's static field.
+SK4040 | Skala.Performance | Info | Return the collection instead of copying it at every read.
+SK4041 | Skala.Performance | Warning | A `StringBuilder` is filled and its text is never read.
