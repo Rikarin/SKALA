@@ -170,7 +170,8 @@ public sealed class SqlAndReflectionBatchTests {
         Assert.True(
             byLine.ContainsKey("SK5001"),
             "SK5001 did not fire on the tainted half, so this file proves nothing about disjointness. "
-            + "Found: " + string.Join(", ", byLine.Keys.Order(StringComparer.Ordinal))
+            + "Found: "
+            + string.Join(", ", byLine.Keys.Order(StringComparer.Ordinal))
         );
 
         Assert.True(byLine.ContainsKey("SK2230"), "SK2230 did not fire on the fused half.");
@@ -356,9 +357,7 @@ public sealed class SqlAndReflectionBatchTests {
     static string Scaffolding { get; } = Read();
 
     static string Read() {
-        var text = File.ReadAllText(
-            Path.Combine(RuleFixtures.Root, "SK2231", "negative", "every_marker_is_bound.cs")
-        );
+        var text = File.ReadAllText(Path.Combine(RuleFixtures.Root, "SK2231", "negative", "every_marker_is_bound.cs"));
 
         var start = text.IndexOf("sealed class Bag", StringComparison.Ordinal);
         Assert.True(start > 0, "The SK2231 fixture no longer carries the command scaffolding.");

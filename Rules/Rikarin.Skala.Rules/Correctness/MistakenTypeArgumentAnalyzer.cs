@@ -196,9 +196,9 @@ public sealed class MistakenTypeArgumentAnalyzer : DiagnosticAnalyzer {
             // a value type, a sealed class, an open generic left unbound by `typeof(List<>)` — the
             // last of these throws too, and is not reported, because it is the one shape where an
             // author may be building a closed type from it later in a way this rule cannot see.
-            Contract.Instantiable => argument is not {
-                TypeKind: TypeKind.Interface
-            } and not { IsAbstract: true } and not { IsStatic: true },
+            Contract.Instantiable => argument is not { TypeKind: TypeKind.Interface }
+                and not { IsAbstract: true }
+                and not { IsStatic: true },
             _ => true
         };
 

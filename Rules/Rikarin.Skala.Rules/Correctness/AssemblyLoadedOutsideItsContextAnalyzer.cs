@@ -22,8 +22,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         identically-named type from the other.
 ///     </para>
 ///     <para>
-///         ⚠ <b>This is the sound core of `S3885`, and the broad reading of that rule is deliberately
-///         not implemented.</b> "`Assembly.Load` should be used" reported everywhere would report
+///         ⚠
+///         <b>
+///             This is the sound core of `S3885`, and the broad reading of that rule is deliberately
+///             not implemented.
+///         </b> "`Assembly.Load` should be used" reported everywhere would report
 ///         every plugin host in existence — <c>LoadFrom</c> against a path is exactly right when the
 ///         default context is where the assembly belongs, and which context an assembly belongs in is
 ///         intent rather than a fact in the file. Inside a <c>Load</c> override the intent <em>is</em>
@@ -111,8 +114,8 @@ public sealed class AssemblyLoadedOutsideItsContextAnalyzer : DiagnosticAnalyzer
                 + access.Name.Identifier.ValueText
                 + "` loads into "
                 + (access.Name.Identifier.ValueText == "LoadFrom"
-                    ? "the default context"
-                    : "a new anonymous context")
+                        ? "the default context"
+                        : "a new anonymous context")
                 + ", not into this one — use `LoadFromAssemblyPath`"
             )
         );

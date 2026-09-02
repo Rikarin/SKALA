@@ -22,8 +22,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         contain.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The whole risk is the "this is SQL" test, so it is three conditions rather than
-///         one.</b> The concatenation's first literal must open with a statement keyword; the join
+///         ⚠
+///         <b>
+///             The whole risk is the "this is SQL" test, so it is three conditions rather than
+///             one.
+///         </b> The concatenation's first literal must open with a statement keyword; the join
 ///         must actually fuse two word characters; and the word the right-hand literal begins with
 ///         must itself be a SQL keyword, matched whole. Anything looser reports ordinary string
 ///         building.
@@ -51,15 +54,49 @@ public sealed class SqlFragmentsRunTogetherAnalyzer : DiagnosticAnalyzer {
     ///     and of identifiers, and the whole-word match is not enough protection on two letters.
     /// </summary>
     static readonly HashSet<string> ContinuationKeywords = new(StringComparer.Ordinal) {
-        "SELECT", "FROM", "WHERE", "AND", "OR", "ORDER", "GROUP", "HAVING", "JOIN", "INNER",
-        "LEFT", "RIGHT", "OUTER", "CROSS", "FULL", "ON", "SET", "VALUES", "INTO", "INSERT",
-        "UPDATE", "DELETE", "UNION", "LIMIT", "OFFSET", "DISTINCT", "RETURNING"
+        "SELECT",
+        "FROM",
+        "WHERE",
+        "AND",
+        "OR",
+        "ORDER",
+        "GROUP",
+        "HAVING",
+        "JOIN",
+        "INNER",
+        "LEFT",
+        "RIGHT",
+        "OUTER",
+        "CROSS",
+        "FULL",
+        "ON",
+        "SET",
+        "VALUES",
+        "INTO",
+        "INSERT",
+        "UPDATE",
+        "DELETE",
+        "UNION",
+        "LIMIT",
+        "OFFSET",
+        "DISTINCT",
+        "RETURNING"
     };
 
     /// <summary>The keyword a whole statement may open with — the "this is SQL" gate.</summary>
     static readonly HashSet<string> StatementKeywords = new(StringComparer.Ordinal) {
-        "SELECT", "INSERT", "UPDATE", "DELETE", "MERGE", "WITH", "CREATE", "ALTER", "DROP",
-        "TRUNCATE", "FROM", "WHERE"
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE",
+        "MERGE",
+        "WITH",
+        "CREATE",
+        "ALTER",
+        "DROP",
+        "TRUNCATE",
+        "FROM",
+        "WHERE"
     };
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);
@@ -213,8 +250,7 @@ public sealed class SqlFragmentsRunTogetherAnalyzer : DiagnosticAnalyzer {
         return count;
     }
 
-    static string Upper(string text, int start, int length) =>
-        text.Substring(start, length).ToUpperInvariant();
+    static string Upper(string text, int start, int length) => text.Substring(start, length).ToUpperInvariant();
 
     static bool IsWordCharacter(char c) => char.IsLetterOrDigit(c) || c == '_';
 }
