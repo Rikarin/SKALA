@@ -17,8 +17,11 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         the positional form is newer than most of it.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Which accessor pair is generated depends on the record kind, and getting that wrong
-///         either misses every finding or deletes a property that was doing something.</b> A
+///         ⚠
+///         <b>
+///             Which accessor pair is generated depends on the record kind, and getting that wrong
+///             either misses every finding or deletes a property that was doing something.
+///         </b> A
 ///         <c>record class</c> and a <c>readonly record struct</c> generate <c>{ get; init; }</c>; a
 ///         mutable <c>record struct</c> generates <c>{ get; set; }</c>. So <c>{ get; init; }</c> written
 ///         on a mutable record struct is <em>not</em> redundant — it makes the property init-only,

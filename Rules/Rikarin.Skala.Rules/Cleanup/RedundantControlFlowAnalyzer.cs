@@ -150,9 +150,7 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
             edit = (
                 clause.Span,
                 tree.GetText(context.CancellationToken)
-                    .ToString(
-                        TextSpan.FromBounds(block.OpenBraceToken.Span.End, block.CloseBraceToken.SpanStart)
-                    )
+                    .ToString(TextSpan.FromBounds(block.OpenBraceToken.Span.End, block.CloseBraceToken.SpanStart))
             );
         } else {
             // `else foo();` and `else if (…)` need no unwrap at all: only the keyword goes, and the
@@ -186,12 +184,13 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///     <c>while (true)</c> with no <c>break</c>, an exhaustive <c>switch</c>. Those are missed
     ///     findings, not wrong ones.
     /// </remarks>
-    static bool AlwaysLeaves(StatementSyntax statement) => statement switch {
-        ReturnStatementSyntax or ThrowStatementSyntax => true,
-        BreakStatementSyntax or ContinueStatementSyntax or GotoStatementSyntax => true,
-        BlockSyntax { Statements.Count: > 0 } block => AlwaysLeaves(block.Statements[block.Statements.Count - 1]),
-        _ => false
-    };
+    static bool AlwaysLeaves(StatementSyntax statement) =>
+        statement switch {
+            ReturnStatementSyntax or ThrowStatementSyntax => true,
+            BreakStatementSyntax or ContinueStatementSyntax or GotoStatementSyntax => true,
+            BlockSyntax { Statements.Count: > 0 } block => AlwaysLeaves(block.Statements[block.Statements.Count - 1]),
+            _ => false
+        };
 
     static bool DeclaresSomething(BlockSyntax block) {
         foreach (var inner in block.Statements) {
@@ -227,8 +226,11 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///     reported either; what <em>is</em> reported is an arm whose expression the trailing arm
     ///     repeats — <c>n switch { 1 =&gt; "a", 2 =&gt; "b", _ =&gt; "b" }</c> flags <c>2 =&gt; "b"</c>.
     ///     <para>
-    ///         ⚠ <b>Only the unbroken run of agreeing arms directly above the discard, and that is the
-    ///         correctness argument rather than an economy.</b> Deleting arm <em>i</em> is safe only if
+    ///         ⚠
+    ///         <b>
+    ///             Only the unbroken run of agreeing arms directly above the discard, and that is the
+    ///             correctness argument rather than an economy.
+    ///         </b> Deleting arm <em>i</em> is safe only if
     ///         everything matching its pattern lands on an arm producing the same value, which is
     ///         exactly "every arm below it, down to the discard, agrees". A scan that reported any arm
     ///         equal to the last one would be wrong on <c>{ 1 =&gt; "a", 2 =&gt; "b", _ =&gt; "a" }</c>,
@@ -236,8 +238,11 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///         match <c>2</c> — a fact this rule does not attempt to know.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>The whole run is one finding carrying one edit per arm, and both halves of that
-    ///         shape are forced by a test rather than chosen.</b> Reporting each arm separately fails
+    ///         ⚠
+    ///         <b>
+    ///             The whole run is one finding carrying one edit per arm, and both halves of that
+    ///             shape are forced by a test rather than chosen.
+    ///         </b> Reporting each arm separately fails
     ///         <c>CleanupBatchTests.EveryFixture_ProducesTheExactCount</c>, which exists because a rule
     ///         reporting one redundancy twice gives <c>skala fix</c> two edits for one finding.
     ///         Reporting only the lowest arm and leaving the rest to the next pass fails

@@ -18,8 +18,11 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         work out which of the two is the one that matters.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Only an interface implied by another <em>interface</em> in the same list, never one
-///         implied by the base class</b>, and that is a correctness constraint rather than a scope cut.
+///         ⚠
+///         <b>
+///             Only an interface implied by another <em>interface</em> in the same list, never one
+///             implied by the base class
+///         </b>, and that is a correctness constraint rather than a scope cut.
 ///         ReSharper reports both — measured: <c>class D : B, IBase</c> where <c>B : IBase</c> is
 ///         flagged by <c>jb inspectcode</c> 2025.2.6 — and the two are not the same edit. Re-listing an
 ///         interface in a derived class makes the derived class <em>re-implement</em> it, so the

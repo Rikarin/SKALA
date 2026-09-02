@@ -102,7 +102,8 @@ public sealed class RedundantRequiredMembersAttributeAnalyzer : DiagnosticAnalyz
     static bool IsCodeAnalysisNamespace(INamespaceSymbol? symbol) =>
         symbol is {
             Name: "CodeAnalysis",
-            ContainingNamespace: {
+            ContainingNamespace:
+            {
                 Name: "Diagnostics",
                 ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
             }

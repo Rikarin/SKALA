@@ -59,8 +59,11 @@ public sealed class IneffectiveModifierAnalyzer : DiagnosticAnalyzer {
     ///     <c>scoped</c> on an <c>out</c> parameter, which the language already applies.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b><c>out</c> is the only implicitly-scoped parameter form, and that was measured rather
-    ///     than reasoned from the name.</b> Six spellings were put through
+    ///     ⚠
+    ///     <b>
+    ///         <c>out</c> is the only implicitly-scoped parameter form, and that was measured rather
+    ///         than reasoned from the name.
+    ///     </b> Six spellings were put through
     ///     <c>jb inspectcode</c> 2025.2.6 — <c>scoped out int</c>, <c>scoped out</c> a <c>ref struct</c>,
     ///     <c>scoped ref</c> a <c>ref struct</c>, <c>scoped in</c> a <c>ref struct</c>, <c>scoped</c> on
     ///     a by-value <c>ref struct</c>, and <c>scoped ref int</c> — and ReSharper reported the two
