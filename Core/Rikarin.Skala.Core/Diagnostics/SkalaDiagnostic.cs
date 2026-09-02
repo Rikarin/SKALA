@@ -106,6 +106,20 @@ public static class ConfigDiagnosticIds {
     public const string LoadModeFellBack = "SK9025";
 
     /// <summary>
+    ///     <c>--rules</c> names an id no rule in this run can produce, so those ids contribute nothing.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It exists because the absence of it read as a clean tree (#278). <c>--rules SK3510,SK3511</c>
+    ///     bound a single string containing a comma, matched no rule, and exited 0 with no output — half
+    ///     an hour of an agent believing its analyzers were dead while they were fine. The comma is now
+    ///     split, but a mistyped id reaches the same false clean by a different route, so the filter is
+    ///     checked against what actually loaded. A filter that is unknown <em>in full</em> is refused
+    ///     rather than reported under this id: such a run cannot produce a finding, and its zero is not
+    ///     a measurement.
+    /// </remarks>
+    public const string UnknownRuleFilter = "SK9026";
+
+    /// <summary>
     ///     The managed canonical block does not hash to what its own marker says. Somebody edited it.
     ///     This is the gate condition: drift is a finding, not a surprise (docs/plan/03 § "Canonical
     ///     distribution").

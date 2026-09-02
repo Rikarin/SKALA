@@ -126,6 +126,13 @@ public static class CheckCommand {
         CancellationToken cancellation = default
     ) {
         var stopwatch = Stopwatch.StartNew();
+
+        // ⚠ #278: `--rules SK3510,SK3511` bound one string containing a comma, matched no rule id,
+        // and reported a clean tree with exit 0. Splitting here rather than in the CLI so that the
+        // daemon, the MCP server and MSBuild get the same spelling — doc 02 keeps argument shapes
+        // out of Rikarin.Skala.Cli precisely because it is not the only front end.
+        request = request with { Rules = NormalizeRuleFilter(request.Rules) };
+
         var root = Path.GetFullPath(
             request.RepositoryRoot
             ?? FormatCommand.FindRepositoryRoot(request.Paths.Count > 0 ? request.Paths[0] : ".")
@@ -194,6 +201,45 @@ public static class CheckCommand {
         diagnostics.AddRange(hosted.Diagnostics);
         diagnostics.AddRange(codeStyle.Diagnostics);
         var analyzers = codeStyle.Analyzers.AddRange(hosted.Analyzers);
+
+        // ⚠ #278: a `--rules` filter naming an id nothing in this run can produce used to report a
+        // clean tree. That is the same false clean as the comma, arrived at by a typo instead, and it
+        // survived the split fix — so the filter is checked against what actually loaded rather than
+        // trusted. Unknown-but-not-all is a warning, because a filter naming one live id and one
+        // retired id still measures something; unknown-in-full is refused outright, because such a
+        // run cannot produce a finding and its zero would mean nothing.
+        var unknownRules = UnknownRuleFilter(request.Rules, analyzers);
+        if (unknownRules.Length > 0) {
+            if (unknownRules.Length == request.Rules.Count) {
+                return (
+                    new CommandResult(
+                        ExitCodes.ConfigurationError,
+                        "skala check: --rules names no rule this run can produce: "
+                        + string.Join(", ", unknownRules)
+                        + ".\n  The filter would match nothing, so the report would read as a clean tree.\n"
+                        + "  `skala rules list` names the allocated ids. Repeat the option or separate with commas.\n"
+                    ),
+                    new RunReport {
+                        RepositoryRoot = root,
+                        Mode = loaded.Mode,
+                        Diagnostics = diagnostics.ToImmutable(),
+                        LoadSummary = loaded.Summary,
+                        Duration = stopwatch.Elapsed
+                    }
+                );
+            }
+
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.UnknownRuleFilter,
+                    SkalaSeverity.Warning,
+                    "--rules names "
+                    + string.Join(", ", unknownRules)
+                    + ", which no rule in this run supports; those ids contribute nothing to the report",
+                    root
+                )
+            );
+        }
 
         var findings = new List<Finding>();
         var costs = new List<AnalyzerCost>();
@@ -611,6 +657,74 @@ public static class CheckCommand {
         } catch (Exception exception) when (exception is IOException or InvalidOperationException) {
             return string.Empty;
         }
+    }
+
+    /// <summary>
+    ///     Splits a <c>--rules</c> filter on commas and semicolons, trims, and drops empties.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #278. <c>--rules</c> binds <c>ZeroOrMore</c>, so <c>--rules SK3510,SK3511</c> is one element
+    ///     holding a comma rather than two elements, and <see cref="Filter" /> compared that whole string
+    ///     against each finding's id. Nothing matched and nothing complained. The repeatable spelling
+    ///     already worked, so this makes the two agree instead of making one of them an error — the
+    ///     comma is what a person types, and <c>skala explain</c> and every other list-shaped argument in
+    ///     the CLI would want the same treatment if they grew one.
+    /// </remarks>
+    internal static IReadOnlyList<string> NormalizeRuleFilter(IReadOnlyList<string> rules) {
+        if (rules.Count == 0) {
+            return rules;
+        }
+
+        var normalized = new List<string>(rules.Count);
+        foreach (var entry in rules) {
+            foreach (var part in entry.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries)) {
+                var trimmed = part.Trim();
+                if (trimmed.Length > 0 && !normalized.Contains(trimmed, StringComparer.OrdinalIgnoreCase)) {
+                    normalized.Add(trimmed);
+                }
+            }
+        }
+
+        return normalized;
+    }
+
+    /// <summary>
+    ///     The requested rule ids that nothing in this run can produce.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Checked against the analyzers that actually loaded, not against
+    ///     <see cref="RuleCatalog" /> alone. <c>--rules CA1822</c> and <c>--rules IDE0011</c> are
+    ///     legitimate — ADR-008 hosts third-party analyzers and their findings carry their own ids — so a
+    ///     catalogue-only test would reject the very filters the hosting feature exists to allow.
+    ///     Formatting and arrangement findings come from neither source, so the catalogue supplies
+    ///     <c>SK0001</c> and its siblings.
+    /// </remarks>
+    static ImmutableArray<string> UnknownRuleFilter(
+        IReadOnlyList<string> rules,
+        ImmutableArray<Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer> analyzers
+    ) {
+        if (rules.Count == 0) {
+            return [];
+        }
+
+        var known = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var rule in RuleCatalog.All) {
+            known.Add(rule.Id);
+        }
+
+        foreach (var analyzer in analyzers) {
+            try {
+                foreach (var descriptor in analyzer.SupportedDiagnostics) {
+                    known.Add(descriptor.Id);
+                }
+            } catch (Exception exception) when (exception is not OperationCanceledException) {
+                // ⚠ A third-party analyzer whose SupportedDiagnostics throws must not take the run
+                // down here — SK9030 is where that is reported. Its ids are simply unknown to the
+                // filter check, which can only widen `unknown` into a warning, never into a refusal.
+            }
+        }
+
+        return [.. rules.Where(rule => !known.Contains(rule))];
     }
 
     static ImmutableArray<Finding> Filter(ImmutableArray<Finding> findings, CheckRequest request) {

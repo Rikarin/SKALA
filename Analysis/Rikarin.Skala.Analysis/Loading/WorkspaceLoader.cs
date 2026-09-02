@@ -232,6 +232,30 @@ public static class WorkspaceLoader {
         };
     }
 
+    /// <summary>
+    ///     Which solution or project this workspace load is about.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>#284: the positional path used to be ignored entirely.</b> Resolution went
+    ///     <c>--project</c>, then a glob of <see cref="LoadRequest.RepositoryRoot" /> — the working
+    ///     directory — and <c>skala check /tmp/probe --load=workspace</c> run from inside this checkout
+    ///     therefore loaded <c>Skala.slnx</c> and produced a clean, well-formed, entirely plausible
+    ///     report <em>about Skala</em>. Nothing in it named the tree it had analysed.
+    ///     <para>
+    ///         That is the failure mode this codebase's own instrument-verification step is built to
+    ///         catch and could not: dropping a probe in and confirming a rule fires returns no findings
+    ///         under <c>workspace</c>, which reads as "the rule is dead" rather than "the loader went
+    ///         somewhere else". At least one rule was very nearly withdrawn on that evidence.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The fallback to <see cref="LoadRequest.RepositoryRoot" /> is kept only where it cannot
+    ///         change which tree is measured — that is, where the requested path lies <em>inside</em> the
+    ///         repository root, which is the ordinary <c>skala check src --load=workspace</c> case:
+    ///         load the solution, report on a subtree, and <c>CheckCommand.Paths</c> does the filtering.
+    ///         A requested path <em>outside</em> the root is refused instead. A refusal is a bad
+    ///         experience; a clean report about the wrong repository is a wrong answer.
+    ///     </para>
+    /// </remarks>
     internal static WorkspaceTargetResolution Resolve(LoadRequest request) {
         if (request.ProjectPath is { Length: > 0 } named) {
             var path = Path.GetFullPath(named);
@@ -240,10 +264,49 @@ public static class WorkspaceLoader {
                 : new WorkspaceTargetResolution(null, $"workspace target '{path}' does not exist");
         }
 
-        // ⚠ .slnx before .sln: this repository and Vixen are both on the XML solution format, and
-        // finding the stale .sln beside it would load a different set of projects.
+        var root = Path.GetFullPath(request.RepositoryRoot);
+        foreach (var requested in request.Paths) {
+            var full = Path.GetFullPath(requested);
+
+            // The path may name the workspace target itself — `check ./Probe.csproj --load=workspace`.
+            if (File.Exists(full)) {
+                if (WorkspaceExtensions.Contains(Path.GetExtension(full), StringComparer.OrdinalIgnoreCase)) {
+                    return new(full, null);
+                }
+
+                full = Path.GetDirectoryName(full) ?? full;
+            }
+
+            if (!Directory.Exists(full)) {
+                continue;
+            }
+
+            var under = SearchIn(full);
+            if (under.ShouldAttemptWorkspace) {
+                return under;
+            }
+
+            // ⚠ Nothing under a path that is not part of this root. Falling back here is what
+            // silently swapped the tree, so it is refused, and the message names both trees because
+            // the whole defect was that the output never said which one had been read.
+            if (!IsWithin(full, root)) {
+                return new(
+                    null,
+                    $"no .slnx, .sln or .csproj was found under '{full}', and it is outside the repository root "
+                    + $"'{root}'. Refusing to fall back: that would analyse '{Path.GetFileName(root)}' and report "
+                    + "it as though it were the requested path. Name the target with --project, or use --load=loose.",
+                    true
+                );
+            }
+        }
+
+        return SearchIn(root);
+    }
+
+    /// <summary>⚠ .slnx before .sln: a stale .sln beside it would load a different set of projects.</summary>
+    static WorkspaceTargetResolution SearchIn(string directory) {
         foreach (var pattern in new[] { "*.slnx", "*.sln", "*.csproj" }) {
-            var matches = Directory.GetFiles(request.RepositoryRoot, pattern)
+            var matches = Directory.GetFiles(directory, pattern)
                 .OrderBy(
                     static file => file,
                     StringComparer.Ordinal
@@ -265,8 +328,27 @@ public static class WorkspaceLoader {
 
         return new(null, null);
     }
+
+    static readonly string[] WorkspaceExtensions = [".slnx", ".sln", ".csproj"];
+
+    static bool IsWithin(string candidate, string root) =>
+        string.Equals(candidate, root, StringComparison.Ordinal)
+        || candidate.StartsWith(
+            root.EndsWith(Path.DirectorySeparatorChar) ? root : root + Path.DirectorySeparatorChar,
+            StringComparison.Ordinal
+        );
 }
 
-internal sealed record WorkspaceTargetResolution(string? Target, string? Error) {
-    public bool ShouldAttemptWorkspace => Target is not null || Error is not null;
+internal sealed record WorkspaceTargetResolution(string? Target, string? Error, bool OutsideRoot = false) {
+    /// <summary>
+    ///     ⚠ <see cref="OutsideRoot" /> is an error that <c>auto</c> must not treat as a reason to
+    ///     choose workspace. <see cref="ProjectLoader.ResolveAutoMode" /> reads this to mean "discovery
+    ///     found a target, or found an ambiguity the caller has to resolve" — and the outside-root
+    ///     refusal is neither. It says there is genuinely no workspace target under the requested path,
+    ///     which is the documented condition for choosing loose; loose then honours that path and reads
+    ///     the tree the caller actually named. The refusal still stands for an explicit
+    ///     <c>--load=workspace</c>, because there the ladder enters <see cref="WorkspaceLoader.Load" />
+    ///     directly and <see cref="Resolve" /> is consulted again.
+    /// </summary>
+    public bool ShouldAttemptWorkspace => Target is not null || (Error is not null && !OutsideRoot);
 }

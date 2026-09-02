@@ -138,7 +138,13 @@ public static class SkalaDirectory {
     /// </remarks>
     public static void EnsureForFile(string filePath) {
         var parent = Path.GetDirectoryName(filePath);
-        if (parent is null) {
+
+        // ⚠ Empty and null are both "there is no directory to create", and only null was handled.
+        // `Path.GetDirectoryName` returns null for a root and the empty string for a bare filename,
+        // so `-o report.sarif` reached `Directory.CreateDirectory("")` and threw ArgumentException
+        // *after the whole analysis had run* (#305). The bare filename is the spelling a person
+        // reaches for first, and the file belongs in the current directory — which needs no creating.
+        if (string.IsNullOrEmpty(parent)) {
             return;
         }
 
