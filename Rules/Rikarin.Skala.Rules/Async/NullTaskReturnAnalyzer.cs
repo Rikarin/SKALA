@@ -131,7 +131,7 @@ public sealed class NullTaskReturnAnalyzer : DiagnosticAnalyzer {
         INamedTypeSymbol declared,
         bool isGeneric
     ) {
-        const string FullName = "global::System.Threading.Tasks.Task";
+        const string fullName = "global::System.Threading.Tasks.Task";
         var name = context.SemanticModel.LookupNamespacesAndTypes(position, name: "Task")
             .Any(static symbol => string.Equals(
                     symbol.ToDisplayString(),
@@ -140,7 +140,7 @@ public sealed class NullTaskReturnAnalyzer : DiagnosticAnalyzer {
                 )
             )
                 ? "Task"
-                : FullName;
+                : fullName;
 
         if (!isGeneric) {
             return name + ".CompletedTask";

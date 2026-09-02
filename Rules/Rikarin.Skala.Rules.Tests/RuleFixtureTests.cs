@@ -366,7 +366,7 @@ public sealed class RuleFixtureTests {
         Assert.True(
             remaining.Length == 0,
             $"{fixture}: {fixture.RuleId} still fires {remaining.Length} time(s) after its own fix was "
-            + $"applied, so `skala fix` would loop:\n  "
+            + "applied, so `skala fix` would loop:\n  "
             + string.Join("\n  ", remaining.Select(static d => d.Location.GetLineSpan() + ": " + d.GetMessage()))
             + $"\n---\n{text}"
         );

@@ -324,8 +324,7 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
         var parsed = SyntaxFactory.ParseExpression(
             replacement,
             0,
-            new CSharpParseOptions(LanguageVersion.CSharp11),
-            true
+            new CSharpParseOptions(LanguageVersion.CSharp11)
         );
 
         if (parsed is not InterpolatedStringExpressionSyntax interpolated
@@ -361,8 +360,7 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
         var parsed = SyntaxFactory.ParseExpression(
             rebuilt,
             0,
-            new CSharpParseOptions(LanguageVersion.CSharp11),
-            true
+            new CSharpParseOptions(LanguageVersion.CSharp11)
         );
 
         if (parsed is not InterpolatedStringExpressionSyntax after

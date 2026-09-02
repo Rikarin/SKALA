@@ -214,10 +214,11 @@ public sealed class UnsafeAccessorTargetAnalyzer : DiagnosticAnalyzer {
         return accessor.Parameters.Length == 0 ? null : accessor.Parameters[0].Type as INamedTypeSymbol;
     }
 
+    /// <summary>⚠ The first source location, and only that one — an accessor is reported once.</summary>
     static void Report(SymbolAnalysisContext context, IMethodSymbol accessor, string message) {
-        foreach (var location in accessor.Locations.Where(static location => location.IsInSource)) {
+        var location = accessor.Locations.FirstOrDefault(static candidate => candidate.IsInSource);
+        if (location is not null) {
             context.ReportDiagnostic(Diagnostic.Create(Descriptor, location, message));
-            return;
         }
     }
 
