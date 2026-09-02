@@ -69,7 +69,9 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
         foreach (var member in type.GetMembers()) {
             context.CancellationToken.ThrowIfCancellationRequested();
             if (member is not IFieldSymbol {
-                    IsStatic: false, IsConst: false, IsImplicitlyDeclared: false,
+                    IsStatic: false,
+                    IsConst: false,
+                    IsImplicitlyDeclared: false,
                     DeclaredAccessibility: Accessibility.Private
                 } field) {
                 continue;
@@ -81,7 +83,8 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
                 continue;
             }
 
-            if (!IsSideEffectFree(initializer.Value) || ReferencedInAnOverride(type, field, context.CancellationToken)) {
+            if (!IsSideEffectFree(initializer.Value)
+                || ReferencedInAnOverride(type, field, context.CancellationToken)) {
                 continue;
             }
 
@@ -129,9 +132,8 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
 
         foreach (var statement in Statements(constructor)) {
             if (statement is ExpressionStatementSyntax {
-                    Expression: AssignmentExpressionSyntax {
-                        RawKind: (int)SyntaxKind.SimpleAssignmentExpression
-                    } assignment
+                    Expression:
+                    AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment
                 }
                 && IsFieldTarget(assignment.Left, name)) {
                 return !Mentions(assignment.Right, name);
@@ -159,7 +161,8 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
         left switch {
             IdentifierNameSyntax identifier => identifier.Identifier.ValueText == name,
             MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Expression: ThisExpressionSyntax
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
+                Expression: ThisExpressionSyntax
             } access => access.Name.Identifier.ValueText == name,
             _ => false
         };
@@ -238,23 +241,23 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
                 return IsSideEffectFree(cast.Expression);
 
             case PrefixUnaryExpressionSyntax {
-                RawKind: (int)SyntaxKind.UnaryMinusExpression
-                or (int)SyntaxKind.UnaryPlusExpression
-                or (int)SyntaxKind.BitwiseNotExpression
-                or (int)SyntaxKind.LogicalNotExpression
+                RawKind:
+                (int)SyntaxKind.UnaryMinusExpression
+                    or (int)SyntaxKind.UnaryPlusExpression
+                    or (int)SyntaxKind.BitwiseNotExpression
+                    or (int)SyntaxKind.LogicalNotExpression
             } unary:
                 return IsSideEffectFree(unary.Operand);
 
-            case MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-            } access:
+            case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access:
                 return RewriteGuards.IsPlainNamePath(access);
 
             // ⚠ `nameof` is an invocation in the tree and a constant in the language. Admitting it by
             // name is the one exception to "no invocations", and it is safe because the compiler
             // refuses any `nameof` argument that is not a name.
             case InvocationExpressionSyntax {
-                Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" }, ArgumentList.Arguments.Count: 1
+                Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" },
+                ArgumentList.Arguments.Count: 1
             }:
                 return true;
 
