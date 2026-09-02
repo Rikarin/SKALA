@@ -229,3 +229,8 @@ SK2140 | Skala.Correctness | Warning | The override declares a parameter default
 SK2141 | Skala.Correctness | Warning | The argument replaces what the caller-info attribute would have supplied.
 SK2142 | Skala.Correctness | Warning | The value passed for the parameter is overwritten before it is read.
 SK2143 | Skala.Correctness | Warning | Two arguments are passed crosswise to the parameters they are named after.
+SK2160 | Skala.Correctness | Disabled | The clock is read from a static.
+SK2161 | Skala.Correctness | Warning | The `DateTime` has no time zone and is converted as if it had one.
+SK2162 | Skala.Correctness | Warning | The date or time `TryParse` has an implicit culture.
+SK2163 | Skala.Correctness | Warning | Elapsed time is measured with the wall clock.
+SK2164 | Skala.Correctness | Warning | The assertion's expression has side effects.

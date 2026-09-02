@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 253 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 234 ids are allocated.
 
 ## Async
 
@@ -99,21 +99,11 @@
 | [SK2101](SK2101.md) | `[Pure]` is applied to a method that returns nothing | warning | safe | no |
 | [SK2102](SK2102.md) | The `[DebuggerDisplay]` string names a member that does not exist | warning | — | no |
 | [SK2103](SK2103.md) | The attribute is applied twice with the same arguments | warning | review | no |
-| [SK2110](SK2110.md) | `ToString()` returns null | warning | review | no |
-| [SK2111](SK2111.md) | The null-forgiving operator suppresses nothing | warning | safe | no |
-| [SK2112](SK2112.md) | The local is declared nullable and is never null | suggestion | safe | no |
-| [SK2113](SK2113.md) | The service resolution is null-forgiven instead of required | suggestion | safe | no |
-| [SK2120](SK2120.md) | A bitwise operator combines members of a consecutively numbered enum | warning | — | no |
-| [SK2121](SK2121.md) | The `as` operator tests a conversion that always succeeds | suggestion | safe | no |
-| [SK2140](SK2140.md) | The override declares a parameter default or `params` the call site will not use | warning | review | no |
-| [SK2141](SK2141.md) | The argument replaces what the caller-info attribute would have supplied | warning | review | no |
-| [SK2142](SK2142.md) | The value passed for the parameter is overwritten before it is read | warning | — | no |
-| [SK2143](SK2143.md) | Two arguments are passed crosswise to the parameters they are named after | warning | review | no |
-| [SK2150](SK2150.md) | A string search has an implicit culture policy | warning | review | no |
-| [SK2151](SK2151.md) | A string equality test asks for invariant culture where ordinal was meant | warning | review | no |
-| [SK2152](SK2152.md) | The path comparison assumes the file system's case rules | warning | — | no |
-| [SK2153](SK2153.md) | An IQueryable is silently degraded to IEnumerable | warning | — | no |
-| [SK2154](SK2154.md) | The sort has no ordering to use | warning | — | no |
+| [SK2160](SK2160.md) | The clock is read from a static | none | — | no |
+| [SK2161](SK2161.md) | The `DateTime` has no time zone and is converted as if it had one | warning | — | no |
+| [SK2162](SK2162.md) | The date or time `TryParse` has an implicit culture | warning | — | no |
+| [SK2163](SK2163.md) | Elapsed time is measured with the wall clock | warning | review | no |
+| [SK2164](SK2164.md) | The assertion's expression has side effects | warning | — | no |
 
 ## Design
 

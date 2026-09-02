@@ -270,3 +270,8 @@ SK2140 overridden-parameter-default
 SK2141 restated-caller-info-argument
 SK2142 overwritten-parameter
 SK2143 crosswise-argument-order
+SK2160 static-clock-read
+SK2161 unspecified-date-time-kind
+SK2162 implicit-date-parse-culture
+SK2163 wall-clock-elapsed
+SK2164 side-effect-in-assertion

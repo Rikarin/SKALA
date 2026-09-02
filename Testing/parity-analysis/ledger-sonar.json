@@ -382,7 +382,11 @@
    "proposedFix": "none",
    "rules": [
     "S3346"
-   ]
+   ],
+   "coveredBy": [
+    "SK2164"
+   ],
+   "coverage": "complete"
   },
   {
    "slug": "pure-attribute-on-void-method",
@@ -1365,7 +1369,11 @@
    "proposedFix": "unsafe",
    "rules": [
     "S6354"
-   ]
+   ],
+   "coveredBy": [
+    "SK2160"
+   ],
+   "coverage": "complete"
   },
   {
    "slug": "datetime-kind-and-utc",
@@ -1379,7 +1387,11 @@
     "S6562",
     "S6563",
     "S6566"
-   ]
+   ],
+   "coveredBy": [
+    "SK2161"
+   ],
+   "coverage": "partial"
   },
   {
    "slug": "datetime-parsing-and-formatting-culture",
@@ -1392,7 +1404,11 @@
    "rules": [
     "S6580",
     "S6585"
-   ]
+   ],
+   "coveredBy": [
+    "SK2162"
+   ],
+   "coverage": "partial"
   },
   {
    "slug": "stopwatch-for-elapsed-time",
@@ -1404,7 +1420,11 @@
    "proposedFix": "safe",
    "rules": [
     "S6561"
-   ]
+   ],
+   "coveredBy": [
+    "SK2163"
+   ],
+   "coverage": "complete"
   },
   {
    "slug": "test-class-without-tests",

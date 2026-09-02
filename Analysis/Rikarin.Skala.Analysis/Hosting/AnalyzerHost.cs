@@ -175,6 +175,9 @@ public static class AnalyzerHost {
         new AsyncVoidLambdaAnalyzer(),
         new OverriddenParameterDefaultAnalyzer(), new RestatedCallerInfoArgumentAnalyzer(),
         new OverwrittenParameterAnalyzer(), new CrosswiseArgumentOrderAnalyzer(),
+        new StaticClockReadAnalyzer(), new UnspecifiedDateTimeKindAnalyzer(),
+        new ImplicitDateParseCultureAnalyzer(), new WallClockElapsedAnalyzer(),
+        new SideEffectInAssertionAnalyzer(),
     ];
 
     /// <summary>
