@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 241 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 249 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -33,6 +33,9 @@
 <tr><td><a href="SK3042.html">SK3042</a></td><td>The double-checked locking is not correct</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3043.html">SK3043</a></td><td>Locks are taken in inconsistent orders</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3044.html">SK3044</a></td><td>The field is guarded on some paths and not others</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3050.html">SK3050</a></td><td>An exception is thrown out of an <code>async void</code> body</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK3051.html">SK3051</a></td><td>The <code>async</code> method has no <code>CancellationToken</code> to forward</td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3052.html">SK3052</a></td><td>The <code>async</code> lambda is converted to a <code>void</code>-returning delegate</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
@@ -277,6 +280,11 @@
 <tr><td><a href="SK1071.html">SK1071</a></td><td>Copy the record with a <code>with</code> expression</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1072.html">SK1072</a></td><td>The spread of a freshly created array is its elements</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1073.html">SK1073</a></td><td>Use the framework's cached instance</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1090.html">SK1090</a></td><td>Use a computed property instead of an auto-property holding a constant</td><td><span class="tag sev-hint">hint</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK1091.html">SK1091</a></td><td>The private auto-property is a field</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1092.html">SK1092</a></td><td>Use a tuple literal instead of constructing a <code>Tuple</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK1093.html">SK1093</a></td><td>Express the cast in the declaration instead</td><td><span class="tag sev-hint">hint</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1094.html">SK1094</a></td><td>Use nullable reference type syntax instead of an annotation attribute</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
