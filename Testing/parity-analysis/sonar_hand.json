@@ -37,7 +37,7 @@
  "S3397": ["Uncovered", "base.Equals for reference equality"],
  "S3247": ["Catalogued", "SK1015 is-T-then-cast covers the duplicate cast shape"],
  "S5542": ["Catalogued", "SK5005 weak cipher/ECB"],
- "S3329": ["Catalogued", "SK5005 family, CBC IV predictability"],
+ "S3329": ["Catalogued", "SK5020 predictable cipher IV"],
  "S112": ["Hosted", "CA2201 do not raise reserved exception types; measured, not assumed -- see issue #176"],
  "S4036": ["Out of scope", "OS command PATH resolution: whether PATH is attacker-controlled is a property of the environment, not of the call site, and Skala's own six correct `Process.Start(\"git\")` call sites are the measurement. Refuted at #146; SK5002 keeps the injection half"],
  "S2674": ["Uncovered", "unchecked stream read length"],
