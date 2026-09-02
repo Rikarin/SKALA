@@ -2103,6 +2103,8 @@ registry disagree. Regenerate with `skala rules docs`.
 | **Shipped** — present in `rules.json` | **297** | **89.7 %** |
 | Rules this document names | **329** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **294** | **89.6 %** |
+| Rules this document names | **328** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **293** | **89.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -5633,3 +5635,201 @@ vixen's `GlBindingPlan.Build`, reported because a `switch` expression over an *e
 endpoint unreachable; the same shape with the enum resolved is declined, so that one was the
 instrument. Both are fixed, both have a regression fixture, and the second bought `SK2212` a guard
 it needed anyway.
+## `SK2220`–`SK2222` — declarations, operators and conditional compilation
+
+⚠ **The prose pass for `SK2220`–`SK2222` is owed.** What follows is the allocation register entry —
+enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+**Five issues went into this batch and three rules came out.** The two that did not ship are recorded
+below with what refuted them, because a refutation is the register entry too: an id must not be
+allocated a second time against a concept that was measured and declined.
+
+`SK2220` `dead-conditional-call` — a call to a `[Conditional("X")]` method standing inside a
+preprocessor branch that was taken *because* `X` is undefined, so the compiler deletes the call here
+and the build that defines `X` never compiles the statement at all. ⚠ **The two mechanisms cancel and
+the statement runs in no configuration whatever**, which is what makes this a defect rather than the
+tautology `[Conditional]` normally is. ⚠ **The redundant sibling shape — the same call inside
+`#if X` — is not this rule, and the reason is structural rather than a matter of taste.** Only one of
+the two shapes is ever visible in one compilation: whichever the symbol's *absence* selects. Where
+`X` is undefined the `#if X` region is disabled text holding no invocation node, so a rule written
+against it would pass its own fixture by never running. This rule takes the shape that is a defect
+*and* visible in the same compilation that proves it. ⚠ **Every one of the method's `[Conditional]`
+symbols must be proved undefined**, because the attribute is additive and a method carrying two of
+them survives when either symbol is defined; matching the first attribute and stopping would report
+live code as dead. Two directive shapes are read and no others — `#if !X` whose branch was taken, and
+the `#else` of a plain `#if X`. The fix deletes the statement, which is behaviour-identical because
+the compiler already deletes it, and is nonetheless **not** marked safe: an author who wrote
+`#if !DEBUG` and meant `#if DEBUG` wants the directive corrected rather than the call removed, and an
+unreviewed fix would settle that question the wrong way. · `SK2221`
+`unsafe-accessor-target-mismatch` — an `[UnsafeAccessor]` declaration naming a member the target type
+does not declare, or naming a field where the target has a method. It throws `MissingMethodException`
+on first call, which is a compile-time-knowable fact reported at run time. ⚠ **The target type must be
+declared in this compilation's own source, and that restriction is the whole reason the rule can be
+trusted**: a reference assembly does not publish private members, so against a metadata type "no
+member of that name" is the answer whether the member exists or not, and reporting it at `error`
+severity would break every correct cross-assembly accessor — which is most of the attribute's real
+use. The cost is stated rather than hidden. `UnsafeAccessorKind.Constructor` with a `Name` that is
+neither absent nor `.ctor` needs no member list and so does hold cross-assembly. Signature comparison
+is not attempted, because a second implementation of the runtime's binder that is subtly wrong reports
+working code as broken. · `SK2222` `partially-checked-operator-set` — a type declaring a user-defined
+`checked` operator for one of its operators and not for another that has a checked form. ⚠ **"This
+type has no checked operator" is an observation; "checked on some and not others" is a defect, and the
+difference is the entire specification.** A type that declares none has simply not opted into C# 11's
+user-defined checked arithmetic and nothing in its source says whether overflow matters; a type that
+declares `operator checked +` and not `operator checked -` has already answered that question, and
+then `checked(a - b)` wraps on the line below the `checked(a + b)` that throws.
+
+⚠ **The eight operators that have a checked form were measured against the compiler, not remembered.**
+Binary `+`, `-`, `*`, `/`; unary `-`; `++`; `--`; and the **explicit** conversion. Every other
+operator is rejected outright: `CS9023` for unary `+`, `%`, `&`, `<<` and `==`, and `CS9024` for an
+`implicit` conversion. ⚠ **`CS9025` already reports the opposite direction** — `operator checked +`
+with no matching unchecked `+` — so only the direction the compiler is silent about is a rule's
+subject. ⚠ **`SK2222` deliberately declares no `resharperId`.**
+`OperatorWithoutMatchedCheckedOperator` reports every unmatched operator and this rule reports the
+inconsistent subset, so claiming the inspection in `catalogued.json` would credit Skala with coverage
+it does not have and move the inspection out of the measured residue. It stays counted as uncovered.
+
+### What `SK2220` and `SK2221` do that `SK2164` and `SK2034` do not
+
+⚠ **`SK2164` and `SK2220` share the `[Conditional]` attribute and share nothing else.** `SK2164` is
+about the *argument* of a surviving call: the call is compiled, its argument mutates something, and
+the mutation disappears in the builds where the call does not survive. `SK2220` is about the *call
+site itself* in a build where it provably does not survive, and its argument is never examined. One
+rule reports a call that happens in some builds; the other reports a call that happens in none.
+`SK2202` `conditional-invocation-side-effect` is a third thing again — the `?.` operator, not the
+attribute — and shares only the word.
+
+⚠ **`SK2034` occupies the mirror image of the identifier question and settles it.** `SK2034` reports
+a declaration named after a **reserved** keyword, which can only be spelled `@class`, and it
+explicitly declines every **contextual** keyword on the ground that an escape on one is disambiguation
+the author had no choice about. The unescaped direction was examined in this batch under
+[#191](https://github.com/Rikarin/SKALA/issues/191) and refuted below, so the boundary now has a
+measurement on both sides of it rather than only the one `SK2034` argued.
+
+### Two concepts measured and cut
+
+⚠ **[#191](https://github.com/Rikarin/SKALA/issues/191), "the identifier collides with a contextual
+keyword" — refuted, and every part of it is either a compiler diagnostic or not a defect.** Probed on
+SDK 10.0.400 outside this repository:
+
+- **`field` inside a property accessor is `CS9273`, an *error*, at C# 14** — "in language version
+  14.0, `field` is a keyword within a property accessor. Rename the variable or use the identifier
+  `@field` instead" — and a *member* named `field` read inside an accessor is **`CS9258`**, a warning
+  saying the same thing. The migration hazard the issue is built on is reported by the compiler, at
+  error severity, on the exact shape.
+- **`await` used as an identifier inside an `async` method is `CS4003`, an error.** Outside an async
+  method it is legal and misleads no one.
+- **`value` declared as a local inside a `set` or `add` accessor is `CS0136`, an error.**
+- **`async`, `var`, `record`, `nint`, `when`, `dynamic`, `partial` as a return type, `scoped` in a
+  parenthesized lambda parameter list, and `extension` produce no diagnostic of any kind** and are
+  legal by design — which is what "contextual" means. What is left of the issue after the compiler
+  has taken its half is a readability judgement about identifiers that read correctly to the compiler
+  and, on the evidence of the probe, cost nothing to anybody who is not already reading carefully.
+- ⚠ **The one slice that survived the argument could not survive the harness.** The genuinely
+  unreported case is `field` used as an identifier *below* C# 14, where the compiler is silent and the
+  hazard is the upgrade — confirmed silent at `LangVersion=13`. But `RuleFixtures.Compile` compiles
+  every fixture at `LanguageVersion.Preview`, so a rule whose whole territory is "below C# 14" cannot
+  be given a positive fixture that fires. A rule that cannot be tested in the direction that matters
+  is not a rule this catalogue ships.
+- **`CA1716` does not host it and does not overlap it.** Measured behaviourally rather than read off
+  its documentation: it fires only on **externally visible types and virtual/interface members** whose
+  name matches a **reserved keyword of C# *or Visual Basic*, case-insensitively** — it caught a type
+  named `Partial` and a member named `Do` — and on no local, no parameter, and none of the C#
+  contextual keywords above. ⚠ **Its measured default state is the middle one**: its descriptor
+  declares `enabled` at `note`, and it still produces zero rows in an ordinary build *and* zero rows
+  in the SARIF error log, while `CA1822` at the same declared level does appear. A zero from `CA1716`
+  in a normal build is a zero from a suppressed check, not from clean code.
+
+⚠ **[#15](https://github.com/Rikarin/SKALA/issues/15), "the declaration hides another name in scope" —
+refuted, with the compiler taking the half that is a defect and the idiom taking the half that is
+left.** `CS0108` — "hides inherited member; use the `new` keyword if hiding was intended" — is on by
+default and fires on a field, a property *and* a method that hides an inherited one, which is the
+member-hiding inspections' whole territory. `CS0136` takes every case where two locals or a local and
+a parameter would be ambiguous. What is left is legal shadowing that no diagnostic reports and no
+compiler objects to: a local hiding a field, a parameter hiding a field, a local function hiding a
+method, a nested type's static hiding the outer type's. ⚠ **The dominant instance of the surviving
+shape is the C# constructor idiom** — `this.count = count` — which is not a defect, is what every
+style guide in the language recommends, and would have to be exempted before the first measurement
+could be read. A rule whose bare shape is mostly its own exemption is the "hundred rules that are
+usually right" failure this catalogue exists to avoid. The nine inspections named in the issue stay in
+the measured residue.
+
+### What `SK2220`–`SK2222` measured
+
+Skala's own tree, Release, `--no-incremental` with `-bl:artifacts/skala.binlog`, then
+`check --load=binlog --require-fresh-binlog --no-cache`. The three reference trees were copied
+**outside** the repository — `skala check` cannot reach them in place (`SK9023`) — one project per
+library, `net10.0`, `LangVersion=preview`, empty `Directory.Build.props`/`.targets` above them.
+
+| Tree | Files | Binlog coverage (`SK9021`) | `SK9030` | Findings | `SK2220` | `SK2221` | `SK2222` |
+|---|---|---|---|---|---|---|---|
+| Skala (Release) | — | **0 uncovered** | 0 | 667 | 0 | 0 | 0 |
+| Vixen (Release) | 600 | **0 uncovered** | 0 | 11 523 | 0 | 0 | 0 |
+| Serilog (Release) | 210 | **0 uncovered** | 0 | 1 332 | 0 | 0 | 0 |
+| Newtonsoft.Json (Release) | 330 | **0 uncovered** | 0 | 2 819 | 0 | 0 | 0 |
+
+⚠ **The corpus holds three copies of every file and only one of them is a program.** Beside each
+`X.cs` sit `X.expected.cs` and `X.arranged.expected.cs`, which are formatter oracles rather than
+sources: 380 real files against 760 copies. Compiling all 1 140 is what produces the flood of
+`CS0111` "already defines a member" that has been reported before. Dropping the two expected copies
+brings it to **zero `CS0111`** across all three trees.
+
+⚠ **The corpus omits the generated `ImplicitUsings` file, and the cost is measurable.** With
+`ImplicitUsings` disabled, Vixen alone reports **2 554 unique `CS` error sites**, 9 146 of them
+`CS0246`; enabling it brings that to **2 113**, recovering 441. The remainder is the corpus being a
+fragment of a larger tree, and it does not stop the analysis — analyzers run over a compilation that
+has errors, which is why every number above is real.
+
+**Every zero classified.** ⚠ None of the four zeros above is a zero from clean code:
+
+- **`SK2221` — shape absent, and the grep is complete.** The string `UnsafeAccessor` appears in **0**
+  of the 1 140 corpus files and in no compiled file of Skala's own tree; the attribute has to be
+  spelled in source, so its absence is decidable by search.
+- **`SK2222` — shape absent for the same kind of reason.** `operator checked` appears in **0** corpus
+  files (all three trees predate C# 11) and, in Skala's own tree, only inside
+  `Testing/corpus/**` fixture data and one documentation comment in `SyntaxCoverage.cs` — none of it
+  compiled into an assembly.
+- **`SK2220` — half the shape present in quantity and correctly declined, half absent.** The corpus
+  holds **114 `#if !X` directives**, mostly Newtonsoft's `HAVE_*` feature flags, which is exactly the
+  shape a looser rule would have fired on; the rule walks past all of them. The other half is absent:
+  the corpus declares no `[Conditional]` method at all (the six `Conditional(` matches are a Serilog
+  method of that name and two `<see cref>`s) and calls `Debug.Assert`, `Trace.Assert` or
+  `Trace.Write` **zero** times.
+- ⚠ **`SK2220`'s zero in a Debug sweep is "the analysis never ran", not "correctly declined", and the
+  probe is what established it.** A planted positive fired under `skala check` over a Release binlog
+  and was *silent* over a Debug binlog of the same file — because `DEBUG` is defined there, so
+  `#if !DEBUG` is disabled text holding no invocation node. This is the rule's structural property
+  stated at the top of the section, now measured rather than argued: **a `SK2220` sweep is only
+  meaningful over a configuration that does not define the symbol.** Every number in the table above
+  is from a Release build for that reason.
+
+**The instrument was verified before any of those zeros was believed.** A file carrying one positive
+of each rule was planted into Skala's own tree and, separately, into the Serilog corpus project;
+`skala check` reported all three on the right lines with the right messages through the real
+pipeline; the file was then deleted. Without that step the four zero columns above would be
+indistinguishable from three analyzers that never ran.
+
+⚠ **`SK2222`'s guard is worth 5 findings on a 16-line type, and the widening is what proved it.**
+Removing the opt-in predicate — so the rule reports any operator with no checked counterpart, which
+is the shape the ReSharper inspection describes — makes it fire **5 times on
+`SK2222/−/no_checked_at_all`**, a fifteen-line struct with the arithmetic every money type in every
+repository has. That is the measurement behind declining to ship the bare inspection.
+
+⚠ **A sabotage of that same predicate crashed the analyzer instead of over-firing it, the first time
+it was run, and the crash is the more useful finding.** With the predicate removed the message read
+`declaredChecked[0]` on an empty list and threw `ArgumentOutOfRangeException`, which Roslyn reports
+as `AD0001` — on **seven unrelated fixtures** (`SK1093`, `SK2003`, `SK2008`, `SK2050`, `SK2051`,
+`SK2061`, `SK7010`), every one of which happens to declare a user-defined operator. **A crashed
+analyzer declines every negative fixture it was supposed to decline**, so without
+`RuleFixtureTests`' `AD0001` assertion those seven would have read as seven clean passes and the
+over-firing measurement would have been silently replaced by nothing at all. The helper now reads
+the list instead of indexing it.
+
+⚠ **One sabotage hid underneath another.** Widening the checked-operator table and matching
+counterparts on name alone were run together; the first re-supplied findings the second had removed,
+so `SK2222/+/conversion_and_overload` stayed green and the signature comparison read as untested. Run
+alone, the name-only match turns that fixture red. ⚠ **`SK2221`'s generic guards were unreachable
+through their own fixture** — it named a member that exists, so removing both guards changed
+nothing; the fixture now names members that do not, and the guards are the only thing keeping the
+rule quiet.

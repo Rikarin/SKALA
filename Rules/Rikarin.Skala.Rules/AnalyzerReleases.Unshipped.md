@@ -285,3 +285,6 @@ SK2210 | Skala.Correctness | Warning | The constant index or range cannot be val
 SK2211 | Skala.Correctness | Warning | Nothing the loop condition reads is changed by the loop.
 SK2212 | Skala.Correctness | Warning | The loop body cannot run more than once.
 SK2213 | Skala.Correctness | Warning | The `IndexOf` result is compared to a positive number.
+SK2220 | Skala.Correctness | Warning | A conditionally compiled call under a directive that deletes it.
+SK2221 | Skala.Correctness | Error | The `[UnsafeAccessor]` names a member its target does not have.
+SK2222 | Skala.Correctness | Warning | `checked` is declared for some of the type's operators only.

@@ -208,6 +208,8 @@ public static class AnalyzerHost {
         new LocalFunctionBeforeJumpAnalyzer(), new SharedBranchTailAnalyzer(),
         new InvalidConstantIndexOrRangeAnalyzer(), new UnchangingLoopConditionAnalyzer(),
         new SingleIterationLoopAnalyzer(), new IndexOfComparedToPositiveAnalyzer(),
+        new DeadConditionalCallAnalyzer(), new UnsafeAccessorTargetAnalyzer(),
+        new PartiallyCheckedOperatorAnalyzer(),
     ];
 
     /// <summary>

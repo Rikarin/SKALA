@@ -8016,6 +8016,81 @@
       "configuration": [
         "dotnet_diagnostic.SK2213.severity"
       ]
+    },
+    {
+      "id": "SK2220",
+      "concept": "dead-conditional-call",
+      "title": "The conditionally compiled call sits under a directive that deletes it",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A call to a [Conditional(\"X\")] method stands inside a preprocessor branch that was taken because X is not defined, so the compiler deletes the call here and the build that defines X never compiles the statement at all.",
+      "rationale": "`[Conditional(\"DEBUG\")]` deletes the call site in every compilation that does not define `DEBUG`. Writing that call inside `#if !DEBUG` therefore produces a statement that runs in no configuration whatever: where `DEBUG` is undefined the directive admits it and the attribute removes it, and where `DEBUG` is defined the directive excludes it before the compiler sees it. The two mechanisms cancel. Somebody wrote both, so somebody meant the call to happen — and it never does, in any build, on any machine.",
+      "examples": {
+        "bad": "#if !DEBUG\n    Log.Trace(\"release only\");   // Log.Trace is [Conditional(\"DEBUG\")]\n#endif",
+        "good": "#if DEBUG\n    Log.Trace(\"debug only\");\n#endif"
+      },
+      "falsePositives": "⚠ **The evidence is the branch the preprocessor took, never the compilation's symbol list.** Reading `PreprocessorSymbolNames` directly would report every `Debug.Assert` in every release build — which is `[Conditional]` doing exactly its job and is not a defect at all. What makes this shape a defect is that somebody wrote a guard stating they expected the call to run here, and the guard and the attribute contradict each other.\n\n⚠ **The redundant sibling shape is not this rule, and the reason is structural rather than a matter of taste.** `[Conditional(\"DEBUG\")]` called inside `#if DEBUG` duplicates what the attribute already does and breaks nothing; belt and braces is a legitimate style. It is also unobservable from any compilation that does not define the symbol, because that region is disabled text holding no invocation node to analyse. Only one of the two shapes is ever visible in one compilation, and which one is decided by the symbol's absence. This rule takes the shape that is a defect *and* visible in the same compilation that proves it.\n\n⚠ **Every one of the method's `[Conditional]` symbols must be proved undefined.** The attribute is additive: a method carrying both `[Conditional(\"DEBUG\")]` and `[Conditional(\"TRACE\")]` survives when *either* symbol is defined, so proving one absent proves nothing about the call. A rule that matched the first attribute and stopped would report a live call as dead, which is the worst thing a correctness rule can say. The attribute is read from the method and from every definition it overrides, and an attribute argument that is not a constant string withdraws the finding.\n\n⚠ **Two directive shapes are read and no others.** `#if !X` whose branch was taken proves `X` undefined; the `#else` of a plain `#if X` proves the same. `#elif` chains, `&&`, `||`, parentheses and comparisons are all declined, because each can be true for reasons that say nothing about one symbol. Only a statement whose entire content is the call is reported, so the fix has a deletion that leaves the rest of the expression standing — a `[Conditional]` method returns `void`, so this is the shape such a call almost always has. Generated code is excluded.\n\n⚠ **The fix is not marked safe even though the edit is behaviour-identical.** Deleting the statement removes text the compiler already removes, so nothing observable changes. What a review still has to decide is whether the directive was the typo: an author who wrote `#if !DEBUG` and meant `#if DEBUG` wants the guard corrected, not the call deleted, and an unreviewed fix would quietly settle that question the wrong way.",
+      "configuration": [
+        "dotnet_diagnostic.SK2220.severity"
+      ]
+    },
+    {
+      "id": "SK2221",
+      "concept": "unsafe-accessor-target-mismatch",
+      "title": "The `[UnsafeAccessor]` names a member its target does not have",
+      "category": "Correctness",
+      "defaultSeverity": "error",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An [UnsafeAccessor] declaration names a member the target type does not declare, or names a field where the target has a method, so the runtime binds nothing and the first call throws.",
+      "rationale": "`UnsafeAccessorAttribute` is bound by the runtime, not by the compiler. The member name is a string, nothing checks it, and a typo compiles cleanly and then throws the first time the accessor is called — usually in production, because the accessor is on a path the tests do not take. It is a compile-time-knowable fact reported at run time, which is the trade an analyzer exists to undo.\n\n⚠ **Every shape this rule reports was confirmed by running it, not by reading the documentation.** On .NET 10, a name the target does not declare throws `MissingFieldException` — *Field not found: 'Target._buffer'*; a `Field` kind naming a member that is a method throws the same; and `UnsafeAccessorKind.Constructor` with `Name = \"Create\"` throws **`BadImageFormatException`, \"Invalid usage of UnsafeAccessorAttribute\"**, which is harsher still. The correctly spelled field accessor and the unnamed constructor accessor both succeeded in the same run, so the probe was measuring the rule's subject rather than a broken harness. That is what justifies `error` severity.",
+      "examples": {
+        "bad": "[UnsafeAccessor(UnsafeAccessorKind.Field, Name = \"_buffer\")]\nstatic extern ref byte[] Buffer(Target target);   // the field is called `buffer`",
+        "good": "[UnsafeAccessor(UnsafeAccessorKind.Field, Name = \"buffer\")]\nstatic extern ref byte[] Buffer(Target target);"
+      },
+      "falsePositives": "⚠ **The target type must be declared in this compilation's own source, and that restriction is the whole reason the rule can be trusted.** A reference assembly does not carry private members — stripping them is what a reference assembly is for — so `GetMembers(\"secret\")` against a type from a referenced assembly returns nothing whether the member is genuinely absent or merely not published. Reporting on that would turn every correct cross-assembly accessor, which is the commonest use of the attribute by a wide margin, into a false error at `error` severity. The rule reports what it can prove: for a target the compilation itself declares, the member list is complete and a missing name is missing. The cost is stated plainly rather than hidden — the cross-assembly case, which is most of the attribute's use, is not covered by this rule at all.\n\n⚠ **Signature comparison is not attempted, and the omission is deliberate.** Overload resolution against a private member set, through `ref`, `in`, `out`, generic substitution and the attribute's own convention that the first parameter is the receiver, is a second implementation of the runtime's binder — and a binder that is subtly wrong reports working code as broken. What is checked instead is the fact that needs no binder: whether any member of the named kind answers to that name at all. Base types are walked, because the runtime looks up the hierarchy and a rule that stopped at the declared type would report an inherited private helper as absent.\n\n⚠ **Generic accessors are not reported**, though an upstream idea proposes it: generic `[UnsafeAccessor]` support was added after the attribute shipped, the set of shapes the runtime accepts is version-dependent, and the analyzer cannot tell which runtime the assembly will load on. An accessor on a generic type is skipped for the same reason.\n\n⚠ **A member that was accessible all along is not reported either.** Reaching a `public` field through `[UnsafeAccessor]` is pointless rather than broken, and the two are different findings with different severities; this rule is only about the declaration that throws.\n\n**`UnsafeAccessorKind.Constructor` is checked without any member lookup**, so that one part does hold cross-assembly: the runtime looks for `.ctor` and nothing else, and a `Name` set to anything else names something that will never be found. The whole analyzer withdraws when `System.Runtime.CompilerServices.UnsafeAccessorAttribute` does not resolve.\n\n⚠ **No fix.** The repair is the member's real name, and the rule knows only that the written one is wrong. Guessing from a near match would be inventing a binding, which is the thing this rule exists to stop.",
+      "configuration": [
+        "dotnet_diagnostic.SK2221.severity"
+      ]
+    },
+    {
+      "id": "SK2222",
+      "concept": "partially-checked-operator-set",
+      "title": "The type declares `checked` for some of its operators and not the rest",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "11.0",
+      "summary": "A type declares a user-defined `checked` operator for one of its arithmetic operators and not for another that has a checked form, so inside one `checked` block overflow throws on one operator of that type and silently wraps on the next.",
+      "rationale": "⚠ \"This type has no checked operator\" is an observation; \"this type has checked on some operators and not others\" is a defect, and the difference is the entire specification. A type that declares no `checked` operator has simply not opted into C# 11's user-defined checked arithmetic, and `checked` around it means what it always meant — there is nothing to report and no way to know whether overflow matters here. A type that declares `operator checked +` and not `operator checked -` has stated, in its own source, that overflow on this type is meant to trap; and then `checked(a - b)` wraps silently on the line below the `checked(a + b)` that throws. The evidence for the author's intent comes from the type itself, so the rule never has to guess.",
+      "examples": {
+        "bad": "public static Money operator +(Money a, Money b) => …;\npublic static Money operator checked +(Money a, Money b) => …;\npublic static Money operator -(Money a, Money b) => …;   // no checked form",
+        "good": "public static Money operator -(Money a, Money b) => …;\npublic static Money operator checked -(Money a, Money b) => …;"
+      },
+      "falsePositives": "⚠ **A type declaring no checked operator at all is never reported, and that is the guard the rule is built around.** Nearly every type with a user-defined `+` is in that position, and reporting them would be an opinion about whether overflow matters on somebody else's type — which nothing in the source answers. The rule fires only where the type has already answered it.\n\n⚠ **The eight operators that have a checked form are listed, and the list was measured against the compiler rather than remembered.** Binary `+`, `-`, `*`, `/`; unary `-`; `++`; `--`; and the **explicit** conversion. Every other operator is rejected outright by the language: `CS9023` for unary `+`, `%`, `&`, `<<` and `==`, and `CS9024` for an `implicit` conversion. Naming any of those would be asking for a declaration that does not compile.\n\n⚠ **The opposite direction is already a compiler error and is not restated.** `operator checked +` with no matching unchecked `+` is `CS9025`. Only the direction the compiler is silent about is this rule's subject.\n\n**Parameter and return types are compared, not just the operator name.** A type may overload `+` several times — `Money + Money` and `Money + long` — and a checked form of one says nothing about the other; matching on name alone would call a genuinely missing counterpart present. Two explicit conversions from the same type are distinguished by their return type for the same reason. The rule is silent below C# 11, where no `checked` operator can be declared at all.\n\n⚠ **`resharperId` is deliberately null even though `OperatorWithoutMatchedCheckedOperator` exists.** That inspection reports every unmatched operator; this rule reports the inconsistent subset, which is a fraction of it. Claiming the inspection in the parity map would credit Skala with coverage it does not have and would move the inspection out of the measured residue, so the inspection stays counted as uncovered and this rule claims nothing.\n\n⚠ **No fix.** The repair is a second operator body, and whether the checked form should throw, saturate or clamp is the design question the finding is asking about — not something an edit to one file's text can decide.",
+      "configuration": [
+        "dotnet_diagnostic.SK2222.severity"
+      ]
     }
   ]
 }

@@ -170,6 +170,8 @@ public sealed class RuleFixtureTests {
         new LocalFunctionBeforeJumpAnalyzer(), new SharedBranchTailAnalyzer(),
         new InvalidConstantIndexOrRangeAnalyzer(), new UnchangingLoopConditionAnalyzer(),
         new SingleIterationLoopAnalyzer(), new IndexOfComparedToPositiveAnalyzer(),
+        new DeadConditionalCallAnalyzer(), new UnsafeAccessorTargetAnalyzer(),
+        new PartiallyCheckedOperatorAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
