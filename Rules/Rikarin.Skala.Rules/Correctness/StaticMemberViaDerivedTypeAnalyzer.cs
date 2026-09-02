@@ -74,13 +74,15 @@ public sealed class StaticMemberViaDerivedTypeAnalyzer : DiagnosticAnalyzer {
         if (member.Kind is not (SymbolKind.Field or SymbolKind.Property or SymbolKind.Method or SymbolKind.Event)
             || member is IMethodSymbol { MethodKind: not (MethodKind.Ordinary or MethodKind.ReducedExtension) }
             || member.ContainingType is not { } declaring
-            || declaring.TypeKind is TypeKind.Interface
-            || SymbolEqualityComparer.Default.Equals(declaring.OriginalDefinition, qualifier.OriginalDefinition)) {
+            || declaring.TypeKind is TypeKind.Interface) {
             return;
         }
 
-        // The declaring type must actually be a base of the qualifier — an unrelated containing type
-        // means the qualifier did not resolve the way this rule assumes.
+        // ⚠ The declaring type must be a *strict* base of the qualifier, and this one test is the
+        // whole discriminator. An earlier draft guarded separately against the declaring type being
+        // the qualifier itself; sabotaging that clause turned nothing red, because `IsBaseOf` starts
+        // at `qualifier.BaseType` and therefore already declines it — the clause was dead, and its own
+        // fixtures were passing for the other reason.
         if (!IsBaseOf(declaring, qualifier)) {
             return;
         }
