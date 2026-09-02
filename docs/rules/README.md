@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 229 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 234 ids are allocated.
 
 ## Async
 
@@ -96,6 +96,11 @@
 | [SK2101](SK2101.md) | `[Pure]` is applied to a method that returns nothing | warning | safe | no |
 | [SK2102](SK2102.md) | The `[DebuggerDisplay]` string names a member that does not exist | warning | — | no |
 | [SK2103](SK2103.md) | The attribute is applied twice with the same arguments | warning | review | no |
+| [SK2160](SK2160.md) | The clock is read from a static | none | — | no |
+| [SK2161](SK2161.md) | The `DateTime` has no time zone and is converted as if it had one | warning | — | no |
+| [SK2162](SK2162.md) | The date or time `TryParse` has an implicit culture | warning | — | no |
+| [SK2163](SK2163.md) | Elapsed time is measured with the wall clock | warning | review | no |
+| [SK2164](SK2164.md) | The assertion's expression has side effects | warning | — | no |
 
 ## Design
 

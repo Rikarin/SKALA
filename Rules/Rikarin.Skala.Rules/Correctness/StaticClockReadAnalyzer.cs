@@ -42,14 +42,29 @@ public sealed class StaticClockReadAnalyzer : DiagnosticAnalyzer {
                 // ⚠ The repair is `TimeProvider`. Where the type does not exist there is nothing to
                 // advise, so the rule does not run at all rather than reporting advice that cannot be
                 // taken.
-                var timeProvider = start.Compilation.GetTypeByMetadataName("System.TimeProvider");
-                if (timeProvider is null) {
+                //
+                // ⚠ **`GetTypesByMetadataName`, plural, because a repository may declare its own
+                // `System.TimeProvider` — and the reason first written here was wrong.** Serilog ships
+                // `namespace System; abstract class TimeProvider` under `#if !NET8_0_OR_GREATER`, a
+                // shim so the library can use the shape where the framework lacks it. The hypothesis
+                // was that this makes the name ambiguous, that the singular
+                // `GetTypeByMetadataName` returns null for it, and that the rule therefore withdrew
+                // from Serilog entirely. **Measured, that is false**: on a compilation containing the
+                // shim the singular form returns a symbol — the *source* one — and the plural form
+                // returns two, `[serilog, System.Private.CoreLib]`. Nothing withdrew.
+                //
+                // The plural form is kept anyway, for the exclusion below rather than for this guard:
+                // where both a shim and the framework type exist, a body deriving from either is the
+                // designated place to read the real clock, and the singular form would recognise only
+                // whichever one it happened to return.
+                var providers = start.Compilation.GetTypesByMetadataName("System.TimeProvider");
+                if (providers.Length == 0) {
                     return;
                 }
 
                 var frameworks = TestFrameworks.Resolve(start.Compilation);
                 start.RegisterSyntaxNodeAction(
-                    context => Analyze(context, timeProvider, frameworks),
+                    context => Analyze(context, providers, frameworks),
                     SyntaxKind.SimpleMemberAccessExpression
                 );
             }
@@ -58,7 +73,7 @@ public sealed class StaticClockReadAnalyzer : DiagnosticAnalyzer {
 
     static void Analyze(
         SyntaxNodeAnalysisContext context,
-        INamedTypeSymbol timeProvider,
+        ImmutableArray<INamedTypeSymbol> providers,
         TestFrameworks frameworks
     ) {
         var access = (MemberAccessExpressionSyntax)context.Node;
@@ -74,7 +89,7 @@ public sealed class StaticClockReadAnalyzer : DiagnosticAnalyzer {
         // the test above declines it. The inner node carries the finding on its own.
         if (model.GetEnclosingSymbol(access.SpanStart, cancellation) is not { } enclosing
             || IsTest(enclosing, frameworks)
-            || ImplementsClock(enclosing, timeProvider)) {
+            || ImplementsClock(enclosing, providers)) {
             return;
         }
 
@@ -124,13 +139,16 @@ public sealed class StaticClockReadAnalyzer : DiagnosticAnalyzer {
     ///     A type deriving from <c>System.TimeProvider</c> exists precisely to turn the machine clock
     ///     into an injectable dependency; reporting the one read inside it would be reporting the repair
     ///     this rule asks for. The base chain is walked, so an intermediate abstract provider is covered
-    ///     too.
+    ///     too — and every candidate the name resolves to is checked, so a repository shipping its own
+    ///     <c>System.TimeProvider</c> shim excludes its shim's body rather than the whole repository.
     /// </remarks>
-    static bool ImplementsClock(ISymbol symbol, INamedTypeSymbol timeProvider) {
+    static bool ImplementsClock(ISymbol symbol, ImmutableArray<INamedTypeSymbol> providers) {
         var type = symbol as INamedTypeSymbol ?? symbol.ContainingType;
         for (var current = type; current is not null; current = current.BaseType) {
-            if (SymbolEqualityComparer.Default.Equals(current, timeProvider)) {
-                return true;
+            foreach (var provider in providers) {
+                if (SymbolEqualityComparer.Default.Equals(current, provider)) {
+                    return true;
+                }
             }
         }
 

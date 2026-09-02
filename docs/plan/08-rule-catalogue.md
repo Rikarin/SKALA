@@ -1519,8 +1519,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **256** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **221** | **86.7 %** |
+| Rules this document names | **261** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **226** | **86.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -2562,3 +2562,176 @@ is off under `AnalysisMode=Default`, and ADR-008's answer to that is to enable i
 The one gap found is that `CA2201` matches the exact type, so a `Win32Exception` — which derives from
 the `ExternalException` it does report — passes; that is not what the issue is about and does not
 justify an id.
+
+## `SK2160`–`SK2164` — time, clocks and the assertion that changes the program
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
+Correctness" only to keep it out of a section several concurrent branches were editing.** What follows
+is the register doing the one job ADR-012 needs it to do — the numbers are taken and written down where
+the next milestone will read them — together with the measurements that decided two of the five. It is
+not yet the considered account the sections above carry, and it belongs beside `SK2010`, which is the
+rule this batch most often argues from.
+
+⚠ **All five are `Correctness`, and four of the five issues proposed `SK1000`–`SK1999` instead.** The
+band decides the category, and on reflection the band is right: none of these reports code that is
+merely written in an older dialect. Each one reports a program that computes a **wrong answer** — a
+different day, a different instant, a negative duration, a value that exists in one build and not the
+other. Time is a correctness subject here, not a modernization one.
+
+- `SK2160` **the clock is read from a static** ([#242](https://github.com/Rikarin/SKALA/issues/242),
+  `S6354`). Ships **`defaultSeverity: none`**; the justification is below, and it is a measurement
+  rather than a preference. The whole analyzer withdraws where `System.TimeProvider` does not resolve,
+  because below .NET 8 the repair it names does not exist. Test code is excluded outright, which is
+  what makes it disjoint from `SK8007` by construction rather than by filter. Report-only: the repair
+  introduces a constructor dependency and changes every call site, which is a workspace refactor and
+  not the text edit ADR-005 defines — `SK6053`'s argument, unchanged.
+- `SK2161` **the `DateTime` has no time zone and is converted as if it had one**
+  ([#243](https://github.com/Rikarin/SKALA/issues/243), `S6562`/`S6563`/`S6566`). ⚠ **Reporting every
+  `DateTime` would be absurd, so the rule reports the escape and never the value.** A value whose zone
+  nobody stated is not wrong while it is only compared with others of the same unstated zone; it goes
+  wrong at the point something turns it into a fixed moment, because that conversion supplies an offset
+  it was never given. Three sinks: `ToUniversalTime()`, `ToLocalTime()`, and the
+  `DateTime`-to-`DateTimeOffset` conversion in both spellings. ⚠ **The implicit conversion needs the
+  operation tree rather than the syntax** — `DateTimeOffset when = built;` contains no `new` and no
+  cast — and it is the commonest spelling, so a syntax-only rule would have missed most of the concept.
+  ⚠ **The sharpest fact about this defect is that the two conversions disagree**: `ToUniversalTime()`
+  reads an `Unspecified` value as local, `ToLocalTime()` reads the same value as UTC. Report-only,
+  because which zone the author meant is the entire content of the finding.
+- `SK2162` **the date or time `TryParse` has an implicit culture**
+  ([#244](https://github.com/Rikarin/SKALA/issues/244), `S6580`). ⚠ **Only the quarter of the issue
+  that has no host, and the boundary was measured on a pristine `net10.0` project rather than on this
+  repository, which raises `AnalysisMode`.** See § "the `CA1305` boundary" below. Report-only, and
+  `SK2010` is the precedent rather than an inconsistency: the repair is to name a culture, and which
+  one — invariant for a machine-readable stamp, current for something a person typed — is the finding.
+- `SK2163` **elapsed time is measured with the wall clock**
+  ([#245](https://github.com/Rikarin/SKALA/issues/245), `S6561`). The one rule in the batch that ships
+  a fix: the start local becomes `System.Diagnostics.Stopwatch.StartNew()`, its declared type becomes
+  `var`, and the subtraction becomes `.Elapsed`. ⚠ **Both ends must be the process's own clock reads,
+  and that requirement is the whole rule** — `DateTime.UtcNow - order.PlacedAt` is "how old is this
+  order", a legitimate question about civil time that a `Stopwatch` cannot answer. ⚠ **The fix's
+  preconditions are the rule's preconditions, deliberately**: `hasFix: true` is a promise about every
+  finding, so a start time carried in a field is a **stated gap** rather than a finding with no repair.
+- `SK2164` **the assertion's expression has side effects**
+  ([#166](https://github.com/Rikarin/SKALA/issues/166), `S3346`). ⚠ **Keyed on `[Conditional]` rather
+  than on a list of assertion methods**, which costs nothing and covers a repository's own
+  `[Conditional("TRACE")]` helper. It is also what puts the shape that would otherwise be this rule's
+  worst false positive — xUnit's idiomatic `Assert.True(map.TryGetValue(key, out var found))` — out of
+  scope **by construction**: no test framework marks its assertions `[Conditional]`, so the call is
+  never deleted and there is nothing to report. ⚠ **What counts as a side effect is enumerated, never
+  inferred**, and the collection namespaces are listed exactly because a prefix match on
+  `System.Collections` would make every `ImmutableList<T>.Add` a false positive. Report-only.
+
+### ⚠ `SK2164` lost a fifth kind of evidence to the compiler, and a fixture is what refuted it
+
+An `out var` that the code below the assertion reads was built as evidence and then removed. With the
+call deleted the variable is never assigned, so the read is **`CS0165`, *use of unassigned local
+variable***, in any build without the symbol defined. This was not argued — **the positive fixture
+written for it could not be made to compile**, and the harness's rule that a fixture which does not
+compile proves nothing is what surfaced it. § "the compiler already says it" then decides the question.
+Both directions are now silence: an `out var` nobody reads is harmless, and one that is read is the
+compiler's finding rather than Skala's.
+
+### The `CA1305` boundary, measured on a plain project
+
+`CA1305` — *Specify IFormatProvider* — ships in the SDK **`IsEnabledByDefault: true` with
+`DefaultSeverity: Hidden`**, so it never appears in a build until a repository raises it or opts into
+`AnalysisMode=Recommended`. ⚠ **Being silent by default is not a reason to rebuild it**; ADR-008's
+answer is to enable it, exactly as recorded for `CA2201` above. Raised to `warning` on a pristine
+`net10.0` console project, on a probe whose repaired forms were confirmed silent in the same run, it
+reports:
+
+| shape | `CA1305` |
+|---|---|
+| `DateTime.Parse`, `DateTimeOffset.Parse`, `DateOnly.Parse`, `TimeOnly.Parse`, `TimeSpan.Parse` | reports |
+| `DateTime.ToString()`, `DateTime.ToString(string)`, `DateOnly.ToString()`, `TimeOnly.ToString()` | reports |
+| `string.Format`, `int.Parse`, `int.ToString()` | reports |
+| **every `TryParse` form, on all five types** | **silent** |
+
+So `S6585` — the formatting half of #244 — is **hosted in full and no id was allocated for it**, and
+`S6580` is hosted for `Parse` and unowned for `TryParse`. `SK2162` is that gap and nothing else. ⚠ **The
+gap is larger in practice than in the rule list**: `TryParse` is the form written wherever input might
+be malformed, which is wherever input comes from outside the process — and that is exactly where a date
+arrives written in somebody else's culture.
+
+⚠ **Nothing in the SDK covers the other three concepts, at any analysis mode.** A search of all 317
+shipped C# `CA*` descriptors, and of the NetAnalyzers assemblies' string tables, returns nothing for
+`TimeProvider`, `DateTimeKind`, `Stopwatch`, `DateTime.Now` or `UtcNow`; a probe built at
+`AnalysisMode=All` reports nothing on any of the three shapes. `SK2160`, `SK2161` and `SK2163` have no
+host to defer to.
+
+### ⚠ Why `SK2160` ships disabled, and what the number that decided it is *not*
+
+Run from a fresh Release binlog of Skala's own solution — a load carrying **10 CS diagnostics, every
+one of them `CS9335` (*the pattern is redundant*, a warning), no CS errors, no `AD0001` and no
+`SK9030`** — with the severity temporarily raised, `SK2160` reports **6** findings across the whole
+first-party tree. **Six cannot calibrate anything, and that is the honest statement rather than a
+justification derived from it.** It is not evidence that the rule is quiet; it is evidence that Skala
+barely asks what time it is.
+
+The number with content came from Vixen, measured the same way from its own fresh binlog — a load of
+**159 CS diagnostics across 8 codes, no `AD0001`, no `SK9030`** — where `SK2160` reports **38**. ⚠
+**Every one is a true positive, and that is the problem rather than the reassurance.** **22 of the 38
+sit in `*.Tests` projects**, in helper methods such as `static void Settle(TerrainStreamer, Func<bool>)`
+that poll a deadline — code the rule's own test exclusion cannot reach, because xUnit has no
+class-level attribute and a helper carries none of its own.
+
+⚠ **Vixen is a test subject and never a specification, so 38 does not set a severity either.** What the
+two numbers establish between them is the shape of the risk: the population is large on a repository
+that has not adopted `TimeProvider`, most of it is test scaffolding that is untestable by design, and
+adoption is a decision a repository makes once rather than a defect it repairs line by line. Nothing
+available measures the case that would actually decide it — a repository that *has* adopted
+`TimeProvider` and still reads the clock from a static on a production path. So the rule ships **`none`**
+and is turned on per path, exactly as `SK7010`, `SK7101` and `SK6053` are, and Skala does not assert an
+architectural policy on evidence it does not have.
+
+### ⚠ Four zeros, each classified, and one instrument caught lying
+
+`SK2161`, `SK2162`, `SK2163` and `SK2164` report **0** on Skala's own tree and **0** on Vixen. A zero
+from a disabled check and a zero from clean code are the same zero, so each was classified by reading
+the sites rather than by trusting the count:
+
+- **Skala's own tree — shape absent, in all four cases.** Every syntactic hit for `ToUniversalTime`,
+  `ToLocalTime`, `new DateTimeOffset`, a date `TryParse`, a clock subtraction, `Debug.Assert` and
+  `[Conditional]` turned out to be inside these analyzers' own documentation comments. Skala contains
+  no occurrence of any of the four shapes, and uses `Stopwatch` throughout.
+- **Vixen — shape present and correctly declined, in all four cases**, verified site by site. Its six
+  `SK2161` candidates are all values whose `Kind` cannot be proved (a property, a pattern variable, two
+  parameters) or constructions that were handed a real offset. Its three `SK2162` candidates all pass
+  `CultureInfo.InvariantCulture`. Its seven `SK2164` candidates are all pure comparisons such as
+  `Debug.Assert(index >= 0)`. ⚠ Its **one** real `SK2163` candidate is
+  `static string Ago(DateTime when) { var elapsed = DateTime.UtcNow - when; … }` — a parameter, and
+  literally a method for rendering "two days ago". That is the exact false positive the "both ends must
+  be clock reads" requirement exists to prevent, and it prevented it.
+- **The vendored corpus is not a sound instrument for this, and is reported as such rather than
+  quoted.** Compiled from loose sources it carries 7 257 (Serilog), 11 949 (Newtonsoft) and 48 559
+  (Vixen snapshot) CS errors, with types declared three times over because the fidelity corpus keeps
+  `.cs`, `.expected.cs` and `.arranged.expected.cs` side by side. `SK2160` reports 6 on Newtonsoft
+  there; Serilog's zero is **not soundly classifiable** and is left recorded as unexplained rather than
+  given an invented reason. Reading Newtonsoft's sources directly is what the `SK2161` and `SK2162`
+  conclusions rest on: all 12 of its date-parsing call sites are `TryParseExact` passing
+  `CultureInfo.InvariantCulture`, and all 39 of its zone conversions operate on parameters, on a stated
+  `DateTimeKind.Utc`, or on constructors given a real offset.
+
+⚠ **One hypothesis in this batch was written down, measured, and refuted, and the refutation is worth
+more than the change it prompted.** Serilog ships `namespace System; abstract class TimeProvider` under
+`#if !NET8_0_OR_GREATER`. It was assumed that this makes the metadata name ambiguous, that
+`GetTypeByMetadataName` returns null for it, and that `SK2160` therefore withdrew from Serilog
+entirely — a zero meaning "the analysis never ran". **Measured, that is false**: on a compilation
+containing the shim the singular lookup returns a symbol, the *source* one, and the plural returns two,
+`[serilog, System.Private.CoreLib]`. Nothing withdrew. The real cause of the count that prompted the
+investigation was a **measurement harness that built its own compilation options and omitted the opt-in
+that enables a `none`-severity rule** — the disabled-check zero, met in person, in the very
+investigation that exists to catch it. The analyzer now uses `GetTypesByMetadataName` regardless, for
+the exclusion rather than for the guard: where both a shim and the framework type exist, a body
+deriving from either is the designated place to read the real clock.
+
+### Sabotage
+
+Each of the five guards was removed in turn and the fixture suite re-run. All five turned red, each on
+exactly the negative fixture that documents the removed guard: `SK2160` on
+`a-time-provider-implementation`, `SK2161` on `the-kind-is-stated`, `SK2162` on `the-provider-is-passed`
+and `try-parse-exact-has-a-provider`, `SK2163` on `the-start-is-not-a-clock-read`, `SK2164` on
+`an-immutable-collection`. ⚠ **The first attempt at `SK2161`'s sabotage was invalid and looked identical
+to a valid one**: replacing a condition with `if (false)` fails the build under `TreatWarningsAsErrors`
+(`CS0162`), so the run went red with *zero* failing tests. A non-zero exit code is not evidence that a
+sabotage worked, and the count of failures is what has to be read.
