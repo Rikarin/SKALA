@@ -97,13 +97,8 @@ public sealed class WithExpressionRewritesAllAnalyzer : DiagnosticAnalyzer {
         }
 
         // The set comparison the rule *is*: every positional parameter assigned, none left to copy.
-        var arguments = new ExpressionSyntax[constructor.Parameters.Length];
-        for (var i = 0; i < constructor.Parameters.Length; i++) {
-            if (!assigned.TryGetValue(constructor.Parameters[i].Name, out var value)) {
-                return;
-            }
-
-            arguments[i] = value;
+        if (InParameterOrder(constructor, assigned) is not { } arguments) {
+            return;
         }
 
         if (RewriteGuards.ContainsCommentOrDirective(with.SyntaxTree, with.Span)
@@ -111,33 +106,60 @@ public sealed class WithExpressionRewritesAllAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var replacement = new StringBuilder("new ")
-            .Append(record.ToMinimalDisplayString(model, with.SpanStart))
-            .Append('(');
-        for (var i = 0; i < arguments.Length; i++) {
-            if (i > 0) {
-                replacement.Append(", ");
-            }
-
-            replacement.Append(arguments[i].ToString());
-        }
-
-        replacement.Append(')');
+        var replacement = Construction(record.ToMinimalDisplayString(model, with.SpanStart), arguments);
 
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
                 with.GetLocation(),
-                FixEdits.Pack((with.Span, replacement.ToString())),
+                FixEdits.Pack((with.Span, replacement)),
                 "every member of `"
                 + record.Name
                 + "` is assigned, so nothing of `"
                 + receiver.Identifier.ValueText
                 + "` survives the copy: `"
-                + RewriteGuards.Trim(replacement.ToString())
+                + RewriteGuards.Trim(replacement)
                 + "`"
             )
         );
+    }
+
+    /// <summary>
+    ///     The assigned values in the constructor's parameter order, or null where one is missing.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This lookup, and not the count compared against it above, is what requires every positional
+    ///     parameter to have been assigned — the initializer is free to list them in any order, and
+    ///     <c>pair with { Second = b, First = a }</c> has to emit <c>new Pair(a, b)</c>.
+    /// </remarks>
+    static ExpressionSyntax[]? InParameterOrder(
+        IMethodSymbol constructor,
+        Dictionary<string, ExpressionSyntax> assigned
+    ) {
+        var arguments = new ExpressionSyntax[constructor.Parameters.Length];
+        for (var i = 0; i < constructor.Parameters.Length; i++) {
+            if (!assigned.TryGetValue(constructor.Parameters[i].Name, out var value)) {
+                return null;
+            }
+
+            arguments[i] = value;
+        }
+
+        return arguments;
+    }
+
+    /// <summary>The replacement text: a constructor call on the record, argument for argument.</summary>
+    static string Construction(string type, ExpressionSyntax[] arguments) {
+        var text = new StringBuilder("new ").Append(type).Append('(');
+        for (var i = 0; i < arguments.Length; i++) {
+            if (i > 0) {
+                text.Append(", ");
+            }
+
+            text.Append(arguments[i].ToString());
+        }
+
+        return text.Append(')').ToString();
     }
 
     /// <summary>

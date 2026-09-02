@@ -48,17 +48,34 @@ static class RecordShape {
         }
 
         var positional = new HashSet<string>(System.StringComparer.Ordinal);
+        return EveryParameterIsItsOwnAutoProperty(record, constructor, positional, cancellation)
+            && NothingIsHeldOutsideThoseParameters(record, positional, cancellation);
+    }
+
+    /// <summary>
+    ///     Whether every positional parameter declared the auto-property of the same name, collecting
+    ///     those names into <paramref name="positional" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The property has to be the one <em>this parameter</em> made, which is asked by comparing the
+    ///     two symbols' declaring syntax: a positional record property declares against the
+    ///     <see cref="ParameterSyntax" /> itself, and a hand-written one against a
+    ///     <c>PropertyDeclarationSyntax</c>. ⚠ <c>IsImplicitlyDeclared</c> is the obvious test and it is
+    ///     the wrong one — it is <b>false</b> for a positional record property, because the parameter is
+    ///     where it is written down. Reading it as true would silently disable every rule that asks this.
+    /// </remarks>
+    static bool EveryParameterIsItsOwnAutoProperty(
+        INamedTypeSymbol record,
+        IMethodSymbol constructor,
+        HashSet<string> positional,
+        CancellationToken cancellation
+    ) {
         foreach (var parameter in constructor.Parameters) {
+            cancellation.ThrowIfCancellationRequested();
             if (parameter.RefKind != RefKind.None || parameter.IsParams) {
                 return false;
             }
 
-            // ⚠ The property has to be the one *this parameter* made, which is asked by comparing
-            // the two symbols' declaring syntax: a positional record property declares against the
-            // `ParameterSyntax` itself, and a hand-written one against a `PropertyDeclarationSyntax`.
-            // ⚠ `IsImplicitlyDeclared` is the obvious test and it is the wrong one — it is **false**
-            // for a positional record property, because the parameter is where it is written down.
-            // Reading it as true would silently disable every rule that asks this.
             var named = record.GetMembers(parameter.Name);
             if (named.Length != 1
                 || named[0] is not IPropertySymbol { IsStatic: false, IsIndexer: false, SetMethod: not null } property
@@ -70,6 +87,22 @@ static class RecordShape {
             positional.Add(parameter.Name);
         }
 
+        return true;
+    }
+
+    /// <summary>
+    ///     Whether the record holds no instance state beyond the named positional properties.
+    /// </summary>
+    /// <remarks>
+    ///     The copy constructor carries every field across and a constructor call sets only the
+    ///     parameters, so an instance field that backs nothing positional, an instance event, or a
+    ///     settable property outside the parameter list each make the two forms hold different things.
+    /// </remarks>
+    static bool NothingIsHeldOutsideThoseParameters(
+        INamedTypeSymbol record,
+        HashSet<string> positional,
+        CancellationToken cancellation
+    ) {
         foreach (var member in record.GetMembers()) {
             cancellation.ThrowIfCancellationRequested();
             switch (member) {
