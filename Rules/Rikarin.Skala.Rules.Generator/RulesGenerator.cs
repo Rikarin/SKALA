@@ -96,7 +96,7 @@ public sealed class RulesGenerator : IIncrementalGenerator {
 
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var rule in rules) {
-            if (!IsRuleId(rule.Id)) {
+            if (!RuleIdSyntax.IsRuleId(rule.Id)) {
                 production.ReportDiagnostic(Diagnostic.Create(MalformedId, Location.None, rule.Id));
             }
 
@@ -106,20 +106,6 @@ public sealed class RulesGenerator : IIncrementalGenerator {
         }
 
         production.AddSource("RuleCatalog.g.cs", EmitCatalog(rules));
-    }
-
-    static bool IsRuleId(string id) {
-        if (id.Length != 6 || id[0] != 'S' || id[1] != 'K') {
-            return false;
-        }
-
-        for (var i = 2; i < 6; i++) {
-            if (id[i] < '0' || id[i] > '9') {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     static string EmitCatalog(List<RuleModel> rules) {

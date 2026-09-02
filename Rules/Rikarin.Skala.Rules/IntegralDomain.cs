@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Globalization;
@@ -42,4 +43,59 @@ internal static class IntegralDomain {
             : Convert.ToDecimal(constant.Value, CultureInfo.InvariantCulture);
         return true;
     }
+
+    /// <summary>
+    ///     Reads a comparison as <c>subject &lt;op&gt; constant</c>, whichever side the author wrote
+    ///     the constant on.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Shared rather than duplicated. <c>SK2001</c> and <c>SK2002</c> both need the constant on
+    ///     the right before their tables mean anything, and both wrote this out — one with a
+    ///     <c>Flip</c> helper and one with the same switch inlined. The flip is the part that must not
+    ///     drift: getting one arm wrong turns <c>0 &lt; x</c> into <c>x &lt; 0</c> and inverts the
+    ///     rule's answer rather than losing it, which is the failure that reports a correct comparison
+    ///     as always-true.
+    ///     <para>
+    ///         A comparison with a constant on <b>both</b> sides normalises to the right-hand one, which
+    ///         is what both callers did before; each rejects it afterwards by asking whether the
+    ///         subject is itself constant.
+    ///     </para>
+    /// </remarks>
+    public static bool TryNormalise(
+        SemanticModel model,
+        BinaryExpressionSyntax binary,
+        CancellationToken cancellation,
+        out ExpressionSyntax subject,
+        out SyntaxKind kind,
+        out decimal bound
+    ) {
+        subject = binary.Left;
+        kind = binary.Kind();
+        if (TryConstant(model, binary.Right, cancellation, out bound)) {
+            return true;
+        }
+
+        if (!TryConstant(model, binary.Left, cancellation, out bound)) {
+            return false;
+        }
+
+        subject = binary.Right;
+        kind = Flip(kind);
+        return true;
+    }
+
+    /// <summary>The operator that means the same thing with the operands swapped.</summary>
+    /// <remarks>
+    ///     ⚠ <c>==</c> and <c>!=</c> pass through unchanged, because they already do. Only
+    ///     <c>SK2002</c> registers them; returning anything else here would be wrong for it and
+    ///     unreachable for <c>SK2001</c>, which is exactly the shape a duplicated copy gets wrong.
+    /// </remarks>
+    public static SyntaxKind Flip(SyntaxKind kind) =>
+        kind switch {
+            SyntaxKind.LessThanExpression => SyntaxKind.GreaterThanExpression,
+            SyntaxKind.LessThanOrEqualExpression => SyntaxKind.GreaterThanOrEqualExpression,
+            SyntaxKind.GreaterThanExpression => SyntaxKind.LessThanExpression,
+            SyntaxKind.GreaterThanOrEqualExpression => SyntaxKind.LessThanOrEqualExpression,
+            _ => kind
+        };
 }

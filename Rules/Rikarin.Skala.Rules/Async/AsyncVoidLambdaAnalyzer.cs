@@ -76,7 +76,7 @@ public sealed class AsyncVoidLambdaAnalyzer : DiagnosticAnalyzer {
         if (context.SemanticModel.GetTypeInfo(context.Node, context.CancellationToken).ConvertedType
             is not INamedTypeSymbol { TypeKind: TypeKind.Delegate } target
             || target.DelegateInvokeMethod is not { ReturnsVoid: true } invoke
-            || HasEventHandlerShape(invoke, eventArgs)) {
+            || AsyncSignature.HasEventHandlerShape(invoke, eventArgs)) {
             return;
         }
 
@@ -89,24 +89,5 @@ public sealed class AsyncVoidLambdaAnalyzer : DiagnosticAnalyzer {
                 + "`, which returns `void`, so nothing waits for it and its exceptions cannot be caught"
             )
         );
-    }
-
-    /// <summary><c>(object, TEventArgs) -&gt; void</c> — the delegate shape the BCL's events use.</summary>
-    static bool HasEventHandlerShape(IMethodSymbol invoke, INamedTypeSymbol? eventArgs) {
-        if (eventArgs is null || invoke.Parameters.Length != 2) {
-            return false;
-        }
-
-        if (invoke.Parameters[0].Type.SpecialType != SpecialType.System_Object) {
-            return false;
-        }
-
-        for (var type = invoke.Parameters[1].Type; type is not null; type = type.BaseType) {
-            if (SymbolEqualityComparer.Default.Equals(type, eventArgs)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

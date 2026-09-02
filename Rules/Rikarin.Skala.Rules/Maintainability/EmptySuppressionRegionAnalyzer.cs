@@ -63,7 +63,7 @@ public sealed class EmptySuppressionRegionAnalyzer : DiagnosticAnalyzer {
         }
 
         var source = context.Tree.GetText(context.CancellationToken);
-        var content = ContentPositions(root);
+        var content = RegionContent.Positions(root, SyntaxKind.PragmaWarningDirectiveTrivia);
 
         for (var i = 0; i < directives.Count; i++) {
             var disable = directives[i];
@@ -92,32 +92,6 @@ public sealed class EmptySuppressionRegionAnalyzer : DiagnosticAnalyzer {
         }
     }
 
-    /// <summary>
-    ///     Every position in the file that is code as far as this rule is concerned.
-    /// </summary>
-    /// <remarks>
-    ///     Zero-width tokens are skipped — the end-of-file token is one, and treating it as content
-    ///     would make a trailing suppression look occupied by nothing.
-    /// </remarks>
-    static List<int> ContentPositions(SyntaxNode root) {
-        var result = new List<int>();
-        foreach (var token in root.DescendantTokens()) {
-            if (token.Span.Length > 0) {
-                result.Add(token.SpanStart);
-            }
-        }
-
-        foreach (var trivia in root.DescendantTrivia()) {
-            if (!trivia.IsKind(SyntaxKind.WhitespaceTrivia)
-                && !trivia.IsKind(SyntaxKind.EndOfLineTrivia)
-                && !trivia.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia)) {
-                result.Add(trivia.SpanStart);
-            }
-        }
-
-        result.Sort();
-        return result;
-    }
 
     /// <summary>The first later <c>restore</c> that lifts this <c>disable</c>.</summary>
     /// <remarks>

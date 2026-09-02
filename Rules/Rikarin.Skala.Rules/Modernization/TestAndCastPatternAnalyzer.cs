@@ -135,7 +135,7 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
         // ⚠ The definite-assignment half. `b` is assigned above the `if` today and merely *declared*
         // by the pattern, so a read below the `if` becomes CS0165 and a read in an `else` branch —
         // already refused above — would be a read of a variable the pattern never bound.
-        if (!ReferencedOnlyWithin(model, local, guard, statement, cancellation)) {
+        if (RewriteGuards.ReferencedOutside(model, local, guard, statement, cancellation)) {
             return;
         }
 
@@ -311,31 +311,6 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
         }
 
         return null;
-    }
-
-    /// <summary>Whether every reference to a local other than its own declaration is inside one node.</summary>
-    static bool ReferencedOnlyWithin(
-        SemanticModel model,
-        ILocalSymbol local,
-        SyntaxNode allowed,
-        SyntaxNode declaration,
-        CancellationToken cancellation
-    ) {
-        foreach (var node in RewriteGuards.ScopeRoot(declaration).DescendantNodes()) {
-            cancellation.ThrowIfCancellationRequested();
-            if (node is not IdentifierNameSyntax identifier
-                || !string.Equals(identifier.Identifier.ValueText, local.Name, System.StringComparison.Ordinal)
-                || allowed.Span.Contains(identifier.Span)
-                || declaration.Span.Contains(identifier.Span)) {
-                continue;
-            }
-
-            if (SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(identifier, cancellation).Symbol, local)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /// <summary>Whether the tested type is a resolved reference type, so <c>is T</c> is a legal pattern.</summary>

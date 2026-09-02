@@ -54,15 +54,8 @@ public sealed class NonnegativeSizeComparisonAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var size = binary.Left;
-        var kind = binary.Kind();
-        if (!IntegralDomain.TryConstant(model, binary.Right, cancellation, out var bound)) {
-            if (!IntegralDomain.TryConstant(model, binary.Left, cancellation, out bound)) {
-                return;
-            }
-
-            size = binary.Right;
-            kind = Flip(kind);
+        if (!IntegralDomain.TryNormalise(model, binary, cancellation, out var size, out var kind, out var bound)) {
+            return;
         }
 
         if (model.GetConstantValue(size, cancellation).HasValue
@@ -93,15 +86,6 @@ public sealed class NonnegativeSizeComparisonAnalyzer : DiagnosticAnalyzer {
             )
         );
     }
-
-    static SyntaxKind Flip(SyntaxKind kind) =>
-        kind switch {
-            SyntaxKind.LessThanExpression => SyntaxKind.GreaterThanExpression,
-            SyntaxKind.LessThanOrEqualExpression => SyntaxKind.GreaterThanOrEqualExpression,
-            SyntaxKind.GreaterThanExpression => SyntaxKind.LessThanExpression,
-            SyntaxKind.GreaterThanOrEqualExpression => SyntaxKind.LessThanOrEqualExpression,
-            _ => kind
-        };
 
     static bool? Decide(SyntaxKind kind, decimal minimum, decimal maximum, decimal bound) =>
         kind switch {

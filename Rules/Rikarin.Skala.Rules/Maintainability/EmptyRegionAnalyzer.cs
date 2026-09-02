@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -47,7 +46,11 @@ public sealed class EmptyRegionAnalyzer : DiagnosticAnalyzer {
         }
 
         var source = context.Tree.GetText(context.CancellationToken);
-        var content = ContentPositions(root);
+        var content = RegionContent.Positions(
+            root,
+            SyntaxKind.RegionDirectiveTrivia,
+            SyntaxKind.EndRegionDirectiveTrivia
+        );
 
         foreach (var region in regions) {
             // ⚠ An unbalanced `#region` has no partner and is skipped. Deleting one half of a pair
@@ -71,28 +74,6 @@ public sealed class EmptyRegionAnalyzer : DiagnosticAnalyzer {
                 )
             );
         }
-    }
-
-    /// <summary>Every position that is content as far as this rule is concerned.</summary>
-    static List<int> ContentPositions(SyntaxNode root) {
-        var result = new List<int>();
-        foreach (var token in root.DescendantTokens()) {
-            if (token.Span.Length > 0) {
-                result.Add(token.SpanStart);
-            }
-        }
-
-        foreach (var trivia in root.DescendantTrivia()) {
-            if (!trivia.IsKind(SyntaxKind.WhitespaceTrivia)
-                && !trivia.IsKind(SyntaxKind.EndOfLineTrivia)
-                && !trivia.IsKind(SyntaxKind.RegionDirectiveTrivia)
-                && !trivia.IsKind(SyntaxKind.EndRegionDirectiveTrivia)) {
-                result.Add(trivia.SpanStart);
-            }
-        }
-
-        result.Sort();
-        return result;
     }
 
     static TextSpan Line(SourceText source, DirectiveTriviaSyntax directive) {

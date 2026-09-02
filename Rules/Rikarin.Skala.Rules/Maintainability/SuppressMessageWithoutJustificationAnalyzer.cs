@@ -5,7 +5,6 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System;
 using System.Collections.Immutable;
-using System.Linq;
 
 namespace Rikarin.Skala.Rules.Maintainability;
 
@@ -45,16 +44,11 @@ public sealed class SuppressMessageWithoutJustificationAnalyzer : DiagnosticAnal
         INamedTypeSymbol? unconditional
     ) {
         var attribute = (AttributeSyntax)context.Node;
-        if (context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol
-            is not IMethodSymbol constructor
-            || (!SymbolEqualityComparer.Default.Equals(constructor.ContainingType, suppress)
-                && !SymbolEqualityComparer.Default.Equals(constructor.ContainingType, unconditional))) {
+        if (!AttributeBinding.Matches(context, attribute, suppress, unconditional)) {
             return;
         }
 
-        var justification = attribute.ArgumentList?.Arguments.FirstOrDefault(static argument =>
-            argument.NameEquals?.Name.Identifier.ValueText == "Justification"
-        );
+        var justification = AttributeBinding.NamedArgument(attribute, "Justification");
         if (justification is not null
             && context.SemanticModel.GetConstantValue(justification.Expression, context.CancellationToken)
             is { HasValue: true, Value: string value }
