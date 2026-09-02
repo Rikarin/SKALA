@@ -3631,8 +3631,14 @@ type nor an assembly — but it is documented as defensive and has no fixture, a
 for it now says the opposite of what it was written to say.
 
 **The measurement.** All five rules were swept over Skala's own source through a fresh Release binlog
-(`--load=binlog --require-fresh-binlog`, **11 CS diagnostics in the load** — `CS9335` ×10 and
-`CS8933` ×1 — 1 451 results in total). All five report **zero**, and ⚠ **none of the five zeros is
+(`dotnet build -c Release --no-incremental -bl:`, then
+`--load=binlog --require-fresh-binlog`; **`SK9021` coverage 594 of 596 files, 100 %**, **11 CS
+diagnostics in the load** — `CS9335` ×10 and `CS8933` ×1 — 1 451 results in total). ⚠ **Both
+flags matter and only together.** `--no-incremental` is what makes the binlog cover the whole
+tree rather than whatever MSBuild happened to rebuild, and `--require-fresh-binlog` is what turns
+an incomplete one into an error instead of a warning above a plausible number. The two files not
+covered are `build/Build.cs` and `build/Configuration.cs`, which are not in `Skala.slnx` at all —
+the same gap that let a compile error live under `build/` through a green CI. All five report **zero**, and ⚠ **none of the five zeros is
 the analysis failing to run**, which was established before any of them was believed.
 
 - **The instrument was verified first.** A probe file planting one shape per rule into
