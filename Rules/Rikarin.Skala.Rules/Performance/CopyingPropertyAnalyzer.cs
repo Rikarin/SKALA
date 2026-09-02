@@ -22,8 +22,8 @@ namespace Rikarin.Skala.Rules.Performance;
 ///         somewhere nobody is looking at this declaration.
 ///     </para>
 ///     <para>
-///         ⚠ <b>A deliberate defensive copy has exactly this shape, and no analysis tells the two
-///         apart.</b> That is why the fix is <c>fixIsSafe: false</c> and why the rule is a suggestion
+///         ⚠ <b>A deliberate defensive copy has this shape too, and nothing tells them apart.</b>
+///         That is why the fix is <c>fixIsSafe: false</c> and why the rule is a suggestion
 ///         rather than a warning: the finding is "callers cannot see this cost", which is true of the
 ///         deliberate copy too, and the answer to it may be to keep the copy and move it behind a
 ///         method whose parentheses admit the work.
@@ -202,9 +202,8 @@ public sealed class CopyingPropertyAnalyzer : DiagnosticAnalyzer {
     ) {
         switch (body) {
             case InvocationExpressionSyntax {
-                Expression: MemberAccessExpressionSyntax {
-                    RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-                } access
+                Expression:
+                MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access
             } invocation
                 when Array.IndexOf(Materializers, access.Name.Identifier.ValueText) >= 0
                 && invocation.ArgumentList.Arguments.Count == 0: {

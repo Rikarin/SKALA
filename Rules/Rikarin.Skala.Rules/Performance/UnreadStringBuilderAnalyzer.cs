@@ -20,8 +20,8 @@ namespace Rikarin.Skala.Rules.Performance;
 ///         read it was deleted and the code that filled it was not.
 ///     </para>
 ///     <para>
-///         ⚠ <b>A <c>StringBuilder</c> handed to anything else escapes, and the rule stands down at the
-///         first sign of it.</b> A method taking one may read it, store it, or return its text, and
+///         ⚠ <b>A builder handed to anything else escapes, and the rule then stands down.</b>
+///         A method taking one may read it, store it, or return its text, and
 ///         nothing in this compilation is required to say so. So a reference that is not the receiver
 ///         of a mutating member — an argument, an assignment, a return, a capture inside a lambda or a
 ///         local function — ends the analysis for that local rather than being reasoned about.
@@ -96,7 +96,10 @@ public sealed class UnreadStringBuilderAnalyzer : DiagnosticAnalyzer {
 
         if (model.GetDeclaredSymbol(declarator, cancellation) is not ILocalSymbol local
             || !SymbolEqualityComparer.Default.Equals(local.Type, stringBuilder)
-            || !SymbolEqualityComparer.Default.Equals(model.GetTypeInfo(initializer, cancellation).Type, stringBuilder)) {
+            || !SymbolEqualityComparer.Default.Equals(
+                model.GetTypeInfo(initializer, cancellation).Type,
+                stringBuilder
+            )) {
             return;
         }
 

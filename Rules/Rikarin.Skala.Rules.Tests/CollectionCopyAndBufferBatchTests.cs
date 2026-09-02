@@ -69,88 +69,88 @@ public sealed class CollectionCopyAndBufferBatchTests {
     }
 
     /// <summary>
-    ///     ⚠ <b>Issue #267 — "the sequence is enumerated more than once" — is not <c>SK4006</c>, and
-    ///     this is the refutation as a test rather than as a sentence.</b>
+    ///     ⚠ Issue #267 — "the sequence is enumerated more than once" — is not <c>SK4006</c>, and this
+    ///     is the refutation as a test rather than as a sentence.
     /// </summary>
     /// <remarks>
     ///     <c>catalogued.json</c> credited ReSharper's <c>PossibleMultipleEnumeration</c> to
     ///     <c>SK4006</c>, and <c>SK4006</c> is <em>Review a materialization used only by foreach</em> —
-    ///     a <c>ToArray()</c> that should be <b>removed</b>. Multiple enumeration is a <c>ToArray()</c>
-    ///     that should be <b>added</b>. Three shapes pin the relation, and ⚠ <b>the third is the one
-    ///     that matters: the two are not merely different, they contradict each other on code that
-    ///     satisfies both.</b> A sequence walked once through a materialization and once more
-    ///     afterwards is a multiple enumeration <em>and</em> an <c>SK4006</c> finding, and taking
-    ///     <c>SK4006</c>'s advice there makes the multiple enumeration worse. A map that treats one as
-    ///     coverage of the other therefore does not merely overstate the catalogue; it records the
-    ///     opposite of what the tool says.
+    ///     a <c>ToArray()</c> that should be removed. Multiple enumeration is a <c>ToArray()</c> that
+    ///     should be added. Four shapes pin the relation, and ⚠ the fourth is the one that matters:
+    ///     the two are not merely different, they contradict each other on code that satisfies both. A
+    ///     sequence walked once through a materialization and once more afterwards is a multiple
+    ///     enumeration <em>and</em> an <c>SK4006</c> finding, and taking <c>SK4006</c>'s advice there
+    ///     makes the multiple enumeration worse. A map that treats one as coverage of the other
+    ///     therefore does not merely overstate the catalogue; it records the opposite of what the tool
+    ///     says.
     ///     <para>
     ///         ⚠ No <c>SK</c> id was allocated for #267, and for a different reason again: the concept
-    ///         is hosted by <c>CA1851</c>, measured <c>enabledByDefault: false, defaultSeverity:
-    ///         Warning</c> against the 10.0.400 SDK, whose flow-sensitive analysis strictly dominates
-    ///         what a static-type rule could report. See docs/plan/08 § <c>SK4040</c>–<c>SK4041</c>.
+    ///         is hosted by <c>CA1851</c>, measured as not enabled by default and warning-severity
+    ///         against the 10.0.400 SDK, whose flow-sensitive analysis strictly dominates what a
+    ///         static-type rule could report. See docs/plan/08 § <c>SK4040</c>–<c>SK4041</c>.
     ///     </para>
     /// </remarks>
     [Fact]
     public void MultipleEnumeration_IsNotTheShapeSk4006Reports() {
         // Satisfies the multiple-enumeration shape and not SK4006's: nothing is materialized.
         const string enumeratedTwice = """
-            using System.Collections.Generic;
-            using System.Linq;
+                                       using System.Collections.Generic;
+                                       using System.Linq;
 
-            public sealed class Feed {
-                public static int Total(IEnumerable<int> source) => source.Count() + source.Sum();
-            }
-            """;
+                                       public sealed class Feed {
+                                           public static int Total(IEnumerable<int> source) => source.Count() + source.Sum();
+                                       }
+                                       """;
 
         // Satisfies neither: one walk, no materialization.
         const string neitherShape = """
-            using System.Collections.Generic;
+                                    using System.Collections.Generic;
 
-            public sealed class Feed {
-                public static int Total(List<int> source) {
-                    var total = 0;
-                    foreach (var value in source) {
-                        total += value;
-                    }
+                                    public sealed class Feed {
+                                        public static int Total(List<int> source) {
+                                            var total = 0;
+                                            foreach (var value in source) {
+                                                total += value;
+                                            }
 
-                    return total;
-                }
-            }
-            """;
+                                            return total;
+                                        }
+                                    }
+                                    """;
 
         // Satisfies SK4006's shape and not the multiple-enumeration one: one consumer.
         const string materializedForOneForeach = """
-            using System.Linq;
+                                                 using System.Linq;
 
-            public sealed class Feed {
-                public static int Total(int[] source) {
-                    var total = 0;
-                    foreach (var value in source.ToArray()) {
-                        total += value;
-                    }
+                                                 public sealed class Feed {
+                                                     public static int Total(int[] source) {
+                                                         var total = 0;
+                                                         foreach (var value in source.ToArray()) {
+                                                             total += value;
+                                                         }
 
-                    return total;
-                }
-            }
-            """;
+                                                         return total;
+                                                     }
+                                                 }
+                                                 """;
 
         // ⚠ Satisfies both, and the two answers are opposite: SK4006 offers to delete the `ToArray`
         // that is the only thing keeping the second walk off the source.
         const string couldSatisfyBoth = """
-            using System.Collections.Generic;
-            using System.Linq;
+                                        using System.Collections.Generic;
+                                        using System.Linq;
 
-            public sealed class Feed {
-                public static int Total(IEnumerable<int> source) {
-                    var total = 0;
-                    foreach (var value in source.ToArray()) {
-                        total += value;
-                    }
+                                        public sealed class Feed {
+                                            public static int Total(IEnumerable<int> source) {
+                                                var total = 0;
+                                                foreach (var value in source.ToArray()) {
+                                                    total += value;
+                                                }
 
-                    return total + source.Count();
-                }
-            }
-            """;
+                                                return total + source.Count();
+                                            }
+                                        }
+                                        """;
 
         Assert.DoesNotContain(
             Analyze(enumeratedTwice, "enumerated-twice.cs"),
@@ -186,26 +186,26 @@ public sealed class CollectionCopyAndBufferBatchTests {
     [Fact]
     public void TheFix_IsOfferedOnlyWhereTheSourceTypeSurvivesIt() {
         const string convertible = """
-            using System.Collections.Generic;
-            using System.Linq;
+                                   using System.Collections.Generic;
+                                   using System.Linq;
 
-            public sealed class Feed {
-                readonly List<string> entries = new();
+                                   public sealed class Feed {
+                                       readonly List<string> entries = new();
 
-                public IReadOnlyList<string> Items => entries.ToList();
-            }
-            """;
+                                       public IReadOnlyList<string> Items => entries.ToList();
+                                   }
+                                   """;
 
         const string notConvertible = """
-            using System.Collections.Generic;
-            using System.Linq;
+                                      using System.Collections.Generic;
+                                      using System.Linq;
 
-            public sealed class Feed {
-                readonly List<string> entries = new();
+                                      public sealed class Feed {
+                                          readonly List<string> entries = new();
 
-                public string[] Items => entries.ToArray();
-            }
-            """;
+                                          public string[] Items => entries.ToArray();
+                                      }
+                                      """;
 
         var reported = Analyze(convertible, "convertible.cs")
             .Where(static diagnostic => diagnostic.Id == RuleIds.CopyingProperty)
@@ -230,26 +230,26 @@ public sealed class CollectionCopyAndBufferBatchTests {
     [Fact]
     public void AChainOfAppends_IsAWriteUntilSomethingReadsIt() {
         const string chainDiscarded = """
-            using System.Text;
+                                      using System.Text;
 
-            public sealed class Report {
-                public void Write(string name) {
-                    var builder = new StringBuilder();
-                    builder.Append(name).Append('!').AppendLine();
-                }
-            }
-            """;
+                                      public sealed class Report {
+                                          public void Write(string name) {
+                                              var builder = new StringBuilder();
+                                              builder.Append(name).Append('!').AppendLine();
+                                          }
+                                      }
+                                      """;
 
         const string chainRead = """
-            using System.Text;
+                                 using System.Text;
 
-            public sealed class Report {
-                public string Write(string name) {
-                    var builder = new StringBuilder();
-                    return builder.Append(name).Append('!').ToString();
-                }
-            }
-            """;
+                                 public sealed class Report {
+                                     public string Write(string name) {
+                                         var builder = new StringBuilder();
+                                         return builder.Append(name).Append('!').ToString();
+                                     }
+                                 }
+                                 """;
 
         Assert.Contains(
             Analyze(chainDiscarded, "chain-discarded.cs"),
