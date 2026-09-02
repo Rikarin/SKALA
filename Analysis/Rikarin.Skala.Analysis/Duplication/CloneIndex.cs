@@ -39,7 +39,7 @@ internal sealed class CloneIndex {
     const uint Magic = 0x4C43_4B53;
 
     /// <summary>⚠ Bump when the normalisation or the layout changes. An old index is discarded, not read.</summary>
-    const int FormatVersion = 2;
+    const int FormatVersion = 3;
 
     /// <summary>
     ///     What produced this index: the tool version, and a fingerprint of the tokeniser itself.
@@ -215,13 +215,24 @@ internal sealed class CloneIndex {
             previousEnd = end;
         }
 
-        return new(path, contentHash, TokenStream.FromArrays(codes, starts, ends, headerLines));
+        // ⚠ The uniform runs are derived from the parse tree, not from the stream, so a warm entry that
+        // dropped them would silently re-report every table this build learned to decline — issue #333.
+        var runs = new int[cursor.ReadVarInt()];
+        for (var i = 0; i < runs.Length; i++) {
+            runs[i] = cursor.ReadVarInt();
+        }
+
+        return new(path, contentHash, TokenStream.FromArrays(codes, starts, ends, headerLines, runs));
     }
 
     static byte[] WritePayload(List<Entry> entries) {
         var total = 0;
         foreach (var entry in entries) {
-            total += entry.Path.Length * 3 + entry.ContentHash.Length + 32 + entry.Tokens.Count * 6;
+            total += (entry.Path.Length * 3)
+                + entry.ContentHash.Length
+                + 32
+                + (entry.Tokens.Count * 6)
+                + (entry.Tokens.Runs.Length * 5);
         }
 
         var writer = new Buffer(total);
@@ -246,6 +257,11 @@ internal sealed class CloneIndex {
                 writer.WriteVarInt(tokens.Starts[i] - previousEnd);
                 writer.WriteVarInt(tokens.Ends[i] - tokens.Starts[i]);
                 previousEnd = tokens.Ends[i];
+            }
+
+            writer.WriteVarInt(tokens.Runs.Length);
+            foreach (var value in tokens.Runs) {
+                writer.WriteVarInt(value);
             }
         }
 

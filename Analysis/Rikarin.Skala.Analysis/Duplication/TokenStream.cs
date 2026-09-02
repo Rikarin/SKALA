@@ -42,6 +42,16 @@ internal sealed class TokenStream {
     const byte CountedToken = 2;
 
     /// <summary>
+    ///     ⚠ Three, because two identical siblings is a copy-paste and three is a table.
+    /// </summary>
+    /// <remarks>
+    ///     A block pasted into the slot beside itself is exactly the finding <c>SK7020</c> is for, and it
+    ///     is a pair. The shape with nothing to extract is the one that goes on: rows of a list, all the
+    ///     same, differing only in the names the normalisation has already erased.
+    /// </remarks>
+    const int MinimumRunElements = 3;
+
+    /// <summary>
     ///     The source the tokeniser's own fingerprint is taken over.
     /// </summary>
     /// <remarks>
@@ -68,6 +78,9 @@ internal sealed class TokenStream {
             const string Verbatim = @"a""b";
             const int Number = 0x2A;
 
+            // ⚠ A uniform sibling run of four elements, so a change to `UniformRuns` moves the stamp.
+            static readonly Probe[] Table = [new Probe(), new Probe(), new Probe(), new Probe()];
+
             public async Task<int> RunAsync(string name) {
                 var total = 0;
                 using var handle = File.OpenRead(name);
@@ -79,7 +92,7 @@ internal sealed class TokenStream {
                 total -= 1;
         #endif
 
-                return total + $"{name} {Number:X}".Length + Verbatim.Length;
+                return total + $"{name} {Number:X}".Length + Verbatim.Length + Table.Length;
             }
         }
         """;
@@ -109,11 +122,12 @@ internal sealed class TokenStream {
     /// </remarks>
     public static string Fingerprint { get; } = ComputeFingerprint();
 
-    TokenStream(ushort[] codes, int[] starts, int[] ends, int headerLines) {
+    TokenStream(ushort[] codes, int[] starts, int[] ends, int headerLines, int[] runs) {
         Codes = codes;
         Starts = starts;
         Ends = ends;
         HeaderLines = headerLines;
+        Runs = runs;
     }
 
     /// <summary>The normalised class of each token. ⚠ <c>SyntaxKind</c> is a <c>ushort</c> enum; this is it.</summary>
@@ -141,11 +155,78 @@ internal sealed class TokenStream {
     /// </remarks>
     public int HeaderLines { get; }
 
+    /// <summary>
+    ///     The file's uniform sibling runs, as flat triples <c>(first, past, stride)</c> of token indices
+    ///     — <b>issue #333</b>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         A list of similar rows matches itself, shifted, and that is the normalisation and not
+    ///         duplication.
+    ///     </b> Every identifier is one class here, so
+    ///     <c>new FieldBackedPropertyAnalyzer(), new SearchValuesAnalyzer(),</c> and the two rows under it
+    ///     are the <i>same</i> five-token sequence repeated: a 290-element analyzer list is 1 450 tokens
+    ///     with a period of 5, so its first hundred tokens are a verified token-for-token clone of its
+    ///     second hundred, and of its third. There is nothing to extract — the "duplication" is the list
+    ///     being a list. This is the same artefact <b>#323</b> removed for file headers, surviving wherever
+    ///     a file holds a run of similar declarations.
+    ///     <para>
+    ///         ⚠ <b>The test is structural, never lexical.</b> A run is <see cref="Uniform" />: three or
+    ///         more <i>consecutive elements of one syntactic list</i> whose normalised token sequences are
+    ///         identical and whose token stride is constant. Both halves earn their place. Reading
+    ///         periodicity out of the token array alone would decline a genuinely repeated block that
+    ///         happens to be periodic, and "elements of one list" alone would decline two duplicated method
+    ///         bodies sitting in one class's member list — which is real duplication and the exact thing
+    ///         the rule is for.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Three elements, not two.</b> Two identical siblings are a copy-paste of one element
+    ///         into the next slot, which is a finding; three or more is a table. The floor is where the
+    ///         artefact starts and not where it is convenient.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The stride is what <see cref="CloneDetector" /> compares an occurrence's length against,
+    ///         so a match that fits <i>inside</i> one element is still reported: three identical
+    ///         200-token siblings are three copies of a block and are exactly what <c>SK7020</c> exists to
+    ///         find. Recording the period rather than a token count is what keeps that case alive without
+    ///         a threshold anybody has to pick.
+    ///     </para>
+    /// </remarks>
+    public int[] Runs { get; }
+
     public int Count => Codes.Length;
 
     /// <summary>Rebuilds a stream from the persisted index. No validation — the index verifies itself.</summary>
-    public static TokenStream FromArrays(ushort[] codes, int[] starts, int[] ends, int headerLines) =>
-        new(codes, starts, ends, headerLines);
+    public static TokenStream FromArrays(ushort[] codes, int[] starts, int[] ends, int headerLines, int[] runs) =>
+        new(codes, starts, ends, headerLines, runs);
+
+    /// <summary>
+    ///     The uniform run covering tokens <c>[first, past)</c>, or <c>-1</c> where no one run covers them.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Covering, not overlapping. A window straddling the edge of a table has half its tokens in
+    ///     ordinary code, and that half is evidence the run's interior is not.
+    /// </remarks>
+    public int RunCovering(int first, int past) {
+        var low = 0;
+        var high = (Runs.Length / 3) - 1;
+        while (low <= high) {
+            var middle = low + ((high - low) / 2);
+            if (Runs[(middle * 3) + 1] <= first) {
+                low = middle + 1;
+            } else if (Runs[middle * 3] > first) {
+                high = middle - 1;
+            } else {
+                return past <= Runs[(middle * 3) + 1] ? middle : -1;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>The token period of run <paramref name="run" />: one element and its separator.</summary>
+    public int StrideOf(int run) => Runs[(run * 3) + 2];
 
     /// <summary>
     ///     Lexes one file, minus its header — <b>issue #323</b>.
@@ -193,7 +274,8 @@ internal sealed class TokenStream {
     public static TokenStream Lex(string text) {
         ArgumentNullException.ThrowIfNull(text);
 
-        var skipped = HeaderSpans(text);
+        var root = SyntaxFactory.ParseCompilationUnit(text);
+        var skipped = HeaderSpans(root);
         var lineStarts = LineStarts(text);
 
         // ⚠ Flags, not a state: a line carrying both is a counted line, and only a line that is
@@ -246,7 +328,7 @@ internal sealed class TokenStream {
             Array.Resize(ref ends, count);
         }
 
-        return new(codes, starts, ends, HeaderLineCount(lines));
+        return new(codes, starts, ends, HeaderLineCount(lines), UniformRuns(root, codes, starts));
     }
 
     /// <summary>
@@ -318,10 +400,191 @@ internal sealed class TokenStream {
     ///     namespaces and compilation units, so this recursion visits the declaration spine and never
     ///     descends into a type body.
     /// </remarks>
-    static List<TextSpan> HeaderSpans(string text) {
+    static List<TextSpan> HeaderSpans(CompilationUnitSyntax root) {
         var spans = new List<TextSpan>();
-        Collect(SyntaxFactory.ParseCompilationUnit(text), spans);
+        Collect(root, spans);
         return spans;
+    }
+
+    /// <summary>
+    ///     Every uniform sibling run in the file, as flat <c>(first, past, stride)</c> triples over the
+    ///     token stream — see <see cref="Runs" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The lists considered are the ones a table is actually written as: an initialiser or a
+    ///     collection expression, an argument list, a switch expression's arms, an enum's members, and a
+    ///     type's own member list. Anything else — a parameter list, a block's statements, a base list —
+    ///     either cannot reach a hundred tokens of repetition or is ordinary code whose repetition is the
+    ///     finding.
+    ///     <para>
+    ///         ⚠ Runs nest: <c>[new Foo(1, 2, 3), new Foo(4, 5, 6), new Foo(7, 8, 9)]</c> is one run of
+    ///         three elements, and each element's argument list is another. Only the outermost is kept —
+    ///         an inner run says nothing the run containing it does not already say, and overlapping
+    ///         entries would make <see cref="RunCovering" />'s binary search a range query for no gain.
+    ///     </para>
+    /// </remarks>
+    static int[] UniformRuns(CompilationUnitSyntax root, ushort[] codes, int[] starts) {
+        var runs = new List<(int First, int Past, int Stride)>();
+        foreach (var node in root.DescendantNodesAndSelf()) {
+            var elements = Elements(node);
+            if (elements.Count >= MinimumRunElements) {
+                Uniform(elements, codes, starts, runs);
+            }
+        }
+
+        if (runs.Count == 0) {
+            return [];
+        }
+
+        // Outermost wins: earliest start first, and the longer of two starting together.
+        runs.Sort(static (left, right) =>
+            left.First != right.First ? left.First.CompareTo(right.First) : right.Past.CompareTo(left.Past)
+        );
+
+        var kept = new List<int>(runs.Count * 3);
+        var reached = 0;
+        foreach (var (first, past, stride) in runs) {
+            if (first < reached) {
+                continue;
+            }
+
+            kept.Add(first);
+            kept.Add(past);
+            kept.Add(stride);
+            reached = past;
+        }
+
+        return [.. kept];
+    }
+
+    /// <summary>The sibling elements of the lists a table is written as, or an empty list.</summary>
+    static IReadOnlyList<SyntaxNode> Elements(SyntaxNode node) =>
+        node switch {
+            InitializerExpressionSyntax initializer => initializer.Expressions,
+            CollectionExpressionSyntax collection => collection.Elements,
+            ArgumentListSyntax arguments => arguments.Arguments,
+            SwitchExpressionSyntax switched => switched.Arms,
+            EnumDeclarationSyntax enumeration => enumeration.Members,
+            TypeDeclarationSyntax type => type.Members,
+            _ => []
+        };
+
+    /// <summary>
+    ///     Adds every maximal run of <see cref="MinimumRunElements" /> or more consecutive elements that
+    ///     lex to one token sequence at a constant stride.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The comparison is over <paramref name="codes" /> — the stream's own normalisation — and not
+    ///     over the parse tree's tokens. They are not the same tokens: <see cref="Lex" /> reads lexer
+    ///     tokens, where a contextual keyword is an identifier and an interpolated string is one token, so
+    ///     comparing the tree's would be a second normalisation free to disagree with the one every
+    ///     verdict is actually made against.
+    /// </remarks>
+    static void Uniform(
+        IReadOnlyList<SyntaxNode> elements,
+        ushort[] codes,
+        int[] starts,
+        List<(int First, int Past, int Stride)> runs
+    ) {
+        var first = new int[elements.Count];
+        var past = new int[elements.Count];
+        for (var i = 0; i < elements.Count; i++) {
+            var span = elements[i].Span;
+            first[i] = TokenAt(starts, span.Start);
+            past[i] = PastToken(starts, span.End);
+            if (first[i] < 0 || past[i] <= first[i]) {
+                // A zero-width or header-skipped element: it has no run and it breaks any it touches.
+                first[i] = -1;
+            }
+        }
+
+        var start = 0;
+        while (start < elements.Count) {
+            var end = start;
+            if (Matches(codes, first, past, start, start + 1, elements.Count)) {
+                var stride = first[start + 1] - first[start];
+                end = start + 1;
+                while (Matches(codes, first, past, end, end + 1, elements.Count)
+                       && first[end + 1] - first[end] == stride) {
+                    end++;
+                }
+
+                if (end - start + 1 >= MinimumRunElements) {
+                    runs.Add((first[start], Periodic(codes, past[end], first[end] + stride, stride), stride));
+                }
+            }
+
+            // ⚠ Restart *on* the element that ended the run, never past it. A run can end because the
+            // stride moved rather than because the shapes stopped agreeing, and that element is then the
+            // first row of the next table.
+            start = Math.Max(end, start + 1);
+        }
+    }
+
+    /// <summary>Whether two adjacent elements lex alike.</summary>
+    /// <remarks>
+    ///     ⚠ The stride has to be constant across the whole run, so the caller compares it against the
+    ///     run's <i>first</i> pair rather than against the previous one. A trailing comma, an attribute on
+    ///     one member or a directive between two rows moves the period, and a period that is only locally
+    ///     constant is not a period.
+    /// </remarks>
+    static bool Matches(ushort[] codes, int[] first, int[] past, int left, int right, int count) {
+        if (right >= count) {
+            return false;
+        }
+
+        if (first[left] < 0 || first[right] < 0) {
+            return false;
+        }
+
+        var length = past[left] - first[left];
+        if (past[right] - first[right] != length) {
+            return false;
+        }
+
+        for (var i = 0; i < length; i++) {
+            if (codes[first[left] + i] != codes[first[right] + i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    ///     Carries the run's end forward over whatever still repeats at <paramref name="stride" />, up to
+    ///     <paramref name="limit" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         The separator after the last element belongs to the run, and leaving it out was an
+    ///         off-by-one with real consequences.
+    ///     </b> A list of 60 four-token elements is 299 tokens to the end
+    ///     of the last one and 300 with its trailing comma, so the third 100-token window over it ran one
+    ///     token past the recorded span, came back uncovered, and was reported as duplication — the exact
+    ///     finding this exists to decline, surviving in the one window that reaches the end of the table.
+    ///     The run is therefore the maximal region the period actually covers, not the span of the
+    ///     elements.
+    /// </remarks>
+    static int Periodic(ushort[] codes, int past, int limit, int stride) {
+        while (past < limit && past < codes.Length && codes[past] == codes[past - stride]) {
+            past++;
+        }
+
+        return past;
+    }
+
+    /// <summary>The index of the token starting exactly at <paramref name="offset" />, or -1.</summary>
+    static int TokenAt(int[] starts, int offset) {
+        var found = Array.BinarySearch(starts, offset);
+        return found >= 0 ? found : -1;
+    }
+
+    /// <summary>The index just past the last token starting before <paramref name="offset" />.</summary>
+    static int PastToken(int[] starts, int offset) {
+        var found = Array.BinarySearch(starts, offset);
+        return found >= 0 ? found : ~found;
     }
 
     static void Collect(SyntaxNode scope, List<TextSpan> spans) {
@@ -357,13 +620,21 @@ internal sealed class TokenStream {
 
     static string ComputeFingerprint() {
         var stream = Lex(Canary);
-        var bytes = new byte[stream.Count * 10 + 8];
+        var bytes = new byte[(stream.Count * 10) + (stream.Runs.Length * 4) + 8];
         var at = 0;
         for (var i = 0; i < stream.Count; i++) {
             BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(at), stream.Codes[i]);
             BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(at + 2), stream.Starts[i]);
             BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(at + 6), stream.Ends[i]);
             at += 10;
+        }
+
+        // ⚠ The runs are in the stamp because they are in the index. A change to `UniformRuns` alone
+        // moves no token and no offset, so without this the whole corpus would be served the previous
+        // build's runs — which is issue #322's failure exactly, one field later.
+        foreach (var value in stream.Runs) {
+            BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(at), value);
+            at += 4;
         }
 
         BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(at), stream.Count);
