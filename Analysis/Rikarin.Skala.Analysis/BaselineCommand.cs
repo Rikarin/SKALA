@@ -1,6 +1,7 @@
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Rules.Metadata;
 using System.Globalization;
 using System.Text;
 
@@ -62,6 +63,37 @@ public static class BaselineCommand {
 
         if (checkResult.ExitCode == ExitCodes.LoadFailure) {
             return (checkResult, report);
+        }
+
+        // ⚠ #309: a baseline written from a partial run stores fewer findings than the tree holds,
+        // and every later run compares against that — the reduced denominator becomes permanent and
+        // silent, which is worse than the partial run itself. `show` is exempt because reading is
+        // not recording; the writing verbs are refused. The same applies to a run in which an
+        // analyzer threw: the rules it carries produced nothing, so a baseline built now would
+        // "accept" their absence and un-suppress every one of their findings on the next green run.
+        var unreliable = report.Partial
+            || report.Diagnostics.Any(static d =>
+                d.Id == RuleIds.AnalyzerThrew && d.Severity >= SkalaSeverity.Warning
+            );
+
+        if (verb != Verb.Show && unreliable) {
+            return (
+                new CommandResult(
+                    ExitCodes.LoadFailure,
+                    "skala baseline: refusing to write a baseline from a run that did not measure the whole tree.\n"
+                    + string.Join(
+                        "\n",
+                        report.Diagnostics
+                            .Where(static d =>
+                                d.Id == ConfigDiagnosticIds.PartialAnalysis || d.Id == RuleIds.AnalyzerThrew
+                            )
+                            .Select(static d => "  " + d)
+                    )
+                    + "\n  A baseline records what fired; one recorded now would accept the silence of whatever "
+                    + "did not run, and every later run would compare against it.\n"
+                ),
+                report
+            );
         }
 
         var path = request.BaselinePath is { Length: > 0 } named

@@ -1,4 +1,5 @@
 using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.Json;
@@ -123,8 +124,71 @@ public static class Gate {
         EvaluateMetrics(definition, report, failures);
         EvaluateRuleOverrides(definition, report, failures);
         EvaluateSuppressions(report, failures);
+        EvaluateReliability(report, failures);
 
         return new(definition.Name, failures.Count == 0, failures.ToImmutable());
+    }
+
+    /// <summary>
+    ///     The two conditions the run states about <em>itself</em>: it did not finish, or a rule died.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Unconditional, and named by no gate. Every other condition here is something a repository
+    ///     opts into in <c>skala.jsonc</c>; these two are not opinions about code quality but statements
+    ///     that the denominator is unknown, and a verdict computed over an unknown fraction of the tree
+    ///     is not a verdict. They are the same defect the tool keeps committing in different places —
+    ///     answering confidently about a tree it did not finish reading.
+    ///     <para>
+    ///         ⚠ #309: <c>Partial</c> was set, written to the SARIF, printed as "⚠ partial run" — and read
+    ///         by nothing. The run passed or failed on whatever findings it happened to collect, a
+    ///         baseline recorded during one stored fewer findings than the tree contains, and every later
+    ///         run compared against that.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ #295: <c>SK9030</c> <em>was</em> emitted, printed and recorded — the issue's claim that
+    ///         the pipeline "neither surfaces nor records" an analyzer crash is false. What was missing is
+    ///         this: a crashed analyzer is disabled for the rest of the run and contributes zero findings,
+    ///         so nothing distinguished "this rule found nothing" from "this rule died on the first file",
+    ///         and the gate passed either way. That is a load failure wearing a finding's clothes.
+    ///     </para>
+    /// </remarks>
+    static void EvaluateReliability(RunReport report, ImmutableArray<string>.Builder failures) {
+        if (report.Partial) {
+            var cancelled = report.Diagnostics
+                .Where(static diagnostic => diagnostic.Id == ConfigDiagnosticIds.PartialAnalysis)
+                .Select(static diagnostic => diagnostic.File ?? string.Empty)
+                .ToArray();
+
+            failures.Add(
+                "the run was partial: "
+                + (cancelled.Length > 0
+                    ? cancelled.Length.ToString(CultureInfo.InvariantCulture)
+                    + " compilation unit(s) were cancelled and contributed no findings ("
+                    + string.Join(", ", cancelled.Take(3).Select(Path.GetFileName))
+                    + ")"
+                    : "at least one compilation unit was cancelled and contributed no findings")
+                + ", so this verdict is computed from an unknown fraction of the tree"
+            );
+        }
+
+        // ⚠ Warning and above. `GeneratorDriver` also reports a source generator's own *reported*
+        // error under this id at Info — that is the generator saying something about the code, not
+        // the generator falling over — and failing a gate on it would fail every repository whose
+        // build emits a generator diagnostic.
+        var crashed = report.Diagnostics
+            .Where(static diagnostic =>
+                diagnostic.Id == RuleIds.AnalyzerThrew && diagnostic.Severity >= SkalaSeverity.Warning
+            )
+            .ToArray();
+
+        if (crashed.Length > 0) {
+            failures.Add(
+                crashed.Length.ToString(CultureInfo.InvariantCulture)
+                + " analyzer(s) threw and were disabled for the rest of the run, so the rules they carry "
+                + "reported nothing and their zero means nothing: "
+                + string.Join("; ", crashed.Take(3).Select(static diagnostic => diagnostic.Message))
+            );
+        }
     }
 
     /// <summary>

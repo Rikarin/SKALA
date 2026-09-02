@@ -279,7 +279,24 @@ public static class CheckCommand {
             findings.AddRange(outcome.Findings);
             diagnostics.AddRange(outcome.Diagnostics);
             costs.AddRange(outcome.Costs);
-            partial |= outcome.Partial;
+            // ⚠ #309: `partial |= outcome.Partial` aggregates across compilation units, and the only
+            // path that sets it returns *no findings*. So one cancelled unit contributed zero and
+            // marked the whole run while every other unit reported normally — which is how a sweep
+            // came to see `partial: true` beside 211 findings and could not account for it. The flag
+            // stays aggregate because the gate needs one answer, and the unit is named here so that
+            // the next reader does not have to trace it by hand.
+            if (outcome.Partial) {
+                partial = true;
+                diagnostics.Add(
+                    new SkalaDiagnostic(
+                        ConfigDiagnosticIds.PartialAnalysis,
+                        SkalaSeverity.Warning,
+                        $"'{unit.Name}' was cancelled before it finished and contributed no findings; "
+                        + "the run saw only part of the tree",
+                        unit.ProjectPath is { Length: > 0 } project ? project : unit.Name
+                    )
+                );
+            }
             files += unit.ReportablePaths.Count;
             foreach (var tree in unit.Compilation.SyntaxTrees) {
                 lines += tree.GetText(cancellation).Lines.Count;
@@ -507,7 +524,7 @@ public static class CheckCommand {
             } catch (Exception exception) when (exception is InvalidOperationException or IOException) {
                 diagnostics.Add(
                     new SkalaDiagnostic(
-                        RuleIds.AnalyzerThrew,
+                        ConfigDiagnosticIds.GateInputUnavailable,
                         SkalaSeverity.Error,
                         "--since=" + reference + " could not be resolved: " + exception.Message,
                         report.RepositoryRoot
@@ -526,7 +543,7 @@ public static class CheckCommand {
             if (!File.Exists(baselinePath)) {
                 diagnostics.Add(
                     new SkalaDiagnostic(
-                        RuleIds.AnalyzerThrew,
+                        ConfigDiagnosticIds.GateInputUnavailable,
                         SkalaSeverity.Warning,
                         "the gate names a baseline at "
                         + SarifWriter.Relative(report.RepositoryRoot, baselinePath)
@@ -552,7 +569,7 @@ public static class CheckCommand {
             } catch (Exception exception) when (exception is IOException or InvalidDataException) {
                 diagnostics.Add(
                     new SkalaDiagnostic(
-                        RuleIds.AnalyzerThrew,
+                        ConfigDiagnosticIds.GateInputUnavailable,
                         SkalaSeverity.Error,
                         "the baseline at " + baselinePath + " could not be read: " + exception.Message,
                         baselinePath
@@ -574,7 +591,7 @@ public static class CheckCommand {
             } catch (Exception exception) when (exception is InvalidOperationException or IOException) {
                 diagnostics.Add(
                     new SkalaDiagnostic(
-                        RuleIds.AnalyzerThrew,
+                        ConfigDiagnosticIds.GateInputUnavailable,
                         SkalaSeverity.Error,
                         "--no-new-suppressions could not compare against " + against + ": " + exception.Message,
                         report.RepositoryRoot
