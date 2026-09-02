@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 284 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 287 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -225,6 +225,9 @@
 <tr><td><a href="SK3530.html">SK3530</a></td><td>The disposable field is not disposed by <code>Dispose</code></td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK3531.html">SK3531</a></td><td>The <code>DisposeAsync</code> override never calls the base implementation</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK3532.html">SK3532</a></td><td>The <code>ref struct</code> owns a disposable and cannot declare it</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3540.html">SK3540</a></td><td>A <code>Dispose</code> method the type never declares</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK3541.html">SK3541</a></td><td>The <code>HttpClient</code> is disposed at the end of the call</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK3542.html">SK3542</a></td><td><code>DangerousGetHandle</code> with nothing holding the handle open</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
