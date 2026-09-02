@@ -109,10 +109,16 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
 
         // ⚠ A parent that is not a block cannot hold the extra statement an unwrap produces:
         // `while (c) if (a) return; else b();` has exactly one embedded statement position.
+        // ⚠ There is deliberately no `HasNoDirective(clause)` here and the sabotage is what says so.
+        // One was written, and removing it turned nothing red — because it cannot: that helper asks
+        // about the clause's *leading and trailing* trivia, and the fix deletes from the `else` token
+        // to the block's `{`, or from `else` to the embedded statement. A directive before `else` or
+        // after the closing brace is in neither span, so the guard withdrew correct findings to
+        // protect text nothing removes. Exactly #302's shape, and the span checks below cover what is
+        // actually at risk.
         if (statement.Else is not { } clause
             || statement.Parent is not BlockSyntax
             || !AlwaysLeaves(statement.Statement)
-            || !HasNoDirective(clause)
             || HasDirectiveInside(statement.Statement)) {
             return;
         }

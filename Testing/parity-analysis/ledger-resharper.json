@@ -354,7 +354,10 @@
    "state": "shipped",
    "coverage": "partial",
    "coveredBy": [
-    "SK2016"
+    "SK2016",
+    "SK2070",
+    "SK2071",
+    "SK2073"
    ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
@@ -374,13 +377,6 @@
     "resharper_complex_object_destructuring_problem_highlighting",
     "resharper_complex_object_in_context_destructuring_problem_highlighting",
     "resharper_positional_property_used_problem_highlighting"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK2016",
-    "SK2070",
-    "SK2071",
-    "SK2073"
    ]
   },
   {
@@ -2301,7 +2297,7 @@
   },
   {
    "slug": "out-parameter-value-discarded",
-   "title": "The out parameter's assigned value is discarded by every caller",
+   "title": "The private out parameter's assigned value is discarded by every caller",
    "issue": 324,
    "state": "proposed",
    "proposedRange": "SK2000-SK2999",
@@ -2309,9 +2305,9 @@
    "proposedScope": "Compilation",
    "proposedFix": "none",
    "inspections": [
-    "OutParameterValueIsAlwaysDiscarded.Global",
     "OutParameterValueIsAlwaysDiscarded.Local"
-   ]
+   ],
+   "evidence": "⚠ **`.Local` is decidable in one compilation; `.Global` is not, and `.Global` has been moved to `excluded` because the state vocabulary is per concept and this concept's two halves have different answers.** Measured rather than reasoned about: neither variant fires under plain `jb inspectcode`, and `.Local` appears only with `--swea`. That is itself the shape of the answer — both are whole-program questions, and `.Local` is the one whose whole program fits inside a compilation. Every call site of a `private` (or `file`) method is in the compilation by construction, so a `CompilationStart`/`CompilationEnd` pair collecting `IInvocationOperation`s answers it, which is what `scope: Compilation` exists for. ⚠ Four guards are load-bearing and each names a way to be wrong: (1) any reference to the method that is not a direct invocation — a method group converted to a delegate, a `nameof`, an `[UnsafeAccessor]` target — hides a call site whose `out` argument may well be read; (2) a `partial`, `virtual`, `abstract`, `override` or interface-implementing method has callers the accessibility does not bound; (3) a method with *zero* call sites is unused rather than discarded and is a different finding; (4) a source generator can add a part that calls it, invisible on a `--load=loose` run — the same objection that refuted `PartialTypeWithSinglePart` under #129, and the reason the scope must be `Compilation` rather than `Semantic`. ⚠ **Nothing hosts either half.** Absent from all 442 descriptors read out of SDK 10.0.400's analyzer assemblies, and silent in a behavioural probe with all 120 `IDE` and all 320 `CA` ids at `warning`: `IDE0058`, `IDE0059` and ReSharper's own `UnusedVariable` all fire at the **call site** on `out var ignored`, and `CA1021` objects to `out` parameters as a design matter, but nothing reports the callee-side dead write. `SK6040` `unused-out-variable` is the call-site neighbour, as the issue says. ⚠ The remedy is a signature change at the declaration and at every call site, so `proposedFix: none` stands and the rule would ship as a finding with no edit, like the `SK7xxx` metrics."
   }
  ],
  "excluded": [
@@ -2530,6 +2526,10 @@
   {
    "inspection": "OperatorIsCanBeUsed",
    "reason": "VB.NET inspection; the key carries no language prefix but the construct is VB-only."
+  },
+  {
+   "inspection": "OutParameterValueIsAlwaysDiscarded.Global",
+   "reason": "⚠ Out of reach rather than unbuilt, and recorded here because the ledger's `state` vocabulary is per concept while #324's two inspections have different answers. `.Global` is the non-private half: a `public` method's callers live in downstream assemblies that no compilation and no solution contains, so no amount of analysis inside the project can say the assigned value is discarded everywhere. ReSharper answers it for one solution, which is simply wrong about a published library. Reopen only if Skala ever gains a whole-program view, which #301 defines as out of scope. The private half is tracked as concept `out-parameter-value-discarded` on issue #324."
   },
   {
    "inspection": "OutParameterWithHandlesResourceDisposalAttribute",

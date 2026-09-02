@@ -693,6 +693,90 @@ without the redundant name.
 ⚠ **`class C : object` is not this finding**, and ReSharper does not report it either — probed in the
 same run, which is why the rule does not carry a shape somebody would otherwise add for symmetry.
 
+**Corpus: 6 findings, every zero classified.** Over the three vendored trees, all five canaries fired
+on all three, so no zero here is a `Silent` one. `SK0240` reports **5** on newtonsoft — all of them the
+new `else` shape, all read and confirmed genuine (`IsoDateTimeConverter.cs:190`, and
+`JTokenReader.cs:87`, `:121`, `:160`, `:179`, each an `if (…) { return …; } else { … }`) — and **1** on
+vixen, the case-label shape that was already shipping. The rest are `Declined`, and they are not all
+worth the same:
+
+- **`SK0241`'s `scoped` shape and `SK0281` are shape-absent zeros and carry no false-positive
+  information.** A scripted count over the 380 real sources finds **zero** `scoped` modifiers and
+  **zero** `[SetsRequiredMembers]`, so those zeros say nothing about the rules. Saying "clean" of them
+  would be the double-count docs/plan/17 warns about. (There are 81 `required` members, which is what
+  makes `SK0281`'s absence worth stating rather than assuming.)
+- **`SK0280`, `SK0282` and the switch-arm half of `SK0240` are zeros with the population present.**
+  24 declarations carry two or more base-list entries, 28 positional records carry a body, and 51
+  switch expressions appear across 23 files. Each rule ran over all of them and reported nothing,
+  which is a measurement.
+
+**Sabotage: 31 guards, 30 of them shown to be what produces the behaviour.** Each was removed on its
+own and the fixture set re-run. ⚠ **Five of the first thirty measured nothing and each was a different
+defect**, which is the whole reason the exercise is run one guard at a time:
+
+- ⚠ **Five patches were `if (false) { … }`, which is `CS0162` and an error in this build — they never
+  compiled, so they measured nothing.** Re-run with always-false expressions the compiler cannot fold
+  (`span.Length < 0`), all five turned their named fixture red.
+- ⚠ **One guard was dead and is deleted.** `HasNoDirective(clause)` on the `else` shape asks about the
+  clause's *leading and trailing* trivia, and the fix deletes from the `else` token to the block's
+  `{`. A directive before `else` or after the closing brace is in neither span, so the guard withdrew
+  correct findings to protect text nothing removes — #302's shape again, one rule over.
+- ⚠ **Three fixtures did not reach the guard they were written for, and each passed for a reason one
+  guard earlier.** `else_where_the_branch_jumps_behind_a_directive` put the `return;` inside
+  `#if TRACE`, so with `TRACE` undefined it is *disabled text*, the block's last statement is not a
+  jump, and `AlwaysLeaves` declined it before the directive guard was asked;
+  `the_discard_arm_has_a_when_clause` put the `when` on a *middle* arm, so the value comparison
+  stopped the walk; `the_repeating_arm_binds_a_name` used two arms whose expressions were not
+  syntactically equal, so `AreEquivalent` declined it before the designation guard. Replacements that
+  do reach each guard are committed — a directive *after* the jump, a `when` on the trailing arm, and
+  two arms both reading `text` where one is a pattern variable and the other a field — and all three
+  now turn red.
+- ⚠ **One guard on `SK0282` is asserted by a fixture but has not been sabotage-tested, and saying so is
+  the point.** `property.Initializer is not { Value: IdentifierNameSyntax initializer }` cannot be
+  removed without restructuring the method around a shape that has no `initializer` to bind, so no
+  sabotage was run for it. `the_property_has_no_initializer` asserts the behaviour; nothing has been
+  shown to be the thing that produces it.
+
+#### `OutParameterValueIsAlwaysDiscarded` — what is decidable, for [#324](https://github.com/Rikarin/SKALA/issues/324)
+
+⚠ **The two halves have different answers, and the ledger's `state` vocabulary is per concept, so
+`.Global` has been moved into `ledger-resharper.json`'s `excluded` list with its reason and the
+concept on #324 now carries `.Local` alone.**
+
+Measured rather than reasoned about: **neither variant fires under plain `jb inspectcode`**, and
+`.Local` appears only under `--swea`. That is the shape of the answer — both are whole-program
+questions, and `.Local` is the one whose whole program fits inside a compilation.
+
+- **`.Local` (private accessibility) is decidable in one compilation.** Every call site of a `private`
+  or `file` method is inside the compilation by construction, so a `CompilationStart`/`CompilationEnd`
+  pair collecting `IInvocationOperation`s answers it — which is what `scope: Compilation` is for. ⚠
+  Four guards are load-bearing and each names a way to be wrong: any reference to the method that is
+  **not a direct invocation** — a method group converted to a delegate, a `nameof`, an
+  `[UnsafeAccessor]` target — hides a call site whose `out` argument may be read; a `partial`,
+  `virtual`, `abstract`, `override` or interface-implementing method has callers the accessibility
+  does not bound; a method with **zero** call sites is unused rather than discarded and is a different
+  finding; and a source generator can add a part that calls it, which a `--load=loose` run never sees
+  — the same objection that refuted `PartialTypeWithSinglePart`, and precisely why the scope must be
+  `Compilation` and not `Semantic`.
+- **`.Global` (non-private) is out of reach**, not merely unbuilt. A `public` method's callers live in
+  downstream assemblies that no compilation and no solution contains. ReSharper answers it for one
+  solution, which is simply wrong about a published library.
+- **Nothing hosts either half.** `IDE0058`, `IDE0059` and ReSharper's own `UnusedVariable` all fire at
+  the **call site** on `out var ignored`, and `CA1021` objects to `out` parameters as a design matter;
+  none of them reports the callee-side dead write. `SK6040` `unused-out-variable` is the call-site
+  neighbour, exactly as the issue says.
+- ⚠ **The remedy is a signature change** at the declaration and at every call site, so `proposedFix:
+  none` stands: the rule would ship as a finding with no edit, like the `SK7xxx` metrics. It is not
+  built here — establishing what is decidable was the ask — and #324 stays open for `.Local`.
+
+⚠ **A defect in `ledger-resharper.json` fell out of touching it**, and it is the kind this repository
+keeps finding: the `structured-log-template` concept carried **`coverage` and `coveredBy` twice in one
+object**. JSON's last-wins is why `verify_ledger.py` never noticed — it already read the four-rule
+list — but a reader, or any parser taking the first occurrence, sees the concept credited to `SK2016`
+alone and `SK2070`/`SK2071`/`SK2073` uncredited. Introduced by the logging batch in `48e89a2d`. The
+duplicate is collapsed to the value that was already in effect, so nothing changes and the file now
+says one thing.
+
 ⚠ **None of the three is hosted, and the zeros are measured in both directions.** 442 descriptors
 were read out of SDK 10.0.400's analyzer assemblies — `Microsoft.CodeAnalysis.dll` loaded first
 behind an `AssemblyResolve` handler, without which `GetTypes()` throws and **every id reads absent**,
