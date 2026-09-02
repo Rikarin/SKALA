@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 253 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 258 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -129,6 +129,11 @@
 <tr><td><a href="SK2152.html">SK2152</a></td><td>The path comparison assumes the file system's case rules</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2153.html">SK2153</a></td><td>An IQueryable is silently degraded to IEnumerable</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2154.html">SK2154</a></td><td>The sort has no ordering to use</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2160.html">SK2160</a></td><td>The clock is read from a static</td><td><span class="tag sev-none">none</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2161.html">SK2161</a></td><td>The <code>DateTime</code> has no time zone and is converted as if it had one</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2162.html">SK2162</a></td><td>The date or time <code>TryParse</code> has an implicit culture</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2163.html">SK2163</a></td><td>Elapsed time is measured with the wall clock</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2164.html">SK2164</a></td><td>The assertion's expression has side effects</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>
