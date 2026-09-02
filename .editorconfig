@@ -695,3 +695,11 @@ tab_width = 4
 indent_style = space
 indent_size = 4
 tab_width = 4
+
+# ⚠ SK6034 (#330): the constants this project has promised never to change, declared by the project
+# rather than recognised by the analyzer. Rule ids are permanent under ADR-012 — `allocated-ids.txt`
+# is append-only and `RuleCatalogTests` asserts it — and the exit codes are a published CLI contract,
+# so a caller holding the old copy holds the right one. `static readonly` would also forbid the
+# constant positions this tree already writes, such as `[InlineData(RuleIds.…, 6)]`.
+[*.cs]
+dotnet_code_quality.SK6034.frozen_constant_types = ArrangeIds, ConfigDiagnosticIds, ExitCodes, FormatDiagnosticIds

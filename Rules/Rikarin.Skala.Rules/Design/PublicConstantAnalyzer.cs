@@ -2,7 +2,10 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Modernization;
+using System;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Design;
@@ -21,6 +24,28 @@ namespace Rikarin.Skala.Rules.Design;
 ///         The rule is semantic because the question is whether the field escapes the assembly, and that
 ///         is the field's accessibility <em>and</em> every containing type's, which is a walk over
 ///         symbols rather than over one declaration's modifiers.
+///     </para>
+///     <para>
+///         ⚠ <b>A project can declare which of its constants are frozen, and the analyzer knows nothing
+///         about which names those are (#330).</b> The rule's own rationale already says a value that
+///         "can never change" is correctly <c>public const</c> — a protocol magic number, a format
+///         version — and it had no way to be told. It does now:
+///         <c>dotnet_code_quality.SK6034.frozen_constant_types</c> names the containing types whose
+///         constants are contract, defaults to empty, and is read from the <c>.editorconfig</c> the
+///         consumer already has. ⚠ <b>The exemption is declared by the project, never recognised by the
+///         analyzer.</b> The first proposal on the issue keyed it on <c>allocated-ids.txt</c> and on the
+///         type names <c>RuleIds</c>/<c>ExitCodes</c> — that is one repository's layout carried inside a
+///         rule that ships to repositories which have neither, and it is the thing the working
+///         agreement forbids. Skala declares its own four types in its own <c>.editorconfig</c>, like
+///         any other consumer.
+///     </para>
+///     <para>
+///         ⚠ <b>The fix drops an initialiser that is the type's default, because keeping it is
+///         <c>CA1805</c>.</b> <c>public const int Ok = 0;</c> rewritten to
+///         <c>public static readonly int Ok = 0;</c> is an explicit default initialiser, which is
+///         redundant on a field and legitimate only on a <c>const</c> — so the one-token swap traded
+///         this rule's finding for the SDK's. Only value types are dropped: <c>const string X = null;</c>
+///         would become an uninitialised non-nullable field and trade the finding for CS8618 instead.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -75,11 +100,26 @@ public sealed class PublicConstantAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        if (IsFrozenByTheProject(
+                context.Options.AnalyzerConfigOptionsProvider.GetOptions(field.SyntaxTree),
+                symbol.ContainingType
+            )) {
+            return;
+        }
+
+        var edits = ImmutableArray.CreateBuilder<(TextSpan Span, string Text)>();
+        edits.Add((keyword.Span, "static readonly"));
+        foreach (var variable in field.Declaration.Variables) {
+            if (DefaultInitializer(context, variable) is { } redundant) {
+                edits.Add((redundant, string.Empty));
+            }
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
                 keyword.GetLocation(),
-                FixEdits.Pack((keyword.Span, "static readonly")),
+                FixEdits.Pack(edits.ToArray()),
                 "`"
                 + declarator.Identifier.ValueText
                 + "` is visible outside this assembly and `const`, so its value is copied into every "
@@ -87,6 +127,92 @@ public sealed class PublicConstantAnalyzer : DiagnosticAnalyzer {
                 + "rebuilt on the old one, with no error anywhere"
             )
         );
+    }
+
+    /// <summary>
+    ///     The <c>= …</c> a <c>static readonly</c> field must not keep, or null when it may.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>CA1805</c>: an explicit default initialiser is redundant on a field and legitimate on a
+    ///     <c>const</c>, so the one-token swap turns <c>public const int Ok = 0;</c> into an SDK finding
+    ///     unless the initialiser goes with it (#330).
+    ///     <para>
+    ///         ⚠ <b>Value types only.</b> <c>const string Name = null;</c> is also "the type's default",
+    ///         and dropping <em>that</em> initialiser leaves an uninitialised non-nullable field —
+    ///         CS8618, which is a worse trade than the one being repaired.
+    ///     </para>
+    /// </remarks>
+    static TextSpan? DefaultInitializer(SyntaxNodeAnalysisContext context, VariableDeclaratorSyntax variable) {
+        if (variable.Initializer is not { } initializer
+            || context.SemanticModel.GetDeclaredSymbol(variable, context.CancellationToken)
+                is not IFieldSymbol { HasConstantValue: true, Type.IsValueType: true } field
+            || !IsTheTypesDefault(field.ConstantValue)) {
+            return null;
+        }
+
+        var span = TextSpan.FromBounds(variable.Identifier.Span.End, initializer.Span.End);
+        return RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(variable.SyntaxTree, span) ? null : span;
+    }
+
+    /// <summary>
+    ///     Whether a constant value is the one the runtime would have produced anyway.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Floating point is left out on purpose: <c>-0.0</c> compares equal to <c>0.0</c> and is not
+    ///     the same value, so <c>==</c> is the wrong question to ask about it and
+    ///     <c>float.IsNegative</c> does not exist on netstandard2.0.
+    /// </remarks>
+    static bool IsTheTypesDefault(object? value) =>
+        value switch {
+            bool flag => !flag,
+            char character => character == '\0',
+            sbyte number => number == 0,
+            byte number => number == 0,
+            short number => number == 0,
+            ushort number => number == 0,
+            int number => number == 0,
+            uint number => number == 0,
+            long number => number == 0,
+            ulong number => number == 0,
+            decimal number => number == 0m,
+            _ => false
+        };
+
+    /// <summary>
+    ///     Whether the project has declared this containing type's constants frozen.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Declared, not recognised.</b> The key defaults to empty, so the rule reports every
+    ///     externally visible <c>const</c> until a project says otherwise — which is the "on purpose
+    ///     rather than by default" the rationale asks for. An entry matches either the type's own name or
+    ///     its fully qualified one, so <c>ExitCodes</c> and
+    ///     <c>Rikarin.Skala.Core.Diagnostics.ExitCodes</c> both work and a consumer with two types of one
+    ///     name can say which.
+    /// </remarks>
+    static bool IsFrozenByTheProject(AnalyzerConfigOptions options, INamedTypeSymbol? containing) {
+        if (containing is null
+            || !options.TryGetValue("dotnet_code_quality." + RuleIds.PublicConstantField + ".frozen_constant_types",
+                out var configured)
+            || string.IsNullOrWhiteSpace(configured)) {
+            return false;
+        }
+
+        var qualified = containing.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            .Replace("global::", string.Empty);
+
+        foreach (var entry in configured!.Split(',')) {
+            var name = entry.Trim();
+            if (name.Length == 0) {
+                continue;
+            }
+
+            if (string.Equals(name, containing.Name, StringComparison.Ordinal)
+                || string.Equals(name, qualified, StringComparison.Ordinal)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
