@@ -106,6 +106,43 @@ public static class ConfigDiagnosticIds {
     public const string LoadModeFellBack = "SK9025";
 
     /// <summary>
+    ///     <c>--rules</c> names an id no rule in this run can produce, so those ids contribute nothing.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It exists because the absence of it read as a clean tree (#278). <c>--rules SK3510,SK3511</c>
+    ///     bound a single string containing a comma, matched no rule, and exited 0 with no output — half
+    ///     an hour of an agent believing its analyzers were dead while they were fine. The comma is now
+    ///     split, but a mistyped id reaches the same false clean by a different route, so the filter is
+    ///     checked against what actually loaded. A filter that is unknown <em>in full</em> is refused
+    ///     rather than reported under this id: such a run cannot produce a finding, and its zero is not
+    ///     a measurement.
+    /// </remarks>
+    public const string UnknownRuleFilter = "SK9026";
+
+    /// <summary>A compilation unit was cancelled, so the run saw only part of the tree.</summary>
+    /// <remarks>
+    ///     ⚠ #309. <c>AnalyzerHost</c> sets <c>Partial</c> in exactly one place — the
+    ///     <c>OperationCanceledException</c> catch — and that path returns <em>no findings</em>, while
+    ///     <c>CheckCommand</c> aggregates the flag across units with <c>|=</c>. So on a multi-project
+    ///     tree one cancelled unit contributes zero findings and marks the whole run, and every other
+    ///     unit reports normally: a sweep observed <c>partial: true</c> alongside 211 findings and could
+    ///     not explain it. Until this id existed the flag was a bare boolean that no reader could
+    ///     attribute to a unit, which is why the anomaly took a hand trace to explain.
+    /// </remarks>
+    public const string PartialAnalysis = "SK9027";
+
+    /// <summary>An input the gate's scoping depends on could not be read.</summary>
+    /// <remarks>
+    ///     ⚠ It exists because these four conditions were reported as <c>SK9030</c> "an analyzer threw",
+    ///     which none of them is: an unresolvable <c>--since</c> ref, a baseline the gate names and that
+    ///     does not exist, a baseline that will not parse, and a <c>--no-new-suppressions</c> comparison
+    ///     that failed. Sharing an id with the analyzer-crash diagnostic meant <c>SK9030</c> in a report
+    ///     could not be read as "a rule died" — the one question #295 wanted it to answer — and it is
+    ///     what made the gate unable to fail on a crash without also failing on a missing baseline file.
+    /// </remarks>
+    public const string GateInputUnavailable = "SK9028";
+
+    /// <summary>
     ///     The managed canonical block does not hash to what its own marker says. Somebody edited it.
     ///     This is the gate condition: drift is a finding, not a surprise (docs/plan/03 § "Canonical
     ///     distribution").

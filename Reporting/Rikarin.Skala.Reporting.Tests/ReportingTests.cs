@@ -215,8 +215,15 @@ public sealed class ReportingTests {
     ///     with the verdict, its reasons, and the run's own diagnostics about itself all written
     ///     somewhere the log could not reach. Read from the log alone, this repository's master gate
     ///     looked like one rule family misbehaving; it was failing four conditions, and the one that
-    ///     mattered most was <c>SK9030</c> — the baseline the gate names does not exist, so every
-    ///     finding counts as new. The tool had diagnosed itself and filed the answer out of sight.
+    ///     mattered most was the missing baseline the gate names, which makes every finding count as
+    ///     new. The tool had diagnosed itself and filed the answer out of sight.
+    ///     <para>
+    ///         ⚠ That diagnostic used to be reported as <c>SK9030</c> "an analyzer threw", which it is
+    ///         not. Four unrelated conditions shared that id — an unresolvable <c>--since</c>, a missing
+    ///         baseline, an unreadable one, and a failed suppression comparison — so <c>SK9030</c> in a
+    ///         report could not answer the one question it exists for, "did a rule die" (#295). They are
+    ///         <c>SK9028</c> now, and this test carries the id it is really emitted under.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void GithubRenderer_PutsTheVerdictAndTheRunsOwnDiagnosticsInTheLog() {
@@ -224,7 +231,7 @@ public sealed class ReportingTests {
             Gate = new GateResult("ci", false, ["3 new finding(s) at or above warning"]),
             Diagnostics = [
                 new SkalaDiagnostic(
-                    "SK9030",
+                    ConfigDiagnosticIds.GateInputUnavailable,
                     SkalaSeverity.Warning,
                     "the gate names a baseline at .skala/baseline.sarif and there is no such file"
                 )
@@ -233,7 +240,7 @@ public sealed class ReportingTests {
 
         var text = Renderer.Render(report, ReportFormat.Github, true);
 
-        Assert.Contains("::notice::SK9030: the gate names a baseline", text, StringComparison.Ordinal);
+        Assert.Contains("::notice::SK9028: the gate names a baseline", text, StringComparison.Ordinal);
         Assert.Contains("::error::gate `ci`: FAIL", text, StringComparison.Ordinal);
         Assert.Contains("::error::  3 new finding(s) at or above warning", text, StringComparison.Ordinal);
 
