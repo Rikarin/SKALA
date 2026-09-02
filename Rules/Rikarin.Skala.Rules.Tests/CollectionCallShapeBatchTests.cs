@@ -14,16 +14,17 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     The five rules decided by the receiver's static type plus the operator called on it.
 /// </summary>
 /// <remarks>
-///     ⚠ <c>SK1034</c> is in the analyzer list on purpose. <c>SK4033</c> declares
-///     <c>supersedes: ["SK1034"]</c>, and whether the two land on the same span — which is the only
-///     thing <c>Supersession.Apply</c> can match on — is a property of the pair rather than of either
-///     rule.
+///     ⚠ <c>SK1034</c> used to be in this analyzer list, because <c>SK4033</c> declared
+///     <c>supersedes: ["SK1034"]</c> and whether the two landed on the same span was a property of the
+///     pair rather than of either rule. <c>SK1034</c> is retired (#281) and the supersession went with
+///     it, so what is left to assert is that <c>SK4033</c> reports the shapes it owns on its own —
+///     which is what the span tests below now do, without a partner to pair against.
 /// </remarks>
 public sealed class CollectionCallShapeBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new CollectionOwnMethodAnalyzer(), new DictionaryKeyRelookupAnalyzer(),
         new SubstringBeforeSearchAnalyzer(), new ConcurrentDictionaryMemberAnalyzer(),
-        new SortBeforeFilterAnalyzer(), new CountPropertyAnalyzer(), new WhereBeforeOperatorAnalyzer(),
+        new SortBeforeFilterAnalyzer(), new WhereBeforeOperatorAnalyzer(),
     ];
 
     static readonly string[] Ids = ["SK4030", "SK4031", "SK4032", "SK4033", "SK4034"];
@@ -306,18 +307,23 @@ public sealed class CollectionCallShapeBatchTests {
     }
 
     /// <summary>
-    ///     ⚠ The supersession, as the only thing that can actually make it work: the same span.
+    ///     <c>SK4033</c> reports the expensive <c>Keys.Count()</c> shape alone, now that nothing
+    ///     partners it.
     /// </summary>
     /// <remarks>
-    ///     <c>Supersession.Apply</c> pairs findings by rule, file, line and column. A rule that
-    ///     declared <c>supersedes</c> and reported one character to the left would suppress nothing
-    ///     and nothing would say so — the two findings would simply both appear, which is what this
-    ///     asserts against.
+    ///     ⚠ This was <c>TheSupersededCountFindingLandsOnTheSameSpan</c>, and it asserted that
+    ///     <c>SK4033</c> and <c>SK1034</c> landed on the same span — the only thing
+    ///     <c>Supersession.Apply</c> can pair on. <c>SK1034</c> is retired (#281), so the pairing is
+    ///     gone and with it the failure mode it guarded. What survives is the half that is still
+    ///     falsifiable: exactly one finding on this shape, and it is <c>SK4033</c>'s. ⚠ The
+    ///     <c>Assert.Empty</c> is the load-bearing line — it is what would catch <c>SK4033</c> being
+    ///     silently widened to re-report the plain <c>Count()</c> shape the retirement handed to
+    ///     <c>CA1829</c>.
     /// </remarks>
     [Theory]
     [InlineData("entries.Keys.Count()")]
     [InlineData("entries.Values.Count()")]
-    public void TheSupersededCountFindingLandsOnTheSameSpan(string written) {
+    public void TheExpensiveCountFindingIsReportedAlone(string written) {
         var source = $$"""
                        using System.Collections.Concurrent;
                        using System.Linq;
@@ -327,19 +333,14 @@ public sealed class CollectionCallShapeBatchTests {
                        """;
 
         var findings = Analyze(RuleFixtures.Compile(source, "probe.cs"));
-        var mine = Assert.Single(findings.Where(d => d.Id == "SK4033"));
-        var superseded = Assert.Single(findings.Where(d => d.Id == "SK1034"));
-
-        Assert.Equal(
-            superseded.Location.GetLineSpan().StartLinePosition,
-            mine.Location.GetLineSpan().StartLinePosition
-        );
-        Assert.Contains("SK1034", RuleCatalog.Get("SK4033").Supersedes);
+        Assert.Single(findings.Where(d => d.Id == "SK4033"));
+        Assert.Empty(findings.Where(d => d.Id == "SK1034"));
+        Assert.Empty(RuleCatalog.Get("SK4033").Supersedes);
     }
 
     /// <summary>The same, for the negated form, whose span is the negation's rather than the call's.</summary>
     [Fact]
-    public void TheNegatedAnyAlsoLandsWhereSK1034Reports() {
+    public void TheNegatedAnyIsReportedOnTheNegationsSpan() {
         const string source = """
                               using System.Collections.Concurrent;
                               using System.Linq;
@@ -356,9 +357,9 @@ public sealed class CollectionCallShapeBatchTests {
 
         var findings = Analyze(RuleFixtures.Compile(source, "probe.cs"));
         var mine = Assert.Single(findings.Where(d => d.Id == "SK4033"));
-        var superseded = Assert.Single(findings.Where(d => d.Id == "SK1034"));
 
-        Assert.Equal(superseded.Location.SourceSpan, mine.Location.SourceSpan);
+        // ⚠ The span is the negation's, not the call's: the fix rewrites `!entries.Keys.Any()` whole.
+        Assert.Equal("!entries.Keys.Any()", source[mine.Location.SourceSpan.Start..mine.Location.SourceSpan.End]);
         Assert.Contains("entries.IsEmpty", Apply(source, "SK4033"), StringComparison.Ordinal);
     }
 

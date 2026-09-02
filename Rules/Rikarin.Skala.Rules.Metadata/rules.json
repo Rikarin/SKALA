@@ -8,17 +8,15 @@
     "",
     "ADR-012: an id is allocated once and never re-purposed. RuleCatalogTests.RuleIds_AreAppendOnly",
     "reads Rules/Rikarin.Skala.Rules.Metadata/allocated-ids.txt and fails the build when an id in it",
-    "is absent here or when a shipped id's `concept` changes. Retiring a rule means `retired: true`,",
-    "never deleting the entry.",
+    "is absent here or when a shipped id's `concept` changes.",
     "",
-    "`scope` drives two separate things and they are not the same thing:",
-    "  - Syntax | Semantic  -> whether the rule may run in --load=loose (docs/plan/07 § loose).",
-    "  - Compilation        -> excluded from the per-file incremental cache, because its output for",
-    "                          one file depends on files the cache key does not name.",
-    "",
-    "`languageVersion` is a floor and is checked against the compilation's *effective* LangVersion,",
-    "never the SDK's. A rule that suggests C# 12 syntax to a project pinned at C# 10 produces",
-    "uncompilable fixes."
+    "⚠ Retirement has two shapes and they are not interchangeable. A rule that SHIPPED and is",
+    "then withdrawn keeps its entry here with `retired: true`: the descriptor stays (disabled, so",
+    "nothing new is reported), the docs page stays as a tombstone an old finding can be looked up",
+    "in, and `dotnet_diagnostic.<id>.severity` still resolves instead of dangling. A rule retired",
+    "BEFORE it was ever built has no entry here at all -- there is nothing to flag -- and the",
+    "retirement is recorded inline in allocated-ids.txt instead. SK1020 and SK1034 are the first",
+    "kind (#281); SK6001 is the second."
   ],
   "rules": [
     {
@@ -696,10 +694,11 @@
       "fixIsSafe": true,
       "resharperId": "UseThrowIfNullMethod",
       "supersedes": [],
+      "retired": true,
       "since": "0.6",
       "languageVersion": null,
       "summary": "A hand-written null guard that `ArgumentNullException.ThrowIfNull` already is.",
-      "rationale": "The BCL helper is one line instead of three, captures the argument expression itself through `CallerArgumentExpression` so the message cannot drift from the parameter name, and is annotated so the nullable analysis knows the argument is non-null afterwards — which the hand-written form only manages when the `throw` is the whole `if` body.",
+      "rationale": "⚠ **Retired (#281).** `CA1510` is enabled by default at `Info` in a stock SDK build and reports all three of this rule's positive fixtures with nothing configured, which is the same visibility this rule shipped at (`suggestion`). ADR-008 is host, never rebuild, so the rule is withdrawn rather than kept as a second opinion. The id stays allocated for ever (ADR-012). The BCL helper is one line instead of three, captures the argument expression itself through `CallerArgumentExpression` so the message cannot drift from the parameter name, and is annotated so the nullable analysis knows the argument is non-null afterwards — which the hand-written form only manages when the `throw` is the whole `if` body.",
       "examples": {
         "bad": "if (source is null) {\n    throw new ArgumentNullException(nameof(source));\n}",
         "good": "ArgumentNullException.ThrowIfNull(source);"
@@ -799,10 +798,11 @@
       "fixIsSafe": true,
       "resharperId": "UseCollectionCountProperty",
       "supersedes": [],
+      "retired": true,
       "since": "0.6",
       "languageVersion": null,
       "summary": "`list.Count() > 0` and `list.Any()` on something that already has a `Count`.",
-      "rationale": "`Enumerable.Count()` has a fast path for `ICollection` and `Any()` allocates an enumerator; both are strictly more work than reading the property, and both hide from the reader that the length is already known. The value is legibility more than speed.",
+      "rationale": "⚠ **Retired (#281).** `CA1860` and `CA1829` are both enabled by default at `Info` in a stock SDK build and between them report all four of this rule's positive fixtures with nothing configured — `CA1860` three, `CA1829` the `Count()` one — which is the same visibility this rule shipped at (`suggestion`). ADR-008 is host, never rebuild. The id stays allocated for ever (ADR-012). `Enumerable.Count()` has a fast path for `ICollection` and `Any()` allocates an enumerator; both are strictly more work than reading the property, and both hide from the reader that the length is already known. The value is legibility more than speed.",
       "examples": {
         "bad": "if (items.Any()) {\n    Consume(items);\n}",
         "good": "if (items.Count > 0) {\n    Consume(items);\n}"
@@ -3696,9 +3696,7 @@
       "hasFix": true,
       "fixIsSafe": true,
       "resharperId": null,
-      "supersedes": [
-        "SK1034"
-      ],
+      "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
       "summary": "`dict.Keys.Count` locks the whole table and copies every key into a new list to produce a number `dict.Count` already has; `dict.Count == 0` locks it to answer what `dict.IsEmpty` answers for free.",
@@ -3707,7 +3705,7 @@
         "bad": "if (cache.Keys.Count > 0) {\n    Flush(cache);\n}\n\nif (pending.Count == 0) {\n    return;\n}",
         "good": "if (!cache.IsEmpty) {\n    Flush(cache);\n}\n\nif (pending.IsEmpty) {\n    return;\n}"
       },
-      "falsePositives": "⚠ **`SK1034` reads `dict.Keys.Count()` and offers `dict.Keys.Count`, which is right and leaves the expensive half standing.** This rule reports on the same span and declares `supersedes: [\"SK1034\"]`, so where both fire the stronger remedy wins and the weaker one stays in the report marked superseded rather than disappearing. Matching the span is the whole mechanism — `Supersession.Apply` pairs findings by rule, file, line and column — which is why `SK1034` runs inside this batch's own test list. The one shape where the two spans do not coincide is a mirrored comparison, `0 < dict.Keys.Count()`, where both are reported; both are true and neither is wrong. ⚠ **`dict.Keys.Contains(k)` looks like it belongs here and does not, and this is the useful exclusion.** `Keys` hands back a plain `List<TKey>`, whose `Contains` uses `EqualityComparer<TKey>.Default`, while `ContainsKey` uses the comparer the dictionary was *constructed* with. For a table built with `StringComparer.OrdinalIgnoreCase` the two give different answers, and nothing at the call site says which kind of table this is — so the obvious rewrite is a behaviour change wearing a performance fix's clothes. ⚠ Only comparisons with `0`, or with `1` under `<`/`>=`, are read as emptiness tests; a count is never negative, so those are the only ones a comparison with a literal decides. Anything else is a claim about *how many*, which `IsEmpty` cannot answer. ⚠ `Any()` becomes `!dict.IsEmpty`, which is a unary expression where the call was a primary one, so it is offered only where the surrounding syntax cannot re-bind — the same restriction and the same list as `SK1034`. `dict.Keys.Any().ToString()` would otherwise become `!dict.IsEmpty.ToString()`, which parses, binds, and means something else. The `!dict.Keys.Any()` form has no such restriction, because `dict.IsEmpty` is primary too. ⚠ The receiver must be a path of names, since the fix writes it a second time. ⚠ `LongCount()` is left alone: it returns `long` where `Count` returns `int`, and a narrowing of the static type can change which overload a surrounding call resolves to.",
+      "falsePositives": "⚠ **`dict.Keys.Contains(k)` looks like it belongs here and does not, and this is the useful exclusion.** `Keys` hands back a plain `List<TKey>`, whose `Contains` uses `EqualityComparer<TKey>.Default`, while `ContainsKey` uses the comparer the dictionary was *constructed* with. For a table built with `StringComparer.OrdinalIgnoreCase` the two give different answers, and nothing at the call site says which kind of table this is — so the obvious rewrite is a behaviour change wearing a performance fix's clothes. ⚠ Only comparisons with `0`, or with `1` under `<`/`>=`, are read as emptiness tests; a count is never negative, so those are the only ones a comparison with a literal decides. Anything else is a claim about *how many*, which `IsEmpty` cannot answer. ⚠ `Any()` becomes `!dict.IsEmpty`, which is a unary expression where the call was a primary one, so it is offered only where the surrounding syntax cannot re-bind. `dict.Keys.Any().ToString()` would otherwise become `!dict.IsEmpty.ToString()`, which parses, binds, and means something else. The `!dict.Keys.Any()` form has no such restriction, because `dict.IsEmpty` is primary too. ⚠ The receiver must be a path of names, since the fix writes it a second time. ⚠ `LongCount()` is left alone: it returns `long` where `Count` returns `int`, and a narrowing of the static type can change which overload a surrounding call resolves to. ⚠ **This rule declared `supersedes: [\"SK1034\"]` until `SK1034` was retired (#281).** The pairing is gone because the weaker finding is: `dict.Keys.Count()` is now reported once, by this rule, and the plain `Count()` shape that `SK1034` also covered belongs to `CA1829`. Nothing here reports the cheap rewrite any more, which is the point — on a `ConcurrentDictionary` it was always the wrong half to fix.",
       "configuration": [
         "dotnet_diagnostic.SK4033.severity"
       ]

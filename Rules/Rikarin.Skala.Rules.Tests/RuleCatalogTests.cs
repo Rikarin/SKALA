@@ -98,7 +98,14 @@ public sealed class RuleCatalogTests {
             $"{CataloguePath} was read but does not look like the rule catalogue ({catalogue.Length} bytes)."
         );
 
-        var coverage = RuleCoverage.Compute(catalogue, RuleCatalog.All.Select(static rule => rule.Id));
+        // ⚠ Retired rules are excluded from `shipped`. RuleCoverage.Compute checks `live` first, so a
+        // withdrawn rule that kept its rules.json entry would otherwise be counted as Shipped — the
+        // one direction an error here must never go, because it credits the catalogue with a rule
+        // that can no longer fire.
+        var coverage = RuleCoverage.Compute(
+            catalogue,
+            RuleCatalog.All.Where(static rule => !rule.Retired).Select(static rule => rule.Id)
+        );
 
         // The catalogue names a hundred-odd rules and ships a couple of dozen. If either of those
         // stops being roughly true, the parser has broken rather than the project.
@@ -115,7 +122,9 @@ public sealed class RuleCatalogTests {
         // plan. They have their own register and their own guard in ToolDiagnosticIdTests, and
         // counting them here would credit the catalogue with eight rules it never planned. It is
         // also why rules.json has 37 entries and the coverage says 29.
-        foreach (var rule in RuleCatalog.All.Where(static r => !r.Id.StartsWith("SK9", StringComparison.Ordinal))) {
+        foreach (var rule in RuleCatalog.All.Where(static r =>
+                     !r.Id.StartsWith("SK9", StringComparison.Ordinal) && !r.Retired
+                 )) {
             Assert.True(
                 coverage.States.ContainsKey(rule.Id),
                 $"{rule.Id} ships and was excluded from the coverage count. "
@@ -151,42 +160,93 @@ public sealed class RuleCatalogTests {
     }
 
     /// <summary>
-    ///     ⚠ A retired id is still allocated, and the register has to say so.
+    ///     ⚠ A retired id is still allocated, the register has to say so, and the rule must not fire.
     /// </summary>
     /// <remarks>
-    ///     <c>SK6001</c> and <c>SK7010</c> are one rule under two ids; <c>SK7010</c> shipped.
-    ///     <c>SK6001</c> is retired before it was ever built, and until M9 that fact lived only in doc
-    ///     08's prose — which <c>allocated-ids.txt</c> cannot read, so nothing stopped the number being
-    ///     handed out again. <see cref="RuleIds_AreAppendOnly" /> demands a <c>rules.json</c> entry for
-    ///     every allocated id, and a rule that was never built has none, so the register marks the
-    ///     retirement inline and the append-only test skips those lines.
+    ///     <para>
+    ///         ⚠ <b>This test used to assert that a retired id was absent from rules.json, and that was
+    ///         only ever true by accident.</b> It was written when <c>SK6001</c> was the only retirement
+    ///         and <c>SK6001</c> was retired <em>before it was ever built</em>, so it had no
+    ///         <c>rules.json</c> row to be present in. Generalising from that one case produced a rule
+    ///         that flatly contradicted <see cref="RuleIds_AreAppendOnly" />'s own failure message and
+    ///         the <c>notes</c> block at the top of <c>rules.json</c>, both of which say to mark a
+    ///         withdrawn rule <c>retired: true</c> — which requires the entry to still be there.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>The <c>retired: true</c> field was the built answer all along and had simply never
+    ///         been used.</b> <c>RuleInfo.Retired</c> is read by five places:
+    ///         <c>SkalaRule.Build</c> clears <c>IsEnabledByDefault</c>, <c>AnalyzerHost</c> drops the
+    ///         rule from the semantic set, <c>DocsSite</c> renders a retired tag in the index and a
+    ///         tombstone banner on the page, <c>RuleFixtures</c> exempts it from the severity check, and
+    ///         the release surface reports the transition. All five are dead code unless a withdrawn
+    ///         rule keeps its row. Deleting the row instead would 404 the docs page out of its own
+    ///         index and leave <c>dotnet_diagnostic.SK1020.severity</c> resolving to nothing in every
+    ///         <c>.editorconfig</c> that names it.
+    ///     </para>
+    ///     <para>
+    ///         So retirement has two shapes. Retired after shipping (<c>SK1020</c>, <c>SK1034</c> —
+    ///         #281): the row stays, flagged. Retired before it was ever built (<c>SK6001</c>, one rule
+    ///         with <c>SK7010</c>, which shipped): there is no row, and this file is the only record.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The load-bearing assertion is <c>IsEnabledByDefault</c>, not the flag. A retirement
+    ///         that set the flag and left the rule firing would satisfy every check that only reads
+    ///         metadata about itself.
+    ///     </para>
     /// </remarks>
     [Fact]
-    public void RetiredIds_AreRecordedInTheRegisterAndNotInTheCatalogue() {
-        var retired = File.ReadAllLines(AllocatedIdsPath)
-            .Where(static line => line.Contains("retired", StringComparison.Ordinal))
-            .Where(static line => !line.StartsWith('#'))
-            .Select(static line => line.Split(' ')[0])
+    public void RetiredIds_AreRecordedInTheRegister_AndNeverShip() {
+        var retired = RegisterLines()
+            .Where(static entry => entry.Retired)
+            .Select(static entry => entry.Id)
             .ToList();
 
         Assert.Contains("SK6001", retired);
+        Assert.Contains("SK1020", retired);
+        Assert.Contains("SK1034", retired);
+
+        // Retired before it was ever built: there is no row to flag, and that is the whole reason
+        // the register carries the marker inline.
+        Assert.Null(RuleCatalog.Find("SK6001"));
 
         foreach (var id in retired) {
-            Assert.False(
-                RuleCatalog.All.Any(rule => string.Equals(rule.Id, id, StringComparison.Ordinal)),
-                $"{id} is marked retired in allocated-ids.txt and is also in rules.json. "
-                + "A retired id names no rule; if this one now ships, it was not retired."
+            var rule = RuleCatalog.Find(id);
+            if (rule is null) {
+                continue;
+            }
+
+            Assert.True(
+                rule.Retired,
+                $"{id} is marked retired in allocated-ids.txt and its rules.json entry is not "
+                + "`retired: true`. A withdrawn rule keeps its entry so the docs page and the "
+                + "`dotnet_diagnostic` key survive — but the entry has to say it is withdrawn."
             );
+
+            Assert.False(
+                SkalaRule.Descriptor(id).IsEnabledByDefault,
+                $"{id} is retired and its descriptor is still enabled by default. The flag is not "
+                + "the promise; not firing is."
+            );
+        }
+
+        // The other direction: a flagged row whose register line does not say retired is drift, and
+        // the register is the file ADR-012 makes permanent.
+        foreach (var rule in RuleCatalog.All.Where(static rule => rule.Retired)) {
+            Assert.Contains(rule.Id, retired);
         }
     }
 
     /// <summary>
-    ///     ⚠ The append-only test. An id in <c>allocated-ids.txt</c> must still be in the catalogue with
-    ///     the same concept.
+    ///     <c>allocated-ids.txt</c> parsed into <c>(id, concept, retired)</c>, comments dropped.
     /// </summary>
-    [Fact]
-    public void RuleIds_AreAppendOnly() {
-        var allocated = new List<(string Id, string Concept)>();
+    /// <remarks>
+    ///     ⚠ The <c>retired</c> marker follows the concept on the same line, so the concept is
+    ///     everything before it. Splitting on the marker rather than skipping the line is what lets a
+    ///     retired rule's concept still be checked for drift.
+    /// </remarks>
+    static List<(string Id, string Concept, bool Retired)> RegisterLines() {
+        const string marker = " retired";
+        var result = new List<(string, string, bool)>();
         foreach (var line in File.ReadAllLines(AllocatedIdsPath)) {
             var trimmed = line.Trim();
             if (trimmed.Length == 0 || trimmed.StartsWith('#')) {
@@ -196,32 +256,57 @@ public sealed class RuleCatalogTests {
             var space = trimmed.IndexOf(' ', StringComparison.Ordinal);
             Assert.True(space > 0, $"'{trimmed}' is not `<id> <concept>`.");
 
-            // ⚠ A retired id has no rules.json entry to compare against, because it was retired
-            // before it was ever built. The line stays so the number cannot be handed out twice,
-            // which is the only thing this register is for.
-            // RetiredIds_AreRecordedInTheRegisterAndNotInTheCatalogue asserts the other half.
-            if (trimmed.Contains("retired", StringComparison.Ordinal)) {
+            var id = trimmed[..space];
+            var rest = trimmed[(space + 1)..].Trim();
+
+            var at = rest.IndexOf(marker, StringComparison.Ordinal);
+            var isRetired = at >= 0;
+            var concept = isRetired ? rest[..at].Trim() : rest;
+
+            result.Add((id, concept, isRetired));
+        }
+
+        Assert.NotEmpty(result);
+
+        return result;
+    }
+
+    /// <summary>
+    ///     ⚠ The append-only test. An id in <c>allocated-ids.txt</c> must still be in the catalogue with
+    ///     the same concept.
+    /// </summary>
+    [Fact]
+    public void RuleIds_AreAppendOnly() {
+        foreach (var (id, concept, isRetired) in RegisterLines()) {
+            var rule = RuleCatalog.Find(id);
+
+            // ⚠ Only a rule retired BEFORE it was ever built has no entry to compare against.
+            // A rule retired after shipping keeps its entry, so its concept is still checked here —
+            // the meaning of an id that findings in the wild carry must not drift after withdrawal
+            // any more than before it.
+            if (rule is null) {
+                Assert.True(
+                    isRetired,
+                    $"{id} is allocated in allocated-ids.txt and is no longer in rules.json. "
+                    + "ADR-012 makes ids permanent: mark it `retired: true` in rules.json and add a "
+                    + "`retired` marker to its line here, rather than deleting either, because every "
+                    + "baseline in every repository names it."
+                );
+
                 continue;
             }
 
-            allocated.Add((trimmed[..space], trimmed[(space + 1)..].Trim()));
-        }
-
-        Assert.NotEmpty(allocated);
-
-        foreach (var (id, concept) in allocated) {
-            var rule = RuleCatalog.Find(id);
             Assert.True(
-                rule is not null,
-                $"{id} is allocated in allocated-ids.txt and is no longer in rules.json. "
-                + "ADR-012 makes ids permanent: mark it `retired: true` rather than deleting it, "
-                + "because every baseline in every repository names it."
+                string.Equals(rule.Concept, concept, StringComparison.Ordinal),
+                $"{id} was allocated for '{concept}' and now means '{rule.Concept}'. "
+                + "ADR-012: an id's meaning never widens and is never re-purposed. Allocate a new id."
             );
 
             Assert.True(
-                string.Equals(rule!.Concept, concept, StringComparison.Ordinal),
-                $"{id} was allocated for '{concept}' and now means '{rule.Concept}'. "
-                + "ADR-012: an id's meaning never widens and is never re-purposed. Allocate a new id."
+                rule.Retired == isRetired,
+                $"{id} is `retired: {rule.Retired.ToString().ToLowerInvariant()}` in rules.json and its "
+                + $"allocated-ids.txt line {(isRetired ? "does" : "does not")} carry a `retired` marker. "
+                + "The two records of one withdrawal have to agree."
             );
         }
     }
@@ -594,7 +679,8 @@ public sealed class RuleCatalogTests {
     ///     </para>
     ///     <para>
     ///         ⚠ It is scoped to <c>IDE*</c> and <c>CA*</c> deliberately. A Skala id may legitimately be
-    ///         superseded by more than one rule — <c>SK4033</c> claims <c>SK1034</c> — and that is a
+    ///         superseded by more than one rule — <c>SK4033</c> claimed <c>SK1034</c> until #281 retired
+    ///         it — and that is a
     ///         different relationship from hosting an analyzer nobody else may claim.
     ///     </para>
     ///     <para>
