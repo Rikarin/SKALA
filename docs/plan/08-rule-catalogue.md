@@ -5151,3 +5151,27 @@ frameworks and writes every `using` out, while Vixen is modern C# that leans on 
 does not carry — so no semantic rule can be measured on the corpus at all, and that is why
 `SK1120`'s and `SK1122`'s corpus zeros are classified as the analysis never running rather than as
 clean code.
+
+### The three gates
+
+`./build.sh Lint` was red once and for exactly the expected reason: `skala format --check Rules`
+named **the four new analyzers and nothing else** — 356 files left alone, so no pre-existing file
+had drifted. Formatted, and green.
+
+The self-gate reported **one** new finding attributable to this batch: `SK7002`, cognitive
+complexity 18 against a threshold of 15, on `ReflectiveTypeTestAnalyzer.Analyze`. ⚠ **Split rather
+than baselined**, following `SK2200`: recognising the call syntactically and testing whether the
+rewrite is admissible are two questions, and `TryReadCall` now answers the first. It returns the
+`typeof` and the operand as a nullable tuple rather than through `out` parameters, because
+netstandard2.0 has no `NotNullWhen` and the `out` form produced a CS0165/CS8604 pair at the call
+site.
+
+⚠ **The self-gate is still red, and none of it is this batch's.** With `--baseline` (which the
+command in `CLAUDE.md` omits, and which must be passed explicitly — "empty uses
+`.skala/baseline.sarif` when it exists") **731 findings survive a 433-entry baseline**, and **not one
+is located in a file this batch created**. The `SK7020` rows that name the new analyzers name them
+as *secondary* members of a cluster whose primary is a pre-existing file — the `using`-and-
+`Initialize` header every analyzer in the tree shares. The baseline predates both this batch and the
+merges that landed beside it, which is the state `CLAUDE.md` describes: the baseline settles after
+the **last** merge, not the first, so it is deliberately left for the integrator rather than updated
+from inside one of ten concurrent worktrees.
