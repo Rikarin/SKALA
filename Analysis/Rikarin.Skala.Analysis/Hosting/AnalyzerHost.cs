@@ -163,6 +163,7 @@ public static class AnalyzerHost {
         new LogTemplateArgumentCountAnalyzer(), new LogTemplateDuplicatePropertyAnalyzer(),
         new InvisibleCharacterAnalyzer(), new CaughtExceptionNotLoggedAnalyzer(),
         new LoggerForAnotherTypeAnalyzer(),
+        new PlainEnumBitwiseAnalyzer(), new AlwaysSucceedingAsAnalyzer(),
     ];
 
     /// <summary>

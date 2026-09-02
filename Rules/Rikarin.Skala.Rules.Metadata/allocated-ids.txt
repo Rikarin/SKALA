@@ -246,3 +246,5 @@ SK2100 ineffective-thread-static
 SK2101 pure-attribute-on-void
 SK2102 debugger-display-missing-member
 SK2103 duplicated-attribute
+SK2120 bitwise-operation-on-plain-enum
+SK2121 always-succeeding-as-operator

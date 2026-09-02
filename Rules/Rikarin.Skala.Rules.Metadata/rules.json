@@ -5947,6 +5947,56 @@
       "configuration": [
         "dotnet_diagnostic.SK7110.severity"
       ]
+    },
+    {
+      "id": "SK2120",
+      "concept": "bitwise-operation-on-plain-enum",
+      "title": "A bitwise operator combines members of a consecutively numbered enum",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "BitwiseOperatorOnEnumWithoutFlags",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `|`, `&`, `^` or `~` is applied to an enum whose members carry no explicit values, so they are numbered 0, 1, 2, ... and no bit of the result means anything.",
+      "rationale": "An enum written `enum Color { Red, Green, Blue }` numbers its members consecutively, so `Red | Green` is `0 | 1`, which is `Green`, and `Green | Blue` is `1 | 2`, which is `3` and no declared member at all. The value then fails every `switch`, every `Equals` and every `ToString`, and it does so silently: the operation is legal C#, the compiler says nothing, and the wrong value is only noticed downstream where nothing points back here. ⚠ **This is the use site, not the declaration.** `CA1027` asks a declaration whose values already look like a bit set to carry `[Flags]`, and `CA2217` asks a `[Flags]` declaration to stop declaring values that are not powers of two. Neither can be reached from an enum that was never given explicit values, so neither says a word about the code that combines one — which is the only place the mistake is visible.",
+      "examples": {
+        "bad": "enum Color { Red, Green, Blue }\n\nvar combined = Color.Green | Color.Blue; // 3, which is not a Color",
+        "good": "[Flags]\nenum Color { None = 0, Red = 1, Green = 2, Blue = 4 }\n\nvar combined = Color.Green | Color.Blue; // Green | Blue"
+      },
+      "falsePositives": "⚠ **Every member of the enum must be implicitly numbered.** One explicit value anywhere in the declaration — `Red = 1` — declines the whole enum, because an author who wrote a value down may have been laying out a bit set and the declaration alone cannot say. That exclusion is also what makes this rule provably disjoint from `CA1027`: `CA1027` needs at least three distinct non-zero values that are all powers of two, and consecutive numbering reaches three non-zero values only at `1, 2, 3`, where `3` is not a power of two — so `CA1027` can never fire on a declaration this rule accepts, and the two can never report one mistake twice. Measured against the SDK at `AnalysisMode=All` rather than assumed. `[Flags]` enums are excluded. The operand type is read after unwrapping `Nullable<T>`; an operand already cast to its underlying integral type is not an enum operation and is not reported. `==`, `!=` and the boolean operators are not bitwise combinations of members and are outside the rule. There is no fix: adding `[Flags]` is a public API change and is usually the wrong answer here, because a consecutively numbered enum is normally a closed choice that should not be combined at all.",
+      "configuration": [
+        "dotnet_diagnostic.SK2120.severity"
+      ]
+    },
+    {
+      "id": "SK2121",
+      "concept": "always-succeeding-as-operator",
+      "title": "The `as` operator tests a conversion that always succeeds",
+      "category": "Correctness",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "TryCastAlwaysSucceeds",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The operand already converts to the tested type implicitly, so `as` can only return the operand and the `null` it appears to guard against is the operand’s own `null`.",
+      "rationale": "`d as Base` where `d` is a `Derived` yields `d`, always. The operator reads as a question — *is this a `Base`?* — and there is no question: the widening is the same one an assignment would perform. What it costs is the null check that usually follows, which the next reader takes for a type guard and which is really a null guard on a value the code may already have proved non-null. ⚠ **This is the half of issue #1 the compiler does not already own, and it is the only half.** The always-*false* cases are compiler diagnostics: `s is int` and `d is Unrelated` are `CS0184`, `d as Unrelated` is `CS0039`, and an unreachable type pattern in a `switch` is `CS8121` — the last two are errors, not warnings. `v is int` on an `int` is `CS0183`. What is left over is this operator, which the compiler permits in silence because it is well defined.",
+      "examples": {
+        "bad": "void M(Derived d) {\n    var b = d as Base;\n    if (b is null) { return; }\n}",
+        "good": "void M(Derived d) {\n    var b = (Base)d;\n}"
+      },
+      "falsePositives": "The conversion must be an identity, an implicit reference or a boxing conversion as `ClassifyConversion` reports it; anything else — an explicit conversion, a user-defined one, an unboxing — is a conversion that can genuinely fail and is not reported. ⚠ **Type parameters are excluded outright.** `t as Base` inside a generic method is classified against the constraint set and not against the type the method is instantiated with, so a conversion that looks certain there is not certain at run time. `dynamic` operands, error types and an operand with no type at all are declined for the same reason. The fix keeps the expression’s static type rather than removing the operator: a widening becomes the matching cast, `(Base)d`, so a surrounding `var` still declares a `Base`, and only an identity conversion — where the operand already has the tested type — is replaced by the operand itself. `fixIsSafe` is `true` because both edits are the conversion the operator was already performing.",
+      "configuration": [
+        "dotnet_diagnostic.SK2121.severity"
+      ]
     }
   ]
 }

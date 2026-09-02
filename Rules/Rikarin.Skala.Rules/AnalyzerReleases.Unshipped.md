@@ -205,3 +205,5 @@ SK2071 | Skala.Correctness | Warning | The structured log template names the sam
 SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
 SK2073 | Skala.Correctness | Warning | The caught exception is not passed to the logger's exception parameter.
 SK7110 | Skala.Maintainability | Info | The logger is declared for a different type than the one that declares it.
+SK2120 | Skala.Correctness | Warning | A bitwise operator combines members of a consecutively numbered enum.
+SK2121 | Skala.Correctness | Info | The `as` operator tests a conversion that always succeeds.
