@@ -264,6 +264,96 @@ public sealed class LiteralAndExpressionFormBatchTests {
         Assert.Single(Below(escapeShape, LanguageVersion.CSharp7_3).Where(static d => d.Id == "SK1062"));
     }
 
+    /// <summary>
+    ///     ⚠ <b>A run of sibling literals converts whole or not at all</b> — issue #331.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>No single-literal fixture can see this, which is why it went out in a release.</b> Every
+    ///     per-literal verdict above is correct: a value ending in a quote has no single-line raw spelling
+    ///     and is rightly declined, and its neighbour ending in a space is rightly converted. Applied to a
+    ///     builder assembling one JSON document that produced a block in two literal spellings at once —
+    ///     worse than either uniform state, and worse than what the author wrote. The defect exists only
+    ///     <i>between</i> neighbours, so the fixtures have to hold two.
+    ///     <para>
+    ///         ⚠ Each case asserts the count and not just emptiness. "Nothing fires" would pass just as
+    ///         well if the rule had stopped working, and the boundary cases below are the ones that say
+    ///         the run does not swallow the whole method.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    // ⚠ The reported shape, reduced: one literal ends in a quote and cannot convert, its neighbour can,
+    // and converting the neighbour alone is what left `CanonicalEditorConfig` in two spellings.
+    [InlineData(
+        """
+        builder.Append("  \"version\": \"").Append(v).AppendLine("\",");
+        builder.Append("  \"assignments\": ").AppendLine(",");
+        """,
+        0
+    )]
+    // The same two statements with nothing stuck: both convert.
+    [InlineData(
+        """
+        builder.Append("  \"version\": ").Append(v).AppendLine(",");
+        builder.Append("  \"assignments\": ").AppendLine(",");
+        """,
+        2
+    )]
+    // ⚠ A blank line is the author's own paragraph mark, and it ends the run: the second statement is
+    // no longer held back by the first.
+    [InlineData(
+        """
+        builder.Append("  \"version\": \"").Append(v).AppendLine("\",");
+
+        builder.Append("  \"assignments\": ").AppendLine(",");
+        """,
+        1
+    )]
+    // ⚠ And so does a statement that is not a call on the same receiver — the bound that keeps one
+    // awkward literal from freezing a whole method.
+    [InlineData(
+        """
+        builder.Append("  \"version\": \"").Append(v).AppendLine("\",");
+        v = v.Trim();
+        builder.Append("  \"assignments\": ").AppendLine(",");
+        """,
+        1
+    )]
+    // A different receiver is a different run.
+    [InlineData(
+        """
+        builder.Append("  \"version\": \"").AppendLine("\",");
+        other.Append("  \"assignments\": ").AppendLine(",");
+        """,
+        1
+    )]
+    // ⚠ One chain is unambiguously one group, blocked from inside a single statement.
+    [InlineData("""builder.Append("  \"version\": \"").Append("  \"assignments\": ");""", 0)]
+    public void EscapeFreeLiteral_ConvertsARunWholeOrNotAtAll(string body, int expected) =>
+        Assert.Equal(
+            expected,
+            Analyze(Builder(body), LanguageVersion.CSharp12).Count(static d => d.Id == "SK1062")
+        );
+
+    /// <summary>
+    ///     ⚠ The chain outside a statement, where the run is the chain and nothing wider.
+    /// </summary>
+    [Fact]
+    public void EscapeFreeLiteral_InAnExpressionBody_TakesTheChainAsTheRun() {
+        const string blocked =
+            """
+            using System.Text;
+            class C { string M(StringBuilder b) => b.Append("  \"a\": \"").Append("  \"b\": ").ToString(); }
+            """;
+        const string open =
+            """
+            using System.Text;
+            class C { string M(StringBuilder b) => b.Append("  \"a\": ").Append("  \"b\": ").ToString(); }
+            """;
+
+        Assert.Empty(Analyze(blocked, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1062"));
+        Assert.Equal(2, Analyze(open, LanguageVersion.CSharp12).Count(static d => d.Id == "SK1062"));
+    }
+
     [Theory]
     [InlineData(
         """class C { string M(int d, int t) => string.Format("{0} of {1}", d, t); }""",
@@ -418,6 +508,12 @@ public sealed class LiteralAndExpressionFormBatchTests {
 
         return text;
     }
+
+    /// <summary>A method body around <paramref name="body" />, with a builder and a second receiver.</summary>
+    static string Builder(string body) =>
+        "using System.Text;\nclass C {\n    void M(StringBuilder builder, StringBuilder other, string v) {\n"
+        + body
+        + "\n    }\n}\n";
 
     static ImmutableArray<Diagnostic> Analyze(string source, LanguageVersion version) {
         var compilation = RuleFixtures.Compile(source, "test.cs", version);

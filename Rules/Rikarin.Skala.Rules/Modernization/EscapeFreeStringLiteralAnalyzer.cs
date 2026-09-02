@@ -4,7 +4,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 
 namespace Rikarin.Skala.Rules.Modernization;
@@ -23,6 +25,15 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         ⚠ <b>The version gate is per shape.</b> The three raw-string shapes need C# 11; simplifying
 ///         an escape sequence to the character it denotes needs nothing, and a rule-level floor of 11
 ///         would have silenced it on exactly the older projects it is for.
+///     </para>
+///     <para>
+///         ⚠ <b>The raw rewrite is all-or-nothing over a run, and that is not a refinement of the
+///         per-literal decision — it overrules it</b> (issue #331). Every per-literal verdict this rule
+///         reaches is correct; applied to a run of sibling calls assembling one document it converted the
+///         literals it could and left the ones it may not, so a block the author had written uniformly came
+///         back in two spellings at once. The defect only exists <i>between</i> neighbours, which is why no
+///         single-literal fixture could ever have shown it. See <see cref="RunIsMixed" /> for where the run
+///         begins and ends.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -73,18 +84,11 @@ public sealed class EscapeFreeStringLiteralAnalyzer : DiagnosticAnalyzer {
 
         var verbatim = text.StartsWith("@", StringComparison.Ordinal);
 
-        // ⚠ The trigger is what the *current* form costs, not what the value looks like. A verbatim
-        // literal gains from the raw form only if it doubles a quote; a regular one only if it
-        // escapes a backslash or a quote. Anything else is already as plain as it gets.
-        var worthRewriting = verbatim
-            ? value.IndexOf('"') >= 0
-            : text.IndexOf("""\\""", StringComparison.Ordinal) >= 0
-            || text.IndexOf("\\\"", StringComparison.Ordinal) >= 0;
-
         if (raw
-            && worthRewriting
+            && WorthRewriting(text, value)
             && RawStringFor(value) is { } rewritten
-            && ParsesBackToTheSameValue(rewritten, value)) {
+            && ParsesBackToTheSameValue(rewritten, value)
+            && !RunIsMixed(literal)) {
             Report(
                 context,
                 literal,
@@ -134,6 +138,223 @@ public sealed class EscapeFreeStringLiteralAnalyzer : DiagnosticAnalyzer {
                 reason + ": `" + RewriteGuards.Trim(replacement) + "`"
             )
         );
+
+    /// <summary>
+    ///     ⚠ Whether the <i>current</i> form costs escapes, which is the trigger — not what the value
+    ///     looks like.
+    /// </summary>
+    /// <remarks>
+    ///     A verbatim literal gains from the raw form only if it doubles a quote; a regular one only if it
+    ///     escapes a backslash or a quote. Anything else is already as plain as it gets.
+    /// </remarks>
+    static bool WorthRewriting(string text, string value) =>
+        text.StartsWith("@", StringComparison.Ordinal)
+            ? value.IndexOf('"') >= 0
+            : text.IndexOf("""\\""", StringComparison.Ordinal) >= 0
+            || text.IndexOf("\\\"", StringComparison.Ordinal) >= 0;
+
+    /// <summary>
+    ///     Whether some literal in <paramref name="literal" />'s run wants the raw form and cannot have it
+    ///     — <b>issue #331</b>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The run is the unit, because the reader's unit is the run.</b> A literal that pays for
+    ///     escapes and has no single-line raw spelling — one whose value begins or ends with a quote — can
+    ///     never join its neighbours in the raw form, so converting the neighbours around it leaves the
+    ///     block in two spellings at once, which is worse than either uniform state. Where one member is
+    ///     stuck, the whole run stays as written.
+    ///     <para>
+    ///         ⚠ <b>Only the raw rewrite is gated.</b> Simplifying <c>\x41</c> to <c>A</c> respells a
+    ///         character inside a literal whose <i>form</i> does not change, so it cannot make a block
+    ///         mixed and is left to fire on its own. Shortening an over-long fence is likewise still a raw
+    ///         string afterwards.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>A member that pays no escapes at all is not a blocker.</b> <c>builder.AppendLine("{")</c>
+    ///         sitting beside a raw literal is what uniform code looks like; the mixed block this rule
+    ///         guards against is an <i>escaped</i> literal beside a raw one spelling the same kind of
+    ///         content.
+    ///     </para>
+    /// </remarks>
+    static bool RunIsMixed(LiteralExpressionSyntax literal) {
+        foreach (var statement in Run(literal)) {
+            foreach (var member in Literals(statement)) {
+                if (member.Token.IsKind(SyntaxKind.StringLiteralToken)
+                    && WorthRewriting(member.Token.Text, member.Token.ValueText)
+                    && (RawStringFor(member.Token.ValueText) is not { } spelling
+                        || !ParsesBackToTheSameValue(spelling, member.Token.ValueText))) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     The nodes whose literals a reader takes as one block with <paramref name="literal" />'s.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Two boundaries, and the tighter one is deliberate.</b> The unambiguous group is the
+    ///     invocation chain: <c>builder.Append(a).Append(b).AppendLine(c)</c> is one expression a reader
+    ///     takes in at once. The useful group is wider — a run of consecutive expression statements whose
+    ///     chains all root on the same receiver, which is how a <c>StringBuilder</c> assembling a document
+    ///     is actually written. It is bounded on both sides by the <i>first</i> statement that is not one
+    ///     of those, and by a blank line or a comment between two members.
+    ///     <para>
+    ///         ⚠ <b>Not the whole method, and the difference is the point.</b> Taking every literal in the
+    ///         enclosing member would let one awkward literal in an early paragraph freeze every literal
+    ///         after it, however far away and however unrelated — the rule would then be wrong about the
+    ///         group in the other direction. A blank line is the author's own paragraph mark and is
+    ///         treated as one; so is an intervening comment, for the same reason.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The receiver is compared by name, not by symbol. This rule is <c>Syntax</c>-scoped
+    ///         (<c>rules.json</c>) and runs with no compilation at all under <c>--load=loose</c>, so a
+    ///         symbol comparison would silently stop grouping in exactly the mode the rule is most used in.
+    ///         Two different <c>builder</c>s in one run of statements is not a shape that occurs, and
+    ///         mis-grouping costs a diagnostic that is not reported rather than a wrong rewrite.
+    ///     </para>
+    /// </remarks>
+    static List<SyntaxNode> Run(LiteralExpressionSyntax literal) {
+        var statement = literal.FirstAncestorOrSelf<ExpressionStatementSyntax>();
+        if (statement is null) {
+            // Not a statement at all — an initialiser, an argument, an arrow body. The chain it sits in
+            // is the whole of its group.
+            return [Chain(literal)];
+        }
+
+        if (statement.Parent is not BlockSyntax block || Receiver(statement.Expression) is not { } receiver) {
+            return [statement];
+        }
+
+        var statements = block.Statements;
+        var index = statements.IndexOf(statement);
+
+        // ⚠ The statement being *added* is the one whose receiver decides, in both directions. Testing
+        // the one already in the run instead is a test that always passes, and it reads as working:
+        // every blocked case still blocks, and the run silently grows backwards over statements
+        // belonging to somebody else.
+        var first = index;
+        while (first > 0
+               && RootedOn(statements[first - 1], receiver)
+               && !Separated(statements[first - 1], statements[first])) {
+            first--;
+        }
+
+        var last = index;
+        while (last + 1 < statements.Count
+               && RootedOn(statements[last + 1], receiver)
+               && !Separated(statements[last], statements[last + 1])) {
+            last++;
+        }
+
+        var run = new List<SyntaxNode>(last - first + 1);
+        for (var i = first; i <= last; i++) {
+            run.Add(statements[i]);
+        }
+
+        return run;
+    }
+
+    /// <summary>Whether <paramref name="statement" /> is a call chain rooted on <paramref name="receiver" />.</summary>
+    static bool RootedOn(StatementSyntax statement, string receiver) =>
+        statement is ExpressionStatementSyntax expression
+        && Receiver(expression.Expression) is { } other
+        && string.Equals(other, receiver, StringComparison.Ordinal);
+
+    /// <summary>
+    ///     Whether a blank line or a comment stands between two adjacent statements.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Counted from the trivia, not from the text: one end-of-line is the newline that ends
+    ///     <paramref name="previous" />, so a second one is a line with nothing on it. A comment carries
+    ///     its own end-of-line and therefore separates by the same count, which is the intended answer —
+    ///     a reader who wrote a comment between two calls has said they are two things.
+    /// </remarks>
+    static bool Separated(StatementSyntax previous, StatementSyntax next) {
+        var newlines = 0;
+        foreach (var trivia in previous.GetTrailingTrivia()) {
+            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia)) {
+                newlines++;
+            }
+        }
+
+        foreach (var trivia in next.GetLeadingTrivia()) {
+            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia)) {
+                newlines++;
+            }
+        }
+
+        return newlines > 1;
+    }
+
+    /// <summary>
+    ///     The name at the root of an invocation chain — the <c>builder</c> in
+    ///     <c>builder.Append(a).AppendLine(b)</c> — or null where the root is not a plain name.
+    /// </summary>
+    static string? Receiver(ExpressionSyntax expression) {
+        var invocations = 0;
+        for (var node = expression; node is not null;) {
+            switch (node) {
+                case InvocationExpressionSyntax invocation:
+                    invocations++;
+                    node = invocation.Expression;
+                    continue;
+                case MemberAccessExpressionSyntax access:
+                    node = access.Expression;
+                    continue;
+                case ConditionalAccessExpressionSyntax conditional:
+                    node = conditional.Expression;
+                    continue;
+                case AwaitExpressionSyntax await:
+                    node = await.Expression;
+                    continue;
+
+                // ⚠ At least one call, or `x;` and `x.y;` would root a run on a name that never
+                // assembles anything.
+                case IdentifierNameSyntax name when invocations > 0:
+                    return name.Identifier.ValueText;
+                case ThisExpressionSyntax when invocations > 0:
+                    return "this";
+                default:
+                    return null;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>The outermost invocation chain <paramref name="literal" /> is an argument of.</summary>
+    static SyntaxNode Chain(LiteralExpressionSyntax literal) {
+        SyntaxNode outermost = literal;
+        for (var node = literal.Parent; node is not null; node = node.Parent) {
+            if (node is InvocationExpressionSyntax) {
+                outermost = node;
+            } else if (node is not (ArgumentSyntax or ArgumentListSyntax or MemberAccessExpressionSyntax)) {
+                break;
+            }
+        }
+
+        return outermost;
+    }
+
+    /// <summary>
+    ///     The string literals in <paramref name="scope" /> that belong to the run.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A lambda's body is not part of the run. <c>builder.Append(items.Select(i =&gt; "\"" + i))</c>
+    ///     holds a literal a reader reads as part of the lambda, not as part of the document being
+    ///     assembled, and letting it block the run would freeze a builder over an argument nobody groups
+    ///     with it.
+    /// </remarks>
+    static IEnumerable<LiteralExpressionSyntax> Literals(SyntaxNode scope) =>
+        scope.DescendantNodes(static node => node is not (AnonymousFunctionExpressionSyntax
+                or LocalFunctionStatementSyntax
+                or InterpolatedStringExpressionSyntax)
+            )
+            .OfType<LiteralExpressionSyntax>()
+            .Where(static node => node.IsKind(SyntaxKind.StringLiteralExpression));
 
     /// <summary>
     ///     The shortest single-line raw string spelling of a value, or null where there is none.
