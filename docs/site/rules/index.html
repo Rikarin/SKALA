@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 321 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 325 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -73,7 +73,7 @@
 <tr><td><a href="SK2005.html">SK2005</a></td><td>Do not mutate a copy of a readonly struct field</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2007.html">SK2007</a></td><td>The collection being enumerated is modified inside the loop</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2008.html">SK2008</a></td><td>A stored delegate captures a changing loop variable</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
-<tr><td><a href="SK2009.html">SK2009</a></td><td>An enum switch statement omits declared members</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2009.html">SK2009</a></td><td>An enum switch omits declared members</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2010.html">SK2010</a></td><td>A string comparison has an implicit culture policy</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2011.html">SK2011</a></td><td>A struct uses inherited ValueType.Equals</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2012.html">SK2012</a></td><td>Review a self-operation on an automatic property</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
@@ -168,6 +168,10 @@
 <tr><td><a href="SK2220.html">SK2220</a></td><td>The conditionally compiled call sits under a directive that deletes it</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2221.html">SK2221</a></td><td>The <code>[UnsafeAccessor]</code> names a member its target does not have</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2222.html">SK2222</a></td><td>The type declares <code>checked</code> for some of its operators and not the rest</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2230.html">SK2230</a></td><td>The concatenated SQL fragments run together</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>yes</td></tr>
+<tr><td><a href="SK2231.html">SK2231</a></td><td>The command's SQL names a parameter nothing supplies</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2232.html">SK2232</a></td><td>The load context's own resolver loads outside it</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2233.html">SK2233</a></td><td>The <code>Type</code> passed cannot satisfy what the API asks for</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2240.html">SK2240</a></td><td>The <code>with</code> expression rewrites every member</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2241.html">SK2241</a></td><td>The regular expression pattern does not parse</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2242.html">SK2242</a></td><td>The argument check does not run until the result is enumerated</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>

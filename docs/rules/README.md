@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 302 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 325 ids are allocated.
 
 ## Async
 
@@ -58,7 +58,7 @@
 | [SK2005](SK2005.md) | Do not mutate a copy of a readonly struct field | warning | — | no |
 | [SK2007](SK2007.md) | The collection being enumerated is modified inside the loop | warning | review | no |
 | [SK2008](SK2008.md) | A stored delegate captures a changing loop variable | warning | — | no |
-| [SK2009](SK2009.md) | An enum switch statement omits declared members | warning | — | no |
+| [SK2009](SK2009.md) | An enum switch omits declared members | warning | — | no |
 | [SK2010](SK2010.md) | A string comparison has an implicit culture policy | warning | — | no |
 | [SK2011](SK2011.md) | A struct uses inherited ValueType.Equals | warning | — | no |
 | [SK2012](SK2012.md) | Review a self-operation on an automatic property | warning | — | no |
@@ -146,10 +146,20 @@
 | [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | safe | no |
 | [SK2201](SK2201.md) | The unsubscription passes an anonymous function | warning | — | no |
 | [SK2202](SK2202.md) | The modification sits inside a conditional invocation | warning | — | yes |
+| [SK2210](SK2210.md) | The constant index or range cannot be valid | warning | — | no |
+| [SK2211](SK2211.md) | Nothing the loop condition reads is changed by the loop | warning | — | no |
+| [SK2212](SK2212.md) | The loop body cannot run more than once | warning | — | no |
+| [SK2213](SK2213.md) | The `IndexOf` result is compared to a positive number | warning | review | no |
+| [SK2220](SK2220.md) | The conditionally compiled call sits under a directive that deletes it | warning | review | no |
+| [SK2221](SK2221.md) | The `[UnsafeAccessor]` names a member its target does not have | error | — | no |
+| [SK2222](SK2222.md) | The type declares `checked` for some of its operators and not the rest | warning | — | no |
 | [SK2230](SK2230.md) | The concatenated SQL fragments run together | warning | review | yes |
 | [SK2231](SK2231.md) | The command's SQL names a parameter nothing supplies | warning | — | no |
 | [SK2232](SK2232.md) | The load context's own resolver loads outside it | warning | review | no |
 | [SK2233](SK2233.md) | The `Type` passed cannot satisfy what the API asks for | warning | — | no |
+| [SK2240](SK2240.md) | The `with` expression rewrites every member | warning | review | no |
+| [SK2241](SK2241.md) | The regular expression pattern does not parse | warning | — | no |
+| [SK2242](SK2242.md) | The argument check does not run until the result is enumerated | warning | — | no |
 
 ## Design
 
