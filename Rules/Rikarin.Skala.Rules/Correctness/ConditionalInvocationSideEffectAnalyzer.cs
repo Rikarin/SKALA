@@ -66,6 +66,17 @@ public sealed class ConditionalInvocationSideEffectAnalyzer : DiagnosticAnalyzer
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var modification = context.Node;
 
+        // ⚠ An object, collection or `with` initializer member is an `AssignmentExpressionSyntax` of
+        // the same kind as a real assignment, and it is not a modification of anything: it names a
+        // member of an object that is being *constructed* on this line. Vixen reported nine of these
+        // and one true finding before this guard existed —
+        // `OnBind?.Invoke(new(context, this) { Effect = effect })` is not a conditional side effect
+        // by any reading. A mutation *nested inside* an initializer, `a?.M(new Foo { N = i++ })`, is
+        // a different node and is still reported.
+        if (modification.Parent is InitializerExpressionSyntax) {
+            return;
+        }
+
         for (var current = modification; current.Parent is not null; current = current.Parent) {
             // ⚠ A body whose run time is decided by somebody else is not decided by the `?.`. A
             // lambda or a local function inside the conditional part is invoked by whoever holds the

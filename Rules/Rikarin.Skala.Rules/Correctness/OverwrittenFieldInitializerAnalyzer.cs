@@ -107,7 +107,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
                     Descriptor,
                     initializer.GetLocation(),
                     FixEdits.Pack((span, string.Empty)),
-                    "the value `" + field.Name + "` is given here is overwritten by every constructor"
+                    "the value given to `" + field.Name + "` here is overwritten by every constructor"
                 )
             );
         }
