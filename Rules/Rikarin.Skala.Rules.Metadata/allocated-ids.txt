@@ -316,3 +316,5 @@ SK2172 forgiven-is-operand
 SK2173 negated-empty-pattern
 SK2174 unparenthesised-precedence-mix
 SK5030 xml-signature-unverified-key
+SK5020 predictable-cipher-initialization-vector
+SK5021 undersized-asymmetric-key

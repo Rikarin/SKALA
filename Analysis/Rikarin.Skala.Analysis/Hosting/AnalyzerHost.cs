@@ -203,6 +203,7 @@ public static class AnalyzerHost {
         new ForgivenIsOperandAnalyzer(), new NegatedEmptyPatternAnalyzer(),
         new UnparenthesisedPrecedenceMixAnalyzer(),
         new XmlSignatureAnalyzer(),
+        new PredictableInitializationVectorAnalyzer(), new AsymmetricKeySizeAnalyzer(),
     ];
 
     /// <summary>

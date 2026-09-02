@@ -14,33 +14,6 @@
  },
  "concepts": [
   {
-   "slug": "hardcoded-secret",
-   "title": "A credential or key is hard-coded",
-   "issue": 138,
-   "proposedRange": "SK5000-SK5999",
-   "proposedSeverity": "error",
-   "proposedScope": "Semantic",
-   "proposedFix": "none",
-   "rules": [
-    "S2068",
-    "S6418",
-    "S2115"
-   ]
-  },
-  {
-   "slug": "weak-password-hashing",
-   "title": "The password hash is unsalted or fast",
-   "issue": 139,
-   "proposedRange": "SK5000-SK5999",
-   "proposedSeverity": "error",
-   "proposedScope": "Semantic",
-   "proposedFix": "none",
-   "rules": [
-    "S2053",
-    "S5344"
-   ]
-  },
-  {
    "slug": "insecure-random-in-security-context",
    "title": "A predictable generator produces security-sensitive values",
    "issue": 140,
@@ -54,18 +27,6 @@
    ]
   },
   {
-   "slug": "custom-cryptographic-algorithm",
-   "title": "A cryptographic algorithm is hand-written",
-   "issue": 141,
-   "proposedRange": "SK5000-SK5999",
-   "proposedSeverity": "error",
-   "proposedScope": "Semantic",
-   "proposedFix": "none",
-   "rules": [
-    "S2257"
-   ]
-  },
-  {
    "slug": "predictable-cipher-iv",
    "title": "The cipher initialisation vector is predictable",
    "issue": 142,
@@ -75,6 +36,10 @@
    "proposedFix": "none",
    "rules": [
     "S3329"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK5020"
    ]
   },
   {
@@ -86,8 +51,11 @@
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "rules": [
-    "S4423",
     "S4426"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK5021"
    ]
   },
   {
@@ -1793,6 +1761,16 @@
    "issue": 14
   },
   {
+   "rule": "S2053",
+   "resolution": "decided-in-doc-08",
+   "detail": "docs/plan/08 refutes #139 and names the half that is decidable and unbuilt. `CA5379` covers only the hash algorithm; `CA5387`/`CA5388` produced nothing on a 100-iteration SHA-1 derivation with a zero salt, measured. A constant salt would be a new id."
+  },
+  {
+   "rule": "S2068",
+   "resolution": "decided-in-doc-08",
+   "detail": "docs/plan/08 refutes #138 for the reason it already cut `SK5006`: entropy does not separate a credential from a GUID, a base64 asset, a test vector or a hash constant. The one decidable slice — a constant `byte[]` reaching `SymmetricAlgorithm.Key` — is hosted by `CA5390`."
+  },
+  {
    "rule": "S2077",
    "resolution": "shipped",
    "detail": "Shipped as `SK5001`."
@@ -1801,6 +1779,11 @@
    "rule": "S2092",
    "resolution": "out-of-scope",
    "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+  },
+  {
+   "rule": "S2115",
+   "resolution": "decided-in-doc-08",
+   "detail": "docs/plan/08 refutes #138. The empty-database-password half needs the tool to decide that a string literal *is* a connection string before it can parse it, which is the identifier judgement that cut `SK5008`."
   },
   {
    "rule": "S2123",
@@ -1874,6 +1857,11 @@
    "resolution": "tracked-by-resharper-issue",
    "concept": "loop-cannot-terminate",
    "issue": 14
+  },
+  {
+   "rule": "S2257",
+   "resolution": "decided-in-doc-08",
+   "detail": "docs/plan/08 refutes #141 for `SK5005`'s hash-half reason: `HashAlgorithm` is the base class for **checksums**. CRC32, xxHash and MurmurHash derive from it for the streaming plumbing and are not security controls. ⚠ No `CA` covers it either, measured under `AnalysisMode=All`."
   },
   {
    "rule": "S2259",
@@ -2915,6 +2903,11 @@
    "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
+   "rule": "S4423",
+   "resolution": "decided-in-doc-08",
+   "detail": "docs/plan/08 refutes #143's TLS half: the compiler already reports it **on by default** — `SYSLIB0039` on `SslProtocols.Tls`/`Tls11`, `CS0618` on `Ssl3`, and `SYSLIB0014` on every `ServicePointManager` reference, which is the only expression that reaches `SecurityProtocolType`. A Skala rule would be a third copy."
+  },
+  {
    "rule": "S4428",
    "resolution": "out-of-scope",
    "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
@@ -2966,6 +2959,11 @@
    "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
+   "rule": "S5344",
+   "resolution": "decided-in-doc-08",
+   "detail": "docs/plan/08 refutes #139. The fast-hash half needs to know that a string is a password, which is the identifier judgement that cut `SK5008` and half of `SK5005`."
+  },
+  {
    "rule": "S5542",
    "resolution": "shipped",
    "detail": "Shipped as `SK5005`."
@@ -2990,6 +2988,11 @@
    "resolution": "tracked-by-resharper-issue",
    "concept": "regex-pattern-problems",
    "issue": 48
+  },
+  {
+   "rule": "S6418",
+   "resolution": "decided-in-doc-08",
+   "detail": "docs/plan/08 refutes #138 with `SK5006`'s reason. ⚠ `CA5390` hosts the decidable slice and declines `Encoding.UTF8.GetBytes(\"…\")` and `Convert.FromBase64String(\"…\")`, measured; `CA5403` declines a hard-coded PFX password."
   },
   {
    "rule": "S6419",

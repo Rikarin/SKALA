@@ -1586,7 +1586,8 @@ input · `SK5003` path built from user input without `Path.GetFullPath` containm
 hash/cipher (`MD5`, `SHA1`, `DES`, ECB) · `SK5006` hardcoded credential or key material by shape and
 entropy · `SK5007` certificate validation disabled · `SK5008` `Random` used for a token or key ·
 `SK5009` XML reader with DTD processing enabled · `SK5010` a pattern that can backtrack, run with
-no timeout.
+no timeout · `SK5020` a cipher initialisation vector fixed at compile time · `SK5021` an RSA or DSA
+key generated below 2048 bits.
 
 ⚠ `SK5030` — an XML signature checked against the key the document carries — was allocated
 after this list was written, from the SonarQube parity batch rather than from the plan. It is
@@ -2100,6 +2101,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **326** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **291** | **89.5 %** |
+| Rules this document names | **327** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **292** | **89.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -3255,6 +3258,283 @@ with no credentials, lives in `System.DirectoryServices`, which is Windows-only 
 cross-platform surface a modern target uses. On `LdapConnection`, the type a `net10.0` program
 actually has, anonymity requires writing `AuthType.Anonymous` on purpose. **No `CA` exists for it**,
 and there is no version of the rule that is both decidable and about a defect.
+### ⚠ `SK5020`/`SK5021`, and the three proposals the SDK or the compiler already answers
+
+⚠ **Owed prose: this section records two rules shipped and three `rule-proposal` issues refuted, and
+its main deliverable is not either rule — it is the table below, of what fifteen security `CA*`
+diagnostics do *behaviourally* rather than what their titles say.** The batch was five
+SonarQube-derived proposals — issues #138, #139, #141, #142, #143 — and the hypothesis was that a
+secrets-and-cryptography finding is decidable at a call site. It survived for two of them, and for
+one and a half of the two the reason is that the host does something different from what it is
+named.
+
+⚠ **Do not re-measure this by reading descriptors.** Nine of the eighteen rows below say something
+that no published rule description implies, and four of them are the reason a proposal was decided
+one way rather than the other.
+
+#### The probe, and why the default column is the one that matters
+
+The method is #299's and doc 08's existing one, repeated because a probe built anywhere else answers
+a different question: `dotnet new classlib -f net10.0` on SDK 10.0.400, **outside this repository**,
+with an empty `Directory.Build.props` and `Directory.Build.targets` above it to stop MSBuild's upward
+walk — this repository raises `AnalysisMode`, so measuring here would measure Skala's settings.
+Built three times: untouched, with `-p:AnalysisMode=All`, and with `-p:ErrorLog=` so the SARIF could
+be read.
+
+⚠ **The plain build emitted 0 `CA` warnings and 0 errors, and that is not the same as "no analyzer
+ran".** Its SARIF carried **18 `CA1822` at `note`** — the third state, *enabled but below the
+console's threshold*, invisible to any build and visible only through the error log. **No `CA5xxx`
+appeared in the default SARIF at any level**, which is what separates "off" from "hidden" for this
+family and is why the default column below reads `off` rather than `silent`. The mechanism is the
+one #299 found: `analysislevelsecurity_10_default.globalconfig` carries **no rule entries at all**
+(nine lines, all header), so a security `CA`'s default is whatever its own descriptor says.
+
+⚠ **And the `All` build proves the zeros are real**: the same sources under `-p:AnalysisMode=All`
+emitted seventeen distinct `CA` ids, twelve of them in the security family — so a row below that says
+"declined under `All`" is a rule that ran and said nothing, not a rule that never ran.
+
+#### What fifteen security `CA*` actually do
+
+| `CA*` | What it does **behaviourally** | Default | Bearing on this batch |
+|---|---|---|---|
+| `CA5350` | ⚠ "Weak" is `TripleDES` **and `SHA1`** — not `DES` | **off** | `SK5005` |
+| `CA5351` | ⚠ "Broken" is `DES`, `RC2` and `MD5` — the two rules split the families differently from their titles | **off** | `SK5005`; the hash half is cut, see above |
+| `CA5358` | `Mode = ECB`, `CFB`, `OFB`. ⚠ **Does not report `CBC`**, despite "unsafe cipher modes" | **off** | `SK5005` has ECB; `CFB`/`OFB` are an unclaimed gap |
+| `CA5359` | `ServicePointManager.ServerCertificateValidationCallback = (…) => true`. ⚠ **Did not fire** on `HttpClientHandler.ServerCertificateCustomValidationCallback` in an object initialiser in the same file | **off** | `SK5007` covers both spellings |
+| `CA5364` | `SecurityProtocolType.Ssl3`/`Tls`/`Tls11`, **and a cast integer** — `(SecurityProtocolType)768` is reported by value | **off** | #143's TLS half |
+| `CA5379` | `Rfc2898DeriveBytes` **constructors** that default to or pass SHA-1. ⚠ Silent on `Rfc2898DeriveBytes.Pbkdf2(…, SHA256, …)` whatever its salt or its iteration count | **off** | #139 |
+| `CA5384` | `new DSACryptoServiceProvider(1024)` — as an *algorithm*, regardless of size. ⚠ Misses `DSA.Create(1024)` | **off** | `SK5021` |
+| `CA5385` | ⚠ **`new RSACryptoServiceProvider(1024)` and nothing else** — not `RSA.Create(1024)`, not `rsa.KeySize = 1024` even on `RSACryptoServiceProvider`, the type its own message names | **off** | **`SK5021` exists because of this row** |
+| `CA5386` | `SecurityProtocolType.Tls12` **and `Tls13`** — it reports hard-coding a *good* version, not a bad one | **off** | #143 |
+| `CA5387`/`CA5388` | ⚠ Set to `warning` by `analysislevel_10_all.globalconfig` and produced **nothing** on `new Rfc2898DeriveBytes(password, new byte[8], 100)` — shape present, correctly declined or inapplicable | **off** | #139 |
+| `CA5390` | `aes.Key = <constant `byte[]` field>` and `= new byte[] { … }`. ⚠ **Declines** `Encoding.UTF8.GetBytes("…")`, `Convert.FromBase64String("…")` and `new HMACSHA256(<constant>)` | **off** | #138 |
+| `CA5397` | `SslProtocols.Ssl3`/`Tls`/`Tls11`, on `SslClientAuthenticationOptions` and on `HttpClientHandler` | **off** | #143 |
+| `CA5398` | `SslProtocols.Tls12` — again the *good* version | **off** | #143 |
+| `CA5401` | ⚠ `CreateEncryptor` after **any** explicit IV — **including `RandomNumberGenerator.GetBytes(16)`**, which is the correct code. Silent after `GenerateIV()`, silent on `CreateDecryptor` | **off** | **`SK5020` exists because of this row** |
+| `CA5402` | ⚠ Set to `warning` under `All` and produced nothing on either parameterless-`CreateEncryptor` shape — shape present, declined | **off** | — |
+| `CA5403` | ⚠ **Declined** `new X509Certificate2("cert.pfx", "hardcoded-pfx-password")`. A hard-coded PFX *password* is not what "do not hard-code certificate" looks for | **off** | #138 |
+| `CA5404` | `ValidateIssuer`, `ValidateAudience`, `ValidateLifetime` set to `false`. ⚠ **Did not fire on `ValidateIssuerSigningKey = false`** in the same initialiser — three of the four flags | **off** | Outside this batch; recorded so it is not re-probed |
+| — | ⚠ **There is no `CA` for a hand-written cryptographic algorithm.** A `HashAlgorithm` subclass, a `SymmetricAlgorithm` subclass, a `RandomNumberGenerator` subclass and a hand-rolled XOR "encrypt" produced **zero** `CA` of any kind under `All`, in the build that emitted seventeen other ids | — | #141 |
+
+**`SK5020` and `SK5021` ship. The other three do not, and half of #143 does not.**
+
+| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` (380 files) | `corpus/vulnerable` |
+|---|---|---|---|---:|---:|---:|
+| `SK5020` a cipher initialisation vector fixed at compile time | Semantic | **error** | ⚠ none | 9 / 23 | **0**, shape absent | 6 |
+| `SK5021` an RSA or DSA key generated below 2048 bits | Semantic | **error** | yes, `fixIsSafe: false` | 7 / 17 | **0**, shape absent | 3 |
+
+⚠ **The `corpus/real` zeros are classified as *shape absent*, and this is the first batch where that
+is the whole story.** Not one of the **4 459** files under `Testing/corpus` mentions
+`System.Security.Cryptography`, `SslProtocols` or `SecurityProtocolType` — a logging library, a JSON
+serialiser and a game engine have no cryptography in them at all. So a sweep of the reference trees
+cannot distinguish a working rule from a dead one here, in **either** direction, and the number that
+decides this range is `Rules/Rikarin.Skala.Rules.Tests/corpus/` as § "SK5000 — Security" already
+says. Two files were added to it: `vulnerable/KeyMaterial.cs` with nine findings and
+`safe/FreshKeyMaterial.cs`, whose fourteen members are the same shapes with the defect removed the
+way a reviewer removes it — `GenerateIV()`, a vector drawn at the call, a vector read off the
+message, a decrypting call handed the vector it was given, and key sizes at or above the floor.
+
+#### ⚠ #142 ships, and the argument is the one #140 lost
+
+`CA5401` hosts the *shape*, so ADR-008's "host, never rebuild" appears to settle it the way #140 was
+settled. It does not, and the difference is worth stating because it is the line between the two
+outcomes: **`CA5401` reports `aes.IV = RandomNumberGenerator.GetBytes(16)` and
+`aes.CreateEncryptor(key, RandomNumberGenerator.GetBytes(16))`** — both measured, both correct code.
+Its question is "is the IV non-default", and the answer is yes for every program that transmits an IV
+alongside its ciphertext, which is every program that uses CBC properly. It is untargeted in exactly
+the way `CA5394` is.
+
+⚠ **What made #140 refutable and #142 shippable is not the host, it is what narrowing the host
+costs.** Narrowing `CA5394` means deciding whether some bytes become a token, which is an
+identifier-name judgement — the judgement this document already refused when it cut `SK5008`.
+Narrowing `CA5401` means asking whether an expression is a compile-time constant, which is not a
+judgement at all: the compiler has already computed it. **Where the narrowing is a fact rather than a
+guess, the narrow rule is the one that can ship at `error`, and the host cannot.**
+
+⚠ **`SK5020` never resolves a local, and a false positive rather than cost is the reason.**
+`var iv = new byte[16]; RandomNumberGenerator.Fill(iv); aes.IV = iv;` is how correct code is written,
+and a rule that followed `iv` back to its declaration would report it at `error`. So the constant
+must be written at the assignment itself, or be the initialiser of a field holding an **explicit list
+of literals**: `static readonly byte[] Iv = { 1, 2, … }` is a hard-coded IV and cannot be anything
+else, while `= new byte[16]` on a field is the same allocate-then-fill shape and is deliberately not
+followed — `safe/FreshKeyMaterial.cs` carries both, one filled in a static constructor. ⚠ **Only the
+encrypting side**: `CreateDecryptor(key, iv)` is handed the IV the message arrived with, and
+reporting it would report the reader of a broken format rather than its writer. ⚠ **And test methods
+are exempt**, by the attribute test five rules already use, because a NIST or RFC known-answer vector
+pins the IV *by definition* and a security rule at `error` that breaks a crypto library's own test
+suite is how a reviewer learns to skim past every security finding the tool makes.
+
+#### The sweep, and what its zero is a zero of
+
+The 380 sources of `corpus/real` were staged outside the repository — `SK9023` puts the corpus out of
+`skala check`'s reach — as **one project per vendored tree**, because a single project over all three
+collides. The `.expected.cs` and `.arranged.expected.cs` twins were left behind: the corpus holds
+three copies of every file, and compiling all 1 140 produces about eleven thousand spurious `CS0111`
+that say nothing about anything.
+
+⚠ **The slice omits the generated `ImplicitUsings` file, and that lies in both directions — measured
+this time rather than assumed.** The same 380 files, built twice:
+
+| | `CS` errors |
+|---|---:|
+| `<ImplicitUsings>disable</ImplicitUsings>` | **13 036** |
+| `<ImplicitUsings>enable</ImplicitUsings>` | **10 996** |
+
+⚠ **13 036 is exactly the figure this document records for `SK5010`'s sweep**, which means that
+measurement was made without implicit usings too. Turning them on resolves **2 040** more names —
+almost all `CS0246` — so a semantic rule sees two thousand more bound expressions than the earlier
+sweep gave it. Neither number is "the corpus compiles"; the point is that the earlier one understated
+what the analysis could see.
+
+⚠ **Binlog coverage: `SK9021` is silent.** The build was `--no-incremental` and the check ran
+`--require-fresh-binlog --no-cache`, which rejects a binlog covering under 90 % of the selected
+files. Not one `SK9021` was emitted, so every one of the 380 staged files was in a recorded
+compilation — **100 %**, against the 98 % a complete Vixen build manages and the 1 % an incremental
+one does.
+
+| | `SK5020` | `SK5021` |
+|---|---:|---:|
+| `corpus/real`, 380 files, 16 205 findings in the same run | **0** | **0** |
+| the same run with a `ZzCanary.cs` planted in each of the three projects | **6** | **6** |
+
+⚠ **Both zeros are classified *shape absent*, and neither is evidence about either rule.** The canary
+is what separates a live analysis from a dead one, and it is the only thing that can: the trees hold
+no cipher to configure and no key pair to generate, so there is no "declined correctly" reading
+available. The measurement that decides these two rules is the hand-written
+`Rules/Rikarin.Skala.Rules.Tests/corpus/` pair and the fixture sets, and this document says so rather
+than quoting a corpus zero as though it meant the rules are safe.
+
+#### ⚠ Sixteen sabotages, two survivors, and they survived for opposite reasons
+
+Each clause was removed or inverted in turn and a named test had to turn red. Fourteen did. ⚠ **The
+two that did not are the interesting ones, and telling them apart is the whole point of the
+exercise: one was a hole in the rule and the other is a clause that is genuinely redundant.**
+
+⚠ **`T6` — inverting `arguments.Length != 1` to `> 1` on `SK5021` left the whole suite green, and the
+clause was not dead, it was wrong.** `arguments.IsDefaultOrEmpty` had already rejected the
+zero-argument case one line above, so the arity test's *only* effect was on arity two — where it
+silently declined `new RSACryptoServiceProvider(1024, cspParameters)`. That is a real overload
+carrying a real 1024-bit key, and the rule said nothing about it. Nothing in the fixtures could have
+caught it, because a fixture set written from the same assumption as the rule tests the assumption
+rather than the API. The test that separates a key size from `RSA.Create(RSAParameters)` and
+`RSA.Create(string)` is that the **first parameter is an `int`** — every RSA and DSA overload that
+takes a size takes it first — and the rule now asks that instead, with two fixtures and a corpus pair
+pinning the two-argument spelling.
+
+⚠ **`T2` half-survived, and the reason is a fact about the BCL that the rule's design depends on.**
+Replacing `target.Instance?.Type` with `target.Property.ContainingType` turned `key-size-property`
+red and left `key-size-in-an-initializer` green. Verified by reflection rather than assumed:
+
+| Type | Where `KeySize` is declared |
+|---|---|
+| `RSA`, `DSA`, **`ECDsa`** | `AsymmetricAlgorithm` |
+| `RSACryptoServiceProvider`, `DSACryptoServiceProvider` | themselves — they override it |
+
+So the property's declaring type is `AsymmetricAlgorithm` for the modern factories and the concrete
+type only for the legacy ones. ⚠ **That makes the receiver-type test load-bearing in both
+directions at once**: keyed on the declaring type the rule misses `RSA.Create()` entirely, and
+widening the family set to `AsymmetricAlgorithm` to compensate would sweep in `ECDsa`, where 256 bits
+is correct. Only the receiver's type answers both.
+
+⚠ **`T7` is the opposite result, and it is reported rather than quietly kept.** The clause that
+replaced the arity check — the first parameter must be an `int` — was deleted, and nothing turned
+red. It is redundant for correctness: `Examine`'s `Value: int bits` pattern already declines
+`RSA.Create(RSAParameters)` and `RSA.Create(string)`, because a constant string does not match
+`int`. It is kept anyway, as a **cost filter**: the action runs on every object creation and every
+static `Create` in the compilation and `Family` walks a base-type chain, so the cheap `SpecialType`
+read keeps the walk off the hot path. The remark on the method says exactly that, so the next reader
+does not mistake a redundant clause for a load-bearing one.
+
+⚠ **And one sabotage found a clause with no test at all, before any of this.** Inverting `bits <= 0`
+to `bits < 0` turned nothing red: zero is the "not configured yet" sentinel and reporting it would
+tell a reader their 0-bit key should be 2048 bits, but nothing asserted that. A negative fixture was
+added and the sabotage now fails there. ⚠ Worth keeping beside doc 08's existing note on `SK5010`'s
+four survivors: **a surviving sabotage is a hole in the tests or a hole in the rule, and this batch
+found one of each.**
+
+#### ⚠ #143 is half a rule: the key size ships, the TLS version is already a compiler diagnostic
+
+The key-size half is `SK5021`, and the `CA5385` row above is its entire justification: the SDK covers
+`new RSACryptoServiceProvider(1024)` and misses `RSA.Create(1024)`, which is the modern factory and
+the spelling every current sample uses — as well as `DSA.Create(1024)` and the `KeySize` property on
+the very type `CA5385` names. ⚠ **Elliptic curves are excluded deliberately rather than
+overlooked**: `KeySize` is declared on `AsymmetricAlgorithm`, whose other descendants are `ECDsa` and
+`ECDiffieHellman`, where 256 bits is *stronger* than 2048-bit RSA. A bit-count floor applied across
+algorithm families would make the rule report the replacement it recommends, so the family test is on
+the **receiver's** type and reaches only `RSA` and `DSA`.
+
+⚠ **The TLS-version half is refuted, and the evidence is the plain build rather than the `All`
+build.** The probe emitted **zero `CA` diagnostics** at default and, in the same run, from the
+compiler and the BCL:
+
+- `SYSLIB0039` on `SslProtocols.Tls` and `SslProtocols.Tls11` — three occurrences, **on by default**,
+  no analyzer involved;
+- `CS0618` on `SslProtocols.Ssl3` and on `SecurityProtocolType.Ssl3`;
+- `SYSLIB0014` on all seven `ServicePointManager` references — and
+  `ServicePointManager.SecurityProtocol` is the only way to reach `SecurityProtocolType` at all, so
+  the whole legacy spelling is obsolete by default whatever value it is given.
+
+A Skala rule here would be the **third** copy of a diagnostic the consumer already receives without
+configuring anything — the cut M6 made for `SK3006`/`CS1998` and M7 for `SK8003`/xUnit1001. ⚠ The one
+thing the compiler does not report is `SecurityProtocolType.Tls` and `Tls11`, which are **not**
+marked obsolete where their `SslProtocols` twins are; `SYSLIB0014` covers the only expression that
+can reach them, so the gap is not reachable in practice.
+
+#### ⚠ #138 is refuted, and this document had already refuted it
+
+#138 is the concept § "Cut, with the reason" cut as `SK5006`: "entropy does not separate a credential
+from a GUID, a base64 asset, a test vector or a hash constant". Nothing in this batch's measurement
+changes that, and ADR-012 forbids reusing the id for the narrower thing anyway. What the measurement
+adds is the shape of the one slice that *is* decidable, and who owns it: **`CA5390` hosts a constant
+`byte[]` reaching `SymmetricAlgorithm.Key`**, so a Skala rule for it would be a rebuild. ⚠ **Its
+coverage is narrower than its title and the gaps are recorded rather than closed**: it declined
+`aes.Key = Encoding.UTF8.GetBytes("0123456789abcdef")` and `aes.Key = Convert.FromBase64String("…")`,
+which are the two most common ways a hard-coded key is actually written, and it does not look at HMAC
+keys at all. ⚠ **`CA5403` is not the second half of it either** — it declined
+`new X509Certificate2("cert.pfx", "hardcoded-pfx-password")`, so a hard-coded PFX password is nobody's
+finding. And the `S2115` half — an empty or default database password — needs the tool to decide that
+a string literal *is* a connection string before it can parse it, which is the naming judgement one
+more time.
+
+#### ⚠ #139 is refuted, and the half that is decidable is named rather than built
+
+Two halves, and each fails for a reason this document has already written down once.
+
+The **fast-hash** half — `SHA256.HashData(Encoding.UTF8.GetBytes(password))` — is unreported by
+anything, measured. It stays unreported here because the only thing at the call site saying the input
+is a password is a parameter *named* `password`, and "is this identifier a secret" is precisely the
+judgement that cut `SK5008` and half of `SK5005`. `SHA-256` of a string is a content address far more
+often than it is a password store.
+
+The **salt** half is genuinely unhosted — `CA5379` looks only at the hash algorithm, and
+`CA5387`/`CA5388` produced nothing on a 100-iteration SHA-1 derivation with a zero salt, which is the
+shape they are named for. ⚠ **So there is a decidable, unclaimed finding here: a key-derivation
+function given a salt that is a compile-time constant.** It is not built in this batch, for two
+reasons stated rather than hidden. PBKDF2 with a fixed salt is also how a key is legitimately derived
+from a high-entropy secret against a protocol-fixed salt, and separating that from a password store
+is the same "what is this value for" question as the fast-hash half. And it cannot be measured: the
+reference trees contain no cryptography, so a rule shipped here would ship on fixtures alone. ⚠ It
+is the obvious next allocation in this range if somebody wants it, and it is a **new** id — `SK5006`
+is cut and ADR-012 says a narrower concept takes a new number.
+
+#### ⚠ #141 is refuted because `HashAlgorithm` is the base class for checksums
+
+Unhosted, and measured to be: a `HashAlgorithm` subclass, a `SymmetricAlgorithm` subclass, a
+`RandomNumberGenerator` subclass and a hand-rolled XOR "encrypt" produced **zero** `CA` of any kind
+under `AnalysisMode=All`, in the build that emitted seventeen other ids. So the SDK is not the reason
+to decline it.
+
+The reason is that the shape it would match is the shape of a large population that is not
+cryptography at all, and it is the **same** argument that cut `SK5005`'s hash half. Deriving from
+`HashAlgorithm` says which interface a type implements, not what the type is for, and CRC32, xxHash,
+MurmurHash and FNV are all routinely written as `HashAlgorithm` subclasses — precisely to get the
+incremental `TransformBlock`/`ICryptoTransform` streaming plumbing — while claiming to be checksums
+and nothing more. `RandomNumberGenerator` is subclassed in test code to make a generator
+deterministic, which is the correct thing to do there. Reporting "a cryptographic algorithm is
+hand-written" on a CRC would be asserting a vulnerability in code that has none and cannot have one.
+⚠ And unlike the other refutations the false-positive rate here is **unmeasurable rather than
+measured**: with no cryptography anywhere in the reference trees there is no population to count, and
+this range's bar is not satisfiable by an argument alone.
 
 ### ⚠ What M7 added: three rules out of twenty-three, and one of them has no fix
 

@@ -165,6 +165,7 @@ public sealed class RuleFixtureTests {
         new ForgivenIsOperandAnalyzer(), new NegatedEmptyPatternAnalyzer(),
         new UnparenthesisedPrecedenceMixAnalyzer(),
         new XmlSignatureAnalyzer(),
+        new PredictableInitializationVectorAnalyzer(), new AsymmetricKeySizeAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
