@@ -57,50 +57,17 @@ public sealed class BodyStyleRule : ArrangementRule {
                 return visited;
             }
 
-            return Convert(
-                visited,
-                options.MethodOrOperatorBody,
-                visited.Body,
-                visited.ExpressionBody,
-                static (member, arrow, semicolon) => member.WithBody(null)
-                    .WithExpressionBody(arrow)
-                    .WithSemicolonToken(semicolon),
-                static (member, block) => member.WithExpressionBody(null)
-                    .WithSemicolonToken(default)
-                    .WithBody(block)
-            );
+            return Convert(visited, options.MethodOrOperatorBody);
         }
 
         public override SyntaxNode? VisitOperatorDeclaration(OperatorDeclarationSyntax node) {
             var visited = (OperatorDeclarationSyntax)base.VisitOperatorDeclaration(node)!;
-            return Convert(
-                visited,
-                options.MethodOrOperatorBody,
-                visited.Body,
-                visited.ExpressionBody,
-                static (member, arrow, semicolon) => member.WithBody(null)
-                    .WithExpressionBody(arrow)
-                    .WithSemicolonToken(semicolon),
-                static (member, block) => member.WithExpressionBody(null)
-                    .WithSemicolonToken(default)
-                    .WithBody(block)
-            );
+            return Convert(visited, options.MethodOrOperatorBody);
         }
 
         public override SyntaxNode? VisitConversionOperatorDeclaration(ConversionOperatorDeclarationSyntax node) {
             var visited = (ConversionOperatorDeclarationSyntax)base.VisitConversionOperatorDeclaration(node)!;
-            return Convert(
-                visited,
-                options.MethodOrOperatorBody,
-                visited.Body,
-                visited.ExpressionBody,
-                static (member, arrow, semicolon) => member.WithBody(null)
-                    .WithExpressionBody(arrow)
-                    .WithSemicolonToken(semicolon),
-                static (member, block) => member.WithExpressionBody(null)
-                    .WithSemicolonToken(default)
-                    .WithBody(block)
-            );
+            return Convert(visited, options.MethodOrOperatorBody);
         }
 
         public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) {
@@ -129,34 +96,12 @@ public sealed class BodyStyleRule : ArrangementRule {
 
         public override SyntaxNode? VisitConstructorDeclaration(ConstructorDeclarationSyntax node) {
             var visited = (ConstructorDeclarationSyntax)base.VisitConstructorDeclaration(node)!;
-            return Convert(
-                visited,
-                options.ConstructorOrDestructorBody,
-                visited.Body,
-                visited.ExpressionBody,
-                static (member, arrow, semicolon) => member.WithBody(null)
-                    .WithExpressionBody(arrow)
-                    .WithSemicolonToken(semicolon),
-                static (member, block) => member.WithExpressionBody(null)
-                    .WithSemicolonToken(default)
-                    .WithBody(block)
-            );
+            return Convert(visited, options.ConstructorOrDestructorBody);
         }
 
         public override SyntaxNode? VisitDestructorDeclaration(DestructorDeclarationSyntax node) {
             var visited = (DestructorDeclarationSyntax)base.VisitDestructorDeclaration(node)!;
-            return Convert(
-                visited,
-                options.ConstructorOrDestructorBody,
-                visited.Body,
-                visited.ExpressionBody,
-                static (member, arrow, semicolon) => member.WithBody(null)
-                    .WithExpressionBody(arrow)
-                    .WithSemicolonToken(semicolon),
-                static (member, block) => member.WithExpressionBody(null)
-                    .WithSemicolonToken(default)
-                    .WithBody(block)
-            );
+            return Convert(visited, options.ConstructorOrDestructorBody);
         }
 
         /// <summary>
@@ -169,23 +114,13 @@ public sealed class BodyStyleRule : ArrangementRule {
         /// </summary>
         public override SyntaxNode? VisitPropertyDeclaration(PropertyDeclarationSyntax node) {
             var visited = (PropertyDeclarationSyntax)base.VisitPropertyDeclaration(node)!;
-            if (options.AccessorOwnerBody != AccessorOwnerBodyStyle.ExpressionBody
-                || visited.AccessorList is not { } accessors) {
-                return visited;
-            }
-
-            if (accessors.Accessors is [{ } only]
-                && only.IsKind(SyntaxKind.GetAccessorDeclaration)
-                && only.AttributeLists.Count == 0
-                && only.Modifiers.Count == 0
-                && ExtractAccessor(only) is { } expression
-                && !HasTriviaThatBlocksConversion(accessors)) {
-                return visited.WithAccessorList(null)
-                    .WithExpressionBody(Arrow(expression))
-                    .WithSemicolonToken(Semicolon(accessors.CloseBraceToken));
-            }
-
-            return visited;
+            return CollapseAccessorOwner(
+                visited,
+                visited.AccessorList,
+                static (owner, arrow, semicolon) => owner.WithAccessorList(null)
+                    .WithExpressionBody(arrow)
+                    .WithSemicolonToken(semicolon)
+            );
         }
 
         /// <summary>
@@ -217,8 +152,34 @@ public sealed class BodyStyleRule : ArrangementRule {
         /// <summary>⚠ An indexer is an accessor owner too, and reads the same key.</summary>
         public override SyntaxNode? VisitIndexerDeclaration(IndexerDeclarationSyntax node) {
             var visited = (IndexerDeclarationSyntax)base.VisitIndexerDeclaration(node)!;
+            return CollapseAccessorOwner(
+                visited,
+                visited.AccessorList,
+                static (owner, arrow, semicolon) => owner.WithAccessorList(null)
+                    .WithExpressionBody(arrow)
+                    .WithSemicolonToken(semicolon)
+            );
+        }
+
+        /// <summary>
+        ///     The owner collapse itself, shared by a property and an indexer.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ One body rather than two, because the two were identical token for token and
+        ///     <c>SK7020</c> reported them as one clone group. The only thing that differed was the node
+        ///     type, and <see cref="Microsoft.CodeAnalysis.CSharp.Syntax.BasePropertyDeclarationSyntax" />
+        ///     cannot carry the rebuild: it declares <c>AccessorList</c> but neither
+        ///     <c>ExpressionBody</c> nor <c>SemicolonToken</c>, because an event declaration derives from
+        ///     it and has no expression body. Hence the delegate — the type is what varies, and it is the
+        ///     only thing that does.
+        /// </remarks>
+        TOwner CollapseAccessorOwner<TOwner>(
+            TOwner visited,
+            AccessorListSyntax? accessorList,
+            Func<TOwner, ArrowExpressionClauseSyntax, SyntaxToken, TOwner> toExpression
+        ) where TOwner : SyntaxNode {
             if (options.AccessorOwnerBody != AccessorOwnerBodyStyle.ExpressionBody
-                || visited.AccessorList is not { } accessors) {
+                || accessorList is not { } accessors) {
                 return visited;
             }
 
@@ -228,9 +189,7 @@ public sealed class BodyStyleRule : ArrangementRule {
                 && only.Modifiers.Count == 0
                 && ExtractAccessor(only) is { } expression
                 && !HasTriviaThatBlocksConversion(accessors)) {
-                return visited.WithAccessorList(null)
-                    .WithExpressionBody(Arrow(expression))
-                    .WithSemicolonToken(Semicolon(accessors.CloseBraceToken));
+                return toExpression(visited, Arrow(expression), Semicolon(accessors.CloseBraceToken));
             }
 
             return visited;
@@ -239,6 +198,39 @@ public sealed class BodyStyleRule : ArrangementRule {
         /// <summary>The expression an already-converted accessor carries, for the owner collapse.</summary>
         static ExpressionSyntax? ExtractAccessor(AccessorDeclarationSyntax accessor) =>
             accessor.ExpressionBody?.Expression ?? Extract(accessor.Body);
+
+        /// <summary>
+        ///     <see cref="Convert{TMember}" /> for the five members that keep their body on
+        ///     <see cref="BaseMethodDeclarationSyntax" /> — method, operator, conversion operator,
+        ///     constructor, destructor.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ The five call sites passed byte-identical rebuild lambdas and differed only in the style
+        ///     operand, which <c>SK7020</c> reported as a 292-token clone group. The base type carries
+        ///     <c>Body</c>, <c>ExpressionBody</c> and all three <c>With…</c> methods, so the lambdas can be
+        ///     written once; each <c>With…</c> dispatches virtually and returns the caller's own concrete
+        ///     node, so nothing about the tree that comes back changes.
+        ///     <para>
+        ///         ⚠ A local function is *not* what varies. <see cref="Convert{TMember}" />'s own
+        ///         <c>ConstructorDeclarationSyntax or DestructorDeclarationSyntax</c> test and
+        ///         <see cref="BlockFor" />'s switch both match on the runtime type, which passing the node
+        ///         as its base does not touch — that is what makes this a rename of the call rather than a
+        ///         change of behaviour.
+        ///     </para>
+        /// </remarks>
+        BaseMethodDeclarationSyntax Convert(BaseMethodDeclarationSyntax member, BodyStyle style) =>
+            Convert(
+                member,
+                style,
+                member.Body,
+                member.ExpressionBody,
+                static (owner, arrow, semicolon) => owner.WithBody(null)
+                    .WithExpressionBody(arrow)
+                    .WithSemicolonToken(semicolon),
+                static (owner, block) => owner.WithExpressionBody(null)
+                    .WithSemicolonToken(default)
+                    .WithBody(block)
+            );
 
         TMember Convert<TMember>(
             TMember member,

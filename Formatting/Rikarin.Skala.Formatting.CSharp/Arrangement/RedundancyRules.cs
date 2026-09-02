@@ -101,17 +101,10 @@ public sealed class ThisQualifierRule : ArrangementRule {
                 return visited;
             }
 
-            // ⚠ The precondition: the bare name, looked up at exactly this position, must find the
-            // same symbol. `LookupSymbols` is asked rather than the syntax re-bound, because the
-            // rewritten tree is not in the model and re-binding it would need a whole new
-            // compilation — which is layer 2's job, not layer 1's.
-            var candidates = model.LookupSymbols(node.SpanStart, name: node.Name.Identifier.ValueText);
-            if (candidates.Length != 1 || !SymbolEqualityComparer.Default.Equals(candidates[0], qualified)) {
-                return visited;
-            }
-
-            return visited.Name.WithLeadingTrivia(visited.GetLeadingTrivia())
-                .WithTrailingTrivia(visited.GetTrailingTrivia());
+            // ⚠ The precondition — the bare name, looked up at exactly this position, must find the
+            // same symbol — lives on `GuardedRewriter`, because StaticQualifierRule needs the identical
+            // test and two copies is how a fix to one of them misses the other.
+            return BareNameResolvesTo(model, node, qualified) ? Unqualified(visited) : visited;
         }
 
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) {

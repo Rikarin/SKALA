@@ -80,16 +80,9 @@ public sealed class StaticQualifierRule : ArrangementRule {
                 return visited;
             }
 
-            // ⚠ The same precondition ThisQualifierRule uses, for the same reason: the bare name,
-            // looked up at this position, must find exactly this symbol. A `using static` import or
-            // a local of the same name makes the unqualified form mean something else.
-            var candidates = model.LookupSymbols(node.SpanStart, name: node.Name.Identifier.ValueText);
-            if (candidates.Length != 1 || !SymbolEqualityComparer.Default.Equals(candidates[0], member)) {
-                return visited;
-            }
-
-            return visited.Name.WithLeadingTrivia(visited.GetLeadingTrivia())
-                .WithTrailingTrivia(visited.GetTrailingTrivia());
+            // ⚠ The same precondition ThisQualifierRule uses, for the same reason — which is why it is
+            // `GuardedRewriter`'s and not written out here a second time.
+            return BareNameResolvesTo(model, node, member) ? Unqualified(visited) : visited;
         }
 
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) {
@@ -134,21 +127,6 @@ public sealed class StaticQualifierRule : ArrangementRule {
             )
                 .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
-        }
-
-        static bool IsInNameOf(SyntaxNode node) {
-            for (var current = node; current is not null; current = current.Parent) {
-                if (current.Parent is ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax invocation }
-                    && invocation.Expression is IdentifierNameSyntax { Identifier.ValueText: "nameof" }) {
-                    return true;
-                }
-
-                if (current is StatementSyntax or MemberDeclarationSyntax) {
-                    return false;
-                }
-            }
-
-            return false;
         }
     }
 }
