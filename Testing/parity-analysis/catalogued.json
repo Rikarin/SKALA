@@ -267,5 +267,7 @@
   "EventUnsubscriptionViaAnonymousDelegate": "SK2201",
   "PossiblyUnintendedSideEffectsInsideConditionalInvocation": "SK2202",
   "VariableLengthStringHexEscapeSequence": "SK2171",
-  "SuppressNullableWarningExpressionAsInvertedIsExpression": "SK2172"
+  "SuppressNullableWarningExpressionAsInvertedIsExpression": "SK2172",
+  "WithExpressionModifiesAllMembers": "SK2240",
+  "RegExpInspections": "SK2241"
 }

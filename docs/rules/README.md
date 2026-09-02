@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 298 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 301 ids are allocated.
 
 ## Async
 
@@ -146,6 +146,9 @@
 | [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | safe | no |
 | [SK2201](SK2201.md) | The unsubscription passes an anonymous function | warning | — | no |
 | [SK2202](SK2202.md) | The modification sits inside a conditional invocation | warning | — | yes |
+| [SK2240](SK2240.md) | The `with` expression rewrites every member | warning | review | no |
+| [SK2241](SK2241.md) | The regular expression pattern does not parse | warning | — | no |
+| [SK2242](SK2242.md) | The argument check does not run until the result is enumerated | warning | — | no |
 
 ## Design
 

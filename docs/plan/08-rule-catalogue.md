@@ -2094,8 +2094,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **325** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **290** | **89.5 %** |
+| Rules this document names | **328** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **293** | **89.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -4895,3 +4895,93 @@ map to be wrong in. `ConfusingCharAsIntegerInConstructor` — #39's third inspec
 argument widening to an `int` parameter — is uncovered for a different reason: it is a question
 about overload resolution rather than about how a literal reads, and it is a different rule from
 `SK2171`.
+
+## `SK2240`–`SK2242` — patterns, initializers and deferred checks
+
+⚠ **The prose pass for `SK2240`–`SK2242` is owed.** What follows is the allocation register entry —
+enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+**Five concepts were taken and three shipped.** The batch was chosen so that three of its five sat
+directly on top of already-shipped rules, and working out where each boundary actually falls was
+most of the work: `SK1071` and `SK0230` both read `with` expressions, `SK5010` already owns half of
+the regex concept, and `SK6050` had already met — and written down — the exact wall that the fourth
+concept walks into.
+
+`SK2240` `with-expression-rewrites-all` — a `with` expression that assigns every positional
+parameter of the record it copies, which is `new T(…)` spelled longer and which will silently start
+carrying the *next* member added to the record. ⚠ **It is the same translation as `SK1071` in the
+opposite direction, and both are sound under exactly the same condition**: the record's whole
+instance state is its primary constructor's parameters, every positional property is the
+auto-property the compiler synthesized, and the record is `sealed`. The predicate therefore moved
+into a shared `RecordShape` rather than being copied, which is also what keeps Skala's own
+duplication gate quiet. ⚠ **`IsImplicitlyDeclared` is `false` for a positional record property** —
+the parameter is where it is written down — so the test that the property is the compiler's own is
+that both symbols point at the same `ParameterSyntax`. A rule testing `IsImplicitlyDeclared` as true
+would match nothing and pass every negative fixture it had.
+
+⚠ **The live hazard in `SK2240` was never a false positive; it was a fix loop, and it is guarded by
+a fixture rather than by prose.** `x with { X = x.X, Y = b }` assigns every member, so the bare shape
+matches — and its fix, `new T(x.X, b)`, is *precisely* `SK1071`'s input, which `SK1071` would rewrite
+straight back. Any assignment carrying a member across unchanged from the same receiver therefore
+withdraws the finding (`carries_a_member_across.cs`). The other direction is disjoint for free:
+`SK1071` requires at least one member to be carried across, so what it emits always assigns fewer
+than all of them (`sk1071_output_is_not_reported.cs`). Disjointness from `SK0230` is by construction
+— `SK0230` reports an initializer that assigns nothing, this one requires an assignment per
+positional parameter — and `empty_initializer_is_sk0230.cs` asserts it.
+
+`SK2241` `malformed-regex-pattern` — a compile-time-constant pattern passed to a `Regex` API that
+will refuse to parse it, so the call throws the first time the line runs. ⚠ **The oracle is `Regex`
+itself.** The analyzer constructs the pattern with the same options the call passes and reports what
+the constructor threw, so the rule cannot disagree with the runtime whose behaviour it predicts and
+it needs no regex parser of its own — which is what issue #48 assumed it would need. Construction
+parses and does not match, so no pattern can make the analyzer backtrack, and `RegexOptions.Compiled`
+is stripped first because it emits IL and cannot change whether a pattern parses.
+
+⚠ **Only the parse-failure half ships, and the "suspicious" half is declined rather than deferred.**
+Redundancy and oddity in a pattern are a judgement; the one half of that with an objective test —
+catastrophic backtracking — is already `SK5010`'s. What is left here has no judgement in it at all.
+
+`SK2242` `deferred-argument-check` — an iterator method that validates an argument before its first
+`yield`, so the exception is raised by whatever later enumerates the result rather than by the call
+that passed the bad argument. ⚠ **`yield` anywhere in the body makes the whole method lazy**,
+including the statements above the `yield`, which is what makes this decidable rather than a
+heuristic: there is no execution in which the guard runs at call time. Report-only, because the
+repair splits one method into two and the name, accessibility and placement of the second are design
+decisions with no signal in the source. It is disjoint from `SK3030` by node kind: `SK3030` reports a
+*call site* that drops an async iterator, this reports a *declaration*.
+
+⚠ **The `async` half of #189 is measured out rather than deferred, and upstream reached the same
+place independently.** An `async` method's exception does land on the returned task, but the
+overwhelming majority of call sites `await` in the statement that makes the call, where it surfaces
+exactly where it would have anyway. SonarQube publishes the two halves as separate rules and puts
+only the iterator one, `S4456`, in its default `Sonar way` profile; the `async` rule `S4457` is
+excluded from it. An `async` **iterator** is still reported, because there the deferral belongs to
+the iterator rather than to the `async` machinery.
+
+### Refuted: #273 and #263
+
+⚠ **Two of the five were refuted, and a refutation is the outcome here rather than a shortfall.**
+Both were proposed with "⚠ none proposed" against the fix column and both turn out to lack a
+predicate that separates the defect from the idiom.
+
+⚠ **#273 — the nested collection initializer — is refuted because its shape is the *only* way to
+populate a get-only collection property**, which is what most instances of it are. `new Foo { Items
+= { 1, 2 } }` calls `Add` on whatever `Items` already returns rather than assigning it, and that is
+genuinely surprising when read as an assignment; but where `Items` has no setter it is the correct
+and only spelling, and where it has one the author may still have meant exactly what they wrote.
+The narrow decidable defect underneath it — a settable auto-property with no initializer and no
+constructor assignment, where the nested initializer is a guaranteed `NullReferenceException` — is a
+different and much smaller rule than the issue describes, needs whole-type constructor analysis to
+be sound, and is not what #273 asked for. Recorded rather than built.
+
+⚠ **#263 — the effect-free `void` method — walks into the wall `SK6050` already documented, and the
+wall is the same one.** `SK6050` ships `private`-only for a stated reason: *there is no predicate
+over a visible method that separates a placeholder from a deliberate no-op.* An empty `void` method
+has strictly less signal than a constant-returning one, not more — a `virtual` hook meant to be
+overridden, an interface implementation with nothing to do, a `[Conditional]` target and a
+deliberate null-object are all correct and all indistinguishable from a stub. Restricting to
+`private` the way `SK6050` does would leave the empty private method, which is already `SK6050`'s
+neighbour in spirit and is the case a reader spots unaided. No id is allocated for either concept:
+ADR-012 makes an id permanent, and a number taken for a rule nobody has specified is a number that
+cannot be given back.
