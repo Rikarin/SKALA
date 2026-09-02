@@ -91,7 +91,7 @@ public sealed class TaintGenerator : IIncrementalGenerator {
         }
 
         foreach (var sink in model.Sinks) {
-            if (!IsRuleId(sink.Rule)) {
+            if (!RuleIdSyntax.IsRuleId(sink.Rule)) {
                 production.ReportDiagnostic(
                     Diagnostic.Create(MalformedSink, Location.None, sink.Type, sink.Member, sink.Rule)
                 );
@@ -99,20 +99,6 @@ public sealed class TaintGenerator : IIncrementalGenerator {
         }
 
         production.AddSource("TaintTable.g.cs", Render(model));
-    }
-
-    static bool IsRuleId(string id) {
-        if (id.Length != 6 || id[0] != 'S' || id[1] != 'K') {
-            return false;
-        }
-
-        for (var i = 2; i < 6; i++) {
-            if (id[i] < '0' || id[i] > '9') {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     static string Render(TaintModel model) {

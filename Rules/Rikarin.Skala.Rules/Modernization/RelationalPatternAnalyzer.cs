@@ -102,16 +102,15 @@ public sealed class RelationalPatternAnalyzer : DiagnosticAnalyzer {
         ITypeSymbol type,
         SemanticModel model
     ) {
-        var (minimum, maximum) = type.SpecialType switch {
-            SpecialType.System_SByte => ((decimal)sbyte.MinValue, (decimal)sbyte.MaxValue),
-            SpecialType.System_Byte => (byte.MinValue, (decimal)byte.MaxValue),
-            SpecialType.System_Int16 => (short.MinValue, (decimal)short.MaxValue),
-            SpecialType.System_UInt16 or SpecialType.System_Char => (ushort.MinValue, (decimal)ushort.MaxValue),
-            SpecialType.System_Int32 => (int.MinValue, (decimal)int.MaxValue),
-            SpecialType.System_UInt32 => (uint.MinValue, (decimal)uint.MaxValue),
-            SpecialType.System_Int64 => (long.MinValue, (decimal)long.MaxValue),
-            _ => (ulong.MinValue, (decimal)ulong.MaxValue)
-        };
+        // ⚠ The same table stood inline here and in IntegralDomain, which is a range table copied —
+        // the one kind of duplicate where a divergence is silently a wrong answer rather than a
+        // compile error. `PatternSafety.IsIntegral` above admits exactly the nine special types
+        // `IntegralDomain.TryGet` knows, so the call cannot fail here and the `_` arm this replaced
+        // was only ever reached for `ulong`.
+        if (!IntegralDomain.TryGet(type, out var minimum, out var maximum)) {
+            return false;
+        }
+
         var a = Interval(left, model, minimum, maximum);
         var b = Interval(right, model, minimum, maximum);
         if (a.Low > a.High || b.Low > b.High) {

@@ -224,6 +224,44 @@ internal static class RewriteGuards {
         return current;
     }
 
+    /// <summary>
+    ///     Whether the local is named anywhere in its scope other than its own declaration and one
+    ///     node the caller is about to fold it into.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Shared rather than duplicated: <c>SK1024</c> asked it as "mentioned outside" and
+    ///     <c>SK1042</c> as "referenced only within", the same walk written twice with opposite
+    ///     polarity. Both rules move a declaration into another construct, and both are only safe when
+    ///     the answer is no — so the two copies had to agree, and nothing made them.
+    ///     <para>
+    ///         The name is compared before the symbol on purpose. Resolving every identifier in the
+    ///         scope is what this would otherwise cost, and a local's name is a cheap, exact filter.
+    ///     </para>
+    /// </remarks>
+    public static bool ReferencedOutside(
+        SemanticModel model,
+        ILocalSymbol local,
+        SyntaxNode allowed,
+        SyntaxNode declaration,
+        CancellationToken cancellation
+    ) {
+        foreach (var node in ScopeRoot(declaration).DescendantNodes()) {
+            cancellation.ThrowIfCancellationRequested();
+            if (node is not IdentifierNameSyntax identifier
+                || !string.Equals(identifier.Identifier.ValueText, local.Name, System.StringComparison.Ordinal)
+                || allowed.Span.Contains(identifier.Span)
+                || declaration.Span.Contains(identifier.Span)) {
+                continue;
+            }
+
+            if (SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(identifier, cancellation).Symbol, local)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>A message fragment that will not run off the end of a terminal.</summary>
     public static string Trim(string value) => value.Length <= 48 ? value : value.Substring(0, 48) + "…";
 }

@@ -103,7 +103,7 @@ public sealed class InlineOutVariableAnalyzer : DiagnosticAnalyzer {
 
         if (target is null
             || !InTheStatementsOwnExpression(target, following)
-            || MentionedOutside(model, local, following, declarator, cancellation)) {
+            || RewriteGuards.ReferencedOutside(model, local, following, declarator, cancellation)) {
             return;
         }
 
@@ -170,28 +170,4 @@ public sealed class InlineOutVariableAnalyzer : DiagnosticAnalyzer {
         return true;
     }
 
-    /// <summary>Whether the local is named anywhere other than its declaration and the next statement.</summary>
-    static bool MentionedOutside(
-        SemanticModel model,
-        ILocalSymbol local,
-        StatementSyntax allowed,
-        SyntaxNode declaration,
-        CancellationToken cancellation
-    ) {
-        foreach (var node in RewriteGuards.ScopeRoot(declaration).DescendantNodes()) {
-            cancellation.ThrowIfCancellationRequested();
-            if (node is not IdentifierNameSyntax identifier
-                || !string.Equals(identifier.Identifier.ValueText, local.Name, System.StringComparison.Ordinal)
-                || allowed.Span.Contains(identifier.Span)
-                || declaration.Span.Contains(identifier.Span)) {
-                continue;
-            }
-
-            if (SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(identifier, cancellation).Symbol, local)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

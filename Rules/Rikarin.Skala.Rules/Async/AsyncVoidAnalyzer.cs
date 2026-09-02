@@ -57,7 +57,7 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer {
                 var referenced = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
 
                 start.RegisterSyntaxNodeAction(
-                    context => RecordReference(context, referenced),
+                    context => AsyncSignature.RecordReference(context, referenced),
                     SyntaxKind.IdentifierName
                 );
 
@@ -112,26 +112,6 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer {
         public ImmutableDictionary<string, string?> Fix { get; }
     }
 
-    static void RecordReference(SyntaxNodeAnalysisContext context, ConcurrentDictionary<string, byte> referenced) {
-        var identifier = (IdentifierNameSyntax)context.Node;
-
-        // `Foo()` — a direct call is not a method group and says nothing about a delegate.
-        if (identifier.Parent is InvocationExpressionSyntax invocation
-            && ReferenceEquals(invocation.Expression, identifier)) {
-            return;
-        }
-
-        // `x.Foo()` — the same, one level in.
-        if (identifier.Parent is MemberAccessExpressionSyntax access
-            && ReferenceEquals(access.Name, identifier)
-            && access.Parent is InvocationExpressionSyntax outer
-            && ReferenceEquals(outer.Expression, access)) {
-            return;
-        }
-
-        referenced.TryAdd(identifier.Identifier.ValueText, 0);
-    }
-
     static void Collect(
         SyntaxNodeAnalysisContext context,
         ConcurrentBag<Candidate> candidates,
@@ -173,7 +153,9 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer {
         }
 
         var symbol = context.SemanticModel.GetDeclaredSymbol(method, context.CancellationToken);
-        if (symbol is null || HasEventHandlerShape(symbol, eventArgs) || ImplementsAnInterface(symbol)) {
+        if (symbol is null
+            || AsyncSignature.HasEventHandlerShape(symbol, eventArgs)
+            || AsyncSignature.ImplementsAnInterface(symbol)) {
             return;
         }
 
@@ -197,49 +179,6 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer {
 
         return async
             && method.ReturnType is PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.VoidKeyword };
-    }
-
-    /// <summary><c>(object, TEventArgs)</c> — the delegate shape the BCL's events use.</summary>
-    static bool HasEventHandlerShape(IMethodSymbol method, INamedTypeSymbol? eventArgs) {
-        if (eventArgs is null || method.Parameters.Length != 2) {
-            return false;
-        }
-
-        if (method.Parameters[0].Type.SpecialType != SpecialType.System_Object) {
-            return false;
-        }
-
-        for (var type = method.Parameters[1].Type; type is not null; type = type.BaseType) {
-            if (SymbolEqualityComparer.Default.Equals(type, eventArgs)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    static bool ImplementsAnInterface(IMethodSymbol method) {
-        if (!method.ExplicitInterfaceImplementations.IsEmpty) {
-            return true;
-        }
-
-        var containing = method.ContainingType;
-        if (containing is null) {
-            return false;
-        }
-
-        foreach (var @interface in containing.AllInterfaces) {
-            foreach (var member in @interface.GetMembers(method.Name)) {
-                if (SymbolEqualityComparer.Default.Equals(
-                        containing.FindImplementationForInterfaceMember(member),
-                        method
-                    )) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     /// <summary>

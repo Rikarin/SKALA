@@ -84,7 +84,7 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
                 var referenced = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
 
                 start.RegisterSyntaxNodeAction(
-                    context => RecordReference(context, referenced),
+                    context => AsyncSignature.RecordReference(context, referenced),
                     SyntaxKind.IdentifierName
                 );
 
@@ -138,26 +138,6 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
         public Location Location { get; }
 
         public ImmutableDictionary<string, string?> Fix { get; }
-    }
-
-    static void RecordReference(SyntaxNodeAnalysisContext context, ConcurrentDictionary<string, byte> referenced) {
-        var identifier = (IdentifierNameSyntax)context.Node;
-
-        // `Foo()` — a direct call is not a method group and says nothing about a delegate.
-        if (identifier.Parent is InvocationExpressionSyntax invocation
-            && ReferenceEquals(invocation.Expression, identifier)) {
-            return;
-        }
-
-        // `x.Foo()` — the same, one level in.
-        if (identifier.Parent is MemberAccessExpressionSyntax access
-            && ReferenceEquals(access.Name, identifier)
-            && access.Parent is InvocationExpressionSyntax outer
-            && ReferenceEquals(outer.Expression, access)) {
-            return;
-        }
-
-        referenced.TryAdd(identifier.Identifier.ValueText, 0);
     }
 
     static void Collect(
@@ -223,7 +203,7 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
         if (model.GetDeclaredSymbol(method, cancellation) is not { } declared
             || declared.ReturnType is not INamedTypeSymbol returned
             || !tasks.Contains(returned.OriginalDefinition)
-            || ImplementsAnInterface(declared)) {
+            || AsyncSignature.ImplementsAnInterface(declared)) {
             return;
         }
 
@@ -294,30 +274,6 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
              current = current.Parent) {
             if (current is CatchClauseSyntax or FinallyClauseSyntax) {
                 return true;
-            }
-        }
-
-        return false;
-    }
-
-    static bool ImplementsAnInterface(IMethodSymbol method) {
-        if (!method.ExplicitInterfaceImplementations.IsEmpty) {
-            return true;
-        }
-
-        var containing = method.ContainingType;
-        if (containing is null) {
-            return false;
-        }
-
-        foreach (var @interface in containing.AllInterfaces) {
-            foreach (var member in @interface.GetMembers(method.Name)) {
-                if (SymbolEqualityComparer.Default.Equals(
-                        containing.FindImplementationForInterfaceMember(member),
-                        method
-                    )) {
-                    return true;
-                }
             }
         }
 
