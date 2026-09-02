@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.TestQuality;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Correctness;
@@ -66,8 +67,9 @@ public sealed class StaticClockReadAnalyzer : DiagnosticAnalyzer {
                 }
 
                 var frameworks = TestFrameworks.Resolve(start.Compilation);
+                var testClasses = new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default);
                 start.RegisterSyntaxNodeAction(
-                    context => Analyze(context, providers, frameworks),
+                    context => Analyze(context, providers, frameworks, testClasses),
                     SyntaxKind.SimpleMemberAccessExpression
                 );
             }
@@ -77,7 +79,8 @@ public sealed class StaticClockReadAnalyzer : DiagnosticAnalyzer {
     static void Analyze(
         SyntaxNodeAnalysisContext context,
         ImmutableArray<INamedTypeSymbol> providers,
-        TestFrameworks frameworks
+        TestFrameworks frameworks,
+        ConcurrentDictionary<ISymbol, bool> testClasses
     ) {
         var access = (MemberAccessExpressionSyntax)context.Node;
         var model = context.SemanticModel;
@@ -91,7 +94,7 @@ public sealed class StaticClockReadAnalyzer : DiagnosticAnalyzer {
         // that: `Date` is an instance property, so the outer access is not a static clock read and
         // the test above declines it. The inner node carries the finding on its own.
         if (model.GetEnclosingSymbol(access.SpanStart, cancellation) is not { } enclosing
-            || IsTest(enclosing, frameworks)
+            || IsTest(enclosing, frameworks, testClasses)
             || ImplementsClock(enclosing, providers)) {
             return;
         }
@@ -109,21 +112,61 @@ public sealed class StaticClockReadAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    ///     ⚠ Test code is excluded outright, by method attribute and by containing type.
+    ///     ⚠ Test code is excluded outright, by method attribute, by containing type, and — for xUnit —
+    ///     by the containing type holding a test case.
     /// </summary>
     /// <remarks>
     ///     A test that pins a clock is doing the thing this rule asks for, and a test that reads the real
     ///     one has made that choice deliberately — <c>SK8007</c> is the rule that has an opinion there.
     ///     The containing type is checked as well as the method, because a fixture's helper and its
     ///     constructor are test code that carries no attribute of its own.
+    ///     <para>
+    ///         ⚠ <b>The attribute walk alone cannot see an xUnit fixture</b> (#303). MSTest has
+    ///         <c>[TestClass]</c> and NUnit has <c>[TestFixture]</c>; xUnit has nothing at class level at
+    ///         all, so a helper in an xUnit test class carries nothing and its class carries nothing
+    ///         either, and the helper was reported. That was <b>22 of the 38 findings</b> this rule makes
+    ///         on the reference tree, every one of them a settle loop polling a wall-clock deadline —
+    ///         code that reads the real clock because reading the real clock is the point.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <see cref="TestFrameworks.HoldsATestCase" /> is xUnit's own discovery rule: a class is a
+    ///         test class when one of its methods carries a test attribute. It is decidable from
+    ///         attributes alone — no naming convention and no reference sniffing — and its cost is that a
+    ///         class holding one <c>[Fact]</c> beside production helpers has all of them excluded.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>What it still does not reach</b>, stated rather than left to be rediscovered: a
+    ///         helper in a separate class that holds no test case of its own. Only "the project
+    ///         references a test framework" would cover that, and it would exclude a repository's own
+    ///         test-helper *library* along with it — a coarser claim this rule does not make. A
+    ///         repository wanting it has <c>.editorconfig</c> path scoping, which is what this rule's
+    ///         <c>none</c> default already assumes.
+    ///     </para>
+    ///     <para>
+    ///         The per-type answer is cached because a syntax-node action asks it once per clock read and
+    ///         <c>GetMembers</c> is not free on a large fixture.
+    ///     </para>
     /// </remarks>
-    static bool IsTest(ISymbol symbol, TestFrameworks frameworks) {
+    static bool IsTest(ISymbol symbol, TestFrameworks frameworks, ConcurrentDictionary<ISymbol, bool> cache) {
         for (var current = symbol; current is not null; current = current.ContainingSymbol) {
             if (TestFrameworks.Carries(current, frameworks.TestMethodAttributes)
                 || TestFrameworks.Carries(current, frameworks.LifecycleAttributes)
                 || TestFrameworks.Carries(current, frameworks.MsTestClassAttribute)
                 || TestFrameworks.Carries(current, frameworks.NUnitFixtureAttribute)) {
                 return true;
+            }
+
+            // ⚠ `TryGetValue` and an assignment rather than `GetOrAdd`: netstandard2.0's
+            // `ConcurrentDictionary` has no state-carrying overload, and the closure form would
+            // allocate a delegate on every clock read the cache exists to make cheap.
+            if (current is INamedTypeSymbol type) {
+                if (!cache.TryGetValue(type, out var holds)) {
+                    cache[type] = holds = TestFrameworks.HoldsATestCase(type, frameworks);
+                }
+
+                if (holds) {
+                    return true;
+                }
             }
 
             if (current is INamespaceSymbol) {
