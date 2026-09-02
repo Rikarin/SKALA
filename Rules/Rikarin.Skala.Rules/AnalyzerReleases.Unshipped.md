@@ -244,3 +244,6 @@ SK2131 | Skala.Correctness | Warning | A get-only auto-property nothing ever ass
 SK2132 | Skala.Correctness | Warning | An accessor reaches for another property's backing field.
 SK2133 | Skala.Correctness | Info | A called `partial void` with no implementing declaration.
 SK2134 | Skala.Correctness | Warning | Instance code assigns its own type's static field.
+SK2200 | Skala.Correctness | Warning | The field initializer is overwritten by every constructor.
+SK2201 | Skala.Correctness | Warning | The unsubscription passes an anonymous function.
+SK2202 | Skala.Correctness | Warning | The modification sits inside a conditional invocation.
