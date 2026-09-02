@@ -235,5 +235,6 @@
   "CanReplaceCastWithVariableType": "SK1093",
   "UseNullableReferenceTypesAnnotationSyntax": "SK1094",
   "UseNullableAnnotationInsteadOfAttribute": "SK1094",
-  "RedundantNullnessAttributeWithNullableReferenceTypes": "SK1094"
+  "RedundantNullnessAttributeWithNullableReferenceTypes": "SK1094",
+  "AsyncVoidThrowException": "SK3050"
 }

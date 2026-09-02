@@ -6382,6 +6382,82 @@
       "configuration": [
         "dotnet_diagnostic.SK1094.severity"
       ]
+    },
+    {
+      "id": "SK3050",
+      "concept": "async-void-throw",
+      "title": "An exception is thrown out of an `async void` body",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "AsyncVoidThrowException",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `throw` inside an `async void` method or local function, where nothing between it and the body's edge can catch it.",
+      "rationale": "An `async void` method has nowhere to put an exception. There is no task to fault, so the compiler-generated builder hands it to whatever `SynchronizationContext` was captured — and where there is none, which is every console application and every thread-pool callback, that is an unhandled exception on a pool thread and the process ends. The caller's `try`/`catch` never sees it, because the caller returned at the first `await`. A `catch` that logs and then rethrows is therefore strictly worse than no handler at all: it turns a recorded failure into a terminated process.",
+      "examples": {
+        "bad": "async void OnSaveClicked(object sender, EventArgs e) {\n    try {\n        await SaveAsync();\n    } catch (IOException ex) {\n        logger.LogError(ex, \"save failed\");\n        throw;\n    }\n}",
+        "good": "async void OnSaveClicked(object sender, EventArgs e) {\n    try {\n        await SaveAsync();\n    } catch (IOException ex) {\n        logger.LogError(ex, \"save failed\");\n        ShowError(ex);\n    }\n}"
+      },
+      "falsePositives": "⚠ **Event handlers are reported, and that is the decision rather than an oversight.** `SK3001` excludes them because its remedy — return `Task` — is not available to a method whose signature an event declares. This rule's remedy is different and is available to every `async void` there is: handle the exception where it is thrown. Excluding handlers would exclude the one place `async void` is legitimate and therefore the place this defect actually reaches production. ⚠ **Lambdas are not matched at all**, which is what makes the rule disjoint from `SK3052` by construction: an `async` lambda converted to a `void` delegate is `async void` too, and it is reported once, at the conversion, by `SK3052` — which is where the remedy is. The owner must be a declaration that writes `void` in its own source. ⚠ **A `throw` an enclosing `try` in the same body could catch is not reported**, and the test is deliberately over-broad: any `catch` at all on an enclosing `try` silences the finding, even one whose filter could not possibly match. A `throw` written *inside* a `catch` clause is not silenced by that clause's own `try`, because the clause it is written in does not catch it — that rethrow is the shape the rule exists for. Test methods are excluded for the same reason `SK3002` excludes them, and generated code is excluded. **No fix is offered**: deleting the `throw` swallows the exception, wrapping the body changes what the method does, and turning the method into `async Task` is `SK3001`'s edit and a caller-wide refactor. The finding is true and the repair is a decision.",
+      "resharperNote": "⚠ The export sets `resharper_async_void_throw_exception_highlighting = suggestion` and this rule defaults to `warning`. ReSharper files it under \"Potential Code Quality Issues\"; the consequence is not potential and not a quality issue — an exception on a captured context with no handler ends the process — and doc 00's ninth non-negotiable takes a severity from what the rule means rather than from what the reference tool set. Reading the ReSharper key (off by default, doc 03 § \"Severities\") would demote it to `suggestion`.",
+      "configuration": [
+        "dotnet_diagnostic.SK3050.severity"
+      ]
+    },
+    {
+      "id": "SK3051",
+      "concept": "async-method-without-cancellation",
+      "title": "The `async` method has no `CancellationToken` to forward",
+      "category": "Async",
+      "defaultSeverity": "suggestion",
+      "scope": "Compilation",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An `async` method that accepts no `CancellationToken` and calls something that would have taken one.",
+      "rationale": "`SK3004` reports a token accepted and not passed on. This reports the step before it: the method accepts none, so there is nothing to pass on and no caller can stop the work. The two are the same argument at two points in the call graph, and applying this rule's fix is what makes `SK3004` reachable on the same body — a cancellation chain is worth nothing until it is complete, and the place it breaks first is the frame that never offered the parameter.",
+      "examples": {
+        "bad": "async Task<string> LoadAsync(string path) {\n    return await File.ReadAllTextAsync(path);\n}",
+        "good": "async Task<string> LoadAsync(string path, CancellationToken cancellationToken = default) {\n    return await File.ReadAllTextAsync(path, cancellationToken);\n}"
+      },
+      "falsePositives": "⚠ **The finding needs a call in the body that would have taken a token**, and that exemption is what separates a finding from advice. \"Every async method should accept a token\" fires on every leaf in every codebase; \"this method calls something that offers a token and has none to give it\" names a concrete cancellation that is broken, and the callee appears in the message. The call must match one of the two shapes `SK3004` can repair — an omitted *optional* `CancellationToken` parameter, or an overload that is this parameter list with a token appended and every argument positional — so the two rules cannot disagree about whether a call wants a token. ⚠ **`SK3004` and this rule are disjoint on any one call, and the construction is the count**: `SK3004` reports a call with *exactly one* token in scope, and a call is evidence here only when there are *none*. ⚠ **The claim is per call and not per body, and the difference was measured rather than assumed.** The draft carried a second, method-level \"declares no `CancellationToken`\" check that would have made the stronger claim true; sabotaging it turned nothing red, because the scopes enclosing a call inside a body are a superset of the ones enclosing its declaration — so a method with a token parameter can never contain a call with none, and the check was dead code no sabotage could kill. It is gone. ⚠ Worse, the negative fixture that was supposed to pin the count was named `cancellationToken` and was being silenced by the CS0100 guard before the count was ever consulted; it is named `token` now, and sabotaging the count turns it red. ⚠ **A call inside a `catch` or a `finally` is not evidence**, because `SK3004` declines to forward a token into cleanup and reporting the method would leave a finding whose only repair the sibling rule then refuses. ⚠ **The rule is `Compilation`-scoped and the fix is what costs it.** Appending a parameter — even an optional one — breaks a method group conversion, because optional parameters do not participate in delegate conversion and `Func<Task> f = LoadAsync;` becomes CS0123. Whether a method is used that way is not visible in the file that declares it, so the analysis collects every name used as a method group across the compilation and reports only methods no such use names; the name check is over-broad on purpose, so any occurrence of the identifier in a non-invoked position silences the rule. The price is that the rule is not cacheable, which is the same trade `SK3001` states. ⚠ Not reported: `override`, `virtual`, `abstract`, `new`, `partial` and `extern` methods, interface implementations, anything carrying an attribute, `Main`, test methods, a parameter list ending in `params` (CS0231 leaves no edit), a method that already has a parameter named `cancellationToken`, and any method whose return type is not `Task`, `Task<T>`, `ValueTask` or `ValueTask<T>` — which is what keeps `async void` out of it. Generated code is excluded. The fix is unsafe because a parameter added to a signature is a signature the author should look at.",
+      "configuration": [
+        "dotnet_diagnostic.SK3051.severity"
+      ]
+    },
+    {
+      "id": "SK3052",
+      "concept": "async-void-lambda",
+      "title": "The `async` lambda is converted to a `void`-returning delegate",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "AsyncVoidLambda",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An `async` lambda or anonymous method whose target delegate returns `void`, which makes it `async void`.",
+      "rationale": "A lambda has no written return type: it takes the one the target delegate asks for. `Register(async () => await SaveAsync())` against a `Register(Action)` therefore compiles into an `async void` with every one of its consequences — `Register` returns the instant the lambda reaches its first `await`, the rest of the body runs unobserved, and an exception in it goes to the synchronization context rather than to anyone who could catch it. Nothing in the source says `void`, which is why reading the code does not find it.",
+      "examples": {
+        "bad": "cache.OnEviction(async () => await FlushAsync());",
+        "good": "cache.OnEviction(() => FlushAsync().GetAwaiter().GetResult());"
+      },
+      "falsePositives": "⚠ **`SK3001` cannot see this and neither can `SK3005`.** `SK3001` matches a `MethodDeclarationSyntax` whose return type is written `void`, and there is no such token here; `SK3005` matches a task-producing call discarded as a statement in a *synchronous* body, and this body is `async`, so it returns before it looks. The three are disjoint by construction rather than by `supersedes`, and `AsyncVoidShapeBatchTests` pins each pair on a fixture that satisfies both shapes at once rather than on two fixtures that differ. ⚠ **A delegate with the event-handler shape — `(object, TEventArgs) -> void` — is excluded, and it is the same exclusion `SK3001` makes.** That is the shape the language gives events, an `async` handler subscribed to one is the sanctioned use of `async void`, and no other signature is available to it. What is left is the case the rule is about: a `void` delegate somebody chose, where a `Func<Task>` could have been asked for instead. An exception thrown inside such a handler is still reported, by `SK3050`. ⚠ **The *converted* type decides, never the lambda's own** — a lambda has no type until a conversion gives it one, and that conversion is the defect: the same text is correct against `Func<Task>` and a process-killer against `Action`. Where the conversion does not bind, there is no converted type and nothing is reported. **No fix is offered**: the repair is either a different overload on the callee, which is the callee's author's decision, or a body that observes its own task, which changes what the code does. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK3052.severity"
+      ]
     }
   ]
 }

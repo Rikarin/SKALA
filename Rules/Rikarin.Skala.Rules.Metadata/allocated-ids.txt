@@ -263,3 +263,6 @@ SK1091 private-auto-property
 SK1092 tuple-literal
 SK1093 cast-in-declaration
 SK1094 nullable-annotation-syntax
+SK3050 async-void-throw
+SK3051 async-method-without-cancellation
+SK3052 async-void-lambda

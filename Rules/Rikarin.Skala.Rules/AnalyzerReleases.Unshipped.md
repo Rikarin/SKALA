@@ -222,3 +222,6 @@ SK1091 | Skala.Modernization | Info | The private auto-property is a field.
 SK1092 | Skala.Modernization | Info | Use a tuple literal instead of constructing a `Tuple`.
 SK1093 | Skala.Modernization | Hidden | Express the cast in the declaration instead.
 SK1094 | Skala.Modernization | Warning | Use nullable reference type syntax instead of an annotation attribute.
+SK3050 | Skala.Async | Warning | An exception is thrown out of an `async void` body.
+SK3051 | Skala.Async | Info | The `async` method has no `CancellationToken` to forward.
+SK3052 | Skala.Async | Warning | The `async` lambda is converted to a `void`-returning delegate.

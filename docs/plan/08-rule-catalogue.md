@@ -1026,6 +1026,97 @@ mechanical repair, because the edit that would fix them is a decision about what
 contract is — which lock is first, which field is `volatile`, where the boundary of a critical
 section falls. The pattern is now established enough to say so once rather than five times.
 
+### `SK3050`–`SK3052` — async void wearing three disguises
+
+⚠ **The prose pass on this block is owed.** The rows below are the allocation register doing its one
+job — recording that a number is taken — written as the three rules landed rather than as a
+considered section.
+
+- `SK3050` `async-void-throw` — a `throw` inside an `async void` method or local function that
+  nothing between it and the body's edge can catch. **Fixless.**
+  ([#54](https://github.com/Rikarin/SKALA/issues/54))
+- `SK3051` `async-method-without-cancellation` — an `async` method that accepts no
+  `CancellationToken` and calls something that would have taken one. Fix: append the parameter,
+  `fixIsSafe: false`. ([#256](https://github.com/Rikarin/SKALA/issues/256))
+- `SK3052` `async-void-lambda` — an `async` lambda or anonymous method whose target delegate returns
+  `void`, which makes it `async void` with no signature saying so. **Fixless.**
+  ([#272](https://github.com/Rikarin/SKALA/issues/272))
+
+⚠ **`SK3001` reports the signature; these report the three ways the harm arrives anyway.** `SK3001`
+matches a `MethodDeclarationSyntax` whose return type is written `void`, and excludes the event
+handler because its remedy — return `Task` — is not available to a method whose signature an event
+declares. That leaves two holes and `SK3050` and `SK3052` are them: the handler `SK3001` correctly
+declines still ends the process when it rethrows, and a lambda has no written return type at all, so
+`Register(async () => await X())` against a `Register(Action)` is `async void` that no search for the
+keyword finds.
+
+⚠ **`catalogued.json` credited `AsyncVoidLambda` to `SK3001`, and `SK3001` cannot see a lambda.** It
+registers on `MethodDeclaration` alone. The parity map is hand-written judgement, and doc 17 § "The
+soft edge" says a *missing* entry inflates the residue — this is the other direction and it is worse:
+a wrong entry marks a concept covered and takes it off the queue, so the gap it hides is one nothing
+will ever count again. The entry now points at `SK3052`, and `AsyncVoidThrowException` — absent
+entirely — points at `SK3050`.
+
+⚠ **The three are disjoint by construction and the construction is the owner, not a `supersedes`.**
+`SK3050` requires the nearest `async` owner to be a *declaration* that writes `void` in its own
+source; `SK3052` requires a lambda or anonymous method, which writes no return type at all; `SK3005`
+requires a *synchronous* body, which an `async` lambda is not. `AsyncVoidShapeBatchTests` pins each
+pair on a fixture that satisfies **both** rules' shapes at once and asserts exactly one fires —
+because two fixtures that differ in shape prove only that the shapes differ, which is true whether or
+not either rule looks.
+
+⚠ **`SK3051` and `SK3004` are the same argument at two points in the call graph, separated by a
+count.** `SK3004` reports a call with *exactly one* `CancellationToken` in scope; a call is evidence
+for `SK3051` only where there are *none*. Applying `SK3051`'s fix is what moves a body from the
+second set into the first — the pair is a chain rather than an overlap, and the test asserts the
+handover on one file rather than on two.
+
+⚠ **The disjointness claim is per call and not per body, and two sabotages are why it is written
+that way.** `SK3051`'s draft carried a second, method-level "declares no `CancellationToken`" check,
+which would have made the stronger per-body claim true. Sabotaging it turned nothing red: the scopes
+enclosing a call inside a body are a superset of the ones enclosing its declaration, so a method with
+a token parameter cannot contain a call with none, and the check was dead code no sabotage could
+kill. It is deleted, on `SK3043`'s precedent. ⚠ **Underneath it was a worse one.** The negative
+fixture meant to pin the count declared its parameter as `cancellationToken`, so the CS0100 guard
+silenced the rule before the count was ever consulted — the fixture was green and proved nothing.
+Renaming the parameter to `token` made the count load-bearing, and only then did sabotaging it turn
+the fixture red. Two guards, one hidden underneath the other, and only removing the first made the
+second reachable.
+
+⚠ **`SK3051` is the batch's expensive decision and the fix is what costs it.** Appending a parameter
+— even an optional one — is CS0123 at any method group conversion, because optional parameters do not
+participate in delegate conversion. Whether a method is used that way is not visible in the file that
+declares it, so the rule takes `SK3001`'s compilation-wide identifier scan and its `scope:
+Compilation` with it. The alternative was a fixless rule, and a rule that says "this cannot be
+cancelled" without saying what to write is advice rather than a finding.
+
+⚠ **Two of this batch's five issues were closed as hosted, and the measurement is the finding.**
+A probe project at *default* analysis level — no `AnalysisMode`, no `AnalysisLevel`, nothing but
+`dotnet build` on `net10.0` — answers what a repository actually gets:
+
+| Concept | Host | On at default? |
+|---|---|---|
+| A `ValueTask` consumed more than once ([#199](https://github.com/Rikarin/SKALA/issues/199)) | `CA2012` | **yes**, at `info` |
+| A synchronous call with an awaitable overload ([#200](https://github.com/Rikarin/SKALA/issues/200)) | `CA1849` | no — shipped and off |
+| A `throw` out of an `async void` body | none | — |
+| An `async` method that accepts no `CancellationToken` | none | — |
+| An `async` lambda converted to a `void` delegate | none | — |
+
+⚠ **`CA2012` is on by default and invisible, which is not the same as absent.** It is `info`, and
+`dotnet build` prints no info-severity diagnostic and `-warnaserror` does not promote one — the only
+readout that shows it is `-p:ErrorLog=…`. It fires on a `ValueTask` awaited twice, on `.Result` and
+`.GetAwaiter().GetResult()` off both a call and a stored local, on two `AsTask()` calls, and on a
+`ValueTask` returned and never consumed. ⚠ Its one measured gap is a `ValueTask` **parameter** awaited
+twice, where there is no creation site to reason about; that is left unowned deliberately, because a
+parameter's single-consumption contract is the caller's and not visible here.
+
+⚠ **`CA1849` is off by default, and ADR-008's answer to that is to enable it rather than rebuild it**
+— the same answer § "Format strings" reached for `CA2241`. Measured, it fires on `Stream.Read` and
+`Stream.Write`, on `File.ReadAllText`, on `Thread.Sleep`, on a **user-defined** `Save()` beside a
+`SaveAsync()`, inside an `async` lambda and inside a non-`async` `Task`-returning method. ⚠ **Its one
+gap is `task.GetAwaiter().GetResult()`, which `SK3002` already reports** — so between the two the
+concept is covered and there was no id left to allocate.
+
 ## SK4000 — Performance
 
 `SK4001` LINQ in a per-frame or per-request path (path-scoped, off by default) · `SK4002` closure
@@ -1659,6 +1750,8 @@ registry disagree. Regenerate with `skala rules docs`.
 | **Shipped** — present in `rules.json` | **233** | **87.3 %** |
 | Rules this document names | **261** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **226** | **86.9 %** |
+| Rules this document names | **259** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **224** | **86.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |

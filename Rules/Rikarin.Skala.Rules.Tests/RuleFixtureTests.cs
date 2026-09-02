@@ -133,6 +133,8 @@ public sealed class RuleFixtureTests {
         new NullableLocalNeverNullAnalyzer(), new NullForgivenServiceResolutionAnalyzer(),
         new ComputedPropertyAnalyzer(), new PrivateAutoPropertyAnalyzer(), new TupleLiteralAnalyzer(),
         new CastInDeclarationAnalyzer(), new NullableAnnotationSyntaxAnalyzer(),
+        new AsyncVoidThrowAnalyzer(), new UncancellableAsyncMethodAnalyzer(),
+        new AsyncVoidLambdaAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

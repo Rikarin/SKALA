@@ -171,6 +171,8 @@ public static class AnalyzerHost {
         new NullableLocalNeverNullAnalyzer(), new NullForgivenServiceResolutionAnalyzer(),
         new ComputedPropertyAnalyzer(), new PrivateAutoPropertyAnalyzer(), new TupleLiteralAnalyzer(),
         new CastInDeclarationAnalyzer(), new NullableAnnotationSyntaxAnalyzer(),
+        new AsyncVoidThrowAnalyzer(), new UncancellableAsyncMethodAnalyzer(),
+        new AsyncVoidLambdaAnalyzer(),
     ];
 
     /// <summary>
