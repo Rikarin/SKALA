@@ -214,12 +214,12 @@ public sealed class LinqChainAndLoopShapeBatchTests {
     public void AnArrayIndexerAndElementAt_ThrowDifferentExceptions() {
         int[] values = [1, 2, 3];
 
-        Assert.Throws<System.IndexOutOfRangeException>(() => _ = values[7]);
-        Assert.Throws<System.ArgumentOutOfRangeException>(() => _ = values.ElementAt(7));
+        Assert.Throws<IndexOutOfRangeException>(() => _ = values[7]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => _ = values.ElementAt(7));
 
         List<int> list = [1, 2, 3];
-        Assert.Throws<System.ArgumentOutOfRangeException>(() => _ = list[7]);
-        Assert.Throws<System.ArgumentOutOfRangeException>(() => _ = list.ElementAt(7));
+        Assert.Throws<ArgumentOutOfRangeException>(() => _ = list[7]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => _ = list.ElementAt(7));
     }
 
     static ImmutableArray<Diagnostic> Findings(RuleFixture fixture) =>

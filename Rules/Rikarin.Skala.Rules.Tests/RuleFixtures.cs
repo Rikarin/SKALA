@@ -123,7 +123,11 @@ public static class RuleFixtures {
                 if (path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)) {
                     try {
                         builder.Add(MetadataReference.CreateFromFile(path));
-                    } catch (BadImageFormatException) { }
+                    } catch (BadImageFormatException) {
+                        // ⚠ Deliberate: the trusted-platform list carries native and resource-only
+                        // `.dll` files alongside the managed ones, and the only way to tell them apart
+                        // is to try. A reference that will not load is one the fixtures do not need.
+                    }
                 }
             }
         }

@@ -104,22 +104,26 @@ public sealed class PartiallyCheckedOperatorAnalyzer : DiagnosticAnalyzer {
                 continue;
             }
 
-            foreach (var location in method.Locations.Where(static location => location.IsInSource)) {
-                context.ReportDiagnostic(
-                    Diagnostic.Create(
-                        Descriptor,
-                        location,
-                        "`"
-                        + type.Name
-                        + "` declares `operator checked "
-                        + Spelling(declaredChecked)
-                        + "` and no `operator checked "
-                        + pair.Spelling
-                        + "`, so overflow traps on one and wraps on the other inside the same `checked` block"
-                    )
-                );
-                break;
+            // ⚠ The first source location, not every one. A partial declaration carries several, and
+            // the defect is the operator, reported once.
+            var location = method.Locations.FirstOrDefault(static candidate => candidate.IsInSource);
+            if (location is null) {
+                continue;
             }
+
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Descriptor,
+                    location,
+                    "`"
+                    + type.Name
+                    + "` declares `operator checked "
+                    + Spelling(declaredChecked)
+                    + "` and no `operator checked "
+                    + pair.Spelling
+                    + "`, so overflow traps on one and wraps on the other inside the same `checked` block"
+                )
+            );
         }
     }
 

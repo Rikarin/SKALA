@@ -255,8 +255,7 @@ public sealed class EscapeFreeStringLiteralAnalyzer : DiagnosticAnalyzer {
         var parsed = SyntaxFactory.ParseExpression(
             replacement,
             0,
-            new CSharpParseOptions(LanguageVersion.CSharp11),
-            true
+            new CSharpParseOptions(LanguageVersion.CSharp11)
         );
 
         return parsed is LiteralExpressionSyntax { RawKind: (int)SyntaxKind.StringLiteralExpression } literal

@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Rikarin.Skala.Rules.Modernization;
 
@@ -168,7 +169,8 @@ public sealed class SharedBranchTailAnalyzer : DiagnosticAnalyzer {
         foreach (var node in statement.DescendantNodesAndSelf()) {
             // A declaration inside the moved statement escapes the branch with it, which is the
             // outward move C# answers with CS0136 whenever a sibling scope holds the same name.
-            foreach (var unused in RewriteGuards.DeclaredNames(node)) {
+            // ⚠ Whether there is *any* declared name, not which — the names themselves are unused here.
+            if (RewriteGuards.DeclaredNames(node).Any()) {
                 return true;
             }
 
