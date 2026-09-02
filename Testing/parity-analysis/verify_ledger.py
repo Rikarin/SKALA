@@ -7,21 +7,60 @@ checks it, because the failure mode is silent -- a rule dropped from both the co
 and the exclusion list simply disappears, and the next audit re-derives it from scratch.
 
 Structural checks always run. The cross-checks against the pipeline need its generated
-inputs and are skipped, loudly, when they are absent:
+inputs:
 
-    python3 universe.py && python3 classify.py   # -> classified.json
-    python3 fetch_sonar.py                       # -> sonar.json
+    python3 classify.py       # -> classified.json
+    python3 fetch_sonar.py    # -> sonar.json
 
-Exit code is 1 if any check fails. Reconcile items are *not* failures -- see below.
+⚠ **A skipped check is not a pass, and this file used to say it was.** Every cross-check
+below is registered by name; a missing input marks it SKIPPED, the verdict names it, and the
+run exits **2**. The verdict line never reads a bare `0 failures` unless every registered
+check actually executed. That is #311, and it was not theoretical: `universe.json` and
+`types-2026.xml` were both gitignored, so in a fresh clone or agent worktree the parity-map
+key-validity check -- the strongest assertion in the file, and the one that catches an
+invented inspection id -- did not run, and roughly thirty agents read the resulting
+`0 failures` as verification. A zero from a disabled check and a zero from a clean map are
+the same zero; this file exists to say so and was the thing saying it wrongly.
+
+⚠ The parity-map key check no longer has a skip path at all. `types-2026.xml` is committed
+now and `universe.py` exposes `build()`, so the universe is derived in-process from two
+committed inputs and the check runs everywhere, unconditionally. Deleting `universe.json` no
+longer disables it -- verify that when you change this, because that was the bug.
+
+`--allow-skips` downgrades a skipped check to a warning and restores exit 0/1. It exists for
+the genuinely degraded case (no network for `fetch_sonar.py`); it is not the default,
+because "I could not verify the thing you asked me to verify" is not a pass.
+
+Exit codes: 0 all checks ran and passed, 1 a check failed, 2 a check could not run.
+Reconcile items are *not* failures -- see below.
 
 A second completeness claim is checked here, about the *shipped* catalogue rather than the
 proposal queue -- see "the shipped catalogue" at the bottom of this file.
 """
 import json, os, sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import universe as universe_mod
+
 W = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(W))
 fail, warn = [], []
+
+ALLOW_SKIPS = "--allow-skips" in sys.argv
+
+# ⚠ The register of cross-checks. A check that needs a generated input registers here so the
+# verdict can say it did not run. The failure this prevents is structural: an `if
+# os.path.exists(...)` with an `else: warn` reads as diligence and prints the same final line
+# as a clean run, because a warning is not counted anywhere the exit code can see it.
+CHECKS = {}
+
+
+def ran(name, detail=""):
+    CHECKS[name] = ("ran", detail)
+
+
+def skipped(name, how):
+    CHECKS[name] = ("skipped", how)
 
 COVERAGE = {"complete", "partial"}
 
@@ -91,9 +130,10 @@ if os.path.exists(f"{W}/classified.json"):
                         f"buckets it {b!r} -- the concept may need narrowing or closing")
     print(f"resharper: {len(rs['concepts'])} concepts covering {len(assigned)} inspections, "
           f"{len(excluded)} excluded, against {len(uncovered)} Uncovered rows")
+    ran("resharper completeness", f"{len(uncovered)} Uncovered rows")
 else:
-    warn.append("classified.json is absent -- ReSharper completeness NOT checked. "
-                "Run: python3 universe.py && python3 classify.py")
+    skipped("resharper completeness",
+            "classified.json is absent -- run: python3 universe.py && python3 classify.py")
 
 # --------------------------------------------------------------- SonarQube
 sn = json.load(open(f"{W}/ledger-sonar.json"))
@@ -118,9 +158,9 @@ if os.path.exists(f"{W}/sonar.json"):
         warn.append(f"reconcile: {k} is in the ledger but Sonar no longer publishes it")
     print(f"sonar:     {len(sn['concepts'])} concepts covering {len(claimed)} rules, "
           f"{len(resolved)} resolved, against {len(rules)} published rules")
+    ran("sonar completeness", f"{len(rules)} published rules")
 else:
-    warn.append("sonar.json is absent -- SonarQube completeness NOT checked. "
-                "Run: python3 fetch_sonar.py")
+    skipped("sonar completeness", "sonar.json is absent -- run: python3 fetch_sonar.py")
 
 # ------------------------------------------- SonarQube: open, unimplemented rule ideas
 # These are upstream GitHub issues rather than published rules, so there is no file to
@@ -287,38 +327,41 @@ INERT = {
     "UseUtf8StringLiteral": "real in types-2026.xml, absent from editor_config_template, so no "
                             "universe row carries it",
 }
-if os.path.exists(f"{W}/universe.json"):
-    import re as _re
-
-    def _snake(s):
-        s = s.replace(".", "_")
-        s = _re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", s)
-        s = _re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "_", s)
-        return s.lower()
-
-    uni = json.load(open(f"{W}/universe.json"))
-    uni_ids = {v["id"] for v in uni.values() if v["id"]}
-    live = 0
-    for iid in catalogued:
-        b = _snake(iid)
-        if iid in uni_ids or any(f"resharper_{b}_highlighting{s}" in uni
-                                 for s in ("", "_highlighting")):
-            live += 1
-        elif iid not in INERT:
-            fail.append(f"catalogued.json: {iid!r} matches no row in the inspection universe, so "
-                        f"it credits {catalogued[iid]} with nothing. Verify the id against "
-                        f"types-2026.xml -- an invented id is silently inert")
-    for iid in sorted(set(INERT) - set(catalogued)):
-        warn.append(f"reconcile: {iid!r} is on the known-inert list and is no longer in "
-                    f"catalogued.json -- delete its line from INERT")
-    # ⚠ Report inert and excused separately. Printing one number for both let a newly added
-    # bad entry read as one more of the ones already known about.
-    inert_now = len(catalogued) - live
-    print(f"parity map: {live} of {len(catalogued)} entries match a universe row "
-          f"({inert_now} inert, {len(set(INERT) & set(catalogued))} of them on the known list)")
-else:
-    warn.append("universe.json is absent -- parity-map key validity NOT checked. "
-                "Run: python3 universe.py")
+# ⚠ The universe is built in-process from `editor_config_template` and `types-2026.xml`, both
+#    committed, rather than read from the gitignored `universe.json`. There is deliberately no
+#    `if os.path.exists(...)` here: this check has no skip path, because its skip path is what
+#    #311 was. Deleting `universe.json` must not silence it -- test that, do not assume it.
+#
+#    ⚠ `editor_config_template` is the universe and `types-2026.xml` is only metadata joined
+#    onto it. #318 measured the map's keys against the XML alone and called 26 of them
+#    fabrications; 14 of those are real inspections that merely post-date the dump and carry a
+#    live `resharper_*_highlighting` key in the export. Checking against the XML would fail on
+#    correct entries, which is a worse instrument than the one it replaced.
+uni = universe_mod.build()
+if len(uni) < 500:
+    fail.append(f"the inspection universe built to {len(uni)} rows; that is not the universe, "
+                f"and the parity-map key check below would pass vacuously against it")
+uni_ids = {v["id"] for v in uni.values() if v["id"]}
+_snake = universe_mod.snake
+live = 0
+for iid in catalogued:
+    b = _snake(iid)
+    if iid in uni_ids or any(f"resharper_{b}_highlighting{s}" in uni
+                             for s in ("", "_highlighting")):
+        live += 1
+    elif iid not in INERT:
+        fail.append(f"catalogued.json: {iid!r} matches no row in the inspection universe, so "
+                    f"it credits {catalogued[iid]} with nothing. Verify the id against "
+                    f"editor_config_template -- an invented id is silently inert")
+for iid in sorted(set(INERT) - set(catalogued)):
+    warn.append(f"reconcile: {iid!r} is on the known-inert list and is no longer in "
+                f"catalogued.json -- delete its line from INERT")
+# ⚠ Report inert and excused separately. Printing one number for both let a newly added
+# bad entry read as one more of the ones already known about.
+inert_now = len(catalogued) - live
+print(f"parity map: {live} of {len(catalogued)} entries match a universe row "
+      f"({inert_now} inert, {len(set(INERT) & set(catalogued))} of them on the known list)")
+ran("parity-map key validity", f"{live} of {len(catalogued)} live, over {len(uni)} universe rows")
 print(f"shipped:   {len(shipped)} rules, {len(declaring)} declaring a resharperId, "
       f"{len(catalogued)} parity-map entries")
 print(f"coverage:  resharper {rs_complete} complete / {rs_partial} partial, "
@@ -326,9 +369,31 @@ print(f"coverage:  resharper {rs_complete} complete / {rs_partial} partial, "
       f"sonar-ideas {id_complete} complete / {id_partial} partial")
 
 # --------------------------------------------------------------- verdict
+# ⚠ Skips are printed after the failures, not before, and the verdict line names them. The old
+# shape put a skip in the same `warn` list as a reconcile note, printed it 26 items up from the
+# bottom, and ended with `0 failures` -- which is what everybody read and quoted.
 for w in warn:
     print("WARN  " + w)
 for f in fail:
     print("FAIL  " + f)
-print(f"\n{len(fail)} failures, {len(warn)} warnings")
+
+missing = sorted(n for n, (state, _) in CHECKS.items() if state == "skipped")
+for n in missing:
+    print(f"SKIP  {n} DID NOT RUN -- {CHECKS[n][1]}")
+
+print(f"\nchecks: {len(CHECKS) - len(missing)} run, {len(missing)} skipped"
+      + (f" ({', '.join(missing)})" if missing else ""))
+
+if missing and not ALLOW_SKIPS:
+    # ⚠ Deliberately NOT phrased as "N failures". That string is what a reader greps for and
+    # what an agent quotes, and printing it next to a check that did not run is the whole bug:
+    # the old code ended `0 failures, 26 warnings` whether the check passed or never executed.
+    print(f"verdict: INCOMPLETE -- {len(missing)} check(s) could not run, so this is NOT a pass. "
+          f"Among the checks that did run: {len(fail)} failed, {len(warn)} warning(s). "
+          f"Generate the inputs above, or pass --allow-skips to accept the gap deliberately.")
+    sys.exit(2)
+if missing:
+    warn.append("running with --allow-skips; the skipped checks above were not performed")
+print(f"{len(fail)} failures, {len(warn)} warnings"
+      + (f" -- ⚠ {len(missing)} check(s) skipped by --allow-skips" if missing else ""))
 sys.exit(1 if fail else 0)

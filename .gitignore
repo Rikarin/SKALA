@@ -18,7 +18,13 @@ artifacts/
 # Testing/corpus/pathological/ deliberately rather than committing the whole directory.
 .skala/
 # doc 17's parity pipeline: generated inputs and outputs, re-made by a re-run.
-Testing/parity-analysis/types-2026.xml
+# ⚠ `types-2026.xml` is NOT in this list any more, and its absence was a real defect rather
+# than tidiness. It is a dumped snapshot of an external tool's catalogue, not a build output:
+# it needs `jb inspectcode --dumpIssuesTypes`, ReSharper is being retired, and re-dumping it
+# from a later release would silently change every parity number measured against it. While it
+# was ignored, `verify_ledger.py`'s strongest assertion — that every `catalogued.json` key names
+# a real inspection — did not run in any fresh clone or worktree, and the run still printed
+# `0 failures` (#311). Committing the snapshot is what makes that check unskippable.
 Testing/parity-analysis/types.json
 Testing/parity-analysis/universe.json
 Testing/parity-analysis/classified.json
