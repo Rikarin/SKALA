@@ -205,3 +205,7 @@ SK2071 | Skala.Correctness | Warning | The structured log template names the sam
 SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
 SK2073 | Skala.Correctness | Warning | The caught exception is not passed to the logger's exception parameter.
 SK7110 | Skala.Maintainability | Info | The logger is declared for a different type than the one that declares it.
+SK2140 | Skala.Correctness | Warning | The override declares a parameter default or `params` the call site will not use.
+SK2141 | Skala.Correctness | Warning | The argument replaces what the caller-info attribute would have supplied.
+SK2142 | Skala.Correctness | Warning | The value passed for the parameter is overwritten before it is read.
+SK2143 | Skala.Correctness | Warning | Two arguments are passed crosswise to the parameters they are named after.

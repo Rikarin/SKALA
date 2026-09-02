@@ -246,3 +246,7 @@ SK2100 ineffective-thread-static
 SK2101 pure-attribute-on-void
 SK2102 debugger-display-missing-member
 SK2103 duplicated-attribute
+SK2140 overridden-parameter-default
+SK2141 restated-caller-info-argument
+SK2142 overwritten-parameter
+SK2143 crosswise-argument-order
