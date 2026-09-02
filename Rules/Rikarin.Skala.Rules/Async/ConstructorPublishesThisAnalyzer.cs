@@ -22,9 +22,9 @@ namespace Rikarin.Skala.Rules.Async;
 ///         <c>button.Click += OnClick;</c> in a constructor is the overwhelmingly common
 ///         <em>legitimate</em> shape — nearly every UI type ever written contains it — and a rule that
 ///         reports it is worse than no rule at all, because it would be dismissed wholesale and take
-///         the four real shapes with it. So the rule reports only publication whose <em>second
-///         reader is outside the constructor's control</em>: process-wide static state, or a thread
-///         the constructor itself starts. Everything else is declined, and the negative fixture set,
+///         the four real shapes with it. So the rule reports only publication whose second reader is
+///         <em>outside the constructor's control</em>: process-wide static state, or a thread the
+///         constructor itself starts. Everything else is declined, and the negative fixture set,
 ///         which is more than twice the size of the positive one, is where that promise is kept.
 ///     </para>
 ///     <list type="number">
@@ -310,9 +310,9 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
 
         var scheduler = Is(definition, starters.Task) && method.Name is "Run" ? "`Task.Run`"
             : Is(definition, starters.TaskFactory) && method.Name is "StartNew" ? "`Task.Factory.StartNew`"
-            : Is(definition, starters.ThreadPool) && method.Name is "QueueUserWorkItem"
-                ? "`ThreadPool.QueueUserWorkItem`"
-                : null;
+                : Is(definition, starters.ThreadPool) && method.Name is "QueueUserWorkItem"
+                    ? "`ThreadPool.QueueUserWorkItem`"
+                    : null;
 
         if (scheduler is not null) {
             Escapes(context, invocation.ArgumentList.Arguments, invocation, owner, scheduler);
@@ -382,13 +382,13 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
                     ):
                     return declared;
                 case AssignmentExpressionSyntax {
-                        RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
-                        Left: { } target,
-                        Right: ObjectCreationExpressionSyntax assigned
-                    } when SymbolEqualityComparer.Default.Equals(
-                        context.SemanticModel.GetSymbolInfo(target, context.CancellationToken).Symbol,
-                        thread
-                    ):
+                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
+                    Left: { } target,
+                    Right: ObjectCreationExpressionSyntax assigned
+                } when SymbolEqualityComparer.Default.Equals(
+                    context.SemanticModel.GetSymbolInfo(target, context.CancellationToken).Symbol,
+                    thread
+                ):
                     return assigned;
             }
         }
