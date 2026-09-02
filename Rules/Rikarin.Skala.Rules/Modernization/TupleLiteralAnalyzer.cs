@@ -98,7 +98,7 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
         var declared = statement.Declaration.Type;
         var edits = new List<(TextSpan Span, string Text)>();
         if (!declared.IsVar) {
-            if (declared is not GenericNameSyntax { Identifier.ValueText: "Tuple" } written
+            if (AsTupleName(declared) is not { } written
                 || written.TypeArgumentList.Arguments.Count != arguments.Arguments.Count) {
                 return;
             }
@@ -124,10 +124,27 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
         );
     }
 
+    /// <summary>
+    ///     The <c>Tuple&lt;…&gt;</c> at the end of a written type name, or null when it is not one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>System.Tuple&lt;int, string&gt;</c> is a <see cref="QualifiedNameSyntax" /> and
+    ///     <c>Tuple&lt;int, string&gt;</c> is a <see cref="GenericNameSyntax" />. Matching only the
+    ///     second silently declined every fully-qualified spelling — measured, on the rule's own first
+    ///     positive fixture.
+    /// </remarks>
+    static GenericNameSyntax? AsTupleName(TypeSyntax type) =>
+        type switch {
+            GenericNameSyntax { Identifier.ValueText: "Tuple" } generic => generic,
+            QualifiedNameSyntax qualified => AsTupleName(qualified.Right),
+            AliasQualifiedNameSyntax aliased => AsTupleName(aliased.Name),
+            _ => null
+        };
+
     /// <summary>The argument list of a <c>new Tuple&lt;…&gt;(…)</c> or a <c>Tuple.Create(…)</c>.</summary>
     static ArgumentListSyntax? Arguments(ExpressionSyntax value) =>
         value switch {
-            ObjectCreationExpressionSyntax { Type: GenericNameSyntax { Identifier.ValueText: "Tuple" } } creation =>
+            ObjectCreationExpressionSyntax creation when AsTupleName(creation.Type) is not null =>
                 creation.ArgumentList,
             InvocationExpressionSyntax {
                 Expression: MemberAccessExpressionSyntax {

@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 229 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 234 ids are allocated.
 
 ## Async
 
@@ -236,6 +236,11 @@
 | [SK1071](SK1071.md) | Copy the record with a `with` expression | suggestion | safe | no |
 | [SK1072](SK1072.md) | The spread of a freshly created array is its elements | suggestion | safe | no |
 | [SK1073](SK1073.md) | Use the framework's cached instance | suggestion | safe | no |
+| [SK1090](SK1090.md) | Use a computed property instead of an auto-property holding a constant | hint | review | no |
+| [SK1091](SK1091.md) | The private auto-property is a field | suggestion | safe | no |
+| [SK1092](SK1092.md) | Use a tuple literal instead of constructing a `Tuple` | suggestion | review | no |
+| [SK1093](SK1093.md) | Express the cast in the declaration instead | hint | safe | no |
+| [SK1094](SK1094.md) | Use nullable reference type syntax instead of an annotation attribute | warning | review | no |
 
 ## Performance
 
