@@ -105,6 +105,18 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
         && model.GetTypeInfo(cast.Expression).Nullability.FlowState
         == model.GetTypeInfo(cast).Nullability.FlowState;
 
+    /// <summary>Explicit method type arguments inference would reproduce exactly.</summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         The rewrite is bound away from its tree, and that was a crash here rather than a
+    ///         theory.
+    ///     </b> <c>values?.Where(…).Cast&lt;string&gt;()</c> hands
+    ///     <c>GetSpeculativeSymbolInfo</c> a detached node whose root is a member binding, and the
+    ///     compiler throws a <c>NullReferenceException</c> looking for the conditional access that
+    ///     is no longer above it — see <see cref="SpeculativeBinding" />. It reached a report as
+    ///     nothing at all, because an analyzer exception is <c>AD0001</c> (#279, #295).
+    /// </remarks>
     static void AnalyzeTypeArguments(SyntaxNodeAnalysisContext context) {
         var invocation = (InvocationExpressionSyntax)context.Node;
         var generic = invocation.Expression switch {
@@ -115,6 +127,7 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
 
         if (generic is null
             || generic.TypeArgumentList.Arguments.Count == 0
+            || !SpeculativeBinding.CanBindDetached(invocation)
             || context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
             is not IMethodSymbol method) {
             return;

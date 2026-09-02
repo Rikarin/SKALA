@@ -92,6 +92,7 @@ public sealed class RuleFixtureTests {
         new DuplicatedBaseDocumentationAnalyzer(), new UndocumentedNonPublicMemberAnalyzer(),
         new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
         new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
+        new RedundantDiscardDesignationAnalyzer(),
         new RedundantDeclarationAnalyzer(),
         new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(),
         new MergedConditionalAccessAnalyzer(), new DiscardAssignmentAnalyzer(),
@@ -189,10 +190,23 @@ public sealed class RuleFixtureTests {
             + string.Join("; ", errors.Take(3).Select(static d => d.ToString()))
         );
 
-        var produced = RuleFixtures
-            .Analyze(compilation, Analyzers, TestContext.Current.CancellationToken)
-            .Where(diagnostic => diagnostic.Id == fixture.RuleId)
-            .ToArray();
+        var all = RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken);
+
+        // ⚠ An analyzer that throws is reported as AD0001 and nothing else: its positive fixtures
+        // fail, and *every negative fixture it was supposed to decline passes*, because the rule
+        // that would have fired never ran. SK0232 threw `IndexOutOfRangeException` on every
+        // expanded `params` call for as long as this assertion was missing (#298, #279), and
+        // `skala check` does not fail a gate on it either — the crash is renamed to SK9030 and
+        // reaches only the SARIF's `toolExecutionNotifications` (#295). This is the one place that
+        // can see it, so it is asked on every fixture rather than on the ones under test.
+        var crashes = all.Where(static diagnostic => diagnostic.Id == "AD0001").ToArray();
+        Assert.True(
+            crashes.Length == 0,
+            $"{fixture}: an analyzer threw while running over this fixture, so every rule it hosts "
+            + $"silently declined:\n  {string.Join("\n  ", crashes.Select(static d => d.GetMessage()))}"
+        );
+
+        var produced = all.Where(diagnostic => diagnostic.Id == fixture.RuleId).ToArray();
 
         if (fixture.ShouldFire) {
             Assert.True(
