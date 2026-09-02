@@ -255,8 +255,11 @@ refutations, not deferrals:
 - [#132](https://github.com/Rikarin/SKALA/issues/132) — **nothing shippable remains.**
   `RedundantToStringCallForValueType` and `RedundantStringInterpolation`'s single-hole form were
   refused with reasons that still stand. `RedundantVerbatimPrefix`'s identifier form is `SK2034`'s
-  concept. ⚠ `RedundantStringType` is **not a C# inspection at all**: the export's own description is
-  "Redundant string type", it carries no more than that, and no C# construct answers to it.
+  concept. ⚠ `RedundantStringType` is **not a C# inspection at all** — JetBrains' own page for it is
+  about a **resource entry in a `.resx` file**, where naming the string type restates the default
+  entry type. There is no C# code shape to write a rule against. The export gives no hint of that:
+  its entire description is "Redundant string type", which is why it sat on the queue looking like a
+  language rule for as long as nobody opened the `WikiUrl` beside it.
 - [#136](https://github.com/Rikarin/SKALA/issues/136) — **nothing shippable remains, and the reason
   changed.** Its two uncovered inspections are both `SK0210`'s, and the CS8933 story that put one of
   them on the queue is refuted above.
