@@ -77,54 +77,13 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
 
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var invocation = (InvocationExpressionSyntax)context.Node;
-
-        if (invocation.Expression is not MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                Expression: TypeOfExpressionSyntax target
-            } access
-            || invocation.ArgumentList.Arguments.Count != 1) {
+        if (TryReadCall(context, invocation) is not { } call) {
             return;
         }
 
-        var name = access.Name.Identifier.ValueText;
-        var isInstanceOfType = string.Equals(name, "IsInstanceOfType", System.StringComparison.Ordinal);
-        if (!isInstanceOfType && !string.Equals(name, "IsAssignableFrom", System.StringComparison.Ordinal)) {
-            return;
-        }
-
-        var argument = invocation.ArgumentList.Arguments[0];
-
-        // ⚠ A named or `ref`/`in` argument is not this shape and its rewrite is not this rewrite.
-        if (argument.NameColon is not null || argument.RefKindKeyword.RawKind != (int)SyntaxKind.None) {
-            return;
-        }
-
+        var (target, operand) = call;
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
-
-        if (model.GetSymbolInfo(invocation, cancellation).Symbol is not IMethodSymbol { ContainingType: { } declaring }
-            || !IsSystemType(declaring)) {
-            return;
-        }
-
-        // The value whose type is being tested. For `IsInstanceOfType` it is the argument itself;
-        // for `IsAssignableFrom` the argument has to be a `GetType()` call, and the value is that
-        // call's receiver. ⚠ `typeof(A).IsAssignableFrom(typeof(B))` is a question about two types
-        // with no value in it at all, and has no `is` spelling — requiring `GetType()` declines it
-        // by construction rather than by a name list.
-        ExpressionSyntax operand;
-        if (isInstanceOfType) {
-            operand = argument.Expression;
-        } else if (!TryReadGetTypeReceiver(model, argument.Expression, cancellation, out var receiver)) {
-            return;
-        } else {
-            operand = receiver;
-        }
-
-        if (!IsPrimary(operand)) {
-            return;
-        }
-
         var tested = model.GetTypeInfo(target.Type, cancellation).Type;
         var operandType = model.GetTypeInfo(operand, cancellation).Type;
         if (!IsPatternableTarget(tested) || !IsPatternableOperand(operandType)) {
@@ -164,6 +123,65 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
                 "The `is` operator answers this directly: `" + RewriteGuards.Trim(test) + "`"
             )
         );
+    }
+
+    /// <summary>
+    ///     Whether this invocation is one of the two reflection calls, and on what value.
+    /// </summary>
+    /// <remarks>
+    ///     Split out of <c>Analyze</c> so that the rule passes Skala's own cognitive-complexity gate:
+    ///     the syntactic recognition and the semantic admissibility test are two questions, and asking
+    ///     them in one method put <c>SK7002</c> at 18 against a threshold of 15.
+    /// </remarks>
+    static (TypeOfExpressionSyntax Target, ExpressionSyntax Operand)? TryReadCall(
+        SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation
+    ) {
+        if (invocation.Expression is not MemberAccessExpressionSyntax {
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
+                Expression: TypeOfExpressionSyntax typeOf
+            } access
+            || invocation.ArgumentList.Arguments.Count != 1) {
+            return null;
+        }
+
+        var name = access.Name.Identifier.ValueText;
+        var isInstanceOfType = string.Equals(name, "IsInstanceOfType", System.StringComparison.Ordinal);
+        if (!isInstanceOfType && !string.Equals(name, "IsAssignableFrom", System.StringComparison.Ordinal)) {
+            return null;
+        }
+
+        var argument = invocation.ArgumentList.Arguments[0];
+
+        // ⚠ A named or `ref`/`in` argument is not this shape and its rewrite is not this rewrite.
+        if (argument.NameColon is not null || argument.RefKindKeyword.RawKind != (int)SyntaxKind.None) {
+            return null;
+        }
+
+        var model = context.SemanticModel;
+        var cancellation = context.CancellationToken;
+        if (model.GetSymbolInfo(invocation, cancellation).Symbol is not IMethodSymbol { ContainingType: { } declaring }
+            || !IsSystemType(declaring)) {
+            return null;
+        }
+
+        // The value whose type is being tested. For `IsInstanceOfType` it is the argument itself;
+        // for `IsAssignableFrom` the argument has to be a `GetType()` call, and the value is that
+        // call's receiver. ⚠ `typeof(A).IsAssignableFrom(typeof(B))` is a question about two types
+        // with no value in it at all, and has no `is` spelling — requiring `GetType()` declines it
+        // by construction rather than by a name list.
+        ExpressionSyntax value;
+        if (isInstanceOfType) {
+            value = argument.Expression;
+        } else if (TryReadGetTypeReceiver(model, argument.Expression, cancellation, out var receiver)) {
+            value = receiver;
+        } else {
+            return null;
+        }
+
+        // ⚠ The rewrite moves the expression from an argument position, where every precedence is
+        // legal, to the left of a relational operator, where most are not.
+        return IsPrimary(value) ? (typeOf, value) : null;
     }
 
     /// <summary>The receiver of an <c>object.GetType()</c> call, when that is what this is.</summary>
