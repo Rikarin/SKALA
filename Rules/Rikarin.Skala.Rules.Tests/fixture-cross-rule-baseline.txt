@@ -13,8 +13,8 @@
 # test asserts EQUALITY, so a line that no longer fires fails just as loudly as a finding with no
 # line. Adding one is a decision that has to be defended in review.
 #
-# Scope, and why: the same sweep over every category produces 18 030 findings, of which 11 712 are
-# SK7101/SK7010 documentation and 4 131 are SK6030 — style rules firing on deliberately minimal
+# Scope, and why: the same sweep over every category produces 18 042 findings, of which 11 687 are
+# SK7101/SK7010 documentation and 4 134 are SK6030 — style rules firing on deliberately minimal
 # snippets, which says nothing about the fixture's soundness. Correctness and Security are the
 # categories where "this file contains the defect another rule reports" is a statement about the
 # fixture rather than about its brevity. Positive fixtures are excluded because a positive fixture's

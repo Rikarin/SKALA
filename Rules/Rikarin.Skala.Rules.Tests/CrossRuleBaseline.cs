@@ -29,8 +29,8 @@ namespace Rikarin.Skala.Rules.Tests;
 public static class CrossRuleBaseline {
     /// <summary>The categories a cross-rule finding is measured in, and nothing else.</summary>
     /// <remarks>
-    ///     ⚠ Measured, not chosen by taste: the same sweep across every category produces 18 030
-    ///     findings on 3 848 fixtures, 15 843 of them <c>SK7101</c>, <c>SK7010</c> and <c>SK6030</c> —
+    ///     ⚠ Measured, not chosen by taste: the same sweep across every category produces 18 042
+    ///     findings on 3 848 fixtures, 15 821 of them <c>SK7101</c>, <c>SK7010</c> and <c>SK6030</c> —
     ///     documentation and declaration style, firing because a fixture is a deliberately minimal
     ///     snippet. A baseline of that size records nothing anybody would read. In these two
     ///     categories, "this file contains the defect another rule reports" is a statement about the
