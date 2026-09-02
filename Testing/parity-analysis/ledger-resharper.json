@@ -339,7 +339,10 @@
    ],
    "coverage": "partial",
    "coveredBy": [
-    "SK2016"
+    "SK2016",
+    "SK2070",
+    "SK2071",
+    "SK2073"
    ]
   },
   {
