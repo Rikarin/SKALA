@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 298 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 302 ids are allocated.
 
 ## Async
 
@@ -146,6 +146,10 @@
 | [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | safe | no |
 | [SK2201](SK2201.md) | The unsubscription passes an anonymous function | warning | — | no |
 | [SK2202](SK2202.md) | The modification sits inside a conditional invocation | warning | — | yes |
+| [SK2230](SK2230.md) | The concatenated SQL fragments run together | warning | review | yes |
+| [SK2231](SK2231.md) | The command's SQL names a parameter nothing supplies | warning | — | no |
+| [SK2232](SK2232.md) | The load context's own resolver loads outside it | warning | review | no |
+| [SK2233](SK2233.md) | The `Type` passed cannot satisfy what the API asks for | warning | — | no |
 
 ## Design
 
