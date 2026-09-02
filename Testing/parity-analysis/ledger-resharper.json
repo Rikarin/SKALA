@@ -1155,6 +1155,10 @@
    "proposedFix": "unsafe",
    "inspections": [
     "ForCanBeConvertedToForeach"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1083"
    ]
   },
   {
@@ -1208,6 +1212,10 @@
     "LoopCanBePartlyConvertedToQuery",
     "ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator",
     "ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK1084"
    ]
   },
   {
@@ -1474,6 +1482,10 @@
     "ReplaceWithOfType.SingleOrDefault.2",
     "ReplaceWithOfType.Where",
     "resharper_replace_with_of_type_highlighting"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK1080"
    ]
   },
   {
@@ -1494,7 +1506,8 @@
    ],
    "coverage": "partial",
    "coveredBy": [
-    "SK1033"
+    "SK1033",
+    "SK1081"
    ]
   },
   {
@@ -1606,6 +1619,10 @@
    "proposedFix": "safe",
    "inspections": [
     "UseIndexedProperty"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1082"
    ]
   },
   {

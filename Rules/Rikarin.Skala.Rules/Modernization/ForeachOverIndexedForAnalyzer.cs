@@ -338,14 +338,18 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
             last = last.Substring(dot + 1);
         }
 
+        // ⚠ One singular per plural, never two. An earlier draft offered the "ies" → "y" form *and*
+        // the bare stem, so when `property` was already taken the corpus got
+        // `foreach (var propertie in properties)`. A wrong-looking name is not a compile error and no
+        // test would have caught it; it was read off the sweep. `-ss` is guarded so `class` does not
+        // become `clas`.
         var candidates = new List<string>();
-        if (last.Length > 1 && last.EndsWith("s", StringComparison.Ordinal)) {
-            var singular = last.Substring(0, last.Length - 1);
-            if (singular.EndsWith("ie", StringComparison.Ordinal)) {
-                candidates.Add(singular.Substring(0, singular.Length - 2) + "y");
-            }
-
-            candidates.Add(singular);
+        if (last.EndsWith("ies", StringComparison.Ordinal) && last.Length > 3) {
+            candidates.Add(last.Substring(0, last.Length - 3) + "y");
+        } else if (last.Length > 1
+            && last.EndsWith("s", StringComparison.Ordinal)
+            && !last.EndsWith("ss", StringComparison.Ordinal)) {
+            candidates.Add(last.Substring(0, last.Length - 1));
         }
 
         candidates.Add("item");
