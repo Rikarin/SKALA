@@ -1775,8 +1775,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **295** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **260** | **88.4 %** |
+| Rules this document names | **297** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **262** | **88.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -3529,3 +3529,104 @@ the declaration or sink the reader, write the implementation or delete the hook,
 per-instance or make the member static — and the finding is precisely the evidence that the author
 knows which and the analyzer does not. `SK2132` is the exception because there the two candidate
 repairs are not symmetric: one of them is a rename of a property that other code already calls.
+
+## `SK4040`–`SK4041` — collections copied on every read, and buffers nobody reads
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK4000 —
+Performance" only to keep it out of a section several concurrent branches were editing.** What
+follows is the register doing the one job ADR-012 needs it to do — the numbers are taken and written
+down where the next milestone will read them. It belongs beside `SK4030`–`SK4034`.
+
+**Two rules shipped out of five issues, and ⚠ the three that did not ship are the more useful half of
+the result.** The batch was opened on issues #203, #185, #69, #72 and #267. Three of them turned out
+to be covered by an analyzer that already ships in the .NET SDK, and each disposition rests on a
+measured default state rather than on a rule's documentation: a probe was built **outside this
+repository**, with empty `Directory.Build.props`/`.targets` beside it so that Skala's own raised
+`AnalysisMode` could not colour the answer, and the descriptors were then read directly out of
+`Microsoft.CodeAnalysis.NetAnalyzers.dll` shipped with SDK 10.0.400.
+
+- `SK4040` a **property** whose getter is one call that allocates a fresh copy of a collection the
+  property's own type already accepts. Property syntax reads as a field read — that is the whole of
+  the convention, and it is why a caller writes `Items.Count` and then `Items[0]` and pays for two
+  copies without seeing either. ⚠ **The reported shape is narrower than "a property that copies", and
+  deliberately so: the copy has to be one the property could simply have skipped.** Where the source
+  already converts to the property's type by identity or by reference, deleting the materializing
+  call is an edit that keeps the signature; where the call also converts — `int[] Items =>
+  list.ToArray();` — there is no edit that keeps the declared type, and a finding with no available
+  answer is one the reader argues with instead of acting on. ⚠ **A deliberate defensive copy has
+  exactly this shape and nothing tells the two apart.** That is not a hole to close later — whether a
+  caller should see later mutations is a decision about the API, held nowhere in the source — and it
+  is why the rule ships at `suggestion` rather than at the `warning` the proposal asked for, and why
+  the fix is `fixIsSafe: false`. The right answer to a deliberate copy is often to keep it and move it
+  behind a method, whose parentheses admit the work, and only a person can choose that.
+- `SK4041` a local `StringBuilder` that is constructed, appended to, and never read. ⚠ **It is almost
+  never a performance mistake by intent; it is a missing line** — usually the `return
+  builder.ToString();` that was never written. ⚠ **A builder handed to anything else escapes, and the
+  rule stands down at the first sign of it rather than reasoning about it**: an argument, an
+  assignment, a `return`, a second local aliasing it, or any reference inside a lambda or a local
+  function ends the analysis for that local. The default is "this is a read" and only nine mutating
+  members count as writes, so a member added to `StringBuilder` in a later framework silences the rule
+  instead of making it wrong. ⚠ **No fix, and the reason is the finding.** The edit that repairs it is
+  the read the author did not write; deleting the builder is the other candidate and is wrong whenever
+  an append's argument has side effects, so the rule reports and stops, as `SK4024` does.
+
+⚠ **Three concepts were measured and closed against analyzers that already ship, and no id was
+allocated for any of them.**
+
+- **Issue #69** — "the class is never inherited and is not `sealed`" — is **`CA1852`**, measured
+  `enabledByDefault: true, defaultSeverity: Hidden`. That is the middle of the three states rather
+  than "off": the analyzer runs in every build and its findings are invisible until a repository
+  raises the severity, which is what ADR-008 already says to do. A probe confirms the behaviour as
+  well as the state — `CA1852` reports the `internal` class that nothing derives from, is silent on
+  the `public` one, and is silent on the `internal` one that has a derived type. ⚠ **The silence on
+  `public` is not a gap a Skala rule could fill**, and it is the same assembly-boundary problem that
+  closed #114 and #119: "never inherited" is not answerable from one compilation for a type another
+  assembly can see.
+- **Issue #72** — "the parameter expects a constant and is given one at runtime" — is **`CA1857`**,
+  measured `enabledByDefault: true, defaultSeverity: Warning`, and it is the one probed rule that
+  fires in an ordinary `dotnet build` with no `AnalysisMode` raised at all. It covers both halves the
+  issue named: it reports a `[ConstantExpected]` parameter given a variable, and it reports a constant
+  outside a declared `Min`/`Max` range. There is no residue.
+- **Issue #267** — "the sequence is enumerated more than once" — is **`CA1851`**, measured
+  `enabledByDefault: false, defaultSeverity: Warning`. Off, so ADR-008's answer is to enable it — the
+  same disposition #169's null half took against `CA1508`. ⚠ **What settled it was not the existence
+  of the rule but its measured coverage against a thirteen-shape probe**, because the specification
+  this batch would have shipped was "report where the receiver's static type is `IEnumerable<T>`", and
+  `CA1851` is flow-sensitive rather than type-sensitive and therefore strictly better: it reports the
+  two-operator chain, the `foreach` followed by a LINQ call, two `foreach` loops, a `Where` result
+  walked twice and an enumeration inside a loop; it declines a `List<T>` **assigned to an
+  `IEnumerable<T>` local**, which a static-type rule reports and is wrong about, and it declines the
+  branch where only one walk happens at run time. Its own residue is real and small — it says nothing
+  about a field — and a rule for that alone would be a narrower duplicate of a better analysis.
+
+⚠ **`SK4006` is not this concept, and the map said it was.** `catalogued.json` credited ReSharper's
+`PossibleMultipleEnumeration` to `SK4006`, and `SK4006` is *Review a materialization used only by
+`foreach`* — a `ToList()` that should be **removed**. Multiple enumeration is a `ToList()` that should
+be **added**. The two are mirror images: one needs an explicit materialization and exactly one
+consumer, the other needs no materialization and two consumers, so no program satisfies both. The
+mapping was already deleted from `catalogued.json` and `ledger-resharper.json` records why; what was
+missing was anything asserting it. The refutation is now a test in `CollectionCopyAndBufferBatchTests`
+rather than a sentence here, so the day the claim stops being true the file goes red.
+
+⚠ **Neither new rule takes a `catalogued.json` key, and that was checked rather than assumed.**
+`types-2026.xml` — ReSharper's own issue-type catalogue — has no inspection for a property that copies
+a collection and none for an unread `StringBuilder`; the nearest names, `CollectionNeverQueried` and
+`RedundantCollectionCopyCall`, are different concepts and the latter is already mapped to `SK1081`.
+
+⚠ **`SK4040` overlaps `CA1819` on exactly one shape and disagrees with it about everything else.**
+`CA1819` was measured `enabledByDefault: false, defaultSeverity: Warning` and asks about the
+property's *type*: it reports `int[] P => field;`, which copies nothing, and it is silent on
+`IReadOnlyList<T> P => xs.ToList();`, which is the whole of this concept. The one shape both see is
+`T[] P => array.ToArray();`, and there they say two different true things — one about exposure, one
+about cost.
+
+⚠ **Nothing in the SDK reports `SK4041`'s shape.** The probe at `AnalysisMode=All` produced only
+`CA1834` on the same code, which is about `Append(char)` versus `Append(string)` and fires whether or
+not the buffer is ever read.
+
+⚠ **`SK4041` sits in the performance band and issue #185 proposed the correctness one, and the id is
+what it is.** The concept is dead work — an allocation and an `O(n)` copy whose result is discarded —
+which is a defensible reading of `SK4000`–`SK4999`, and SonarSource classifies the same rule as a code
+smell rather than a bug. The number was allocated from this batch's reserved range and ADR-012 makes
+it permanent either way; recording the discrepancy here is what stops it being rediscovered as a
+mistake.
