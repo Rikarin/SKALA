@@ -285,3 +285,6 @@ SK2131 unassigned-get-only-property
 SK2132 mismatched-backing-field
 SK2133 unimplemented-partial-method
 SK2134 instance-write-to-static
+SK6060 invariant-type-parameter
+SK6061 caller-info-parameter-not-last
+SK6062 write-only-local-collection

@@ -244,3 +244,6 @@ SK2131 | Skala.Correctness | Warning | A get-only auto-property nothing ever ass
 SK2132 | Skala.Correctness | Warning | An accessor reaches for another property's backing field.
 SK2133 | Skala.Correctness | Info | A called `partial void` with no implementing declaration.
 SK2134 | Skala.Correctness | Warning | Instance code assigns its own type's static field.
+SK6060 | Skala.Design | Info | The interface type parameter could be declared variant.
+SK6061 | Skala.Design | Warning | A caller-info parameter is followed by an ordinary parameter.
+SK6062 | Skala.Design | Info | A local collection is filled and never read.

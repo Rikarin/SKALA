@@ -6958,6 +6958,83 @@
       "configuration": [
         "dotnet_diagnostic.SK2134.severity"
       ]
+    },
+    {
+      "id": "SK6060",
+      "concept": "invariant-type-parameter",
+      "title": "The interface's type parameter is invariant and need not be",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "TypeParameterCanBeVariant",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An interface whose type parameter appears only in output positions can declare it `out`, and every assignment its callers currently cannot write becomes legal without any of them changing.",
+      "rationale": "Variance is the one piece of an interface's design that costs the declarer nothing and is invisible until somebody needs it. `IReadOnlyList<out T>` is why `IReadOnlyList<string>` is an `IReadOnlyList<object>`; an interface that could have said the same thing and did not forces every consumer into a copy, a `Cast<T>()` or a second overload — and the consumer usually cannot tell that the restriction was accidental rather than meant. ⚠ **The declaration is the only place the question can be asked**, because the compiler will not infer it and nothing in a call site says \"this would have worked\".",
+      "examples": {
+        "bad": "interface IFactory<T> {\n    T Create();\n    IEnumerable<T> CreateMany(int count);\n}\n\n// IFactory<string> is not an IFactory<object>, for no reason.",
+        "good": "interface IFactory<out T> {\n    T Create();\n    IEnumerable<T> CreateMany(int count);\n}"
+      },
+      "falsePositives": "**The finding is the compiler's own variance-safety rule, run in reverse, and not an approximation of it.** Every occurrence of the parameter in every member signature is classified by position — a return type is covariant, a by-value or `in` parameter is contravariant, a `ref` or `out` parameter and a get-set property are invariant, an event is contravariant, a generic method's constraint is contravariant, and a base interface is covariant — and each occurrence is then composed through the declared variance of whatever generic type encloses it, flipping on a contravariant parameter and collapsing to invariant on an invariant one. That composition is what separates `IEnumerable<T> Get()`, which is reportable, from `List<T> Get()` and `Action<T> Get()`, which are not; all three look like the parameter sitting in a return type. ⚠ **Eight shapes were run through the real compiler before the algorithm was written**, and its answers agree with `CS1961` on all eight.\n\n**Only interfaces, and only ones declared in source and not `partial`.** A delegate's type parameters admit exactly the same argument and are deliberately out of scope: the concept is the same, the decision to ship it is a separate one. A `partial` interface repeats its type parameter list on every declaration and C# requires the variance modifiers to match across all of them, so a fix that edits one part produces `CS0264`; the rule declines rather than emitting a multi-part edit.\n\n⚠ **A parameter constrained to `struct` is declined even though `interface I<out T> where T : struct` compiles.** Variance exists to admit reference conversions and a value type admits none, so the suggestion would be true, accepted by the compiler, and worth nothing. The same goes for a parameter that occurs in no member signature at all: that is an unused type parameter, a different finding, and `out` on a phantom is noise.\n\n**The parameter must occur at least once, and both directions are reported.** A parameter used only in output positions is offered `out`; one used only in input positions is offered `in`. A parameter that occurs only in invariant positions, or in both directions, is silent — there is nothing to suggest.\n\n⚠ **The fix is `fixIsSafe: false` and the reason is not the source.** Adding a variance modifier is source-compatible for every consumer, and that is exactly what makes it easy to apply without thinking: it is **binary-breaking**. The type's metadata name is unchanged but its signature is not, so an already-compiled assembly referencing the old form fails to load against the new one. It also constrains every future member of the interface — a `void Set(T value)` that anyone might want to add later becomes a compiler error rather than a design discussion. Neither is visible in the diff.",
+      "configuration": [
+        "dotnet_diagnostic.SK6060.severity"
+      ]
+    },
+    {
+      "id": "SK6061",
+      "concept": "caller-info-parameter-not-last",
+      "title": "A caller-info parameter is followed by an ordinary parameter",
+      "category": "Design",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3343"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The compiler only fills a caller-info parameter the caller omitted, so an ordinary parameter declared after one can never be passed positionally without cancelling the substitution it sits in front of.",
+      "rationale": "`[CallerMemberName]` is a promise that the caller does not have to say where the call came from. A parameter after it takes that back: to reach the later parameter positionally the caller has to supply the caller-info one too, and the value it then carries is whatever was typed rather than where the call is. The declaration reads as two independent conveniences and behaves as one that disables the other. ⚠ **The failure is silent in both directions** — the caller who wants the later parameter loses the location without a diagnostic, and the caller who wants the location cannot reach the later parameter at all except by name.",
+      "examples": {
+        "bad": "static void Log(string message, [CallerMemberName] string caller = \"\", int level = 0) { }\n\n// Log(\"hi\", 2) does not compile; Log(\"hi\", \"Run\", 2) throws the location away.",
+        "good": "static void Log(string message, int level = 0, [CallerMemberName] string caller = \"\") { }"
+      },
+      "falsePositives": "⚠ **The shape the issue described does not compile, and establishing that first is what made the rule narrow.** A caller-info attribute on a parameter without a default value is `CS4022` — \"may only be applied to parameters with default values\" — verified against the compiler rather than assumed, so \"a required parameter after a caller-info one\" is not a program anyone can write. Everything after an optional parameter is itself optional or `params`, and *that* is the real defect: two optional parameters where the first is filled by the compiler and the second is what the caller wanted.\n\n**A trailing run of caller-info parameters is correct and is never reported.** `(string message, [CallerFilePath] string file = \"\", [CallerLineNumber] int line = 0)` is the shape the attributes were designed for. The rule fires only where a caller-info parameter is followed by a parameter that carries no caller-info attribute of its own, which is why the fix is a rotation rather than a swap: the whole caller-info run moves to the end together, keeping its internal order.\n\n**Three declarations are declined because reordering them would be wrong rather than unsafe.** An `override`, an explicit or implicit interface implementation, and a `partial` implementation each have a signature fixed by something else in the program; moving a parameter there produces a member that no longer overrides, implements or matches. The finding belongs on the declaration that owns the order, and reporting it on the one that copies it would be reporting a defect at a place that cannot fix it.\n\n⚠ **A `params` parameter is declined outright.** `params` must be last, so the caller-info run has nowhere to go: the only rewrite that satisfies both constraints is the one already written. This is silence rather than a finding without a fix, because a finding a person cannot act on is a finding they learn to skip.\n\n⚠ **The fix is `fixIsSafe: false` and the reason is every existing call site.** Reordering optional parameters silently re-points positional arguments: a caller written as `Log(\"hi\", \"x\", 2)` still compiles against a reordered signature if the types line up, and now means something else. The rewrite is correct for the declaration and needs the call sites read, which is what review is for. Where it is applied, `SK2141` reports the call sites that were compensating for the old order.\n\n**This rule and `SK2141` are the same defect seen from two ends and cannot double-report.** `SK2141` reports an argument at a call site that restates what the attribute would have supplied; this reports the declaration that made restating it necessary. Neither reads the other's node.",
+      "configuration": [
+        "dotnet_diagnostic.SK6061.severity"
+      ]
+    },
+    {
+      "id": "SK6062",
+      "concept": "write-only-local-collection",
+      "title": "The local collection is filled and never read",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "CollectionNeverQueried.Local",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A local collection is created, added to, and never enumerated, indexed, counted or handed anywhere — so the work that fills it is a feature that was started and abandoned.",
+      "rationale": "Both halves look correct in isolation, which is why review does not catch it: the declaration is ordinary, every `Add` is ordinary, and nothing is missing from any line. What is missing is a line. The compiler has nothing to say — a collection that is written to is used, as far as it is concerned — and every test over the method passes, because the method's observable behaviour is exactly what it would be with the collection deleted. ⚠ **The usual cause is a removed consumer**: the loop that read the list was deleted or moved and the loop that fills it was left behind, still paying for every element.",
+      "examples": {
+        "bad": "var failures = new List<string>();\nforeach (var item in items) {\n    if (!item.IsValid) {\n        failures.Add(item.Name);\n    }\n}\n\nreturn items.Count;   // nothing ever reads `failures`",
+        "good": "var failures = new List<string>();\nforeach (var item in items) {\n    if (!item.IsValid) {\n        failures.Add(item.Name);\n    }\n}\n\nreturn failures.Count == 0 ? items.Count : throw new ValidationException(failures);"
+      },
+      "falsePositives": "**Locals only, and this is the whole reason the rule is decidable.** A field, a property or a parameter can be read by any member of the type and by anything holding the instance, so \"nothing reads it\" is not a claim a single compilation can make about one — which is the assembly boundary that closed [#114](https://github.com/Rikarin/SKALA/issues/114) and [#119](https://github.com/Rikarin/SKALA/issues/119), and the reason the `.Global` half of this concept is not here. A local's every reference is in one member and the analyzer can see all of them.\n\n**Proved by exhaustion rather than by dataflow**, the argument `SK2083` uses for the mirror-image defect. Every reference to the local inside the declaring member must be the receiver of a mutating call whose result is discarded — an `Add`, `AddRange`, `Insert`, `Remove`, `RemoveAt`, `RemoveAll`, `Clear`, `Push`, `Enqueue`, `Sort`, `Reverse`, `TryAdd`, `TryTake` or `Enqueue` written as a statement — or the target of an indexer assignment. Anything else withdraws the finding without the analyzer having to decide what it does: an argument, a `return`, an assignment to anything, a `ref`, an interpolation, a capture, a `foreach` subject, a `.Count`, a LINQ call, a debugger-visible use. ⚠ **A discarded return value is required, not just tolerated**: `if (set.Remove(x))` reads the collection through the `bool`, and that is a use.\n\n⚠ **`SK2083` and this rule are disjoint by construction rather than by filter.** `SK2083` reports a `foreach` over a collection nothing fills — it requires a read and forbids every write. This requires a write and forbids every read. No source can satisfy both, so the two can never report the same local.\n\n⚠ **The scan runs over the whole enclosing member, not forward from the declaration**, so a lambda or local function declared above the local — which cannot capture it — and one declared below it — which holds a reference the scan sees — give the same answer. The result does not depend on statement order, which is what makes the exhaustion argument sound rather than merely usually right.\n\n**Only collection types with a known empty constructor**, the same closed table `SK2083` resolves by symbol. A custom collection may have a `Add` that is the point of the call — writing to a logger, an accumulator with an observable side effect — and the rule has no way to know. Restricting to `List`, `HashSet`, `Dictionary`, `Queue`, `Stack` and their neighbours is what makes \"nothing reads it\" mean the collection is dead rather than that the analyzer cannot see the reader.\n\n**Report-only, and not because a fix was hard to write.** Deleting the local means deleting every statement that writes to it, and those statements carry expressions — `failures.Add(Describe(item))` — whose evaluation may be the thing that mattered. More often the right edit is the opposite one: add the reader that was lost. The finding says the code is unfinished; it does not say in which direction, and an automated edit would have to guess.",
+      "configuration": [
+        "dotnet_diagnostic.SK6062.severity"
+      ]
     }
   ]
 }
