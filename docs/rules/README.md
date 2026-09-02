@@ -364,6 +364,9 @@
 | [SK5020](SK5020.md) | A cipher initialisation vector fixed at compile time | error | — | no |
 | [SK5021](SK5021.md) | An RSA or DSA key generated below 2048 bits | error | review | no |
 | [SK5030](SK5030.md) | An XML signature checked against the key the document carries | error | — | no |
+| [SK5040](SK5040.md) | An XML resolver put back where the platform's default is none | error | — | no |
+| [SK5041](SK5041.md) | The key-derivation salt is fixed at compile time | error | — | no |
+| [SK5042](SK5042.md) | A file or directory created writable by every local user | error | — | no |
 
 ## Tests
 

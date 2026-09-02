@@ -3052,8 +3052,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **351** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **317** | **90.6 %** |
+| Rules this document names | **354** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **320** | **90.7 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
@@ -8367,3 +8367,220 @@ in a report, and the control is the only thing that separates them. (⚠ The obv
 measuring the vendored corpus, which has `@operator` in `QueryExpression.cs` — does *not* work:
 `Testing/` is excluded from `skala check`, which answers `SK9023: no C# files were found` rather than
 zero findings.)
+## `SK5040`–`SK5042` — the resolver, the salt and the permission bit, and two proposals refuted
+
+Five `rule-proposal` issues were assessed in this batch — #313, #139, #145 for security and #224, #235
+for maintainability. **Three ship and two are refuted, and neither refutation consumed an id.** The
+security three are all `error`, `Semantic`, and all three carry `hasFix: false` for the reason the rest
+of this range does: the edit is a migration or a deployment decision rather than a change of text.
+
+| Id | Concept | Fixtures (+/−) | Corpus (vuln.) | `corpus/real` (380 files) |
+|---|---|---:|---:|---:|
+| `SK5040` an XML resolver put back where the platform's default is none | #313 | 5 / 10 | 4 | 0 — *shape absent* |
+| `SK5041` the key-derivation salt is fixed at compile time | #139 | 8 / 12 | 6 | 0 — *shape absent* |
+| `SK5042` a file or directory created writable by every local user | #145 | 5 / 11 | 5 | 0 — *shape absent* |
+
+⚠ **Every corpus zero in that table is *shape absent* and is reported as such.** Not one of the 4 459
+files under `Testing/corpus` mentions `System.Security.Cryptography`, and neither reference tree
+configures an `XmlResolver` or a `UnixFileMode` anywhere. So the reference trees carry **no
+false-positive information at all** about these three, and the evidence that decides them is the
+fixtures plus `Rules/Rikarin.Skala.Rules.Tests/corpus/` plus the sabotage pass — not a clean sweep.
+
+### The hosting probe, and the control that makes its zeros mean something
+
+One `net10.0` class library outside this repository, empty `Directory.Build.props`/`.targets` above
+it, a `root = true` `.editorconfig`, built twice: once plain, and once under `AnalysisMode=All` with
+every `CA3xxx` and `CA5xxx` raised to `warning`. ⚠ **A `DataSet.ReadXml` was planted in the same file
+and fired `CA2351` and `CA5366`**, so each zero below is *shape present and declined* rather than a
+build where the analyzers never loaded.
+
+Two things the **plain** build reported that no plan document had recorded:
+
+- ⚠ **`SYSLIB0060` is on by default on every `Rfc2898DeriveBytes` constructor** — "the constructors on
+  `Rfc2898DeriveBytes` are obsolete, use the static `Pbkdf2` method instead". So the constructor half
+  of `SK5041`'s population is legacy code by the compiler's own account, and the static `Pbkdf2`
+  overloads, which carry no obsoletion, are where a fixed salt gets written today. Both are covered.
+- ⚠ **`CA1416` is on by default at `warning` on all three Unix-mode APIs**, because every one of them
+  is `[UnsupportedOSPlatform("windows")]`.
+
+### ⚠ `SK5040` takes a new id because `SK5009`'s own entry said it must
+
+`SK5009` records the gap and the reason in the same sentence: `XmlDocument` "has an `XmlResolver` and
+no `DtdProcessing`, so the two-fact rule cannot see" it, and "closing that needs its own id rather than
+a widening of this one". That prior decision is honoured rather than revisited, and the concepts really
+are different. `SK5009` needs **two** facts because `XmlReaderSettings` defaults `DtdProcessing` to
+`Prohibit`, so a resolver alone on that receiver fetches nothing. `XmlDocument` has no `DtdProcessing`
+at all and `XmlTextReader` defaults it to `Parse`, so on those two the resolver alone decides — one
+fact, and `XmlResolver` has defaulted to `null` since 4.5.2, which makes an explicit `XmlUrlResolver` a
+deliberate re-enable rather than an omission.
+
+`CA3075` and `CA3077` are titled for exactly this and deliver none of it: the object-initialiser form,
+the post-construction assignment, `XmlTextReader.XmlResolver` and `XmlReaderSettings.XmlResolver` all
+produced **nothing**. ⚠ `CA3077` is `IsEnabledByDefault=True, DefaultSeverity=Hidden`, so it is running
+silently in consumer builds already and still finds none of it — which is why the descriptor was read
+rather than the error log, an error log being unable to tell `Hidden` from absent.
+
+⚠ **One thing issue #313 asked for is refused, in writing.** It listed "a resolver with credentials
+pointed at a trusted internal host" as a required negative. It ships as a **positive**. Credentials do
+not restrict *what* an `XmlUrlResolver` fetches — the document still names the target — they only
+decide what is sent along, which makes a credentialed resolver a request-forgery primitive with the
+process's authority attached. `XmlSecureResolver` is the type that restricts, and it is the exclusion.
+
+### ⚠ `SK5041` corrects a measurement this document published
+
+The #139 entry above says `CA5387`/`CA5388`, raised to `warning` under `AnalysisMode=All`, "produced
+**nothing** on a `Rfc2898DeriveBytes` with 100 iterations and a zero salt". **That is wrong, and the
+correction matters more than the error.** `CA5387` *does* fire on that call. It fires on the
+**iteration count** and on nothing else: it fired on a derivation whose salt was a perfectly good
+`byte[]` parameter, and it was **silent** on 100 000 iterations with a hard-coded eight-byte salt and
+on a 100 000-iteration `Pbkdf2` with an all-zero salt. `CA5379` looks only at the hash algorithm. So
+the conclusion #139 reached — the salt is unhosted — survives, and the evidence it was reached on did
+not.
+
+⚠ **The open question #139 left is answered by receiver rather than by judgement.** A fixed salt *is*
+legitimate in protocol-fixed key derivation, and the place that happens is **HKDF**: RFC 5869 says its
+salt is optional and may be fixed and public, because it extracts from high-entropy input keying
+material rather than from a password. So HKDF is not a receiver. PBKDF2 is the opposite case — it is
+*defined* for passwords, its own first parameter is named `password` by the BCL, and the rule keys on
+the API's `salt` parameter name rather than on any identifier in the code under analysis.
+
+⚠ **The test-method exemption here is load-bearing rather than a courtesy: RFC 6070's PBKDF2 test
+vectors specify the salt as the literal string `"salt"`.** Without it the rule would fail the build of
+every crypto library that checks itself against the standard's own vectors, at `error`.
+
+⚠ **The verifying side is silent by construction and that is the design.** Checking a password
+re-derives with the salt stored beside the hash — a variable, always — so the rule reports the code
+that *creates* a bad credential and never the code that reads one back.
+
+### ⚠ `SK5042` is one third of #145; the other two thirds are refuted by measurement
+
+Issue #145 bundled three SonarQube rules. Two do not survive contact with .NET:
+
+- ⚠ **`S5443`, temporary files in publicly writable directories, is not decidable from the source,
+  because the directory is not publicly writable on two of the three platforms.** Measured:
+  `Path.GetTempPath()` returns a **per-user** directory on macOS — `/var/folders/…/T/`, mode `0700` —
+  and `%LOCALAPPDATA%\Temp` on Windows. Only on Linux with `TMPDIR` unset is it `/tmp`. The same source
+  text is a vulnerability or not depending on the machine it runs on, which makes it a property of the
+  deployment rather than of the code.
+- ⚠ **`S5445`, insecure temporary file creation, is refuted on .NET.** Measured:
+  `Path.GetTempFileName()` creates the file at mode `0600` — .NET goes through `mkstemp`, so the file
+  exists, owned and private, before the name is returned, and the create-then-open race the rule is
+  written about does not arise. What is left is a name-exhaustion limit at 65 535 files on Windows,
+  which is a robustness bug and not a vulnerability.
+
+⚠ **World-*readable* is not a rule either, and the measurement is the reason.** Plain
+`File.WriteAllText` creates at `0644`, because that is what the process umask says — so every ordinary
+file .NET writes is already world-readable, and a rule reporting `OtherRead` would report every
+file-writing call in existence. `SK5042` is about `OtherWrite` alone: the bit that lets an unrelated
+local account **replace the contents** of a file this program will later read and trust.
+
+⚠ **`CA1416` is not this diagnostic and does not host it, and the residue was measured rather than
+assumed.** `CA1416` fires on the *platform*, not the permission, and says exactly the same thing about
+`UnixFileMode.UserRead`, which is safe. Scoping the call site with `[SupportedOSPlatform("linux")]` or
+an `OperatingSystem.IsLinux()` guard silences `CA1416` **completely** and leaves `OtherWrite` reported
+by nothing at all, even under `AnalysisMode=All`. That residue — platform-scoped Unix code, which is
+the code that legitimately uses these APIs — is the rule's whole population. `StickyBit` is the one
+escape: `OtherWrite` with it is mode `1777`, the deliberate drop box, and the rule declines it.
+
+⚠ **The receiver set was enumerated by reflection rather than recalled, and an earlier draft was
+wrong.** The BCL exposes `UnixFileMode` at exactly four entry points — `File.SetUnixFileMode(string,
+…)`, `File.SetUnixFileMode(SafeFileHandle, …)`, `Directory.CreateDirectory(string, UnixFileMode)` and
+the `FileStreamOptions.UnixCreateMode` property. `File.Open` and `File.OpenHandle` take no mode at all;
+the analyzer's remark said they did until the listing corrected it. None of the four is named in the
+rule, which matches on the argument's *type*, so a fifth arrives covered.
+
+### ⚠ #224 is refuted: the population is assembly versions and XML namespaces, and there is no residue
+
+The proposal is a hard-coded URI or IP address. Measured across the **380 unique** files of
+`Testing/corpus/real` — the tree holds 1 140 `.cs` files and three copies of each, so `*.expected.cs`
+and `*.arranged.expected.cs` are excluded:
+
+- **53 IPv4-shaped string literals**, and **all 53 are the same literal `"4.0.0.0"` in the same
+  attribute**: `[GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]`. ⚠
+  **That is an assembly version, not an address.** A dotted quad is indistinguishable from a four-part
+  version, and four-part versions are far commoner in C# source than literal IP addresses.
+- **8 URI-shaped string literals.** One is `any1.Namespace = "http://www.w3.org/2001/XMLSchema"` — ⚠ an
+  **XML namespace**, which is exactly the population that refuted #149 in the batch above, arriving
+  again unprompted. Four are JSON test data and documentation samples (`http://james.newtonking.com`,
+  `http://www.starwars.com`) — values *inside* a serialised document rather than endpoints. Three are
+  test fixtures at `ws://127.0.0.1:0/`, `https://vixen.invalid/…` and `https://content.example`, where
+  `.invalid` and `.example` are RFC 2606 reserved names that exist so that tests may hard-code them.
+
+**Nought of 61 is the defect the proposal describes.** And the residue after those exclusions is not
+merely small, it is empty in principle: whether an address *should* come from configuration is a
+question about how the program is deployed, and nothing in the source answers it. No id is spent.
+
+### ⚠ #235 is refuted: the missing `else` is the intent, twelve times out of twelve
+
+The proposal is an `if`/`else if` chain with no final `else`, and its stated argument is "the same
+argument the enum-`switch` rules make". ⚠ **That analogy is the refutation.** An enum has a decidable,
+finite domain, so "you did not handle `Blue`" is a fact the compiler can check. A chain of arbitrary
+boolean predicates has no domain an analyzer can enumerate, so "an input matching none of the branches"
+is not a set the rule can name.
+
+Measured on the same 380 files: **1 307** plain single `if` statements with no `else`, **17**
+`if`/`else if` chains, of which **12 have no final `else`**. All twelve were read. **All twelve are
+correct code in which doing nothing is the intent**, and they come from three unrelated codebases:
+
+- `MessageTemplateRenderer.cs:30` — `if (format[i] == 'l') isLiteral = true; else if (format[i] == 'j')
+  isJson = true;`, scanning a format string for two flags. Every other character is ignored on purpose.
+- `SystemGraph.cs:253` and `:261` — `if (index.TryGetValue(…)) Link(…); else if (unsatisfied is not
+  null) unsatisfied.Add(…)`. The absent branch is "not found, and nobody asked for an explanation".
+- `FieldFilter.cs:26` — `if (v != null) yield return v; else if (settings?.ErrorWhenNoMatch ?? false)
+  throw …`. The absent branch is the documented behaviour of that option.
+- `JObject.cs:192`, `PhysicsScene.cs:393`, `LoggerSinkConfiguration.cs:72`, `DateTimeUtils.cs:349` and
+  `:384`, `CurveEditor.cs:665`, `GrassRenderer.cs:204`, `AccelerationStructureDeviceTests.cs:215` — the
+  same shape each time.
+
+⚠ **This is not calibration to Vixen.** Two of the three trees are vendored third-party libraries, and
+the finding is not "these codebases disagree with the rule" but that **the shape carries no information
+about whether the fall-through was intended**, and no further fact is available to decide it. The only
+edit a fix could make is `else { }` or `else { /* nothing to do */ }` — a documentation act, not a
+removal of a defect. A rule that is wrong on 12 of the 12 instances it can find is the
+hundred-rules-that-are-usually-right failure mode, and no id is spent.
+
+### Sabotage
+
+Twelve sabotages, one guard each. ⚠ **Every one turned a named fixture red; none turned nothing red.**
+
+| Sabotage | Fixtures that go red |
+|---|---|
+| `SK5040` drop the `XmlSecureResolver` exclusion | `−/secure-resolver` |
+| `SK5040` drop the receiver test | `−/reader-settings-alone`, `−/reader-settings-pair`, `−/another-types-resolver` |
+| `SK5040` accept any value, not only a `new` | `−/resolver-from-a-variable` |
+| `SK5040` stop unwrapping the implicit conversion | all five positives |
+| `SK5041` stop keying on the API's `salt` parameter | all eight positives |
+| `SK5041` drop the test-method exemption | `−/known-answer-test` |
+| `SK5041` drop the receiver test on `Pbkdf2` | `−/hkdf-with-a-protocol-salt`, `−/another-types-pbkdf2` |
+| `SK5041` accept any field initialiser as constant | `−/salt-field-drawn-at-startup` |
+| `SK5042` drop the sticky-bit escape | `−/sticky-drop-box` |
+| `SK5042` drop the `OtherWrite` bit test | `−/owner-only`, `−/group-shared`, `−/world-readable` |
+| `SK5042` drop the test-method exemption | `−/permissions-test` |
+| `SK5042` stop unwrapping `UnixFileMode?` | `+/file-stream-options` |
+
+⚠ **The last row was a real defect before it was a sabotage.** `FileStreamOptions.UnixCreateMode` is a
+`UnixFileMode?`, so a folded flag combination assigned to it is wrapped in an `IConversionOperation`
+whose own `ConstantValue` is absent — and `SK5042` was silent on its own positive fixture until the
+read unwrapped conversions. That is the same defect `SK5009` once had, found the same way, and it is
+the argument for writing the positive fixture before believing the rule works.
+
+⚠ **One sabotage had to be written twice, and the first attempt measured nothing.** Guarding
+`SK5040`'s conversion case with `when false` made the following line unreachable, so the project failed
+to compile with `CS0162` and the run reported a build failure rather than a fixture result — a
+sabotage that tests nothing looks exactly like a sabotage that passes if the output is not read.
+
+### The constant-bytes test is shared, and `SK5020`'s fixtures are what proved the extraction safe
+
+`SK5041` asks the same question of a key-derivation salt that `SK5020` asks of a cipher's
+initialisation vector: is this expression fixed at compile time, and how was it written. The test was
+extracted to `ConstantBytes` and both rules now call it, so an expression that is a constant IV is a
+constant salt and the two cannot drift apart. ⚠ The extraction changed a shipped `error`-severity rule,
+and the thing that made that acceptable is that `SK5020` carries 9 positive and 23 negative fixtures:
+they all stayed green, which is what a fixture set that large is for.
+
+### What is owed
+
+⚠ **`Distribution/Rikarin.Skala.Sdk/build/Rikarin.Skala.Sdk.targets` still lists 245 ids and does not
+carry `SK5040`–`SK5042`.** Nothing in the Rules test project asserts that list, so it is a silent gap
+rather than a red gate; it is regenerated with the rest of the generated surface after the last merge
+of this batch, along with `docs/site/` and `Testing/parity-analysis/ledger-sonar.json`.

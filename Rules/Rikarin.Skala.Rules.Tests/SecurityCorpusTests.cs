@@ -47,7 +47,8 @@ public sealed class SecurityCorpusTests {
         new SqlInjectionAnalyzer(), new ProcessArgumentInjectionAnalyzer(), new WeakCipherAnalyzer(),
         new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(), new RegexTimeoutAnalyzer(),
         new XmlSignatureAnalyzer(), new PredictableInitializationVectorAnalyzer(),
-        new AsymmetricKeySizeAnalyzer()
+        new AsymmetricKeySizeAnalyzer(), new XmlResolverReenabledAnalyzer(),
+        new FixedKeyDerivationSaltAnalyzer(), new WorldWritableFileModeAnalyzer()
     ];
 
     static string Root { get; } = Path.Combine(
@@ -111,6 +112,9 @@ public sealed class SecurityCorpusTests {
     [InlineData(RuleIds.XmlSignatureUnverifiedKey, 2)]
     [InlineData(RuleIds.PredictableCipherInitializationVector, 6)]
     [InlineData(RuleIds.UndersizedAsymmetricKey, 4)]
+    [InlineData(RuleIds.XmlResolverReenabled, 4)]
+    [InlineData(RuleIds.FixedKeyDerivationSalt, 6)]
+    [InlineData(RuleIds.WorldWritableFileMode, 5)]
     public void TheVulnerableHalf_ProducesExactlyTheKnownCount(string ruleId, int expected) {
         var findings = Analyze("vulnerable").Where(finding => finding.Id == ruleId).ToArray();
 
