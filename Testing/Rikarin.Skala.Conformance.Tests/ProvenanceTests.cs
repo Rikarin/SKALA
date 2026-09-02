@@ -39,6 +39,18 @@ public sealed class ProvenanceTests {
     const int Examples = 5;
 
     /// <summary>
+    ///     The number of <c>corpus/real</c> sources every published sweep in docs/plan/08 was measured
+    ///     over — the originals, with the two oracle twins of each left behind.
+    /// </summary>
+    const int SweptSources = 380;
+
+    /// <summary>
+    ///     The per-vendored-tree split of <see cref="SweptSources" />, as docs/plan/08 attributes its
+    ///     findings.
+    /// </summary>
+    static readonly (string Tree, int Sources)[] Trees = [("newtonsoft", 110), ("serilog", 70), ("vixen", 200)];
+
+    /// <summary>
     ///     Every fixture records the digest of the base configuration as it stands on disk.
     /// </summary>
     /// <remarks>
@@ -365,6 +377,71 @@ public sealed class ProvenanceTests {
             + "formatter that no longer exists. Re-run `./build.sh Sweep` in a commit of its own so the "
             + "table moves where it is reviewed."
         );
+    }
+
+    /// <summary>
+    ///     ⚠ The corpus is the denominator of every sweep number in docs/plan/08, and until this test
+    ///     existed nothing asserted how big it is.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>What went wrong, and what did not.</b> Three table headers in
+    ///     <c>docs/plan/08-rule-catalogue.md</c> label the swept tree <c>corpus/real (380 files)</c> while
+    ///     <c>Testing/corpus/real</c> holds <b>1 140</b> <c>.cs</c> files, which read as a stale count
+    ///     (<see href="https://github.com/Rikarin/SKALA/issues/312" />). It is not one. The corpus keeps
+    ///     three copies of every source — <c>X.cs</c>, <c>X.expected.cs</c> and
+    ///     <c>X.arranged.expected.cs</c> — so 1 140 = 380 × 3 exactly, and every sweep deliberately staged
+    ///     the 380 originals because compiling the twins produces thousands of spurious
+    ///     <c>CS0101</c>/<c>CS0111</c>. The headers were under-specified, not wrong. What has no
+    ///     instrument either way is the arithmetic itself: a file added to one tree and not to the other
+    ///     two moves 380 and 1 140 apart silently, and every table header in the document keeps saying
+    ///     380.
+    ///     <para>
+    ///         So this asserts the shape rather than restating the number in a second place: the swept
+    ///         count, the on-disk count, that the second is exactly three times the first, and the
+    ///         per-tree split the document names. ⚠ It deliberately does <b>not</b> parse the document's
+    ///         headers. A test that rewrote the prose when the corpus moved would let the corpus move
+    ///         unreviewed, which is the failure this file exists to reject — the same argument
+    ///         <see cref="EveryFixture_RecordsTheConfigurationInForce" /> makes for oracle headers.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void TheCorpus_IsTheSizeEveryPublishedSweepMeasured() {
+        // The set every sweep stages: `Corpus.Files` already drops the `.expected.cs` twins.
+        var swept = Corpus.Files(Corpus.Real);
+
+        // ⚠ Anti-vacuity, in KeyFlipSweep.IsBrokenMeasurement's shape. A missing or renamed directory
+        // returns empty from `Corpus.Files`, and every equality below would then be comparing zeros.
+        Assert.True(swept.Count > 0, $"{Corpus.SetRoot(Corpus.Real)} enumerated no files; that is not the corpus.");
+
+        var onDisk = Directory
+            .EnumerateFiles(Corpus.SetRoot(Corpus.Real), "*.cs", SearchOption.AllDirectories)
+            .ToArray();
+
+        Assert.True(
+            swept.Count == SweptSources,
+            $"docs/plan/08 reports every `corpus/real` sweep over {Count(SweptSources)} staged sources; "
+            + $"the tree now stages {Count(swept.Count)}. Every published corpus count in that document "
+            + "is a measurement of a tree that no longer exists. Re-derive them or mark the rows, and "
+            + "move this constant in the same commit."
+        );
+
+        Assert.True(
+            onDisk.Length == SweptSources * 3,
+            $"`corpus/real` holds {Count(onDisk.Length)} .cs files against {Count(swept.Count)} staged "
+            + $"sources, and the corpus keeps exactly three copies of each — expected "
+            + $"{Count(swept.Count * 3)}. A source is missing one of its `.expected.cs` or "
+            + "`.arranged.expected.cs` twins, or a twin has outlived its source. Run `./build.sh Oracle`."
+        );
+
+        foreach (var (tree, expected) in Trees) {
+            var staged = swept.Count(file => file.RelativePath.StartsWith(tree + "/", StringComparison.Ordinal));
+            Assert.True(
+                staged == expected,
+                $"`corpus/real/{tree}` stages {Count(staged)} sources; docs/plan/08 and issue #312 both "
+                + $"record {Count(expected)}. The per-tree split is what says which vendored library a "
+                + "sweep's finding came from, so a moved boundary re-scopes every number attributed to it."
+            );
+        }
     }
 
     static OracleHeader? HeaderOf(string path) {

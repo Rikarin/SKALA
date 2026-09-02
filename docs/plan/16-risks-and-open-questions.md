@@ -337,8 +337,8 @@ not containing the shape. The measurements:
 | | |
 |---|---|
 | Fixtures | 10 positive, **27 negative** for the three rules |
-| `corpus/real` (380 files) | **1** finding, `SK6003`, read and correct |
-| Vixen (4 681 files, loose + semantic) | **25** findings, all `SK8005`, every one read, **zero false positives** |
+| `corpus/real` sources (380 of 1 140) | **1** finding, `SK6003`, read and correct |
+| Vixen checkout (4 681, loose + semantic) — ⚠ the full external tree, not `corpus/real/vixen`'s 200 | **25** findings, all `SK8005`, every one read, **zero false positives** |
 | Fix verification | the ten positive fixtures compiled as one tree: **0 compiler errors before applying every fix, 0 after** |
 
 ⚠ **`SK8005`'s twenty-five findings are M6's `SK3002` case again, at four times the scale.** All

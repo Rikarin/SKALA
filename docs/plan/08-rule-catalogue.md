@@ -2717,7 +2717,7 @@ so **none of them costs the incremental cache anything** — the warm path is av
 that does not enable a compilation-scoped rule, and after M9 that is still only `SK3001` and
 `SK7020`.
 
-| Id | Scope | Fix | Fixtures (+/−) | `corpus/real` (380) | Vixen (4 680) | Cost |
+| Id | Scope | Fix | Fixtures (+/−) | `corpus/real` sources (380 of 1 140) | Vixen checkout (4 680) | Cost |
 |---|---|---|---:|---:|---:|---:|
 | `SK2007` collection modified during enumeration | Semantic | `.ToList()` | 3 / 8 | 0 | **0** | 54.5 ms |
 | `SK3004` `CancellationToken` accepted, not passed on | Semantic | a named or appended argument | 3 / 9 | 0 | **0** | 68.2 ms |
@@ -2796,7 +2796,7 @@ M8 is the `SK5xxx` milestone and the last one, because a wrong security rule is 
 one. Nine ids, **five** ship, all at `error` — the range's default, unchanged, because a security
 rule's severity comes from what it means rather than from how much it fires.
 
-| Id | Scope | Fix | Fixtures (+/−) | corpus/vulnerable | corpus/safe | `corpus/real` (380) | Vixen (4 717) |
+| Id | Scope | Fix | Fixtures (+/−) | corpus/vulnerable | corpus/safe | `corpus/real` sources (380 of 1 140) | Vixen checkout (4 717) |
 |---|---|---|---:|---:|---:|---:|---:|
 | `SK5001` request data concatenated into SQL | Semantic | ⚠ none | 4 / 10 | 6 | **0** | 0 | 0 |
 | `SK5002` request data reaches a process start | Semantic | ⚠ none | 3 / 7 | 4 | **0** | 0 | 0 |
@@ -2960,7 +2960,7 @@ is decidable at the call site with no taint and no inter-procedural step, becaus
 argument at the construction or at the static call, and both spellings of "I thought about this" —
 a `TimeSpan` and `RegexOptions.NonBacktracking` — are visible in the same expression.
 
-| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` (380 files) | `corpus/vulnerable` |
+| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` sources (380 of 1 140) | `corpus/vulnerable` |
 |---|---|---|---|---:|---:|---:|
 | `SK5010` a pattern that can backtrack, unbounded | Semantic | **warning** | ⚠ none | 8 / 22 | **0** | 2 |
 
@@ -3193,11 +3193,43 @@ returns at `CompilationStart` without registering anything. That is the correct 
 also why the trees cannot be the measurement here — `corpus/vulnerable` and `corpus/safe` are, and
 the test project needed the package added before its own fixtures would compile at all.
 
-⚠ **Two file counts in this document are stale, noticed while taking that reading and not
-reconciled here.** The tables above label `corpus/real` as "380 files" and Vixen separately as
-"4 681 files". On disk today `Testing/corpus/real` holds 1 140 `.cs` files *including* Vixen's 600.
-Whatever those figures counted, they do not count what a `find -name '*.cs'` counts now, and every
-row quoting them is quoting a number nobody has re-derived.
+#### ⚠ What the two corpus columns are measured over — and the reading that was wrong
+
+This block used to say that two file counts in this document were stale and that "every row quoting
+them is quoting a number nobody has re-derived" ([#312](https://github.com/Rikarin/SKALA/issues/312)).
+⚠ **Both counts have now been re-derived and the staleness reading is refuted.** They are two
+different trees, and the headers were under-specified rather than wrong.
+
+**`corpus/real` — 380 sources, not 1 140 files, and the difference is deliberate.** The corpus keeps
+three copies of every source, `X.cs` beside `X.expected.cs` and `X.arranged.expected.cs`, so
+`Testing/corpus/real` holds 1 140 `.cs` files and **1 140 = 380 × 3 exactly** — 110 Newtonsoft, 70
+Serilog and 200 Vixen sources. Every sweep in this document staged the 380 originals and left the
+oracle twins behind, because compiling all three copies produces about eleven thousand spurious
+`CS0111`/`CS0101` that say nothing about any rule; § "The sweep, and what its zero is a zero of"
+records that decision at the point it was taken, and the figure recurs as "380 sources in 1 140
+files" in three other places here. So **the scope of every `corpus/real` zero in these tables is the
+380 sources**, which is the scope the sweeps intended and the narrower of the two readings the old
+header allowed. The headers now say `corpus/real` sources (380 of 1 140).
+
+**The Vixen column is a different tree, and it is not the corpus copy.** `corpus/real/vixen` holds
+200 of the 380 staged sources; the Vixen column is the **full working checkout**, outside this
+repository, and the three adjacent tables quote **4 680**, **4 681** and **4 717** because they
+measured it on different days rather than because one of them is wrong. ⚠ **4 717 is reproducible**:
+`git ls-tree -r --name-only 44b88648 | grep -c '\.cs$'` over that checkout — the commit at the head
+of the day `dff9c86` recorded the M7 sweep — is exactly 4 717, and the working tree today, less
+`obj`, `bin` and the agent worktrees under `.claude`, is 4 726. ⚠ **4 680 and 4 681 are not
+reproducible and are marked rather than restated**: they are 36 and 37 short of the tracked count on
+their own day, so the exclusion policy those two runs used is not recoverable from what was written
+down. The tree they name is certain; the last two digits are not, and no conclusion in either table
+turns on them — `SK8005`'s 25 findings were each read individually.
+
+⚠ **What had no instrument either way was the arithmetic**, which is the part worth fixing rather
+than re-deriving. A source added to one vendored tree and not given its two twins moves 380 and 1 140
+apart silently while every header here keeps saying 380.
+`ProvenanceTests.TheCorpus_IsTheSizeEveryPublishedSweepMeasured` now asserts the staged count, the
+on-disk count, that the second is exactly three times the first, and the per-tree split. It
+deliberately does not parse these headers: a test that rewrote the prose when the corpus moved would
+let the corpus move unreviewed.
 
 ⚠ **#150 — deserialization accepts any type the payload names — is refuted as hosted, and the
 hosting is better than what Skala could write.** `CA2326` and `CA2327` between them caught seven of
@@ -3316,7 +3348,7 @@ emitted seventeen distinct `CA` ids, twelve of them in the security family — s
 
 **`SK5020` and `SK5021` ship. The other three do not, and half of #143 does not.**
 
-| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` (380 files) | `corpus/vulnerable` |
+| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` sources (380 of 1 140) | `corpus/vulnerable` |
 |---|---|---|---|---:|---:|---:|
 | `SK5020` a cipher initialisation vector fixed at compile time | Semantic | **error** | ⚠ none | 9 / 23 | **0**, shape absent | 6 |
 | `SK5021` an RSA or DSA key generated below 2048 bits | Semantic | **error** | yes, `fixIsSafe: false` | 7 / 17 | **0**, shape absent | 3 |
@@ -3540,7 +3572,7 @@ M7 is the `SK4xxx`/`SK6xxx`/`SK8xxx` milestone. Those three ranges list twenty-t
 ship. The bar did the same job it did in M5 and M6, and this time it was not the false-positive
 clause that bit — it was the reference trees having almost nothing of the shape.
 
-| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` (380 files) | Vixen (4 681 files) |
+| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` sources (380 of 1 140) | Vixen checkout (4 681) |
 |---|---|---|---|---:|---:|---:|
 | `SK4010` a `Where` the next operator could have taken | Semantic | suggestion | safe | 4 / 10 | 0 | 0 |
 | `SK6003` abstract type with a public constructor | Syntax | suggestion | safe | 3 / 9 | **1** | 0 |
