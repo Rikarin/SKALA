@@ -102,8 +102,10 @@ public static class SarifReader {
     /// <remarks>
     ///     <para>
     ///         ⚠ <b>A baseline suppression is not one of these, and reading it as one loses the run.</b>
-    ///         Since M9 the writer puts a <c>suppressions</c> entry on every finding the baseline accepts,
-    ///         so that code scanning shows it dismissed rather than open. This method used to answer
+    ///         Since M9 the writer puts a <c>suppressions</c> entry on every finding the baseline accepts.
+    ///         (⚠ Not so that code scanning dismisses it — that claim was false and the upload now takes a
+    ///         narrowed log instead, #332 — but so that this file states what the gate read.) This method
+    ///         used to answer
     ///         "there is at least one suppression" with <see cref="SuppressionKind.Pragma" />, which after
     ///         that change turned every accepted finding into a pragma on the way back — and
     ///         <see cref="RunReport.Reportable" /> drops suppressed findings, so <c>skala report</c> over a

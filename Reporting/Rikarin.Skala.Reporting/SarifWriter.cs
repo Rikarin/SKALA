@@ -337,12 +337,19 @@ public static class SarifWriter {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>This is what makes the uploaded report say what the gate decided.</b> Until M9 the
+    ///         ⚠ <b>This is what makes the stored report say what the gate decided.</b> Until M9 the
     ///         baseline governed the verdict and was invisible in the SARIF: every accepted finding went
     ///         up to code scanning with no suppression on it, so a page that is supposed to answer "what
     ///         is wrong with master" listed 428 long-accepted findings as open alerts. SARIF § 3.35 has
-    ///         the vocabulary for exactly this, and code scanning honours it by showing a suppressed
-    ///         result as dismissed rather than open.
+    ///         the vocabulary for exactly this.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>What used to end that paragraph — "and code scanning honours it by showing a
+    ///         suppressed result as dismissed rather than open" — is false.</b> GitHub's SARIF support
+    ///         documentation does not mention <c>suppressions</c> anywhere; the property is not consumed,
+    ///         and every accepted finding was still raised as an open alert. Writing the suppression was
+    ///         necessary and not sufficient, and the upload takes
+    ///         <see cref="BuildWithoutSuppressed" />'s narrower log instead (#332).
     ///     </para>
     ///     <para>
     ///         ⚠ <b>Suppressed, never dropped.</b> Filtering the accepted findings out of the file is a
