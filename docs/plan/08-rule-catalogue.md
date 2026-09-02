@@ -1519,8 +1519,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **256** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **221** | **86.7 %** |
+| Rules this document names | **258** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **223** | **86.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -2562,3 +2562,105 @@ is off under `AnalysisMode=Default`, and ADR-008's answer to that is to enable i
 The one gap found is that `CA2201` matches the exact type, so a `Win32Exception` — which derives from
 the `ExternalException` it does report — passes; that is not what the issue is about and does not
 justify an id.
+
+## `SK2120`–`SK2121` — switches, enums and conditions the compiler already decided
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
+Correctness" only to keep it out of a section nine concurrent branches were editing.** What follows
+is the register doing the one job ADR-012 needs it to do — the numbers are taken and written down
+where the next milestone will read them. It belongs beside `SK2001` and `SK2009`.
+
+Two rules shipped out of five issues, and ⚠ **the three that did not ship are the more useful half of
+the result.** The batch was opened on issues #16, #28, #29, #1 and #169; three of them turned out to
+describe something the compiler or the SDK already reports, and each refutation is a test in
+`EnumAndTypeCheckBatchTests` rather than a sentence here, so the day a claim stops being true the
+file goes red.
+
+- `SK2120` a `|`, `&`, `^` or `~` applied to an enum **whose members carry no explicit values**.
+  `enum Color { Red, Green, Blue }` numbers them `0, 1, 2`, so `Green | Blue` is `3` and no declared
+  member at all; the value then matches no `case`, equals no member and prints as a number, and
+  nothing in the toolchain says a word because the operation is legal C#. ⚠ **The trigger is implicit
+  numbering, not the missing `[Flags]`,** and that is what keeps the rule honest: an enum whose author
+  wrote `Read = 1, Write = 2` may be a bit set missing its attribute, and one explicit value anywhere
+  declines the whole declaration. ⚠ **The rule is disjoint from `CA1027` by arithmetic rather than by
+  a filter.** `CA1027` was probed against the SDK at `AnalysisMode=All`, not assumed: it needs at
+  least three distinct non-zero values that are all powers of two, and it is silent on `{ A, B, C }`
+  and on `{ A, B, C, D }`. A consecutively numbered enum reaches a third non-zero value only once it
+  contains `3`, which is not a power of two — so no declaration this rule accepts can satisfy
+  `CA1027`, and the two can never report one mistake twice. ⚠ **An enum from a referenced assembly is
+  never reported**, because the evidence is the declaration's syntax and metadata has none; that is a
+  stated hole with a fixture, not an oversight. Report-only: adding `[Flags]` is a public API change
+  and is usually the wrong answer, because the defect is normally the combination.
+- `SK2121` an `as` whose conversion always succeeds — the operand already converts to the tested
+  type implicitly, so the operator returns the operand and the `null` it appears to guard against is
+  the operand's own. ⚠ **This is the only part of issue #1 the compiler does not already own, and
+  probing settled that rather than argument.** `d is Unrelated` and `s is int` are `CS0184`, `v is
+  int` on an `int` is `CS0183`, `d as Unrelated` is **`CS0039`** and an unreachable type pattern in a
+  `switch` is **`CS8121`** — the last two errors, so that code never reaches a linter at all. ⚠ **The
+  always-*true* `is` check is still nobody's, and deliberately not this rule's**: `d is D` is `false`
+  when `d` is null, so calling it redundant means treating a nullable annotation as a runtime
+  guarantee, which `SK2001`'s rationale already refuses to do. `as` needs no such assumption. The one
+  rule of the two with a fix, and `fixIsSafe: true` — but ⚠ **the fix is the matching cast, not the
+  bare operand**: `var b = d as Base;` declares a `Base`, and rewriting it to `d` would declare a
+  `Derived` and change what every member access below it resolves to. Only an identity conversion,
+  where the type does not move, is replaced by the operand itself.
+
+⚠ **Three concepts were measured and closed against existing diagnostics, and no id was allocated for
+any of them.**
+
+- **Issue #29** — "the switch arm is unreachable given the value's range" — is already a compiler
+  **error**: `CS8510` for an arm, `CS8120` for a case, with `CS0031` where the constant does not even
+  fit the operand type. Code that would reach such a rule does not build. What the compiler does not
+  do is reason from a range the *flow* proved rather than the type — `if (x is >= 0 and <= 10)` and
+  then `case 20:` draws nothing — and that residue needs the value lattice issue #169 asks for.
+- **Issue #28** — "the enum `switch` has no default section" — is **`CS8524`** in its switch-expression
+  form, and `CS8524` names exactly the concern the issue raises: a value of the input type that no
+  arm handles and no member declares. ⚠ **The switch-*statement* form is what remains, and it is
+  precisely the shape that gave `SK2009` its six false positives on Skala's own source (#280)** — a
+  `switch` used as a non-exhaustive filter, where falling through means "do nothing" and is correct.
+  Shipping it would have reproduced that defect with a second id.
+- **Issue #169** — "the condition's value is already determined" — has its null half hosted by
+  **`CA1508`**, verified on a probe that reports `'s is null' is always 'false'` and `'s != null' is
+  always 'true'` after a preceding guard. `CA1508` is off under `AnalysisMode=Default`, and ADR-008's
+  answer to that is to enable it. The measured residue is real but is not a rule: `if (flag) { if
+  (flag) … }`, a constant local re-tested, and a collection reassigned before its count is compared
+  all pass `CA1508`. Each needs a value lattice over flow, which is one build shared with the
+  nullability rule rather than a rule per shape, and `SK2062` already covers the `else if` case.
+
+⚠ **`SK2009` (#280) should adopt `SK2120`'s discriminator rather than a member-count threshold.** Of
+the three boundaries #280 proposes, the measurement here argues against two. A member count is a
+magic number that will be wrong for the enum just under it. "Declared in this compilation" does not
+separate the six false positives from the three genuine findings, because `OptionValueKind` and
+`SyntaxKind` are on the same side of it for a consumer of Roslyn. What does separate them is the
+third: `JsonValueKind` is switched *as a value*, and `SyntaxKind` is switched *as a filter* — a
+`switch` **statement** with no `default`, every arm returning the same value, and no `return` after
+it that depends on the arm. ⚠ **And the compiler is already the boundary for half of it**: `CS8524`
+and `CS8509` cover every switch **expression**, so `SK2009` could stand down on expressions entirely
+and lose nothing — which alone removes the shape from a third of the false-positive sites and is the
+same "stand down where another diagnostic has the answer" mechanism `SK2053` uses against `SK2001`.
+Whichever is chosen, #280 is right that it needs a negative fixture built from a real `SyntaxKind`
+filter.
+
+**The measurement.** Both rules were swept over Skala's own source through a fresh Release binlog
+(`--load=binlog`, **10 CS diagnostics in the load**, 1 286 results in total). Both report **zero**,
+and ⚠ **neither zero is the absence of the shape and neither is the analysis failing to run.**
+
+- The instrument was verified before the zero was believed. A probe file planting one `ProbeColor
+  left | right` and one `derived as ProbeBase` into `Rikarin.Skala.Core` made both rules fire through
+  the same binlog pipeline, at the right lines, with the right messages — which is the only check
+  that sees a real reference set rather than the fixture harness's (#297). The probe was then deleted
+  and the binlog rebuilt.
+- `SK2120`'s shape is **present 37 times and declined 37 times**. Relaxing both guards and re-sweeping
+  found 37 bitwise-operations-on-an-enum in Skala's source; the shipped rule reports none of them.
+  Spot-checked rather than assumed: `RegexOptions` and `StringSplitOptions` are `[Flags]` enums from
+  metadata, and `BraceOwners` is a `[Flags]` enum with explicit values whose flagged site is its own
+  `All = Types | Methods | …` composite — declined by both guards independently.
+- `SK2121`'s shape is **present 199 times and declined 199 times**. Every `as` in Skala's source is a
+  narrowing — `ISymbol` to `IFieldSymbol`, `SyntaxNode` to a specific node type — which is what the
+  operator is for.
+
+⚠ **There is no corpus evidence for either rule, and that is a property of the rules rather than an
+omission.** Both declare `requiresSemantics: true`, so `AnalyzerHost.SkippedFor` drops them under
+`--load=loose` (#277), and `Testing/corpus` neither compiles nor is reachable through `skala check`
+(`SK9023`). The self-sweep is the measurement, and #280 argues it is the stronger one anyway, because
+Skala's tree actually compiles.

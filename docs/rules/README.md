@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 229 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 231 ids are allocated.
 
 ## Async
 
@@ -96,6 +96,8 @@
 | [SK2101](SK2101.md) | `[Pure]` is applied to a method that returns nothing | warning | safe | no |
 | [SK2102](SK2102.md) | The `[DebuggerDisplay]` string names a member that does not exist | warning | — | no |
 | [SK2103](SK2103.md) | The attribute is applied twice with the same arguments | warning | review | no |
+| [SK2120](SK2120.md) | A bitwise operator combines members of a consecutively numbered enum | warning | — | no |
+| [SK2121](SK2121.md) | The `as` operator tests a conversion that always succeeds | suggestion | safe | no |
 
 ## Design
 
