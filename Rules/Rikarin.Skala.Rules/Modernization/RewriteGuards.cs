@@ -66,6 +66,28 @@ internal static class RewriteGuards {
     ///     A comment inside the text a rewrite removes is content, and a fix that silently deletes it
     ///     is a fix nobody can review. A preprocessor directive is worse: removing one half of an
     ///     <c>#if</c> does not merely lose text, it stops the file parsing under the other symbol set.
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             This overload asks over <c>FullSpan</c>, so it sees the comment written ABOVE the
+    ///             node, and that is deliberate rather than the defect #302 describes.
+    ///         </b> A fix that
+    ///         deletes a whole <em>line</em> — anything reaching for <see cref="LineSpanOf" /> — really
+    ///         does carry the leading comment away with it, and for those callers <c>FullSpan</c> is
+    ///         the only correct question. A fix that rewrites a <em>span inside</em> the node does not,
+    ///         and for those callers this overload over-declines exactly the way
+    ///         <c>SpanContainsComment</c> did: silently, on documented code, with every negative still
+    ///         passing.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>So the two overloads are not a correct one and a broken one</b>, which is how #302
+    ///         reads them — they are two different questions, and which one a call site needs is
+    ///         decided by what its fix rewrites. Pass the node when the edit takes the line; pass
+    ///         <c>(tree, node.Span)</c> when it takes less. There are 56 node-overload call sites and
+    ///         nothing classifies them, so the audit is real work and is not this method's to do: a
+    ///         blanket switch to <c>Span</c> would make the line-deleting rules eat comments, which is
+    ///         a great deal worse than a missed finding.
+    ///     </para>
     /// </remarks>
     public static bool ContainsCommentOrDirective(SyntaxNode node) {
         foreach (var trivia in node.DescendantTrivia(descendIntoTrivia: true)) {

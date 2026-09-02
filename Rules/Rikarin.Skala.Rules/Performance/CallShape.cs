@@ -44,18 +44,22 @@ internal static class CallShape {
     }
 
     /// <summary>A comment inside a span a fix replaces is content the fix would delete.</summary>
-    internal static bool ContainsComment(SyntaxNode node) {
-        foreach (var trivia in node.DescendantTrivia()) {
-            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    /// <remarks>
+    ///     ⚠ <b>Over <c>node.Span</c>, and the distinction is the whole defect this once had.</b> The
+    ///     first version walked <c>node.DescendantTrivia()</c>, which covers <c>FullSpan</c> and
+    ///     therefore the node's <em>leading</em> trivia — so a comment written <em>above</em> the code,
+    ///     which no fix here deletes, declined the finding anyway. In a documented codebase that is
+    ///     nearly every member, which makes a rule dead exactly where a linter is most wanted (#302).
+    ///     <para>
+    ///         ⚠ Every caller rewrites a sub-span of the node it passes — <c>SK4034</c> swaps two
+    ///         member-name-to-end spans, the rest replace an argument list or a call — so
+    ///         <c>node.Span</c> is the text at risk and <c>FullSpan</c> was never the question. A rule
+    ///         whose fix deletes a whole <em>line</em> has the opposite need and must keep asking over
+    ///         <c>FullSpan</c>, which is why this is not a change that can be made everywhere at once.
+    ///     </para>
+    /// </remarks>
+    internal static bool ContainsComment(SyntaxNode node) =>
+        Modernization.RewriteGuards.ContainsCommentOrDirective(node.SyntaxTree, node.Span);
 
     /// <summary>
     ///     Whether <paramref name="type" /> is the constructed form of the named generic type.
