@@ -686,7 +686,7 @@
       "configuration": [
         "dotnet_diagnostic.SK1020.severity"
       ],
-      "resharperNote": "⚠ The export sets `resharper_use_throw_if_null_method_highlighting = none`, so reading the key as authoritative would switch this rule off in the repository Skala was built for. That measurement is why --resharper-severities is opt-in. docs/plan/16 § Q5."
+      "resharperNote": "⚠ The export set `resharper_use_throw_if_null_method_highlighting = none`. While Skala honoured those keys, reading them as authoritative would have switched this rule off in the repository Skala was built for — which is why that bridge was opt-in, and in the end why it was removed: an export's severities were chosen for ReSharper's inspections, not for Skala's rules. This rule is retired in any case; `CA1510` covers it at stock settings."
     },
     {
       "id": "SK1030",
@@ -2788,7 +2788,7 @@
         "good": "sealed class Reader : IDisposable {\n    public void Dispose() => stream.Dispose();\n}"
       },
       "falsePositives": "Reported only for `GC.SuppressFinalize(this)` written as a statement directly inside a block, in a sealed class that derives straight from object and declares no finalizer in a single non-partial declaration. Every part of that is load-bearing. ⚠ An unsealed type is excluded because a derived type may declare a finalizer, which makes the base's call the thing that suppresses it; a type with any base class other than object is excluded for the same reason one level up. A partial or multi-file declaration is excluded so the answer stays decidable from the file the finding is in, which is what `scope: Semantic` promises the cache. Structs are excluded: they cannot have finalizers at all, so the call is redundant there too, but it also boxes and that is a different finding. An argument that is not literally `this`, a call in an expression-bodied member, and a call as an embedded statement under an `if` are all excluded, because the fix is a deletion and each of those has no statement to delete or leaves a construct behind that does not compile. Reflection or a runtime-registered finalizer is outside the proof.",
-      "resharperNote": "The export sets `resharper_gc_suppress_finalize_for_type_without_destructor_highlighting` to `warning` and Skala defaults the rule to `suggestion`, so `--resharper-severities` raises it. The lower default is deliberate: the call is harmless at runtime, so this is source noise rather than a defect, and a gate that fails on it would fail on tidiness.",
+      "resharperNote": "The export sets `resharper_gc_suppress_finalize_for_type_without_destructor_highlighting` to `warning` and Skala defaults the rule to `suggestion`. The lower default is deliberate: the call is harmless at runtime, so this is source noise rather than a defect, and a gate that fails on it would fail on tidiness.",
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2837,7 +2837,7 @@
         "good": "void Register(Type declaredType, EventInfo declaredEvent) { }"
       },
       "falsePositives": "⚠ **Reserved keywords only, and that is what keeps the rule off load-bearing escapes.** Every `@` a language feature can *require* is on a contextual keyword — `@field` once `field` became the backing-field keyword, `@value` in an accessor, `@extension`, `@record`, `@var`, `@async`, `@await` — and a contextual keyword is a legal identifier without the escape, so an escape on one is disambiguation rather than a name to change. None of them is reported. Only the declaring identifier is reported, never a reference to it: a name that comes from another assembly must be escaped at every use site and the author cannot rename it, so reporting uses would be reporting something nobody can fix, and it would multiply one finding by its call count. Constructors and destructors are skipped because their identifier repeats the type's, which is already reported once. Namespace name parts and query continuations are not examined. Verbatim strings, interpolated verbatim strings and `@` inside documentation or comments are not identifiers and are never seen.",
-      "resharperNote": "⚠ ReSharper publishes this one as an `.editorconfig` key with no inspection id in its issue-type dump, so `resharperId` carries the id that derives to the real key — `resharper_escaped_keyword_highlighting`, which the export sets to `warning`. Skala defaults the rule to `suggestion`, so `--resharper-severities` raises it: an escaped keyword compiles and runs correctly, and the cost is entirely to the reader.",
+      "resharperNote": "⚠ ReSharper publishes this one as an `.editorconfig` key with no inspection id in its issue-type dump, and the key is `resharper_escaped_keyword_highlighting`, which the export sets to `warning`. Skala defaults the rule to `suggestion`, deliberately: an escaped keyword compiles and runs correctly, and the cost is entirely to the reader.",
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2991,7 +2991,7 @@
       "configuration": [
         "dotnet_diagnostic.SK1041.severity"
       ],
-      "resharperNote": "The export sets `resharper_convert_to_compound_assignment_highlighting = hint` while this rule defaults to `suggestion`. Reading the ReSharper key with `--resharper-severities` therefore lowers it: ReSharper treats the long form as a cosmetic preference, and Skala treats it as the shape a half-finished rename hides in."
+      "resharperNote": "The export sets `resharper_convert_to_compound_assignment_highlighting = hint` while this rule defaults to `suggestion`. The lower ReSharper severity is not followed: ReSharper treats the long form as a cosmetic preference, and Skala treats it as the shape a half-finished rename hides in."
     },
     {
       "id": "SK1042",
@@ -4832,7 +4832,7 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperNote": "The export carries two inspections for this concept — `ThreadStaticAtInstanceField` and `ThreadStaticFieldHasInitializer` — both at `warning`, and Skala reports them as one rule because they are one question asked of one declaration. `--resharper-severities` maps the first; the second has no separate Skala id and never will.",
+      "resharperNote": "The export carries two inspections for this concept — `ThreadStaticAtInstanceField` and `ThreadStaticFieldHasInitializer` — both at `warning`, and Skala reports them as one rule because they are one question asked of one declaration. The second has no separate Skala id and never will.",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -6607,7 +6607,7 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperNote": "The export carries six inspections for issue #24's concept — `UnassignedField.Global`, `UnassignedField.Local`, `UnassignedReadonlyField`, `UnassignedGetOnlyAutoProperty`, `NotNullOrRequiredMemberIsNotInitialized` and `PropertyFieldKeywordIsNeverAssigned`. Skala ships the fourth and only the fourth, and the reason is measured rather than a matter of taste: the three field inspections describe what `CS0649` already reports, and `--resharper-severities` maps the one inspection this rule actually covers. The others have no Skala id and none is proposed until somebody can say what they would add to the compiler.",
+      "resharperNote": "The export carries six inspections for issue #24's concept — `UnassignedField.Global`, `UnassignedField.Local`, `UnassignedReadonlyField`, `UnassignedGetOnlyAutoProperty`, `NotNullOrRequiredMemberIsNotInitialized` and `PropertyFieldKeywordIsNeverAssigned`. Skala ships the fourth and only the fourth, and the reason is measured rather than a matter of taste: the three field inspections describe what `CS0649` already reports. The others have no Skala id and none is proposed until somebody can say what they would add to the compiler.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
