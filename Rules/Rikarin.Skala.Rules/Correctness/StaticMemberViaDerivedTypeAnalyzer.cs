@@ -30,8 +30,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <para>
 ///         ⚠ <b>The declaring type must be nameable at the site or nothing is reported.</b> A
 ///         <c>public</c> type deriving from an <c>internal</c> base is the shape that would otherwise
-///         produce a fix that does not compile. ⚠ <b><c>IsSymbolAccessibleWithin</c> throws for
-///         anything that is not a type or an assembly</b>, so the <c>within</c> argument here is always
+///         produce a fix that does not compile. ⚠
+///         <b>
+///             <c>IsSymbolAccessibleWithin</c> throws for
+///             anything that is not a type or an assembly
+///         </b>, so the <c>within</c> argument here is always
 ///         an <see cref="INamedTypeSymbol" /> and the check is skipped where there is none.
 ///     </para>
 /// </remarks>

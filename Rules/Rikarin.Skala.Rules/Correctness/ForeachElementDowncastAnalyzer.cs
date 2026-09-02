@@ -19,10 +19,16 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         of them fails it.
 ///     </para>
 ///     <para>
-///         ⚠ <b>This is the residue of issue #2 after the compiler has taken its share, and the share
-///         was measured.</b> At <c>AnalysisMode=All</c>, <c>(Sealed)derived</c>,
-///         <c>(IUnrelated)sealedValue</c> and <c>(Sealed)unrelatedInterface</c> are <b><c>CS0030</c>,
-///         errors</b> — that source never reaches an analyzer. A plain downcast <c>(Derived)b</c> and a
+///         ⚠
+///         <b>
+///             This is the residue of issue #2 after the compiler has taken its share, and the share
+///             was measured.
+///         </b> At <c>AnalysisMode=All</c>, <c>(Sealed)derived</c>,
+///         <c>(IUnrelated)sealedValue</c> and <c>(Sealed)unrelatedInterface</c> are
+///         <b>
+///             <c>CS0030</c>,
+///             errors
+///         </b> — that source never reaches an analyzer. A plain downcast <c>(Derived)b</c> and a
 ///         covariant array conversion produce nothing at all, but deciding either needs to know which
 ///         values reach the site, which is the value lattice this codebase does not have and which
 ///         refuted the neighbouring issue #169. The <c>foreach</c> form needs none of it: the cast is

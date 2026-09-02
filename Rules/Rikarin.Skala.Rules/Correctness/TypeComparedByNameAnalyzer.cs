@@ -22,8 +22,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         in any namespace of any referenced assembly matches it.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The literal must name a type this compilation can already see, and that one condition
-///         is the whole specification.</b> A name comparison is the <em>only</em> option for a type
+///         ⚠
+///         <b>
+///             The literal must name a type this compilation can already see, and that one condition
+///             is the whole specification.
+///         </b> A name comparison is the <em>only</em> option for a type
 ///         loaded reflectively, for a plugin whose assembly is deliberately not referenced, and across
 ///         a boundary this project does not compile against — and in every one of those the name does
 ///         not resolve here, so nothing is reported. Where it does resolve, the file could have named
@@ -131,15 +134,14 @@ public sealed class TypeComparedByNameAnalyzer : DiagnosticAnalyzer {
         // ⚠ The receiver must be a `GetType()` call. `someType.Name == "Order"` on a `Type` variable
         // has no `typeof` rewrite — the subject there is a type, not an instance — so it is declined
         // rather than reported without an answer.
-        if (property.Expression is not InvocationExpressionSyntax {
-                ArgumentList.Arguments.Count: 0
-            } call
+        if (property.Expression is not InvocationExpressionSyntax { ArgumentList.Arguments.Count: 0 } call
             || call.Expression is not MemberAccessExpressionSyntax {
                 RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
             } getType
             || getType.Name.Identifier.ValueText != "GetType"
             || model.GetSymbolInfo(call, cancellation).Symbol is not IMethodSymbol {
-                Parameters.Length: 0, IsStatic: false
+                Parameters.Length: 0,
+                IsStatic: false
             }) {
             return;
         }
