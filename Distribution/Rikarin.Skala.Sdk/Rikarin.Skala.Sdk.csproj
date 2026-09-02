@@ -40,7 +40,18 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <!--
+      ⚠ NU5129 is a convention warning and it is wrong about this package, but it is an error under
+      TreatWarningsAsErrors and it broke `Pack` on all three runners. It fires because `build/`
+      contains a .props file that is not `build/$(PackageId).props`, on the assumption that a .props
+      NuGet does not auto-import is a .props nothing imports. `build/Rikarin.Skala.Sdk.RuleIds.props`
+      is imported explicitly, by `build/Rikarin.Skala.Sdk.targets`, which NuGet does auto-import —
+      and it has to stay a separate file for the reason the generator comment below gives: a list
+      that lives in the .targets gets hand-maintained and gets merged twice, and both have happened.
+      ⚠ Renaming it to the conventional name is not the fix: `buildTransitive` reaches it through
+      that same relative import, and NuGet would then import it a second time on its own.
+    -->
+    <NoWarn>$(NoWarn);NU5128;NU5129</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
