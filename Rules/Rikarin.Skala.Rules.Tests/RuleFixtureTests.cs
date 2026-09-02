@@ -151,6 +151,8 @@ public sealed class RuleFixtureTests {
         new ForeachElementDowncastAnalyzer(), new GetTypeOnATypeAnalyzer(),
         new TypeComparedByNameAnalyzer(), new StaticMemberViaDerivedTypeAnalyzer(),
         new HiddenBaseInterfaceOverloadAnalyzer(),
+        new InvariantTypeParameterAnalyzer(), new CallerInfoParameterOrderAnalyzer(),
+        new WriteOnlyLocalCollectionAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

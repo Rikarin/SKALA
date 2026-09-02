@@ -189,6 +189,8 @@ public static class AnalyzerHost {
         new ForeachElementDowncastAnalyzer(), new GetTypeOnATypeAnalyzer(),
         new TypeComparedByNameAnalyzer(), new StaticMemberViaDerivedTypeAnalyzer(),
         new HiddenBaseInterfaceOverloadAnalyzer(),
+        new InvariantTypeParameterAnalyzer(), new CallerInfoParameterOrderAnalyzer(),
+        new WriteOnlyLocalCollectionAnalyzer(),
     ];
 
     /// <summary>

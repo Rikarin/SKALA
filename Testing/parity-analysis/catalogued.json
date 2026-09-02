@@ -250,5 +250,7 @@
   "PossibleInvalidCastExceptionInForeachLoop": "SK2180",
   "PossibleMistakenCallToGetType": "SK2181",
   "AccessToStaticMemberViaDerivedType": "SK2183",
-  "PossibleInterfaceMemberAmbiguity": "SK2184"
+  "PossibleInterfaceMemberAmbiguity": "SK2184",
+  "TypeParameterCanBeVariant": "SK6060",
+  "CollectionNeverQueried.Local": "SK6062"
 }

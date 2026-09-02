@@ -1929,6 +1929,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **303** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **268** | **88.7 %** |
+| Rules this document names | **298** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **263** | **88.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -3827,3 +3829,203 @@ position — and this sweep is the first count of how often it actually fires: 1
 SARIF only as an `SK9030` `toolExecutionNotification` and does not fail the gate (#295), which is
 how it survived. None of the
 five analyzers in this batch appears in that list.
+## `SK6060`–`SK6062` — the shape of a declaration, and three questions that stop at the assembly edge
+
+⚠ **The prose pass is owed for this block.** What follows is the register doing the job ADR-012 needs
+it to do — the numbers are taken and written down where the next milestone will read them — together
+with the measurements that decided the batch. It is not yet the considered account the sections above
+carry, and it belongs beside `SK6040`/`SK6041`, which are the rules it most often argues from.
+
+⚠ **Five concepts were briefed and three ship. The two that do not are the more useful result**, and
+both were closed by measurement rather than by argument.
+
+- `SK6060` `invariant-type-parameter` ([#117](https://github.com/Rikarin/SKALA/issues/117),
+  `TypeParameterCanBeVariant`). An interface type parameter that occurs in one direction only and is
+  not declared `out` or `in`. ⚠ **This is the compiler's own variance-safety rule run in reverse, and
+  the composition is the entire content of it.** Each occurrence is classified by the position it sits
+  in — a return type is covariant, a by-value or `in` parameter contravariant, a `ref`/`out` parameter
+  and a get-set property invariant, an event contravariant, a generic method's constraint
+  contravariant, a base interface covariant — and then composed through the declared variance of every
+  generic type enclosing it, flipping on a contravariant parameter and collapsing on an invariant one.
+  That composition is what separates `IEnumerable<T> Get()` from `List<T> Get()` and `Action<T> Get()`,
+  which are indistinguishable at the level of "the parameter is in a return type" and of which the
+  first can be `out`, the second nothing, and the third `in`.
+- `SK6061` `caller-info-parameter-not-last` ([#207](https://github.com/Rikarin/SKALA/issues/207),
+  `S3343`). ⚠ **The shape the concept is usually described with does not compile, and establishing that
+  is what made the rule narrow.** A caller-info attribute on a parameter without a default value is
+  `CS4022`, so "a required parameter after a caller-info one" is not a program anyone can write.
+  Everything after an optional parameter is optional or `params`, and *that* is the defect: two
+  optional parameters where the first is filled by the compiler and the second is what the caller
+  wanted. A trailing *run* of caller-info parameters is the correct shape and is never reported, which
+  is also why the fix rotates the whole run to the end rather than swapping a pair. `params` is
+  declined outright — it must be last, so the run has nowhere to go and the only rewrite satisfying
+  both constraints is the one already written. Report-with-fix, `fixIsSafe: false`, because reordering
+  optional parameters silently re-points every positional argument at the call sites.
+- `SK6062` `write-only-local-collection` ([#123](https://github.com/Rikarin/SKALA/issues/123),
+  `CollectionNeverQueried.Local`). A local collection created, written to, and never read. ⚠ **Locals
+  only, and that restriction is not caution — it is the whole reason the question is answerable.** A
+  field or a property can be read by anything holding the instance, which is the assembly boundary that
+  closed [#114](https://github.com/Rikarin/SKALA/issues/114) and
+  [#119](https://github.com/Rikarin/SKALA/issues/119). Proved by exhaustion rather than dataflow, the
+  argument `SK2083` uses for the mirror-image defect: every reference must be the receiver of a
+  discarded mutating call or the target of an indexer assignment, and anything else withdraws the
+  finding without the analyzer deciding what it does. ⚠ **A discarded return value is required rather
+  than tolerated** — `if (set.Remove(x))` reads the collection through the `bool`. Report-only: the
+  usual repair is to add the reader that was lost, not to delete the writes, and the source does not
+  say which.
+
+⚠ **`SK2083` and `SK6062` are disjoint by construction rather than by filter.** `SK2083` reports a
+`foreach` over a collection nothing fills — it requires a read and forbids every write. `SK6062`
+requires a write and forbids every read. No source satisfies both.
+
+### ⚠ `SK6060`'s algorithm was written after the compiler, not before it, and three shapes refuted the first draft
+
+Twelve interface shapes were compiled with the modifier already applied before a line of the analyzer
+existed, and the answers are the specification. Three of them broke a draft that had looked complete:
+
+- **A nested enum, class or struct inside an interface is `CS8427` outright** — "cannot be declared in
+  an interface that has an `in` or `out` type parameter" — so the modifier is illegal there no matter
+  what the signatures say. Nothing in the signature-walking model would ever have found this.
+- **A nested delegate or interface is legal and is variance-checked through its own members**, which
+  are not the enclosing interface's members and were not being walked. One guard covers both: an
+  interface declaring any nested type is declined.
+- **A `ref` return is an invariant position, not a covariant one.** It is the one shape in this rule
+  that reads as an ordinary return type and is not.
+
+Two further shapes were checked and left the algorithm alone, which is worth as much: `where U : T` on
+a *sibling* type parameter of the interface is not variance-checked, and neither is a non-abstract
+`static` member's signature. The rule classifies the static member anyway. That is deliberately more
+conservative than the compiler — it loses a finding and cannot invent one.
+
+⚠ **Two negative fixtures were refuted by the rule and confirmed wrong by the compiler**, which is the
+instrument working in the direction that matters. `Action<T>` in a return type was written as a
+negative on the assumption that a flipped position is no position; `in T` is legal there and the file
+is now a positive. `event EventHandler<T>` was written as "an event of an invariant delegate";
+`EventHandler<TEventArgs>` is declared `in` on modern .NET, so `out T` is legal and that assumption
+about the BCL was simply false. A locally-declared invariant delegate replaced it.
+
+### ⚠ `SK6061`'s guard fixtures all passed for the wrong reason first, and the fix is worth writing down
+
+An `override`, an interface implementation and a `partial` implementation are declined because their
+parameter order is fixed by something else in the program. The first version of each negative fixture
+carried the defect on the *base* declaration as well — which is where the rule correctly reports it —
+so every file fired and the guard was never exercised at all. ⚠ **A derived declaration may add
+caller-info attributes its base does not carry**, verified against the compiler, which leaves the
+derived member as the only candidate in the file and makes the guard the only thing standing between
+the fixture and a finding. The same probe turned up `CS4026` on the explicit-implementation and
+partial-implementation shapes — the attribute "will have no effect because it applies to a member that
+is used in contexts that do not allow optional arguments" — which is the compiler making the guard's
+argument independently.
+
+### ⚠ Two concepts closed without an id, and both were closed by a probe
+
+⚠ **No id was allocated for either.** ADR-012 makes an id permanent and doc 08 § "What this does not
+recommend" is explicit that ids must not be allocated against a concept that turned out not to exist.
+
+- **[#113](https://github.com/Rikarin/SKALA/issues/113) — the namespace does not match the file's
+  location — is hosted by `IDE0130`** (ADR-008). ⚠ **The issue's stated reason for rebuilding it is
+  false.** It says `IDE0130` "is off by default and does not know about `<RootNamespace>` overrides
+  the way a project-loading tool can". Measured on a probe built outside this repository with empty
+  `Directory.Build.props`/`.targets` above it: `IDE0130` is `isEnabledByDefault: true` with
+  `defaultLevel: note`, and its effective severity comes from its style option's default notification,
+  which is silent — so it is **enabled and effectively `Hidden`**, not off. And it reports
+  `Namespace "Probe.Wrong.Place" does not match folder structure, expected "Probe.Sub.Folder"` on a
+  file under `src/Sub/Folder` in a project whose `RootNamespace` is `Probe`. It knows exactly what the
+  issue says it cannot know. ⚠ Two further measurements are worth keeping: setting
+  `dotnet_style_namespace_match_folder = true` alone does **not** make it fire, and setting
+  `dotnet_diagnostic.IDE0130.severity` alone does — the severity is the knob, not the option; and like
+  every `IDE*` it needs `EnforceCodeStyleInBuild=true` to appear at build time at all.
+- **[#116](https://github.com/Rikarin/SKALA/issues/116) — the parameter type is narrower than the code
+  needs — is refuted**, and the refutation has two halves that meet in the middle. The **public** half
+  is the assembly boundary again, but sharper than in #114: a public member's parameter type is not a
+  guess about usage, it is a *contract*, and narrowing or widening it is a breaking change no
+  single-compilation analysis is entitled to propose. That leaves only the **non-public** half — and
+  ⚠ **`CA1859` ships on by default at `note` and argues the opposite direction on exactly that
+  slice.** Measured: `CA1859` is `isEnabledByDefault: true`, `defaultLevel: note`, and on a private
+  method returning `IReadOnlyList<int>` it says *"Change return type … from
+  `System.Collections.Generic.IReadOnlyList<int>` to `System.Collections.Generic.List<int>`"*. A rule
+  telling an author to widen a non-public signature would contradict a shipped, on-by-default SDK
+  analyzer telling them to narrow it. `CA1002` was probed too and is a different concept — off by
+  default (`isEnabledByDefault: false`, `defaultLevel: warning`), fires only on the *public* surface,
+  and its remedy is `Collection<T>` rather than `IEnumerable<T>`; doc 08 allocates that ground to
+  `SK6002`.
+
+⚠ **The `.Global` and public halves of [#123](https://github.com/Rikarin/SKALA/issues/123) hit the same
+wall as #114 and #119 and are not shipped**, and the internal-type slice of it is hosted: **`CA1812`**
+reports *"'NeverInstantiated' is an internal class that is apparently never instantiated"* and is
+**off by default** (`isEnabledByDefault: false`, `defaultLevel: warning`), so the work there is
+enabling and mapping rather than writing an analyzer. What `SK6062` ships is the one part of that
+issue no assembly boundary touches: a *local*.
+
+### ⚠ Three zeros on the reference trees, each classified, and one of them says nothing at all
+
+Swept over all three vendored trees — 380 source files, `.expected.cs` excluded — staged outside the
+repository because the corpus is unreachable through `skala check` in place (`SK9023`), built into
+real projects with empty `Directory.Build.props`/`.targets` above them, and read through
+`--load=binlog`. ⚠ **`--load=loose` would have skipped all three rules** (issue #277) and
+`--load=workspace` ignores its path argument (issue #284), so binlog is the only mode in which this
+measurement means anything.
+
+⚠ **The first set of numbers was discarded and re-taken, and the reason is `BinlogLoader`'s own
+measurement.** An *incremental* build's binlog is not stale — its mtime is seconds old — it is
+**partial**, containing only the projects MSBuild rebuilt, and on Vixen a complete build's binlog
+covers 98 % of the tree where an incremental one covers 1 %. The builds here already used
+`--no-incremental`, but the first sweep omitted `--require-fresh-binlog`, which is the flag that turns
+coverage below 90 % into an error rather than a number nobody checks. Re-taken with both:
+
+| Tree | Files covered | Coverage | `SK9021` | CS diagnostics | `SK` findings | Distinct `SK` rules |
+|---|---:|---:|---:|---:|---:|---:|
+| `newtonsoft` | 110 / 110 | 100 % | 0 | 2 531 | 280 | 38 |
+| `serilog` | 70 / 70 | 100 % | 0 | 944 | 141 | 21 |
+| `vixen` | 200 / 200 | 100 % | 0 | 10 982 | 211 | 24 |
+| **total** | **380 / 380** | **100 %** | **0** | **14 457** | **632** | — |
+
+No `AD0001` and no `SK9030` anywhere. The finding totals are the evidence the analysis ran at all, and
+are why the three zeros below are readable. ⚠ **One thing here is unexplained and is recorded rather
+than smoothed over**: the `vixen` invocation reports `partial: true`, whose only producer in
+`AnalyzerHost` is a cancelled run that returns *no* findings — and this run returned 211. The zero was
+therefore not trusted on that tree until the planted probe was run against it directly, below.
+
+⚠ **`<ImplicitUsings>` was set to `enable` and the difference is not cosmetic.** The slice omits the
+generated file, and its absence lies in both directions. CS-error lines in the MSBuild log, disabled
+then enabled: serilog **1 694 → 972**, vixen **9 534 → 8 218**, newtonsoft **1 808 → 1 806**. A sweep
+run without it is measuring a different program on two of the three trees.
+
+**The instrument was verified before any zero was reported**, in the pipeline rather than in the
+harness, and on **two** trees rather than one. A file carrying all three shapes was planted into the
+serilog project and then into vixen, each rebuilt with `--no-incremental` and swept with
+`--require-fresh-binlog`. All three fired both times — `SK6060` on `IPlantedFactory<T>`, `SK6061` on a
+`[CallerMemberName]` parameter followed by an `int level = 0`, `SK6062` on a `List<string>` filled in a
+loop — and deleting the file returned each sweep to zero. ⚠ **The vixen plant is the one that
+matters**, because it is the tree whose invocation reported `partial: true`: the probe fired there with
+the flag still set, which is what makes vixen's zero a statement about vixen's code rather than about a
+truncated run.
+
+| Rule | Findings | Classification |
+|---|---:|---|
+| `SK6060` | 0 | **Shape present, correctly declined** — 2 candidates, 2 different reasons |
+| `SK6061` | 0 | ⚠ **Shape absent** — the corpus contains no caller-info attribute at all |
+| `SK6062` | 0 | **Shape present, correctly declined** — 68 candidates |
+
+- **`SK6060`.** Exactly two generic interfaces with an unannotated type parameter exist across the
+  three trees, and each is declined for a different one of the rule's reasons. `ISyncCodec<T>`
+  (`vixen/Core/Vixen.Net.Engine/SyncField.cs`) has `void Write(ref BitWriter, in T)` and
+  `bool Read(ref BitReader, out T)` — the `in` is contravariant and the `out` parameter is
+  **invariant**, so neither modifier is legal and the compiler agrees. `IInlineBuffer<T>`
+  (`vixen/Core/Vixen.Core.Collections/InlineBuffer.cs`) declares one member,
+  `static abstract int Capacity { get; }`, which does not mention `T` at all — the unused-type-parameter
+  guard, which is a different finding.
+- **`SK6061`.** ⚠ **This zero is worth nothing and saying so is the point.** A search of all 380 files
+  finds no `[CallerMemberName]`, `[CallerFilePath]`, `[CallerLineNumber]` or
+  `[CallerArgumentExpression]` anywhere. The rule was never given the chance to be wrong here, and its
+  false-positive evidence is the fixture set and the planted probe, not this sweep.
+- **`SK6062`.** 68 locals initialised to a `new` collection of a type the rule classifies, and every one
+  of them is read somewhere in its member. That is the zero that carries weight in this batch.
+
+⚠ **`SK6062` was sweepable and the brief assumed it would not be**, which is worth recording because
+the reasoning generalises. A usage-based rule cannot be measured on a source slice when the usage it
+asks about lives outside the slice — most of the callers are missing, so "nothing uses this" is a
+statement about the vendoring rather than about the code. `SK6062` asks only about a **local**, and
+every reference to a local is inside the member that declares it and therefore inside the slice. The
+same property that makes the rule decidable across the assembly boundary makes it measurable on an
+incomplete tree. `SK6060` and `SK6061` are declaration-shape questions and were never usage-based.

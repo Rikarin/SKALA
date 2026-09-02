@@ -293,3 +293,6 @@ SK2181 get-type-on-a-type
 SK2182 type-compared-by-name
 SK2183 static-member-via-derived-type
 SK2184 hidden-base-interface-overload
+SK6060 invariant-type-parameter
+SK6061 caller-info-parameter-not-last
+SK6062 write-only-local-collection
