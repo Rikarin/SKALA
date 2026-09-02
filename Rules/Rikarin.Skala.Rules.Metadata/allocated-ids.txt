@@ -246,3 +246,8 @@ SK2100 ineffective-thread-static
 SK2101 pure-attribute-on-void
 SK2102 debugger-display-missing-member
 SK2103 duplicated-attribute
+SK1090 computed-property
+SK1091 private-auto-property
+SK1092 tuple-literal
+SK1093 cast-in-declaration
+SK1094 nullable-annotation-syntax

@@ -205,3 +205,8 @@ SK2071 | Skala.Correctness | Warning | The structured log template names the sam
 SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
 SK2073 | Skala.Correctness | Warning | The caught exception is not passed to the logger's exception parameter.
 SK7110 | Skala.Maintainability | Info | The logger is declared for a different type than the one that declares it.
+SK1090 | Skala.Modernization | Hidden | Use a computed property instead of an auto-property holding a constant.
+SK1091 | Skala.Modernization | Info | The private auto-property is a field.
+SK1092 | Skala.Modernization | Info | Use a tuple literal instead of constructing a `Tuple`.
+SK1093 | Skala.Modernization | Hidden | Express the cast in the declaration instead.
+SK1094 | Skala.Modernization | Warning | Use nullable reference type syntax instead of an annotation attribute.

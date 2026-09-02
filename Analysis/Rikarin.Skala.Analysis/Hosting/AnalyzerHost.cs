@@ -163,6 +163,8 @@ public static class AnalyzerHost {
         new LogTemplateArgumentCountAnalyzer(), new LogTemplateDuplicatePropertyAnalyzer(),
         new InvisibleCharacterAnalyzer(), new CaughtExceptionNotLoggedAnalyzer(),
         new LoggerForAnotherTypeAnalyzer(),
+        new ComputedPropertyAnalyzer(), new PrivateAutoPropertyAnalyzer(), new TupleLiteralAnalyzer(),
+        new CastInDeclarationAnalyzer(), new NullableAnnotationSyntaxAnalyzer(),
     ];
 
     /// <summary>
