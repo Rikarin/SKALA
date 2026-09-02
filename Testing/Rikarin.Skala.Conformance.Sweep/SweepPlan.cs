@@ -1,5 +1,6 @@
 using Rikarin.Skala.Options;
 using Rikarin.Skala.Testing;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Conformance.Sweep;
 
@@ -40,8 +41,14 @@ public static class SweepPlan {
     ///     ⚠ An allow-list rather than a deny-list. A key whose language is added to the registry
     ///     tomorrow is excluded and reported, which is the failure mode to prefer over silently
     ///     sweeping a C++ key against a C# fixture and reporting it unexercised.
+    ///     <para>
+    ///         ⚠ <see cref="ImmutableArray{T}" /> rather than <c>string[]</c>, and the difference is not
+    ///         cosmetic: <c>readonly</c> on an array field stops the assignment and nothing else, so any
+    ///         caller — the pairwise planner, a test — could have written <c>Languages[0] = "cpp"</c> and
+    ///         changed what every later sweep in the process considers sweepable (SK6031).
+    ///     </para>
     /// </remarks>
-    public static readonly string[] Languages = ["csharp", "xmldoc", "any"];
+    public static readonly ImmutableArray<string> Languages = ["csharp", "xmldoc", "any"];
 
     public static SweepPlanResult Build(IReadOnlyList<string> families) {
         var candidates = new List<SweepCandidate>();

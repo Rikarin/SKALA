@@ -110,7 +110,7 @@ public sealed class OpenDefectTests {
             + "Move the file into Testing/corpus/pathological/, regenerate its fixture with\n"
             + $"  ./build.sh Oracle --only {Path.GetFileNameWithoutExtension(entry.File)}\n"
             + $"and delete the {id} entry from Testing/corpus/pathological/open/register.md.\n\n"
-            + $"What the file does produce now: "
+            + "What the file does produce now: "
             + (violations.IsEmpty
                     ? "every property holds."
                     : string.Join("; ", violations.Select(static violation => violation.ToString())))

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Rikarin.Skala.Testing;
 
 /// <summary>One configuration a fixture set is run under besides the repository's own.</summary>
@@ -41,8 +43,13 @@ public static class CorpusVariants {
     ///     <c>keep_user_linebreaks</c>, so putting it on the <c>keep_existing_*</c> axis collapses the
     ///     table — both "reflow" corners come out identical to their "keep" neighbours and the 2×2 stops
     ///     measuring anything. Its own effect is pinned by its own fixture instead.
+    ///     <para>
+    ///         ⚠ <see cref="ImmutableArray{T}" /> rather than <c>string[]</c>: <c>readonly</c> would have
+    ///         frozen the field and left the thirteen keys writable through it, so a caller could drop or
+    ///         swap an axis of the 2×2 for every variant built afterwards in the same process (SK6031).
+    ///     </para>
     /// </remarks>
-    public static readonly string[] KeepExistingKeys = [
+    public static readonly ImmutableArray<string> KeepExistingKeys = [
         "resharper_csharp_keep_existing_attribute_arrangement",
         "resharper_csharp_keep_existing_declaration_block_arrangement",
         "resharper_csharp_keep_existing_declaration_parens_arrangement",

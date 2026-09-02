@@ -550,7 +550,7 @@ public sealed class ArrangementRuleTests {
         Assert.StartsWith("// Copyright the author.", arranged, StringComparison.Ordinal);
         Assert.Equal(
             1,
-            arranged.Split("// Copyright the author.", StringSplitOptions.None).Length - 1
+            arranged.Split("// Copyright the author.").Length - 1
         );
     }
 
