@@ -71,20 +71,37 @@ public sealed class ConfigurationDiagnosticsTests {
         );
     }
 
+    /// <summary>
+    ///     An inspection severity, a Roslyn diagnostic severity and a naming key are classified, not
+    ///     reported as unknown options.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The sample is inline on purpose.</b> This test used to read the repository's own
+    ///     <c>editor_config_template</c> and assert it contained an <c>InspectionSeverity</c> key —
+    ///     so it broke the moment somebody legitimately removed the 1 062 <c>resharper_*_highlighting</c>
+    ///     lines from it, which says nothing about whether the classifier still works. A real Rider
+    ///     export still carries about three thousand of these, and that is the input this is about;
+    ///     what this repository happens to keep in its own configuration is a different question.
+    /// </remarks>
     [Fact]
     public void SK9001_IgnoresTheSeverityNamespaces() {
-        // 3 021 inspection severities, 253 diagnostic severities and 215 naming keys are not
-        // unknown options; they are Milestone 5's and Roslyn's, respectively.
-        var document = EditorConfigDocument.Load(RepositoryPaths.Template);
-        var resolution = OptionResolver.Resolve(
-            EditorConfigChain.Of(Path.Combine(RepositoryPaths.Root, "Probe.cs"), document)
+        var document = EditorConfigDocument.FromText(
+            "/repo/.editorconfig",
+            """
+            root = true
+            [*]
+            resharper_web_config_module_not_resolved_highlighting = warning
+            dotnet_diagnostic.CA1822.severity = suggestion
+            dotnet_naming_rule.constants_rule.severity = warning
+            """
         );
+
+        var resolution = OptionResolver.Resolve(EditorConfigChain.Of("/repo/File.cs", document));
 
         Assert.Contains(resolution.Unknown, static key => key.Namespace == KeyNamespace.InspectionSeverity);
         Assert.DoesNotContain(
             ConfigurationAnalyzer.Analyze(resolution),
             static d => d.Id == ConfigDiagnosticIds.UnknownKey
-                && d.Message.Contains("_highlighting", StringComparison.Ordinal)
         );
     }
 
