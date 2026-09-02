@@ -3618,3 +3618,36 @@ this repository's raised `AnalysisMode` could not answer for a consumer's.
 directions — declare the identity or supply a comparer, drop the modifier or return the value,
 declare the field or delete the write — and the finding is the evidence that the author knows which
 and the analyzer does not.
+
+**What the batch was measured against.** A complete `dotnet build Vixen.slnx -c Release
+--no-incremental` binlog, loaded with `check --load=binlog --require-fresh-binlog`: 13 450 findings
+over 3 666 files, **20 CS diagnostics**, and **no `SK9021` at all** — every selected source file was
+in a compilation, so the run covered 100 % of what it selected and the flag accepted it. ⚠ **The
+`--no-incremental` half is not optional and neither is the flag**: an incremental build's binlog
+holds only the projects MSBuild rebuilt, it is not stale, and `BinlogLoader`'s own recorded
+measurement is that such a binlog covers 1 % of Vixen against a complete one's 98 %. **Zero findings
+from all five rules**, and the zero is classified rather than reported:
+
+| Rule | Candidate sites in Vixen | What the zero is |
+|---|---|---|
+| `SK2190` | 5 119 `new Dictionary`/`HashSet`/`ConcurrentDictionary` | present in bulk, correctly declined |
+| `SK2191` | 11 018 `in` parameters, 847 `ref readonly` locals | present in bulk, correctly declined |
+| `SK2192` | 0 span `==` comparisons | shape absent |
+| `SK2193` | 0 `new ImmutableArray<T> { … }` | shape absent |
+| `SK2194` | 6 160 primary constructor declarations | present in bulk, correctly declined |
+
+The candidate counts are text scans and are upper bounds, not semantic matches; what they establish
+is that the first, second and fifth rules had thousands of chances and took none of them.
+
+⚠ **The instrument was verified before the zero was believed.** One file carrying all five shapes
+was planted into the corpus slice, rebuilt and re-checked through the same
+`check --load=binlog` path: all five fired, one finding each. Deleting it returned the count to
+zero. Without that step a zero from these rules and a zero from an analysis that never ran would
+have been the same zero.
+
+⚠ **The corpus slice is a weak second instrument and says so.** `Testing/corpus/real/` copied
+outside the repository as three projects builds with **≈5 500 unique CS errors** because it is a
+slice — most of what it references is not in it. Enabling `<ImplicitUsings>enable</ImplicitUsings>`
+removes about **1 020** of them (13 036 → 10 996 raw log lines, each error printed twice), which is
+the direction doc 17 records; it does not make the slice a compiling tree. Zero findings there too,
+but the finding that matters is Vixen's.
