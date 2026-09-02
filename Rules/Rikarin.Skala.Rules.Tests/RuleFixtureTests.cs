@@ -89,7 +89,53 @@ public sealed class RuleFixtureTests {
                     produced.Select(static d => "  " + d.Location.GetLineSpan() + ": " + d.GetMessage())
                 )
             );
+
+            AssertNoUnrecordedCrossRuleFinding(fixture, all);
         }
+    }
+
+    /// <summary>
+    ///     ⚠ A negative fixture is a claim that the file is correct code. Every rule already ran over
+    ///     it — this asks what the other 289 said instead of throwing it away.
+    /// </summary>
+    /// <remarks>
+    ///     The two directions are asserted together, because only the pair is an instrument. An
+    ///     unrecorded finding is a fixture that may be passing for the wrong reason; a recorded finding
+    ///     that no longer fires is a line that has stopped being true, and a file of those is how an
+    ///     allow-list turns into wallpaper. See <see cref="CrossRuleBaseline" /> for what is measured
+    ///     and why the scope is the two categories it is.
+    /// </remarks>
+    static void AssertNoUnrecordedCrossRuleFinding(RuleFixture fixture, ImmutableArray<Diagnostic> all) {
+        var key = CrossRuleBaseline.Key(fixture.Path);
+        var observed = CrossRuleBaseline.Observed(all, fixture.RuleId);
+        var recorded = CrossRuleBaseline.For(key);
+
+        Assert.True(
+            observed.SetEquals(recorded),
+            $"{fixture}: fixture-cross-rule-baseline.txt disagrees with what ran over this negative fixture.\n"
+            + Describe("  not recorded, and a negative fixture is a claim this file is correct code", observed.Except(recorded), all)
+            + Describe("  recorded but no longer fires; delete the line", recorded.Except(observed), all)
+        );
+    }
+
+    static string Describe(string heading, IEnumerable<string> rules, ImmutableArray<Diagnostic> all) {
+        var listed = rules.Order(StringComparer.Ordinal).ToArray();
+        if (listed.Length == 0) {
+            return string.Empty;
+        }
+
+        return heading
+            + ":\n"
+            + string.Join(
+                "\n",
+                listed.Select(rule =>
+                    "    "
+                    + rule
+                    + ": "
+                    + (all.FirstOrDefault(diagnostic => diagnostic.Id == rule)?.GetMessage() ?? "(no longer produced)")
+                )
+            )
+            + "\n";
     }
 
     [Theory]
