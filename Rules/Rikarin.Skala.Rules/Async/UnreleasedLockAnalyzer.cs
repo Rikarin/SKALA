@@ -160,19 +160,28 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
         // ⚠ Two messages, because the two cases read differently to whoever gets the finding. "There is
         // no Exit" sends a reader looking for one; "the Exit you wrote is on the happy path" sends them
         // to the one they already wrote and cannot see the problem with.
+        //
+        // ⚠ Neither message says "here" of the release and neither says "method", and both of those
+        // were wrong in the first draft. The finding is reported at the *enter*, so "`Monitor.Exit`
+        // here" underlined one call and named another — the reader looks at the squiggle, not at the
+        // sentence. And the unit of analysis is the enclosing function, which is a lambda often
+        // enough that "in this method" names nothing the reader can point at: an enter in a field
+        // initializer's lambda is the case that made it obvious.
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
                 enter.GetLocation(),
                 found
                     ? "`"
+                    + qualified
+                    + "` is released by a `"
                     + releaseName
-                    + "` here runs only when nothing throws; the lock stays held for the life of the process if the critical section throws"
+                    + "` that is not inside a `finally`, so it runs only when nothing throws and the lock stays held for the life of the process if the critical section does"
                     : "`"
                     + qualified
-                    + "` here has no matching `"
+                    + "` has no matching `"
                     + releaseName
-                    + "` in this method, so the lock is never released"
+                    + "` on this path, so the lock is never released"
             )
         );
     }
@@ -192,6 +201,17 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
     ///         inner class silence its container.
     ///     </para>
     ///     <para>
+    ///         ⚠ <b>A <c>partial</c> type silences the rule outright, and that gate is here because the
+    ///         shape was tested rather than reasoned about.</b> The walk starts from the
+    ///         <em>syntactic</em> declaration holding the enter, so it sees one part and not the others
+    ///         — and the parts are usually in different files. A partial type with <c>Acquire()</c> in
+    ///         one part and <c>Release()</c> in the other produced a false positive;
+    ///         <c>a-protocol-split-across-partial-parts.cs</c> is what holds the fix. Walking every
+    ///         <c>DeclaringSyntaxReference</c> instead would make the answer for one file depend on
+    ///         files the cache key does not name, which is what <c>scope: Compilation</c> costs and what
+    ///         this rule declines to pay for a shape this rare.
+    ///     </para>
+    ///     <para>
     ///         ⚠ Runs only for a genuine candidate, which is close to never. Everything above it is a
     ///         name probe and a bind; this is a walk of a whole type declaration.
     ///     </para>
@@ -204,6 +224,10 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
     ) {
         if (enter.FirstAncestorOrSelf<TypeDeclarationSyntax>() is not { } declaration) {
             return false;
+        }
+
+        if (declaration.Modifiers.Any(SyntaxKind.PartialKeyword)) {
+            return true;
         }
 
         var member = enter.FirstAncestorOrSelf<MemberDeclarationSyntax>();
