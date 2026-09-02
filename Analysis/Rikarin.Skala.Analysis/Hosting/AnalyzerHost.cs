@@ -202,6 +202,7 @@ public static class AnalyzerHost {
         new MisleadingBodyIndentationAnalyzer(), new VariableLengthHexEscapeAnalyzer(),
         new ForgivenIsOperandAnalyzer(), new NegatedEmptyPatternAnalyzer(),
         new UnparenthesisedPrecedenceMixAnalyzer(),
+        new PredictableInitializationVectorAnalyzer(), new AsymmetricKeySizeAnalyzer(),
     ];
 
     /// <summary>

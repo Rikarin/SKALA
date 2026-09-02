@@ -274,3 +274,5 @@ SK2171 | Skala.Correctness | Warning | The `\x` escape's length depends on what 
 SK2172 | Skala.Correctness | Warning | A null-forgiving `!` stands where it reads as a negated `is`.
 SK2173 | Skala.Correctness | Warning | `is not { }` is `is null` spelled backwards.
 SK2174 | Skala.Correctness | Info | A shift or bitwise operand groups only by precedence.
+SK5020 | Skala.Security | Error | A cipher initialisation vector fixed at compile time.
+SK5021 | Skala.Security | Error | An RSA or DSA key generated below 2048 bits.

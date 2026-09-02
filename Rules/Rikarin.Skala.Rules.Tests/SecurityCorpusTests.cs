@@ -45,7 +45,8 @@ public sealed class SecurityCorpusTests {
     /// <summary>The security analyzers, and only those — the corpus is about this range.</summary>
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new SqlInjectionAnalyzer(), new ProcessArgumentInjectionAnalyzer(), new WeakCipherAnalyzer(),
-        new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(), new RegexTimeoutAnalyzer()
+        new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(), new RegexTimeoutAnalyzer(),
+        new PredictableInitializationVectorAnalyzer(), new AsymmetricKeySizeAnalyzer()
     ];
 
     static string Root { get; } = Path.Combine(
@@ -106,6 +107,8 @@ public sealed class SecurityCorpusTests {
     [InlineData(RuleIds.CertificateValidationDisabled, 5)]
     [InlineData(RuleIds.XmlExternalEntityResolution, 2)]
     [InlineData(RuleIds.RegexWithoutTimeout, 2)]
+    [InlineData(RuleIds.PredictableCipherInitializationVector, 6)]
+    [InlineData(RuleIds.UndersizedAsymmetricKey, 3)]
     public void TheVulnerableHalf_ProducesExactlyTheKnownCount(string ruleId, int expected) {
         var findings = Analyze("vulnerable").Where(finding => finding.Id == ruleId).ToArray();
 

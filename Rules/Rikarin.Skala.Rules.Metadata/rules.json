@@ -7730,6 +7730,60 @@
       "configuration": [
         "dotnet_diagnostic.SK2174.severity"
       ]
+    },
+    {
+      "id": "SK5020",
+      "concept": "predictable-cipher-initialization-vector",
+      "title": "A cipher initialisation vector fixed at compile time",
+      "category": "Security",
+      "defaultSeverity": "error",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3329"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The initialisation vector is a constant, an array of zeros, or the key — so it is not a vector, it is a second constant.",
+      "rationale": "CBC exists to stop the thing ECB does: it chains each block into the next so that identical plaintext blocks encrypt differently. The chain has to start somewhere, and the initialisation vector is that start. If it is the same on every message, the chain begins identically every time — so two messages that share a prefix produce ciphertext that shares a prefix, and an observer learns that they are related and where they diverge, which is exactly the structure `SK5005` reports ECB for leaking. It gets worse than leakage: with a predictable IV an attacker who can get a chosen plaintext encrypted can test guesses about an unknown block, which is the BEAST attack. The IV is not a secret and it is not a second key — it must be *unpredictable*, and it travels with the ciphertext in the clear. `GenerateIV()` draws a fresh one per message from the platform's cryptographic generator; prepend it to the output and read it back before decrypting. `AesGcm` takes a nonce and does the same job while also authenticating the ciphertext, so an attacker cannot flip bits in a message you will decrypt and act on. ⚠ There is no fix on the diagnostic, and that is the range's \"rarely\" column rather than a gap: making the IV fresh means also writing it into the message and reading it back at the other end, which changes the ciphertext format — every value already encrypted becomes unreadable by the new code. That is a migration, exactly as it is for `SK5005`.",
+      "examples": {
+        "bad": "using var cipher = Aes.Create();\ncipher.Key = key;\ncipher.IV = new byte[16];\nusing var encryptor = cipher.CreateEncryptor();",
+        "good": "using var cipher = Aes.Create();\ncipher.Key = key;\ncipher.GenerateIV();\nawait output.WriteAsync(cipher.IV);\nusing var encryptor = cipher.CreateEncryptor();"
+      },
+      "falsePositives": "⚠ **The shape is hosted by `CA5401` and the host is not usable, which is why this is a rule rather than an entry in the hosted map.** Measured on a plain `net10.0` project built outside this repository with empty `Directory.Build.props`/`.targets` above it: `CA5401` is off by default — `analysislevelsecurity_10_default.globalconfig` carries no rule entries at all, so a security `CA`'s default is its own descriptor's — and once enabled it reports `aes.IV = RandomNumberGenerator.GetBytes(16)` and `aes.CreateEncryptor(key, RandomNumberGenerator.GetBytes(16))`, both of which are the correct code. Its question is \"is the IV non-default\", and the answer is yes for every program that transmits an IV with its ciphertext. ⚠ **The reason narrowing it is allowed here where doc 08 refused to narrow `CA5394` for #140 is that this narrowing needs no judgement**: separating a security-sensitive `Random` from a statistical one means reading identifier names, which is what cut `SK5008`, whereas \"is this expression a compile-time constant\" is a fact the compiler has already computed. ⚠ **A local is never resolved, and a false positive is the reason rather than cost.** `var iv = new byte[16]; RandomNumberGenerator.Fill(iv); aes.IV = iv;` is how correct code is written, and a rule that followed `iv` to its declaration would report it — so the constant must be written at the assignment itself, or be the initialiser of a field holding an explicit list of literals. `static readonly byte[] Iv = { 1, 2, … }` is a hard-coded IV and cannot be anything else; `= new byte[16]` is the allocate-then-fill shape and is deliberately not followed. ⚠ **Only the encrypting side.** `CreateDecryptor(key, iv)` is handed the IV the message arrived with — that is what the overload is for, and reporting it would report the reader of a broken format rather than its writer. ⚠ **Test methods are exempt**, by the attribute test five other rules already use: a NIST or RFC test vector pins the IV by definition, and a security rule at `error` that breaks a crypto library's test suite is how a reviewer learns to skim past every security finding the tool makes. ⚠ **The reference trees prove nothing here and the zero is reported as such**: not one of the 4 459 files under `Testing/corpus` mentions `System.Security.Cryptography`, so the corpus zero is *shape absent* rather than *correctly declined*. The measurement that decides this rule is `Rules/Rikarin.Skala.Rules.Tests/corpus/`, where every safe file is the same shape as its vulnerable twin with the vulnerability removed the way a reviewer would remove it.",
+      "configuration": [
+        "dotnet_diagnostic.SK5020.severity"
+      ]
+    },
+    {
+      "id": "SK5021",
+      "concept": "undersized-asymmetric-key",
+      "title": "An RSA or DSA key generated below 2048 bits",
+      "category": "Security",
+      "defaultSeverity": "error",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S4426"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A 1024-bit RSA or DSA modulus is a budget away from being factored, and the size is written at the call.",
+      "rationale": "The security of RSA and of finite-field DSA is the cost of factoring a number that the code chooses the size of, and that cost has been falling for forty years while the number stayed the same length. A 1024-bit modulus is estimated at about 80 bits of work; NIST SP 800-57 has required 112 bits — which is 2048 — since 2014, and CA/Browser Forum rules stopped issuing certificates below it at the same time. The distance between \"nobody has published a 1024-bit factorisation\" and \"nobody can afford one\" is not a security property, and it is not the sort of thing to find out about afterwards, because a key that turns out to be factorable retroactively invalidates every signature it ever made. The size is a single argument at the generation call, which is what makes this decidable where most cryptographic mistakes are not. Generate at least 2048 bits — or move to `ECDsa`, where a 256-bit key is stronger than a 3072-bit RSA one, the keys and signatures are an order of magnitude smaller, and generation is fast enough to do per-request.",
+      "examples": {
+        "bad": "using var signer = RSA.Create(1024);\nvar signature = signer.SignData(payload, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);",
+        "good": "using var signer = RSA.Create(2048);\nvar signature = signer.SignData(payload, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);"
+      },
+      "falsePositives": "⚠ **The SDK covers exactly one spelling of this and it is the legacy one, which is the whole argument for the rule.** Measured on a plain `net10.0` project outside this repository under `-p:AnalysisMode=All`, so the analyzers demonstrably ran: `CA5385` fires on `new RSACryptoServiceProvider(1024)` and on **nothing else** — not on `RSA.Create(1024)`, which is the modern factory and the spelling every current sample uses; not on `DSA.Create(1024)`; and not on `rsa.KeySize = 1024` even where `rsa` is an `RSACryptoServiceProvider`, the very type `CA5385`'s own message names. `CA5384` reports `DSACryptoServiceProvider` as an algorithm regardless of its key size and likewise misses `DSA.Create`. Both are off by default. ⚠ **Elliptic curves are excluded deliberately rather than overlooked.** `KeySize` is declared on `AsymmetricAlgorithm`, whose other descendants are `ECDsa` and `ECDiffieHellman`, where 256 bits is *stronger* than 2048-bit RSA — so the family test is on the receiver's type and reaches only `RSA` and `DSA`. A bit-count floor applied across algorithm families would make this rule report the replacement it recommends. ⚠ **Only a compile-time-constant size**, so a key size read from configuration is silence rather than a guess, and only a positive one, so a sentinel is not reported as a weak key. ⚠ **Test methods are exempt**, by the attribute test five other rules already use: generating a deliberately small key to keep a test fast is real and correct, and a security rule at `error` that breaks a test suite teaches a reviewer to skim past every security finding the tool makes. ⚠ **`fixIsSafe: false`, and the fix is still carried.** Raising the argument to 2048 compiles, binds and is strictly stronger, but the size is half of an agreement with whoever holds the other end of the protocol; a tool that changed it silently under `--fix` would be renegotiating that agreement on its own authority. ⚠ **The reference trees prove nothing here and the zero is reported as such**: no file under `Testing/corpus` mentions `System.Security.Cryptography`, so the corpus zero is *shape absent*, not *correctly declined*.",
+      "configuration": [
+        "dotnet_diagnostic.SK5021.severity"
+      ]
     }
   ]
 }
