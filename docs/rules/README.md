@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 298 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 302 ids are allocated.
 
 ## Async
 
@@ -302,6 +302,10 @@
 | [SK1092](SK1092.md) | Use a tuple literal instead of constructing a `Tuple` | suggestion | review | no |
 | [SK1093](SK1093.md) | Express the cast in the declaration instead | hint | safe | no |
 | [SK1094](SK1094.md) | Use nullable reference type syntax instead of an annotation attribute | warning | review | no |
+| [SK1120](SK1120.md) | A reflection call asks what `is` answers | suggestion | review | no |
+| [SK1121](SK1121.md) | A `try`/`catch` is the whole body of a `try`/`finally` | hint | safe | yes |
+| [SK1122](SK1122.md) | A nearby anonymous type has the same members in another order | hint | review | no |
+| [SK1123](SK1123.md) | Two `or` alternatives test the same property | hint | safe | yes |
 
 ## Performance
 

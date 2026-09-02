@@ -267,5 +267,10 @@
   "EventUnsubscriptionViaAnonymousDelegate": "SK2201",
   "PossiblyUnintendedSideEffectsInsideConditionalInvocation": "SK2202",
   "VariableLengthStringHexEscapeSequence": "SK2171",
-  "SuppressNullableWarningExpressionAsInvertedIsExpression": "SK2172"
+  "SuppressNullableWarningExpressionAsInvertedIsExpression": "SK2172",
+  "CanSimplifyIsInstanceOfType": "SK1120",
+  "CanSimplifyIsAssignableFrom": "SK1120",
+  "TryStatementsCanBeMerged": "SK1121",
+  "SimilarAnonymousTypeNearby": "SK1122",
+  "ExtractCommonPropertyPattern": "SK1123"
 }

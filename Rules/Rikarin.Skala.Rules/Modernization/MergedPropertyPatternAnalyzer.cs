@@ -25,10 +25,14 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         rule stays <c>Syntax</c>.
 ///     </para>
 ///     <para>
-///         ⚠ <b>A designation anywhere in either side withdraws the finding, and it is a compile
-///         error rather than a preference.</b> C# forbids a pattern variable under <c>or</c>
-///         (CS8780) — it would not be definitely assigned — so <c>{ A: int i } or { A: 2 }</c> has no
-///         merged spelling at all.
+///         ⚠ <b>The designation guard this rule was written with is refuted, and the compiler is what
+///         refutes it.</b> CS8780 — "a variable may not be declared within a 'not' or 'or' pattern" —
+///         makes <c>{ A: int i } or { A: 2 }</c> and <c>{ A: 1 } x or { A: 2 }</c> both uncompilable,
+///         confirmed by compiling both. No program this rule can run on carries a pattern variable
+///         there, so the guard was unreachable; and the one designation that <em>is</em> legal under
+///         <c>or</c> is a discard, which merges perfectly well — <c>{ A: int _ } or { A: 2 }</c> and
+///         its merged <c>{ A: int _ or 2 }</c> both compile. The guard's only reachable effect was to
+///         decline a finding it should report.
 ///     </para>
 ///     <para>
 ///         ⚠ <b>No parentheses are needed and that is a property of the grammar, not luck.</b>
@@ -110,12 +114,13 @@ public sealed class MergedPropertyPatternAnalyzer : DiagnosticAnalyzer {
             return false;
         }
 
-        // ⚠ CS8780: a pattern variable cannot be declared under `or`, so a designation anywhere
-        // inside either alternative makes the merged form uncompilable.
-        if (subpattern.Pattern.DescendantNodesAndSelf().OfType<VariableDesignationSyntax>().Any()) {
-            return false;
-        }
-
+        // ⚠ There is no designation guard, and the guard that was written here is refuted rather
+        // than merely unused. CS8780 — "a variable may not be declared within a 'not' or 'or'
+        // pattern" — means no compiling program can put a pattern variable under the `or` this rule
+        // matches, on either the subpattern or the recursive pattern; both were compiled and both
+        // are errors. So the merged form is available whenever the source form exists, and a guard
+        // would only have declined the one designation that *is* legal there — a discard, where
+        // `{ A: int _ } or { A: 2 }` compiles and so does the `{ A: int _ or 2 }` it merges to.
         name = colon.Name.Identifier.ValueText;
         value = subpattern.Pattern;
         return true;

@@ -2094,8 +2094,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **325** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **290** | **89.5 %** |
+| Rules this document names | **329** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **294** | **89.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -4895,3 +4895,128 @@ map to be wrong in. `ConfusingCharAsIntegerInConstructor` — #39's third inspec
 argument widening to an `int` parameter — is uncovered for a different reason: it is a question
 about overload resolution rather than about how a literal reads, and it is a different rule from
 `SK2171`.
+
+## `SK1120`–`SK1123` — expression-level modernization, and what the issues got wrong
+
+⚠ **The prose pass for `SK1120`–`SK1123` is owed.** What follows is the allocation register entry —
+enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+**Five issues went into this batch and four rules came out**, and the gap is the interesting part:
+in three separate places the *issue* was wrong about the transformation it proposed, and the
+correction was reached by compiling and running the two forms rather than by reading them.
+
+`SK1120` `reflective-type-test` — `typeof(T).IsInstanceOfType(x)` and
+`typeof(T).IsAssignableFrom(x.GetType())`, both of which spell `x is T` as a `Type` load and a
+virtual call. · `SK1121` `mergeable-try` — a `try`/`catch` that is the entire body of a
+`try`/`finally`. · `SK1122` `reordered-anonymous-type` — two anonymous object creations in one
+member with the same members in a different order. · `SK1123` `merged-property-pattern` —
+`x is { A: p } or { A: q }`, which asks one question about one property in the shape of two.
+
+### ⚠ Three claims refuted, each by running the program rather than reading it
+
+**`SK1120`: the nullable-value-type divergence does not exist.** The brief for this batch, and the
+rule's own first draft, both held that `IsAssignableFrom` and `is` disagree for nullable value
+types. They agree. `Type.IsAssignableFrom` documents a special case for a nullable value type and
+its underlying type, and the probe confirms it: `typeof(int?).IsAssignableFrom(typeof(int))` is
+`true` and `(object)someInt is int?` is `true`. **Fourteen shapes were run for `IsInstanceOfType`** —
+`null`, a boxed value type, a non-null and a null `int?`, an interface, a covariant interface, array
+covariance, an array through `IList<T>`, an enum boxed as itself and as its underlying `int`, and a
+wrong type — **and the reflection call and the operator agree on every one.** ⚠ **The one real
+divergence is the null receiver of the other shape**: `x.GetType()` throws `NullReferenceException`
+where `x is T` is `false`. That single result is why the rule ships `fixIsSafe: false` although one
+half of it is exactly total — a rule carries one safety answer and the pair takes the weaker one.
+
+**`SK1121`: issue #109's headline example is the nesting that cannot be merged.** The issue proposes
+`try { try { … } finally { … } } catch { … }` → one statement. Compiled and run, that rewrite
+reverses the order of two side effects: the nested form logs `body → finally → catch` and the merged
+form logs `body → catch → finally`. .NET's two-pass exception handling runs the inner `finally`
+while unwinding to a handler it has *already located*, so the `finally` precedes the `catch`; a
+merged `finally` runs after its own `catch`. ⚠ **ReSharper's inspection describes the sound nesting
+and the issue transcribed it backwards** — the export reads *"try-catch and try-finally statements
+can be merged"*, `catch` on the **inner** statement and `finally` on the outer. That is the
+direction `SK1121` ships, and it is exact in both directions of abrupt completion: an outer
+`finally` already covers the inner `catch` bodies, so a rethrowing handler logs
+`body → catch → finally → escaped` either way.
+
+**`SK1122`: half of what "reuse the nearby anonymous type" suggests is a no-op the compiler already
+performs.** Two anonymous object creations with the same member names, the same member types **and
+the same order** are already **one** type — the same `Type` instance, across methods, within an
+assembly. ⚠ **Order is the whole finding**: `new { X = 1, Y = "s" }` compiles to
+`<>f__AnonymousType0` and `new { Y = "s", X = 1 }` to `<>f__AnonymousType1`, and the two are
+distinct at run time, so every dictionary, `Distinct` and `Union` over the pair keys separately. A
+creation in a **different assembly** is a different type whatever its shape, confirmed in the same
+run and out of reach of any edit. The rule therefore reports *only* the reordering, which is the one
+case an edit can fix, and issue #111's own body — which says the same thing — is right where the
+inspection's name is misleading.
+
+### ⚠ `SK1123`'s designation guard was written, and the compiler refuted it
+
+The first draft declined any designation inside either alternative, on the reasoning that C# forbids
+a pattern variable under `or`. It does — CS8780, confirmed by compiling both
+`d is { Status: int i } or { Status: 2 }` and `d is { Status: 1 } x or { Status: 2 }`, and both are
+errors. ⚠ **Which makes the guard unreachable: no program this rule can run on carries a pattern
+variable there.** And its only *reachable* effect was wrong — a **discard** is legal under `or`, and
+it merges perfectly well: `{ Payload: string _ } or { Payload: 2 }` and the
+`{ Payload: string _ or 2 }` it merges to both compile. The guard was removed and
+`SK1123/+/discard_designation` pins the case it used to decline. This is the same shape of defect as
+`SK2170`'s empty-body exemption: a guard whose removal turns nothing red, hiding a case it should
+have reported.
+
+### ⚠ Two rules refused, and the id range is not the reason
+
+**`TailRecursiveCall` (#106) is refuted rather than deferred**, and the evidence is three
+counter-examples that were run rather than argued. The transformation is a whole-method rewrite, and
+`EveryModernizationRule_HasAFix` means a rule in this range must produce it:
+
+| What the rewrite must preserve | Recursive | Naive loop |
+|---|---|---|
+| **simultaneous parameter assignment** — `Recursive(n - 1, b, a)` | `ba` | `bb` |
+| **virtual dispatch** — an unqualified self-call in a `virtual` method runs the most derived override | `DBD` | `BBB` |
+| **`finally` ordering** — a `return F(…)` inside a `try` is not in tail position at all | `end:00123` | `end:21000` |
+
+Each column is a live program in the probe, and each is a silent wrong answer rather than a crash.
+⚠ **The second row is the one that decides it**: `return F(x)` inside a `virtual` method is a
+*virtual* call, so the loop that replaces it can only ever run the body it is written in. A fix that
+has to be reviewed line by line for three independent hazards adds nothing over the finding, and the
+inspection is `HINT`. ⚠ **A report-only form is possible and belongs outside this range** — the
+concept is "a stack overflow waiting for a large enough input", which is `Correctness` or
+`Performance`, and those categories carry no fix invariant. That id is not this batch's to allocate.
+
+**`RedundantIsBeforeRelationalPattern` (part of #92) is refused because it contradicts two rules
+that already ship.** It rewrites `x is > 5` to `x > 5`. ⚠ **`SK1051`'s own documented good example
+is `count is <= 5`** — the output of its `not (> 5)` inversion — so this rule would immediately undo
+the shape `SK1051` had just produced, on the same file, in the same `skala fix` run. And the
+conjunction case oscillates against `SK1014`: `x is > 5 && x is < 10` → `x > 5 && x < 10` →
+`SK1014` → `x is > 5 and < 10`. ⚠ **`SK1014` cannot fire on a lone comparison** — it is registered
+only on `LogicalAndExpression` and `LogicalOrExpression`, so the single-pattern case converges — but
+the catalogue's settled direction of travel is comparisons *into* patterns, and a rule pointing the
+other way is a disagreement rather than a rewrite. **`ReplaceObjectPatternWithVarPattern` is refused
+separately**: every reading of *"replace object pattern not performing any additional checks with
+`var` pattern"* turns a pattern that rejects `null` into one that accepts it, which is a behaviour
+change with no guard that recovers it. **`ReplaceSequenceEqualWithConstantPattern` stays
+outstanding** — it is a real and narrow rewrite (`span.SequenceEqual("abc")` → `span is "abc"`) and
+it was not reached in this batch.
+
+⚠ **All four of #92's remaining inspections are C#, and that had to be checked rather than assumed.**
+The `jb` export carries **no `Language` attribute at all** — the whole 3 086-entry list is one
+alphabetical run with C#, VB and C++ interleaved, and VB ids are not prefixed. Language is readable
+only from the feature each description names, and relational patterns, the `var` pattern, property
+patterns and constant patterns are all C#-only constructs. ⚠ `RedundantIsBeforeRelationalPattern`
+sits three lines from `RedundantMeQualifier`, which is Visual Basic; alphabetical neighbourhood
+proves nothing.
+
+### ⚠ Nothing in the shipped toolchain reports any of these four concepts
+
+Measured rather than assumed, in a probe built **outside this repository** with empty
+`Directory.Build.props`/`.targets` above it. ⚠ **Three states, and the middle one is where the first
+attempt stopped.** At `AnalysisMode=All`, `AnalysisLevel=latest-all` and
+`EnforceCodeStyleInBuild=true`, **no `IDE*` diagnostic appeared at all** — they ship enabled and
+`Hidden`, and `EnforceCodeStyleInBuild` alone does not raise them. Only after
+`dotnet_analyzer_diagnostic.category-Style.severity = warning` did the instrument become capable of
+printing a non-zero. ⚠ **It was then verified rather than trusted**: planted shapes produce
+`IDE0059` and `IDE0090`, and the same build reports `CA1304`, `CA1311`, `CA1862` and `CA1822`. On
+the four concepts under test, the only diagnostics that land are `IDE0055` (formatting), `IDE0022`
+(expression body), `IDE0046`, `CA1062`, `CA1303` and `CA1051` — none of which is about any of them.
+So all four zeros are **shape present and correctly not reported by anyone else**, not shape absent
+and not an instrument that never ran.
