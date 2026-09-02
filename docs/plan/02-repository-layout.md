@@ -138,6 +138,81 @@ project the language-plugin seam is gone. Also enforced by a reference test.
 A tool whose logic lives in its entry-point assembly cannot be embedded, and embedding is exactly
 what MSBuild and MCP need.
 
+## What `netstandard2.0` costs a rule author
+
+Rule authors keep rediscovering this list by hitting a compile error mid-rule, and the errors do not
+say "wrong target framework". ⚠ **Everything below was compiled rather than remembered**, one
+construct per compilation against a project replicating the analyzer profile exactly, built outside
+this repository so that nothing above it could contribute. A list somebody guessed at would be worse
+than none, because it would be trusted.
+
+**Why it is `netstandard2.0`, so that nobody "fixes" it by retargeting.**
+[01](01-technology-decisions.md) § ADR-006 makes Skala's rules ordinary Roslyn `DiagnosticAnalyzer`s
+so they run inside `csc`, inside Rider and inside `skala check` from one implementation, and records
+the price: *"analyzers must be `netstandard2.0`, must not use C# 14 features that need a newer
+compiler at their build time (they can, the target is netstandard2.0 not an old language version),
+must be concurrency-safe, and must not hold state across compilations."* The parenthesis is the part
+that surprises people — `LangVersion` is `latest`, so the *language* is current and only the
+*runtime surface* is old.
+
+⚠ **The test project beside the analyzer is `net10.0`**, because `Directory.Build.props` assigns the
+profile by project name and `.Tests` does not end in `.Rules`. A construct that compiles in
+`Rikarin.Skala.Rules.Tests` therefore says nothing about whether it compiles in
+`Rikarin.Skala.Rules`, which is why this is confusing rather than merely restrictive.
+
+**Not available.** Each row is one compilation of one construct:
+
+| What you write | What you get |
+|---|---|
+| `xs is [1]` — list patterns | `CS0518`, `System.Index` is not defined |
+| `xs[^1]` — index from end | `CS0518` and `CS0656` |
+| `xs[1..]` — range | `CS0518`, `System.Range` is not defined |
+| `dictionary.TryAdd(k, v)` on a `Dictionary<,>` | `CS1061` |
+| `foreach (var (k, v) in dictionary)` | `CS0411`, `CS8129`, `CS8130` — no `KeyValuePair` deconstruction |
+| `s.Contains('c')`, `s.StartsWith('c')`, `s.Split(',', options)` | `CS1503` |
+| `xs.ToHashSet()`, `d.EnsureCapacity(n)` | `CS1061` |
+| `HashCode.Combine(…)` | `CS0103` |
+| `ArgumentNullException.ThrowIfNull(o)` | `CS0117` |
+| `Enum.GetValues<E>()` | `CS0308` |
+| `required` members | `CS0656`, and the `IsExternalInit` shim does not help |
+
+⚠ **`System.Index` exists and is `internal`, so "does the type exist" is the wrong question.** Naming
+it directly is **`CS0122`** — inaccessible — not `CS0246`, because `System.Memory` ships an internal
+shim for `netstandard2.0`. `Compilation.GetTypeByMetadataName` finds a symbol on a framework where
+`x[^1]` does not compile, which is how `SK1060` came to report sixteen findings on Skala's own
+projects whose fixes did not build. `IsSymbolAccessibleWithin` is the compiler's own test and is what
+the analyzer asks now.
+
+⚠ **`s.Contains('c')` starts compiling the moment `using System.Linq;` is in scope** — measured — and
+it then binds `Enumerable.Contains<char>`, an O(n) walk of the string rather than `string.Contains`.
+It is the one row here that fails quietly instead of loudly.
+
+**Refuted — these are *not* constraints, and treating them as such costs real expressiveness.**
+`record`, `record struct` and `init` accessors all work, because `Compat.cs` declares
+`IsExternalInit` in this assembly; the analyzer source uses both. `ConcurrentDictionary.TryAdd`
+works, and all six `.TryAdd` call sites under `Rules/Rikarin.Skala.Rules/` are on a
+`ConcurrentDictionary` — so the constraint is `Dictionary.TryAdd` specifically, and the unqualified
+form reads as a ban on a call the codebase makes constantly. `ValueTuple` deconstruction in a
+`foreach` works, so "no deconstruction" would be wrong; only `KeyValuePair`'s is missing. Collection
+expressions, file-scoped namespaces, raw string literals, target-typed `new()`, `is not` and
+`string.Contains(string, StringComparison)` all compile.
+
+⚠ **`if (false) { … }` is `CS0162` and that is not a `netstandard2.0` constraint at all.** It is
+`TreatWarningsAsErrors`, which `Directory.Build.props` sets for every project except `_build` —
+the `net10.0` ones included. It matters because the shipping bar requires sabotage testing and
+short-circuiting a guard is the obvious way to perform one. Two spellings work: delete the guard, or
+use a false the compiler cannot fold, such as `if (symbol.Name.Length < 0)`. ⚠ **A sabotage that does
+not compile goes red with *zero* failing tests**, so the exit code is not the result and the failure
+*count* is what has to be read. And deleting a `if (x is null)` guard leaves the later `x.Name` as
+`CS8602` under `Nullable=enable`, so that sabotage needs a second edit — `x?.Name` — in the same
+patch.
+
+⚠ **Verify the instrument before trusting what it prints.** A first probe putting all forty
+constructs in one file reported six errors, which read as "almost everything compiles". It was
+measuring nothing: Roslyn skips method-body binding once the declaration phase has errors, so a
+single `init` accessor near the bottom suppressed every body error above it. One construct, one
+compilation.
+
 ## Package boundaries — what ships to NuGet
 
 ✅ **All five exist and are built by `./build.sh Pack`.** Sizes are the measured `.nupkg`, Release,

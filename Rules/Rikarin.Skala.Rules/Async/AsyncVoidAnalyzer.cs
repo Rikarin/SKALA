@@ -94,9 +94,12 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer {
     ///     An <c>async void</c> method that survived every local guard, pending the name check.
     /// </summary>
     /// <remarks>
-    ///     ⚠ A class rather than a positional record: this assembly is <c>netstandard2.0</c>
-    ///     (ADR-006) and <c>init</c> accessors need an <c>IsExternalInit</c> the target framework does
-    ///     not carry. Not worth a second shim for three fields.
+    ///     ⚠ A class rather than a positional record, and <b>the reason written here was false.</b> It
+    ///     said <c>init</c> accessors need an <c>IsExternalInit</c> the target framework does not
+    ///     carry — but <c>Compat.cs</c> in this very assembly declares that shim, and the analyzer
+    ///     source uses <c>init</c> and positional records freely. Compiled to check: a positional
+    ///     record builds here. The class stays because it is written and works; nothing about
+    ///     <c>netstandard2.0</c> requires it. See doc 02 § "What netstandard2.0 costs a rule author".
     /// </remarks>
     sealed class Candidate {
         public Candidate(string name, Location location, ImmutableDictionary<string, string?> fix) {
