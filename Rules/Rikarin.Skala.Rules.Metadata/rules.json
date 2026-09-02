@@ -668,7 +668,6 @@
       "fixIsSafe": true,
       "resharperId": "MergeCastWithTypeCheck",
       "supersedes": [
-        "IDE0019",
         "IDE0020"
       ],
       "since": "1.2",
