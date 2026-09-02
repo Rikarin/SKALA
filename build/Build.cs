@@ -1,6 +1,7 @@
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
+using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
@@ -149,27 +150,48 @@ class Build : NukeBuild {
                     // reproduction. `format --check` above answers a different question — ADR-015 is
                     // "Skala formats Skala", and arrangement is the other half of that claim.
                     //
-                    // ⚠ It is ONE invocation over the root with an explicit workspace, not nine over
-                    // the areas like `Format` above. `--load=auto` means "one workspace target, else
-                    // loose", and none of those nine directories contains a `.slnx` — so the
-                    // per-area shape silently degrades to `loose`, which SKIPS every semantic rule.
-                    // Measured: nine directories reported 22 files and 666 in no compilation; the
-                    // root with `--load=workspace` reported 66 and 2. The cheaper-looking spelling
-                    // answers a third of the question and says nothing about the rest.
+                    // ⚠ It is ONE invocation over the root, not nine over the areas like `Format`
+                    // above. `--load=auto` means "one workspace target, else loose", and none of
+                    // those nine directories contains a `.slnx` — so the per-area shape silently
+                    // degrades to `loose`, which SKIPS every semantic rule. Measured: nine
+                    // directories reported 22 files and 666 in no compilation; the root reported 66
+                    // and 2. The cheaper-looking spelling answers a third of the question.
+                    //
+                    // ⚠ **A binlog, not `--load=workspace`, and the difference is 353 false
+                    // positives on a clean checkout.** `MSBuildWorkspace` drops the
+                    // `Rikarin.Skala.Rules.Metadata` project reference — it says so, as `SK9024`
+                    // "Found project reference without a matching metadata reference" — so
+                    // `RuleCatalog`, which that project's source generator emits, does not bind, and
+                    // `SK0210` calls every `using Rikarin.Skala.Rules.Metadata;` redundant. Measured
+                    // in one fresh clone at one commit: `--load=workspace` → 353 files to arrange,
+                    // all `SK0210`; `--load=binlog` → 0. ADR-007 is why: the binlog is what the
+                    // build actually compiled, generated sources included.
+                    //
+                    // ⚠ **A working tree hides this**, which is how it reached master. A tree that
+                    // has ever been built in Debug carries `bin/Debug` output that satisfies the
+                    // dropped reference, so `--load=workspace` is green here and red on CI's clean
+                    // checkout. The local gate agreed with CI only after a `git clone` reproduced it.
+                    //
+                    // ⚠ The build below is `--no-incremental` on purpose. An up-to-date incremental
+                    // build writes a binlog with no `CoreCompile` in it, `arrange` has no
+                    // `--require-fresh-binlog` to catch that, and the run would pass having analysed
+                    // nothing semantically — the zero from a disabled check and the zero from clean
+                    // code are the same zero.
+                    var binlog = RootDirectory / "artifacts" / "skala.binlog";
+                    DotNetBuild(settings => settings
+                            .SetProjectFile(Solution)
+                            .SetConfiguration(Configuration)
+                            .EnableNoRestore()
+                            .EnableNoIncremental()
+                            .AddProcessAdditionalArguments("-bl:" + binlog.ToString())
+                    );
+
                     DotNetRun(settings => settings
                             .SetProjectFile(cli)
                             .SetConfiguration(Configuration)
                             .EnableNoBuild()
                             .EnableNoRestore()
-                            .SetApplicationArguments(
-                                "arrange",
-                                "--check",
-                                "--quiet",
-                                "--load=workspace",
-                                "--project",
-                                Solution.Path,
-                                RootDirectory
-                            )
+                            .SetApplicationArguments("arrange", "--check", "--quiet", "--load=binlog", RootDirectory)
                     );
                 }
             );

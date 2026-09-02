@@ -199,7 +199,17 @@ run 0 "skala config diff --canonical" -- "$SKALA" config diff --canonical
 run 0 "skala format"                  -- "$SKALA" format
 run 0 "skala format --check (clean)"  -- "$SKALA" format --check --quiet
 run 0 "skala check --load loose"      -- "$SKALA" check --load loose
-run 0 "skala verify"                  -- "$SKALA" verify
+
+# ⚠ **Exit 1, and 0 would be the bug.** `verify`'s contract is deliberately stricter than the gate
+# it runs — "exit 0 means nothing to do" — and this repository has plenty to do: `Widget.cs` carries
+# a planted `SK0240`, and `Gadget.cs` is unarranged (`SK0205`, `SK0210`), because `format` above
+# does not arrange. `check --gate=local` passes all of it, a warning being below the local bar.
+# ⚠ Asserting 0 asserted that a tree with known work in it is finished, and it was never reachable:
+# every `Release` run in the visible history failed at `Pack` on NU5129 before this line ran, for as
+# long as the SDK package has carried its generated RuleIds .props. Fixing `Pack` is what surfaced
+# it. The findings are planted and stay — `SkalaTreatFindingsAsErrors` below needs `Gadget.cs` to
+# still say `== null`, so this repository is deliberately NOT arranged.
+run 1 "skala verify (exit 1: work remains)" -- "$SKALA" verify
 run 0 "skala explain SK1010"          -- "$SKALA" explain SK1010
 
 # ── the same commands, deep ────────────────────────────────────────────────────
@@ -209,6 +219,13 @@ run 0 "skala config sync --apply"     -- "$SKALA" config sync --apply
 run 0 "skala format"                  -- "$SKALA" format
 run 0 "skala format --check (clean)"  -- "$SKALA" format --check --quiet src/Widget.cs
 run 0 "skala check --load loose"      -- "$SKALA" check --load loose
+
+# ⚠ `arrange` was in no smoke test at all — the one command of the four in `verify` that the
+# installed tool never ran here. It goes in the deep repository rather than the shallow one on
+# purpose: arranging rewrites `Gadget.cs`'s `other == null` to `other is null`, which would delete
+# the `SK1010` the `SkalaTreatFindingsAsErrors` assertions need. Nothing downstream reads this copy.
+run 0 "skala arrange"                 -- "$SKALA" arrange
+run 0 "skala arrange --check (clean)" -- "$SKALA" arrange --check --quiet
 
 # ── the other four packages ────────────────────────────────────────────────────
 # ⚠ One PackageReference on the meta package, which is the claim doc 02 makes for it. If the
