@@ -5015,3 +5015,82 @@ style guide in the language recommends, and would have to be exempted before the
 could be read. A rule whose bare shape is mostly its own exemption is the "hundred rules that are
 usually right" failure this catalogue exists to avoid. The nine inspections named in the issue stay in
 the measured residue.
+
+### What `SK2220`–`SK2222` measured
+
+Skala's own tree, Release, `--no-incremental` with `-bl:artifacts/skala.binlog`, then
+`check --load=binlog --require-fresh-binlog --no-cache`. The three reference trees were copied
+**outside** the repository — `skala check` cannot reach them in place (`SK9023`) — one project per
+library, `net10.0`, `LangVersion=preview`, empty `Directory.Build.props`/`.targets` above them.
+
+| Tree | Files | Binlog coverage (`SK9021`) | `SK9030` | Findings | `SK2220` | `SK2221` | `SK2222` |
+|---|---|---|---|---|---|---|---|
+| Skala (Release) | — | **0 uncovered** | 0 | 667 | 0 | 0 | 0 |
+| Vixen (Release) | 600 | **0 uncovered** | 0 | 11 523 | 0 | 0 | 0 |
+| Serilog (Release) | 210 | **0 uncovered** | 0 | 1 332 | 0 | 0 | 0 |
+| Newtonsoft.Json (Release) | 330 | **0 uncovered** | 0 | 2 819 | 0 | 0 | 0 |
+
+⚠ **The corpus holds three copies of every file and only one of them is a program.** Beside each
+`X.cs` sit `X.expected.cs` and `X.arranged.expected.cs`, which are formatter oracles rather than
+sources: 380 real files against 760 copies. Compiling all 1 140 is what produces the flood of
+`CS0111` "already defines a member" that has been reported before. Dropping the two expected copies
+brings it to **zero `CS0111`** across all three trees.
+
+⚠ **The corpus omits the generated `ImplicitUsings` file, and the cost is measurable.** With
+`ImplicitUsings` disabled, Vixen alone reports **2 554 unique `CS` error sites**, 9 146 of them
+`CS0246`; enabling it brings that to **2 113**, recovering 441. The remainder is the corpus being a
+fragment of a larger tree, and it does not stop the analysis — analyzers run over a compilation that
+has errors, which is why every number above is real.
+
+**Every zero classified.** ⚠ None of the four zeros above is a zero from clean code:
+
+- **`SK2221` — shape absent, and the grep is complete.** The string `UnsafeAccessor` appears in **0**
+  of the 1 140 corpus files and in no compiled file of Skala's own tree; the attribute has to be
+  spelled in source, so its absence is decidable by search.
+- **`SK2222` — shape absent for the same kind of reason.** `operator checked` appears in **0** corpus
+  files (all three trees predate C# 11) and, in Skala's own tree, only inside
+  `Testing/corpus/**` fixture data and one documentation comment in `SyntaxCoverage.cs` — none of it
+  compiled into an assembly.
+- **`SK2220` — half the shape present in quantity and correctly declined, half absent.** The corpus
+  holds **114 `#if !X` directives**, mostly Newtonsoft's `HAVE_*` feature flags, which is exactly the
+  shape a looser rule would have fired on; the rule walks past all of them. The other half is absent:
+  the corpus declares no `[Conditional]` method at all (the six `Conditional(` matches are a Serilog
+  method of that name and two `<see cref>`s) and calls `Debug.Assert`, `Trace.Assert` or
+  `Trace.Write` **zero** times.
+- ⚠ **`SK2220`'s zero in a Debug sweep is "the analysis never ran", not "correctly declined", and the
+  probe is what established it.** A planted positive fired under `skala check` over a Release binlog
+  and was *silent* over a Debug binlog of the same file — because `DEBUG` is defined there, so
+  `#if !DEBUG` is disabled text holding no invocation node. This is the rule's structural property
+  stated at the top of the section, now measured rather than argued: **a `SK2220` sweep is only
+  meaningful over a configuration that does not define the symbol.** Every number in the table above
+  is from a Release build for that reason.
+
+**The instrument was verified before any of those zeros was believed.** A file carrying one positive
+of each rule was planted into Skala's own tree and, separately, into the Serilog corpus project;
+`skala check` reported all three on the right lines with the right messages through the real
+pipeline; the file was then deleted. Without that step the four zero columns above would be
+indistinguishable from three analyzers that never ran.
+
+⚠ **`SK2222`'s guard is worth 5 findings on a 16-line type, and the widening is what proved it.**
+Removing the opt-in predicate — so the rule reports any operator with no checked counterpart, which
+is the shape the ReSharper inspection describes — makes it fire **5 times on
+`SK2222/−/no_checked_at_all`**, a fifteen-line struct with the arithmetic every money type in every
+repository has. That is the measurement behind declining to ship the bare inspection.
+
+⚠ **A sabotage of that same predicate crashed the analyzer instead of over-firing it, the first time
+it was run, and the crash is the more useful finding.** With the predicate removed the message read
+`declaredChecked[0]` on an empty list and threw `ArgumentOutOfRangeException`, which Roslyn reports
+as `AD0001` — on **seven unrelated fixtures** (`SK1093`, `SK2003`, `SK2008`, `SK2050`, `SK2051`,
+`SK2061`, `SK7010`), every one of which happens to declare a user-defined operator. **A crashed
+analyzer declines every negative fixture it was supposed to decline**, so without
+`RuleFixtureTests`' `AD0001` assertion those seven would have read as seven clean passes and the
+over-firing measurement would have been silently replaced by nothing at all. The helper now reads
+the list instead of indexing it.
+
+⚠ **One sabotage hid underneath another.** Widening the checked-operator table and matching
+counterparts on name alone were run together; the first re-supplied findings the second had removed,
+so `SK2222/+/conversion_and_overload` stayed green and the signature comparison read as untested. Run
+alone, the name-only match turns that fixture red. ⚠ **`SK2221`'s generic guards were unreachable
+through their own fixture** — it named a member that exists, so removing both guards changed
+nothing; the fixture now names members that do not, and the guards are the only thing keeping the
+rule quiet.
