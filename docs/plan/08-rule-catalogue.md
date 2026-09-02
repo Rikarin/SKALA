@@ -3286,14 +3286,16 @@ header allowed. The headers now say `corpus/real` sources (380 of 1 140).
 **The Vixen column is a different tree, and it is not the corpus copy.** `corpus/real/vixen` holds
 200 of the 380 staged sources; the Vixen column is the **full working checkout**, outside this
 repository, and the three adjacent tables quote **4 680**, **4 681** and **4 717** because they
-measured it on different days rather than because one of them is wrong. ⚠ **4 717 is reproducible**:
-`git ls-tree -r --name-only 44b88648 | grep -c '\.cs$'` over that checkout — the commit at the head
-of the day `dff9c86` recorded the M7 sweep — is exactly 4 717, and the working tree today, less
-`obj`, `bin` and the agent worktrees under `.claude`, is 4 726. ⚠ **4 680 and 4 681 are not
-reproducible and are marked rather than restated**: they are 36 and 37 short of the tracked count on
-their own day, so the exclusion policy those two runs used is not recoverable from what was written
-down. The tree they name is certain; the last two digits are not, and no conclusion in either table
-turns on them — `SK8005`'s 25 findings were each read individually.
+measured it on different days rather than because one of them is wrong. ⚠ **4 717 is a count the
+checkout really produces**: `git ls-tree -r --name-only 44b88648 | grep -c '\.cs$'` — Vixen's head on
+2026-08-27, the day `dff9c86` recorded the M7 sweep — is exactly 4 717, and the working tree today,
+less `obj`, `bin` and the agent worktrees under `.claude`, is 4 726. ⚠ **That is a match, not a
+reproduction**: nothing recorded which Vixen commit any of these three runs was pointed at, so the
+right reading is that the column is the external checkout at three moments a few files apart, and
+**4 680 and 4 681 are marked rather than restated** — 36 and 37 short of the tracked count on that
+day, by an exclusion policy nobody wrote down. The tree they name is certain; the last two digits are
+not, and no conclusion in either table turns on them — `SK8005`'s 25 findings were each read
+individually.
 
 ⚠ **What had no instrument either way was the arithmetic**, which is the part worth fixing rather
 than re-deriving. A source added to one vendored tree and not given its two twins moves 380 and 1 140
