@@ -455,7 +455,7 @@ public static class XmlDocIds {
         ),
         new(
             "resharper_xmldoc_attribute_style",
-            "Pending, not refused. ⚠ The reason recorded here — 'it arranges the attributes of a header Skala does not yet wrap' — is MEASURED FALSE: it does not wait for a wrap. `on_different_lines` puts the tag name alone and every attribute on its own line, and `first_attribute_on_single_line` keeps the first on the tag's line and breaks the rest, and BOTH do so to a header that fits on one line comfortably. What survives is the second half: the export leaves it at `do_not_touch`, so the default costs nothing today. ⚠ The open question this entry recorded is now CLOSED and the hypothesis it named was right: `on_single_line` IS distinguished from `do_not_touch`, on exactly the shape it predicted — an already-wrapped short header, `<see cref=\"System.String\"` / `href=\"https://short.invalid/\" />`, which `do_not_touch` keeps wrapped and `on_single_line` joins onto one line. All FOUR values separate. SK-DIV-0079."
+            """Pending, not refused. ⚠ The reason recorded here — 'it arranges the attributes of a header Skala does not yet wrap' — is MEASURED FALSE: it does not wait for a wrap. `on_different_lines` puts the tag name alone and every attribute on its own line, and `first_attribute_on_single_line` keeps the first on the tag's line and breaks the rest, and BOTH do so to a header that fits on one line comfortably. What survives is the second half: the export leaves it at `do_not_touch`, so the default costs nothing today. ⚠ The open question this entry recorded is now CLOSED and the hypothesis it named was right: `on_single_line` IS distinguished from `do_not_touch`, on exactly the shape it predicted — an already-wrapped short header, `<see cref="System.String"` / `href="https://short.invalid/" />`, which `do_not_touch` keeps wrapped and `on_single_line` joins onto one line. All FOUR values separate. SK-DIV-0079."""
         ),
         new(
             "resharper_xmldoc_alignment_tab_fill_style",
@@ -513,7 +513,7 @@ public static class XmlDocIds {
         // the same instruction, so the doc-comment task does see it.
         new(
             "resharper_xmldoc_pi_attribute_style",
-            "⚠ Not pending — MEASURED INERT IN THE ORACLE, which is a different claim from the one recorded here before. `<?skala-probe first = \"1\" second=\"2\"   third='3'?>` comes back byte-identical at all four values, the spaces around '=' and the double space included, and a 160-column instruction is not wrapped at any of them. So 'a processing instruction is emitted verbatim' is true of jb cleanupcode 2025.2.6 as well, and Skala's verbatim path is not a gap against it. Control in the same run: resharper_xmldoc_blank_line_after_pi = false."
+            """⚠ Not pending — MEASURED INERT IN THE ORACLE, which is a different claim from the one recorded here before. `<?skala-probe first = "1" second="2"   third='3'?>` comes back byte-identical at all four values, the spaces around '=' and the double space included, and a 160-column instruction is not wrapped at any of them. So 'a processing instruction is emitted verbatim' is true of jb cleanupcode 2025.2.6 as well, and Skala's verbatim path is not a gap against it. Control in the same run: resharper_xmldoc_blank_line_after_pi = false."""
         ),
         new(
             "resharper_xmldoc_pi_attributes_indent",
@@ -521,11 +521,11 @@ public static class XmlDocIds {
         ),
         new(
             "resharper_xmldoc_space_after_last_pi_attribute",
-            "⚠ Not pending — measured inert in the oracle, at both values, on an instruction written tight ('third=\"3\"?>') and one written with the space ('epsilon=\"epsilonvalue\" ?>'). The oracle copies the instruction's bytes, '?>' and whatever precedes it included. Control in the same run: resharper_xmldoc_blank_line_after_pi = false."
+            """⚠ Not pending — measured inert in the oracle, at both values, on an instruction written tight ('third="3"?>') and one written with the space ('epsilon="epsilonvalue" ?>'). The oracle copies the instruction's bytes, '?>' and whatever precedes it included. Control in the same run: resharper_xmldoc_blank_line_after_pi = false."""
         ),
         new(
             "resharper_xmldoc_spaces_around_eq_in_pi_attribute",
-            "⚠ Not pending — measured inert in the oracle, asked on the shape the key would have to normalise: a '=' written with a space on each side, `<?skala-probe first = \"1\" …?>`, beside one written tight. The spaces survive at `false` and none is added at `true`. Control in the same run: resharper_xmldoc_blank_line_after_pi = false."
+            """⚠ Not pending — measured inert in the oracle, asked on the shape the key would have to normalise: a '=' written with a space on each side, `<?skala-probe first = "1" …?>`, beside one written tight. The spaces survive at `false` and none is added at `true`. Control in the same run: resharper_xmldoc_blank_line_after_pi = false."""
         )
     ];
 }

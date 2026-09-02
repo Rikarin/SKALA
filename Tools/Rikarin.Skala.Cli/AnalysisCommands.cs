@@ -362,7 +362,7 @@ public static partial class SkalaCommandLine {
         var rules = new Command("rules", "The rule catalogue.");
 
         var list = new Command("list", "Every allocated rule id, with its severity and scope.");
-        list.SetAction(_ => {
+        list.SetAction(static _ => {
                 Console.Out.Write(ExplainCommand.RenderIndex());
                 return ExitCodes.Ok;
             }

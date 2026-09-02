@@ -666,7 +666,7 @@ public static class ConfigCommands {
             // SK-DIV-0006 is the entry that corrects the original inference; the wording below no
             // longer repeats it. "Not verifiable yet" and "not verifiable" are different claims, and
             // only the first one is true.
-            if (families.Any(static g => g.Key == "xmldoc")) {
+            if (families.Exists(static g => g.Key == "xmldoc")) {
                 output.AppendLine(
                     "    xmldoc*: honoured and observable, but the committed oracle profiles do not enable"
                 );

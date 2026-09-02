@@ -25,16 +25,22 @@ public sealed class ConfigurationDiagnosticsTests {
 
         Assert.Equal(3, messages.Length);
 
-        var finalNewline = Assert.Single(messages, m => m.Contains("insert_final_newline", StringComparison.Ordinal));
+        var finalNewline = Assert.Single(
+            messages,
+            static m => m.Contains("insert_final_newline", StringComparison.Ordinal)
+        );
         Assert.Contains("resharper_csharp_insert_final_newline = true", finalNewline, StringComparison.Ordinal);
         Assert.Contains("the C# key wins", finalNewline, StringComparison.Ordinal);
         Assert.Contains("the effective value is 'true'", finalNewline, StringComparison.Ordinal);
 
-        var whitespace = Assert.Single(messages, m => m.Contains("trim_trailing_whitespace", StringComparison.Ordinal));
+        var whitespace = Assert.Single(
+            messages,
+            static m => m.Contains("trim_trailing_whitespace", StringComparison.Ordinal)
+        );
         Assert.Contains("resharper_remove_spaces_on_blank_lines = true", whitespace, StringComparison.Ordinal);
         Assert.Contains("the C# key wins", whitespace, StringComparison.Ordinal);
 
-        var lineEndings = Assert.Single(messages, m => m.Contains("end_of_line = lf", StringComparison.Ordinal));
+        var lineEndings = Assert.Single(messages, static m => m.Contains("end_of_line = lf", StringComparison.Ordinal));
         Assert.Contains("resharper_enforce_line_ending_style = false", lineEndings, StringComparison.Ordinal);
         Assert.Contains("the C# key wins", lineEndings, StringComparison.Ordinal);
     }
@@ -52,7 +58,7 @@ public sealed class ConfigurationDiagnosticsTests {
 
         var diagnostic = Assert.Single(
             ConfigurationAnalyzer.Analyze(OptionResolver.Resolve(EditorConfigChain.Of("/repo/File.cs", document))),
-            d => d.Id == ConfigDiagnosticIds.UnknownKey
+            static d => d.Id == ConfigDiagnosticIds.UnknownKey
         );
 
         // ⚠ Info, not warning: the export contains ~2 000 keys Skala will never implement, and a
@@ -74,10 +80,11 @@ public sealed class ConfigurationDiagnosticsTests {
             EditorConfigChain.Of(Path.Combine(RepositoryPaths.Root, "Probe.cs"), document)
         );
 
-        Assert.Contains(resolution.Unknown, key => key.Namespace == KeyNamespace.InspectionSeverity);
+        Assert.Contains(resolution.Unknown, static key => key.Namespace == KeyNamespace.InspectionSeverity);
         Assert.DoesNotContain(
             ConfigurationAnalyzer.Analyze(resolution),
-            d => d.Id == ConfigDiagnosticIds.UnknownKey && d.Message.Contains("_highlighting", StringComparison.Ordinal)
+            static d => d.Id == ConfigDiagnosticIds.UnknownKey
+                && d.Message.Contains("_highlighting", StringComparison.Ordinal)
         );
     }
 
@@ -91,7 +98,7 @@ public sealed class ConfigurationDiagnosticsTests {
 
         var diagnostic = Assert.Single(
             ConfigurationAnalyzer.Analyze(OptionResolver.Resolve(source), repository),
-            d => d.Id == ConfigDiagnosticIds.InheritedFromAbove
+            static d => d.Id == ConfigDiagnosticIds.InheritedFromAbove
         );
 
         Assert.Equal(SkalaSeverity.Info, diagnostic.Severity);
@@ -111,7 +118,10 @@ public sealed class ConfigurationDiagnosticsTests {
             """
         );
 
-        var diagnostic = Assert.Single(config.Diagnostics, d => d.Id == ConfigDiagnosticIds.StyleKeyInToolConfig);
+        var diagnostic = Assert.Single(
+            config.Diagnostics,
+            static d => d.Id == ConfigDiagnosticIds.StyleKeyInToolConfig
+        );
         Assert.Equal(SkalaSeverity.Error, diagnostic.Severity);
         Assert.Contains("move it to .editorconfig", diagnostic.Message, StringComparison.Ordinal);
     }
@@ -130,7 +140,7 @@ public sealed class ConfigurationDiagnosticsTests {
 
         var diagnostic = Assert.Single(
             ConfigurationAnalyzer.Analyze(OptionResolver.Resolve(EditorConfigChain.Of("/repo/File.cs", document))),
-            d => d.Id == ConfigDiagnosticIds.DuplicateAlias
+            static d => d.Id == ConfigDiagnosticIds.DuplicateAlias
         );
 
         Assert.Equal(SkalaSeverity.Warning, diagnostic.Severity);
@@ -152,7 +162,7 @@ public sealed class ConfigurationDiagnosticsTests {
 
         var diagnostic = Assert.Single(
             ConfigurationAnalyzer.Analyze(OptionResolver.Resolve(EditorConfigChain.Of("/repo/File.cs", document))),
-            d => d.Id == ConfigDiagnosticIds.UnhonourableSetting
+            static d => d.Id == ConfigDiagnosticIds.UnhonourableSetting
         );
 
         Assert.Equal(SkalaSeverity.Warning, diagnostic.Severity);
@@ -160,6 +170,6 @@ public sealed class ConfigurationDiagnosticsTests {
 
     [Fact]
     public void SK9006_IsSilentForTheTemplate_BecauseTheTemplateTurnsAutodetectionOff() {
-        Assert.DoesNotContain(AnalyzeTemplate(), d => d.Id == ConfigDiagnosticIds.UnhonourableSetting);
+        Assert.DoesNotContain(AnalyzeTemplate(), static d => d.Id == ConfigDiagnosticIds.UnhonourableSetting);
     }
 }

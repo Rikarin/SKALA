@@ -317,7 +317,7 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
     ///     original never ran.
     /// </remarks>
     static bool IsInTailPosition(StatementSyntax statement, BlockSyntax body) {
-        var current = (SyntaxNode)statement;
+        SyntaxNode current = statement;
         while (!ReferenceEquals(current, body)) {
             var parent = current.Parent;
             switch (parent) {

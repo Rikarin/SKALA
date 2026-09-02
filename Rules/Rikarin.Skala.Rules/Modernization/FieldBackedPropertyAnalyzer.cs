@@ -74,7 +74,7 @@ public sealed class FieldBackedPropertyAnalyzer : DiagnosticAnalyzer {
             } symbol
             || symbol.IsStatic != field.IsStatic
             || !SymbolEqualityComparer.IncludeNullability.Equals(symbol.Type, field.Type)
-            || accessors.Accessors.Any(accessor => !uses.Any(use => accessor.Span.Contains(use.Span)))
+            || accessors.Accessors.Any(accessor => !uses.Exists(use => accessor.Span.Contains(use.Span)))
             || symbol.ContainingType.GetAttributes()
                 .Any(static attribute => attribute.AttributeClass?.ToDisplayString()
                     is "System.Runtime.InteropServices.StructLayoutAttribute" or "System.SerializableAttribute"

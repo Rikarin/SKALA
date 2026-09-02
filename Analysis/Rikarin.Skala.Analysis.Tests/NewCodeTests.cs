@@ -90,10 +90,10 @@ public sealed class NewCodeTests : IDisposable {
     /// </remarks>
     [Fact]
     public void Since_MarksOnlyTheChangedLines() {
-        Write("Core/Foo.cs", string.Join('\n', Enumerable.Range(1, 40).Select(i => "// line " + i)) + "\n");
+        Write("Core/Foo.cs", string.Join('\n', Enumerable.Range(1, 40).Select(static i => "// line " + i)) + "\n");
         Commit("base");
 
-        var lines = Enumerable.Range(1, 40).Select(i => "// line " + i).ToArray();
+        var lines = Enumerable.Range(1, 40).Select(static i => "// line " + i).ToArray();
         lines[19] = "// CHANGED";
         Write("Core/Foo.cs", string.Join('\n', lines) + "\n");
 
@@ -149,10 +149,10 @@ public sealed class NewCodeTests : IDisposable {
 
     [Fact]
     public void Since_TagsFindingsInPlace() {
-        Write("Core/Foo.cs", string.Join('\n', Enumerable.Range(1, 10).Select(i => "// line " + i)) + "\n");
+        Write("Core/Foo.cs", string.Join('\n', Enumerable.Range(1, 10).Select(static i => "// line " + i)) + "\n");
         Commit("base");
 
-        var lines = Enumerable.Range(1, 10).Select(i => "// line " + i).ToArray();
+        var lines = Enumerable.Range(1, 10).Select(static i => "// line " + i).ToArray();
         lines[4] = "// CHANGED";
         Write("Core/Foo.cs", string.Join('\n', lines) + "\n");
 

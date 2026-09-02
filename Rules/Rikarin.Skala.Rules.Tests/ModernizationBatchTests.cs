@@ -240,7 +240,7 @@ public sealed class ModernizationBatchTests {
         var before = RuleFixtures.Compile(source, "probe.cs");
         var diagnostics = Analyze(before);
         Assert.Equal(expectedFixes, diagnostics.Length);
-        var edits = diagnostics.Select(diagnostic => new TextChange(
+        var edits = diagnostics.Select(static diagnostic => new TextChange(
                 new TextSpan(
                     int.Parse(
                         diagnostic.Properties[FixEdits.StartKey(0)]!,

@@ -244,7 +244,7 @@ public static class SyntaxCoverage {
         // three spell the same two keywords and only the parameter is the C# 12 addition.
         yield return ("ref readonly parameter",
             nodes.OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ParameterSyntax>()
-                .Count(parameter => parameter.Modifiers.Any(SyntaxKind.RefKeyword)
+                .Count(static parameter => parameter.Modifiers.Any(SyntaxKind.RefKeyword)
                     && parameter.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)
                 ));
 

@@ -46,8 +46,8 @@ public sealed class FuzzGenerator {
 
     static readonly ImmutableArray<string> Attributes = [
         "Obsolete", "Pure", "DebuggerStepThrough", "EditorBrowsable(EditorBrowsableState.Never)",
-        "MethodImpl(MethodImplOptions.AggressiveInlining)", "Obsolete(\"replaced\", false)",
-        "SuppressMessage(\"Design\", \"CA1000:DoNotDeclareStaticMembersOnGenericTypes\")",
+        "MethodImpl(MethodImplOptions.AggressiveInlining)", """Obsolete("replaced", false)""",
+        """SuppressMessage("Design", "CA1000:DoNotDeclareStaticMembersOnGenericTypes")""",
         "InlineArray(8)", "StringSyntax(StringSyntaxAttribute.Regex)"
     ];
 
@@ -1049,14 +1049,14 @@ public sealed class FuzzGenerator {
     string RawString(int indent) {
         if (random.Chance(0.5)) {
             var quotes = new string('"', random.Chance(0.3) ? 4 : 3);
-            return quotes + random.Pick(["a { b } c", "no escapes \\n here", "<x a=\"1\"/>", "{}"]) + quotes;
+            return quotes + random.Pick(["a { b } c", """no escapes \n here""", """<x a="1"/>""", "{}"]) + quotes;
         }
 
         var pad = new string(' ', (indent + 1) * 4);
         var lines = random.Next(1, 4);
         var content = new List<string>();
         for (var i = 0; i < lines; i++) {
-            content.Add(random.Pick(["select 1", "{ \"json\": true }", "line of text"]));
+            content.Add(random.Pick(["select 1", """{ "json": true }""", "line of text"]));
         }
 
         // ⚠ The `$` prefix is taken only when no line carries a brace. In an interpolated raw string

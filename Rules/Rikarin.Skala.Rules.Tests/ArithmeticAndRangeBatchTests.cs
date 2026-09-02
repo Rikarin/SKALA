@@ -93,8 +93,8 @@ public sealed class ArithmeticAndRangeBatchTests {
         Assert.False(-5 % 2 == 1);
         Assert.True(-5 % 2 != 0);
 #pragma warning restore SK2054
-        Assert.Single(Findings("class C { bool M(int v) => v % 2 == 1; }"), d => d.Id == "SK2054");
-        Assert.DoesNotContain(Findings("class C { bool M(int v) => v % 2 == 0; }"), d => d.Id == "SK2054");
+        Assert.Single(Findings("class C { bool M(int v) => v % 2 == 1; }"), static d => d.Id == "SK2054");
+        Assert.DoesNotContain(Findings("class C { bool M(int v) => v % 2 == 0; }"), static d => d.Id == "SK2054");
     }
 
     /// <summary>
@@ -109,11 +109,11 @@ public sealed class ArithmeticAndRangeBatchTests {
         Assert.Equal(value, value << 32);
 #pragma warning restore SK2052
         Assert.Equal(4294967296L, 1L << 32);
-        Assert.Single(Findings("class C { int M(int v) => v << 32; }"), d => d.Id == "SK2052");
-        Assert.DoesNotContain(Findings("class C { long M(long v) => v << 32; }"), d => d.Id == "SK2052");
+        Assert.Single(Findings("class C { int M(int v) => v << 32; }"), static d => d.Id == "SK2052");
+        Assert.DoesNotContain(Findings("class C { long M(long v) => v << 32; }"), static d => d.Id == "SK2052");
 
         // A byte promotes to int, so it masks with 31 and not with 7.
-        Assert.Single(Findings("class C { int M(byte v) => v << 32; }"), d => d.Id == "SK2052");
+        Assert.Single(Findings("class C { int M(byte v) => v << 32; }"), static d => d.Id == "SK2052");
     }
 
     /// <summary>

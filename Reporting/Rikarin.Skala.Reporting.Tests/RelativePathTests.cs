@@ -88,6 +88,6 @@ public sealed class RelativePathTests {
     /// </summary>
     [Fact]
     public void NoSeparatorSurvivesAsABackslash() {
-        Assert.DoesNotContain("\\", SarifWriter.Relative(Root, Under("a", "b", "c.cs")), StringComparison.Ordinal);
+        Assert.DoesNotContain("""\""", SarifWriter.Relative(Root, Under("a", "b", "c.cs")), StringComparison.Ordinal);
     }
 }

@@ -32,7 +32,7 @@ public sealed class SyntaxKindInventoryTests {
         var missing = Enum.GetValues<SyntaxKind>()
             .Select(static kind => kind.ToString())
             .Distinct(StringComparer.Ordinal)
-            .Where(name => !Inventory.ContainsKey(name))
+            .Where(static name => !Inventory.ContainsKey(name))
             .Order(StringComparer.Ordinal)
             .ToArray();
 

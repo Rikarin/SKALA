@@ -162,7 +162,7 @@ public sealed class XmlDocSubFormatterTests {
             ("resharper_xmldoc_max_line_length", "60")
         );
 
-        Assert.All(XmlDoc.DocLines(narrow), line => Assert.True(Inner(line) <= 60, line));
+        Assert.All(XmlDoc.DocLines(narrow), static line => Assert.True(Inner(line) <= 60, line));
         Assert.True(
             XmlDoc.DocLines(narrow).Length
             > XmlDoc.DocLines(XmlDoc.Text(XmlDoc.InClass("/// <summary>" + text + "</summary>"))).Length
@@ -186,30 +186,30 @@ public sealed class XmlDocSubFormatterTests {
     [Fact]
     public void LinebreakBeforeElements_GivesEachListedTagItsOwnLine() {
         var source = XmlDoc.InClass(
-            "/// <summary>One.</summary><param name=\"a\">A.</param><param name=\"b\">B.</param>"
+            """/// <summary>One.</summary><param name="a">A.</param><param name="b">B.</param>"""
         );
 
         Assert.Equal(
-            ["/// <summary>One.</summary>", "/// <param name=\"a\">A.</param>", "/// <param name=\"b\">B.</param>"],
+            ["/// <summary>One.</summary>", """/// <param name="a">A.</param>""", """/// <param name="b">B.</param>"""],
             XmlDoc.DocLines(XmlDoc.Text(source))
         );
     }
 
     [Fact]
     public void AnElementNotOnTheList_StaysInlineWithTheProse() {
-        var source = XmlDoc.InClass("/// <summary>See <see cref=\"C\" /> for details.</summary>");
+        var source = XmlDoc.InClass("""/// <summary>See <see cref="C" /> for details.</summary>""");
         Assert.Equal(
-            ["/// <summary>See <see cref=\"C\" /> for details.</summary>"],
+            ["""/// <summary>See <see cref="C" /> for details.</summary>"""],
             XmlDoc.DocLines(XmlDoc.Text(source))
         );
     }
 
     [Fact]
     public void SpaceBeforeSelfClosing_IsHonoured() {
-        var source = XmlDoc.InClass("/// <summary>A <see cref=\"C\"/> b.</summary>");
-        Assert.Contains("<see cref=\"C\" />", XmlDoc.Text(source), StringComparison.Ordinal);
+        var source = XmlDoc.InClass("""/// <summary>A <see cref="C"/> b.</summary>""");
+        Assert.Contains("""<see cref="C" />""", XmlDoc.Text(source), StringComparison.Ordinal);
         Assert.Contains(
-            "<see cref=\"C\"/>",
+            """<see cref="C"/>""",
             XmlDoc.Text(source, ("resharper_xmldoc_space_before_self_closing", "false")),
             StringComparison.Ordinal
         );
@@ -513,8 +513,8 @@ public sealed class XmlDocColumnTests {
         // `corpus/real/` comments, which is the sub-formatter declining to ship what it could not
         // prove, and the refusal count is how it surfaced at all.
         const string code =
-            "/// <example><code lang=\"cs\" source=\"..\\Src\\Newtonsoft.Json.Tests\\Documentation\\LinqToJsonTests.cs\" "
-            + "region=\"LinqToJsonCreateParse\" title=\"Parsing a JSON Object from Text\" /></example>";
+            """/// <example><code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\LinqToJsonTests.cs" """
+            + """region="LinqToJsonCreateParse" title="Parsing a JSON Object from Text" /></example>""";
         var formatted = XmlDoc.Text(XmlDoc.InClass(code));
 
         Assert.DoesNotContain("</code>", formatted, StringComparison.Ordinal);
@@ -808,7 +808,9 @@ public sealed class XmlDocHazardTests {
 
     [Fact]
     public void ACrefAttribute_IsCopiedByteForByte() {
-        var source = XmlDoc.InClass("/// <summary>See <see cref=\"System.Collections.Generic.List{T}\" />.</summary>");
+        var source = XmlDoc.InClass(
+            """/// <summary>See <see cref="System.Collections.Generic.List{T}" />.</summary>"""
+        );
         Assert.Contains(
             "cref=\"System.Collections.Generic.List{T}\"",
             XmlDoc.Text(source),
@@ -938,14 +940,14 @@ public sealed class XmlDocPropertyTests {
 public sealed class XmlDocMeasuredTagHeaderTests {
     [Fact]
     public void SpaceAfterLastAttribute_DefaultsToNoSpace_AndAddsOneWhenAsked() {
-        var source = XmlDoc.InClass("/// <param name=\"a\" >Text.</param>");
+        var source = XmlDoc.InClass("""/// <param name="a" >Text.</param>""");
 
         // ⚠ The default normalises the author's stray space away rather than preserving it. That is
         // the oracle's answer, and it is the half of this key that changes output at its default.
-        Assert.Contains("/// <param name=\"a\">Text.</param>", XmlDoc.Text(source), StringComparison.Ordinal);
+        Assert.Contains("""/// <param name="a">Text.</param>""", XmlDoc.Text(source), StringComparison.Ordinal);
 
         Assert.Contains(
-            "/// <param name=\"a\" >Text.</param>",
+            """/// <param name="a" >Text.</param>""",
             XmlDoc.Text(source, ("resharper_xmldoc_space_after_last_attribute", "true")),
             StringComparison.Ordinal
         );
@@ -957,23 +959,23 @@ public sealed class XmlDocMeasuredTagHeaderTests {
         // both counts: a self-closing tag's gap belongs to `space_before_self_closing` alone, and a
         // tag with no attributes has no last attribute to follow.
         var formatted = XmlDoc.Text(
-            XmlDoc.InClass("/// <summary>Short.</summary>", "/// <remarks><see cref=\"C\" /></remarks>"),
+            XmlDoc.InClass("/// <summary>Short.</summary>", """/// <remarks><see cref="C" /></remarks>"""),
             ("resharper_xmldoc_space_after_last_attribute", "true")
         );
 
         Assert.Contains("/// <summary>Short.</summary>", formatted, StringComparison.Ordinal);
-        Assert.Contains("<see cref=\"C\" />", formatted, StringComparison.Ordinal);
+        Assert.Contains("""<see cref="C" />""", formatted, StringComparison.Ordinal);
         Assert.DoesNotContain("<summary >", formatted, StringComparison.Ordinal);
     }
 
     [Fact]
     public void SpacesAroundEqInAttribute_MovesOnlyTheWhitespace() {
-        var source = XmlDoc.InClass("/// <param name = \"b\">Text.</param>");
+        var source = XmlDoc.InClass("""/// <param name = "b">Text.</param>""");
 
-        Assert.Contains("/// <param name=\"b\">Text.</param>", XmlDoc.Text(source), StringComparison.Ordinal);
+        Assert.Contains("""/// <param name="b">Text.</param>""", XmlDoc.Text(source), StringComparison.Ordinal);
 
         Assert.Contains(
-            "/// <param name = \"b\">Text.</param>",
+            """/// <param name = "b">Text.</param>""",
             XmlDoc.Text(source, ("resharper_xmldoc_spaces_around_eq_in_attribute", "true")),
             StringComparison.Ordinal
         );
@@ -988,12 +990,12 @@ public sealed class XmlDocMeasuredTagHeaderTests {
         var formatted = XmlDoc.Text(
             XmlDoc.InClass(
                 "/// <param name='single'>One.</param>",
-                "/// <param   name=\"double\"    other=\"x\"  >Two.</param>"
+                """/// <param   name="double"    other="x"  >Two.</param>"""
             )
         );
 
         Assert.Contains("/// <param name='single'>One.</param>", formatted, StringComparison.Ordinal);
-        Assert.Contains("/// <param name=\"double\" other=\"x\">Two.</param>", formatted, StringComparison.Ordinal);
+        Assert.Contains("""/// <param name="double" other="x">Two.</param>""", formatted, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -1042,14 +1044,14 @@ public sealed class XmlDocMeasuredTagHeaderTests {
     ///     says <c>/// &lt;?…?&gt;</c> is the right answer; what still diverges there is the trailing
     ///     space on the blank line after it, which is the entry's second half and a decision.
     /// </remarks>
-    const string Pi = "/// <?display mode=\"short\"?>";
+    const string Pi = """/// <?display mode="short"?>""";
 
     [Fact]
     public void BlankLineAfterPi_IsOnByDefault() {
         // ⚠ A default-true key the sub-formatter had never performed, invisible for as long as the
         // key coverage test excluded the processing-instruction family from its own partition.
         var lines = XmlDoc.DocLines(
-            XmlDoc.Text(XmlDoc.InClass("/// <?display mode=\"short\"?>", "/// <summary>After.</summary>"))
+            XmlDoc.Text(XmlDoc.InClass("""/// <?display mode="short"?>""", "/// <summary>After.</summary>"))
         );
 
         // ⚠ `/// ` — the blank line carries the marker's space, which is SK-DIV-0023's second half
@@ -1063,7 +1065,7 @@ public sealed class XmlDocMeasuredTagHeaderTests {
     public void BlankLineAfterPi_IsSuppressedWhenTurnedOff() {
         var lines = XmlDoc.DocLines(
             XmlDoc.Text(
-                XmlDoc.InClass("/// <?display mode=\"short\"?>", "/// <summary>After.</summary>"),
+                XmlDoc.InClass("""/// <?display mode="short"?>""", "/// <summary>After.</summary>"),
                 ("resharper_xmldoc_blank_line_after_pi", "false")
             )
         );
@@ -1077,7 +1079,7 @@ public sealed class XmlDocMeasuredTagHeaderTests {
         // instruction does not end it on a bare `///`. Asserted because the blank line is emitted
         // unconditionally and this is the one place that has to take it back.
         var lines = XmlDoc.DocLines(
-            XmlDoc.Text(XmlDoc.InClass("/// <summary>Before.</summary>", "/// <?display mode=\"short\"?>"))
+            XmlDoc.Text(XmlDoc.InClass("/// <summary>Before.</summary>", """/// <?display mode="short"?>"""))
         );
 
         Assert.Equal(["/// <summary>Before.</summary>", Pi], lines);
@@ -1226,7 +1228,7 @@ public sealed class XmlDocKeyCoverageTests {
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash)
                 .Count(id => implemented.Contains(id) && !unsubstantiated.Contains(OptionRegistry.Get(id).Key)),
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash)
-                .Count(id => OptionRegistry.Get(id).Tier == OptionTier.A)
+                .Count(static id => OptionRegistry.Get(id).Tier == OptionTier.A)
         );
     }
 }

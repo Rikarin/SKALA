@@ -80,7 +80,7 @@ public sealed class UnchangingLoopConditionAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (variables.Any(variable => written.WrittenInside.Contains(variable, SymbolEqualityComparer.Default)
+        if (variables.Exists(variable => written.WrittenInside.Contains(variable, SymbolEqualityComparer.Default)
                 || IsReachableFromAClosure(context.Node, variable)
             )) {
             return;

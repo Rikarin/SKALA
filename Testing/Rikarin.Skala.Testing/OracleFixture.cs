@@ -246,5 +246,5 @@ public static class TextNormalisation {
     public static string Normalise(string text) => string.Join('\n', Lines(text));
 
     public static StringBuilder AppendEscaped(this StringBuilder builder, string value) =>
-        builder.Append(value.Replace("\t", "\\t", StringComparison.Ordinal));
+        builder.Append(value.Replace("\t", """\t""", StringComparison.Ordinal));
 }

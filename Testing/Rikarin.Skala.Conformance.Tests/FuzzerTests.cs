@@ -146,7 +146,9 @@ public sealed class FuzzerTests {
             }
 
             if (Errors(subject.Text) > Errors(subject.Baseline)) {
-                lost.Add(FuzzRandom.Format(seed) + ": " + string.Join(", ", subject.Mutations.Select(m => m.Name)));
+                lost.Add(
+                    FuzzRandom.Format(seed) + ": " + string.Join(", ", subject.Mutations.Select(static m => m.Name))
+                );
             }
         }
 
@@ -311,7 +313,7 @@ public sealed class FuzzerTests {
         var budget = new MinimiseBudget(4000);
         var reduced = FuzzMinimiser.Minimise(
             marked,
-            candidate => candidate.Contains("Trigger()", StringComparison.Ordinal),
+            static candidate => candidate.Contains("Trigger()", StringComparison.Ordinal),
             budget
         );
 

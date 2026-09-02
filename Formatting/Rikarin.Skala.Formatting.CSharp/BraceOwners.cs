@@ -88,9 +88,8 @@ public static class BraceOwnerSet {
                 // ⚠ `none`, and the five members the C# formatter does not answer to. Listed rather
                 // than left to the default arm so that "measured inert" and "not a member of this
                 // option" are two different lines of code.
-                "none" => BraceOwners.None,
-                "anonymous_methods" or "anonymous_types" or "events" or "indexers" or "local_functions" =>
-                    BraceOwners.None,
+
+
                 _ => BraceOwners.None
             };
         }

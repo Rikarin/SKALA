@@ -226,7 +226,7 @@ public sealed class AdoptionTests {
 
         Assert.DoesNotContain(
             loaded.Units.SelectMany(static unit => unit.Compilation.SyntaxTrees).Select(static tree => tree.FilePath),
-            path => path.Contains("crash", StringComparison.Ordinal)
+            static path => path.Contains("crash", StringComparison.Ordinal)
         );
     }
 

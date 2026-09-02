@@ -129,7 +129,7 @@ public static class DocsSite {
         var builder = Open("Skala", string.Empty, null);
         builder.Append("<h1>Skala</h1>\n");
         builder.Append(
-            "<p class=\"lede\">One configuration, the same formatting and analysis everywhere. This site is the "
+            """<p class="lede">One configuration, the same formatting and analysis everywhere. This site is the """
             + "rule catalogue and the option registry, rendered from the two files that define them.</p>\n"
         );
 
@@ -183,12 +183,12 @@ public static class DocsSite {
         }
 
         builder.Append("</tbody>\n</table>\n</div>\n");
-        builder.Append("<p class=\"note\">The ")
+        builder.Append("""<p class="note">The """)
             .Append(Num(options.Count))
             .Append(" keys are grouped into ")
             .Append(Num(constructs))
             .Append(
-                " constructs; the <a href=\"options/index.html\">option reference</a> is one page per construct, "
+                """ constructs; the <a href="options/index.html">option reference</a> is one page per construct, """
                 + "with an alphabetical index of every key.</p>\n"
             );
 
@@ -199,7 +199,7 @@ public static class DocsSite {
         var builder = Open("Rules — Skala", "../", "rules");
         builder.Append("<h1>Rules</h1>\n");
         builder.Append(
-            "<p class=\"lede\"><code>SK</code> + four digits, allocated once and never re-purposed "
+            """<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed """
             + "(ADR-012). "
         )
             .Append(Num(rules.Count))
@@ -214,10 +214,10 @@ public static class DocsSite {
                 + "<th>Loose mode</th></tr></thead>\n<tbody>\n"
             );
             foreach (var rule in group) {
-                builder.Append("<tr><td><a href=\"").Append(rule.Id).Append(".html\">").Append(rule.Id);
+                builder.Append("<tr><td><a href=\"").Append(rule.Id).Append(""".html">""").Append(rule.Id);
                 builder.Append("</a></td><td>").Append(Inline(rule.Title));
                 if (rule.Retired) {
-                    builder.Append(" <span class=\"tag retired\">retired</span>");
+                    builder.Append(""" <span class="tag retired">retired</span>""");
                 }
 
                 builder.Append("</td><td>").Append(SeverityTag(rule));
@@ -234,20 +234,20 @@ public static class DocsSite {
 
     static string RulePage(RuleInfo rule, SiteLinks links) {
         var builder = Open(rule.Id + " — Skala", "../", "rules");
-        builder.Append("<p class=\"crumb\"><a href=\"index.html\">Rules</a> / ").Append(Esc(rule.Category));
+        builder.Append("""<p class="crumb"><a href="index.html">Rules</a> / """).Append(Esc(rule.Category));
         builder.Append("</p>\n");
-        builder.Append("<h1>").Append(rule.Id).Append(" <span class=\"title\">").Append(Inline(rule.Title));
+        builder.Append("<h1>").Append(rule.Id).Append(""" <span class="title">""").Append(Inline(rule.Title));
         builder.Append("</span></h1>\n");
 
         if (rule.Retired) {
             builder.Append(
-                "<p class=\"banner\">⚠ <strong>Retired.</strong> The id stays allocated for ever because every "
+                """<p class="banner">⚠ <strong>Retired.</strong> The id stays allocated for ever because every """
                 + "baseline in every repository names it (ADR-012), and the analyzer no longer enables it, so "
                 + "nothing new is reported. The page is here so that an old finding can still be looked up.</p>\n"
             );
         }
 
-        builder.Append("<p class=\"lede\">").Append(Inline(rule.Summary)).Append("</p>\n");
+        builder.Append("""<p class="lede">""").Append(Inline(rule.Summary)).Append("</p>\n");
 
         builder.Append("<table class=\"facts\">\n<tbody>\n");
         Fact(builder, "Category", Esc(rule.Category));
@@ -316,7 +316,7 @@ public static class DocsSite {
     ) {
         var builder = Open("Options — Skala", "../", "options");
         builder.Append("<h1>Options</h1>\n");
-        builder.Append("<p class=\"lede\">")
+        builder.Append("""<p class="lede">""")
             .Append(Num(options.Count))
             .Append(" <code>.editorconfig</code> keys, grouped into ")
             .Append(Num(constructs.Count))
@@ -331,7 +331,7 @@ public static class DocsSite {
             var languages = members.Select(static option => option.Language)
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(static language => language, StringComparer.Ordinal);
-            builder.Append("<tr><td><a href=\"").Append(Esc(slugOf[construct])).Append(".html\">");
+            builder.Append("<tr><td><a href=\"").Append(Esc(slugOf[construct])).Append(""".html">""");
             builder.Append(Esc(Spaced(construct))).Append("</a></td><td>").Append(Num(members.Count));
             builder.Append("</td><td>").Append(Num(members.Count(static option => option.Tier == OptionTier.A)));
             builder.Append("</td><td>").Append(Esc(string.Join(", ", languages))).Append("</td></tr>\n");
@@ -360,7 +360,7 @@ public static class DocsSite {
         var builder = Open(Spaced(construct) + " — Skala options", "../", "options");
         builder.Append("<p class=\"crumb\"><a href=\"index.html\">Options</a></p>\n");
         builder.Append("<h1>").Append(Esc(Spaced(construct))).Append("</h1>\n");
-        builder.Append("<p class=\"lede\">")
+        builder.Append("""<p class="lede">""")
             .Append(Num(members.Count))
             .Append(" key")
             .Append(Plural(members.Count))
@@ -368,7 +368,7 @@ public static class DocsSite {
 
         foreach (var option in members) {
             builder.Append("<section class=\"option\" id=\"").Append(Esc(option.Key)).Append("\">\n");
-            builder.Append("<h2><code>").Append(Esc(option.Key)).Append("</code> <a class=\"self\" href=\"#");
+            builder.Append("<h2><code>").Append(Esc(option.Key)).Append("""</code> <a class="self" href="#""");
             builder.Append(Esc(option.Key)).Append("\">#</a></h2>\n");
             if (option.Summary.Length > 0) {
                 builder.Append("<p>").Append(Inline(option.Summary)).Append("</p>\n");
@@ -416,7 +416,7 @@ public static class DocsSite {
                     "Read by",
                     string.Join(
                         ", ",
-                        readers.Select(static id => "<a href=\"../rules/" + id + ".html\">" + id + "</a>")
+                        readers.Select(static id => """<a href="../rules/""" + id + """.html">""" + id + "</a>")
                     )
                 );
             }
@@ -440,7 +440,7 @@ public static class DocsSite {
         builder.Append("<title>").Append(Esc(title)).Append("</title>\n");
         builder.Append("<link rel=\"stylesheet\" href=\"").Append(root).Append("style.css\">\n");
         builder.Append("</head>\n<body>\n<!-- ").Append(Esc(Banner)).Append(" -->\n");
-        builder.Append("<nav><a class=\"brand\" href=\"").Append(root).Append("index.html\">Skala</a>");
+        builder.Append("<nav><a class=\"brand\" href=\"").Append(root).Append("""index.html">Skala</a>""");
         Tab(builder, root + "rules/index.html", "Rules", active == "rules");
         Tab(builder, root + "options/index.html", "Options", active == "options");
         builder.Append("</nav>\n<main>\n");
@@ -456,14 +456,14 @@ public static class DocsSite {
     }
 
     static void Tab(StringBuilder builder, string href, string text, bool active) {
-        builder.Append("<a class=\"tab").Append(active ? " active" : string.Empty).Append("\" href=\"");
+        builder.Append("""<a class="tab""").Append(active ? " active" : string.Empty).Append("\" href=\"");
         builder.Append(href).Append("\">").Append(text).Append("</a>");
     }
 
     static void Card(StringBuilder builder, string href, string title, int count, string unit, string blurb) {
         builder.Append("<a class=\"card\" href=\"").Append(href).Append("\"><span class=\"count\">");
-        builder.Append(Num(count)).Append("</span><span class=\"unit\">").Append(Esc(unit));
-        builder.Append("</span><strong>").Append(Esc(title)).Append("</strong><span class=\"blurb\">");
+        builder.Append(Num(count)).Append("""</span><span class="unit">""").Append(Esc(unit));
+        builder.Append("</span><strong>").Append(Esc(title)).Append("""</strong><span class="blurb">""");
         builder.Append(blurb).Append("</span></a>\n");
     }
 
@@ -595,7 +595,7 @@ public static class DocsSite {
 
     static string SeverityTag(RuleInfo rule) {
         var severity = rule.DefaultSeverity.ToString().ToLowerInvariant();
-        return "<span class=\"tag sev-" + severity + "\">" + severity + "</span>";
+        return """<span class="tag sev-""" + severity + "\">" + severity + "</span>";
     }
 
     static string TypeOf(OptionInfo option) =>
@@ -817,7 +817,7 @@ public static class DocsSite {
                 var rendered = "<code>" + Esc(text) + "</code>";
                 return string.Equals(id, selfId, StringComparison.Ordinal)
                     ? rendered
-                    : "<a href=\"" + root + "rules/" + id + ".html\">" + rendered + "</a>";
+                    : "<a href=\"" + root + "rules/" + id + """.html">""" + rendered + "</a>";
             }
 
             return code ? "<code>" + Esc(text) + "</code>" : Esc(text);

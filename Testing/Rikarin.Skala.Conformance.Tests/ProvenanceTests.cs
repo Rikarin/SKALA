@@ -112,7 +112,7 @@ public sealed class ProvenanceTests {
             + "\n  on disk now: sha256:"
             + inForce
             + "\n"
-            + Sample(mismatched.Select(entry => Relative(entry.Path) + " records sha256:" + entry.Recorded))
+            + Sample(mismatched.Select(static entry => Relative(entry.Path) + " records sha256:" + entry.Recorded))
             + "\n\nThe fixtures are frozen and so is Skala's side of every comparison, so this cannot "
             + "surface as a content failure — it surfaces only here.\n"
             + "Either restore the configuration, or regenerate the corpus with `./build.sh Oracle` in a "
@@ -156,7 +156,7 @@ public sealed class ProvenanceTests {
             + " different ReSharper versions, and fixtures from two versions are not comparable:\n"
             + string.Join(
                 "\n",
-                byVersion.Select(entry =>
+                byVersion.Select(static entry =>
                     "  resharper="
                     + entry.Key
                     + ": "

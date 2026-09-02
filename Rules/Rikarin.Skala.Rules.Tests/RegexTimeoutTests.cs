@@ -83,7 +83,7 @@ public sealed class RegexTimeoutTests {
     /// </remarks>
     [Theory]
     [InlineData("public static bool F(string s, string p) => Regex.IsMatch(s, p);")]
-    [InlineData("public static bool F(string s, RegexOptions o) => Regex.IsMatch(s, @\"^(a+)+$\", o);")]
+    [InlineData("""public static bool F(string s, RegexOptions o) => Regex.IsMatch(s, @"^(a+)+$", o);""")]
     public void TheRule_SaysNothingAboutWhatItCannotRead(string member) {
         var source = "using System.Text.RegularExpressions;\npublic static class Probe {\n    " + member + "\n}\n";
         var compilation = RuleFixtures.Compile(source, "probe.cs");

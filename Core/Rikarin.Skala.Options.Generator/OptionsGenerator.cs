@@ -81,7 +81,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "Skala.Options",
         DiagnosticSeverity.Error,
         true,
-        "docs/plan/02-repository-layout.md § \"Naming\"."
+        """docs/plan/02-repository-layout.md § "Naming"."""
     );
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
@@ -400,7 +400,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("    };");
         builder.AppendLine();
         builder.AppendLine(
-            "    /// <summary>ReSharper's alternative spellings for this enum's values — <c>true</c> for <c>always</c>, and the like. Part of the declared domain: <see cref=\"TryParse\"/> accepts them, so a test that sweeps `ValuesOf` alone sweeps less than the option accepts.</summary>"
+            """    /// <summary>ReSharper's alternative spellings for this enum's values — <c>true</c> for <c>always</c>, and the like. Part of the declared domain: <see cref="TryParse"/> accepts them, so a test that sweeps `ValuesOf` alone sweeps less than the option accepts.</summary>"""
         );
         builder.AppendLine("    public static string[] AliasesOf(string enumName) => enumName switch {");
         foreach (var option in model.Enums) {
@@ -438,7 +438,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine();
         builder.AppendLine("public enum OptionValueKind { Bool, Int, String, Enum, Flags }");
         builder.AppendLine();
-        builder.AppendLine("/// <summary>docs/plan/03-configuration-model.md § \"Four tiers\".</summary>");
+        builder.AppendLine("""/// <summary>docs/plan/03-configuration-model.md § "Four tiers".</summary>""");
         builder.AppendLine("public enum OptionTier {");
         builder.AppendLine("    /// <summary>Implemented, and pinned by at least one oracle fixture.</summary>");
         builder.AppendLine("    A,");
@@ -511,7 +511,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         );
         builder.AppendLine("    string? FreeFormBecause,");
         builder.AppendLine(
-            "    /// <summary>Why this entry names no <c>Oracle</c> fixture, when <see cref=\"Inert\"/> is not the answer. ⚠ The two are different claims and must not be merged: <c>Inert</c> says no input distinguishes the option's values, which is a fact about the world; this says the SWEEP cannot ask, which is usually a fact about Skala — the oracle separates the values and Skala is flat at every one of them, so a glob would file an <c>INERT</c> row the registry never declared, on a fixture Skala cannot reproduce. It also carries the measurement behind a Tier C refusal, where <c>Inert</c> is forbidden by construction.</summary>"
+            """    /// <summary>Why this entry names no <c>Oracle</c> fixture, when <see cref="Inert"/> is not the answer. ⚠ The two are different claims and must not be merged: <c>Inert</c> says no input distinguishes the option's values, which is a fact about the world; this says the SWEEP cannot ask, which is usually a fact about Skala — the oracle separates the values and Skala is flat at every one of them, so a glob would file an <c>INERT</c> row the registry never declared, on a fixture Skala cannot reproduce. It also carries the measurement behind a Tier C refusal, where <c>Inert</c> is forbidden by construction.</summary>"""
         );
         builder.AppendLine("    string? UnsweptBecause);");
         builder.AppendLine();
@@ -555,7 +555,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 : "[" + string.Join(", ", option.Aliases.Select(static a => OptionRegistryReader.Literal(a))) + "]";
             var expands = option.Expands.Count == 0
                 ? "[]"
-                : "[" + string.Join(", ", option.Expands.Select(e => "OptionId." + Naming.Pascal(e))) + "]";
+                : "[" + string.Join(", ", option.Expands.Select(static e => "OptionId." + Naming.Pascal(e))) + "]";
             builder.AppendLine(
                 $"        new(OptionId.{option.MemberName}, {OptionRegistryReader.Literal(option.Key)}, {aliases}, "
                 + $"{OptionRegistryReader.Literal(option.Language)}, OptionValueKind.{option.Kind}, "
@@ -637,7 +637,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("    public string GetText(OptionId id) {");
         builder.AppendLine("        var info = OptionRegistry.Get(id);");
         builder.AppendLine("        return info.Kind switch {");
-        builder.AppendLine("            OptionValueKind.Bool => _scalars[(int)id] != 0 ? \"true\" : \"false\",");
+        builder.AppendLine("""            OptionValueKind.Bool => _scalars[(int)id] != 0 ? "true" : "false",""");
         builder.AppendLine(
             "            OptionValueKind.Int => _scalars[(int)id].ToString(System.Globalization.CultureInfo.InvariantCulture),"
         );

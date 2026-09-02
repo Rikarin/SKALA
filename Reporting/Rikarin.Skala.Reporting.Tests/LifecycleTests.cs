@@ -166,7 +166,7 @@ public sealed class LifecycleTests {
         };
 
         var alone = Report(subject).Findings.Single();
-        var crowded = Report(unrelated, subject).Findings.Single(finding => finding.Start == 900);
+        var crowded = Report(unrelated, subject).Findings.Single(static finding => finding.Start == 900);
 
         // Two different findings, so each is the first of its own kind — not 0 and 1.
         Assert.Equal(0, crowded.OrdinalWithinSymbol);

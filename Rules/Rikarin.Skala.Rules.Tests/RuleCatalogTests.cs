@@ -54,7 +54,7 @@ public sealed class RuleCatalogTests {
         var source = File.ReadAllText(path);
         var ids = System.Text.RegularExpressions.Regex.Matches(
             source,
-            "public const string \\w+ = \\\"(?<id>SK\\d{4})\\\";"
+            """public const string \w+ = \"(?<id>SK\d{4})\";"""
         )
             .Cast<System.Text.RegularExpressions.Match>()
             .Select(static match => match.Groups["id"].Value)
@@ -410,7 +410,7 @@ public sealed class RuleCatalogTests {
     [Fact]
     public void EveryRuleWithALanguageFloor_DeclaresAParseableVersion() {
         foreach (var rule in RuleCatalog.All.Where(static rule => rule.LanguageVersion is not null)) {
-            Assert.Matches("^[0-9]+\\.[0-9]+$", rule.LanguageVersion!);
+            Assert.Matches("""^[0-9]+\.[0-9]+$""", rule.LanguageVersion!);
         }
     }
 

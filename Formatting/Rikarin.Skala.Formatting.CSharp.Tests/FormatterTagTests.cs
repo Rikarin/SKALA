@@ -136,7 +136,7 @@ public sealed class FormatterTagTests {
         var result = Format.Run(source);
         Assert.DoesNotContain(
             result.Diagnostics,
-            diagnostic => string.Equals(diagnostic.Id, "SK9099", StringComparison.Ordinal)
+            static diagnostic => string.Equals(diagnostic.Id, "SK9099", StringComparison.Ordinal)
         );
 
         Assert.Contains("""X($"a {b} c");""", result.Formatted, StringComparison.Ordinal);
@@ -164,7 +164,7 @@ public sealed class FormatterTagTests {
         var result = Format.Run(source);
         Assert.DoesNotContain(
             result.Diagnostics,
-            diagnostic => string.Equals(diagnostic.Id, "SK9099", StringComparison.Ordinal)
+            static diagnostic => string.Equals(diagnostic.Id, "SK9099", StringComparison.Ordinal)
         );
 
         // Everything from the tag line on is the author's, byte for byte.

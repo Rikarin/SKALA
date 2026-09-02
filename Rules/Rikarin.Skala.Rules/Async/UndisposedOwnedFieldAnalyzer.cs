@@ -188,7 +188,7 @@ public sealed class UndisposedOwnedFieldAnalyzer : DiagnosticAnalyzer {
 
             // ⚠ `this.stream` is one reference, not two. Reading the identifier alone would make
             // every `this.`-qualified codebase withdraw on its first ordinary member read.
-            var reference = (ExpressionSyntax)identifier;
+            ExpressionSyntax reference = identifier;
             if (reference.Parent is MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } qualified
                 && ReferenceEquals(qualified.Name, reference)) {
                 reference = qualified;

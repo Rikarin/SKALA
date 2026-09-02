@@ -108,13 +108,13 @@ public sealed class VariableLengthHexEscapeAnalyzer : DiagnosticAnalyzer {
 
     static void Report(SyntaxNodeAnalysisContext context, int start, int length, string digits) {
         var span = new TextSpan(start, length);
-        var replacement = "\\u" + digits.PadLeft(4, '0');
+        var replacement = """\u""" + digits.PadLeft(4, '0');
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
                 Location.Create(context.Node.SyntaxTree, span),
                 FixEdits.Pack((span, replacement)),
-                "`\\x"
+                """`\x"""
                 + digits
                 + "` takes up to four hex digits and stopped at "
                 + digits.Length

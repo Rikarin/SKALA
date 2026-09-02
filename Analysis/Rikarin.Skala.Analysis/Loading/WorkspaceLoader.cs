@@ -209,7 +209,7 @@ public static class WorkspaceLoader {
         // is the narrow one: not one line of code came back, and something failed.
         var analysable = units.Sum(static unit => unit.ReportablePaths.Count);
         var failedOutright = analysable == 0
-            && workspace.Diagnostics.Any(static diagnostic => diagnostic.Kind == WorkspaceDiagnosticKind.Failure);
+            && workspace.Diagnostics.Exists(static diagnostic => diagnostic.Kind == WorkspaceDiagnosticKind.Failure);
 
         if (failedOutright) {
             diagnostics.Add(

@@ -92,7 +92,7 @@ public sealed class CanonicalSeverityTests {
         var analyzer = Assert.Single(status.SeverityChanges.Where(static change => change.Diagnostic == "CA1852"));
 
         Assert.False(analyzer.IsCompilerDiagnostic);
-        Assert.DoesNotContain(status.BuildBreaking, change => change.Diagnostic == "CA1852");
+        Assert.DoesNotContain(status.BuildBreaking, static change => change.Diagnostic == "CA1852");
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ public sealed class CanonicalSeverityTests {
             """
         );
 
-        Assert.DoesNotContain(status.SeverityChanges, change => change.Diagnostic == "CS9209");
+        Assert.DoesNotContain(status.SeverityChanges, static change => change.Diagnostic == "CS9209");
         Assert.Empty(status.BuildBreaking);
     }
 
@@ -131,7 +131,7 @@ public sealed class CanonicalSeverityTests {
             """
         );
 
-        Assert.DoesNotContain(status.SeverityChanges, change => change.Diagnostic == "CS9209");
+        Assert.DoesNotContain(status.SeverityChanges, static change => change.Diagnostic == "CS9209");
     }
 
     /// <summary>

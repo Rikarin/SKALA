@@ -103,7 +103,7 @@ public sealed class LoadingTests {
         );
 
         Assert.Equal(LoadMode.Loose, loaded.Mode);
-        Assert.Contains(loaded.Diagnostics, diagnostic => diagnostic.Id == "SK9022");
+        Assert.Contains(loaded.Diagnostics, static diagnostic => diagnostic.Id == "SK9022");
         Assert.Contains("loose", loaded.Summary, StringComparison.Ordinal);
     }
 
@@ -122,7 +122,7 @@ public sealed class LoadingTests {
         );
 
         Assert.Equal(LoadMode.Loose, loaded.Mode);
-        Assert.DoesNotContain(loaded.Diagnostics, diagnostic => diagnostic.Id == "SK9022");
+        Assert.DoesNotContain(loaded.Diagnostics, static diagnostic => diagnostic.Id == "SK9022");
     }
 
     [Fact]

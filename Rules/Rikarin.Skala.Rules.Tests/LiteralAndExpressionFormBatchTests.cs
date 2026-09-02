@@ -57,7 +57,7 @@ public sealed class LiteralAndExpressionFormBatchTests {
     [InlineData("using System.Collections.Generic; class C { string M(Dictionary<int, string> d) => d[d.Count - 1]; }")]
     // The same shape on a hand-written type the language would accept and a reader would not.
     [InlineData(
-        "class T { public int Count => 0; public string this[int h] => \"\"; } class C { string M(T t) => t[t.Count - 1]; }"
+        """class T { public int Count => 0; public string this[int h] => ""; } class C { string M(T t) => t[t.Count - 1]; }"""
     )]
     // Evaluated twice today, once after the rewrite.
     [InlineData(
@@ -96,16 +96,16 @@ public sealed class LiteralAndExpressionFormBatchTests {
     [InlineData("namespace N { class W { } } class C { string M() => typeof(N.W).Name; }", "nameof(N.W)")]
     [InlineData("enum E { Red } class C { string M() => E.Red.ToString(); }", "nameof(E.Red)")]
     [InlineData(
-        "using System; class C { void M(int count) { throw new ArgumentOutOfRangeException(\"count\", count, null); } }",
+        """using System; class C { void M(int count) { throw new ArgumentOutOfRangeException("count", count, null); } }""",
         "nameof(count)"
     )]
     [InlineData(
-        "using System; class C { void M(object o) { ArgumentNullException.ThrowIfNull(o, \"o\"); } }",
+        """using System; class C { void M(object o) { ArgumentNullException.ThrowIfNull(o, "o"); } }""",
         "nameof(o)"
     )]
     [InlineData(
-        "using System.ComponentModel; class C { public string T { get; set; } = \"\"; "
-        + "PropertyChangedEventArgs M() => new PropertyChangedEventArgs(\"T\"); }",
+        """using System.ComponentModel; class C { public string T { get; set; } = ""; """
+        + """PropertyChangedEventArgs M() => new PropertyChangedEventArgs("T"); }""",
         "nameof(T)"
     )]
     public void Nameof_Fires(string source, string replacement) {
@@ -120,11 +120,11 @@ public sealed class LiteralAndExpressionFormBatchTests {
     /// </summary>
     [Theory]
     // A bare literal that matches a member, in a position that says nothing about its meaning.
-    [InlineData("class C { public int Count { get; set; } string M() => \"Count\"; }")]
+    [InlineData("""class C { public int Count { get; set; } string M() => "Count"; }""")]
     // The same literal as a dictionary key: a wire format, not a name.
     [InlineData(
         "using System.Collections.Generic; class C { public int Count { get; set; } "
-        + "Dictionary<string, object> M() => new() { [\"Count\"] = Count }; }"
+        + """Dictionary<string, object> M() => new() { ["Count"] = Count }; }"""
     )]
     // `typeof(List<int>).Name` is "List`1".
     [InlineData("using System.Collections.Generic; class C { string M() => typeof(List<int>).Name; }")]
@@ -141,17 +141,17 @@ public sealed class LiteralAndExpressionFormBatchTests {
     // A variable's `ToString`, which is a value and not a name.
     [InlineData("enum E { Red } class C { string M(E e) => e.ToString(); }")]
     // SK2017's shape: the literal names no parameter.
-    [InlineData("using System; class C { void M(int count) { throw new ArgumentOutOfRangeException(\"size\"); } }")]
+    [InlineData("""using System; class C { void M(int count) { throw new ArgumentOutOfRangeException("size"); } }""")]
     // The message argument is prose, not an identifier, even when it happens to be one.
-    [InlineData("using System; class C { void M(int count) { throw new ArgumentException(\"count\"); } }")]
+    [InlineData("""using System; class C { void M(int count) { throw new ArgumentException("count"); } }""")]
     // No such property on this type: `nameof` written here would not bind.
     [InlineData(
-        "using System.ComponentModel; class C { PropertyChangedEventArgs M() => new PropertyChangedEventArgs(\"V\"); }"
+        """using System.ComponentModel; class C { PropertyChangedEventArgs M() => new PropertyChangedEventArgs("V"); }"""
     )]
     // The empty name means "all properties changed".
     [InlineData(
-        "using System.ComponentModel; class C { public string T { get; set; } = \"\"; "
-        + "PropertyChangedEventArgs M() => new PropertyChangedEventArgs(\"\"); }"
+        """using System.ComponentModel; class C { public string T { get; set; } = ""; """
+        + """PropertyChangedEventArgs M() => new PropertyChangedEventArgs(""); }"""
     )]
     public void Nameof_DeclinesTheNearestMiss(string source) =>
         Assert.Empty(Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1061"));
@@ -164,9 +164,9 @@ public sealed class LiteralAndExpressionFormBatchTests {
     [Fact]
     public void Nameof_ReadsTheParameterAndNotTheValue() {
         const string message =
-            "using System; class C { void M(int count) { throw new ArgumentException(\"count\"); } }";
+            """using System; class C { void M(int count) { throw new ArgumentException("count"); } }""";
         const string paramName =
-            "using System; class C { void M(int count) { throw new ArgumentException(\"bad\", \"count\"); } }";
+            """using System; class C { void M(int count) { throw new ArgumentException("bad", "count"); } }""";
 
         Assert.Empty(Analyze(message, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1061"));
         Assert.Single(Analyze(paramName, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1061"));
@@ -187,21 +187,21 @@ public sealed class LiteralAndExpressionFormBatchTests {
     /// </summary>
     [Theory]
     // A JSON body: every quote escaped today, none of them escaped after.
-    [InlineData("class C { string M() => \"{\\\"id\\\":1}\"; }", "{\"id\":1}")]
+    [InlineData("""class C { string M() => "{\"id\":1}"; }""", """{"id":1}""")]
     // A regex: the backslashes are the content.
-    [InlineData("class C { string M() => \"\\\\d+\\\\.\\\\d+\"; }", "\\d+\\.\\d+")]
+    [InlineData("""class C { string M() => "\\d+\\.\\d+"; }""", """\d+\.\d+""")]
     // The verbatim spelling of the same JSON body.
-    [InlineData("class C { string M() => @\"{\"\"id\"\":1}\"; }", "{\"id\":1}")]
+    [InlineData("""class C { string M() => @"{""id"":1}"; }""", """{"id":1}""")]
     // Two quotes in a row still fit inside a three-quote fence: the run has to *reach* three.
-    [InlineData("class C { string M() => \"a\\\"\\\"b\"; }", "a\"\"b")]
+    [InlineData("""class C { string M() => "a\"\"b"; }""", """a""b""")]
     // ⚠ Three quotes in a row is the case that needs a four-quote fence, and the only one in this
     // set where the delimiter arithmetic is load-bearing. A sabotage pinning the fence at three
     // turned nothing red until this case existed.
-    [InlineData("class C { string M() => \"a\\\"\\\"\\\"b\"; }", "a\"\"\"b")]
+    [InlineData("""class C { string M() => "a\"\"\"b"; }""", """"a"""b"""")]
     // A fence longer than the content needs.
-    [InlineData("class C { string M() => \"\"\"\"abc\"\"\"\"; }", "abc")]
+    [InlineData("""""class C { string M() => """"abc""""; }""""", "abc")]
     // No floor at all on this one: an escape that is simply a character.
-    [InlineData("class C { string M() => \"\\x41\"; }", "A")]
+    [InlineData("""class C { string M() => "\x41"; }""", "A")]
     public void EscapeFreeLiteral_FiresAndKeepsTheValue(string source, string value) {
         var finding = Assert.Single(Analyze(source, LanguageVersion.CSharp12));
         Assert.Equal("SK1062", finding.Id);
@@ -224,27 +224,27 @@ public sealed class LiteralAndExpressionFormBatchTests {
 
     [Theory]
     // Already as plain as it gets.
-    [InlineData("class C { string M() => \"hello\"; }")]
+    [InlineData("""class C { string M() => "hello"; }""")]
     // Verbatim, and no quote to double.
-    [InlineData("class C { string M() => @\"C:\\Users\\app\"; }")]
+    [InlineData("""class C { string M() => @"C:\Users\app"; }""")]
     // ⚠ The fence is greedy, so a content ending in a quote has no single-line raw spelling.
-    [InlineData("class C { string M() => \"say \\\"hi\\\"\"; }")]
+    [InlineData("""class C { string M() => "say \"hi\""; }""")]
     // …nor one starting with one.
-    [InlineData("class C { string M() => \"\\\"hi\\\" he said\"; }")]
+    [InlineData("""class C { string M() => "\"hi\" he said"; }""")]
     // A tab cannot be written literally on one line, and `\\t` is not simplified.
-    [InlineData("class C { string M() => \"a\\\\b\\tc\"; }")]
+    [InlineData("""class C { string M() => "a\\b\tc"; }""")]
     // Nor a newline.
-    [InlineData("class C { string M() => \"a\\\\b\\nc\"; }")]
+    [InlineData("""class C { string M() => "a\\b\nc"; }""")]
     // The fence is already minimal.
-    [InlineData("class C { string M() => \"\"\"a\"b\"\"\"; }")]
+    [InlineData(""""class C { string M() => """a"b"""; }"""")]
     // ⚠ `\\x` is greedy: this is U+041B, not `\\x41` followed by `B`.
-    [InlineData("class C { string M() => \"\\x41B\"; }")]
+    [InlineData("""class C { string M() => "\x41B"; }""")]
     // The denoted character is a newline, which cannot be written literally.
-    [InlineData("class C { string M() => \"\\u000a\"; }")]
+    [InlineData("""class C { string M() => "\u000a"; }""")]
     // SK1063's span, not this rule's.
-    [InlineData("class C { string M() => $\"{\"a\\\\b\"}\"; }")]
+    [InlineData("""class C { string M() => $"{"a\\b"}"; }""")]
     // An empty value has no raw spelling.
-    [InlineData("class C { string M() => \"\"; }")]
+    [InlineData("""class C { string M() => ""; }""")]
     public void EscapeFreeLiteral_DeclinesTheNearestMiss(string source) =>
         Assert.Empty(Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1062"));
 
@@ -254,8 +254,8 @@ public sealed class LiteralAndExpressionFormBatchTests {
     /// </summary>
     [Fact]
     public void EscapeFreeLiteral_GatesTheRawShapesAndNotTheEscapeShape() {
-        const string rawShape = "class C { string M() => \"{\\\"id\\\":1}\"; }";
-        const string escapeShape = "class C { string M() => \"\\x41\"; }";
+        const string rawShape = """class C { string M() => "{\"id\":1}"; }""";
+        const string escapeShape = """class C { string M() => "\x41"; }""";
 
         Assert.Empty(Analyze(rawShape, LanguageVersion.CSharp10).Where(static d => d.Id == "SK1062"));
         Assert.Single(Analyze(rawShape, LanguageVersion.CSharp11).Where(static d => d.Id == "SK1062"));
@@ -266,26 +266,26 @@ public sealed class LiteralAndExpressionFormBatchTests {
 
     [Theory]
     [InlineData(
-        "class C { string M(int d, int t) => string.Format(\"{0} of {1}\", d, t); }",
+        """class C { string M(int d, int t) => string.Format("{0} of {1}", d, t); }""",
         "$\"{d} of {t}\""
     )]
     // ⚠ Four arguments binds `Format(string, params object[])`, not an explicitly typed overload.
     // The rule declined every one of those until a corpus sweep found it.
     [InlineData(
-        "class C { string M(string a, string b, string c, string d) => string.Format(\"{0}{1}{2}{3}\", a, b, c, d); }",
+        """class C { string M(string a, string b, string c, string d) => string.Format("{0}{1}{2}{3}", a, b, c, d); }""",
         "$\"{a}{b}{c}{d}\""
     )]
     // Alignment and format clauses ride across unchanged.
-    [InlineData("class C { string M(decimal a) => string.Format(\"{0,10:N2}\", a); }", "$\"{a,10:N2}\"")]
+    [InlineData("""class C { string M(decimal a) => string.Format("{0,10:N2}", a); }""", "$\"{a,10:N2}\"")]
     // ⚠ A doubled brace means a literal brace in both grammars and must survive as one.
-    [InlineData("class C { string M(int d) => string.Format(\"{{{0}}}\", d); }", "$\"{{{d}}}\"")]
+    [InlineData("""class C { string M(int d) => string.Format("{{{0}}}", d); }""", "$\"{{{d}}}\"")]
     // A colon inside the format clause is not the clause separator.
     [InlineData(
-        "using System; class C { string M(DateTime d) => string.Format(\"{0:HH:mm}\", d); }",
+        """using System; class C { string M(DateTime d) => string.Format("{0:HH:mm}", d); }""",
         "$\"{d:HH:mm}\""
     )]
-    [InlineData("class C { string M(int n) => $\"{n.ToString()} left\"; }", "n")]
-    [InlineData("class C { string M(string r, string n) => $\"{r}{\"/\"}{n}\"; }", "/")]
+    [InlineData("""class C { string M(int n) => $"{n.ToString()} left"; }""", "n")]
+    [InlineData("""class C { string M(string r, string n) => $"{r}{"/"}{n}"; }""", "/")]
     public void InterpolatedForm_Fires(string source, string replacement) {
         var finding = Assert.Single(Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1063"));
         Assert.Contains(replacement, finding.GetMessage(), StringComparison.Ordinal);
@@ -305,30 +305,30 @@ public sealed class LiteralAndExpressionFormBatchTests {
 
     [Theory]
     // Evaluated twice after the rewrite, once before it.
-    [InlineData("class C { string M(string n) => string.Format(\"{0} and {0}\", n); }")]
+    [InlineData("""class C { string M(string n) => string.Format("{0} and {0}", n); }""")]
     // Evaluated in the order they are printed, not the order they are written.
-    [InlineData("class C { string M(string a, string b) => string.Format(\"{1} {0}\", a, b); }")]
+    [InlineData("""class C { string M(string a, string b) => string.Format("{1} {0}", a, b); }""")]
     // The provider is the point of the overload.
     [InlineData(
         "using System.Globalization; class C { string M(decimal a) => "
-        + "string.Format(CultureInfo.InvariantCulture, \"{0:N2}\", a); }"
+        + """string.Format(CultureInfo.InvariantCulture, "{0:N2}", a); }"""
     )]
     // ⚠ One argument, not two: `{0}` means `v[0]`.
-    [InlineData("class C { string M(object[] v) => string.Format(\"{0} {1}\", v); }")]
+    [InlineData("""class C { string M(object[] v) => string.Format("{0} {1}", v); }""")]
     // A colon inside a hole is grammar.
-    [InlineData("class C { string M(bool f, string a, string b) => string.Format(\"{0}\", f ? a : b); }")]
+    [InlineData("""class C { string M(bool f, string a, string b) => string.Format("{0}", f ? a : b); }""")]
     // A gap leaves an argument with nowhere to go.
-    [InlineData("class C { string M(string a, string b) => string.Format(\"{0}\", a, b); }")]
+    [InlineData("""class C { string M(string a, string b) => string.Format("{0}", a, b); }""")]
     // A verbatim format string escapes its text differently.
-    [InlineData("class C { string M(string n) => string.Format(@\"C:\\logs\\{0}\", n); }")]
+    [InlineData("""class C { string M(string n) => string.Format(@"C:\logs\{0}", n); }""")]
     // The format string is not a literal at all.
-    [InlineData("class C { const string F = \"{0}\"; string M(string n) => string.Format(F, n); }")]
+    [InlineData("""class C { const string F = "{0}"; string M(string n) => string.Format(F, n); }""")]
     // ⚠ `null.ToString()` throws where `$\"{null}\"` renders empty.
-    [InlineData("class C { string M(object v) => $\"{v.ToString()} left\"; }")]
+    [InlineData("""class C { string M(object v) => $"{v.ToString()} left"; }""")]
     // Not covered: the instance method and `IFormattable` agree only for the BCL types.
-    [InlineData("class C { string M(decimal a) => $\"{a.ToString(\"N2\")}\"; }")]
+    [InlineData("""class C { string M(decimal a) => $"{a.ToString("N2")}"; }""")]
     // Nothing to remove.
-    [InlineData("class C { string M(decimal a) => $\"{a:N2}\"; }")]
+    [InlineData("""class C { string M(decimal a) => $"{a:N2}"; }""")]
     public void InterpolatedForm_DeclinesTheNearestMiss(string source) =>
         Assert.Empty(Analyze(source, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1063"));
 
@@ -345,9 +345,9 @@ public sealed class LiteralAndExpressionFormBatchTests {
     public void InterpolatedForm_DeclinesWhereAnInterpolationWouldRebind() {
         const string ambiguous = "using System; class Db { public static void Run(string s) { } "
             + "public static void Run(FormattableString s) { } } "
-            + "class C { void M(string n) => Db.Run(string.Format(\"{0}\", n)); }";
+            + """class C { void M(string n) => Db.Run(string.Format("{0}", n)); }""";
         const string unambiguous = "using System; class Db { public static void Run(string s) { } } "
-            + "class C { void M(string n) => Db.Run(string.Format(\"{0}\", n)); }";
+            + """class C { void M(string n) => Db.Run(string.Format("{0}", n)); }""";
 
         Assert.Empty(Analyze(ambiguous, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1063"));
         Assert.Single(Analyze(unambiguous, LanguageVersion.CSharp12).Where(static d => d.Id == "SK1063"));
@@ -355,7 +355,7 @@ public sealed class LiteralAndExpressionFormBatchTests {
 
     [Fact]
     public void InterpolatedForm_RequiresCSharp6() {
-        const string source = "class C { string M(int d, int t) => string.Format(\"{0} of {1}\", d, t); }";
+        const string source = """class C { string M(int d, int t) => string.Format("{0} of {1}", d, t); }""";
 
         Assert.Empty(Below(source, LanguageVersion.CSharp5).Where(static d => d.Id == "SK1063"));
         Assert.NotEmpty(Below(source, LanguageVersion.CSharp6).Where(static d => d.Id == "SK1063"));

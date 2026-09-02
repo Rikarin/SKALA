@@ -179,7 +179,7 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
 
             // ⚠ `x!` and `(x)` wrap the reference without changing what it is, and skipping them is
             // what stops `x!.Dispose()` being read as a use rather than as a disposal.
-            var reference = (ExpressionSyntax)identifier;
+            ExpressionSyntax reference = identifier;
             while (reference.Parent is ParenthesizedExpressionSyntax
                    or PostfixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.SuppressNullableWarningExpression }) {
                 reference = (ExpressionSyntax)reference.Parent;

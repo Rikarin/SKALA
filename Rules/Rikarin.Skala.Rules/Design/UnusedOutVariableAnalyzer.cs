@@ -35,7 +35,7 @@ public sealed class UnusedOutVariableAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(compilation => {
+        context.RegisterCompilationStartAction(static compilation => {
                 if (!SkalaRule.MeetsLanguageVersion(compilation.Compilation, "7.0")) {
                     return;
                 }

@@ -107,7 +107,7 @@ public sealed class RewriteGuardReachTests {
         // rather than that the tree is clean.
         Assert.True(found.Count > 0, "No call site asks the wider question, which cannot be right.");
 
-        var added = found.Where(f => !Permitted.ContainsKey(f)).ToList();
+        var added = found.Where(static f => !Permitted.ContainsKey(f)).ToList();
         Assert.True(
             added.Count == 0,
             "⚠ These call sites ask ContainsCommentOrDirectiveAroundTheDeclaration and are not in the "

@@ -15,7 +15,7 @@ namespace Rikarin.Skala.Core.Tests;
 ///     un-suppresses one finding and wrongly suppresses the other in every repository holding one.
 /// </remarks>
 public sealed class ToolDiagnosticIdTests {
-    static readonly Regex Literal = new(""""  "SK\d{4}"  """".Trim(), RegexOptions.Compiled);
+    static readonly Regex Literal = new("""  "SK\d{4}"  """.Trim(), RegexOptions.Compiled);
 
     /// <summary>A test may name an id freely — asserting on one is the point of a test.</summary>
     static bool IsTest(string path) =>
@@ -53,8 +53,8 @@ public sealed class ToolDiagnosticIdTests {
         // diagnostic Core also names. That is a mirror, not a collision, and the test tells them
         // apart by concept rather than waving every duplicate through.
         var collisions = byId
-            .Where(entry => entry.Value.Select(Concept).Distinct(StringComparer.Ordinal).Count() > 1)
-            .Select(entry => $"{entry.Key} is declared as {string.Join(" and ", entry.Value)}")
+            .Where(static entry => entry.Value.Select(Concept).Distinct(StringComparer.Ordinal).Count() > 1)
+            .Select(static entry => $"{entry.Key} is declared as {string.Join(" and ", entry.Value)}")
             .ToList();
 
         Assert.True(
@@ -114,8 +114,10 @@ public sealed class ToolDiagnosticIdTests {
         var register = File.ReadAllText(Path.Combine(RepositoryRoot, "docs", "plan", "08-rule-catalogue.md"));
 
         var missing = SourceFiles()
-            .SelectMany(file => Declaration.Matches(File.ReadAllText(file)).Select(match => match.Groups["id"].Value))
-            .Where(id => id.StartsWith("SK9", StringComparison.Ordinal))
+            .SelectMany(static file => Declaration.Matches(File.ReadAllText(file))
+                    .Select(static match => match.Groups["id"].Value)
+            )
+            .Where(static id => id.StartsWith("SK9", StringComparison.Ordinal))
             .Distinct(StringComparer.Ordinal)
             .Where(id => !register.Contains(id, StringComparison.Ordinal))
             .Order(StringComparer.Ordinal)
@@ -185,7 +187,7 @@ public sealed class ToolDiagnosticIdTests {
         Assert.True(files.Count > 100, $"Only {files.Count} source file(s) found under {RepositoryRoot}.");
         Assert.Contains(
             files,
-            path => path.EndsWith(
+            static path => path.EndsWith(
                 Path.Combine("Rikarin.Skala.Core.Tests", "ToolDiagnosticIdTests.cs"),
                 StringComparison.Ordinal
             )

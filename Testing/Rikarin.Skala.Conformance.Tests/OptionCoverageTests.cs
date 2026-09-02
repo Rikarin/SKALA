@@ -223,7 +223,7 @@ public sealed class OptionCoverageTests {
         var files = Resolve(info.Oracle!);
         Assert.True(files.Count > 0, $"{key}: `oracle` is '{info.Oracle}' and no corpus file matches it.");
         Assert.True(
-            files.Any(static file => file.HasFixtureFor(OracleProfile.Cleanup)),
+            files.Exists(static file => file.HasFixtureFor(OracleProfile.Cleanup)),
             $"{key}: no committed {OracleProfile.Cleanup.Suffix} beside its corpus file. Run ./build.sh Oracle."
         );
     }
@@ -281,7 +281,7 @@ public sealed class OptionCoverageTests {
         var files = Resolve(info.Oracle!);
         Assert.True(files.Count > 0, $"{key}: `oracle` is '{info.Oracle}' and no corpus file matches it.");
         Assert.True(
-            files.Any(static file => file.HasFixture),
+            files.Exists(static file => file.HasFixture),
             $"{key}: no committed .expected.cs beside its corpus file. Tier A rests on fixture evidence and nothing else; run ./build.sh Oracle."
         );
     }

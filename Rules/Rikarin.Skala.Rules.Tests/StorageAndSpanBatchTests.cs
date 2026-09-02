@@ -110,7 +110,7 @@ public sealed class StorageAndSpanBatchTests {
             static diagnostic => diagnostic.Id == "SK1022"
         );
         var frozen =
-            "using System.Collections.Generic; class C { static readonly Dictionary<string,int> map = new() { {\"a\", Limits.Value} }; int M(string key) => map[key]; }";
+            """using System.Collections.Generic; class C { static readonly Dictionary<string,int> map = new() { {"a", Limits.Value} }; int M(string key) => map[key]; }""";
         Assert.DoesNotContain(
             Analyze(
                 AddFile(

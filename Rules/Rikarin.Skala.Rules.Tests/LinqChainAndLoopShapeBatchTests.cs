@@ -218,7 +218,7 @@ public sealed class LinqChainAndLoopShapeBatchTests {
 
         List<int> list = [1, 2, 3];
         Assert.Throws<ArgumentOutOfRangeException>(() => _ = list[7]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => _ = list.ElementAt(7));
+        Assert.Throws<ArgumentOutOfRangeException>(() => _ = list[7]);
     }
 
     static ImmutableArray<Diagnostic> Findings(RuleFixture fixture) =>

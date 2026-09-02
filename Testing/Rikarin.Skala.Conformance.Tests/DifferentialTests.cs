@@ -165,8 +165,11 @@ public sealed class DifferentialTests {
     public void TheDivergenceRegister_IsReadable() {
         // Every SK-DIV entry that exists must parse; the count is published with the fidelity number.
         Assert.NotEmpty(Divergences.Register);
-        Assert.All(Divergences.Register, entry => Assert.StartsWith("SK-DIV-", entry.Id, StringComparison.Ordinal));
-        Assert.All(Divergences.Register, entry => Assert.NotEmpty(entry.Summary));
+        Assert.All(
+            Divergences.Register,
+            static entry => Assert.StartsWith("SK-DIV-", entry.Id, StringComparison.Ordinal)
+        );
+        Assert.All(Divergences.Register, static entry => Assert.NotEmpty(entry.Summary));
     }
 
     static void Write(string set, FidelityReport report, FidelityBaseline baseline) {

@@ -112,13 +112,13 @@ public static class CanonicalEditorConfig {
         builder.AppendLine("{");
         builder.Append("  \"version\": \"").Append(manifest.Version).AppendLine("\",");
         builder.Append("  \"sha256\": \"").Append(manifest.Sha256).AppendLine("\",");
-        builder.Append("  \"assignments\": ")
+        builder.Append("""  "assignments": """)
             .Append(manifest.Assignments.ToString(CultureInfo.InvariantCulture))
             .AppendLine(",");
-        builder.Append("  \"sections\": ")
+        builder.Append("""  "sections": """)
             .Append(manifest.Sections.ToString(CultureInfo.InvariantCulture))
             .AppendLine(",");
-        builder.AppendLine("  \"source\": \"editor_config_template — the Rider export (ADR-001)\",");
+        builder.AppendLine("""  "source": "editor_config_template — the Rider export (ADR-001)",""");
         builder.AppendLine("  \"generated\": \"./build.sh Canonical\"");
         builder.AppendLine("}");
         return Normalize(builder.ToString());

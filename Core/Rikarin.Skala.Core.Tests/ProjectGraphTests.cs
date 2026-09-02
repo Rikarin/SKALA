@@ -205,7 +205,7 @@ public sealed class ProjectGraphTests {
         var core = Assert.Single(Projects, static p => p.Name == "Rikarin.Skala.Core");
         Assert.All(
             core.ProjectReferences,
-            reference => Assert.Contains("Rikarin.Skala.Options", reference.Path, StringComparison.Ordinal)
+            static reference => Assert.Contains("Rikarin.Skala.Options", reference.Path, StringComparison.Ordinal)
         );
     }
 }

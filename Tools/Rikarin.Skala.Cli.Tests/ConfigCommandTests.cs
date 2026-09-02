@@ -22,7 +22,7 @@ public sealed class ConfigCommandTests {
 
         var width = Assert.Single(
             run.Lines,
-            line => line.StartsWith("resharper_csharp_max_line_length ", StringComparison.Ordinal)
+            static line => line.StartsWith("resharper_csharp_max_line_length ", StringComparison.Ordinal)
         );
         Assert.Contains("120", width, StringComparison.Ordinal);
         Assert.Contains(".editorconfig:", width, StringComparison.Ordinal);
@@ -62,7 +62,7 @@ public sealed class ConfigCommandTests {
 
         var width = Assert.Single(
             run.Lines,
-            line => line.StartsWith("resharper_csharp_max_line_length ", StringComparison.Ordinal)
+            static line => line.StartsWith("resharper_csharp_max_line_length ", StringComparison.Ordinal)
         );
         Assert.Contains("editor_config_template:", width, StringComparison.Ordinal);
     }
@@ -307,7 +307,7 @@ public sealed class ConfigCommandTests {
 
             var row = Assert.Single(
                 run.Lines,
-                line => line.StartsWith("resharper_csharp_wrap_arguments_style ", StringComparison.Ordinal)
+                static line => line.StartsWith("resharper_csharp_wrap_arguments_style ", StringComparison.Ordinal)
             );
 
             Assert.Contains("chop_if_long", row, StringComparison.Ordinal);

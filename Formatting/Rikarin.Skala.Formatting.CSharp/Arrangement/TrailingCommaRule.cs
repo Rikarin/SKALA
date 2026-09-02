@@ -93,7 +93,7 @@ public sealed class TrailingCommaRule : ArrangementRule {
             // `SeparatedSyntaxList` has no operation that appends or drops a *separator*: every
             // method that looks like one is about nodes, and `RemoveAt(list.Count)` — the obvious
             // way to drop a trailing comma — indexes the node list and throws.
-            var last = list[list.Count - 1];
+            var last = list[^1];
             var parts = new List<SyntaxNodeOrToken>();
 
             if (!wanted) {

@@ -187,12 +187,12 @@ internal static class OptionRegistryReader {
         value is null
             ? "null"
             : "\""
-            + value.Replace("\\", "\\\\")
+            + value.Replace("""\""", """\\""")
                 .Replace("\"", "\\\"")
-                .Replace("\n", "\\n")
+                .Replace("\n", """\n""")
                 .Replace(
                     "\r",
-                    "\\r"
+                    """\r"""
                 )
             + "\"";
 

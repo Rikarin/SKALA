@@ -73,20 +73,20 @@ public sealed class CleanupRedundancyBatchTests {
     // SK0231 — `string.Format` of a literal with no placeholders is the literal.
     [InlineData(
         "SK0231",
-        "static class C { static string M() => string.Format(\"plain\"); }",
-        "static class C { static string M() => \"plain\"; }"
+        """static class C { static string M() => string.Format("plain"); }""",
+        """static class C { static string M() => "plain"; }"""
     )]
     // SK0231 — the `$` goes and nothing else does.
     [InlineData(
         "SK0231",
-        "static class C { static string M() => $\"plain\"; }",
-        "static class C { static string M() => \"plain\"; }"
+        """static class C { static string M() => $"plain"; }""",
+        """static class C { static string M() => "plain"; }"""
     )]
     // SK0231 — and so does the `@`.
     [InlineData(
         "SK0231",
-        "static class C { const string S = @\"plain\"; static string M() => S; }",
-        "static class C { const string S = \"plain\"; static string M() => S; }"
+        """static class C { const string S = @"plain"; static string M() => S; }""",
+        """static class C { const string S = "plain"; static string M() => S; }"""
     )]
     // SK0232 — one trailing argument that restates the default.
     [InlineData(
@@ -182,8 +182,8 @@ public sealed class CleanupRedundancyBatchTests {
     // SK0234 — the array size, not the brackets.
     [InlineData(
         "SK0234",
-        "static class C { static string[] M() => new string[2] { \"a\", \"b\" }; }",
-        "static class C { static string[] M() => new string[] { \"a\", \"b\" }; }"
+        """static class C { static string[] M() => new string[2] { "a", "b" }; }""",
+        """static class C { static string[] M() => new string[] { "a", "b" }; }"""
     )]
     // SK0234 — every component name in one finding, because a tuple can restate any subset of them.
     [InlineData(

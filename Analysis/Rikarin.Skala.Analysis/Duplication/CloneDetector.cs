@@ -555,7 +555,7 @@ public static class CloneDetector {
 
     /// <summary>Whether every occurrence has the same token at <paramref name="offset" /> from its seed.</summary>
     static bool Agrees(ushort[] codes, List<int> positions, List<int> owners, int[] fileStart, int offset) {
-        var expected = (ushort)0;
+        ushort expected = 0;
         for (var i = 0; i < positions.Count; i++) {
             var index = positions[i] + offset;
             if (index < fileStart[owners[i]] || index >= fileStart[owners[i] + 1]) {

@@ -88,7 +88,7 @@ public sealed class FixTagTests {
         // Two of them: one inside the tags and one outside. Neither is suppressed.
         Assert.Equal(
             2,
-            report.Findings.Count(finding => string.Equals(finding.RuleId, "SK2015", StringComparison.Ordinal))
+            report.Findings.Count(static finding => string.Equals(finding.RuleId, "SK2015", StringComparison.Ordinal))
         );
     }
 }

@@ -284,7 +284,7 @@ public static partial class SkalaCommandLine {
                             return loadDiagnostics.Count == 0
                                 ? result
                                 : new CommandResult(
-                                    loadDiagnostics.Any(static d => d.Severity >= SkalaSeverity.Error)
+                                    loadDiagnostics.Exists(static d => d.Severity >= SkalaSeverity.Error)
                                         ? ExitCodes.LoadFailure
                                         : result.ExitCode,
                                     string.Join("\n", loadDiagnostics.Select(static d => "  " + d))
@@ -436,7 +436,7 @@ public static partial class SkalaCommandLine {
                             + result.Output;
 
                         return new CommandResult(
-                            loadDiagnostics.Any(static d => d.Severity >= SkalaSeverity.Error)
+                            loadDiagnostics.Exists(static d => d.Severity >= SkalaSeverity.Error)
                                 ? ExitCodes.LoadFailure
                                 : result.ExitCode,
                             text
@@ -499,7 +499,7 @@ public static partial class SkalaCommandLine {
     /// <summary><c>skala lsp</c> — stdio, four capabilities (docs/plan/11 § "LSP").</summary>
     static Command CreateLspCommand() {
         var command = new Command("lsp", "Speak the Language Server Protocol over stdio.");
-        command.SetAction(_ => {
+        command.SetAction(static _ => {
                 var server = new LanguageServer(Console.In, Console.Out);
                 server.RunAsync(CancellationToken.None).GetAwaiter().GetResult();
                 return 0;

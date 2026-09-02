@@ -247,7 +247,7 @@ public sealed class CollectionCallShapeBatchTests {
                               }
                               """;
 
-        Assert.Empty(Analyze(RuleFixtures.Compile(source, "probe.cs")).Where(d => d.Id == "SK4031"));
+        Assert.Empty(Analyze(RuleFixtures.Compile(source, "probe.cs")).Where(static d => d.Id == "SK4031"));
     }
 
     /// <summary>
@@ -301,7 +301,7 @@ public sealed class CollectionCallShapeBatchTests {
                        }
                        """;
 
-        var findings = Analyze(RuleFixtures.Compile(source, "probe.cs")).Where(d => d.Id == "SK4032");
+        var findings = Analyze(RuleFixtures.Compile(source, "probe.cs")).Where(static d => d.Id == "SK4032");
         Assert.Equal(reported, findings.Any());
     }
 
@@ -332,8 +332,8 @@ public sealed class CollectionCallShapeBatchTests {
                        """;
 
         var findings = Analyze(RuleFixtures.Compile(source, "probe.cs"));
-        Assert.Single(findings.Where(d => d.Id == "SK4033"));
-        Assert.Empty(findings.Where(d => d.Id == "SK1034"));
+        Assert.Single(findings.Where(static d => d.Id == "SK4033"));
+        Assert.Empty(findings.Where(static d => d.Id == "SK1034"));
         Assert.Empty(RuleCatalog.Get("SK4033").Supersedes);
     }
 
@@ -355,7 +355,7 @@ public sealed class CollectionCallShapeBatchTests {
                               """;
 
         var findings = Analyze(RuleFixtures.Compile(source, "probe.cs"));
-        var mine = Assert.Single(findings.Where(d => d.Id == "SK4033"));
+        var mine = Assert.Single(findings.Where(static d => d.Id == "SK4033"));
 
         // ⚠ The span is the negation's, not the call's: the fix rewrites `!entries.Keys.Any()` whole.
         Assert.Equal("!entries.Keys.Any()", source[mine.Location.SourceSpan.Start..mine.Location.SourceSpan.End]);
@@ -434,8 +434,8 @@ public sealed class CollectionCallShapeBatchTests {
                               """;
 
         var findings = Analyze(RuleFixtures.Compile(source, "probe.cs"));
-        Assert.Single(findings.Where(d => d.Id == "SK4010"));
-        Assert.Empty(findings.Where(d => d.Id == "SK4034"));
+        Assert.Single(findings.Where(static d => d.Id == "SK4010"));
+        Assert.Empty(findings.Where(static d => d.Id == "SK4034"));
     }
 
     /// <summary>
@@ -454,8 +454,8 @@ public sealed class CollectionCallShapeBatchTests {
                               """;
 
         var findings = Analyze(RuleFixtures.Compile(source, "probe.cs"));
-        Assert.Empty(findings.Where(d => d.Id == "SK4010"));
-        Assert.Single(findings.Where(d => d.Id == "SK4034"));
+        Assert.Empty(findings.Where(static d => d.Id == "SK4010"));
+        Assert.Single(findings.Where(static d => d.Id == "SK4034"));
     }
 
     [Theory]

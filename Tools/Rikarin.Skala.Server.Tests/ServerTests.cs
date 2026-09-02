@@ -179,7 +179,7 @@ public sealed class LanguageServerTests {
         );
 
         var items = (JsonArray)responses[0]["result"]!["items"]!;
-        Assert.Contains(items, item => item!["code"]!.GetValue<string>() == FormatDiagnosticIds.NotParseable);
+        Assert.Contains(items, static item => item!["code"]!.GetValue<string>() == FormatDiagnosticIds.NotParseable);
     }
 
     [Fact]

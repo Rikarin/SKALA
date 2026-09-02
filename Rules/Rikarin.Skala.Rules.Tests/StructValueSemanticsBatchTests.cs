@@ -435,6 +435,6 @@ public sealed class StructValueSemanticsBatchTests {
 
         Assert.Equal(2, replacements.Length);
         Assert.Contains("ImmutableArray.Create<int>(1, 2)", replacements);
-        Assert.Contains("System.Collections.Immutable.ImmutableArray.Create<string>(\"a\")", replacements);
+        Assert.Contains("""System.Collections.Immutable.ImmutableArray.Create<string>("a")""", replacements);
     }
 }

@@ -899,7 +899,7 @@ public sealed class XmlDocTests {
 
         Assert.Contains(
             result.Diagnostics,
-            d => d.Id == FormatDiagnosticIds.MalformedXmlDoc && d.Severity == SkalaSeverity.Hidden
+            static d => d.Id == FormatDiagnosticIds.MalformedXmlDoc && d.Severity == SkalaSeverity.Hidden
         );
 
         Assert.Contains("/// <summary>Not closed <b>at all.</summary>", result.Formatted, StringComparison.Ordinal);
@@ -944,7 +944,7 @@ public sealed class XmlDocTests {
         // `jb cleanupcode` does not produce. A code line is still measured whole.
         Assert.All(
             formatted.Split('\n'),
-            line => {
+            static line => {
                 var slashes = line.IndexOf("///", StringComparison.Ordinal);
                 var measured = slashes < 0 ? TextWidth.Measure(line) : TextWidth.Measure(line[(slashes + 3)..]);
                 Assert.True(measured <= 120, $"'{line}' measures {measured} columns.");

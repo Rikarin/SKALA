@@ -601,7 +601,7 @@ static int Fuzz(string[] args) {
         );
 
         Console.WriteLine(
-            $"mutations: {string.Join(", ", subject.Mutations.Select(mutation => mutation.Name))}"
+            $"mutations: {string.Join(", ", subject.Mutations.Select(static mutation => mutation.Name))}"
             + (subject.AbsorbedOnly ? " (whitespace only — absorption is asserted)" : string.Empty)
         );
 
@@ -627,7 +627,7 @@ static int Fuzz(string[] args) {
 
         Console.WriteLine();
         Console.WriteLine(subject.Text);
-        return violations.Any(violation => violation.Property != FuzzProperties.ParseLost) ? 1 : 0;
+        return violations.Any(static violation => violation.Property != FuzzProperties.ParseLost) ? 1 : 0;
     }
 
     // ⚠ `--check=<path>` asserts the seven properties over one file, read byte for byte. It is what
@@ -703,7 +703,7 @@ static int Fuzz(string[] args) {
         return 0;
     }
 
-    if (args.Any(argument => argument.StartsWith("--grammar-check", StringComparison.Ordinal))) {
+    if (args.Any(static argument => argument.StartsWith("--grammar-check", StringComparison.Ordinal))) {
         Console.WriteLine(
             Fuzzer.GrammarCheck(
                 options.Seed,

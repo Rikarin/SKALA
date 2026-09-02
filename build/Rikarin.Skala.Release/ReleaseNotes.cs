@@ -81,7 +81,7 @@ public static class ReleaseNotes {
                         : "*unmeasured*"
                 )
                 .Append(" | ")
-                .Append(surface.Headline.Replace("|", "\\|", StringComparison.Ordinal))
+                .Append(surface.Headline.Replace("|", """\|""", StringComparison.Ordinal))
                 .AppendLine(" |");
         }
 

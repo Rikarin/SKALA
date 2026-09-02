@@ -130,8 +130,8 @@ public sealed class InstrumentSilenceTests {
     public void WorkspaceResolve_PrefersAProjectUnderTheRequestedPath() {
         using var repository = new Scratch();
         using var probe = new Scratch();
-        repository.Write("Repository.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\" />");
-        var expected = probe.Write("Probe.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+        repository.Write("Repository.csproj", """<Project Sdk="Microsoft.NET.Sdk" />""");
+        var expected = probe.Write("Probe.csproj", """<Project Sdk="Microsoft.NET.Sdk" />""");
 
         var resolution = WorkspaceLoader.Resolve(
             new LoadRequest { RepositoryRoot = repository.Root, Mode = LoadMode.Workspace, Paths = [probe.Root] }
@@ -155,7 +155,7 @@ public sealed class InstrumentSilenceTests {
     public void WorkspaceResolve_RefusesToFallBackToADifferentTree() {
         using var repository = new Scratch();
         using var probe = new Scratch();
-        repository.Write("Repository.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+        repository.Write("Repository.csproj", """<Project Sdk="Microsoft.NET.Sdk" />""");
         probe.Write("Probe.cs", "public sealed class Probe { }");
 
         var resolution = WorkspaceLoader.Resolve(
@@ -183,7 +183,7 @@ public sealed class InstrumentSilenceTests {
     [Fact]
     public void WorkspaceResolve_StillFallsBackWithinTheSameRepository() {
         using var repository = new Scratch();
-        var expected = repository.Write("Repository.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+        var expected = repository.Write("Repository.csproj", """<Project Sdk="Microsoft.NET.Sdk" />""");
         repository.Write(Path.Combine("src", "Widget.cs"), "public sealed class Widget { }");
 
         var resolution = WorkspaceLoader.Resolve(

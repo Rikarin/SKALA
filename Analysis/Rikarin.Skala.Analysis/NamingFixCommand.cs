@@ -137,7 +137,7 @@ public static class NamingFixCommand {
                 .ConfigureAwait(false);
         }
 
-        if (workspace.Diagnostics.Any(static diagnostic => diagnostic.Kind == WorkspaceDiagnosticKind.Failure)) {
+        if (workspace.Diagnostics.Exists(static diagnostic => diagnostic.Kind == WorkspaceDiagnosticKind.Failure)) {
             return new NamingFixOutcome(
                 0,
                 [],

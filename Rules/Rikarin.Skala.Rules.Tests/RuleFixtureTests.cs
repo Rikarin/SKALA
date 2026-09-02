@@ -303,8 +303,8 @@ public sealed class RuleFixtureTests {
             TestContext.Current.CancellationToken
         );
 
-        Assert.Contains(above, diagnostic => diagnostic.Id == RuleIds.FileScopedNamespace);
-        Assert.DoesNotContain(below, diagnostic => diagnostic.Id == RuleIds.FileScopedNamespace);
+        Assert.Contains(above, static diagnostic => diagnostic.Id == RuleIds.FileScopedNamespace);
+        Assert.DoesNotContain(below, static diagnostic => diagnostic.Id == RuleIds.FileScopedNamespace);
     }
 
     [Fact]

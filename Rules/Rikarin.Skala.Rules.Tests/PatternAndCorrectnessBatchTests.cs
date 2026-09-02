@@ -136,7 +136,7 @@ public sealed class PatternAndCorrectnessBatchTests {
                               """;
         var compilation = AddFile(
             RuleFixtures.Compile(source, "use.cs"),
-            "class Constants { public const int First = 1; public const string Text = \"text\"; }",
+            """class Constants { public const int First = 1; public const string Text = "text"; }""",
             "constants.cs"
         );
         Assert.Empty(Analyze(compilation));
@@ -268,7 +268,7 @@ public sealed class PatternAndCorrectnessBatchTests {
     static string Apply(string source, IEnumerable<Diagnostic> diagnostics) =>
         SourceText.From(source)
             .WithChanges(
-                diagnostics.Select(diagnostic => new TextChange(
+                diagnostics.Select(static diagnostic => new TextChange(
                         new TextSpan(
                             int.Parse(
                                 diagnostic.Properties[FixEdits.StartKey(0)]!,

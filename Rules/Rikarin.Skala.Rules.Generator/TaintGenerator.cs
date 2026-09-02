@@ -127,12 +127,12 @@ public sealed class TaintGenerator : IIncrementalGenerator {
         builder.AppendLine("    string What,");
         builder.AppendLine("    string Instead) {");
         builder.AppendLine("    /// <summary>Whether the entry matches every member of its type.</summary>");
-        builder.AppendLine("    public bool MatchesAnyMember => Member == \"*\";");
+        builder.AppendLine("""    public bool MatchesAnyMember => Member == "*";""");
         builder.AppendLine("}");
         builder.AppendLine();
 
         builder.AppendLine(
-            "/// <summary>The taint table, as taint.json declares it. See docs/plan/08 § \"SK5000 — Security\".</summary>"
+            """/// <summary>The taint table, as taint.json declares it. See docs/plan/08 § "SK5000 — Security".</summary>"""
         );
         builder.AppendLine("public static class TaintTable {");
 
@@ -219,13 +219,13 @@ public sealed class TaintGenerator : IIncrementalGenerator {
                     builder.Append("\\\"");
                     break;
                 case '\\':
-                    builder.Append("\\\\");
+                    builder.Append("""\\""");
                     break;
                 case '\n':
-                    builder.Append("\\n");
+                    builder.Append("""\n""");
                     break;
                 case '\r':
-                    builder.Append("\\r");
+                    builder.Append("""\r""");
                     break;
                 default:
                     builder.Append(c);

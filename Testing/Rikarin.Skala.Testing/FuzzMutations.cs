@@ -448,7 +448,7 @@ public static class FuzzMutations {
         }
 
         var edits = Sample(map.Gaps, random, 3)
-            .Select(gap => (gap.Start, gap.End - gap.Start, "\n"))
+            .Select(static gap => (gap.Start, gap.End - gap.Start, "\n"))
             .ToList();
 
         return edits.Count == 0 ? null : Splice(map.Source, edits);

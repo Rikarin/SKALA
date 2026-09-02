@@ -121,7 +121,7 @@ public sealed class InvisibleCharacterAnalyzer : DiagnosticAnalyzer {
     ///     than intended in one case and a compile error in another. A fix that is right for most
     ///     inputs is the fix that breaks a build on the tool's advice.
     /// </summary>
-    static string Escape(char c) => "\\u" + ((int)c).ToString("X4", CultureInfo.InvariantCulture);
+    static string Escape(char c) => """\u""" + ((int)c).ToString("X4", CultureInfo.InvariantCulture);
 
     static string Describe(char c) {
         var name = Names.TryGetValue(c, out var known)
@@ -131,7 +131,7 @@ public sealed class InvisibleCharacterAnalyzer : DiagnosticAnalyzer {
                 : "an invisible character";
 
         var note = Bidi.Contains(c)
-            ? " — a bidirectional control, the \"Trojan Source\" class: it reorders how the "
+            ? """ — a bidirectional control, the "Trojan Source" class: it reorders how the """
             + "literal reads without changing what it contains"
             : string.Empty;
 

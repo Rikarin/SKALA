@@ -29,11 +29,11 @@ public sealed class OpenDefectTests {
         Assert.Equal(registered, present);
         Assert.All(
             OpenDefects.Register,
-            entry => Assert.Contains(entry.Property, FuzzProperties.All, StringComparer.Ordinal)
+            static entry => Assert.Contains(entry.Property, FuzzProperties.All, StringComparer.Ordinal)
         );
 
-        Assert.All(OpenDefects.Register, entry => Assert.NotEmpty(entry.Summary));
-        Assert.All(OpenDefects.Register, entry => Assert.NotEmpty(entry.Seed));
+        Assert.All(OpenDefects.Register, static entry => Assert.NotEmpty(entry.Summary));
+        Assert.All(OpenDefects.Register, static entry => Assert.NotEmpty(entry.Seed));
     }
 
     /// <summary>

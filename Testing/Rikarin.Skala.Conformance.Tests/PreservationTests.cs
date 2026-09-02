@@ -53,7 +53,7 @@ public sealed class PreservationTests {
             .ToArray();
 
         Assert.True(files.Length > 0, "constructs/preservation/ has no files; the four-way table is untested.");
-        Assert.All(files, file => Assert.Equal(4, CorpusVariants.For(file).Count));
+        Assert.All(files, static file => Assert.Equal(4, CorpusVariants.For(file).Count));
     }
 
     [Theory]
@@ -93,7 +93,7 @@ public sealed class PreservationTests {
             var text = CSharpFormatter.Read(file.Path);
             var outputs = CorpusVariants.Preservation
                 .ToDictionary(
-                    variant => variant.Name,
+                    static variant => variant.Name,
                     variant => Format(file, variant, text).Formatted,
                     StringComparer.Ordinal
                 );

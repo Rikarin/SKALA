@@ -90,9 +90,11 @@ public static class MarginSweep {
         builder.AppendLine("⚠ **This file does not carry the wrapping *preference*, and its numbers cannot be read");
         builder.AppendLine("as one.** Each threshold here is where the `=` break's own continuation line stops being");
         builder.AppendLine("taken, measured by padding the *variable* name — so a wider right-hand side widens that");
-        builder.AppendLine("continuation line at the same time, and the boundary confounds \"the inner break is now");
         builder.AppendLine(
-            "enough\" with \"the outer break has stopped being enough\". Every shape below is swept again"
+            """continuation line at the same time, and the boundary confounds "the inner break is now"""
+        );
+        builder.AppendLine(
+            """enough" with "the outer break has stopped being enough". Every shape below is swept again"""
         );
         builder.AppendLine(
             "in [`sk-div-preference-sweep.md`](sk-div-preference-sweep.md) with the filler moved to the"

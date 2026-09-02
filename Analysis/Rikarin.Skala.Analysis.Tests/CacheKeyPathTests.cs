@@ -26,8 +26,7 @@ namespace Rikarin.Skala.Analysis.Tests;
 public sealed class CacheKeyPathTests {
     const string Content = "class C { }\n";
 
-    static string Key(string path) =>
-        CacheKey.For(path, Encoding.UTF8.GetBytes(Content), "compilation", "rules", "editorconfig");
+    static string Key(string path) => CacheKey.For(path, "class C { }\n"u8, "compilation", "rules", "editorconfig");
 
     /// <summary>
     ///     ⚠ The hazard as doc 12 words it. This asserts the correct answer on every platform rather

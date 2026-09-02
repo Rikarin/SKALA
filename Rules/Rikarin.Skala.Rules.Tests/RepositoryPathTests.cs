@@ -53,7 +53,7 @@ public sealed class RepositoryPathTests {
     };
 
     /// <summary>The characters Win32 forbids in a path component.</summary>
-    const string ForbiddenCharacters = "<>:\"|?*\\";
+    const string ForbiddenCharacters = """<>:"|?*\""";
 
     static string RepositoryRoot { get; } =
         Assembly.GetExecutingAssembly()

@@ -115,7 +115,7 @@ public static class CorpusSample {
 
         var areas = taken.GroupBy(static file => file.RelativePath.Split('/')[0], StringComparer.Ordinal)
             .OrderByDescending(static group => group.Count())
-            .Select(group => group.Key + " " + group.Count().ToString(CultureInfo.InvariantCulture));
+            .Select(static group => group.Key + " " + group.Count().ToString(CultureInfo.InvariantCulture));
 
         return $"{taken.Count.ToString(CultureInfo.InvariantCulture)} of {candidates.Count.ToString(CultureInfo.InvariantCulture)} candidates, "
             + $"{taken.Sum(static file => file.Lines).ToString(CultureInfo.InvariantCulture)} lines: "

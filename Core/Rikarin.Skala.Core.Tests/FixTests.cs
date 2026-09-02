@@ -10,8 +10,11 @@ public sealed class FixTests {
         var result = Fixer.Fix(EditorConfigDocument.Load(RepositoryPaths.Template));
 
         Assert.True(result.Changed);
-        Assert.Contains(result.Applied, change => change.Contains("root = true", StringComparison.Ordinal));
-        Assert.Contains(result.Applied, change => change.Contains("max_line_length = 120", StringComparison.Ordinal));
+        Assert.Contains(result.Applied, static change => change.Contains("root = true", StringComparison.Ordinal));
+        Assert.Contains(
+            result.Applied,
+            static change => change.Contains("max_line_length = 120", StringComparison.Ordinal)
+        );
 
         var fixed_ = EditorConfigDocument.FromText("/repo/.editorconfig", result.Text);
         Assert.True(fixed_.IsRoot);

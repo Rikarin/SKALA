@@ -83,7 +83,10 @@ public sealed class AnalysisTests {
 
         var (_, report) = CheckCommand.Run(Request(scratch), TestContext.Current.CancellationToken);
 
-        Assert.DoesNotContain(report.Findings, finding => finding.RuleId.StartsWith("CS", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            report.Findings,
+            static finding => finding.RuleId.StartsWith("CS", StringComparison.Ordinal)
+        );
     }
 
     [Fact]
@@ -94,8 +97,8 @@ public sealed class AnalysisTests {
         var (_, report) = CheckCommand.Run(Request(scratch), TestContext.Current.CancellationToken);
 
         Assert.Equal(LoadMode.Loose, report.Mode);
-        Assert.Contains(report.Findings, finding => finding.RuleId == RuleIds.FileScopedNamespace);
-        Assert.Contains(report.Findings, finding => finding.RuleId == RuleIds.NullCoalescingAssignment);
+        Assert.Contains(report.Findings, static finding => finding.RuleId == RuleIds.FileScopedNamespace);
+        Assert.Contains(report.Findings, static finding => finding.RuleId == RuleIds.NullCoalescingAssignment);
     }
 
     /// <summary>
@@ -309,7 +312,7 @@ public sealed class AnalysisTests {
         scratch.Write("A.cs", NeedsModernizing);
 
         var (_, before) = CheckCommand.Run(Request(scratch), TestContext.Current.CancellationToken);
-        Assert.Contains(before.Findings, finding => finding.RuleId == RuleIds.FileScopedNamespace);
+        Assert.Contains(before.Findings, static finding => finding.RuleId == RuleIds.FileScopedNamespace);
 
         scratch.Write(
             ".editorconfig",
@@ -319,7 +322,7 @@ public sealed class AnalysisTests {
         Core.Configuration.ConfigurationCache.Clear();
 
         var (_, after) = CheckCommand.Run(Request(scratch), TestContext.Current.CancellationToken);
-        Assert.DoesNotContain(after.Findings, finding => finding.RuleId == RuleIds.FileScopedNamespace);
+        Assert.DoesNotContain(after.Findings, static finding => finding.RuleId == RuleIds.FileScopedNamespace);
     }
 
     /// <summary>
@@ -492,7 +495,7 @@ public sealed class AnalysisTests {
         string.Join(
             "\n",
             report.Reportable
-                .Select(finding => $"{finding.RuleId} {Path.GetFileName(finding.Path)}:{finding.Line}:{finding.Column} {finding.Message}"
+                .Select(static finding => $"{finding.RuleId} {Path.GetFileName(finding.Path)}:{finding.Line}:{finding.Column} {finding.Message}"
                 )
                 .Order(StringComparer.Ordinal)
         );

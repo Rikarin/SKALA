@@ -240,7 +240,7 @@ public sealed class UngroupedExtensionMethodsAnalyzer : DiagnosticAnalyzer {
                 }
 
                 foreach (var attribute in attributes) {
-                    if (attribute is XmlNameAttributeSyntax { } named
+                    if (attribute is XmlNameAttributeSyntax named
                         && string.Equals(
                             named.Identifier.Identifier.ValueText,
                             receiverName,

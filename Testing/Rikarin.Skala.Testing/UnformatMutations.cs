@@ -370,7 +370,7 @@ public static class Unformat {
         var verbatim = new List<TextSpan>();
         foreach (var node in root.DescendantNodes()) {
             if (node is InterpolatedStringExpressionSyntax
-                && !verbatim.Any(region => region.Contains(node.Span))) {
+                && !verbatim.Exists(region => region.Contains(node.Span))) {
                 verbatim.Add(node.Span);
             }
         }

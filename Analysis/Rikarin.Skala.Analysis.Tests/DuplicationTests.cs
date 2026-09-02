@@ -35,7 +35,7 @@ public sealed class DuplicationTests {
         (3, "{0}{1}++;"), (4, "{0}{1} = {0}{1};"), (5, "{0}{1} = -1;"), (6, "{0}{1} = {0}{1} + 1;"),
         (7, "{0}{1} = {2}({0}{1});"),
         (8, "{0}{1} = {0}{1} * {0}{1} - 3;"), (9, "if ({0}{1} > 1) {0}{1}++;"),
-        (10, "{0}{1} = new {3}({0}{1}, \"s\");"),
+        (10, """{0}{1} = new {3}({0}{1}, "s");"""),
         (11, "while ({0}{1} < 5) {{ {0}{1}++; }}")
     ];
 
@@ -210,13 +210,13 @@ public sealed class DuplicationTests {
         var production = Assert.Single(result.Groups);
         Assert.All(
             production.Occurrences,
-            occurrence => Assert.DoesNotContain(".Tests", occurrence.Path, StringComparison.Ordinal)
+            static occurrence => Assert.DoesNotContain(".Tests", occurrence.Path, StringComparison.Ordinal)
         );
 
         var tests = Assert.Single(result.TestGroups);
         Assert.All(
             tests.Occurrences,
-            occurrence => Assert.Contains(".Tests", occurrence.Path, StringComparison.Ordinal)
+            static occurrence => Assert.Contains(".Tests", occurrence.Path, StringComparison.Ordinal)
         );
 
         Assert.True(result.DuplicatedLines > 0);
@@ -593,7 +593,7 @@ public sealed class DuplicationTests {
 
     [Fact]
     public void Detect_WhenMinTokensIsBelowOne_Throws() =>
-        Assert.Throws<ArgumentOutOfRangeException>(() => CloneDetector.Detect(
+        Assert.Throws<ArgumentOutOfRangeException>(static () => CloneDetector.Detect(
                 [],
                 0,
                 null,

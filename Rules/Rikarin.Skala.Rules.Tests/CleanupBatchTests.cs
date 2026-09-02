@@ -287,7 +287,7 @@ public sealed class CleanupBatchTests {
 
         var after = Apply(source, findings);
         Assert.Contains("<summary>Flushes nothing, on purpose.</summary>", after, StringComparison.Ordinal);
-        Assert.Contains("[System.Obsolete(\"use Close\")]", after, StringComparison.Ordinal);
+        Assert.Contains("""[System.Obsolete("use Close")]""", after, StringComparison.Ordinal);
         Assert.Contains("public override void Flush()", after, StringComparison.Ordinal);
     }
 

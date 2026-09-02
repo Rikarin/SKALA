@@ -280,7 +280,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         Assert.Contains("_SkalaFindingExit", text, StringComparison.Ordinal);
 
         var assignments = new Regex(
-            @"<_SkalaFindingExit Condition=""(?<condition>[^""]*)"">(?<code>\d+)</_SkalaFindingExit>",
+            """<_SkalaFindingExit Condition="(?<condition>[^"]*)">(?<code>\d+)</_SkalaFindingExit>""",
             RegexOptions.None
         );
 
@@ -303,7 +303,7 @@ public sealed class ExitCodeContractTests : IDisposable {
 
         // ⚠ And the switch that started it: not global, so it may only be handed to the verb that
         // has it. Anything else is a parse error, which the ladder reads as "the tool broke".
-        var common = new Regex(@"<_SkalaCommon Condition=""(?<condition>[^""]*)"">(?<value>[^<]*)</_SkalaCommon>");
+        var common = new Regex("""<_SkalaCommon Condition="(?<condition>[^"]*)">(?<value>[^<]*)</_SkalaCommon>""");
         foreach (Match match in common.Matches(text)) {
             if (!match.Groups["value"].Value.Contains("no-color", StringComparison.Ordinal)) {
                 continue;

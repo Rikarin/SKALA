@@ -10,7 +10,7 @@ public static class RepositoryPaths {
     public static string Root { get; } =
         Assembly.GetExecutingAssembly()
             .GetCustomAttributes<AssemblyMetadataAttribute>()
-            .FirstOrDefault(attribute => attribute.Key == "SkalaRepositoryRoot")?.Value
+            .FirstOrDefault(static attribute => attribute.Key == "SkalaRepositoryRoot")?.Value
         ?? throw new InvalidOperationException("SkalaRepositoryRoot was not stamped into the test assembly.");
 
     /// <summary>The Rider export, unmodified. Never written to.</summary>

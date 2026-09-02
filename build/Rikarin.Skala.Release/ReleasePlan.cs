@@ -127,7 +127,7 @@ public static class ReleasePlan {
             declared,
             next,
             bump,
-            surfaces.Any(static surface => surface.State == DetectorState.Measured),
+            surfaces.Exists(static surface => surface.State == DetectorState.Measured),
             surfaces,
             measurement,
             request.BaselineTool?.Fingerprint ?? "",

@@ -165,7 +165,7 @@ public sealed class EnumAndTypeCheckBatchTests {
 
         // The language fact the exclusion rests on, asserted rather than described.
         object? nothing = null;
-        Assert.False(nothing is object);
+        Assert.False(nothing is not null);
     }
 
     /// <summary>

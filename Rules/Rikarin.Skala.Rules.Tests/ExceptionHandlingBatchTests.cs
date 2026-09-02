@@ -126,12 +126,12 @@ public sealed class ExceptionHandlingBatchTests {
     [Theory]
     [InlineData("System.Console.WriteLine(error); throw;", "SK7092")]
     [InlineData("System.Console.WriteLine(error); throw error;", "SK7092")]
-    [InlineData("throw new Wrapped(\"failed\");", "SK2093")]
+    [InlineData("""throw new Wrapped("failed");""", "SK2093")]
     [InlineData(
-        "System.Console.WriteLine(error); if (error.HResult == 0) { throw new Wrapped(\"failed\"); } throw;",
+        """System.Console.WriteLine(error); if (error.HResult == 0) { throw new Wrapped("failed"); } throw;""",
         "SK7092"
     )]
-    [InlineData("System.Console.WriteLine(error); throw new Wrapped(\"failed\");", "SK2093")]
+    [InlineData("""System.Console.WriteLine(error); throw new Wrapped("failed");""", "SK2093")]
     public void SK2093_AndSK7092_NeverBothFireOnOneClause(string body, string expected) {
         var source = Clause(body);
         Assert.Single(Findings(source, expected));
@@ -144,7 +144,7 @@ public sealed class ExceptionHandlingBatchTests {
     /// </summary>
     [Theory]
     [InlineData("", "SK2014")]
-    [InlineData("throw new Wrapped(\"failed\");", "SK2093")]
+    [InlineData("""throw new Wrapped("failed");""", "SK2093")]
     public void SK2093_AndSK2014_NeverBothFireOnOneClause(string body, string expected) {
         var source = Clause(body);
         Assert.Single(Findings(source, expected));
@@ -202,11 +202,11 @@ public sealed class ExceptionHandlingBatchTests {
     ///     and the negated spelling — is on the finalizer's path and is reported.
     /// </remarks>
     [Theory]
-    [InlineData("if (disposing) { throw new System.InvalidOperationException(\"managed\"); }", 0)]
-    [InlineData("if (!disposing) { return; } else { throw new System.InvalidOperationException(\"m\"); }", 0)]
-    [InlineData("if (!disposing) { throw new System.InvalidOperationException(\"unmanaged\"); }", 1)]
-    [InlineData("if (disposing) { return; } else { throw new System.InvalidOperationException(\"u\"); }", 1)]
-    [InlineData("throw new System.InvalidOperationException(\"always\");", 1)]
+    [InlineData("""if (disposing) { throw new System.InvalidOperationException("managed"); }""", 0)]
+    [InlineData("""if (!disposing) { return; } else { throw new System.InvalidOperationException("m"); }""", 0)]
+    [InlineData("""if (!disposing) { throw new System.InvalidOperationException("unmanaged"); }""", 1)]
+    [InlineData("""if (disposing) { return; } else { throw new System.InvalidOperationException("u"); }""", 1)]
+    [InlineData("""throw new System.InvalidOperationException("always");""", 1)]
     public void SK2090_ReadsTheDisposingBranchTheFinalizerActuallyTakes(string body, int expected) {
         var source = """
                      sealed class C {
@@ -243,7 +243,7 @@ public sealed class ExceptionHandlingBatchTests {
     ///     The fix is one argument, appended in the position the chaining constructor expects.
     /// </summary>
     [Theory]
-    [InlineData("throw new Wrapped(\"failed\");", "throw new Wrapped(\"failed\", error);")]
+    [InlineData("""throw new Wrapped("failed");""", """throw new Wrapped("failed", error);""")]
     [InlineData("throw new Wrapped();", "throw new Wrapped(error);")]
     public void SK2093_AppendsTheCaughtVariableAsTheTrailingArgument(string body, string expected) {
         var source = Clause(body);

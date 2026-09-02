@@ -137,7 +137,7 @@ public sealed class FrozenSweepTests {
             + "covers them and nothing else in the suite can see this.\n"
             + "⚠ Do not re-freeze to make this green. The frozen bytes are the oracle's answer and this "
             + "is a regression until somebody has shown otherwise; re-freezing would make Skala's new "
-            + "answer the standard, which is the tautology docs/plan/12 § \"The oracle\" forbids."
+            + """answer the standard, which is the tautology docs/plan/12 § "The oracle" forbids."""
         );
 
         Assert.True(

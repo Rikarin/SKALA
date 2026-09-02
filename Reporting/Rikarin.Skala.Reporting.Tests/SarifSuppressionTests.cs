@@ -151,7 +151,10 @@ public sealed class SarifSuppressionTests {
         Assert.Equal(2, suppressions.GetArrayLength());
         Assert.Equal(
             ["pragma", SarifWriter.BaselineSuppressionSource],
-            Strings(suppressions, s => s.GetProperty("properties").GetProperty(SarifWriter.SuppressionSourceProperty))
+            Strings(
+                suppressions,
+                static s => s.GetProperty("properties").GetProperty(SarifWriter.SuppressionSourceProperty)
+            )
         );
 
         Assert.Equal(["inSource", "external"], Strings(suppressions, static s => s.GetProperty("kind")));

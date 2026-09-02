@@ -258,7 +258,7 @@ public sealed class ReportingTests {
 
     [Fact]
     public void AgentRenderer_IsBounded() {
-        var many = Enumerable.Range(0, 400).Select(i => Modernization(line: i)).ToArray();
+        var many = Enumerable.Range(0, 400).Select(static i => Modernization(line: i)).ToArray();
         var text = Renderer.Render(Sample(many), ReportFormat.Agent);
 
         Assert.True(
@@ -289,7 +289,7 @@ public sealed class ReportingTests {
         var result = Gate.Evaluate(GateDefinition.Local, report, true);
 
         Assert.False(result.Passed);
-        Assert.Contains(result.Failures, failure => failure.Contains("error", StringComparison.Ordinal));
+        Assert.Contains(result.Failures, static failure => failure.Contains("error", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -337,7 +337,7 @@ public sealed class ReportingTests {
         );
 
         Assert.False(result.Passed);
-        Assert.Contains(result.Failures, failure => failure.Contains("no-formatting", StringComparison.Ordinal));
+        Assert.Contains(result.Failures, static failure => failure.Contains("no-formatting", StringComparison.Ordinal));
     }
 
     /// <summary>A gate that does not name `formatting` does not care that nobody looked.</summary>
@@ -355,7 +355,7 @@ public sealed class ReportingTests {
             .GetProperty("driver")
             .GetProperty("rules");
 
-        var skipped = rules.EnumerateArray().Single(rule => rule.GetProperty("id").GetString() == "SK1010");
+        var skipped = rules.EnumerateArray().Single(static rule => rule.GetProperty("id").GetString() == "SK1010");
         Assert.Equal("requires a semantic model", skipped.GetProperty("properties").GetProperty("skipped").GetString());
     }
 

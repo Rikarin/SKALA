@@ -186,7 +186,7 @@ public static class MarkdownRenderer {
     ///     ⚠ A pipe in a message ends the table cell. Rule messages contain code, and code contains pipes.
     /// </summary>
     static string Escape(string text) =>
-        text.Replace("|", "\\|", StringComparison.Ordinal).Replace("\n", " ", StringComparison.Ordinal);
+        text.Replace("|", """\|""", StringComparison.Ordinal).Replace("\n", " ", StringComparison.Ordinal);
 }
 
 /// <summary>

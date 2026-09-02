@@ -50,7 +50,7 @@ public sealed class RulesGenerator : IIncrementalGenerator {
     static readonly DiagnosticDescriptor MalformedId = new(
         "SKR003",
         "A rule id is not in the SK#### shape",
-        "'{0}' is not a rule id; ids are 'SK' followed by four digits (docs/plan/02 § \"Naming\")",
+        """'{0}' is not a rule id; ids are 'SK' followed by four digits (docs/plan/02 § "Naming")""",
         "Skala.Rules",
         DiagnosticSeverity.Error,
         true
@@ -194,7 +194,9 @@ public sealed class RulesGenerator : IIncrementalGenerator {
         builder.AppendLine("        id != null && ById.TryGetValue(id, out var rule) ? rule : null;");
         builder.AppendLine();
         builder.AppendLine("    public static RuleInfo Get(string id) =>");
-        builder.AppendLine("        Find(id) ?? throw new KeyNotFoundException($\"'{id}' is not a Skala rule id.\");");
+        builder.AppendLine(
+            """        Find(id) ?? throw new KeyNotFoundException($"'{id}' is not a Skala rule id.");"""
+        );
         builder.AppendLine("}");
 
         return builder.ToString();
@@ -247,24 +249,24 @@ public sealed class RulesGenerator : IIncrementalGenerator {
                     break;
 
                 case '\\':
-                    builder.Append("\\\\");
+                    builder.Append("""\\""");
                     break;
 
                 case '\n':
-                    builder.Append("\\n");
+                    builder.Append("""\n""");
                     break;
 
                 case '\r':
-                    builder.Append("\\r");
+                    builder.Append("""\r""");
                     break;
 
                 case '\t':
-                    builder.Append("\\t");
+                    builder.Append("""\t""");
                     break;
 
                 default:
                     if (c < ' ') {
-                        builder.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+                        builder.Append("""\u""").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
                     } else {
                         builder.Append(c);
                     }

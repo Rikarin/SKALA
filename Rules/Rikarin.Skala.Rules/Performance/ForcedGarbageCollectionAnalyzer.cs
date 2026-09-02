@@ -83,7 +83,8 @@ public sealed class ForcedGarbageCollectionAnalyzer : DiagnosticAnalyzer {
 
             if (model.GetDeclaredSymbol(declaration, cancellation) is { } symbol
                 && symbol.GetAttributes()
-                    .Any(attribute => attribute.AttributeClass is { } type && Measurement.Contains(type.MetadataName)
+                    .Any(static attribute => attribute.AttributeClass is { } type
+                        && Measurement.Contains(type.MetadataName)
                     )) {
                 return true;
             }

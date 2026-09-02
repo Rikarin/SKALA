@@ -74,7 +74,7 @@ public sealed class SdkAdoptionTests {
         var document = XDocument.Parse(Targets);
 
         var target = document.Descendants()
-            .FirstOrDefault(element => element.Name.LocalName == "Target"
+            .FirstOrDefault(static element => element.Name.LocalName == "Target"
                 && (string?)element.Attribute("Name") == "SkalaRemoveRules"
             );
 
@@ -84,7 +84,7 @@ public sealed class SdkAdoptionTests {
             + "write on the PackageReference takes it back out again."
         );
 
-        Assert.Contains("Analyzer", target!.Descendants().Select(e => e.Name.LocalName));
+        Assert.Contains("Analyzer", target!.Descendants().Select(static e => e.Name.LocalName));
         Assert.Contains("SkalaRulesEnabled", (string?)target.Attribute("Condition") ?? string.Empty);
     }
 
@@ -98,7 +98,7 @@ public sealed class SdkAdoptionTests {
     [Fact]
     public void SkalaRulesAsErrors_DefaultsToFalse() {
         Assert.Contains(
-            "<SkalaRulesAsErrors Condition=\"'$(SkalaRulesAsErrors)' == ''\">false</SkalaRulesAsErrors>",
+            """<SkalaRulesAsErrors Condition="'$(SkalaRulesAsErrors)' == ''">false</SkalaRulesAsErrors>""",
             Targets,
             StringComparison.Ordinal
         );
@@ -202,7 +202,7 @@ public sealed class SdkAdoptionTests {
     [Fact]
     public void TheRuleIdList_IsDeclaredExactlyOnce() {
         var declarations = PackagedMSBuildFiles
-            .SelectMany(file => XDocument.Parse(File.ReadAllText(file))
+            .SelectMany(static file => XDocument.Parse(File.ReadAllText(file))
                     .Descendants()
                     .Where(static element => element.Name.LocalName == "SkalaRuleIds")
                     .Select(_ => file)
@@ -238,7 +238,7 @@ public sealed class SdkAdoptionTests {
 
         Assert.Contains(
             imports,
-            import => import.Contains("Rikarin.Skala.Sdk.RuleIds.props", StringComparison.Ordinal)
+            static import => import.Contains("Rikarin.Skala.Sdk.RuleIds.props", StringComparison.Ordinal)
         );
 
         // ⚠ Unconditional. `Condition="Exists(...)"` would turn a missing generated file into an
@@ -250,7 +250,7 @@ public sealed class SdkAdoptionTests {
                     ((string?)element.Attribute("Project") ?? string.Empty)
                         .Contains("RuleIds.props", StringComparison.Ordinal)
                 ),
-            element => element.Attribute("Condition") is not null
+            static element => element.Attribute("Condition") is not null
         );
     }
 

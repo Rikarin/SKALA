@@ -439,7 +439,7 @@ public static class PreferenceSweep {
             "single-literal",
             [],
             "One string literal argument, filling the list on its own — the shape of SK-DIV-0005's named "
-            + "counter-example, `Convert.FromBase64String(\"…\")`, where the inner construct has no comma "
+            + """counter-example, `Convert.FromBase64String("…")`, where the inner construct has no comma """
             + "to break at. Not applicable to a type parameter list."
         )
     ];
@@ -1145,7 +1145,7 @@ public static class PreferenceSweep {
             if (constructs.Count != only.Count) {
                 throw new InvalidOperationException(
                     "--only named a construct this sweep does not have: "
-                    + string.Join(", ", only.Where(id => constructs.All(construct => construct.Id != id)))
+                    + string.Join(", ", only.Where(id => constructs.TrueForAll(construct => construct.Id != id)))
                 );
             }
         }
@@ -1983,7 +1983,7 @@ public static class PreferenceSweep {
                 .AppendLine(" of them.");
             if (onlyThird > 0) {
                 builder.AppendLine(
-                    "⚠ In those rows \"which of the two constructs gives\" has no answer, because neither"
+                    """⚠ In those rows "which of the two constructs gives" has no answer, because neither"""
                 );
                 builder.AppendLine("does. Any model fitted only to the rows where one of them wins is fitted to a");
                 builder.AppendLine("selected slice of the oracle's behaviour.");
@@ -2146,7 +2146,7 @@ public static class PreferenceSweep {
                 .Append(whole.Unnamed.ToString(CultureInfo.InvariantCulture))
                 .AppendLine(" are unnamed or came");
             builder.AppendLine(
-                "back flat. Neither is in the denominator: a model of \"which of these two gives\" can only"
+                """back flat. Neither is in the denominator: a model of "which of these two gives" can only"""
             );
             builder.AppendLine("be graded on cells where one of them did.");
         }
@@ -2370,10 +2370,10 @@ public static class PreferenceSweep {
         builder.AppendLine("# The preference surface, measured");
         builder.AppendLine();
         builder.AppendLine(
-            "**Two constructs on one line, one break needed, which one gives.** SK-DIV-0050 § \"The two"
+            """**Two constructs on one line, one break needed, which one gives.** SK-DIV-0050 § "The two"""
         );
         builder.AppendLine(
-            "facts this family is made of\" names this the *preference fact* and says the thing that makes"
+            """facts this family is made of" names this the *preference fact* and says the thing that makes"""
         );
         builder.AppendLine("it different from every other open divergence: it cannot be settled after the oracle is");
         builder.AppendLine(
@@ -2388,14 +2388,14 @@ public static class PreferenceSweep {
         builder.AppendLine("breaking it brings the head line within the margin, and when the inner construct is at");
         builder.AppendLine("least `F` columns wide on its own; otherwise take the outer break.* The first term is a");
         builder.AppendLine("sentence anyone can state without ReSharper installed. The second is the entire");
-        builder.AppendLine("irreducible content of the \"preference fact\" — read the fitted `F` and the accuracy");
+        builder.AppendLine("""irreducible content of the "preference fact" — read the fitted `F` and the accuracy""");
         builder.AppendLine("beside it in the table below, and in each construct's own section.");
         builder.AppendLine();
         builder.AppendLine("⚠ **`F` is not one constant per shape, and it is not one constant per content either.**");
         builder.AppendLine("Version 1 of this file called it the first and version 2 called it the second. Version 2");
         builder.AppendLine("had fourteen shapes, ten of which break at column 12, and the four it compared to");
         builder.AppendLine(
-            "establish \"nothing to the left of the inner construct moves `F`\" were four of those ten."
+            """establish "nothing to the left of the inner construct moves `F`" were four of those ten."""
         );
         builder.AppendLine("That half of the claim survives intact and is worth keeping: a bare callee, a qualifier,");
         builder.AppendLine("a cast and a type argument list *between* the outer break and the inner construct are");
@@ -2864,17 +2864,19 @@ public static class PreferenceSweep {
         );
         builder.AppendLine("   the right-hand side there also widens the `=` break's *own* continuation line, so its");
         builder.AppendLine(
-            "   boundary confounds \"the inner break is now enough\" with \"the outer break has stopped"
+            """   boundary confounds "the inner break is now enough" with "the outer break has stopped"""
         );
         builder.AppendLine(
-            "   being enough\" — and it is the second one it tracks. At a flat width of 121 its flip sits"
+            """   being enough" — and it is the second one it tracks. At a flat width of 121 its flip sits"""
         );
         builder.AppendLine("   at a continuation line of exactly 112 columns at block depths 2, 3, 4, 5 and 6 alike");
         builder.AppendLine("   (its `base64-literal` row), while the head line this law asks about is 45, 49, 53, 57");
         builder.AppendLine("   and 61 columns at those same five flips — nowhere near the margin, and never twice the");
         builder.AppendLine("   same. The law's boundary is not in that data at any depth.");
-        builder.AppendLine("2. **It records one number per row, not one per cell.** The cell is \"the longest");
-        builder.AppendLine("   continuation line still written rather than wrapping\" — a threshold, and a maximum at");
+        builder.AppendLine("""2. **It records one number per row, not one per cell.** The cell is "the longest""");
+        builder.AppendLine(
+            """   continuation line still written rather than wrapping" — a threshold, and a maximum at"""
+        );
         builder.AppendLine(
             "   that. A floor is fitted per cell and scored per cell; neither is recoverable from a row's"
         );
@@ -2990,7 +2992,7 @@ public static class PreferenceSweep {
                 .AppendLine(" fits a");
             builder.AppendLine("floor wider than any inner construct swept, which means the best available model of");
             builder.AppendLine(
-                "that shape is \"always take the outer break\" and the percentage beside it is just how"
+                """that shape is "always take the outer break" and the percentage beside it is just how"""
             );
             builder.AppendLine("often the oracle did. Every such shape is one of the `⚠ left` rows, and that is the");
             builder.AppendLine("confound in the margin sweep's design showing up as a number: with the filler on the");
@@ -3009,7 +3011,7 @@ public static class PreferenceSweep {
                 .Append(string.Join(", ", mute.Select(static entry => "`" + entry.construct.Id + "`")))
                 .AppendLine(" — never took either of the two");
             builder.AppendLine(
-                "constructs under test in any cell swept. For those, \"which of these two gives\" has no"
+                """constructs under test in any cell swept. For those, "which of these two gives" has no"""
             );
             builder.AppendLine("answer to record: the oracle reaches past both every time, and a floor fitted to them");
             builder.AppendLine("would be fitted to nothing.");
@@ -3057,7 +3059,7 @@ public static class PreferenceSweep {
                 builder.Append("| ").Append(total.ToString(CultureInfo.InvariantCulture)).Append(" |");
                 var seen = new List<int>();
                 foreach (var column in columns) {
-                    var reading = mine.FirstOrDefault(entry => entry.Total == total && entry.Filler == column);
+                    var reading = mine.Find(entry => entry.Total == total && entry.Filler == column);
                     if (reading?.Threshold is { } threshold && sampled.Contains(column)) {
                         seen.Add(threshold);
                     }

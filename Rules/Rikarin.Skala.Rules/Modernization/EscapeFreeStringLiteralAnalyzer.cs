@@ -78,7 +78,7 @@ public sealed class EscapeFreeStringLiteralAnalyzer : DiagnosticAnalyzer {
         // escapes a backslash or a quote. Anything else is already as plain as it gets.
         var worthRewriting = verbatim
             ? value.IndexOf('"') >= 0
-            : text.IndexOf("\\\\", StringComparison.Ordinal) >= 0
+            : text.IndexOf("""\\""", StringComparison.Ordinal) >= 0
             || text.IndexOf("\\\"", StringComparison.Ordinal) >= 0;
 
         if (raw

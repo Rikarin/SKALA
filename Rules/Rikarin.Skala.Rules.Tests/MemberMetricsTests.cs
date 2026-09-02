@@ -312,7 +312,7 @@ public sealed class MemberMetricsTests {
     /// </remarks>
     [Fact]
     public void ATwentyCaseSwitch_ScoresLessThanATripleNestedCondition() {
-        var arms = string.Join("\n", Enumerable.Range(1, 20).Select(n => $"case {n}: return {n};"));
+        var arms = string.Join("\n", Enumerable.Range(1, 20).Select(static n => $"case {n}: return {n};"));
         var wide = Cognitive(
             "class C { int Wide(int n) { switch (n) {\n" + arms + "\ndefault: return 0; } } }",
             "Wide"
@@ -754,7 +754,7 @@ public sealed class MemberMetricsTests {
         var declaration = tree.GetRoot(TestContext.Current.CancellationToken)
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
-            .First(m => m.Identifier.ValueText == "M");
+            .First(static m => m.Identifier.ValueText == "M");
 
         var errors = compilation.GetDiagnostics(TestContext.Current.CancellationToken)
             .Where(static d => d.Severity == DiagnosticSeverity.Error)

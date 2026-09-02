@@ -92,7 +92,7 @@ public sealed class RuleCorpusTests {
         );
 
         Assert.Equal(VendoredTrees, RuleCorpus.Trees().ToArray());
-        Assert.Equal(RuleCorpus.Sources().Count, RuleCorpus.Trees().Sum(tree => RuleCorpus.Sources(tree).Count));
+        Assert.Equal(RuleCorpus.Sources().Count, RuleCorpus.Trees().Sum(static tree => RuleCorpus.Sources(tree).Count));
 
         // ⚠ Every file a tree's sweep compiles is under that tree, asserted rather than assumed.
         // `skala check <path>` in the default workspace mode ignores its path argument and analyses
@@ -248,7 +248,7 @@ public sealed class RuleCorpusTests {
             .ToList();
 
         Assert.NotEmpty(withPositives);
-        Assert.All(withPositives, id => Assert.NotNull(RuleCorpus.Canary(id)));
+        Assert.All(withPositives, static id => Assert.NotNull(RuleCorpus.Canary(id)));
         Assert.Null(RuleCorpus.Canary("SK0000"));
     }
 
@@ -264,7 +264,7 @@ public sealed class RuleCorpusTests {
             RuleCorpus.Trees()
                 .ToImmutableDictionary(
                     static tree => tree,
-                    tree => RuleCorpus.CompilerErrors(tree, false, CancellationToken.None),
+                    static tree => RuleCorpus.CompilerErrors(tree, false, CancellationToken.None),
                     StringComparer.Ordinal
                 )
         );

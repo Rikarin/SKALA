@@ -3082,7 +3082,9 @@ public static class Ids {
             );
         }
 
-        if (!targets.Any(target => Collected.Contains(target) && !Inert.Contains(target) && !Unoracled.Contains(target)
+        if (!targets.Any(static target => Collected.Contains(target)
+                && !Inert.Contains(target)
+                && !Unoracled.Contains(target)
             )) {
             throw new InvalidOperationException(
                 $"'{key}' expands to [{string.Join(", ", targets.Select(static t => OptionRegistry.Get(t).Key))}] and phase 1 implements none of them. A generalized key is honoured through its targets or not at all."

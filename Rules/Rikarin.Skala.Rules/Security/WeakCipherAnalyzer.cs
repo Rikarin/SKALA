@@ -130,7 +130,7 @@ public sealed class WeakCipherAnalyzer : DiagnosticAnalyzer {
     static string Why(string family) =>
         family switch {
             "DES" => "a 56-bit cipher and is brute-forced in hours on commodity hardware",
-            "TripleDES" => "a 64-bit-block cipher, which leaks after ~32 GB under one key (CVE-2016-2183, \"Sweet32\")",
+            "TripleDES" => """a 64-bit-block cipher, which leaks after ~32 GB under one key (CVE-2016-2183, "Sweet32")""",
             _ => "a broken cipher with practical key-recovery attacks"
         };
 
