@@ -8423,6 +8423,37 @@
       "configuration": [
         "dotnet_diagnostic.SK2233.severity"
       ]
+    },
+    {
+      "id": "SK0260",
+      "concept": "redundant-boolean-expression",
+      "title": "The boolean expression says the same thing twice",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantBoolCompare",
+      "resharperNote": "⚠ Five ReSharper inspections, one concept: `RedundantBoolCompare`, `DoubleNegationOperator`, `NegativeEqualityExpression`, `RedundantTernaryExpression` and `RedundantLogicalConditionalExpressionOperand`. ReSharper rates the first four a *warning* and the last a *suggestion*; Skala reports the concept at `warning`.\n\n⚠ **Two of the five are hosted by Roslyn and three are not, and that was measured rather than assumed.** Reflecting over `Microsoft.CodeAnalysis.CodeStyle` in SDK 10.0.400 — 440 descriptors, read out of the assemblies because an error log cannot tell `Hidden` from absent — `IDE0100` (\"remove redundant equality\") covers `x == true` and `x != false`, and `IDE0075` (\"simplify conditional expression\") covers `c ? true : false`. **Both are `IsEnabledByDefault: true` with `DefaultSeverity: Hidden`**, so a plain `dotnet build` emits neither: the code-style analyzers are not loaded at all without `EnforceCodeStyleInBuild`, and even then a `Hidden` rule needs an explicit `dotnet_diagnostic.IDExxxx.severity` line before it says anything. Skala ships over them on the reasoning `SK1005` already uses for `IDE0161`. ⚠ **The other three are verified zeros, not unchecked ones**: with all 120 `IDE` ids forced to `warning` and `IDE0055`, `IDE0161`, `IDE0100`, `IDE0075` and `IDE0380` all firing on the same compilation, nothing reported `!!x`, `!(a == b)` or `x && true` — and there was no `AD0001`, so no analyzer crashed silently past them.",
+      "supersedes": [
+        "DoubleNegationOperator",
+        "NegativeEqualityExpression",
+        "RedundantTernaryExpression",
+        "RedundantLogicalConditionalExpressionOperand"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A boolean expression that restates its own operand: a comparison against `true` or `false`, a double negation, a negated equality, a conditional returning the two boolean literals, or a `&&`/`||` operand that cannot change the result.",
+      "rationale": "Each shape asks the reader to evaluate a boolean twice. `flag == true` is `flag` with a comparison in front of it, and the comparison is the part a reader has to check is not `=`; `!!ready` reads as a typo until it is proved not to be; `!(a == b)` makes the reader invert an operator the language already has; `found ? true : false` is a conditional whose branches are the answer to the condition it was given; and `enabled && true` is an operand that was written to be true and stayed. ⚠ The shapes matter disproportionately for generated code: a model that assembles a condition from parts emits `&& true` as the identity element of a fold, and emits `? true : false` because most of its training data predates the habit of returning the condition.",
+      "examples": {
+        "bad": "if (ready == true) { }\nif (!!ready) { }\nif (!(left == right)) { }\n\nvar found = index >= 0 ? true : false;\nvar ok = ready && true;",
+        "good": "if (ready) { }\nif (ready) { }\nif (left != right) { }\n\nvar found = index >= 0;\nvar ok = ready;"
+      },
+      "falsePositives": "⚠ **`bool?` is the false positive this rule is written around, and it defeats every shape at once.** `maybe == true` is *not* `maybe` when `maybe` is `bool?`: the comparison is three-valued and yields `false` for `null`, so the rewrite turns a null into a compile error or, under an implicit conversion, into a different branch. Every shape therefore requires `SpecialType.System_Boolean` on the operand it reads — `Nullable<bool>` reports `System_Nullable_T` and is declined without a special case. ⚠ **A user-defined `==` and a user-defined `!=` need not be each other's negation**, so `!(a == b)` is reported only when the comparison binds to `MethodKind.BuiltinOperator`; a type that overloads equality is left alone even when the two operators do agree, because whether they agree is not a question the shape answers. ⚠ **A `null` operand is declined and handed to `SK1010`**: `!(x == null)` is that rule's `is not null`, and reporting both would put two ids on one span — the `SK0244`/`SK6023` collision, avoided by reading the neighbour first rather than after. ⚠ **`x && false` and `false && x` are deliberately not reported.** The operand that cannot change the result is only `&& true` and `|| false`; deleting the *other* side drops an evaluation, which is a behaviour change and, where the dropped side has an effect, a defect worth its own finding rather than a cleanup. ⚠ **A condition with a user-defined `operator true` is not a `bool`**, so `custom ? true : false` keeps its conditional — removing it would change the expression's type from `bool` to the custom type. ⚠ The negated-equality fix is offered only where `!=` can stand unparenthesised: under an operator that binds tighter than equality the finding is withdrawn rather than rewritten, because the alternative is emitting parentheses that `SK0209` would then report as redundant, and two rules undoing each other is a `skala fix` that does not terminate. A comment or a directive inside the replaced span withdraws the finding, and the span is asked rather than the node — the defect #302 describes.",
+      "configuration": [
+        "dotnet_diagnostic.SK0260.severity"
+      ]
     }
   ]
 }

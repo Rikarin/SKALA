@@ -296,6 +296,62 @@ compile.** Found while considering the nested-`unsafe` half of `RedundantUnsafeC
 `SK0241`: `unsafe class C { unsafe void M() { … } }` is CS0227 in the fixture harness. The
 nested-context shapes were dropped rather than tested against a compilation that rejects them — the
 trap `SK0240`'s deleted iterator guard was committed into once already.
+
+### Cleanup — `SK0260`
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK0260` | The boolean expression says the same thing twice | Semantic | safe |
+
+`SK0260` covers five of [#131](https://github.com/Rikarin/SKALA/issues/131)'s thirteen — the whole
+boolean-expression cluster that block left outstanding: `RedundantBoolCompare` (`ready == true`),
+`DoubleNegationOperator` (`!!ready`), `NegativeEqualityExpression` (`!(a == b)`),
+`RedundantTernaryExpression` (`found ? true : false`) and
+`RedundantLogicalConditionalExpressionOperand` (`ready && true`). With it, #131 stands at eleven of
+thirteen.
+
+⚠ **Two of the five are hosted by Roslyn, and the state that matters is neither "on" nor "absent".**
+Reading `IsEnabledByDefault` and `DefaultSeverity` out of SDK 10.0.400's analyzer assemblies — 440
+descriptors, reflected rather than inferred from an error log, because **an error log cannot tell
+`Hidden` from absent** — `IDE0100` covers the equality shape and `IDE0075` the conditional shape, and
+**both are enabled with `DefaultSeverity: Hidden`**. A plain `dotnet build` emits neither: the
+code-style analyzers are not loaded without `EnforceCodeStyleInBuild`, and a `Hidden` rule still says
+nothing after that without an explicit `dotnet_diagnostic.IDExxxx.severity` line. Skala ships over
+them on the reasoning `SK1005` already uses for `IDE0161`.
+
+⚠ **The other three are verified zeros rather than unchecked ones.** With all 120 `IDE` ids forced to
+`warning`, `AnalysisMode=All`, and `IDE0055`, `IDE0161`, `IDE0100`, `IDE0075` and `IDE0380` all firing
+on the same compilation — and no `AD0001`, so nothing crashed silently past them — nothing reported
+`!!x`, `!(a == b)` or `x && true`. The controls are what make the zeros mean anything.
+
+⚠ **`bool?` is the false positive the rule is built around and it defeats all five shapes at once.**
+`maybe == true` is not `maybe`: the comparison is three-valued and answers `false` for `null`. Every
+shape asks for `SpecialType.System_Boolean`, and `Nullable<bool>` answers `System_Nullable_T` — it is
+declined by the type question itself rather than by an exception beside it.
+
+⚠ **A user-defined `==` and a user-defined `!=` need not be each other's negation**, so `!(a == b)` is
+reported only where the comparison binds to `MethodKind.BuiltinOperator`. The negative fixture
+`user_defined_equality_negated.cs` defines the pair so that both return `true`, which is legal C# and
+which the rewrite would get wrong.
+
+⚠ **The negation direction flips an equality rather than wrapping it, and that is a termination
+requirement.** Writing `left == right == false` as `!(left == right)` would hand this rule's own
+negated-equality shape a finding on the fix's own output, so one `skala fix` pass would not settle —
+the defect `SK0240` records for its composite `try` edit, in a different rule. `FixRoundTripTests`
+asserts it: the fix is applied and the rule must then be silent.
+
+⚠ **`x && false` is deliberately absent.** The operand that cannot change the result is `&& true` and
+`|| false` and only those; deleting the other side drops an evaluation, which is a behaviour change
+wearing a redundancy's clothes.
+
+⚠ **`!(x == null)` is `SK1010`'s span and is handed to it** rather than reported twice — the
+`SK0244`/`SK6023` collision, avoided by reading the neighbour before allocating rather than after.
+
+What #131 has left after this: `RedundantIfElseBlock`, whose fix moves a block's statements into the
+enclosing scope and so has to answer the name-collision question `RewriteGuards.WouldCollide` exists
+for, and `RedundantSwitchExpressionArms`, which needs the exhaustiveness model none of these shapes
+ask for. Neither is refuted; neither has an id.
+
 ### Cleanup — `SK0250`
 
 ⚠ **The prose pass on this block is owed**, like the two above it: it is written as one rule lands and

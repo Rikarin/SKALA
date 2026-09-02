@@ -301,3 +301,4 @@ SK2230 | Skala.Correctness | Warning | The concatenation fuses a word into the S
 SK2231 | Skala.Correctness | Warning | The command's SQL names a parameter nothing supplies.
 SK2232 | Skala.Correctness | Warning | The load context's own resolver loads outside it.
 SK2233 | Skala.Correctness | Warning | The `Type` passed cannot satisfy what the API asks for.
+SK0260 | Skala.Cleanup | Warning | The boolean expression says the same thing twice.
