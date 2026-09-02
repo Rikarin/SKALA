@@ -153,6 +153,9 @@ public sealed class RuleFixtureTests {
         new HiddenBaseInterfaceOverloadAnalyzer(),
         new InvariantTypeParameterAnalyzer(), new CallerInfoParameterOrderAnalyzer(),
         new WriteOnlyLocalCollectionAnalyzer(),
+        new StructKeyWithoutEqualityAnalyzer(), new ReadonlyReceiverMutationAnalyzer(),
+        new SpanReferenceComparisonAnalyzer(), new ImmutableArrayCollectionInitializerAnalyzer(),
+        new MutableCapturedPrimaryParameterAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

@@ -252,5 +252,12 @@
   "AccessToStaticMemberViaDerivedType": "SK2183",
   "PossibleInterfaceMemberAmbiguity": "SK2184",
   "TypeParameterCanBeVariant": "SK6060",
-  "CollectionNeverQueried.Local": "SK6062"
+  "CollectionNeverQueried.Local": "SK6062",
+  "UsageOfDefaultStructEquality": "SK2011",
+  "DefaultStructEqualityIsUsed.Global": "SK2190",
+  "DefaultStructEqualityIsUsed.Local": "SK2190",
+  "PossiblyImpureMethodCallOnReadonlyVariable": "SK2191",
+  "StringSpanComparison": "SK2192",
+  "ImmutableArrayWithCollectionInitializer": "SK2193",
+  "CapturedPrimaryConstructorParameterIsMutable": "SK2194"
 }

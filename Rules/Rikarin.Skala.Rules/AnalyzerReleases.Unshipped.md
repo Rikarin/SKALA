@@ -255,3 +255,8 @@ SK2184 | Skala.Correctness | Warning | The call skips a better overload the deri
 SK6060 | Skala.Design | Info | The interface type parameter could be declared variant.
 SK6061 | Skala.Design | Warning | A caller-info parameter is followed by an ordinary parameter.
 SK6062 | Skala.Design | Info | A local collection is filled and never read.
+SK2190 | Skala.Correctness | Warning | A hash-based collection is keyed on a struct that declares no equality.
+SK2191 | Skala.Correctness | Warning | A struct mutation is lost to a copy made for a readonly receiver.
+SK2192 | Skala.Correctness | Warning | `==` on spans compares memory locations.
+SK2193 | Skala.Correctness | Error | `ImmutableArray<T>` is built with a collection initializer.
+SK2194 | Skala.Correctness | Warning | A captured primary constructor parameter is assigned.

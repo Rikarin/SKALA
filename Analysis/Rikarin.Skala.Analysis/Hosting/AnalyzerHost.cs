@@ -191,6 +191,9 @@ public static class AnalyzerHost {
         new HiddenBaseInterfaceOverloadAnalyzer(),
         new InvariantTypeParameterAnalyzer(), new CallerInfoParameterOrderAnalyzer(),
         new WriteOnlyLocalCollectionAnalyzer(),
+        new StructKeyWithoutEqualityAnalyzer(), new ReadonlyReceiverMutationAnalyzer(),
+        new SpanReferenceComparisonAnalyzer(), new ImmutableArrayCollectionInitializerAnalyzer(),
+        new MutableCapturedPrimaryParameterAnalyzer(),
     ];
 
     /// <summary>
