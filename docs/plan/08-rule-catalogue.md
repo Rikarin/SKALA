@@ -445,6 +445,155 @@ trap `SK0240`'s deleted iterator guard was committed into once already. **Fixed
 `LooseLoader` has always passed in production, and `SK0241`'s nested-context shapes are fixturable.
 ⚠ The related claim that this blocked `SK2221` is **refuted**: `[UnsafeAccessor]` requires `extern`,
 not `unsafe`.
+trap `SK0240`'s deleted iterator guard was committed into once already.
+
+### Cleanup — `SK0260`
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK0260` | The boolean expression says the same thing twice | Semantic | safe |
+
+`SK0260` covers five of [#131](https://github.com/Rikarin/SKALA/issues/131)'s thirteen — the whole
+boolean-expression cluster that block left outstanding: `RedundantBoolCompare` (`ready == true`),
+`DoubleNegationOperator` (`!!ready`), `NegativeEqualityExpression` (`!(a == b)`),
+`RedundantTernaryExpression` (`found ? true : false`) and
+`RedundantLogicalConditionalExpressionOperand` (`ready && true`). With it, #131 stands at eleven of
+thirteen.
+
+⚠ **Two of the five are hosted by Roslyn, and the state that matters is neither "on" nor "absent".**
+Reading `IsEnabledByDefault` and `DefaultSeverity` out of SDK 10.0.400's analyzer assemblies — 440
+descriptors, reflected rather than inferred from an error log, because **an error log cannot tell
+`Hidden` from absent** — `IDE0100` covers the equality shape and `IDE0075` the conditional shape, and
+**both are enabled with `DefaultSeverity: Hidden`**. A plain `dotnet build` emits neither: the
+code-style analyzers are not loaded without `EnforceCodeStyleInBuild`, and a `Hidden` rule still says
+nothing after that without an explicit `dotnet_diagnostic.IDExxxx.severity` line. Skala ships over
+them on the reasoning `SK1005` already uses for `IDE0161`.
+
+⚠ **The other three are verified zeros rather than unchecked ones.** With all 120 `IDE` ids forced to
+`warning`, `AnalysisMode=All`, and `IDE0055`, `IDE0161`, `IDE0100`, `IDE0075` and `IDE0380` all firing
+on the same compilation — and no `AD0001`, so nothing crashed silently past them — nothing reported
+`!!x`, `!(a == b)` or `x && true`. The controls are what make the zeros mean anything.
+
+⚠ **`bool?` is the false positive the rule is built around and it defeats all five shapes at once.**
+`maybe == true` is not `maybe`: the comparison is three-valued and answers `false` for `null`. Every
+shape asks for `SpecialType.System_Boolean`, and `Nullable<bool>` answers `System_Nullable_T` — it is
+declined by the type question itself rather than by an exception beside it.
+
+⚠ **A user-defined `==` and a user-defined `!=` need not be each other's negation**, so `!(a == b)` is
+reported only where the comparison binds to `MethodKind.BuiltinOperator`. The negative fixture
+`user_defined_equality_negated.cs` defines the pair so that both return `true`, which is legal C# and
+which the rewrite would get wrong.
+
+⚠ **The negation direction flips an equality rather than wrapping it, and that is a termination
+requirement.** Writing `left == right == false` as `!(left == right)` would hand this rule's own
+negated-equality shape a finding on the fix's own output, so one `skala fix` pass would not settle —
+the defect `SK0240` records for its composite `try` edit, in a different rule. `FixRoundTripTests`
+asserts it: the fix is applied and the rule must then be silent.
+
+⚠ **`x && false` is deliberately absent.** The operand that cannot change the result is `&& true` and
+`|| false` and only those; deleting the other side drops an evaluation, which is a behaviour change
+wearing a redundancy's clothes.
+
+⚠ **`!(x == null)` is `SK1010`'s span and is handed to it** rather than reported twice — the
+`SK0244`/`SK6023` collision, avoided by reading the neighbour before allocating rather than after.
+
+**Corpus: 0 findings, and every one of the nine candidates is accounted for.** Measured over the 380
+real corpus sources with the 760 `.expected.cs` copies excluded and `ImplicitUsings` on — the two
+things that otherwise manufacture `CS0111`/`CS0101` and strip the `using`s, turning a semantic
+measurement into a clean-looking zero. A hand count of the shapes finds **nine** candidate lines for
+the equality shape and **none at all** for the other four, so `!!x`, `!(a == b)`, `? true : false` and
+`&& true` are **shape absent** across all three reference trees. Of the nine:
+
+- **five** are `x?.M() == true` — a conditional access is `bool?`, which is precisely the false
+  positive this rule is built around, and they are the correctly declined majority of the real-world
+  population;
+- **two** are in `CustomerDataSet.cs`, which **binds cleanly** and whose members carry
+  `[GeneratedCodeAttribute]`; they are declined by `ConfigureGeneratedCodeAnalysis`, verified with a
+  two-way planted probe where the same expression fired in a plain method and stayed silent under the
+  attribute;
+- **one** is inside a string literal — `@"$.[?(@.Valid === true)]"` — so it is text a grep finds and
+  not a syntax node;
+- ⚠ **one is a floor artefact and is recorded as one.** `resolvedSchema.Required != true` in
+  `JsonSchemaGenerator.cs` is declined because that file has **92 binding errors**: `JsonSchema` is
+  not among the four Schema types the corpus vendors. It is not known whether the rule would fire on
+  it, and a semantic corpus count is a floor for exactly this reason.
+
+⚠ **The zero was proved live before it was believed.** Planting one positive of each of the five
+shapes inside the corpus tree produced five findings; deleting the file returned the count to zero.
+
+**Sabotage: eight guards, sixteen fixtures red, none silent.** Each guard was removed and the
+fixture suite re-run against a 12 375-test green baseline. `plain-boolean` →
+`nullable_bool_compared_to_true`, `nullable_bool_compared_to_false`, `nullable_bool_double_negation`,
+`custom_type_compared_to_a_literal`, `conditional_condition_has_operator_true`;
+`builtin-operator` → `user_defined_equality_negated`; `null-operand` → `negated_equality_with_null`,
+`negated_equality_with_null_on_the_left`; `parent-precedence` →
+`negated_equality_under_a_tighter_operator`; `replaceable` → `comment_inside_the_comparison`,
+`directive_inside_the_logical_operand`; `outermost-negation` →
+`triple_negation_reports_the_outer` (the *positive*, through the fix round trip, because the run
+would otherwise report itself twice); `neutral-operand` → `and_false`, `or_true`,
+`false_on_the_left_of_and`; `branches-differ` → `conditional_branches_are_the_same_literal`.
+
+What #131 has left after this: `RedundantIfElseBlock`, whose fix moves a block's statements into the
+enclosing scope and so has to answer the name-collision question `RewriteGuards.WouldCollide` exists
+for, and `RedundantSwitchExpressionArms`, which needs the exhaustiveness model none of these shapes
+ask for. Neither is refuted; neither has an id.
+
+### Cleanup — `SK0261`
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK0261` | The attribute writes out what the language already supplies | Semantic | safe |
+
+`SK0261` covers two of [#130](https://github.com/Rikarin/SKALA/issues/130)'s fourteen:
+`RedundantAttributeSuffix` (`[SerializableAttribute]`) and `RedundantAttributeUsageProperty`
+(`Inherited = true`, `AllowMultiple = false`). With it, #130 stands at eight of fourteen.
+
+⚠ **Neither is hosted, and both zeros are verified.** None of the 440 descriptors reflected out of
+SDK 10.0.400's analyzer assemblies is either shape, and a probe with all 120 `IDE` ids at `warning`,
+`AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on either — on a compilation where
+`IDE0055`, `IDE0161`, `IDE0100`, `IDE0075` and `IDE0380` fired and no `AD0001` was raised. Neither is
+a compiler warning.
+
+⚠ **Dropping the suffix is a lookup, not a string operation.** `[FooAttribute]` resolves to
+`FooAttribute`, but `[Foo]` searches for **both** `Foo` and `FooAttribute` — so a type named `Foo` in
+scope changes what the shortened form means, or makes it `CS1614` when both are attribute classes.
+The rule asks `LookupNamespacesAndTypes` at the attribute's own position and withdraws if anything
+comes back. That is **stricter than the language on purpose**: a non-attribute `Foo` beside an
+attribute `FooAttribute` is in fact still unambiguous and is declined anyway, because "is the other
+candidate an attribute class" is a second question and getting it wrong changes which type is
+applied.
+
+⚠ **A guard written here was dead and the sabotage is what said so.** The suffix branch first carried
+the usual comment-or-directive check over `name.Span`. That span is the tail of a **single identifier
+token**, and an identifier cannot contain trivia — no fixture can put a `//`, a `/*` or a `#` inside
+it, so deleting the guard turned nothing red. It is removed rather than left standing with a fixture
+that does not reach it. The `[AttributeUsage]` branch spans several tokens and keeps its guard, which
+`comment_inside_the_deleted_argument_span.cs` does reach.
+
+⚠ Only a **simple** name is reported: a qualified `[System.SerializableAttribute]` carries a second
+redundancy in its qualifier, and that is `SK0243`'s span and concept.
+
+**Corpus: 0 findings, and both shapes are *shape absent*.** Over the same 380 real sources, a hand
+count finds **no** attribute written with a redundant `Attribute` suffix, **no** `Inherited = true`
+and **no** `AllowMultiple = false`. The suffix search is worth stating precisely, because the
+neighbouring result invites the wrong conclusion: `SK0233` reports `[global::System.Serializable()]`
+in newtonsoft, which is the empty *argument list*, and that attribute is written **without** the
+suffix — so it is not evidence for this shape. As with `SK0260`, the zero was proved live first:
+planted positives of both shapes fired inside the corpus tree and the count returned to zero when the
+file was deleted.
+
+**Sabotage: five guards, five fixtures red.** `suffix-length` → `the_name_is_exactly_the_suffix`;
+`shortened-keyword` → `shortening_leaves_a_keyword`; `short-name-lookup` →
+`a_type_answers_to_the_short_name`; `attribute-usage-identity` (the namespace half) →
+`another_types_attribute_usage`; `argument-trivia` → `comment_inside_the_deleted_argument_span`.
+
+⚠ **Two guards here are asserted by a fixture but were not sabotage-tested, and saying so is the
+point.** The `Name: "AttributeUsageAttribute"` half of the identity check was not removed separately
+— only its namespace half was — so `an_unrelated_attribute_with_an_inherited_property` stayed green
+through the batch. And the `is not IdentifierNameSyntax` restriction that
+`qualified_name_belongs_to_sk0243` covers cannot be removed without restructuring the method around a
+different node type, so no sabotage was run for it. Both fixtures assert the behaviour; neither has
+been shown to be the thing that produces it.
 ### Cleanup — `SK0250`
 
 **One rule, and it is here rather than folded into `SK0233` because the two answer to different

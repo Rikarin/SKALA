@@ -345,3 +345,5 @@ SK2233 mistaken-type-argument
 SK5040 xml-resolver-reenabled
 SK5041 fixed-key-derivation-salt
 SK5042 world-writable-file-mode
+SK0260 redundant-boolean-expression
+SK0261 redundant-attribute-detail

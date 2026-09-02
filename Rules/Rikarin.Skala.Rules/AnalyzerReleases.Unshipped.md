@@ -304,3 +304,5 @@ SK2233 | Skala.Correctness | Warning | The `Type` passed cannot satisfy what the
 SK5040 | Skala.Security | Error | An XML resolver put back where the platform resolves nothing.
 SK5041 | Skala.Security | Error | The key-derivation salt is fixed at compile time.
 SK5042 | Skala.Security | Error | A file or directory created writable by every local user.
+SK0260 | Skala.Cleanup | Warning | The boolean expression says the same thing twice.
+SK0261 | Skala.Cleanup | Warning | The attribute writes out what the language already supplies.
