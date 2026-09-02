@@ -35,6 +35,12 @@ namespace Rikarin.Skala.Analysis.Duplication;
 ///     </para>
 /// </remarks>
 internal sealed class TokenStream {
+    /// <summary>A line-state flag: the header skip dropped a token on this line.</summary>
+    const byte HeaderToken = 1;
+
+    /// <summary>A line-state flag: a token on this line reached the stream, so the line is not header.</summary>
+    const byte CountedToken = 2;
+
     /// <summary>
     ///     The source the tokeniser's own fingerprint is taken over.
     /// </summary>
@@ -190,8 +196,8 @@ internal sealed class TokenStream {
         var skipped = HeaderSpans(text);
         var lineStarts = LineStarts(text);
 
-        // 1 = a header token sits on this line, 2 = a counted one does. A line that ends up 1 and not
-        // 2 leaves both halves of the ratio; anything else is untouched.
+        // ⚠ Flags, not a state: a line carrying both is a counted line, and only a line that is
+        // HeaderToken and nothing else leaves both halves of the ratio.
         var lines = new byte[lineStarts.Count];
 
         // A C# token averages a little over three characters including its trivia; over-guessing
@@ -215,14 +221,8 @@ internal sealed class TokenStream {
                 continue;
             }
 
-            // ⚠ One forward pointer, not a search: `ParseTokens` yields in source order and the spans
-            // are sorted, so the whole skip costs one pass over a list that is usually a dozen long.
-            while (next < skipped.Count && skipped[next].End <= span.Start) {
-                next++;
-            }
-
-            var header = next < skipped.Count && skipped[next].Start <= span.Start;
-            Mark(lines, lineStarts, span, header ? (byte)1 : (byte)2);
+            var header = IsHeader(skipped, ref next, span.Start);
+            Mark(lines, lineStarts, span, header ? HeaderToken : CountedToken);
             if (header) {
                 continue;
             }
@@ -246,15 +246,28 @@ internal sealed class TokenStream {
             Array.Resize(ref ends, count);
         }
 
-        var headerLines = 0;
-        foreach (var state in lines) {
-            if (state == 1) {
-                headerLines++;
-            }
+        return new(codes, starts, ends, HeaderLineCount(lines));
+    }
+
+    /// <summary>
+    ///     Whether the token at <paramref name="start" /> is inside the header.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ One forward pointer, not a search. <see cref="SyntaxFactory.ParseTokens" /> yields in source
+    ///     order and <paramref name="skipped" /> is sorted, so the whole skip costs one pass over a list
+    ///     that is usually a dozen long — <paramref name="next" /> is carried across calls and never
+    ///     rewinds.
+    /// </remarks>
+    static bool IsHeader(List<TextSpan> skipped, ref int next, int start) {
+        while (next < skipped.Count && skipped[next].End <= start) {
+            next++;
         }
 
-        return new(codes, starts, ends, headerLines);
+        return next < skipped.Count && skipped[next].Start <= start;
     }
+
+    /// <summary>Lines that held a header token and no counted one. ⚠ A line with neither is neither.</summary>
+    static int HeaderLineCount(byte[] lines) => lines.Count(static state => state == HeaderToken);
 
     /// <summary>Flags every line <paramref name="span" /> touches with <paramref name="state" />.</summary>
     static void Mark(byte[] lines, List<int> lineStarts, TextSpan span, byte state) {
