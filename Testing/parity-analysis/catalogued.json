@@ -259,5 +259,6 @@
   "PossiblyImpureMethodCallOnReadonlyVariable": "SK2191",
   "StringSpanComparison": "SK2192",
   "ImmutableArrayWithCollectionInitializer": "SK2193",
-  "CapturedPrimaryConstructorParameterIsMutable": "SK2194"
+  "CapturedPrimaryConstructorParameterIsMutable": "SK2194",
+  "ShortLivedHttpClient": "SK3541"
 }

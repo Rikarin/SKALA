@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 284 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 271 ids are allocated.
 
 ## Async
 
@@ -201,6 +201,9 @@
 | [SK3530](SK3530.md) | The disposable field is not disposed by `Dispose` | warning | review | no |
 | [SK3531](SK3531.md) | The `DisposeAsync` override never calls the base implementation | warning | — | no |
 | [SK3532](SK3532.md) | The `ref struct` owns a disposable and cannot declare it | warning | — | no |
+| [SK3540](SK3540.md) | A `Dispose` method the type never declares | warning | review | no |
+| [SK3541](SK3541.md) | The `HttpClient` is disposed at the end of the call | warning | — | no |
+| [SK3542](SK3542.md) | `DangerousGetHandle` with nothing holding the handle open | warning | — | no |
 
 ## Maintainability
 

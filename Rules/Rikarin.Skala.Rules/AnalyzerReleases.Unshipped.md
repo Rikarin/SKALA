@@ -260,3 +260,6 @@ SK2191 | Skala.Correctness | Warning | A struct mutation is lost to a copy made 
 SK2192 | Skala.Correctness | Warning | `==` on spans compares memory locations.
 SK2193 | Skala.Correctness | Error | `ImmutableArray<T>` is built with a collection initializer.
 SK2194 | Skala.Correctness | Warning | A captured primary constructor parameter is assigned.
+SK3540 | Skala.Lifetime | Warning | A `Dispose` method the type never declares.
+SK3541 | Skala.Lifetime | Warning | The `HttpClient` is disposed at the end of the call.
+SK3542 | Skala.Lifetime | Warning | `DangerousGetHandle` with nothing holding the handle open.

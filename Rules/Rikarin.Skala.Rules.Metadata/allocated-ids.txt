@@ -301,3 +301,6 @@ SK2191 readonly-receiver-mutation
 SK2192 span-reference-comparison
 SK2193 immutable-array-collection-initializer
 SK2194 mutable-captured-primary-parameter
+SK3540 dispose-method-without-interface
+SK3541 short-lived-http-client
+SK3542 dangerous-handle-without-ref-count

@@ -194,6 +194,7 @@ public static class AnalyzerHost {
         new StructKeyWithoutEqualityAnalyzer(), new ReadonlyReceiverMutationAnalyzer(),
         new SpanReferenceComparisonAnalyzer(), new ImmutableArrayCollectionInitializerAnalyzer(),
         new MutableCapturedPrimaryParameterAnalyzer(),
+        new UndeclaredDisposeAnalyzer(), new ShortLivedHttpClientAnalyzer(), new DangerousHandleAnalyzer(),
     ];
 
     /// <summary>
