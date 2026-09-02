@@ -126,6 +126,18 @@ public sealed class UnchangingLoopConditionAnalyzer : DiagnosticAnalyzer {
         var result = new List<ISymbol>();
         foreach (var node in condition.DescendantNodesAndSelf()) {
             switch (node) {
+                // ⚠ The condition can be the thing that changes the variable, and this is the
+                // false positive the corpus found: Newtonsoft's `while (digits-- != 0)` writes
+                // `digits` in the condition, so the body has no reason to and the rule reported a
+                // loop that terminates perfectly well. `AnalyzeDataFlow` is asked about the *body*
+                // and answers correctly; the question was incomplete.
+                case PrefixUnaryExpressionSyntax {
+                    RawKind: (int)SyntaxKind.PreIncrementExpression or (int)SyntaxKind.PreDecrementExpression
+                }:
+                case PostfixUnaryExpressionSyntax {
+                    RawKind: (int)SyntaxKind.PostIncrementExpression or (int)SyntaxKind.PostDecrementExpression
+                }:
+                case AssignmentExpressionSyntax:
                 case InvocationExpressionSyntax:
                 case ElementAccessExpressionSyntax:
                 case AwaitExpressionSyntax:

@@ -71,10 +71,21 @@ public sealed class SingleIterationLoopAnalyzer : DiagnosticAnalyzer {
         // endpoint and still runs to completion, so it is the trap this check exists for — and one
         // `continue` among several exits is enough, because that path alone iterates again.
         //
-        // ⚠ No exit point at all is not a miss: with `goto` and non-terminating nested loops already
-        // excluded above, the only remaining way to make the endpoint unreachable is a `throw` on
-        // every path, which is a body that runs at most once for the same reason.
-        if (flow.ExitPoints.Any(static point => point.IsKind(SyntaxKind.ContinueStatement))) {
+        // ⚠ **An exit point is required, and the corpus is why.** The first draft reported a body
+        // whose endpoint was unreachable with no exit point at all, reasoning that `goto` and
+        // non-terminating nested loops were already excluded so only an always-`throw` body was
+        // left. That reasoning was wrong, and vixen's `GlBindingPlan.Build` proved it: a `switch`
+        // expression over an *error type* — `DescriptorKind` was `CS0246` in that compilation —
+        // also makes the endpoint unreachable, and the loop was reported for a reason that would
+        // not exist in a build that compiles. The same shape with the enum resolved is correctly
+        // declined, measured on a probe.
+        //
+        // Requiring a jump the rule can point at closes that whole class, which matters because
+        // the reasons an endpoint can be unreachable are not something this rule can enumerate.
+        // The price is a body that throws on every path, which is a rarer shape and a different
+        // finding from "this loop runs once".
+        if (flow.ExitPoints.Length == 0
+            || flow.ExitPoints.Any(static point => point.IsKind(SyntaxKind.ContinueStatement))) {
             return;
         }
 
