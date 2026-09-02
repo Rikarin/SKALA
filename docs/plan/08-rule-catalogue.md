@@ -1588,6 +1588,10 @@ entropy · `SK5007` certificate validation disabled · `SK5008` `Random` used fo
 `SK5009` XML reader with DTD processing enabled · `SK5010` a pattern that can backtrack, run with
 no timeout.
 
+⚠ `SK5030` — an XML signature checked against the key the document carries — was allocated
+after this list was written, from the SonarQube parity batch rather than from the plan. It is
+specified in § "`SK5030`, and the protocol/deserialization batch" below.
+
 Taint-tracked rules (`SK5001`–`SK5004`) are built on Roslyn's `ControlFlowGraph` +
 `DataFlowAnalysis` with intra-procedural propagation and a declared source/sink/sanitizer table in
 `taint.json`. ⚠ Inter-procedural taint is explicitly out of scope for v1: it is where the false
@@ -2094,8 +2098,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **325** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **290** | **89.5 %** |
+| Rules this document names | **326** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **291** | **89.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -3039,6 +3043,218 @@ what a serializer is for), `Newtonsoft.Json.Tests/Serialization` and `vixen/Core
 purpose is introspection). There is no call-site fact separating those from a real finding — the
 discriminator is what the code *is for* — so the rule would ship at a measured zero true positives
 and 26 false ones. That is the range's stated bar failing closed, and it is the right outcome.
+
+### ⚠ `SK5030`, and the protocol/deserialization batch: one rule out of five, and a corrected reading of the SDK
+
+⚠ **Owed prose: this section records one rule shipped and four `rule-proposal` issues refuted, and it
+also corrects a claim made by the batch above.** The five were issues #144, #147, #149, #150 and
+#151 — JWT validation, anonymous LDAP bind, clear-text protocols, polymorphic deserialization and
+XML signature validation. Four of them fail, and three fail for three *different* reasons, which is
+the part worth keeping: one is hosted by the SDK, one is undecidable at a call site, one is
+undecidable in the configuration object, and one is a decision rather than a defect.
+
+#### ⚠ The SDK reading, corrected: "off" and "Hidden" are not the same state, and the table above conflates them
+
+⚠ **The section above says the default state of every `CA*` in this area is "off". For roughly a
+third of the family that is wrong, and the difference is the difference between a rule a consumer
+can turn on with one `.editorconfig` line and one they must reach `AnalysisMode` for.** The claim
+that `analysislevelsecurity_10_default.globalconfig` carries no rule entries is **confirmed** — it
+holds a header, `is_global` and `global_level` and nothing else — and `analysislevel_10_default`
+holds exactly one (`CA1516 = none`). So the default state of a security `CA` really is whatever its
+own descriptor says. ⚠ What the batch above did not do was read the descriptors, and a build's
+silence cannot tell the two off-states apart.
+
+⚠ **Read directly out of the SDK's own analyzer assemblies, `IsEnabledByDefault` and
+`DefaultSeverity` split 317 C# descriptors three ways: 146 are `IsEnabledByDefault = false` —
+genuinely off — and 53 are enabled with `DefaultSeverity: Hidden`, which is *running in every
+consumer build already* and merely filtered before anybody sees it.** Among the ids the table above
+calls "off", `CA5350`, `CA5351`, `CA5359`, `CA5360`, `CA5364`, `CA5366`, `CA5369`, `CA5371`,
+`CA5379`, `CA5384` and `CA3075` are all in the second group, not the first. `CA5361`, `CA5362`,
+`CA5394`, `CA3006` and `CA3012` are correctly described.
+
+⚠ **And the instrument the brief prescribed for telling them apart does not work.** The standing
+advice is that a `Hidden` diagnostic is "visible only via `-p:ErrorLog=`". It is not, on SDK
+10.0.400: `CA1401` appears in the SARIF error log as `note` in a plain build and **disappears
+entirely** when an `.editorconfig` forces it to `silent`. Hidden diagnostics do not reach the error
+log at all, so a SARIF zero and an absent analyzer look identical. The descriptor dump is the only
+instrument that answers the question, and every state below comes from it rather than from a build's
+silence.
+
+| `CA*` | Behavioural coverage — what it actually caught | Measured default state |
+|---|---|---|
+| `CA2300`/`CA2301`/`CA2302` | ⚠ Unprobeable — `BinaryFormatter` is **removed** from .NET 9+ | `IsEnabledByDefault = false` |
+| `CA2305`, `CA2315`, `CA2321`/`CA2322` | ⚠ Unprobeable — `LosFormatter`, `ObjectStateFormatter`, `JavaScriptSerializer` are `System.Web`, absent on `net10.0` | `IsEnabledByDefault = false` |
+| `CA2310`/`CA2311`/`CA2312` | ⚠ Unprobeable — `NetDataContractSerializer` never existed on .NET Core | `IsEnabledByDefault = false` |
+| `CA2326` | **7/8** `TypeNameHandling` shapes, including the member-property and cross-method forms. ⚠ Also fires where a `SerializationBinder` **is** supplied — it reports its own mitigation | `IsEnabledByDefault = false` |
+| `CA2327` | **5** — the settings object escaping its method, at both the helper's `return` and the call site. ⚠ Inter-procedural, and correctly silent on the bound form | `IsEnabledByDefault = false` |
+| `CA2328` | 1 — the non-constant `TypeNameHandling` "maybe" variant | `IsEnabledByDefault = false` |
+| `CA2329` | 1 — `JsonSerializer.Deserialize` on an insecurely configured serializer | `IsEnabledByDefault = false` |
+| `CA2330` | 0 — shape absent; it is `CA2329`'s "maybe" partner | `IsEnabledByDefault = false` |
+| `CA2351` | 2 — `DataSet.ReadXml`, both the `Stream` and the `XmlReader` overload | `IsEnabledByDefault = false` |
+| `CA2350`, `CA2352`–`CA2356`, `CA2361`, `CA2362` | 0 — shape absent, not written | `IsEnabledByDefault = false` |
+| `CA5359` | 1 — the `=> true` callback. Same shape as `SK5007` | enabled, **`Hidden`** |
+| `CA5360` | 1 — `File.Delete` reached from an `[OnDeserialized]` callback | enabled, **`Hidden`** |
+| `CA5361` | 1 — the `DontEnableSchUseStrongCrypto` switch | `IsEnabledByDefault = false` |
+| `CA5362` | 2 — both self-referencing fields of a `[Serializable]` type | `IsEnabledByDefault = false` |
+| `CA5363`, `CA5365` | ⚠ Unprobeable — `System.Web` request validation and header checking | enabled, **`Hidden`** |
+| `CA5366` | 1 — `DataSet.ReadXml(Stream)`, silent on the `XmlReader` overload | enabled, **`Hidden`** |
+| `CA5369` | 1 — `XmlSerializer.Deserialize(Stream)`, silent on the `XmlReader` overload | enabled, **`Hidden`** |
+| `CA5370` | ⚠ Unprobeable — `XmlValidatingReader` is .NET Framework only | enabled, **`Hidden`** |
+| `CA5371` | 1 — `XmlSchema.Read(Stream, …)`, silent on the `XmlReader` overload | enabled, **`Hidden`** |
+| `CA5375`, `CA5376`, `CA5377` | ⚠ Unprobeable — the legacy Azure Storage SDK, not referenced | `IsEnabledByDefault = false` |
+| `CA5378` | 1 — the `DisableUsingServicePointManagerSecurityProtocols` switch | `IsEnabledByDefault = false` |
+| `CA5379` | 1 — `Rfc2898DeriveBytes` with `SHA1` | enabled, **`Hidden`** |
+| `CA5380` | 1 — `X509Store(StoreName.Root)` plus `Add` | `IsEnabledByDefault = false` |
+| `CA5381` | 0 — shape absent; it is `CA5380`'s non-constant "maybe" partner | `IsEnabledByDefault = false` |
+| `CA5384` | 1 — `DSA.Create()` | enabled, **`Hidden`** |
+| `CA5389` | 1 — `entry.FullName` combined into an extraction path | `IsEnabledByDefault = false` |
+| `CA5390` | 1 — an inline hard-coded key. ⚠ Silent on the same bytes held in a `static readonly` field | `IsEnabledByDefault = false` |
+| `CA5391` | 1 — `[HttpPost]` with no antiforgery token | `IsEnabledByDefault = false` |
+| `CA5392` | 1 — `[DllImport]` with no `[DefaultDllImportSearchPaths]` | `IsEnabledByDefault = false` |
+| `CA5395` | 1 — an action method with no verb attribute | `IsEnabledByDefault = false` |
+| `CA5399` | 2 — ⚠ fired on **both** the unset and the explicitly-`false` `CheckCertificateRevocationList` | `IsEnabledByDefault = false` |
+| `CA5400` | 0 — did not reproduce; `CA5399` covered both halves | `IsEnabledByDefault = false` |
+| `CA3075`, `CA3076`, `CA3077`, `CA3061` | **0**, and forced to `warning` — see below | enabled, **`Hidden`** |
+| `CA3001`, `CA3003`, `CA3006` | **3**, and only from an MVC action — see below | `IsEnabledByDefault = false` |
+| `CA3002`, `CA3004`, `CA3005`, `CA3007`–`CA3012` | 0 — shape absent, not written | `IsEnabledByDefault = false` |
+
+⚠ **The taint question, answered behaviourally rather than from the descriptions: a `CA3xxx` fires
+only from an entry point it recognises, and the same sink one frame away is silence.** The probe put
+three sinks — SQL concatenation, `Process.Start` with a built argument string, `File.ReadAllText` on
+a parameter — inside ASP.NET Core MVC actions, and then *the identical three* in a plain
+`public static` class in the same file. `CA3001`, `CA3003` and `CA3006` fired on the controller and
+produced **nothing** on the plain methods. Because both halves are in one file and one build, the
+analyzer demonstrably ran over the silent half: this is **shape present and correctly declined**,
+not analysis that never happened. ⚠ So "a `CA` exists for this concept" is not the same claim as "a
+`CA` hosts this shape", and for the taint family the second is false wherever the code is a library
+rather than a web entry point — which is most of what Skala is pointed at.
+
+⚠ **A second zero, classified the same way and worth recording because it bears on `SK5009`.**
+`rules.json` says `XmlDocument` is `SK5009`'s known gap. `CA3075` and `CA3077` are titled for exactly
+that gap — "Insecure DTD processing in XML" and "Insecure Processing in API Design, XmlDocument and
+XmlTextReader" — and both, **explicitly raised to `warning`**, produced nothing on
+`new XmlDocument { XmlResolver = new XmlUrlResolver() }`. A planted `DataSet.ReadXml` in the same
+file fired `CA5366` and `CA2351` at the expected line, so the analysis reached it. ⚠ `SK5009`'s
+stated gap is therefore not covered by the SDK either, and closing it remains an open allocation
+rather than something already handled elsewhere.
+
+#### `SK5030` ships. The other four do not.
+
+⚠ **#151 — the XML signature is validated insecurely — is the one that survived, and it survived
+because the whole finding is the argument list.** `SignedXml.CheckSignature()` with no argument takes
+its key from the signature's own `KeyInfo` element, which is part of the document being checked. So
+it asks "was this signed by whoever's key is written inside it", which every document can answer
+about itself: an attacker rewrites the payload, signs it with a key pair generated a second ago,
+writes that public key into `KeyInfo`, and the call returns `true`. It reads exactly like a real
+validation — there is a `CheckSignature`, it returns a `bool`, the code branches on it — and it
+establishes nothing. **No `CA` covers it**: the probe exercised five `SignedXml` shapes with every
+security `CA` in the family forced to `warning` and got zero on all of them, in a file where other
+rules fired.
+
+| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/vulnerable` | `corpus/safe` | reference trees |
+|---|---|---|---|---:|---:|---:|---:|
+| `SK5030` an XML signature checked against the key the document carries | Semantic | **error** | ⚠ none | 3 / 10 | 2 | **0** | **0** |
+
+⚠ **One fact, and no aliasing question — which is what separates it from `SK5009`.** `SK5009` needs
+two assignments about the same object because `DtdProcessing.Parse` alone is not a vulnerability on
+.NET Core. Here the arity of the call *is* the finding: an invocation of `CheckSignature` with zero
+arguments whose declaring type derives from `SignedXml`. Nothing is followed, so the common
+`SignedXml` subclass that overrides `GetIdElement` arrives covered without being named.
+
+⚠ **It has one guard, and the guard is why it can ship at `error`.** There is a correct shape that
+ends in this exact call: read `signed.KeyInfo`, check the certificate in it against a trust store,
+*then* call `CheckSignature()`. By that point the key has been established. So the rule is silent
+whenever the enclosing operation block mentions `KeyInfo` at all — per-block rather than per-object
+on purpose, because proving two expressions name the same `SignedXml` is alias analysis and the
+conservative direction at `error` is the one that misses. An author who never reads `KeyInfo` cannot
+have validated it. `corpus/safe` carries that shape as the file that would break a rule written
+without the guard.
+
+⚠ **Two neighbouring overloads are outside the rule, stated rather than forgotten.**
+`CheckSignatureReturningKey(out …)` verifies against the embedded key and then hands it to the caller
+to judge, so whether it is a bug is a question about the *next* statement.
+`CheckSignature(certificate, verifySignatureOnly: true)` takes a caller-supplied certificate, and
+whether skipping chain validation is wrong depends on where that certificate came from. Both are
+negative fixtures.
+
+⚠ **`hasFix: false`, consistent with the rest of the range and for the range's reason.** The edit is
+"pass the key you trust", and which key that is — and where it comes from — is the decision the rule
+exists to force. There is no substitution to apply.
+
+⚠ **The reference-tree zero is "shape textually absent", established by grep rather than by a
+sweep — which is the stronger statement, because it removes the question of whether the analysis
+ran.** `SignedXml`, `Cryptography.Xml` and `CheckSignature` appear in **zero** of the 1 140 `.cs`
+files under `Testing/corpus/real` (330 Newtonsoft.Json, 210 Serilog, 600 Vixen). A sweep over that
+tree could only have produced the same zero with an extra unanswered question attached, because
+`System.Security.Cryptography.Xml` is a NuGet package rather than part of the shared framework: in a
+compilation that does not reference it, `GetTypeByMetadataName` returns null and the analyzer
+returns at `CompilationStart` without registering anything. That is the correct behaviour and it is
+also why the trees cannot be the measurement here — `corpus/vulnerable` and `corpus/safe` are, and
+the test project needed the package added before its own fixtures would compile at all.
+
+⚠ **Two file counts in this document are stale, noticed while taking that reading and not
+reconciled here.** The tables above label `corpus/real` as "380 files" and Vixen separately as
+"4 681 files". On disk today `Testing/corpus/real` holds 1 140 `.cs` files *including* Vixen's 600.
+Whatever those figures counted, they do not count what a `find -name '*.cs'` counts now, and every
+row quoting them is quoting a number nobody has re-derived.
+
+⚠ **#150 — deserialization accepts any type the payload names — is refuted as hosted, and the
+hosting is better than what Skala could write.** `CA2326` and `CA2327` between them caught seven of
+the eight `TypeNameHandling` shapes probed, including two that Skala's intra-procedural engine could
+not reach: the assignment on a *member* property rather than a local (`Settings.TypeNameHandling =
+…`), and the inter-procedural case where a helper returns the settings and the caller deserializes
+with them — where `CA2327` fires at both ends. `CA2328` and `CA2329` extend it to the non-constant
+and `JsonSerializer`-instance forms. ⚠ The rest of what the issue names is not refutable so much as
+**gone**: `BinaryFormatter` is removed from .NET 9+, and `LosFormatter`, `ObjectStateFormatter`,
+`JavaScriptSerializer` and `NetDataContractSerializer` are `System.Web`/.NET Framework types that a
+`net10.0` compilation cannot even name. So on a modern target there is no residue left for a Skala
+rule to cover, and ADR-008's answer applies: the `CA`s are `IsEnabledByDefault = false`, and the
+disposal is to enable them. ⚠ One caveat worth recording against that advice — `CA2326` fires on the
+form that supplies a `SerializationBinder`, which is the documented mitigation, so enabling it costs
+a false positive on correctly-written code. `CA2327` does not, and is the precise one.
+
+⚠ **#144 — the JWT is signed or validated insecurely — is refuted, and the reason is a fact about
+the library that would have made the obvious rule *wrong*.** The property whose name reads most like
+"signature checking is off" is `ValidateIssuerSigningKey`, and it is neither. Per
+`Microsoft.IdentityModel.Tokens`' own XML documentation it "controls if validation of the [key] that
+signed the securityToken is called … This boolean only applies to default signing key validation" —
+it governs validation *of the key*, not of the signature, which is still checked. ⚠ **And its
+default is `false`.** So a rule firing on `ValidateIssuerSigningKey = false` would report code that
+explicitly writes the framework's own default, at `error`, as a vulnerability it is not. That is the
+exact failure this range exists to avoid. The one property that does mean what it looks like is
+`RequireSignedTokens`, which defaults to `true` and genuinely admits an unsigned token when set
+`false` — but that single literal is a thin slice of the issue's concept, and the rest of the
+concept is assembled across frames: the probe's realistic form builds a `TokenValidationParameters`
+in one method and relaxes it in another, which is the inter-procedural analysis this document puts
+out of scope. An id is not allocated for the narrow slice, because ADR-012 makes it permanent and
+the concept has not been specified. **No `CA` exists for any of it.**
+
+⚠ **#149 — the protocol transmits in clear text — is refuted at the call site, and the
+false-positive population is the argument.** The finding needs to know that a `http://` string is an
+*endpoint*, and most of them are not. The probe's negative population is all real and all
+indistinguishable from a positive by any local fact: `http://www.w3.org/2001/XMLSchema-instance`,
+`http://schemas.xmlsoap.org/soap/envelope/`, `http://www.w3.org/1999/XSL/Transform`,
+`http://purl.org/dc/elements/1.1/` — XML namespaces, which are identifiers that are never fetched
+and are *specified* to be exactly those characters — plus an Apache licence URL, a doc link inside a
+sentence, and `http://localhost`, `http://127.0.0.1` and `http://0.0.0.0`. ⚠ Worse than the volume
+is `http://www.w3.org/2005/08/addressing`, which is simultaneously a namespace identifier and a live
+endpoint; nothing at the call site separates it from a URL somebody meant to change. A rule here
+reports a constant and asks a human to decide whether it is a destination, which is the shape of a
+finding a reviewer learns to skim. **No `CA` exists for it**, and the proposal's own `fixIsSafe:
+true` is the tell: rewriting `http://` to `https://` in an XML namespace changes the meaning of the
+document.
+
+⚠ **#147 — the LDAP connection is anonymous — is refuted because the code is not what decides it.**
+Whether an anonymous bind is wrong is a fact about the *directory*: RFC 4513 defines anonymous bind
+as a legitimate mechanism, and a directory that publishes a public branch expects exactly this call.
+Nothing at the call site distinguishes reading a public address book from reading a private one. ⚠
+The two spellings also pull in opposite directions. `AuthType.Anonymous` written out is a
+*deliberate* statement — reporting it is reporting a decision somebody already made and wrote down,
+not an accident — while the accidental form S4433 is really aimed at, `new DirectoryEntry(path)`
+with no credentials, lives in `System.DirectoryServices`, which is Windows-only and outside the
+cross-platform surface a modern target uses. On `LdapConnection`, the type a `net10.0` program
+actually has, anonymity requires writing `AuthType.Anonymous` on purpose. **No `CA` exists for it**,
+and there is no version of the rule that is both decidable and about a defect.
 
 ### ⚠ What M7 added: three rules out of twenty-three, and one of them has no fix
 

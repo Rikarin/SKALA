@@ -28,6 +28,16 @@
     <ProjectReference Include="../Rikarin.Skala.Rules/Rikarin.Skala.Rules.csproj" />
     <ProjectReference Include="../Rikarin.Skala.Rules.Metadata/Rikarin.Skala.Rules.Metadata.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+
+    <!--
+      ⚠ `SignedXml` lives in a NuGet package, not the shared framework, so without this the SK5030
+      fixtures do not compile — and `RuleFixtureTests` fails a fixture that does not compile rather
+      than passing it, which is the only reason the gap is visible at all. RuleFixtures.Compile
+      builds against the test host's TRUSTED_PLATFORM_ASSEMBLIES, so a PackageReference here is what
+      puts the type within reach of a fixture. Pinned centrally at 10.0.11; the 9.0.0 that
+      Nuke.Common drags in carries seven high-severity advisories (Directory.Packages.props).
+    -->
+    <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 
 </Project>
