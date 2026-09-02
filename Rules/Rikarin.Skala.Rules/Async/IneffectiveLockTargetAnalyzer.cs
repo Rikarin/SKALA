@@ -131,8 +131,8 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
     ///     gives up.
     /// </remarks>
     static readonly string[] WeakIdentityNames = {
-        "System.String", "System.MarshalByRefObject", "System.Reflection.MemberInfo",
-        "System.Reflection.ParameterInfo", "System.Threading.Thread"
+        "System.String", "System.MarshalByRefObject", "System.Reflection.MemberInfo", "System.Reflection.ParameterInfo",
+        "System.Threading.Thread"
     };
 
     static readonly DiagnosticDescriptor Descriptor = SkalaRule.Descriptor(RuleIds.IneffectiveLockTarget);

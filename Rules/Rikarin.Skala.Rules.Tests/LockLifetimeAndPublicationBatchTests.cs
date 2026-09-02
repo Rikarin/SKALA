@@ -235,8 +235,11 @@ public sealed class LockLifetimeAndPublicationBatchTests {
     ///         day the rule stopped firing anywhere.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b><c>SK3060</c> is blind to the same file and is deliberately not asserted either
-    ///         way.</b> It declines through a different mechanism — its <c>Body</c> walk returns
+    ///         ⚠
+    ///         <b>
+    ///             <c>SK3060</c> is blind to the same file and is deliberately not asserted either
+    ///             way.
+    ///         </b> It declines through a different mechanism — its <c>Body</c> walk returns
     ///         <c>null</c> at a type declaration, which is what makes a field initializer decline too —
     ///         so pinning its silence here would turn a recorded gap into a promise. ⚠ <c>SK3044</c>,
     ///         which #307 named alongside <c>SK3061</c>, has an <em>empty</em> gap: it reports on a
@@ -264,10 +267,10 @@ public sealed class LockLifetimeAndPublicationBatchTests {
 
     static string[] Ids(Compilation compilation) =>
         RuleFixtures.Analyze(
-                (CSharpCompilation)compilation,
-                Analyzers,
-                TestContext.Current.CancellationToken
-            )
+            (CSharpCompilation)compilation,
+            Analyzers,
+            TestContext.Current.CancellationToken
+        )
             .Select(static diagnostic => diagnostic.Id)
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
@@ -283,8 +286,11 @@ public sealed class LockLifetimeAndPublicationBatchTests {
         );
 
     /// <summary>
-    ///     ⚠ <b>Shape A's exclusion is a static <em>field</em>, because that is all <c>SK2134</c> can
-    ///     see</b> (#306).
+    ///     ⚠
+    ///     <b>
+    ///         Shape A's exclusion is a static <em>field</em>, because that is all <c>SK2134</c> can
+    ///         see
+    ///     </b> (#306).
     /// </summary>
     /// <remarks>
     ///     <c>SK3062</c> stepped aside for any static member of the constructor's own type, to keep two

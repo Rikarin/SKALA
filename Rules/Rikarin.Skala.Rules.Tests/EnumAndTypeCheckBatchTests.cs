@@ -236,8 +236,11 @@ public sealed class EnumAndTypeCheckBatchTests {
     }
 
     /// <summary>
-    ///     ⚠ <b><c>SK2009</c> reports a switch statement only where it already covers most of the
-    ///     enum</b> (#280).
+    ///     ⚠
+    ///     <b>
+    ///         <c>SK2009</c> reports a switch statement only where it already covers most of the
+    ///         enum
+    ///     </b> (#280).
     /// </summary>
     /// <remarks>
     ///     A <c>switch</c> statement is under no obligation to be exhaustive — falling out of it
@@ -254,7 +257,8 @@ public sealed class EnumAndTypeCheckBatchTests {
     /// </remarks>
     [Fact]
     public void SK2009_ReportsTheStatementThatMeantToBeExhaustive_AndNotTheFilter() {
-        const string prefix = "enum Wide { A, B, C, D, E, F, G, H }\n\nclass C {\n    int M(Wide w) {\n        switch (w) {\n";
+        const string prefix =
+            "enum Wide { A, B, C, D, E, F, G, H }\n\nclass C {\n    int M(Wide w) {\n        switch (w) {\n";
         const string suffix = "        }\n\n        return 0;\n    }\n}\n";
 
         // Five of eight handled, three missing: 3 <= 5, an attempt at exhaustiveness.
@@ -265,7 +269,9 @@ public sealed class EnumAndTypeCheckBatchTests {
 
         // Four of eight handled, four missing: 4 <= 4, still an attempt. The boundary is inclusive
         // deliberately, and this is the case that pins which side of it the tie falls on.
-        const string half = prefix + "            case Wide.A: case Wide.B: case Wide.C: case Wide.D: return 1;\n" + suffix;
+        const string half = prefix
+            + "            case Wide.A: case Wide.B: case Wide.C: case Wide.D: return 1;\n"
+            + suffix;
         Assert.Single(Findings(half), static diagnostic => diagnostic.Id == EnumSwitch);
 
         // Three of eight handled, five missing: 5 > 3, a selection.

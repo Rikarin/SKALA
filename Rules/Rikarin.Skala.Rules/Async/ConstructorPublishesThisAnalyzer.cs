@@ -53,8 +53,11 @@ namespace Rikarin.Skala.Rules.Async;
 ///         </item>
 ///     </list>
 ///     <para>
-///         ⚠ <b>Shape A stops at the constructor's own static <em>field</em>, and the boundary is
-///         <c>SK2134</c>.</b> <c>current = this;</c> in a constructor, writing this type's own static
+///         ⚠
+///         <b>
+///             Shape A stops at the constructor's own static <em>field</em>, and the boundary is
+///             <c>SK2134</c>.
+///         </b> <c>current = this;</c> in a constructor, writing this type's own static
 ///         field, is the canonical shape of <c>instance-write-to-static</c> and is already reported
 ///         there. Two rules on one line is a double-report, and the reader who has to decide which of
 ///         two findings to act on acts on neither.

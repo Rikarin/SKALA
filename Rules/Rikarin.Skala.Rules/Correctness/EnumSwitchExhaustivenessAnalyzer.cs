@@ -14,8 +14,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 /// <summary><c>SK2009</c> — a non-flags enum switch statement omits declared values and has no catch-all.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>The switch <em>expression</em> is the compiler's, and this rule does not look at
-///         one.</b> ADR-008 is host, never rebuild: <c>CS8509</c> ("does not handle all possible values
+///         ⚠
+///         <b>
+///             The switch <em>expression</em> is the compiler's, and this rule does not look at
+///             one.
+///         </b> ADR-008 is host, never rebuild: <c>CS8509</c> ("does not handle all possible values
 ///         … the pattern 'K.C' is not covered") and <c>CS8524</c> (the undeclared-value half) are on by
 ///         default and name the missing member. Probed on a scratch project rather than recalled:
 ///         <c>k switch { K.A => 1, K.B => 2 }</c> draws <c>CS8509</c>, and the same switch written as a
