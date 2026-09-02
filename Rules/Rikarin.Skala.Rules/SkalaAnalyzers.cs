@@ -173,7 +173,7 @@ public static class SkalaAnalyzers {
         new UnparenthesisedPrecedenceMixAnalyzer(),
         new XmlSignatureAnalyzer(),
         new PredictableInitializationVectorAnalyzer(), new XmlResolverReenabledAnalyzer(),
-        new RedundantBooleanExpressionAnalyzer(), new RedundantAttributeDetailAnalyzer(),
+        new RedundantBooleanExpressionAnalyzer(), new ConstantPatternOverSequenceEqualAnalyzer(), new RedundantAttributeDetailAnalyzer(),
         new FixedKeyDerivationSaltAnalyzer(), new WorldWritableFileModeAnalyzer(), new AsymmetricKeySizeAnalyzer(),
         new SingleUseTemporaryAnalyzer(), new SplitDeclarationAndAssignmentAnalyzer(),
         new LocalFunctionBeforeJumpAnalyzer(), new SharedBranchTailAnalyzer(),

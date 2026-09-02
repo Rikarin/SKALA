@@ -347,3 +347,4 @@ SK5041 fixed-key-derivation-salt
 SK5042 world-writable-file-mode
 SK0260 redundant-boolean-expression
 SK0261 redundant-attribute-detail
+SK1130 constant-pattern-over-sequence-equal

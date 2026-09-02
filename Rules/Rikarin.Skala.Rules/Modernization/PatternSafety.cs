@@ -7,8 +7,38 @@ using System.Threading;
 
 namespace Rikarin.Skala.Rules.Modernization;
 
-/// <summary>Proofs shared by the two comparison-to-pattern rewrites.</summary>
+/// <summary>Proofs shared by the comparison-to-pattern and call-to-pattern rewrites.</summary>
 internal static class PatternSafety {
+    /// <summary>
+    ///     ⚠ Whether an <c>is</c> expression may be dropped into this position without parentheses.
+    /// </summary>
+    /// <remarks>
+    ///     A pattern's grammar is not an expression's. <c>!(x is T)</c> rewritten bare as
+    ///     <c>!x is not T</c> is <c>(!x) is not T</c>, and <c>a is object == b</c> rewritten as
+    ///     <c>a is not null == b</c> hands <c>null == b</c> to a grammar that parses constant patterns.
+    ///     Rather than inventing parentheses the author did not write — which the formatter is not
+    ///     allowed to remove again — every rule here declines every position outside this list.
+    ///     <para>
+    ///         ⚠ Shared rather than duplicated: <c>SK1050</c> and <c>SK1130</c> both move an expression
+    ///         into the left operand of an <c>is</c>, so the two copies had to agree about the grammar
+    ///         and nothing made them.
+    ///     </para>
+    /// </remarks>
+    public static bool IsPatternSafeContext(ExpressionSyntax expression) {
+        var parent = expression.Parent;
+        return parent switch {
+            ParenthesizedExpressionSyntax => true,
+            IfStatementSyntax or WhileStatementSyntax or DoStatementSyntax => true,
+            ReturnStatementSyntax or ExpressionStatementSyntax or ArrowExpressionClauseSyntax => true,
+            ArgumentSyntax or AttributeArgumentSyntax or EqualsValueClauseSyntax => true,
+            AssignmentExpressionSyntax assignment => assignment.Right == expression,
+            ConditionalExpressionSyntax conditional => conditional.Condition == expression,
+            BinaryExpressionSyntax binary => binary.IsKind(SyntaxKind.LogicalAndExpression)
+                || binary.IsKind(SyntaxKind.LogicalOrExpression),
+            _ => false
+        };
+    }
+
     public static ExpressionSyntax Unwrap(ExpressionSyntax expression) {
         while (expression is ParenthesizedExpressionSyntax parentheses) {
             expression = parentheses.Expression;

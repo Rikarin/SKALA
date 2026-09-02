@@ -8733,3 +8733,148 @@ they all stayed green, which is what a fixture set that large is for.
 carry `SK5040`–`SK5042`.** Nothing in the Rules test project asserts that list, so it is a silent gap
 rather than a red gate; it is regenerated with the rest of the generated surface after the last merge
 of this batch, along with `docs/site/` and `Testing/parity-analysis/ledger-sonar.json`.
+## `SK1130` — five proposals assessed, one rule built
+
+Issues #156, #175, #264, #91 and #92 were taken together. **One rule came out.** Two of the five were
+already shipped and did not know it, one is hosted by the SDK, and one was refuted by counting its own
+population. ⚠ **That ratio is the bar working, not the batch failing** — and the four non-rules are
+where the measurement is, so they are written down here rather than only in the issues.
+
+`SK1130` `constant-pattern-over-sequence-equal` — `span.SequenceEqual("abc")` where C# 11 spells
+`span is "abc"`. `Semantic`, `suggestion`, `languageVersion: 11.0`, **safe fix**, 6 positive / 11
+negative fixtures.
+
+### ⚠ Two receivers that look alike, bind differently, and are both declined
+
+The rule requires the receiver's own static type to be `Span<char>` or `ReadOnlySpan<char>`, read from
+`GetTypeInfo(...).Type` and never `ConvertedType`. Both near-misses were compiled and run rather than
+reasoned about, and **they fail for opposite reasons**:
+
+- **A `string` receiver binds to `Enumerable.SequenceEqual`** — LINQ over `IEnumerable<char>`. A null
+  receiver **throws `ArgumentNullException`** where `s is "abc"` returns `false`. A behaviour change,
+  not a simplification.
+- **A `char[]` receiver binds to `MemoryExtensions.SequenceEqual`**, through the implicit span
+  conversion, and *agrees* behaviourally — `((char[])null).SequenceEqual("abc")` is `false`. It is
+  still declined, because `chars is "abc"` is **CS0029**: a pattern has no conversion step.
+
+One guard, two fixtures, two different proofs. ⚠ The first draft's reasoning — "decline `string`
+because LINQ diverges" — would have admitted `char[]` and produced a fix that does not compile.
+
+### The equivalence that makes the fix safe
+
+Fourteen inputs compiled and run: an exact match, longer and shorter spans, an empty span,
+`default(ReadOnlySpan<char>)`, a span over a null string, two sliced spans, a case difference, and a
+`Span<char>` from `stackalloc`. **No divergence on any of them.** ⚠ The empty constant was checked
+separately because it is the one that could have split `default` from `""`, and it does not: `is ""`
+and `SequenceEqual("")` are both `true` for a default span, for `((string)null).AsSpan()` and for
+`"".AsSpan()`. A span cannot carry a string's null identity, so there is no null-versus-empty
+asymmetry to trip over. ⚠ The floor is C# 11 by **CS8936**, confirmed by compiling at `LangVersion 10`,
+and the pattern works on `Span<char>` as well as `ReadOnlySpan<char>`.
+
+### ⚠ Two proposals were already shipped, and neither issue knew
+
+- **#156 "the loop body cannot run more than once" is `SK2212`**, shipped earlier in the same session
+  with `supersedes: ["S1751"]` — the very rule the issue proposes. It registers on all five loop forms
+  (`foreach`, `foreach var`, `for`, `while`, `do`). The one shape `S1751` may reach that `SK2212` does
+  not is **a body that throws on every path**, which `SK2212` declines deliberately and with a fixture
+  (`body_only_throws`): requiring a nameable exit point is what closed the error-type class Vixen's
+  `GlBindingPlan.Build` exposed. That is a documented decline, not a gap.
+- **#264 "the type is compared by name" is `SK2182`**, also already shipped, covering `Name` and
+  `FullName`, a literal on either side, and the `Equals` call spelling. Its declines —
+  `AssemblyQualifiedName`, and `t.Name == "Order"` on a `Type` variable — each carry a negative
+  fixture. **No id was allocated for either issue.**
+
+### ⚠ #91's remaining shape is hosted by `IDE0019`, fix included — measured, not inferred
+
+`SK1050` covers four of #91's seven inspections and `SK1015` a fifth. Of the three left, the largest is
+`UseNegatedPatternMatching`, the negated `as` guard, which `SK1050`'s own prose names as "not covered,
+and deliberately so". **It is covered — by the SDK.** Probed outside this repository with empty
+`Directory.Build.props`/`.targets`, `EnforceCodeStyleInBuild=true` and an explicit severity line,
+`IDE0019` fires on all three negated spellings (`t == null`, `null == t`, `t is null`; `return` and
+`throw` bodies alike), on neither negative control, and `dotnet format analyzers --diagnostics IDE0019`
+rewrites
+
+```csharp
+var t = x as string;
+if (t == null) { return; }
+```
+
+to `if (x is not string t) { return; }` — precisely ReSharper's output. ⚠ **`IDE0019` ships
+`IsEnabledByDefault=true` with `DefaultSeverity=Hidden`**, so it is invisible until raised and a plain
+build does not load the code-style analyzers at all; that is why it reads as absent. The instrument was
+controlled with `IDE0055`/`IDE0161`, which fired. **No id allocated.**
+
+### ⚠ #175 was refuted by counting its own population
+
+Sonar's `S108` — an empty nested block — has **no host in the SDK**: not one `{ }` form is reported by
+any `CS*`, `IDE*` or `CA*` rule, confirmed against 438 C# code-style descriptors and 317 analyzer
+descriptors read from the SDK assemblies rather than from an error log. `CS0642` covers only the
+`;`-as-body spelling, and only under `if`/`else`/`do`/`lock`/`using` — Roslyn deliberately tolerates
+`while (c) ;` and `for (...) ;`. So there is a real residue and Skala could have it.
+
+**The census says not to build it.** A Roslyn-based counter over 380 corpus files and 187 of Skala's
+own found **three** empty nested blocks in total, and **every one of them is `while (side-effecting
+condition) { }`** — the drain-the-reader idiom, two of the three carrying a comment that says so.
+Empty `if`, `else`, `for`, `foreach`, `lock`, `using`, `fixed`, `finally`, `try`, free-standing block
+and every `;`-body form: **zero**. ⚠ **That zero is classified, not bare**: a planted control file
+containing one hand-written instance of all 26 shapes was detected 26 times by the same counter, so
+the corpus zeros are "shape absent", not "the counter did not run". A rule shaped like `S108` would, on
+the entire observable population, fire three times and be wrong three times. **No id allocated.**
+
+### The sabotage pass, and two guards it killed
+
+Eleven sabotages, one guard each. **Nine turn their own named fixture red. Two turned nothing red and
+both were dead code, now deleted** — which is the outcome this pass exists to produce and not a pass
+with two blanks in it.
+
+| guard deleted | fixture that goes red |
+|---|---|
+| declared by `System.MemoryExtensions` | `a-user-defined-sequence-equal` |
+| `GetTypeInfo(...).Type`, not `ConvertedType` | `a-char-array-receiver` |
+| the argument is a constant string | `the-argument-is-not-constant` |
+| `AsSpan()` takes no arguments | `the-argument-is-a-sliced-span` |
+| the receiver is a primary expression | `a-non-primary-span-argument` |
+| the `is` fits the position without parentheses | `a-position-a-pattern-cannot-take` |
+| no comment or directive in the replaced span | `a-comment-inside-the-replaced-span` |
+| operand-split arity, extension spelling | `the-comparer-overload-called-as-an-extension` |
+| operand-split arity, static spelling | `the-comparer-overload` |
+
+⚠ **`declaration.Parameters.Length != 2` was dead and is gone.** It was written to exclude the
+`IEqualityComparer<T>` overload and never once did: the operand split already requires one argument in
+the extension spelling and two in the static one, so a comparer call is refused a step earlier in both.
+No fixture that reaches it can be written, because omitting the optional comparer binds to the
+two-parameter overload rather than defaulting the three-parameter one. ⚠ **The two comparer fixtures
+are not redundant with each other** — the extension spelling passes *two* arguments where the static
+one passes three, so a single arity test would have let one through, and each now has its own
+sabotage.
+
+⚠ **The `char` element-type check was dead and is gone.** Both parameters of `SequenceEqual` are
+`ReadOnlySpan<T>` of one `T`, and a string constant converts to `ReadOnlySpan<char>` and to nothing
+else — so requiring the argument to be a constant string already fixes `T` at `char`. `a-byte-span`
+was written to reach it and is declined by the constant check instead, one step earlier.
+
+⚠ **Two sabotages first reported "turned nothing red" for the opposite reason — the fixtures did not
+reach the guard — and that is a different finding with a different fix.** `a-linq-sequence-equal` has
+a non-span receiver and `the-comparer-overload` the wrong arity, so both were declined before the
+declaring-type check was ever consulted. `a-user-defined-sequence-equal` — a hand-written
+`SequenceEqual` extension *on a `ReadOnlySpan<char>`*, so that every other precondition holds and only
+the declaring type differs — is the input that detects the loss. A table of clean single-reason
+negatives tests nothing about a boundary.
+
+### Zero false positives, argued by superset rather than by a sweep
+
+⚠ **No binlog sweep was run for this rule, and none is needed, because the syntactic superset is
+countable and tiny.** Every `SK1130` finding must be a `SequenceEqual` invocation with a string
+literal argument. A Roslyn counter over the three reference trees and Skala's own source finds
+**exactly two**, both in Vixen, both on one line of `ShaderGraphPreviewRenderer.IsTransform`:
+
+```csharp
+var bare = name.AsSpan()[(name.LastIndexOf('.') + 1)..];
+return bare.SequenceEqual("worldViewProjection") || bare.SequenceEqual("world");
+```
+
+`bare` is a `ReadOnlySpan<char>`, the operands sit under `||` — a position an `is` takes without
+parentheses — and both are genuine findings whose fix is `bare is "worldViewProjection" or "world"`.
+There is nowhere else in either tree for the rule to be wrong, which is a stronger statement than a
+sweep returning zero. ⚠ **Vixen is not a specification** — that it writes this shape is evidence the
+shape exists, never evidence the rule is calibrated correctly.
