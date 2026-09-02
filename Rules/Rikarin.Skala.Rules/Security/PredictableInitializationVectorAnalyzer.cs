@@ -17,8 +17,11 @@ namespace Rikarin.Skala.Rules.Security;
 ///     structure; a fixed IV in CBC leaks the same structure by a different mechanism, and
 ///     <c>SK5005</c> does not reach it.
 ///     <para>
-///         ⚠ <b>The shape is hosted by <c>CA5401</c> and the host is not usable, which is why this rule
-///         exists rather than an entry in the hosted map.</b> Measured on a plain <c>net10.0</c> project
+///         ⚠
+///         <b>
+///             The shape is hosted by <c>CA5401</c> and the host is not usable, which is why this rule
+///             exists rather than an entry in the hosted map.
+///         </b> Measured on a plain <c>net10.0</c> project
 ///         outside this repository, <c>CA5401</c> is <b>off by default</b> and, once enabled, reports
 ///         <c>aes.IV = RandomNumberGenerator.GetBytes(16)</c> and
 ///         <c>aes.CreateEncryptor(key, RandomNumberGenerator.GetBytes(16))</c> — both of which are the
@@ -26,8 +29,11 @@ namespace Rikarin.Skala.Rules.Security;
 ///         answer to the first is yes for every program that transmits an IV alongside its ciphertext.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The reason a Skala rule is allowed here and was refused for <c>#140</c> is that the
-///         narrowing needs no judgement.</b> <c>CA5394</c> is untargeted in the same way, and doc 08
+///         ⚠
+///         <b>
+///             The reason a Skala rule is allowed here and was refused for <c>#140</c> is that the
+///             narrowing needs no judgement.
+///         </b> <c>CA5394</c> is untargeted in the same way, and doc 08
 ///         declined to narrow it because separating a security-sensitive <c>Random</c> from a
 ///         statistical one means reading identifier names — the judgement that cut <c>SK5008</c>.
 ///         "Is this expression a compile-time constant" is not a judgement, it is a fact the compiler
@@ -200,7 +206,8 @@ public sealed class PredictableInitializationVectorAnalyzer : DiagnosticAnalyzer
         }
 
         if (SymbolEqualityComparer.Default.Equals(containing, known.Convert)
-            && (invocation.TargetMethod.Name == "FromBase64String" || invocation.TargetMethod.Name == "FromHexString")) {
+            && (invocation.TargetMethod.Name == "FromBase64String"
+                || invocation.TargetMethod.Name == "FromHexString")) {
             return "the initialisation vector is decoded from a literal";
         }
 
@@ -211,9 +218,9 @@ public sealed class PredictableInitializationVectorAnalyzer : DiagnosticAnalyzer
     ///     Whether a field is declared with an explicit list of literal elements.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Decided on syntax, and the list must be non-empty. <c>static readonly byte[] Buffer = new
-    ///     byte[16];</c> is the allocate-then-fill shape and a static constructor may well fill it;
-    ///     <c>= { 1, 2, 3 }</c> cannot be anything but a hard-coded value.
+    ///     ⚠ Decided on syntax, and the list must be non-empty. A field initialised
+    ///     <c>= new byte[16]</c> is the allocate-then-fill shape and a static constructor may well
+    ///     fill it; <c>= { 1, 2, 3 }</c> cannot be anything but a hard-coded value.
     /// </remarks>
     static bool ConstantArrayField(IFieldSymbol field) {
         foreach (var reference in field.DeclaringSyntaxReferences) {
