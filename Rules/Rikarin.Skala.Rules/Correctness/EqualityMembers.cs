@@ -12,8 +12,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     members each of their bodies reads.
 /// </summary>
 /// <remarks>
-///     ⚠ <c>SK2040</c>–<c>SK2044</c> all need the same two answers — <em>which equality members does
-///     this type have</em> and <em>what state does each of them touch</em> — so the answers are
+///     ⚠ <c>SK2040</c>–<c>SK2044</c> all need the same two answers —
+///     <em>
+///         which equality members does
+///         this type have
+///     </em> and <em>what state does each of them touch</em> — so the answers are
 ///     computed here once rather than five times slightly differently. The rules stay disjoint by
 ///     construction and not by filtering: each one asks this type a different question, and the
 ///     partition of "a member the hash code reads" between <c>SK2042</c> and <c>SK2043</c> is total
@@ -86,8 +89,11 @@ static class EqualityMembers {
     ///     interfaces.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>This is not defensive tidiness; without it the rules report the opposite of the
-    ///     truth.</b> Measured on the reference trees: <c>Vixen.Raven</c>'s <c>BufferTypeSymbol</c>
+    ///     ⚠
+    ///     <b>
+    ///         This is not defensive tidiness; without it the rules report the opposite of the
+    ///         truth.
+    ///     </b> Measured on the reference trees: <c>Vixen.Raven</c>'s <c>BufferTypeSymbol</c>
     ///     declares <c>IEquatable&lt;BufferTypeSymbol&gt;</c> in its base list, and in a compilation
     ///     without the SDK's implicit global usings that name binds to an <em>error</em> type — so
     ///     <c>AllInterfaces</c> holds <c>IEquatable&lt;&gt;</c>, the comparison against
@@ -264,7 +270,9 @@ static class EqualityMembers {
 
         // ⚠ `nameof(x)` names a member and reads nothing. Counting it would put a member into the
         // equality set that equality never looked at, which silences a real finding.
-        if (node is InvocationExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" } }) {
+        if (node is InvocationExpressionSyntax {
+                Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" }
+            }) {
             return true;
         }
 

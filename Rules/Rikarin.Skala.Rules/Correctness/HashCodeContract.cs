@@ -11,8 +11,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <c>SK2043</c> report.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>The split is what keeps the two rules off each other's spans, and it is a partition
-///     rather than a filter.</b> A member the hash code reads is either compared by the type's
+///     ⚠
+///     <b>
+///         The split is what keeps the two rules off each other's spans, and it is a partition
+///         rather than a filter.
+///     </b> A member the hash code reads is either compared by the type's
 ///     equality — and then the only open question is whether it can change, which is
 ///     <c>SK2043</c> — or it is not compared, and then the finding is <c>SK2042</c>'s regardless of
 ///     mutability. Every hashed member falls in exactly one half, both rules compute the halves with

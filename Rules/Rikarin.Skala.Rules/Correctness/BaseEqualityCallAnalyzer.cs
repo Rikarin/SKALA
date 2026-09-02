@@ -36,7 +36,7 @@ public sealed class BaseEqualityCallAnalyzer : DiagnosticAnalyzer {
         if (name is not ("Equals" or "GetHashCode")
             || !EqualityMembers.InsideAnEqualityMember(invocation)
             || context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-                is not IMethodSymbol method
+            is not IMethodSymbol method
             || method.ContainingType?.SpecialType != SpecialType.System_Object) {
             return;
         }

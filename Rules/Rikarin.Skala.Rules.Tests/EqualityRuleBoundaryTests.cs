@@ -9,8 +9,11 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     The seams between the seven equality rules, asserted as exact attribution.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>Disjointness that is only a property of the implementation is disjointness nobody will
-///     notice losing.</b> <c>SK2004</c>, <c>SK2011</c> and <c>SK2040</c>–<c>SK2044</c> all look at the
+///     ⚠
+///     <b>
+///         Disjointness that is only a property of the implementation is disjointness nobody will
+///         notice losing.
+///     </b> <c>SK2004</c>, <c>SK2011</c> and <c>SK2040</c>–<c>SK2044</c> all look at the
 ///     same handful of members, and every one of the shapes below is one a reasonable reading would
 ///     hand to two of them. Each is pinned to the single rule that owns it, so a later widening that
 ///     makes two rules argue over one span fails here rather than in somebody's report — where it
@@ -191,16 +194,16 @@ public sealed class EqualityRuleBoundaryTests {
     public void AnInterfaceThatDidNotBind_WithdrawsTheTypeEntirely() {
         // No `using System;`, so `IEquatable` is an error type — deliberately.
         const string source = """
-            public sealed class Handle : IEquatable<Handle> {
-                public int Id { get; init; }
+                              public sealed class Handle : IEquatable<Handle> {
+                                  public int Id { get; init; }
 
-                public bool Equals(Handle? other) => other is not null && other.Id == Id;
+                                  public bool Equals(Handle? other) => other is not null && other.Id == Id;
 
-                public override bool Equals(object? other) => Equals(other as Handle);
+                                  public override bool Equals(object? other) => Equals(other as Handle);
 
-                public override int GetHashCode() => Id;
-            }
-            """;
+                                  public override int GetHashCode() => Id;
+                              }
+                              """;
 
         var compilation = RuleFixtures.Compile(source, "unbound.cs");
         Assert.Contains(

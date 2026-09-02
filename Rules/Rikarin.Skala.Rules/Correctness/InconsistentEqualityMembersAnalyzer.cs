@@ -65,8 +65,8 @@ public sealed class InconsistentEqualityMembersAnalyzer : DiagnosticAnalyzer {
     static string? Message(INamedTypeSymbol type, Compilation compilation) =>
         TypedEqualsWithoutContract(type, compilation)
         ?? (EqualityMembers.Operator(type, "op_Equality") is null
-            ? null
-            : OrderedWithoutRelationalOperators(type, compilation));
+                ? null
+                : OrderedWithoutRelationalOperators(type, compilation));
 
     static string? TypedEqualsWithoutContract(INamedTypeSymbol type, Compilation compilation) =>
         EqualityMembers.TypedEquals(type).Any() && !EqualityMembers.ImplementsEquatable(type, compilation)
