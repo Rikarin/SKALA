@@ -285,3 +285,8 @@ SK2131 unassigned-get-only-property
 SK2132 mismatched-backing-field
 SK2133 unimplemented-partial-method
 SK2134 instance-write-to-static
+SK2190 struct-key-without-equality
+SK2191 readonly-receiver-mutation
+SK2192 span-reference-comparison
+SK2193 immutable-array-collection-initializer
+SK2194 mutable-captured-primary-parameter

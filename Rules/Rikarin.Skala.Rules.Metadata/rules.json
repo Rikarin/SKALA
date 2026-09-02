@@ -6958,6 +6958,131 @@
       "configuration": [
         "dotnet_diagnostic.SK2134.severity"
       ]
+    },
+    {
+      "id": "SK2190",
+      "concept": "struct-key-without-equality",
+      "title": "The struct key has no equality of its own",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `Dictionary`, `HashSet` or `ConcurrentDictionary` is constructed over a source struct key that declares no equality member and is given no comparer, so every hash and every comparison goes through `ValueType`'s reflection fallback.",
+      "rationale": "`EqualityComparer<T>.Default` for a struct that implements nothing falls back to `ValueType.Equals` and `ValueType.GetHashCode`, which walk the fields with reflection when the layout is not blittable. The cost lands on every insert and every lookup for as long as the collection lives, and it lands boxed. ⚠ **The line where it happens contains no comparison to read.** A `Dictionary<Point, int>` names no method, so there is nothing at the use site for a reviewer to notice, and the declaration it comes from looks like an ordinary small struct — which is why the finding belongs where the collection is built rather than where the struct is written.",
+      "examples": {
+        "bad": "struct Cell { public int Row; public int Column; }\n\nvar seen = new Dictionary<Cell, string>();",
+        "good": "readonly struct Cell : IEquatable<Cell> {\n    public int Row { get; init; }\n\n    public int Column { get; init; }\n\n    public bool Equals(Cell other) => other.Row == Row && other.Column == Column;\n\n    public override bool Equals(object? other) => other is Cell cell && Equals(cell);\n\n    public override int GetHashCode() => HashCode.Combine(Row, Column);\n}"
+      },
+      "falsePositives": "⚠ **`SK2011` was read before this was built, and issue #4's premise about it is refuted.** The issue says `SK2011` reports at the declaration; `InheritedValueTypeEqualsAnalyzer` registers on `InvocationExpression` and reports at the `.Equals` call. So the comparison use site is already covered and this rule takes the use site where no comparison is written down at all. ⚠ **`CA1815` is not this rule, measured on a probe built outside this repository with empty `Directory.Build.props`/`.targets`.** At the SDK's default analysis mode it reports nothing — not at `Hidden` either, nothing in the SARIF error log; at `AnalysisMode=All` it reports on the struct's *declaration*, only when the struct is publicly visible, and whether or not anything ever hashes it. Different span, different trigger, off by default. Only `Dictionary<,>`, `HashSet<>` and `ConcurrentDictionary<,>` are recognised: `SortedDictionary` and `SortedSet` order their keys through `Comparer<T>.Default`, which throws without `IComparable` rather than falling back to reflection, and that is a different failure with a different repair. ⚠ **A constructor call that already passes an `IEqualityComparer<T>` is never a finding**, judged on the parameter rather than on the argument's type, because the comparer overload and the copy-constructor overload have the same shape at the call site. An omitted optional argument counts as no comparer. The key must be a struct **declared in this compilation** — a framework struct whose equality the author cannot change is not a finding anybody can act on — and must not be a record struct, a tuple, an anonymous type, an enum or a primitive, all of which have equality the compiler or the framework wrote. A type whose base list did not bind is withdrawn, the same discipline `SK2040`–`SK2044` use. ⚠ **A typed `Equals(Self)` with no `IEquatable<Self>` withdraws the type rather than confirming the finding.** `EqualityComparer<T>.Default` does ignore that method and does fall back to reflection, so the defect is real — and it is `SK2044`'s finding, reported on the declaration where the missing interface can be added. Report-only: generating equality members needs to know which fields define identity, which is the one thing a struct that declared none has not said, and adding a comparer is a decision about the collection rather than the type.",
+      "configuration": [
+        "dotnet_diagnostic.SK2190.severity"
+      ]
+    },
+    {
+      "id": "SK2191",
+      "concept": "readonly-receiver-mutation",
+      "title": "The struct is copied before the mutation lands",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "PossiblyImpureMethodCallOnReadonlyVariable",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A struct method that writes its own instance fields is called through an `in` parameter, a `ref readonly` local or a `foreach` variable, so the write goes to a copy and is discarded.",
+      "rationale": "A non-`readonly` member reached through a readonly-context receiver makes the compiler insert a defensive copy: the method runs, the fields change, and the object the caller is holding does not. Nothing throws, nothing warns, and the value read back afterwards is the one from before the call. ⚠ **AI-generated code produces this shape by default**, because a model writes `struct` without `readonly` and writes `in` on a parameter as a performance habit, and the two together are exactly the defect.",
+      "examples": {
+        "bad": "struct Counter { public int Value; public void Increment() { Value++; } }\n\nstatic void Bump(in Counter counter) => counter.Increment(); // writes a copy",
+        "good": "static Counter Bump(Counter counter) { counter.Increment(); return counter; }"
+      },
+      "falsePositives": "⚠ **Disjoint from `SK2005` by receiver kind and not by a filter.** `SK2005` reports the same lost write through a `readonly` **field** and nothing else — its own `negative/parameter.cs` asserts silence on an `in` parameter. This rule takes the three receivers it does not have: an `in` or `ref readonly` parameter, a `ref readonly` local, and a `foreach` iteration variable. No receiver is both kinds, so neither rule can be configured into a duplicate of the other. ⚠ **The bar for \"mutating\" is a write the analysis has read, never the absence of a `readonly` modifier.** Almost nothing in real code marks struct members `readonly`, so reporting every non-`readonly` member reached through an `in` parameter would report most of a repository for a copy that is real and almost always harmless. The method must be non-static, void-returning, declared on a non-`readonly` struct **in the same file**, and its body must assign or increment an instance field at the top level — the identical evidence bar `SK2005` uses, shared in one place so the two cannot drift. Metadata bodies, other-file bodies, `[Conditional]` methods, expression trees, properties and indexers are excluded. ⚠ **The `foreach` case does not need a defensive copy to be the same bug**: the iteration variable is already a copy of the element, so the write is lost for a different mechanical reason and to exactly the same effect. `foreach (ref var item in span)` aliases the element and is excluded — the write lands, and that is what the `ref` is for. ⚠ **Nothing in the .NET analyzers covers this**, measured rather than assumed: a probe built outside this repository at `AnalysisMode=All` and `AnalysisLevel=latest-all` reports nothing on any of these shapes, and the compiler is silent too. Report-only: dropping `in`, taking the value by return, or marking the member `readonly` are three repairs that change three different things, and the call site does not say which was meant.",
+      "configuration": [
+        "dotnet_diagnostic.SK2191.severity"
+      ]
+    },
+    {
+      "id": "SK2192",
+      "concept": "span-reference-comparison",
+      "title": "`==` on spans compares memory locations",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "StringSpanComparison",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`==` or `!=` binds to `Span<T>`'s or `ReadOnlySpan<T>`'s operator, which is true only when both spans point at the same memory and length.",
+      "rationale": "The operator reads like string equality and answers a question about addresses. Two spans over identical text compare `false`, and the same span compared with itself compares `true`, so the shape passes whatever test was written for it first and fails on the data. ⚠ **`span == \"abc\"` is the case that misleads hardest**: the implicit conversion from `string` makes it look like ordinary text comparison and it is a memory comparison against a freshly made span over the literal, which can never be equal.",
+      "examples": {
+        "bad": "static bool IsYes(System.ReadOnlySpan<char> value) => value == \"yes\";",
+        "good": "static bool IsYes(System.ReadOnlySpan<char> value) => value.SequenceEqual(\"yes\");"
+      },
+      "falsePositives": "⚠ **It compiles, and the brief that carried this rule said it does not.** Measured on a probe built outside this repository: `ReadOnlySpan<char> == ReadOnlySpan<char>`, `Span<char> == Span<char>`, `ReadOnlySpan<byte> == ReadOnlySpan<byte>` and `ReadOnlySpan<char> == string` all build clean at `net10.0`, with no compiler warning and nothing from the .NET analyzers at `AnalysisMode=All` — the span types carry their own `operator ==`. ⚠ **What does *not* compile is `span.Equals(span)`**: `CS1503`, because the only `Equals` in reach takes `object` and a span cannot be boxed. So \"`.Equals` where `SequenceEqual` was meant\" is not a shape that exists on spans, and the operator is the whole rule. The test is on the **bound operator method**, so a type that merely holds a span is never reported. ⚠ **`default` and `null` operands are excluded**: `span == default` is the idiomatic \"is this the default span\" test and is asking about memory deliberately. ⚠ **The replacement is bound before it is offered, not merely composed.** `SequenceEqual` is an extension on `System.MemoryExtensions`, so a file without `using System;` would get text that parses and does not compile, and the element type has to satisfy the overload in reach. Speculative binding at the comparison's own position is what decides; where it does not bind there is no finding rather than a fix that breaks the build. That also means an element type with no usable `SequenceEqual` overload is silently declined. `fixIsSafe: false`, for the reason `SK2040` gives about the same kind of edit: the fix changes the answer, and changing the answer is the entire point of the finding.",
+      "configuration": [
+        "dotnet_diagnostic.SK2192.severity"
+      ]
+    },
+    {
+      "id": "SK2193",
+      "concept": "immutable-array-collection-initializer",
+      "title": "`ImmutableArray<T>` is built with a collection initializer",
+      "category": "Correctness",
+      "defaultSeverity": "error",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "ImmutableArrayWithCollectionInitializer",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`new ImmutableArray<T> { … }` calls `Add` on the default value of the struct, which wraps a null array, so the first element throws `NullReferenceException`.",
+      "rationale": "The collection-initializer form is sugar for `Add` calls on whatever `new` produced, and for this type `new` produces `default` — a struct around a null reference. The line reads like list construction, compiles without a word, and throws on the first element every single time it runs. It is a trap on one type specifically, which is what makes it survive being read.",
+      "examples": {
+        "bad": "var ids = new System.Collections.Immutable.ImmutableArray<int> { 1, 2, 3 };",
+        "good": "var ids = System.Collections.Immutable.ImmutableArray.Create<int>(1, 2, 3);"
+      },
+      "falsePositives": "⚠ **Measured, not assumed: the shape builds clean.** A probe outside this repository compiles it with no compiler warning and nothing from the .NET analyzers at `AnalysisMode=All`, so nothing in the toolchain says a word before it runs. ⚠ **An empty initializer is excluded and is a different, weaker defect.** `new ImmutableArray<T> { }` calls `Add` zero times and therefore does not throw; it silently yields a `default` array whose `IsDefault` is true, which fails later and somewhere else. Reporting it under this rule's message — which says the code throws — would be saying something untrue about it. An element that is itself a braced group is excluded too, because a multi-argument `Add` does not exist on this type. ⚠ **The fix reuses the type's own spelling rather than assuming an import.** `ImmutableArray<int>` becomes `ImmutableArray.Create<int>(…)` and `System.Collections.Immutable.ImmutableArray<int>` keeps its qualifier, so the replacement binds in exactly the files the original bound in. The type argument is written out explicitly because inference from the elements is not the same answer: `new ImmutableArray<object> { 1 }` is an array of `object` and `ImmutableArray.Create(1)` is an array of `int`. ⚠ **The collection-expression spelling `[…]` is deliberately not the fix**, even though C# 12 makes it correct on this type: it needs a target type, and `var ids = new ImmutableArray<int> { 1 };` has none, so a fix that used it would be right in most places and produce `CS9176` in the rest. The target-typed `new() { … }` spelling has no type syntax to reuse and is not reported. A span carrying a comment or a preprocessor directive is not rewritten. `fixIsSafe: false`: the edit turns code that throws into code that runs, which is a behaviour change even though it is the intended one.",
+      "configuration": [
+        "dotnet_diagnostic.SK2193.severity"
+      ]
+    },
+    {
+      "id": "SK2194",
+      "concept": "mutable-captured-primary-parameter",
+      "title": "The captured primary constructor parameter is assigned",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "CapturedPrimaryConstructorParameterIsMutable",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "12.0",
+      "summary": "A member body of a class or struct with a primary constructor assigns one of its parameters, so the compiler-generated capture field is mutable instance state that appears in no declaration.",
+      "rationale": "Capture itself is the feature: a parameter read from a member body becomes a hidden field, and that is what primary constructors are for. What the language gives no way to say is that the field is `readonly`. The moment a body writes the parameter, the type carries mutable state with no declaration, no modifier, no name a reader can search for, and no visibility to any tool that reasons about fields — and the write reads as an assignment to a parameter, which is local by every habit a reader has.",
+      "examples": {
+        "bad": "sealed class Retry(int attempts) {\n    public bool Next() {\n        attempts--;          // writes the hidden capture field\n        return attempts > 0;\n    }\n}",
+        "good": "sealed class Retry(int attempts) {\n    int remaining = attempts;\n\n    public bool Next() {\n        remaining--;\n        return remaining > 0;\n    }\n}"
+      },
+      "falsePositives": "⚠ **Capture is not the finding and a read is never reported.** `PrimaryConstructorParameterCaptureDisallowed` — the second inspection on the originating issue, which the export ships at `none` — asks a project-policy question about whether captures are allowed at all, and that is a configuration choice rather than a defect. The finding here is the write. ⚠ **`CS9107` was probed and covers a different overlap, and it is not `CS9124`.** The compiler warns, always on and with no analyzer package, when a captured parameter's value is *also passed to the base constructor*, because the base may capture it too; it says nothing about a parameter that is merely assigned. A parameter named in the base-constructor argument list is excluded here rather than reported twice. ⚠ **Records are excluded, and the reason is the trap this repository has already paid for.** In a positional record the parameter is also where the property is written down, both symbols point at the same `ParameterSyntax`, and a name in a member body resolves to the property rather than to the capture — a different analysis with a different answer, and guessing at it from the parameter's shape is how a rule ships dead. The exclusion is structural: a record is a different syntax node, so the analyzer never sees one. ⚠ **A field or property initializer is not a member body.** Initializers run while the constructor is running, where the parameter is an ordinary parameter and writing it captures nothing; the same goes for the base-constructor argument list. Simple assignment, compound assignment, `++`/`--` and `ref`/`out` arguments all count as writes. Report-only: the repair is to declare the field the code is already using — a new declaration, a name for it and an edit at every use — and where the write was a mistake the repair is to delete it instead. Those move the type in opposite directions and the assignment does not say which was meant. Silent below C# 12, where the shape cannot exist.",
+      "configuration": [
+        "dotnet_diagnostic.SK2194.severity"
+      ]
     }
   ]
 }

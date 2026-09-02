@@ -184,6 +184,9 @@ public static class AnalyzerHost {
         new ForwardStaticInitializerAnalyzer(), new UnassignedGetOnlyPropertyAnalyzer(),
         new MismatchedBackingFieldAnalyzer(), new UnimplementedPartialMethodAnalyzer(),
         new InstanceWriteToStaticAnalyzer(),
+        new StructKeyWithoutEqualityAnalyzer(), new ReadonlyReceiverMutationAnalyzer(),
+        new SpanReferenceComparisonAnalyzer(), new ImmutableArrayCollectionInitializerAnalyzer(),
+        new MutableCapturedPrimaryParameterAnalyzer(),
     ];
 
     /// <summary>

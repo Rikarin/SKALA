@@ -244,3 +244,8 @@ SK2131 | Skala.Correctness | Warning | A get-only auto-property nothing ever ass
 SK2132 | Skala.Correctness | Warning | An accessor reaches for another property's backing field.
 SK2133 | Skala.Correctness | Info | A called `partial void` with no implementing declaration.
 SK2134 | Skala.Correctness | Warning | Instance code assigns its own type's static field.
+SK2190 | Skala.Correctness | Warning | A hash-based collection is keyed on a struct that declares no equality.
+SK2191 | Skala.Correctness | Warning | A struct mutation is lost to a copy made for a readonly receiver.
+SK2192 | Skala.Correctness | Warning | `==` on spans compares memory locations.
+SK2193 | Skala.Correctness | Error | `ImmutableArray<T>` is built with a collection initializer.
+SK2194 | Skala.Correctness | Warning | A captured primary constructor parameter is assigned.
