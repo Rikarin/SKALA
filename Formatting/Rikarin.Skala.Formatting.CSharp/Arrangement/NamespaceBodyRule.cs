@@ -53,6 +53,15 @@ public sealed class NamespaceBodyRule : ArrangementRule {
             return context.Root;
         }
 
+        // ⚠ Top-level statements are members of the generated `Program`, so a file-scoped namespace
+        // cannot open after them — the rewrite compiles to `CS8956: File-scoped namespace must
+        // precede all other members in a file`. It reached `SK9098` rather than a user's disk, but
+        // only because the re-binding check caught it, and nothing ran `arrange` at all until the
+        // `Lint` target gained `arrange --check`. The block form is the only legal one here.
+        if (unit.Members.Any(static member => member is GlobalStatementSyntax)) {
+            return context.Root;
+        }
+
         if (!context.Guard.IsEmpty && !context.Guard.Preserves(block, block)) {
             return context.Root;
         }

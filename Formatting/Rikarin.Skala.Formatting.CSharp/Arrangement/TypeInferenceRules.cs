@@ -318,9 +318,15 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 // and its right-hand side is an operand of `operator +`, not a target-typed
                 // position: `x += new(…)` is CS8310, "operator '+=' cannot be applied to operand
                 // 'new(float, float, float)'". Nine files on Vixen.
+                // ⚠ And not a discard. `_ = new Regex(p, o)` type-infers its left from the RIGHT, so
+                // `GetTypeInfo` answers `Regex` and the precondition below passes — but `_ = new(p, o)`
+                // is `CS8754: There is no target type for 'new(...)'`. A discard imposes nothing; it
+                // takes whatever it is given. Asked semantically rather than by spelling, because a
+                // local genuinely named `_` is a real target.
                 case AssignmentExpressionSyntax {
                     RawKind: (int)SyntaxKind.SimpleAssignmentExpression
-                } assignment when assignment.Right == node:
+                } assignment when assignment.Right == node
+                    && model.GetSymbolInfo(assignment.Left).Symbol is not IDiscardSymbol:
                     return model.GetTypeInfo(assignment.Left).Type;
 
                 // `SomeType M() => new SomeType();` and `return new SomeType();`

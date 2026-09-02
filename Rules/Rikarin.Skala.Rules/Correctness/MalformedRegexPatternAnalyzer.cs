@@ -6,7 +6,6 @@ using Rikarin.Skala.Rules.Metadata;
 using System;
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
-using System.Threading;
 
 namespace Rikarin.Skala.Rules.Correctness;
 
