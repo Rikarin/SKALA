@@ -244,3 +244,6 @@ SK2131 | Skala.Correctness | Warning | A get-only auto-property nothing ever ass
 SK2132 | Skala.Correctness | Warning | An accessor reaches for another property's backing field.
 SK2133 | Skala.Correctness | Info | A called `partial void` with no implementing declaration.
 SK2134 | Skala.Correctness | Warning | Instance code assigns its own type's static field.
+SK3540 | Skala.Lifetime | Warning | A `Dispose` method the type never declares.
+SK3541 | Skala.Lifetime | Warning | The `HttpClient` is disposed at the end of the call.
+SK3542 | Skala.Lifetime | Warning | `DangerousGetHandle` with nothing holding the handle open.

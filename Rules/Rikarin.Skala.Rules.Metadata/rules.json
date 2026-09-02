@@ -6958,6 +6958,85 @@
       "configuration": [
         "dotnet_diagnostic.SK2134.severity"
       ]
+    },
+    {
+      "id": "SK3540",
+      "concept": "dispose-method-without-interface",
+      "title": "A `Dispose` method the type never declares",
+      "category": "Lifetime",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2953"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The type declares a public parameterless `Dispose()` that releases resources and does not implement `IDisposable`, so nothing the language or the framework does will ever call it.",
+      "rationale": "The cleanup is already written. It is public, it is spelled the way the framework spells it, and the base list does not say so — which means `using` will not bind to it, `is IDisposable` is false, a DI container's teardown walks past it, and every reviewer who sees the method assumes the release happens. This is the failure that looks finished from every angle except the one that matters. ⚠ **It is the other half of `SK3502`'s question, asked of a different declaration.** `SK3502` reads a *field* — the type constructs a disposable and offers no matching disposal — and says nothing about how the type cleans up; this reads a *method*, and says the cleanup exists and is unreachable. A type can be reported by both, and when it is, the two are saying different things: one that the resource is owned, one that the release is undeclared.",
+      "examples": {
+        "bad": "sealed class Journal {\n    readonly FileStream file = File.OpenWrite(\"journal\");\n\n    public void Dispose() {\n        file.Dispose();\n    }\n}",
+        "good": "sealed class Journal : IDisposable {\n    readonly FileStream file = File.OpenWrite(\"journal\");\n\n    public void Dispose() {\n        file.Dispose();\n    }\n}"
+      },
+      "falsePositives": "⚠ **A `Dispose()` that was never meant to be the interface's is legitimate, and the two shapes of that are excluded by construction rather than by guesswork.** A `ref struct` is disposable through the language's pattern rule with no interface in sight, so its `Dispose()` *is* the contract — that is `SK3532`'s subject and it is skipped here. And a pooled object's `Dispose()` that returns the instance to its pool and clears its fields is not cleanup this rule can see: **the body must release something** — a `Dispose`, `DisposeAsync`, `Close` or `GC.SuppressFinalize` call — before the finding stands. That costs the rule every release routed through a helper it cannot name, and the cost is the right way round: the issue's rationale is \"the type already wrote the cleanup\", so where no cleanup is visible there is nothing to report. ⚠ **Not hosted, and that was measured rather than assumed.** `CA1063` and `CA1816` both take a type that *already* implements `IDisposable` as their subject, so neither can see one that does not; a probe built outside this repository with an empty `Directory.Build.props` above it produced no `CA` diagnostic of any severity — hidden included, read out of `-p:ErrorLog=` — on this shape at `AnalysisMode=All`. ⚠ A type implementing `IAsyncDisposable` is skipped: the disposal contract is declared, and whether it should also be synchronous is a design question. ⚠ An `override` of `Dispose()` is skipped, because the base is where the declaration is missing and reporting both says one thing twice. ⚠ Partial types are skipped — another part may carry the base list — and so is a type whose base type does not resolve, because `AllInterfaces` on an unresolved base is empty rather than unknown. ⚠ **The fix is `fixIsSafe: false` and the reason is not uncertainty about the edit.** Adding `IDisposable` widens a public surface: every caller may now wrap the type in a `using`, and every container will now tear it down at scope exit — which is the repair, and is still a behaviour change somebody should read. The edit itself is guarded twice: the interface is written qualified unless `IDisposable` already binds to `System.IDisposable` at the declaration's own position, and any directive in the header withdraws the finding, because the fix inserts at a position rather than replacing a node.",
+      "configuration": [
+        "dotnet_diagnostic.SK3540.severity"
+      ]
+    },
+    {
+      "id": "SK3541",
+      "concept": "short-lived-http-client",
+      "title": "The `HttpClient` is disposed at the end of the call",
+      "category": "Lifetime",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "ShortLivedHttpClient",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `using` owns a directly constructed `HttpClient`, so the connection pool underneath it is closed once per call.",
+      "rationale": "`HttpClient` is the one disposable in the framework whose correct lifetime is the opposite of every other one's. Disposing it closes the connection pool it holds, and the sockets sit in `TIME_WAIT` for the operating system's timeout afterwards — so a handler called under load exhausts the ephemeral port range and starts failing with `SocketException` on a call that worked yesterday, on a machine that is not the author's. ⚠ **The whole family this rule lives in says \"this is not disposed\" and this one says \"this is disposed\".** `SK3501`, `SK3502`, `SK3530` and `SK3532` each report a release that is missing; here the release is present, is what the shape of every other disposable asks for, and is the defect. That inversion is why it cannot be an exception inside one of theirs.",
+      "examples": {
+        "bad": "static async Task<string> Fetch(string url) {\n    using var client = new HttpClient();\n    return await client.GetStringAsync(url);\n}",
+        "good": "static readonly HttpClient Client = new();\n\nstatic async Task<string> Fetch(string url) {\n    return await Client.GetStringAsync(url);\n}"
+      },
+      "falsePositives": "⚠ **What is proved is the declaration, not the lifetime.** The rule speaks only where the `using` is the thing that ends the client's life — a `using` statement or a `using` declaration whose resource is a direct `new HttpClient(…)`. A client assigned to a field, returned, or handed to something else has a lifetime this rule cannot read, and it does not guess at one. ⚠ **An entry point is excluded**, because a client disposed once for the process is not a client disposed per call; the test is the declaration's own shape — a `static Main`, or a top-level statement — rather than `Compilation.GetEntryPoint`, since the same source compiled as a library has no entry point and is the same decision. ⚠ **A constructor taking an `HttpMessageHandler` is excluded and that is the important one**: `new HttpClient(sharedHandler, disposeHandler: false)` is the documented mitigation, the sockets belong to the handler, and disposing the thin wrapper above it costs nothing. Without this exclusion the rule would report the fix. ⚠ The canonical correct form — a `static readonly` field — never reaches the rule at all, because it is not a `using`. ⚠ **Not hosted**: measured outside this repository with an empty `Directory.Build.props` above it, `AnalysisMode=All` produced no `CA` diagnostic of any severity on the shape, hidden included. `CA2234` fires on the same lines and is about the `Uri` overload. ⚠ **Fixless, and not for want of an edit.** The repair is a `static readonly` client, a constructor-injected one, or `IHttpClientFactory` — a decision about where this type gets its dependencies, taken at the type or at the container. Deleting the `using` in place would turn a bounded leak into an unbounded one, which is the one edit a fixing tool must not make on its own.",
+      "configuration": [
+        "dotnet_diagnostic.SK3541.severity"
+      ]
+    },
+    {
+      "id": "SK3542",
+      "concept": "dangerous-handle-without-ref-count",
+      "title": "`DangerousGetHandle` with nothing holding the handle open",
+      "category": "Lifetime",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3869"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`SafeHandle.DangerousGetHandle` is called and the declaring type never touches the reference count that would keep the handle alive.",
+      "rationale": "`SafeHandle` exists to make one failure impossible: the finalizer releasing a handle while something is still using the value, after which the operating system reuses that number and every later call operates on whatever now owns it. `DangerousGetHandle` returns the value out from under that protection, and `DangerousAddRef`/`DangerousRelease` are what put it back for the duration of the use. A raw handle taken with neither is protected by nothing at all, and the failure it produces — a read from a file somebody else now owns — is not one a stack trace explains.",
+      "examples": {
+        "bad": "static int Read(SafeFileHandle handle, byte[] buffer) {\n    var raw = handle.DangerousGetHandle();\n    return Native.Read(raw, buffer, buffer.Length);\n}",
+        "good": "static int Read(SafeFileHandle handle, byte[] buffer) {\n    var held = false;\n    try {\n        handle.DangerousAddRef(ref held);\n        return Native.Read(handle.DangerousGetHandle(), buffer, buffer.Length);\n    } finally {\n        if (held) {\n            handle.DangerousRelease();\n        }\n    }\n}"
+      },
+      "falsePositives": "⚠ **The call is named dangerous and is sometimes correct, so the finding is the missing *pair* and not the call.** What is asked is the weakest question answerable from one file with certainty: does the declaring type contain a `DangerousAddRef` or a `DangerousRelease` anywhere at all? Where it does, the rule says nothing — whether that pair brackets this particular call is a flow question, and there is no safe wrong answer to it. **The rule therefore reports the absence of any ref-counting, which is provable, rather than an incorrect pairing, which is not.** ⚠ **The residual cost is stated rather than guarded.** A type that ref-counts through a helper in another file, or whose caller holds the reference across the call, is reported and should not be. Narrowing the question to the enclosing method makes that worse rather than better — the documented pattern puts the `AddRef` before a `try` and the `Release` in a wrapper's `finally` — so the question is asked of the whole type, which is the same decision `SK3530` takes about where disposal is allowed to live. ⚠ A call in a top-level statement has no enclosing type declaration and is skipped. ⚠ The receiver's type must really derive from `System.Runtime.InteropServices.SafeHandle`, resolved through the semantic model: a `DangerousGetHandle` of somebody's own invention is a different method with the same name. ⚠ **Not hosted**: measured outside this repository with an empty `Directory.Build.props` above it, `AnalysisMode=All` produced no `CA` diagnostic of any severity on the shape, hidden included. ⚠ **Fixless.** The repair either wraps the use in an `AddRef`/`Release` pair with a `bool` flag and a `finally`, or — more often the right answer — stops taking the raw value and passes the `SafeHandle` itself to the P/Invoke, which the marshaller already ref-counts. Which of the two applies depends on where the value goes, and no edit reads that.",
+      "configuration": [
+        "dotnet_diagnostic.SK3542.severity"
+      ]
     }
   ]
 }
