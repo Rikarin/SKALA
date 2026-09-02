@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 268 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 271 ids are allocated.
 
 ## Async
 
@@ -146,6 +146,9 @@
 | [SK6051](SK6051.md) | The base type tests `this` against a derived type | suggestion | — | no |
 | [SK6052](SK6052.md) | Null is returned where an empty sequence was expected | suggestion | review | no |
 | [SK6053](SK6053.md) | The method name does not reflect its synchronicity | none | — | no |
+| [SK6060](SK6060.md) | The interface's type parameter is invariant and need not be | suggestion | review | no |
+| [SK6061](SK6061.md) | A caller-info parameter is followed by an ordinary parameter | warning | review | no |
+| [SK6062](SK6062.md) | The local collection is filled and never read | suggestion | — | no |
 
 ## Formatting
 

@@ -77,7 +77,11 @@ public sealed class CallerInfoParameterOrderAnalyzer : DiagnosticAnalyzer {
         // overriding, implementing or matching if a parameter moved. The defect belongs on the
         // declaration that owns the order; reporting it here would report it where it cannot be
         // fixed.
-        if (method.IsOverride || method.IsPartialDefinition || Implements(method)) {
+        if (method.IsOverride
+            || method.IsPartialDefinition
+            || method.PartialDefinitionPart is not null
+            || method.PartialImplementationPart is not null
+            || Implements(method)) {
             return;
         }
 

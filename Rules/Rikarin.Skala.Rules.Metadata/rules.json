@@ -7022,6 +7022,7 @@
       "hasFix": false,
       "fixIsSafe": false,
       "resharperId": "CollectionNeverQueried.Local",
+      "resharperNote": "\u26a0 The export sets `resharper_collection_never_queried_local_highlighting` to `warning` and this rule defaults to `suggestion`, so importing the key raises it. The gap is deliberate: ReSharper answers the question across a whole solution and can see the reader this analyzer cannot, so its confidence is not available here. What ships is the slice one compilation can prove \u2014 a local, every one of whose references is a discarded write \u2014 and a slice that is narrower than the inspection it maps to does not inherit the inspection's severity.",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
