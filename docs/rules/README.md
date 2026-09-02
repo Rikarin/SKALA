@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 233 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 240 ids are allocated.
 
 ## Async
 
@@ -100,6 +100,13 @@
 | [SK2111](SK2111.md) | The null-forgiving operator suppresses nothing | warning | safe | no |
 | [SK2112](SK2112.md) | The local is declared nullable and is never null | suggestion | safe | no |
 | [SK2113](SK2113.md) | The service resolution is null-forgiven instead of required | suggestion | safe | no |
+| [SK2120](SK2120.md) | A bitwise operator combines members of a consecutively numbered enum | warning | — | no |
+| [SK2121](SK2121.md) | The `as` operator tests a conversion that always succeeds | suggestion | safe | no |
+| [SK2150](SK2150.md) | A string search has an implicit culture policy | warning | review | no |
+| [SK2151](SK2151.md) | A string equality test asks for invariant culture where ordinal was meant | warning | review | no |
+| [SK2152](SK2152.md) | The path comparison assumes the file system's case rules | warning | — | no |
+| [SK2153](SK2153.md) | An IQueryable is silently degraded to IEnumerable | warning | — | no |
+| [SK2154](SK2154.md) | The sort has no ordering to use | warning | — | no |
 
 ## Design
 
