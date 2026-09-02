@@ -16,7 +16,7 @@
   "PossibleIntendedRethrow": "SK2015",
   "PossibleInvalidOperationExceptionCollectionWasModified": "SK2007",
   "AsyncVoidMethod": "SK3001",
-  "AsyncVoidLambda": "SK3001",
+  "AsyncVoidLambda": "SK3052",
   "AsyncVoidMethodWithoutAwait": "SK3001",
   "AsyncVoidEventHandlerMethod": "SK3001",
   "ConvertToPrimaryConstructor": "SK1002",
@@ -223,5 +223,6 @@
   "UseDeconstruction": "SK1070",
   "UseWithExpressionToCopyRecord": "SK1071",
   "RedundantSpreadElement": "SK1072",
-  "UseEventArgsEmptyField": "SK1073"
+  "UseEventArgsEmptyField": "SK1073",
+  "AsyncVoidThrowException": "SK3050"
 }

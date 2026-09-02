@@ -205,3 +205,6 @@ SK2071 | Skala.Correctness | Warning | The structured log template names the sam
 SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
 SK2073 | Skala.Correctness | Warning | The caught exception is not passed to the logger's exception parameter.
 SK7110 | Skala.Maintainability | Info | The logger is declared for a different type than the one that declares it.
+SK3050 | Skala.Async | Warning | An exception is thrown out of an `async void` body.
+SK3051 | Skala.Async | Info | The `async` method has no `CancellationToken` to forward.
+SK3052 | Skala.Async | Warning | The `async` lambda is converted to a `void`-returning delegate.

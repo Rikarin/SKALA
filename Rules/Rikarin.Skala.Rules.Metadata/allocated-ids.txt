@@ -246,3 +246,6 @@ SK2100 ineffective-thread-static
 SK2101 pure-attribute-on-void
 SK2102 debugger-display-missing-member
 SK2103 duplicated-attribute
+SK3050 async-void-throw
+SK3051 async-method-without-cancellation
+SK3052 async-void-lambda
