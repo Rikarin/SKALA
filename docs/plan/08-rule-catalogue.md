@@ -55,6 +55,57 @@ the SDK's.
 deterministic choice (`supersedes` wins; the superseded one is recorded in the SARIF as suppressed
 with reason `superseded`).
 
+## What a green fixture set does not prove
+
+Read this before concluding a rule is finished. The fixture harness is the rule unit level and it is
+the fastest instrument here, but it measures one compilation shape, and two of the ways it differs
+from a real project have already shipped defects.
+
+⚠ **The fixtures are compiled against the test host's reference set — the TPA list — and a real
+project is compiled against its own.** Where the two differ a rule can be correct on every fixture
+and wrong in production with nothing failing, because overload resolution, `params` binding and shim
+visibility all move with the reference set. Two measured cases, both from
+[#297](https://github.com/Rikarin/SKALA/issues/297):
+
+- `SK1063` **silently declined every `string.Format` call with four or more arguments.** On .NET 9+
+  the `params ReadOnlySpan<object?>` overload wins past the last explicitly typed overload, and
+  Roslyn reports that argument as `ArgumentKind.ParamCollection`, not `ArgumentKind.ParamArray`. The
+  rule tested for `ParamArray`. Against the test host's reference set the same call binds
+  `ParamArray`, so every fixture passed.
+- `SK1060` (`x[^1]`) **fired 16 times on Skala's own netstandard2.0 projects and every one of those
+  fixes failed to compile** with `CS0518`. `System.Memory` ships an *internal* `System.Index` shim:
+  `GetTypeByMetadataName` finds the symbol, so the rule concluded the feature was available, but
+  `x[^1]` is illegal against an inaccessible type. The gate is now `IsSymbolAccessibleWithin`. ⚠ **No
+  regression test pins this and none can** — the harness cannot build a compilation in which
+  `System.Index` is inaccessible.
+
+**Therefore the binlog self-sweep is part of shipping a rule, not an optional extra.** Both defects
+surfaced there and only there, and it is the only check in the repository that sees a real reference
+set at all. A worthwhile third option, not built: a second fixture pass against a `netstandard2.0`
+reference set for rules whose `languageVersion` or API use makes them sensitive to it — that would
+have caught `SK1060` and would not have caught `SK1063`.
+
+⚠ **The registration is no longer a second list.** `RuleFixtureTests` used to hold its own
+hand-written 290 analyzer instances beside `AnalyzerHost.Own`'s. Both now read
+`SkalaAnalyzers.All`, so the set the fixtures measure is the set `skala check` runs; the harness also
+now matches production's `concurrentAnalysis`. The one deliberate difference left is
+`onAnalyzerException: null`, which is what turns an analyzer crash into an `AD0001` the fixture
+assertion can see — production folds it into an `SK9030` notification instead.
+
+**What a fixture *can* now say about its own compilation** is three things, as `// fixture-option:`
+directives in its leading comment block, defaulting to the harness's behaviour
+([#310](https://github.com/Rikarin/SKALA/issues/310),
+[#317](https://github.com/Rikarin/SKALA/issues/317)):
+
+```cs
+// fixture-option: LangVersion = 9              // a guard that only exists below the current version
+// fixture-option: DefineConstants = RELEASE    // production's --define, per fixture
+// fixture-option: AllowUnsafe = false          // unsafe is legal by default; this takes it away
+```
+
+⚠ An unrecognised key or unparseable value throws rather than being ignored, because a dropped
+directive leaves a fixture reading as a measurement it is not.
+
 ## Arrangement
 
 These are the structural-cleanup findings emitted by `verify` from the same fixed-point pipeline as
@@ -291,11 +342,15 @@ absent**: all twelve files containing a `finally` have a body in it. ⚠ This is
 rule cannot be measured on this slice at all — a compilation with 9 000 errors answers a symbol
 question with whatever it managed to bind.
 
-⚠ **`RuleFixtures.Compile` does not pass `allowUnsafe`, so no fixture for an `unsafe` shape can
+⚠ **`RuleFixtures.Compile` did not pass `allowUnsafe`, so no fixture for an `unsafe` shape could
 compile.** Found while considering the nested-`unsafe` half of `RedundantUnsafeContext` for
-`SK0241`: `unsafe class C { unsafe void M() { … } }` is CS0227 in the fixture harness. The
+`SK0241`: `unsafe class C { unsafe void M() { … } }` was CS0227 in the fixture harness. The
 nested-context shapes were dropped rather than tested against a compilation that rejects them — the
-trap `SK0240`'s deleted iterator guard was committed into once already.
+trap `SK0240`'s deleted iterator guard was committed into once already. **Fixed
+([#310](https://github.com/Rikarin/SKALA/issues/310)):** `allowUnsafe` now defaults to `true`, as
+`LooseLoader` has always passed in production, and `SK0241`'s nested-context shapes are fixturable.
+⚠ The related claim that this blocked `SK2221` is **refuted**: `[UnsafeAccessor]` requires `extern`,
+not `unsafe`.
 ### Cleanup — `SK0250`
 
 ⚠ **The prose pass on this block is owed**, like the two above it: it is written as one rule lands and

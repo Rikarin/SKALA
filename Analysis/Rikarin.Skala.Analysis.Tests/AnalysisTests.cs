@@ -39,9 +39,16 @@ public sealed class AnalysisTests {
     ///     Every analyzer in the package must be instantiated by the built-in host.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The package and fixture harness discover analyzer classes, while <c>skala check</c> keeps
-    ///     an explicit instance list. Without this two lists can disagree and a fully tested analyzer
-    ///     can ship in the package while the CLI silently never runs it.
+    ///     ⚠ The package discovers analyzer classes, while <c>skala check</c> runs an explicit instance
+    ///     list. Without this the two can disagree and a fully tested analyzer can ship in the package
+    ///     while the CLI silently never runs it.
+    ///     <para>
+    ///         ⚠ <b>This remark used to claim the fixture harness discovered analyzers too, and it did
+    ///         not</b> — <c>RuleFixtureTests</c> held a second hand-written copy of the same 290
+    ///         instances, and a rule missing from it would have been measured by a set that is not the
+    ///         set that ships. Both lists are now <see cref="SkalaAnalyzers.All" />, so this assertion
+    ///         covers the harness as well as the CLI (#297).
+    ///     </para>
     /// </remarks>
     [Fact]
     public void AnalyzerHost_OwnsEveryAnalyzerInTheRulesAssembly() {

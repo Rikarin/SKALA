@@ -160,6 +160,27 @@ public static class RuleFixtures {
     }
 
     /// <summary>Every diagnostic Skala's own analyzers produce for one compilation.</summary>
+    /// <remarks>
+    ///     The settings track <c>AnalyzerHost</c>'s, which is what <c>skala check</c> runs, with one
+    ///     deliberate exception (#297):
+    ///     <list type="bullet">
+    ///         <item>
+    ///             ⚠ <c>onAnalyzerException: null</c>, where production installs a handler that records
+    ///             <c>SK9030</c> and continues. Null is what turns an analyzer crash into an
+    ///             <c>AD0001</c> in the returned diagnostics, and <c>AD0001</c> is the only thing that
+    ///             can tell a rule that <em>declined</em> from a rule that <em>threw</em> — production's
+    ///             handler swallows it into a SARIF notification no test can see. The difference is
+    ///             deliberate and runs in the direction of catching more.
+    ///         </item>
+    ///         <item>
+    ///             <c>concurrentAnalysis: true</c>, as in production. Every Skala analyzer calls
+    ///             <c>EnableConcurrentExecution</c>, so running fixtures serially measured a threading
+    ///             model no user gets; a rule holding state across callbacks would have been correct on
+    ///             every fixture and racy in the field.
+    ///         </item>
+    ///         <item><c>reportSuppressedDiagnostics: true</c>, as in production.</item>
+    ///     </list>
+    /// </remarks>
     public static ImmutableArray<Diagnostic> Analyze(
         CSharpCompilation compilation,
         ImmutableArray<DiagnosticAnalyzer> analyzers,
@@ -171,7 +192,7 @@ public static class RuleFixtures {
                 new CompilationWithAnalyzersOptions(
                     new AnalyzerOptions([], new FixtureOptionsProvider()),
                     null,
-                    false,
+                    true,
                     false,
                     true
                 )
