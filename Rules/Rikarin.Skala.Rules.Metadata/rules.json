@@ -6699,6 +6699,132 @@
       "configuration": [
         "dotnet_diagnostic.SK2164.severity"
       ]
+    },
+    {
+      "id": "SK1080",
+      "concept": "of-type-over-filter-and-cast",
+      "title": "Use the LINQ operator that says what the chain means",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "ReplaceWithOfType",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`xs.Where(x => x is T).Cast<T>()` is `xs.OfType<T>()`, which is the operator the chain was spelling out.",
+      "rationale": "`OfType<T>` is defined as \"test each element against `T` and yield the ones that pass, typed\" — which is exactly what a `Where` holding a type test followed by a `Cast<T>` does, written across two operators and two iterators. The long form reads as two decisions, so a reader has to hold the filter in mind while checking that the cast agrees with it; and the two can silently stop agreeing, at which point `Cast<T>` throws on an element the filter was supposed to have removed. It is in the modernization range rather than the performance one because the saving — one iterator object and one delegate hop per element — is the smaller half: `OfType<T>` names the operation, and naming it is what stops the two halves drifting apart. It is also a shape a model writes because most of its training data predates the habit of reaching for `OfType`.",
+      "examples": {
+        "bad": "var names = values.Where(value => value is string).Cast<string>();\nvar ids = values.Where(value => value is int).Select(value => (int)value);",
+        "good": "var names = values.OfType<string>();\nvar ids = values.OfType<int>();"
+      },
+      "falsePositives": "⚠ **The rewrite is exact only because `OfType<T>` is `Where(x => x is T)` followed by the cast, and every guard here exists to keep the two halves literally that.** The predicate must be a one-parameter lambda whose whole body is `p is T` — not `!(p is not T)`, not a type test joined to anything else — and the `T` it tests must be the *same symbol* as the one the consuming `Cast<T>` or cast expression names. A different `T` on the two sides is not this shape and rewriting it would change which elements survive. ⚠ **The null case is what makes the two forms agree and is worth stating**: `x is T` is false for a null element, so no null reaches the `Cast<T>`, and `OfType<T>` filters nulls out for the same reason — the two produce the same sequence, including for a nullable reference element type where `Cast<T>` on its own would happily pass null through. ⚠ The `Select` spelling is accepted only where its lambda body is a *cast expression* over its own parameter, `x => (T)x`, and never `x => x as T` — `as` yields null for a non-`T` where `OfType` yields nothing, so on a sequence the filter did not fully clean those are different lengths. ⚠ Both calls must resolve to `System.Linq.Enumerable`, and the compilation's own `Enumerable` must declare an `OfType` the fix can bind to; `Queryable` is excluded for the reason `SK4010` excludes it, that a provider is free to translate one spelling of a pipeline and not the other. ⚠ The indexed `Where(Func<T, int, bool>)` overload has no `OfType` counterpart and is refused. ⚠ A conditional access (`xs?.Where(…).Cast<T>()`) is not reported, because collapsing it would mean moving the member binding rather than replacing a name. ⚠ `SK4010` folds `Where(p)` into nine consuming operators and this rule folds it into `Cast`/`Select`; the two consumer sets are disjoint by construction, so they never both fire on one span.",
+      "configuration": [
+        "dotnet_diagnostic.SK1080.severity"
+      ]
+    },
+    {
+      "id": "SK1081",
+      "concept": "redundant-sequence-call",
+      "title": "Remove the LINQ or collection call that does nothing",
+      "category": "Modernization",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantEnumerableCastCall",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`Cast<T>` on a sequence that is already `IEnumerable<T>` returns the very same object, and a `ToList` whose only consumer is another `ToList` copies a copy.",
+      "rationale": "Both shapes are a call whose result is provably the thing that went in. `Enumerable.Cast<T>` opens with `if (source is IEnumerable<T> typed) return typed;`, so on a receiver already typed `IEnumerable<T>` it is not a cheap call — it is a call that returns its own argument by reference. A materializer applied directly to another materializer's result is the same idea one step out: the inner collection is created, copied and dropped inside a single expression, where nothing else in the program can ever hold it. Neither is a matter of taste, which is why this reports at `warning` while the rest of the range suggests: the code says an operation is happening and no operation happens.",
+      "examples": {
+        "bad": "IEnumerable<string> names = source.Cast<string>();\nvar ids = LoadIds().ToList().ToArray();",
+        "good": "IEnumerable<string> names = source;\nvar ids = LoadIds().ToArray();"
+      },
+      "falsePositives": "⚠ **The `Cast<T>` branch requires the receiver's static type to be `IEnumerable<T>` itself, not merely a type that implements it, and that restriction is the whole proof.** On `IEnumerable<T>` the deletion changes neither the value — `Cast<T>` returns the same reference — nor the static type of the expression, so nothing downstream of it can bind differently. On a `List<T>` receiver both of those stop holding at once: `var xs = list.Cast<T>();` types `xs` as `IEnumerable<T>` and `var xs = list;` types it as `List<T>`, and an overload set containing both resolves differently. That is the same trap `SK0234` records for identity casts, and it is answered here the same way — by covering the subset where the question cannot be asked. ⚠ **A `Cast<T>` on a receiver typed `IEnumerable` (non-generic) is never reported**: there the call is the only thing producing a typed sequence. ⚠ **The copy branch requires the inner call to preserve both order and multiplicity, so only `ToList` and `ToArray` may be the inner one.** `ToHashSet` and `Distinct` remove duplicates and `ToDictionary` can throw, so an inner one of those is a real operation and deleting it changes the result; they are allowed as the *outer* call, where the inner copy is still unobservable. ⚠ The inner call's result must be consumed by the outer call and by nothing else, which the shape guarantees: it is a temporary written and read inside one expression, so \"enumerated exactly once with no mutation in between\" is a syntactic fact here rather than the flow question it is for `SK4006`. ⚠ Both calls must resolve to `System.Linq.Enumerable`, except that `List<T>.ToArray()` is accepted as the outer call because that is what `xs.ToList().ToArray()` actually binds to. ⚠ A conditional access is refused in both branches, and so is a `Cast<T>` or a materializer somebody else declared: the receiver's own extension method of the same name is not this rule. ⚠ **Three of the concept's six ReSharper inspections are deliberately elsewhere.** `RedundantDictionaryContainsKeyBeforeAdding` is `SK1033`'s negated-`ContainsKey` shape; `CanSimplifySetAddingWithSingleCall` was measured on SDK 10.0.400 and is reported by `CA1868`, which ADR-008 hosts; and `MultipleOrderBy` is a correctness finding — `OrderBy(a).OrderBy(b)` is not a call that does nothing, it is `OrderBy(b).ThenBy(a)` written in a way that reads as the opposite — so it belongs to a correctness id and not to this one.",
+      "configuration": [
+        "dotnet_diagnostic.SK1081.severity"
+      ]
+    },
+    {
+      "id": "SK1082",
+      "concept": "indexer-over-element-at",
+      "title": "Use the indexer",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseIndexedProperty",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`list.ElementAt(i)` is `list[i]`: the language has syntax for the operation the LINQ extension is standing in for.",
+      "rationale": "`ElementAt` exists so that a bare `IEnumerable<T>` can be indexed at all — it walks the sequence when it has to and reaches for `IList<T>` when it can. On a `List<T>` the second branch is the only one that ever runs, so the call is a generic entry point wrapped around the indexer the receiver already declares. The indexer is shorter, needs no `using System.Linq`, and says *the collection has positions* rather than *find me the element in that position*, which is the distinction that matters when the next reader asks whether the receiver is a sequence or a list.",
+      "examples": {
+        "bad": "var first = entries.ElementAt(0);\nvar chosen = entries.ElementAt(index);",
+        "good": "var first = entries[0];\nvar chosen = entries[index];"
+      },
+      "falsePositives": "⚠ **The receiver is `List<T>` or `ImmutableList<T>` and nothing else, and the reason is the exception the rewrite would otherwise change.** `Enumerable.ElementAt` bounds-checks itself and throws `ArgumentOutOfRangeException` on every path; `List<T>` and `ImmutableList<T>` throw `ArgumentOutOfRangeException` from their indexers, so on those two the type, and not merely the fact, of the failure survives the rewrite. **An array does not qualify and is the shape this exclusion exists for**: `array.ElementAt(i)` throws `ArgumentOutOfRangeException` and `array[i]` throws `IndexOutOfRangeException`, so a `catch` written for one stops catching. `IList<T>` and `IReadOnlyList<T>` are excluded because an array is a legal value for both, which puts the exception type back out of reach. ⚠ **`ImmutableArray<T>` is refused a guard earlier than that, and the difference was found by a sabotage that turned nothing red**: `System.Linq.ImmutableArrayExtensions` declares its own `ElementAt(this ImmutableArray<T>, int)`, so the call never binds to `Enumerable.ElementAt` and the receiver set is never consulted for it — adding it to that set changes nothing at all. The negative fixture that actually holds the receiver set down is `Collection<T>`, which binds `Enumerable.ElementAt`, declares an `int` indexer, and is refused by the closed list alone. This is the same receiver set as `SK4030`, arrived at from the opposite direction — that rule substitutes one *method* for another and this one removes the call in favour of language syntax. ⚠ `ElementAtOrDefault` is not reported: it returns `default(T)` where the indexer throws, so there is no indexer expression that means the same thing. ⚠ The `Index`-typed `ElementAt(^1)` overload is refused, because `list[^1]` is a different rewrite with a C# 8 floor and is `SK1060`'s subject. ⚠ The call must resolve to `System.Linq.Enumerable`, must be the extension spelling on a receiver rather than the static one, and must not be a conditional access — `xs?.ElementAt(i)` becomes `xs?[i]`, which is a different edit. ⚠ `UseIndexedProperty`'s own shape, an explicit `get_Item` call, is not covered and cannot be: C# rejects a direct accessor call with `CS0571`, so the inspection has no C# source form to report on and this rule takes the reachable half of the concept.",
+      "configuration": [
+        "dotnet_diagnostic.SK1082.severity"
+      ]
+    },
+    {
+      "id": "SK1083",
+      "concept": "foreach-over-indexed-for",
+      "title": "Use `foreach` over an indexed `for`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "ForCanBeConvertedToForeach",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `for` over `0..Count` whose index is only ever used to index that one collection is a `foreach` written the long way.",
+      "rationale": "The index in this loop is not information. It is not printed, not compared, not passed anywhere and not used to reach a second collection — it exists to move a cursor the language already knows how to move. What the long form adds is three places to make an off-by-one error, in the bound, in the comparison operator and in the increment, and every one of them is silent. `foreach` deletes all three. It is a shape a model writes far more often than a person does, because the indexed loop is what most of the code written before `foreach` became the default looks like.",
+      "examples": {
+        "bad": "for (var i = 0; i < entries.Count; i++) {\n    Process(entries[i]);\n}",
+        "good": "foreach (var entry in entries) {\n    Process(entry);\n}"
+      },
+      "falsePositives": "⚠ **Three facts are proved before anything is reported, and the rule is silent rather than clever when any of them is not decidable.** *One*: the loop runs the whole range in steps of one — a single `int i = 0` declarator, a condition that is exactly `i < receiver.Count` or `i < receiver.Length` against the same receiver the body indexes, and an incrementor that is exactly `i++` or `++i`. `<=`, a bound that is an expression rather than that receiver's own count, a second declarator, a comma-separated incrementor and a `for` whose body assigns to `i` are all excluded, because each one makes \"visits every element once, in order\" a claim rather than a reading. *Two*: the index is used **only** as `receiver[i]`; any other appearance of `i` in the body — arithmetic on it, a second collection indexed by it, passing it to a method — withdraws the finding, because the element alone does not carry it. *Three*: the collection is not touched in the body except through those reads. **Any other reference to the receiver's symbol inside the loop suppresses the finding**, which is the same guard `SK4006` uses and it is deliberately blunt: a body that calls `list.Add`, passes the list on, or reassigns it is a body this rule cannot reason about. ⚠ **The receiver must be an array, a `string`, a `List<T>` or an `ImmutableList<T>`** — types whose enumerator is documented to yield element `0` through element `Count - 1` in that order. An `IList<T>` or a hand-written indexable type promises no such thing, and a `foreach` over one could visit a different sequence entirely. ⚠ **The residual risk, and the reason `fixIsSafe` is false, is mutation the rule cannot see.** A `for` over a `List<T>` that is mutated through a method call in the body keeps running where a `foreach` throws `InvalidOperationException`; the receiver is required to be a local or a parameter to shrink that surface, but proving that no call reached the list is not decidable and is not attempted. Arrays are immune — they have no version field — and are the case where the fix is in practice mechanical. ⚠ **The rule needs a name for the element that nothing else uses, and the obvious scoping guards are both blind to the case that matters.** The new variable is declared in the header and its scope is the body, so what collides with it is what the *loop itself* declares: `LookupSymbols` at the loop's start position cannot see a pattern variable scoped to an `if` inside the body, and the member-wide scan skips every node overlapping the span being moved — which is the whole loop. Serilog's `MessageTemplate.GetElementsOfTypeToArray` is the case that found it: it loops over `tokens` and its body writes `if (tokens[i] is TResult token)`, so the obvious name was taken and the fix produced `CS0136`. A third scan over the loop's own declarations is what stops it, and the rule falls through to `item` or stays silent when it cannot pick a name. ⚠ Comments and preprocessor directives inside the `for` header exclude the loop, because the fix replaces the whole header. ⚠ It interacts with `SK4001` in the opposite direction to `SK1084`: `foreach` over a `List<T>` uses a struct enumerator and allocates nothing, so this rewrite adds no LINQ and no allocation to a hot path, and the two rules do not disagree.",
+      "configuration": [
+        "dotnet_diagnostic.SK1083.severity"
+      ]
+    },
+    {
+      "id": "SK1084",
+      "concept": "loop-filter-as-query",
+      "title": "Use a LINQ operator for part of the loop",
+      "category": "Modernization",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "LoopCanBePartlyConvertedToQuery",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `foreach` whose entire body is one `if` is a filter and a loop wearing one construct; the filter can move to the sequence.",
+      "rationale": "The loop header says *what is visited* and the body says *what is done*, and a body that is nothing but a guard has put half of the first sentence into the second. Moving the guard to the sequence leaves each construct saying one thing, and it puts the condition next to the thing being filtered rather than one indent below the thing being processed. It is the smallest of this range's rewrites and the one most likely to be declined on taste, which is why it ships at `hint`.",
+      "examples": {
+        "bad": "foreach (var entry in entries) {\n    if (entry.IsVisible) {\n        Render(entry);\n    }\n}",
+        "good": "foreach (var entry in entries.Where(entry => entry.IsVisible)) {\n    Render(entry);\n}"
+      },
+      "falsePositives": "⚠ **`Where` is lazy, and that is the whole equivalence argument rather than a detail of it.** `Where`'s `MoveNext` pulls one element, evaluates the predicate and yields, so the predicate for element *n* runs after the body for element *n-1* and immediately before the body for element *n* — the same interleaving, in the same order, the same number of times, as the `if` it replaced. A condition that reads state the body mutates therefore still sees exactly what it saw. ⚠ **A `break`, a `continue` or a `return` in the body does not prevent this rewrite, and the belief that it does is what kept the shape looking unshippable.** Only the *filter* moves; the body stays a loop body, so `continue` still advances the same `foreach` and `break` still leaves it. What a `break` does change is how many times the predicate runs — it stops early either way, at the same element. ⚠ The body must be exactly one `if` with no `else` and no other statement, and the condition must mention the loop variable, or the \"filter\" is a constant the reader would rather see hoisted. ⚠ **The condition has to be liftable into a lambda, which is a compile question and is asked as one**: a condition declaring a pattern variable the body then uses is refused, because the declaration would move out of scope, and so is one that reads a `ref`, `out` or `in` parameter, a ref local, a `ref struct` local, `stackalloc`, a pointer, or `this` inside a struct — each of those is a lambda the compiler rejects, and a fix that does not compile is worse than the shape it replaced. `await` and `yield` in the condition are impossible by construction and are excluded anyway. ⚠ `System.Linq` must already be imported: the fix does not add a using directive, so a file without one is left alone rather than broken. An `await foreach` is a different operator and is not covered. ⚠ **It is the one rule in this range that suggests LINQ, so it declares the interaction rather than leaving it to be discovered.** `SK4006` reports a materialization consumed by `foreach` and this fix produces no materialization, so it cannot feed that rule; `SK4001` reports LINQ in a configured hot path, and there the two genuinely disagree — which is settled by this rule shipping at `hint`, one step below anything `SK4001` says, so a repository that configures a hot path keeps the loop. ⚠ `fixIsSafe` is false: the rewrite allocates an iterator and a delegate the loop did not, and that is a decision about the call site rather than about the shape.",
+      "configuration": [
+        "dotnet_diagnostic.SK1084.severity"
+      ],
+      "resharperNote": "⚠ The export sets `resharper_loop_can_be_partly_converted_to_query_highlighting = none`, so a repository reading ReSharper's severities turns this rule off entirely, where Skala's own default is `hint`. That is the right disagreement to have and it is deliberate: JetBrains ships the inspection disabled because suggesting LINQ is a taste call it does not want to make by default, and `hint` is Skala saying the same thing one notch louder. ⚠ It also means a `none` read from the export is not evidence the shape is absent — the parity measurement found 44 inspections sitting at `none` that fired the moment they were enabled, and this is one of them."
     }
   ]
 }

@@ -234,3 +234,8 @@ SK2161 | Skala.Correctness | Warning | The `DateTime` has no time zone and is co
 SK2162 | Skala.Correctness | Warning | The date or time `TryParse` has an implicit culture.
 SK2163 | Skala.Correctness | Warning | Elapsed time is measured with the wall clock.
 SK2164 | Skala.Correctness | Warning | The assertion's expression has side effects.
+SK1080 | Skala.Modernization | Info | Use the LINQ operator that says what the chain means.
+SK1081 | Skala.Modernization | Warning | Remove the LINQ or collection call that does nothing.
+SK1082 | Skala.Modernization | Info | Use the indexer.
+SK1083 | Skala.Modernization | Info | Use `foreach` over an indexed `for`.
+SK1084 | Skala.Modernization | Hidden | Use a LINQ operator for part of the loop.

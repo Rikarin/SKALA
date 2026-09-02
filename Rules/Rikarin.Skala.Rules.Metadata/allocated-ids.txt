@@ -275,3 +275,8 @@ SK2161 unspecified-date-time-kind
 SK2162 implicit-date-parse-culture
 SK2163 wall-clock-elapsed
 SK2164 side-effect-in-assertion
+SK1080 of-type-over-filter-and-cast
+SK1081 redundant-sequence-call
+SK1082 indexer-over-element-at
+SK1083 foreach-over-indexed-for
+SK1084 loop-filter-as-query

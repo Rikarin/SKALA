@@ -374,6 +374,35 @@ no `var` → explicit arrangement rule at all. That settles the overlap in both 
 reports only declarations already written `var`, which `VarRule` never looks at, and after the fix
 the declared type is deliberately *not* the initializer's own type, which is the identity `VarRule`
 requires before it converts.
+⚠ **`SK1080`–`SK1084` are registered here and the prose pass is owed.** The rows below take the
+numbers and say what each rule rewrites; the paragraphs explaining why each is worth a rule, in the
+voice the rest of this section is written in, have not been written yet. Every one of them has its
+full false-positive story in `rules.json` in the meantime, which is where the reasoning currently
+lives.
+
+| ID | Concept | Instead of | Use |
+|---|---|---|---|
+| `SK1080` | `of-type-over-filter-and-cast` | `xs.Where(x => x is T).Cast<T>()` | `xs.OfType<T>()` |
+| `SK1081` | `redundant-sequence-call` | `seq.Cast<T>()` on an `IEnumerable<T>`, `xs.ToList().ToArray()` | `seq`, `xs.ToArray()` |
+| `SK1082` | `indexer-over-element-at` | `list.ElementAt(i)` | `list[i]` |
+| `SK1083` | `foreach-over-indexed-for` | `for (var i = 0; i < xs.Count; i++) … xs[i]` | `foreach (var x in xs)` |
+| `SK1084` | `loop-filter-as-query` | `foreach (var x in xs) { if (p(x)) { … } }` | `foreach (var x in xs.Where(p)) { … }` |
+
+⚠ **Three concepts in this batch were measured and closed as hosted rather than built, and two of
+them were inside rules that shipped anyway.** `Count() > 0` → `Any()` — the `UseMethodAny` family,
+five of the thirty-eight inspections issue #100 collects — is reported by **`CA1827`**, on
+`Count()` and `LongCount()` alike, confirmed by compiling the shape on SDK 10.0.400 with
+`AnalysisMode=All` and reading the warning off the build. `if (!set.Contains(x)) set.Add(x)` is
+reported by **`CA1868`** in the same measurement. ADR-008 hosts rather than rebuilds, so neither is
+in `SK1080` or `SK1081`, and the concepts named in those two issues ship one branch narrower than
+the issues describe. The third, `RedundantDictionaryContainsKeyBeforeAdding`, was already `SK1033`'s.
+
+⚠ **`MultipleOrderBy` is not a redundancy and was moved out of `SK1081` for that reason.**
+`xs.OrderBy(a).OrderBy(b)` does not discard the first sort: `OrderBy` is stable, so the result is
+ordered by `b` with ties broken by `a` — which is `xs.OrderBy(b).ThenBy(a)`, the arguments read
+backwards. The rewrite is exact and it belongs to a correctness id, because the finding is that the
+code says something other than what its author meant rather than that a call does nothing. No id is
+allocated for it here; it is left in the queue as a correctness proposal.
 
 ## SK2000 — Correctness
 
@@ -1748,6 +1777,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **285** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **250** | **88.0 %** |
+| Rules this document names | **261** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **226** | **86.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |

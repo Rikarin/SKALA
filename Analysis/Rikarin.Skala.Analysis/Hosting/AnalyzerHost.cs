@@ -178,6 +178,9 @@ public static class AnalyzerHost {
         new StaticClockReadAnalyzer(), new UnspecifiedDateTimeKindAnalyzer(),
         new ImplicitDateParseCultureAnalyzer(), new WallClockElapsedAnalyzer(),
         new SideEffectInAssertionAnalyzer(),
+        new OfTypeChainAnalyzer(), new RedundantSequenceCallAnalyzer(),
+        new IndexerOverElementAtAnalyzer(), new ForeachOverIndexedForAnalyzer(),
+        new LoopFilterAsQueryAnalyzer(),
     ];
 
     /// <summary>

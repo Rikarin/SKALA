@@ -175,6 +175,16 @@ HOSTED = {
     "InconsistentNaming": "IDE1006",
     "RedundantNameQualifier": "IDE0001",
     "SimplifyLinqExpressionUseAll": "CA1868-adjacent",
+    # ⚠ Measured, not assumed, and it removed a branch from a rule that was being written.
+    # Both shapes were compiled on SDK 10.0.400 with `AnalysisMode=All` and the warning read
+    # off the build: `xs.Count() > 0` and `xs.LongCount() > 0` report CA1827, and
+    # `if (!set.Contains(x)) set.Add(x)` reports CA1868. The first is five of the thirty-eight
+    # inspections issue #100 collects and the second is one of issue #101's six, so both
+    # issues ship one branch narrower than they were written. ADR-008 hosts rather than
+    # rebuilds. Before this, all six fell through to `Uncovered` and were counted as a gap.
+    "UseMethodAny.0": "CA1827", "UseMethodAny.1": "CA1827", "UseMethodAny.2": "CA1827",
+    "UseMethodAny.3": "CA1827", "UseMethodAny.4": "CA1827", "UseMethodAny.5": "CA1827",
+    "CanSimplifySetAddingWithSingleCall": "CA1868",
     "UseCollectionCountProperty": "CA1860",
     "ReplaceWithSingleCallToCount": "CA1829",
     "ReplaceWithStringIsNullOrEmpty": "CA1806-adjacent",
