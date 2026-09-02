@@ -172,6 +172,8 @@ public sealed class RuleFixtureTests {
         new SingleIterationLoopAnalyzer(), new IndexOfComparedToPositiveAnalyzer(),
         new DeadConditionalCallAnalyzer(), new UnsafeAccessorTargetAnalyzer(),
         new PartiallyCheckedOperatorAnalyzer(),
+        new WithExpressionRewritesAllAnalyzer(), new MalformedRegexPatternAnalyzer(),
+        new DeferredArgumentCheckAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

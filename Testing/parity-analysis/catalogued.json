@@ -276,5 +276,7 @@
   "NegativeIndex": "SK2210",
   "IndexingByInvalidRange": "SK2210",
   "ZeroIndexFromEnd": "SK2210",
-  "LoopVariableIsNeverChangedInsideLoop": "SK2211"
+  "LoopVariableIsNeverChangedInsideLoop": "SK2211",
+  "WithExpressionModifiesAllMembers": "SK2240",
+  "RegExpInspections": "SK2241"
 }

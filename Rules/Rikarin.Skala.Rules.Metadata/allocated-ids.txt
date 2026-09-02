@@ -329,3 +329,6 @@ SK2213 index-of-compared-to-positive
 SK2220 dead-conditional-call
 SK2221 unsafe-accessor-target-mismatch
 SK2222 partially-checked-operator-set
+SK2240 with-expression-rewrites-all
+SK2241 malformed-regex-pattern
+SK2242 deferred-argument-check

@@ -2101,6 +2101,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **339** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **304** | **89.9 %** |
+| Rules this document names | **328** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **293** | **89.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -5829,3 +5831,206 @@ alone, the name-only match turns that fixture red. ⚠ **`SK2221`'s generic guar
 through their own fixture** — it named a member that exists, so removing both guards changed
 nothing; the fixture now names members that do not, and the guards are the only thing keeping the
 rule quiet.
+## `SK2240`–`SK2242` — patterns, initializers and deferred checks
+
+⚠ **The prose pass for `SK2240`–`SK2242` is owed.** What follows is the allocation register entry —
+enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+**Five concepts were taken and three shipped.** The batch was chosen so that three of its five sat
+directly on top of already-shipped rules, and working out where each boundary actually falls was
+most of the work: `SK1071` and `SK0230` both read `with` expressions, `SK5010` already owns half of
+the regex concept, and `SK6050` had already met — and written down — the exact wall that the fourth
+concept walks into.
+
+`SK2240` `with-expression-rewrites-all` — a `with` expression that assigns every positional
+parameter of the record it copies, which is `new T(…)` spelled longer and which will silently start
+carrying the *next* member added to the record. ⚠ **It is the same translation as `SK1071` in the
+opposite direction, and both are sound under exactly the same condition**: the record's whole
+instance state is its primary constructor's parameters, every positional property is the
+auto-property the compiler synthesized, and the record is `sealed`. The predicate therefore moved
+into a shared `RecordShape` rather than being copied, which is also what keeps Skala's own
+duplication gate quiet. ⚠ **`IsImplicitlyDeclared` is `false` for a positional record property** —
+the parameter is where it is written down — so the test that the property is the compiler's own is
+that both symbols point at the same `ParameterSyntax`. A rule testing `IsImplicitlyDeclared` as true
+would match nothing and pass every negative fixture it had.
+
+⚠ **The live hazard in `SK2240` was never a false positive; it was a fix loop, and it is guarded by
+a fixture rather than by prose.** `x with { X = x.X, Y = b }` assigns every member, so the bare shape
+matches — and its fix, `new T(x.X, b)`, is *precisely* `SK1071`'s input, which `SK1071` would rewrite
+straight back. Any assignment carrying a member across unchanged from the same receiver therefore
+withdraws the finding (`carries_a_member_across.cs`). The other direction is disjoint for free:
+`SK1071` requires at least one member to be carried across, so what it emits always assigns fewer
+than all of them (`sk1071_output_is_not_reported.cs`). Disjointness from `SK0230` is by construction
+— `SK0230` reports an initializer that assigns nothing, this one requires an assignment per
+positional parameter — and `empty_initializer_is_sk0230.cs` asserts it.
+
+`SK2241` `malformed-regex-pattern` — a compile-time-constant pattern passed to a `Regex` API that
+will refuse to parse it, so the call throws the first time the line runs. ⚠ **The oracle is `Regex`
+itself.** The analyzer constructs the pattern with the same options the call passes and reports what
+the constructor threw, so the rule cannot disagree with the runtime whose behaviour it predicts and
+it needs no regex parser of its own — which is what issue #48 assumed it would need. Construction
+parses and does not match, so no pattern can make the analyzer backtrack, and `RegexOptions.Compiled`
+is stripped first because it emits IL and cannot change whether a pattern parses.
+
+⚠ **Only the parse-failure half ships, and the "suspicious" half is declined rather than deferred.**
+Redundancy and oddity in a pattern are a judgement; the one half of that with an objective test —
+catastrophic backtracking — is already `SK5010`'s. What is left here has no judgement in it at all.
+
+`SK2242` `deferred-argument-check` — an iterator method that validates an argument before its first
+`yield`, so the exception is raised by whatever later enumerates the result rather than by the call
+that passed the bad argument. ⚠ **`yield` anywhere in the body makes the whole method lazy**,
+including the statements above the `yield`, which is what makes this decidable rather than a
+heuristic: there is no execution in which the guard runs at call time. Report-only, because the
+repair splits one method into two and the name, accessibility and placement of the second are design
+decisions with no signal in the source. It is disjoint from `SK3030` by node kind: `SK3030` reports a
+*call site* that drops an async iterator, this reports a *declaration*.
+
+⚠ **The `async` half of #189 is measured out rather than deferred, and upstream reached the same
+place independently.** An `async` method's exception does land on the returned task, but the
+overwhelming majority of call sites `await` in the statement that makes the call, where it surfaces
+exactly where it would have anyway. SonarQube publishes the two halves as separate rules and puts
+only the iterator one, `S4456`, in its default `Sonar way` profile; the `async` rule `S4457` is
+excluded from it. An `async` **iterator** is still reported, because there the deferral belongs to
+the iterator rather than to the `async` machinery.
+
+### Refuted: #273 and #263
+
+⚠ **Two of the five were refuted, and a refutation is the outcome here rather than a shortfall.**
+Both were proposed with "⚠ none proposed" against the fix column and both turn out to lack a
+predicate that separates the defect from the idiom.
+
+⚠ **#273 — the nested collection initializer — is refuted because its shape is the *only* way to
+populate a get-only collection property**, which is what most instances of it are. `new Foo { Items
+= { 1, 2 } }` calls `Add` on whatever `Items` already returns rather than assigning it, and that is
+genuinely surprising when read as an assignment; but where `Items` has no setter it is the correct
+and only spelling, and where it has one the author may still have meant exactly what they wrote.
+The narrow decidable defect underneath it — a settable auto-property with no initializer and no
+constructor assignment, where the nested initializer is a guaranteed `NullReferenceException` — is a
+different and much smaller rule than the issue describes, needs whole-type constructor analysis to
+be sound, and is not what #273 asked for. Recorded rather than built.
+
+⚠ **#263 — the effect-free `void` method — walks into the wall `SK6050` already documented, and the
+wall is the same one.** `SK6050` ships `private`-only for a stated reason: *there is no predicate
+over a visible method that separates a placeholder from a deliberate no-op.* An empty `void` method
+has strictly less signal than a constant-returning one, not more — a `virtual` hook meant to be
+overridden, an interface implementation with nothing to do, a `[Conditional]` target and a
+deliberate null-object are all correct and all indistinguishable from a stub. Restricting to
+`private` the way `SK6050` does would leave the empty private method, which is already `SK6050`'s
+neighbour in spirit and is the case a reader spots unaided. No id is allocated for either concept:
+ADR-012 makes an id permanent, and a number taken for a rule nobody has specified is a number that
+cannot be given back.
+
+### The measurement
+
+`skala check --load=binlog --binlog … --require-fresh-binlog --no-cache`, against a Release CLI
+rebuilt for the run, over one project per library created outside this repository with empty
+`Directory.Build.props`/`.targets` above it.
+
+⚠ **The corpus keeps three variants of every file and compiling all three is what produces the
+spurious duplicate-member flood.** `X.cs`, `X.expected.cs` and `X.arranged.expected.cs` are the
+formatter's input and its two oracles; putting all three in one project gave **7 920 `CS0111` and
+1 380 `CS0101` on Vixen alone**, and keeping only the originals removes both entirely. Any finding
+count taken without that step is also three times the real one.
+
+⚠ **A bare project has `ImplicitUsings` off and the corpus assumes it on.** Enabling it on Vixen
+takes `CS0246` from **9 146 to 7 856** and removes all 16 `CS0066`. What is left is missing package
+references the extracted sources never carried, which no project setting can supply.
+
+| tree | files | `CS` | Skala findings | distinct rules | `SK2240` | `SK2241` | `SK2242` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Vixen | 200 | 11 113 | 313 | 25 | 0 | 0 | 0 |
+| Serilog | 70 | 1 125 | 155 | 22 | 0 | 0 | 0 |
+| Newtonsoft.Json | 110 | 2 619 | 297 | 39 | 0 | 0 | 0 |
+| rest of the corpus | 1 265 | 48 665 | 2 329 | 62 | 0 | 0 | 0 |
+
+**`SK9021` is zero on all four**, which is what makes the zeros above claims about the whole tree:
+every `.cs` file under each project was named by the recorded compilation, so nothing was silently
+outside it. `SK9030` is zero — no analyzer crashed — and `SK9010` is zero, so nothing was skipped as
+unparseable.
+
+⚠ **The instrument was verified before any zero was believed.** A file declaring one instance of
+each of the three shapes was planted in the Vixen project, the binlog rebuilt `--no-incremental`,
+and `skala check` re-run: all three fired, with the right messages and the right locations. It was
+deleted afterwards. Without that step "the shape is not there" and "the analysis never ran" are the
+same reading.
+
+**Every zero is then classified by widening each rule to its bare shape**, with a second
+implementation written separately from the analyzers so that "the guard declined it" is not being
+proved by the code under test:
+
+- **`SK2240` — shape present in quantity, correctly declined.** 472 `with` expressions across the
+  four trees and Skala's own source. The dominant reason is the receiver: **361 of the 472** have a
+  receiver that is not a simple name — `Fleet.Everything() with { … }`,
+  `FoliageEcology.Tree with { … }` — where the rewrite would drop an evaluation the original
+  performed. 36 more have a receiver that is not a local or a parameter, and 69 stand on a record
+  with no primary constructor. ⚠ **The rule's own question — is every positional member assigned —
+  is reached six times in everything measured, all six in Skala's own source, and declines all
+  six.** Its recall is therefore unmeasurable on the material available, exactly as `SK6050`'s is,
+  and that is stated rather than hidden behind the zero.
+- **`SK2241` — shape present, every instance well-formed.** 23 call sites pass a pattern; 21 of them
+  pass a compile-time constant and every one of those parses. The remaining two build the pattern at
+  runtime and decline.
+- **`SK2242` — shape absent.** 72 iterator methods across everything measured, and **not one of them
+  validates an argument at all**, before or after its first `yield`. The zero is the absence of the
+  guard, not a rule declining to report one.
+
+### Refuted, with the measurement
+
+⚠ **#263's bare shape has 94 instances in real code and not one of them is a placeholder.** Empty
+`void` methods: 17 in Vixen, 72 in Serilog, 2 in Newtonsoft.Json, 3 in Skala's own source. **71 of
+Serilog's 72 are a single class** — `SilentLogger : ILogger`, whose entire purpose is to do nothing.
+Vixen's 17 are 11 `virtual`/`protected internal virtual` extension points and 6 interface
+implementations with nothing to do. ⚠ **Not one instance anywhere is `private`**, which settles it:
+`SK6050`'s escape hatch — restrict to the one accessibility where every caller is visible — would
+leave this rule with no instances at all, and removing that restriction leaves a rule whose every
+measured instance is correct code. That is the same wall, reached from the other side. (The rest of
+the corpus adds 324 more, 114 of them `private`, but those files are formatter fixtures rather than
+programs and are not evidence about how anybody writes.)
+
+⚠ **A classifier written for this measurement got Serilog's 72 wrong, and only the raw listing
+caught it.** It put all 72 in "visible, none of the above" because `ILogger` does not resolve in a
+tree carrying 1 125 `CS` errors, so `FindImplementationForInterfaceMember` returns nothing for every
+one of them. The count was right and the reason was wrong — which would have made the refutation
+look weaker than it is, and is the same failure mode as a parity map keyed on a null id.
+
+⚠ **#273's bare shape is all but absent, so it could not be measured in either direction.** Nested
+collection initializers: 3 in Vixen, 6 in the rest of the corpus, and **0 in Serilog, 0 in
+Newtonsoft.Json and 0 in Skala's own source** — with all 9 standing on a target that does not
+resolve, so not even their get-only/settable split can be read. A rule whose shape does not occur in
+any tree available here cannot be given the false-positive story doc 08's bar asks for. The design
+argument above stands on its own and the count adds nothing to it, which is itself the answer.
+
+### One guard was found dead by its own sabotage
+
+⚠ **`SK2240`'s `assigned.Count != constructor.Parameters.Length` check is unreachable as a decision,
+and the sabotage sweep is what proved it.** Weakening it to `>` turned *nothing* red — no fixture
+changed verdict. The loop below it already looks every positional parameter up by name and returns
+when one is missing, so the count can only disagree when the initializer assigns a member that is
+not a positional parameter, and `WholeStateIsItsParameters` has already ruled that out by rejecting
+any settable member outside the parameter list. The check stays as a cheap early-out and its comment
+now says that is all it is, rather than reading as the guard it is not. ⚠ **A sabotage that turns
+nothing red is a finding about the code, not a gap in the fixtures**, and this one would have gone
+on looking like a load-bearing guard indefinitely.
+
+### The self-gate, and why the baseline was not touched
+
+⚠ **The self-gate fails, it failed before this batch, and updating the baseline here would have been
+the wrong repair.** `check --load=binlog --binlog artifacts/skala.binlog --require-fresh-binlog
+--gate=ci --duplication`, against a Release build made `--no-incremental`, reports **1 174 new
+findings against a baseline that accepts 433** and `metrics.duplication` at 12.94 against a limit of
+10.
+
+⚠ **`.skala/baseline.sarif` was last settled 424 commits ago** — at `cece8a48b`, since when roughly
+forty rules have shipped. The 1 174 is that drift, and the arithmetic says so: of the **105**
+`SK7020` duplication findings in the whole repository, **exactly one** names a file this batch added,
+and it is the `using` block and `Initialize` boilerplate that twelve other analyzers share verbatim.
+Two findings this batch did own — `SK7002` cognitive complexity of 16 on `SK2240`'s `Analyze` and 17
+on `RecordShape.WholeStateIsItsParameters` — were **split rather than accepted**, the way `25d4b4e7`
+split `SK2200`'s symbol walk, and both are gone from the run above.
+
+⚠ **The baseline settles after the last merge, not the first**, and nine other agents were working in
+parallel while this batch ran. A `baseline update` from inside one worktree bakes that worktree's
+tree into a file every other branch also touches, so it is left for whoever integrates last. What is
+recorded here instead is the attribution: this batch adds one duplication finding, of the kind every
+analyzer in the project already produces, and no new metric finding at all.

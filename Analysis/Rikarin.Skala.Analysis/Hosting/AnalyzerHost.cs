@@ -210,6 +210,8 @@ public static class AnalyzerHost {
         new SingleIterationLoopAnalyzer(), new IndexOfComparedToPositiveAnalyzer(),
         new DeadConditionalCallAnalyzer(), new UnsafeAccessorTargetAnalyzer(),
         new PartiallyCheckedOperatorAnalyzer(),
+        new WithExpressionRewritesAllAnalyzer(), new MalformedRegexPatternAnalyzer(),
+        new DeferredArgumentCheckAnalyzer(),
     ];
 
     /// <summary>

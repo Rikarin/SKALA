@@ -288,3 +288,6 @@ SK2213 | Skala.Correctness | Warning | The `IndexOf` result is compared to a pos
 SK2220 | Skala.Correctness | Warning | A conditionally compiled call under a directive that deletes it.
 SK2221 | Skala.Correctness | Error | The `[UnsafeAccessor]` names a member its target does not have.
 SK2222 | Skala.Correctness | Warning | `checked` is declared for some of the type's operators only.
+SK2240 | Skala.Correctness | Warning | The `with` expression rewrites every member.
+SK2241 | Skala.Correctness | Warning | The regular expression pattern does not parse.
+SK2242 | Skala.Correctness | Warning | The argument check does not run until the result is enumerated.

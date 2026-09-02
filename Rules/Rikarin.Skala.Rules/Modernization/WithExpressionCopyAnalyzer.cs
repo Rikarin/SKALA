@@ -86,7 +86,7 @@ public sealed class WithExpressionCopyAnalyzer : DiagnosticAnalyzer {
         }
 
         var record = constructor.ContainingType;
-        if (!IsARecordWhoseWholeStateIsItsParameters(record, constructor, cancellation)) {
+        if (!RecordShape.WholeStateIsItsParameters(record, constructor, cancellation)) {
             return;
         }
 
@@ -199,103 +199,6 @@ public sealed class WithExpressionCopyAnalyzer : DiagnosticAnalyzer {
         return model.GetSymbolInfo(member, cancellation).Symbol is IPropertySymbol { IsStatic: false }
             ? receiver
             : null;
-    }
-
-    /// <summary>
-    ///     ⚠ Whether the record's entire instance state is the positional parameters of this
-    ///     constructor, and every one of them is the auto-property the record synthesized.
-    /// </summary>
-    /// <remarks>
-    ///     This is the proof the rule rests on. <c>with</c> copies fields; the constructor call sets
-    ///     properties. Where the two sets are the same and the properties are the compiler's own, the
-    ///     rewrite cannot change what the object holds. Where they differ — an extra field, an
-    ///     inherited one, a hand-written accessor — it silently can.
-    /// </remarks>
-    static bool IsARecordWhoseWholeStateIsItsParameters(
-        INamedTypeSymbol record,
-        IMethodSymbol constructor,
-        CancellationToken cancellation
-    ) {
-        // ⚠ Unsealed is the trap: `x with { … }` returns x's *runtime* type through the virtual
-        // clone, and `new R(…)` returns exactly R.
-        if (!record.IsRecord
-            || !record.IsSealed
-            || record.BaseType is not (null
-                or { SpecialType: SpecialType.System_Object or SpecialType.System_ValueType })
-            || constructor.Parameters.Length == 0) {
-            return false;
-        }
-
-        // The primary constructor and no other: its declaring syntax is the record declaration
-        // itself, where a secondary constructor's is a `ConstructorDeclarationSyntax`.
-        if (constructor.DeclaringSyntaxReferences.Length != 1
-            || constructor.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is not RecordDeclarationSyntax) {
-            return false;
-        }
-
-        var positional = new HashSet<string>(System.StringComparer.Ordinal);
-        foreach (var parameter in constructor.Parameters) {
-            if (parameter.RefKind != RefKind.None || parameter.IsParams) {
-                return false;
-            }
-
-            // ⚠ The property has to be the one *this parameter* made, which is asked by comparing
-            // the two symbols' declaring syntax: a positional record property declares against the
-            // `ParameterSyntax` itself, and a hand-written one against a `PropertyDeclarationSyntax`.
-            // ⚠ `IsImplicitlyDeclared` is the obvious test and it is the wrong one — it is **false**
-            // for a positional record property, because the parameter is where it is written down.
-            // Reading it as true would have silently disabled the whole rule.
-            var named = record.GetMembers(parameter.Name);
-            if (named.Length != 1
-                || named[0] is not IPropertySymbol { IsStatic: false, IsIndexer: false, SetMethod: not null } property
-                || !SymbolEqualityComparer.Default.Equals(property.Type, parameter.Type)
-                || !DeclaredBy(property, parameter, cancellation)) {
-                return false;
-            }
-
-            positional.Add(parameter.Name);
-        }
-
-        foreach (var member in record.GetMembers()) {
-            cancellation.ThrowIfCancellationRequested();
-            switch (member) {
-                case IFieldSymbol { IsStatic: false, IsConst: false } field
-                    when field.AssociatedSymbol is not IPropertySymbol associated
-                    || !positional.Contains(associated.Name):
-                    return false;
-
-                case IEventSymbol { IsStatic: false }:
-                    return false;
-
-                case IPropertySymbol { IsStatic: false, IsIndexer: false, SetMethod: not null } property
-                    when !positional.Contains(property.Name):
-                    return false;
-            }
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    ///     Whether the property is the positional one this parameter declared.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ A positional record property and its parameter are <em>the same piece of source</em>: both
-    ///     symbols point at the one <see cref="ParameterSyntax" />. A property written out in the record
-    ///     body points at a <c>PropertyDeclarationSyntax</c> instead, and its accessor is called by
-    ///     <c>x.A</c> and not called by the copy constructor, which moves the backing field across
-    ///     without asking. Comparing the two declarations is the shortest way to say "the compiler wrote
-    ///     this one", and it is also why the rule only matches records declared in source: a record from
-    ///     metadata has no declaring syntax to compare, and nothing else in the symbol tells the two
-    ///     apart.
-    /// </remarks>
-    static bool DeclaredBy(IPropertySymbol property, IParameterSymbol parameter, CancellationToken cancellation) {
-        if (property.DeclaringSyntaxReferences.Length != 1 || parameter.DeclaringSyntaxReferences.Length != 1) {
-            return false;
-        }
-
-        return property.DeclaringSyntaxReferences[0].GetSyntax(cancellation) is ParameterSyntax declaration
-            && ReferenceEquals(declaration, parameter.DeclaringSyntaxReferences[0].GetSyntax(cancellation));
     }
 
     /// <summary>
