@@ -122,7 +122,8 @@ public sealed class BlockingOnAsyncAnalyzer : DiagnosticAnalyzer {
         var properties = ImmutableDictionary<string, string?>.Empty;
 
         // The fix exists only where `await` is already legal. See the type's remarks.
-        if (AsyncContext.IsInsideAsyncBody(node) && !Modernization.RewriteGuards.ContainsCommentOrDirective(node.SyntaxTree, node.Span)) {
+        if (AsyncContext.IsInsideAsyncBody(node)
+            && !Modernization.RewriteGuards.ContainsCommentOrDirective(node.SyntaxTree, node.Span)) {
             var replacement = producesValue && AsyncContext.NeedsParentheses(node)
                 ? "(await " + receiverText + ")"
                 : "await " + receiverText;

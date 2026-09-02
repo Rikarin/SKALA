@@ -89,8 +89,11 @@ public sealed class CorpusCrashTests {
     ///     <c>OpenDefectTests</c> instead. Including them here would assert that a known-open defect is
     ///     closed, and this suite would be red for a reason it is not about.
     ///     <para>
-    ///         ⚠ <b>The <c>.expected.cs</c> oracle fixtures are swept too, unlike everywhere else in
-    ///         the repository</b>, where they are the answer a measurement is compared against rather
+    ///         ⚠
+    ///         <b>
+    ///             The <c>.expected.cs</c> oracle fixtures are swept too, unlike everywhere else in
+    ///             the repository
+    ///         </b>, where they are the answer a measurement is compared against rather
     ///         than an input. Here they are just more C#: a fixture is <c>jb cleanupcode</c>'s
     ///         reformatting of the file beside it, which is a different token stream over the same
     ///         program, and trivia is precisely what <c>pathological/</c> is built to make hostile. It

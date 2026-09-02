@@ -92,8 +92,11 @@ public static class SkalaRule {
     ///     Maps a rule's declared <c>languageVersion</c> onto the Roslyn version it means.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>Public, and the <c>Try</c> shape, so that a test can ask the question the switch
-    ///     cannot ask about itself</b> — <c>RuleCatalogTests.EveryDeclaredLanguageVersion_IsRecognised</c>
+    ///     ⚠
+    ///     <b>
+    ///         Public, and the <c>Try</c> shape, so that a test can ask the question the switch
+    ///         cannot ask about itself
+    ///     </b> — <c>RuleCatalogTests.EveryDeclaredLanguageVersion_IsRecognised</c>
     ///     walks every distinct non-null <c>languageVersion</c> in <c>rules.json</c> through here and
     ///     names the value it could not map. Nothing asserted that before, and the table shipped
     ///     without a <c>"6.0"</c> arm while <c>SK1061</c> declared <c>6.0</c> as its floor (#296).
@@ -120,13 +123,19 @@ public static class SkalaRule {
     ///     ⚠ An unrecognised floor over-fires. It used to under-fire, which is worse.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>The old fallback was <see cref="LanguageVersion.Preview" />, so a floor the table did
-    ///     not name silenced its rule on every real project rather than on none.</b> The rule was still
+    ///     ⚠
+    ///     <b>
+    ///         The old fallback was <see cref="LanguageVersion.Preview" />, so a floor the table did
+    ///         not name silenced its rule on every real project rather than on none.
+    ///     </b> The rule was still
     ///     registered, still in the SARIF <c>rules[]</c>, still in <c>docs/rules/</c>, and reported
     ///     nothing anywhere — one typo in <c>rules.json</c> and a rule is dead with no error (#296).
     ///     <para>
-    ///         ⚠ <b>The fallback is <see cref="LanguageVersion.Default" /> rather than a throw, and the
-    ///         reason is this batch's own lesson.</b> <c>Parse</c> runs inside an analyzer callback, so
+    ///         ⚠
+    ///         <b>
+    ///             The fallback is <see cref="LanguageVersion.Default" /> rather than a throw, and the
+    ///             reason is this batch's own lesson.
+    ///         </b> <c>Parse</c> runs inside an analyzer callback, so
     ///         a throw here is not a loud failure — Roslyn catches it, reports <c>AD0001</c>, and drops
     ///         the analyzer for the rest of the compilation, which silences the rule *and* every other
     ///         rule that analyzer hosts while the run still reports success (#315, #298, #295).

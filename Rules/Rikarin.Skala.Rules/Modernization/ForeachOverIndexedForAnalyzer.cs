@@ -395,5 +395,4 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
 
         return null;
     }
-
 }

@@ -30,8 +30,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         guard is worth more than shipping all of it with a fix that breaks builds.
 ///     </para>
 ///     <para>
-///         ⚠ <b>That blocker is gone: <see cref="RewriteGuards.DeclaredWithin" /> is the inward guard,
-///         and it is what the cut half was waiting for.</b> The question
+///         ⚠
+///         <b>
+///             That blocker is gone: <see cref="RewriteGuards.DeclaredWithin" /> is the inward guard,
+///             and it is what the cut half was waiting for.
+///         </b> The question
 ///         <c>TooWideLocalVariableScope</c> could not ask — does the block I am about to push this
 ///         declaration into already declare the name, at any depth — is one call against the
 ///         destination block. ⚠ It is <em>not</em> on its own a complete case for shipping the rule:
