@@ -446,23 +446,14 @@ INERT = {
     # `MemberCanBeInternal.Global` was here and has been dropped from the map: the id was invented
     # (ReSharper has no `.Global` suffix on it) and it pointed at SK6002, which doc 08 allocates to
     # a different concept. #114 closed out of scope, so nothing will ever ship for it.
-    "AbstractTypeWithPublicConstructor": "invented; the real id is PublicConstructorInAbstractClass, "
-                                         "which is now mapped to SK6003 -- drop this one",
-    "CyclomaticComplexity": "invented; ReSharper has no complexity-threshold inspection. "
-                            "FunctionComplexityOverflow is 'body too complex to analyse', a "
-                            "different thing, so this is a drop and not a re-point",
-    "CognitiveComplexity": "invented; same as CyclomaticComplexity",
-    "ClosureAllocation": "invented; not in the 2026 dump under any name",
-    "ImplicitlyCapturedClosure": "real in older ReSharper, absent from this dump and the export",
-    "AsyncApostrophe": "invented",
-    "CommentTypo": "invented",
-    "CommentedOutCode": "invented",
-    "SelfAssignment": "invented; no C# inspection of this name in the dump",
-    "SimplifyLinqExpressionUseMinByMaxBy": "invented; the dump has UseAll and UseAny only",
-    "ThrowingSystemException": "invented",
-    "UnusedPragmaWarningRestore": "invented; RedundantDisableWarningComment is the nearest real "
-                                  "id and is a different concept (ReSharper's own disable comment)",
-    "UseSearchValues": "invented; no SearchValues inspection in the dump",
+    #
+    # ⚠ Eleven entries that used to be excused here have been **dropped from the map** by #318's
+    # adjudication, and two of the reasons written above them were wrong. See `OUTSIDE_BOTH`
+    # below for what replaced them and how each was decided.
+    "CyclomaticComplexity": "real ReSharper C# inspection, absent from jb 2025.2.6's dump and "
+                            "from the export -- see OUTSIDE_BOTH",
+    "CognitiveComplexity": "real ReSharper C# inspection, absent from jb 2025.2.6's dump and "
+                           "from the export -- see OUTSIDE_BOTH",
     # real id, but outside the measured universe, so it credits nothing either.
     "UseUtf8StringLiteral": "real in types-2026.xml, absent from editor_config_template, so no "
                             "universe row carries it",
@@ -477,31 +468,136 @@ INERT = {
 #    fabrications; 14 of those are real inspections that merely post-date the dump and carry a
 #    live `resharper_*_highlighting` key in the export. Checking against the XML would fail on
 #    correct entries, which is a worse instrument than the one it replaced.
-uni = universe_mod.build()
-if len(uni) < 500:
-    fail.append(f"the inspection universe built to {len(uni)} rows; that is not the universe, "
-                f"and the parity-map key check below would pass vacuously against it")
-uni_ids = {v["id"] for v in uni.values() if v["id"]}
-_snake = universe_mod.snake
-live = 0
-for iid in catalogued:
-    b = _snake(iid)
-    if iid in uni_ids or any(f"resharper_{b}_highlighting{s}" in uni
-                             for s in ("", "_highlighting")):
-        live += 1
-    elif iid not in INERT:
-        fail.append(f"catalogued.json: {iid!r} matches no row in the inspection universe, so "
-                    f"it credits {catalogued[iid]} with nothing. Verify the id against "
-                    f"editor_config_template -- an invented id is silently inert")
-for iid in sorted(set(INERT) - set(catalogued)):
-    warn.append(f"reconcile: {iid!r} is on the known-inert list and is no longer in "
-                f"catalogued.json -- delete its line from INERT")
-# ⚠ Report inert and excused separately. Printing one number for both let a newly added
-# bad entry read as one more of the ones already known about.
-inert_now = len(catalogued) - live
-print(f"parity map: {live} of {len(catalogued)} entries match a universe row "
-      f"({inert_now} inert, {len(set(INERT) & set(catalogued))} of them on the known list)")
-ran("parity-map key validity", f"{live} of {len(catalogued)} live, over {len(uni)} universe rows")
+#
+# ⚠ **The inputs are checked for presence, and their absence is a SKIP and not a pass.** That is
+#    not a reintroduction of the #311 hole, it is the repair of the last corner of it. #311 was a
+#    check that read `0 failures` when its input was gone. What stood here instead was a check
+#    that *crashed* on a missing `editor_config_template` (an unhandled FileNotFoundError, exit 1,
+#    no SKIP line, nothing in the register saying which check never ran) and, on a missing
+#    `types-2026.xml`, quietly carried on export-only and reported failures it had no grounds to
+#    report. Neither is a pass and neither said so in the register's own vocabulary. Both inputs
+#    are committed, so this path fires only if somebody deletes one -- and then it says which.
+TYPES_XML, EXPORT_FILE = universe_mod.TYPES_XML, universe_mod.EXPORT
+_missing_inputs = [p for p in (TYPES_XML, EXPORT_FILE) if not os.path.exists(p)]
+_how_missing = ("absent: " + ", ".join(os.path.relpath(p, REPO) for p in _missing_inputs)
+                + " -- both are committed; restore from git rather than regenerating")
+
+uni = universe_mod.build() if not _missing_inputs else {}
+if _missing_inputs:
+    skipped("parity-map key validity", _how_missing)
+else:
+    if len(uni) < 500:
+        fail.append(f"the inspection universe built to {len(uni)} rows; that is not the universe, "
+                    f"and the parity-map key check below would pass vacuously against it")
+    uni_ids = {v["id"] for v in uni.values() if v["id"]}
+    live = 0
+    for iid in catalogued:
+        if iid in uni_ids or any(k in uni for k in universe_mod.key_for(iid)):
+            live += 1
+        elif iid not in INERT:
+            fail.append(f"catalogued.json: {iid!r} matches no row in the inspection universe, so "
+                        f"it credits {catalogued[iid]} with nothing. Verify the id against "
+                        f"editor_config_template -- an invented id is silently inert")
+    for iid in sorted(set(INERT) - set(catalogued)):
+        warn.append(f"reconcile: {iid!r} is on the known-inert list and is no longer in "
+                    f"catalogued.json -- delete its line from INERT")
+    # ⚠ Report inert and excused separately. Printing one number for both let a newly added
+    # bad entry read as one more of the ones already known about.
+    inert_now = len(catalogued) - live
+    print(f"parity map: {live} of {len(catalogued)} entries match a universe row "
+          f"({inert_now} inert, {len(set(INERT) & set(catalogued))} of them on the known list)")
+    ran("parity-map key validity",
+        f"{live} of {len(catalogued)} live, over {len(uni)} universe rows")
+
+# (3b) ⚠ **Existence, against the UNION of the two inputs.** Check (3) above asks whether a key
+#      *credits* anything -- whether it joins to a row of the measured universe, which is the
+#      export alone. It cannot tell an id ReSharper has never had from one ReSharper has and the
+#      author's export happens not to carry. Those are different defects with different repairs:
+#      the first is a fabrication and the row must go, the second is a real inspection the
+#      measurement cannot see and the row is evidence worth keeping.
+#
+#      ⚠ **`types-2026.xml` alone is the wrong reference, and #318 was filed measuring against
+#      it.** That reported 29 of the map's keys as fabrications (26 at first, on a substring test
+#      that also miscounted -- see `universe.issue_type_ids`). Ten of the 29 are real, live,
+#      correctly mapped inspections that simply post-date the dump and carry a
+#      `resharper_*_highlighting` key in the export: `ConvertToExtensionBlock` and
+#      `MoveToExtensionBlock` are C# 14 extension blocks, and `ShortLivedHttpClient`,
+#      `EscapedKeyword`, `TemplateIsNotCompileTimeConstantProblem` and the rest are ordinary
+#      current inspections. **An assert-against-the-XML check would have failed on correct
+#      entries** -- a worse instrument than none, because it trains the reader to ignore it.
+#
+#      So: a key is defensible if EITHER input knows it. A key **neither** knows is the defect.
+#
+#      This check subsumes nothing and replaces nothing. It runs beside (3) because the two ask
+#      different questions and a row can fail either independently.
+OUTSIDE_BOTH = {
+    # ⚠ Real ReSharper C# inspections that neither committed input carries. Both were on the
+    # known-inert list marked "invented", and **both of those notes were wrong** -- refuted by
+    # JetBrains' own settings file, `JetBrains/resharper-ultimate-whatsnew/Inspections.DotSettings`,
+    # which sets `InspectionSeverities/=CyclomaticComplexity` to WARNING and, three lines up,
+    # `CodeInspection/CyclomaticComplexityAnalysis/Thresholds/=CSHARP` to 7. A threshold keyed on
+    # CSHARP is not something a C++-only inspection has.
+    #
+    # Neither id occurs in a single byte of the 935 MB `jetbrains.resharper.globaltools 2025.2.6`
+    # payload (`grep -rla`, with 28 of 30 sampled known-live ids found by the same grep; the two
+    # misses were `.`-suffixed variants like `UseMethodAny.1`, whose base id *is* found). So they
+    # are real, and they are not in the command-line tool this dump came from -- the IDE surface
+    # is wider than `jb inspectcode --dumpIssuesTypes`, which is the same reason `CommentTypo` is
+    # missing from the dump while the bundled ReSpeller assembly declares it.
+    #
+    # ⚠ **Where the check should look to retire these two lines:** a `.DotSettings` or
+    # `.editorconfig` exported from **Rider**, not a `jb inspectcode --dumpIssuesTypes`. Refresh
+    # `editor_config_template` from a Rider export and both should appear, at which point they
+    # join the universe, `INERT` loses them too, and this list should be empty.
+    "CyclomaticComplexity": "real; JetBrains' own Inspections.DotSettings sets it WARNING beside "
+                            "a CyclomaticComplexityAnalysis threshold keyed on CSHARP. Absent "
+                            "from jb 2025.2.6 (dump and binaries) and from the export",
+    "CognitiveComplexity": "real; set in current third-party C# .DotSettings including "
+                           "dotnet/ResXResourceManager and a Rider global-settings export. "
+                           "Absent from jb 2025.2.6 (dump and binaries) and from the export",
+}
+if _missing_inputs:
+    skipped("parity-map key existence (union)", _how_missing)
+else:
+    _xml_ids = universe_mod.issue_type_ids()
+    _ec_keys = universe_mod.export_keys()
+    # Anti-vacuity, and deliberately separate from the missing-input skip above: a *present but
+    # truncated* input is the failure a presence test cannot see. An empty XML makes every key
+    # fall through to the export, and an empty export makes the union the XML alone -- which is
+    # precisely the wrong instrument this check exists to avoid being.
+    if len(_xml_ids) < 1000 or len(_ec_keys) < 500:
+        # ⚠ Both a failure AND a skip. The failure says the data is wrong; the skip is what keeps
+        # this check's name out of the "ran" column, because it did not. Recording only the
+        # failure would have printed `N failures` for a check that never executed a comparison --
+        # the #311 shape wearing the opposite sign.
+        fail.append(f"the union inputs built to {len(_xml_ids)} issue types and {len(_ec_keys)} "
+                    f"export keys; that is not both inputs, and the existence check below would "
+                    f"pass vacuously or fail wholesale against them")
+        skipped("parity-map key existence (union)",
+                f"inputs present but truncated: {len(_xml_ids)} issue types, "
+                f"{len(_ec_keys)} export keys")
+    else:
+        known = 0
+        for iid in sorted(catalogued):
+            if iid in _xml_ids or any(k in _ec_keys for k in universe_mod.key_for(iid)):
+                known += 1
+            elif iid not in OUTSIDE_BOTH:
+                fail.append(
+                    f"catalogued.json: {iid!r} is in neither types-2026.xml nor "
+                    f"editor_config_template, so no ReSharper version this repository can see "
+                    f"has ever had it. It credits {catalogued[iid]} with covering an inspection "
+                    f"that does not exist. Establish the real id and re-point the key, or drop "
+                    f"the row so the inspection returns to the measured gap -- do not add it to "
+                    f"OUTSIDE_BOTH without evidence that ReSharper really ships it")
+        for iid in sorted(set(OUTSIDE_BOTH) - set(catalogued)):
+            warn.append(f"reconcile: {iid!r} is excused as real-but-unlisted and is no longer in "
+                        f"catalogued.json -- delete its line from OUTSIDE_BOTH")
+        _residue = len(catalogued) - known
+        print(f"key union:  {known} of {len(catalogued)} entries are known to types-2026.xml "
+              f"({len(_xml_ids)} ids) or editor_config_template ({len(_ec_keys)} keys); "
+              f"{_residue} to neither, {len(set(OUTSIDE_BOTH) & set(catalogued))} excused")
+        ran("parity-map key existence (union)",
+            f"{known} of {len(catalogued)} known to one of the two inputs")
 print(f"shipped:   {len(shipped)} rules, {len(declaring)} declaring a resharperId, "
       f"{len(catalogued)} parity-map entries")
 print(f"coverage:  resharper {rs_complete} complete / {rs_partial} partial, "
