@@ -22,8 +22,11 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         <c>new int?(5)</c> and <c>new Nullable&lt;int&gt;(5)</c> — so both are covered.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Whether the wrapper converts nothing is a question about the position, not about the
-///         expression</b>, and the semantic model cannot be asked it.
+///         ⚠
+///         <b>
+///             Whether the wrapper converts nothing is a question about the position, not about the
+///             expression
+///         </b>, and the semantic model cannot be asked it.
 ///         <c>GetSpeculativeTypeInfo</c> at a position binds the operand as a <em>standalone</em>
 ///         expression, so for <c>new int?(5)</c> the operand's <c>ConvertedType</c> comes back
 ///         <c>int</c> — in every context, including the ones where the rewrite is correct. A guard
@@ -70,7 +73,8 @@ public sealed class RedundantNullableCreationAnalyzer : DiagnosticAnalyzer {
         }
 
         if (model.GetTypeInfo(creation.Type, cancellation).Type is not INamedTypeSymbol {
-                ConstructedFrom.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
+                ConstructedFrom.SpecialType: SpecialType.System_Nullable_T,
+                TypeArguments.Length: 1
             } nullable) {
             return;
         }
@@ -138,8 +142,8 @@ public sealed class RedundantNullableCreationAnalyzer : DiagnosticAnalyzer {
             // int?(5);` types `x` as `int?` and `var x = 5;` types it as `int`, and `GetTypeInfo` on
             // the `var` keyword answers `int?` for both, so only the syntax separates them.
             EqualsValueClauseSyntax {
-                    Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration }
-                } => !declaration.Type.IsVar && IsWritten(model, declaration.Type, nullable, cancellation),
+                Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration }
+            } => !declaration.Type.IsVar && IsWritten(model, declaration.Type, nullable, cancellation),
 
             // (2) A return position, under a member whose return type is written.
             ReturnStatementSyntax statement when statement.Expression == creation =>
@@ -228,8 +232,11 @@ public sealed class RedundantNullableCreationAnalyzer : DiagnosticAnalyzer {
     ///     wrapper reaches the same symbol.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>The parameter's type is not enough on its own, and that is the point of the second
-    ///     question.</b> With <c>void M(int x)</c> and <c>void M(int? x)</c> both in scope,
+    ///     ⚠
+    ///     <b>
+    ///         The parameter's type is not enough on its own, and that is the point of the second
+    ///         question.
+    ///     </b> With <c>void M(int x)</c> and <c>void M(int? x)</c> both in scope,
     ///     <c>M(new int?(5))</c> calls the second and <c>M(5)</c> calls the first — a behaviour change
     ///     hiding inside a deletion. So the call is rebuilt without the wrapper and rebound, and only
     ///     an identical symbol counts.
