@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 263 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 268 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -120,6 +120,11 @@
 <tr><td><a href="SK2113.html">SK2113</a></td><td>The service resolution is null-forgiven instead of required</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK2120.html">SK2120</a></td><td>A bitwise operator combines members of a consecutively numbered enum</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2121.html">SK2121</a></td><td>The <code>as</code> operator tests a conversion that always succeeds</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK2130.html">SK2130</a></td><td>A static field initializer reads a field declared below it</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2131.html">SK2131</a></td><td>The get-only property is never assigned</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2132.html">SK2132</a></td><td>The accessor uses another property's backing field</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK2133.html">SK2133</a></td><td>The called <code>partial</code> method has no implementation</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK2134.html">SK2134</a></td><td>Instance code writes to its own type's static field</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK2140.html">SK2140</a></td><td>The override declares a parameter default or <code>params</code> the call site will not use</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2141.html">SK2141</a></td><td>The argument replaces what the caller-info attribute would have supplied</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK2142.html">SK2142</a></td><td>The value passed for the parameter is overwritten before it is read</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
