@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
+using Rikarin.Skala.Rules.Async;
 using Rikarin.Skala.Rules.Metadata;
 using System;
 using System.Collections.Concurrent;
@@ -79,7 +80,7 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
                 var referenced = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
 
                 start.RegisterSyntaxNodeAction(
-                    context => RecordReference(context, referenced),
+                    context => AsyncSignature.RecordReference(context, referenced),
                     SyntaxKind.IdentifierName,
                     SyntaxKind.GenericName
                 );
@@ -156,35 +157,6 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
         public int Ordinal { get; }
 
         public bool Discarded { get; }
-    }
-
-    /// <summary>
-    ///     Records an identifier that names something as a value rather than calling it.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ The same two exclusions, and the same reasoning, as <c>AsyncSignature.RecordReference</c> —
-    ///     with one addition it does not need and this rule does. <c>GenericName</c> is watched as well
-    ///     as <c>IdentifierName</c>, because a generic method's method-group conversion spells
-    ///     <c>TryGet&lt;int&gt;</c>, which is a <see cref="GenericNameSyntax" /> and invisible to an
-    ///     identifier-only sweep. Losing that would leave the one hole the guard exists to close.
-    /// </remarks>
-    static void RecordReference(SyntaxNodeAnalysisContext context, ConcurrentDictionary<string, byte> referenced) {
-        var name = (SimpleNameSyntax)context.Node;
-
-        // `Foo()` — a direct call is not a method group and says nothing about a delegate.
-        if (name.Parent is InvocationExpressionSyntax invocation && ReferenceEquals(invocation.Expression, name)) {
-            return;
-        }
-
-        // `x.Foo()` — the same, one level in.
-        if (name.Parent is MemberAccessExpressionSyntax access
-            && ReferenceEquals(access.Name, name)
-            && access.Parent is InvocationExpressionSyntax outer
-            && ReferenceEquals(outer.Expression, access)) {
-            return;
-        }
-
-        referenced.TryAdd(name.Identifier.ValueText, 0);
     }
 
     /// <summary>

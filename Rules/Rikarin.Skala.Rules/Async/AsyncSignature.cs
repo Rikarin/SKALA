@@ -87,26 +87,34 @@ internal static class AsyncSignature {
     ///     offer to change it. Losing either exclusion silences the rule on every method that is also
     ///     called, which is nearly all of them.
     /// </remarks>
+    /// <remarks>
+    ///     ⚠ <c>SimpleNameSyntax</c> rather than <c>IdentifierNameSyntax</c>, so that a caller may
+    ///     register <c>GenericName</c> alongside <c>IdentifierName</c>: a generic method's method-group
+    ///     conversion spells <c>TryGet&lt;int&gt;</c>, which is a <see cref="GenericNameSyntax" /> and
+    ///     invisible to an identifier-only sweep. The two callers that register only
+    ///     <c>IdentifierName</c> are unaffected — every <c>IdentifierNameSyntax</c> is a
+    ///     <c>SimpleNameSyntax</c>. <c>SK2290</c> had its own copy of this method for exactly one
+    ///     reason, that widening, and <c>SK7020</c> reported the copy at 100 tokens.
+    /// </remarks>
     public static void RecordReference(
         SyntaxNodeAnalysisContext context,
         ConcurrentDictionary<string, byte> referenced
     ) {
-        var identifier = (IdentifierNameSyntax)context.Node;
+        var name = (SimpleNameSyntax)context.Node;
 
         // `Foo()` — a direct call is not a method group and says nothing about a delegate.
-        if (identifier.Parent is InvocationExpressionSyntax invocation
-            && ReferenceEquals(invocation.Expression, identifier)) {
+        if (name.Parent is InvocationExpressionSyntax invocation && ReferenceEquals(invocation.Expression, name)) {
             return;
         }
 
         // `x.Foo()` — the same, one level in.
-        if (identifier.Parent is MemberAccessExpressionSyntax access
-            && ReferenceEquals(access.Name, identifier)
+        if (name.Parent is MemberAccessExpressionSyntax access
+            && ReferenceEquals(access.Name, name)
             && access.Parent is InvocationExpressionSyntax outer
             && ReferenceEquals(outer.Expression, access)) {
             return;
         }
 
-        referenced.TryAdd(identifier.Identifier.ValueText, 0);
+        referenced.TryAdd(name.Identifier.ValueText, 0);
     }
 }

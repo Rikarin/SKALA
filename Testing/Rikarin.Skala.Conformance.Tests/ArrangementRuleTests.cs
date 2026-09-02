@@ -131,7 +131,7 @@ public sealed class ArrangementRuleTests {
     static string Declined(ArrangementResult result) {
         Assert.DoesNotContain(
             result.Diagnostics,
-            diagnostic => diagnostic.Id is ArrangeIds.Reverted or ArrangeIds.SymbolChanged
+            static diagnostic => diagnostic.Id is ArrangeIds.Reverted or ArrangeIds.SymbolChanged
         );
 
         Assert.NotEqual(ArrangementOutcome.Reverted, result.Outcome);

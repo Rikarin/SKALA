@@ -158,7 +158,8 @@ sealed class SkalaTools(string repositoryRoot) {
                     "The text does not parse and was left exactly as it is (SK9010). "
                     + string.Join(" ", result.Diagnostics.Select(static d => d.Message)),
                 FormatOutcome.VerificationFailed =>
-                    "SK9099: the formatter's output was not token-equivalent. Nothing was changed; this is a Skala bug.",
+                    "SK9099: the formatter's output was not token-equivalent. "
+                    + "Nothing was changed; this is a Skala bug.",
                 _ => result.Formatted
             };
         }

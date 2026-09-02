@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using System;
@@ -87,6 +88,52 @@ public static class SkalaRule {
 
         return !(csharp.LanguageVersion < Parse(floor));
     }
+
+    /// <summary>
+    ///     The two steps a LINQ rule takes before it sees a node: the language floor and the
+    ///     <c>Enumerable</c> lookup.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Extracted because <c>SK7020</c> reported <c>SK1084</c>'s copy and <c>SK1030</c>'s as a
+    ///     141-token clone — the token stream normalises every identifier to its kind, so two
+    ///     analyzers whose only difference is <c>ForEachStatement</c> against <c>InvocationExpression</c>
+    ///     are byte-identical to it and to a reader.
+    ///     <para>
+    ///         ⚠ Eleven analyzers resolve <c>System.Linq.Enumerable</c> and only these two matched: the
+    ///         rest interleave further lookups of their own, so this is deliberately <em>not</em> a
+    ///         universal registration path. Widening it to fit them would mean a parameter list longer
+    ///         than the code it replaces.
+    ///     </para>
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             <c>ConfigureGeneratedCodeAnalysis</c> and <c>EnableConcurrentExecution</c> cannot
+    ///             move in here
+    ///         </b>, and that is not a style preference: <c>RS1025</c> and <c>RS1026</c>
+    ///         look for those two calls <em>syntactically inside</em> <c>Initialize</c>, so hoisting
+    ///         them fails the build on every analyzer that delegates. Part of what <c>SK7020</c>
+    ///         measured is duplication Roslyn's own analyzers require.
+    ///     </para>
+    /// </remarks>
+    public static void RegisterWithEnumerable(
+        AnalysisContext context,
+        string? languageVersion,
+        SyntaxKind kind,
+        Action<SyntaxNodeAnalysisContext, INamedTypeSymbol> analyze
+    ) =>
+        context.RegisterCompilationStartAction(start => {
+                if (!MeetsLanguageVersion(start.Compilation, languageVersion)) {
+                    return;
+                }
+
+                var enumerable = start.Compilation.GetTypeByMetadataName("System.Linq.Enumerable");
+                if (enumerable is null) {
+                    return;
+                }
+
+                start.RegisterSyntaxNodeAction(node => analyze(node, enumerable), kind);
+            }
+        );
 
     /// <summary>
     ///     Maps a rule's declared <c>languageVersion</c> onto the Roslyn version it means.

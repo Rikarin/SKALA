@@ -73,22 +73,7 @@ public sealed class RedundantSequenceCallAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
-                if (!SkalaRule.MeetsLanguageVersion(start.Compilation, Rule.LanguageVersion)) {
-                    return;
-                }
-
-                var enumerable = start.Compilation.GetTypeByMetadataName("System.Linq.Enumerable");
-                if (enumerable is null) {
-                    return;
-                }
-
-                start.RegisterSyntaxNodeAction(
-                    context => Analyze(context, enumerable),
-                    SyntaxKind.InvocationExpression
-                );
-            }
-        );
+        SkalaRule.RegisterWithEnumerable(context, Rule.LanguageVersion, SyntaxKind.InvocationExpression, Analyze);
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context, INamedTypeSymbol enumerable) {
