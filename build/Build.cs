@@ -143,6 +143,34 @@ class Build : NukeBuild {
                              }) {
                         DotNetRun(settings => Format(settings, cli, RootDirectory / area));
                     }
+
+                    // ⚠ `arrange --check` was in no target at all, and two live `SK9098` bugs sat on
+                    // master because of it: nothing ever ran the command that produces the
+                    // reproduction. `format --check` above answers a different question — ADR-015 is
+                    // "Skala formats Skala", and arrangement is the other half of that claim.
+                    //
+                    // ⚠ It is ONE invocation over the root with an explicit workspace, not nine over
+                    // the areas like `Format` above. `--load=auto` means "one workspace target, else
+                    // loose", and none of those nine directories contains a `.slnx` — so the
+                    // per-area shape silently degrades to `loose`, which SKIPS every semantic rule.
+                    // Measured: nine directories reported 22 files and 666 in no compilation; the
+                    // root with `--load=workspace` reported 66 and 2. The cheaper-looking spelling
+                    // answers a third of the question and says nothing about the rest.
+                    DotNetRun(settings => settings
+                            .SetProjectFile(cli)
+                            .SetConfiguration(Configuration)
+                            .EnableNoBuild()
+                            .EnableNoRestore()
+                            .SetApplicationArguments(
+                                "arrange",
+                                "--check",
+                                "--quiet",
+                                "--load=workspace",
+                                "--project",
+                                Solution.Path,
+                                RootDirectory
+                            )
+                    );
                 }
             );
 
