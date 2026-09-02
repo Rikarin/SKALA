@@ -56,6 +56,13 @@ public sealed class RegexTimeoutTests {
     [InlineData(@"[(*+]+", "`(` and `*` inside a class are literals")]
     [InlineData(@"\(a+\)+", "escaped parentheses are not a group")]
     [InlineData(@"[]()]+", "a `]` straight after `[` is a literal, so the class runs to the second one")]
+    // ⚠ The three below were added because sabotaging the escape skip, the class skip and the
+    // leading-`]` rule each left every other case in this class green. In all three the scanner would
+    // read a group that is not there and report a pattern that cannot backtrack. They are the only
+    // cases that fail when those clauses are removed, and without them the clauses read as dead code.
+    [InlineData(@"\(a+)+", "the `(` is escaped, so the `)` closes nothing")]
+    [InlineData(@"[(]+)+", "the `(` is inside a class, so the `)` closes nothing")]
+    [InlineData(@"[](a+)+]", "a leading `]` is a literal, so the whole pattern is one class")]
     [InlineData(@"(?>a+)+", "an atomic group cannot be backtracked into")]
     [InlineData(@"(?=a+)b+", "a lookaround is skipped rather than modelled")]
     [InlineData(@"^(a+$", "unbalanced: the scanner fails closed")]
@@ -63,6 +70,33 @@ public sealed class RegexTimeoutTests {
     [InlineData(@"[a-z]+", "no group at all")]
     public void TheScanner_DeclinesWhatCannotBlowUp(string pattern, string why) =>
         Assert.True(Findings(pattern).Length == 0, $"reported `{pattern}`, but {why}.");
+
+    /// <summary>
+    ///     What the rule cannot read, it does not report on.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Both halves matter and they fail in opposite directions. An unknown *pattern* could be
+    ///     anything, and reporting it would be guessing; unknown *options* could carry
+    ///     `NonBacktracking`, so reporting would be reporting over the mitigation. The pattern in the
+    ///     second case is the one every "reads it" case above is built from, so the only thing keeping
+    ///     the rule quiet there is the options guard.
+    /// </remarks>
+    [Theory]
+    [InlineData("public static bool F(string s, string p) => Regex.IsMatch(s, p);")]
+    [InlineData("public static bool F(string s, RegexOptions o) => Regex.IsMatch(s, @\"^(a+)+$\", o);")]
+    public void TheRule_SaysNothingAboutWhatItCannotRead(string member) {
+        var source = "using System.Text.RegularExpressions;\npublic static class Probe {\n    " + member + "\n}\n";
+        var compilation = RuleFixtures.Compile(source, "probe.cs");
+
+        Assert.DoesNotContain(
+            compilation.GetDiagnostics(TestContext.Current.CancellationToken),
+            static d => d.Severity == DiagnosticSeverity.Error
+        );
+        Assert.DoesNotContain(
+            RuleFixtures.Analyze(compilation, Analyzers, TestContext.Current.CancellationToken),
+            static d => d.Id == RuleIds.RegexWithoutTimeout
+        );
+    }
 
     /// <summary>
     ///     ⚠ A crashed analyzer reports nothing, so every "declines" case above would pass on a rule
