@@ -248,3 +248,8 @@ SK2102 debugger-display-missing-member
 SK2103 duplicated-attribute
 SK2120 bitwise-operation-on-plain-enum
 SK2121 always-succeeding-as-operator
+SK2150 implicit-string-search-culture
+SK2151 invariant-culture-comparison
+SK2152 platform-dependent-path-comparison
+SK2153 queryable-degraded-to-enumerable
+SK2154 sort-without-ordering

@@ -164,6 +164,9 @@ public static class AnalyzerHost {
         new InvisibleCharacterAnalyzer(), new CaughtExceptionNotLoggedAnalyzer(),
         new LoggerForAnotherTypeAnalyzer(),
         new PlainEnumBitwiseAnalyzer(), new AlwaysSucceedingAsAnalyzer(),
+        new ImplicitStringSearchCultureAnalyzer(), new InvariantCultureComparisonAnalyzer(),
+        new PlatformDependentPathComparisonAnalyzer(), new QueryableDegradedToEnumerableAnalyzer(),
+        new SortWithoutOrderingAnalyzer(),
     ];
 
     /// <summary>

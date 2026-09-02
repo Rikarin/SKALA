@@ -225,5 +225,9 @@
   "RedundantSpreadElement": "SK1072",
   "UseEventArgsEmptyField": "SK1073",
   "BitwiseOperatorOnEnumWithoutFlags": "SK2120",
-  "TryCastAlwaysSucceeds": "SK2121"
+  "TryCastAlwaysSucceeds": "SK2121",
+  "StringLastIndexOfIsCultureSpecific.1": "SK2150",
+  "StringLastIndexOfIsCultureSpecific.2": "SK2150",
+  "StringLastIndexOfIsCultureSpecific.3": "SK2150",
+  "PossibleUnintendedQueryableAsEnumerable": "SK2153"
 }
