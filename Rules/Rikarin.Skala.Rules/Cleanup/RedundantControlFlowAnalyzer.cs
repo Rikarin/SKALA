@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Modernization;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Cleanup;
@@ -220,14 +221,23 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///     reported either; what <em>is</em> reported is an arm whose expression the trailing arm
     ///     repeats — <c>n switch { 1 =&gt; "a", 2 =&gt; "b", _ =&gt; "b" }</c> flags <c>2 =&gt; "b"</c>.
     ///     <para>
-    ///         ⚠ <b>Arms are taken from the bottom and the walk stops at the first disagreement</b>, and
-    ///         that is the correctness argument rather than an optimisation. Deleting arm <em>i</em> is
-    ///         safe only if everything matching its pattern lands on an arm producing the same value —
-    ///         which is exactly "every arm below it, down to the discard, has that value". A scan that
-    ///         reported any arm equal to the last one would be wrong on
-    ///         <c>{ 1 =&gt; "a", 2 =&gt; "b", _ =&gt; "a" }</c>, where deleting <c>1 =&gt; "a"</c> is
-    ///         still right but only because <c>1</c> does not match <c>2</c> — a fact this rule does not
-    ///         attempt to know.
+    ///         ⚠ <b>Only the unbroken run of agreeing arms directly above the discard, and that is the
+    ///         correctness argument rather than an economy.</b> Deleting arm <em>i</em> is safe only if
+    ///         everything matching its pattern lands on an arm producing the same value, which is
+    ///         exactly "every arm below it, down to the discard, agrees". A scan that reported any arm
+    ///         equal to the last one would be wrong on <c>{ 1 =&gt; "a", 2 =&gt; "b", _ =&gt; "a" }</c>,
+    ///         where deleting <c>1 =&gt; "a"</c> happens to be right but only because <c>1</c> does not
+    ///         match <c>2</c> — a fact this rule does not attempt to know.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>The whole run is one finding carrying one edit per arm, and both halves of that
+    ///         shape are forced by a test rather than chosen.</b> Reporting each arm separately fails
+    ///         <c>CleanupBatchTests.EveryFixture_ProducesTheExactCount</c>, which exists because a rule
+    ///         reporting one redundancy twice gives <c>skala fix</c> two edits for one finding.
+    ///         Reporting only the lowest arm and leaving the rest to the next pass fails
+    ///         <c>FixRoundTripTests</c>, because the fix's own output still carries the finding it
+    ///         uncovered — the "convergent sequence" argument that works for the <c>try</c> shapes next
+    ///         door does <em>not</em> transfer here, and it was written down before it was measured.
     ///     </para>
     ///     <para>
     ///         ⚠ <b>The whole-switch collapse is deliberately not offered.</b> ReSharper also reports
@@ -253,7 +263,16 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ The run of agreeing arms directly above the discard is ONE finding carrying one edit per
+        // arm, and both halves of that are forced by a test. Reporting each arm separately fails
+        // `CleanupBatchTests.EveryFixture_ProducesTheExactCount`; reporting only the lowest fails
+        // `FixRoundTripTests.ApplyingAFix_LeavesTheCodeCompilingAndTheRuleSilent`, because the fix's
+        // own output still carries the finding it uncovered. The composite edit is the only shape that
+        // is neither.
         var tree = context.Node.SyntaxTree;
+        var edits = new List<(TextSpan Span, string Text)>();
+        var topmost = last;
+
         for (var index = arms.Count - 2; index >= 0; index--) {
             var arm = arms[index];
 
@@ -263,24 +282,37 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
             if (arm.WhenClause is not null
                 || BindsAName(arm.Pattern)
                 || !SyntaxFactory.AreEquivalent(arm.Expression, last.Expression, topLevel: false)) {
-                return;
+                break;
             }
 
+            // ⚠ The span starts at the arm's first token, so a comment on the line *above* it is not
+            // in what the fix deletes and does not withdraw the finding — #302's lesson, and there is
+            // a positive fixture asserting exactly that.
             var span = TextSpan.FromBounds(arm.SpanStart, arms.GetSeparator(index).Span.End);
             if (RewriteGuards.ContainsCommentOrDirective(tree, span)) {
-                return;
+                break;
             }
 
-            context.ReportDiagnostic(
-                Diagnostic.Create(
-                    Descriptor,
-                    arm.GetLocation(),
-                    FixEdits.Pack((span, string.Empty)),
-                    "the arm below produces the same value for everything this pattern matches, so the "
-                    + "arm changes no result"
-                )
-            );
+            edits.Add((span, string.Empty));
+            topmost = arm;
         }
+
+        if (edits.Count == 0) {
+            return;
+        }
+
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                Descriptor,
+                topmost.GetLocation(),
+                FixEdits.Pack([.. edits]),
+                edits.Count == 1
+                    ? "the arm below produces the same value for everything this pattern matches, so "
+                    + "the arm changes no result"
+                    : $"the arm below produces the same value for everything these {edits.Count} "
+                    + "patterns match, so the arms change no result"
+            )
+        );
     }
 
     /// <summary>Whether the pattern introduces a name its arm's expression could be reading.</summary>

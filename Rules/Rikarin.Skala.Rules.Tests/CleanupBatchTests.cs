@@ -79,6 +79,17 @@ public sealed class CleanupBatchTests {
     // two edits whose composition is CS1524, and reporting one per pass leaves a finding standing on
     // the fix's own output.
     [InlineData("finally_empty_beside_a_rethrowing_catch", "only rethrows")]
+    // ⚠ The two shapes from #131 that were still open. `else` is reported on the branch's behaviour,
+    // never on the `else` block's contents; the switch arm is reported on the arm above the discard.
+    [InlineData("else_after_a_returning_branch", "the `if` branch always leaves")]
+    [InlineData("else_after_a_throwing_branch", "the `if` branch always leaves")]
+    [InlineData("else_after_a_continue", "the `if` branch always leaves")]
+    [InlineData("else_if_after_a_returning_branch", "the `if` branch always leaves")]
+    [InlineData("else_holding_an_embedded_statement", "the `if` branch always leaves")]
+    [InlineData("arm_repeats_the_discard_arms_value", "the arm below produces the same value")]
+    [InlineData("arm_repeats_a_non_literal_value", "the arm below produces the same value")]
+    [InlineData("two_repeating_arms_report_the_lower_one", "the arm below produces the same value")]
+    [InlineData("arm_with_a_comment_above_it", "the arm below produces the same value")]
     public void SK0240_ReportsTheShapeItMatched(string name, string sentence) {
         var finding = Assert.Single(
             Findings(Path.Combine(RuleFixtures.Root, "SK0240", "positive", name + ".cs"), "SK0240")
@@ -223,7 +234,7 @@ public sealed class CleanupBatchTests {
         Assert.Contains(comment, after, StringComparison.Ordinal);
     }
 
-    /// <summary>Each of <c>SK0241</c>'s five keywords, named by the sentence it reports.</summary>
+    /// <summary>Each of <c>SK0241</c>'s six keywords, named by the sentence it reports.</summary>
     [Theory]
     [InlineData("abstract_interface_method", "an interface member is abstract")]
     [InlineData("abstract_interface_property", "an interface member is abstract")]
@@ -234,6 +245,10 @@ public sealed class CleanupBatchTests {
     [InlineData("readonly_method_in_readonly_struct", "`readonly struct` is already `readonly`")]
     [InlineData("readonly_property_in_readonly_struct", "`readonly struct` is already `readonly`")]
     [InlineData("readonly_accessor_in_readonly_struct", "`readonly struct` is already `readonly`")]
+    // ⚠ #129's last modifier. `out` is the only implicitly-scoped parameter form; `scoped ref` and
+    // `scoped in` narrow the reference's own escape and have negative fixtures saying so.
+    [InlineData("scoped_on_an_out_parameter", "an `out` parameter is implicitly `scoped`")]
+    [InlineData("scoped_on_an_out_ref_struct_parameter", "an `out` parameter is implicitly `scoped`")]
     public void SK0241_ReportsTheKeywordItMatched(string name, string sentence) {
         var finding = Assert.Single(
             Findings(Path.Combine(RuleFixtures.Root, "SK0241", "positive", name + ".cs"), "SK0241")

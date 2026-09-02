@@ -298,5 +298,11 @@
  "EmptyNamespace": "SK0244",
  "RedundantAttributeSuffix": "SK0261",
  "RedundantAttributeUsageProperty": "SK0261",
- "ReplaceSequenceEqualWithConstantPattern": "SK1130"
+ "ReplaceSequenceEqualWithConstantPattern": "SK1130",
+ "RedundantIfElseBlock": "SK0240",
+ "RedundantSwitchExpressionArms": "SK0240",
+ "RedundantScopedParameterModifier": "SK0241",
+ "RedundantExtendsListEntry": "SK0280",
+ "RedundantSetsRequiredMembersAttribute": "SK0281",
+ "RedundantExplicitPositionalPropertyDeclaration": "SK0282"
 }

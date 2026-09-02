@@ -538,6 +538,12 @@ enclosing scope and so has to answer the name-collision question `RewriteGuards.
 for, and `RedundantSwitchExpressionArms`, which needs the exhaustiveness model none of these shapes
 ask for. Neither is refuted; neither has an id.
 
+⚠ **Both sentences in that paragraph were wrong and § `SK0280` below says how.** They were written
+without asking the oracle. `RedundantSwitchExpressionArms` is not about exhaustiveness at all — the
+shape that reading describes is CS8510, a compiler error — and `RedundantIfElseBlock` needs no
+collision analysis, only the declares-nothing test the sole-`catch` unwrap already uses. Both now ship
+inside `SK0240`, and **#131 is complete at thirteen of thirteen**.
+
 ### Cleanup — `SK0261`
 
 | ID | Rule | Scope | Fix |
@@ -594,6 +600,110 @@ through the batch. And the `is not IdentifierNameSyntax` restriction that
 `qualified_name_belongs_to_sk0243` covers cannot be removed without restructuring the method around a
 different node type, so no sabotage was run for it. Both fixtures assert the behaviour; neither has
 been shown to be the thing that produces it.
+
+### Cleanup — `SK0280`, `SK0281`, `SK0282`, and five inspections that took no id at all
+
+**Three new ids and five foldings**, which is what the residue of
+[#128](https://github.com/Rikarin/SKALA/issues/128),
+[#129](https://github.com/Rikarin/SKALA/issues/129),
+[#130](https://github.com/Rikarin/SKALA/issues/130),
+[#131](https://github.com/Rikarin/SKALA/issues/131) and
+[#134](https://github.com/Rikarin/SKALA/issues/134) came to once each inspection was measured rather
+than read.
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK0280` | The base list names an interface it already has | Semantic | safe |
+| `SK0281` | The attribute promises to set members that do not exist | Semantic | safe |
+| `SK0282` | The record writes out the property its parameter generates | Semantic | safe |
+
+⚠ **Four of the seven open inspections did not mean what the issue text suggested, and only running
+the oracle said so.** `jb` 2025.2.6 is installed, so ReSharper itself was asked rather than reasoned
+about — a step every earlier pass over this family skipped, which is why three of these entries had
+sat as "could not be identified from the export".
+
+- **`RedundantSwitchExpressionArms` is not about exhaustiveness.** Four readings were probed.
+  `b switch { true => 1, false => 2, _ => 3 }` is **CS8510, a compiler error**, not a lint finding; a
+  non-exhaustive switch whose arms all agree is **CS8509**. What ReSharper reports is an arm whose
+  value the arm below it repeats — `n switch { 1 => "a", 2 => "b", _ => "b" }` flags `2 => "b"`. It
+  needs no exhaustiveness model at all and folds into `SK0240` as a syntactic shape. ⚠ The claim
+  recorded above under `SK0260` — that it "needs the exhaustiveness model none of these shapes ask
+  for" — is **refuted**.
+- **`RedundantIfElseBlock` folds into `SK0240` too**, and it does not need
+  `RewriteGuards.WouldCollide` either: a block that declares nothing cannot collide with anything,
+  and the sole-`catch` unwrap next door already draws that line. ⚠ The claim recorded above that its
+  fix "has to answer the name-collision question `RewriteGuards.WouldCollide` exists for" is
+  **refuted** — the same guard `CanUnwrap` uses is enough, and it is cheaper.
+- **`RedundantScopedParameterModifier` folds into `SK0241`**, and is far narrower than its name.
+  Six spellings were probed and ReSharper reports only `scoped out` — `scoped ref`, `scoped in` and
+  `scoped` on a by-value `ref struct` are all declined, because `out` is the only implicitly-scoped
+  parameter form and `scoped` on a `ref`/`in` parameter narrows the reference's own
+  ref-safe-to-escape.
+- **`RedundantSetterValueParameterDeclaration` is Visual Basic.** ⚠ **Neither instrument named in the
+  brief can answer this**, and that is worth recording: `types-2026.xml` carries no language
+  attribute and mixes the languages freely — `RedundantEmptyCaseElse` ("Case Else") sits eleven lines
+  from the entry in question — and `editor_config_template` does the same, carrying
+  `resharper_redundant_me_qualifier_highlighting` (`Me` is VB's `this`). What settles it is the C#
+  grammar: an accessor has no parameter list, so there is no C# program in which an explicit `value`
+  parameter can be written. VB's `Set(ByVal value As String)` is the declaration the inspection is
+  about. ⚠ The two earlier VB refutations in this family — `RedundantPropertyParentheses` and
+  `RedundantArrayLowerBoundSpecification` — rest on the same non-evidence and should be re-derived
+  from the grammar rather than from the export.
+- **`RedundantOverflowCheckingContext`, `RedundantFixedPointerDeclaration` and
+  `RedundantImmediateDelegateInvocation` are unreproduced**, which is a stronger statement than the
+  "could not be identified from the export" that stood before. Twenty-two candidate shapes were put
+  through `jb inspectcode` at `--severity=HINT` — eight for the overflow context (nested
+  `checked`/`checked` and `unchecked`/`unchecked`, blocks with no arithmetic, floating-point-only
+  arithmetic, constant expressions), eight for the fixed pointer (`&data[0]`, a fixed buffer through
+  a field, a `Span<T>`, a `string`, two declarators over one source, instance and static fields, an
+  unused pointer), six for the immediate invocation (`new Func<int>(() => 5)()`, `.Invoke()`, a cast
+  lambda, an anonymous method, a generic inference) — **and none of them fired**, on a run where
+  `RedundantIfElseBlock`, `RedundantSwitchExpressionArms`, `RedundantExtendsListEntry`,
+  `RedundantScopedParameterModifier`, `RedundantSetsRequiredMembersAttribute`,
+  `RedundantExplicitPositionalPropertyDeclaration`, `RedundantExplicitNullableCreation` and
+  `RedundantUnsafeContext` all did. The severity band was reached — `RedundantIfElseBlock` is a
+  `hint` and it fired — so these are declines rather than a silent instrument. No id is allocated for
+  a shape nobody has yet produced.
+- **`RedundantUnsafeContext` is half hosted, and the halves are not the ones the earlier note
+  assumed.** `IDE0380` "Remove unnecessary 'unsafe' modifier" is `IsEnabledByDefault: true` with
+  `DefaultSeverity: Hidden`, and it covers the **modifier** in all three shapes probed — including
+  the one with nothing unsafe inside it, not only the nested one. It does **not** cover the `unsafe`
+  **statement**: ReSharper reported `'unsafe' statement is redundant` at two nested `unsafe { }`
+  blocks that `IDE0380` said nothing about. That half is open and unhosted; it takes no id here
+  because it is one shape, in a construct the population Skala exists for does not write.
+- **`RedundantExplicitNullableCreation` is real, confirmed on both spellings, and is deferred with a
+  reason.** The fix replaces `new int?(5)` with `5`, which reproduces the original type only where
+  the target type is written: under `var` it silently narrows to `int`, and in an argument position
+  it moves overload resolution. ⚠ The obvious guard does not work, and the reasoning is `SK0234`'s:
+  `GetSpeculativeTypeInfo` at a **position** binds the operand as a standalone expression, so its
+  `ConvertedType` is `int` for every context including the ones where the rewrite is correct — a
+  guard that would withdraw every finding and look exactly like a rule with nothing to find. What it
+  needs is an explicit whitelist of written-type positions, and that is a separate piece of work.
+
+⚠ **`SK0280` deliberately ships less than its inspection, and the difference is correctness.**
+ReSharper flags an interface implied by the **base class** as well as one implied by another
+interface entry — measured: `class Reader : ReaderBase, IReader` where `ReaderBase : IReader` is
+reported. That entry is not redundant. Re-listing an interface on a derived type makes the derived
+type **re-implement** it, so the interface mapping is recomputed there and a member declared `new`
+becomes the implementation instead of the base's; deleting the entry changes which method an
+interface call reaches. Skala reports only the interface-implies-interface half, where the type has to
+implement the derived interface either way and the mapping is computed in the same place with or
+without the redundant name.
+
+⚠ **`class C : object` is not this finding**, and ReSharper does not report it either — probed in the
+same run, which is why the rule does not carry a shape somebody would otherwise add for symmetry.
+
+⚠ **None of the three is hosted, and the zeros are measured in both directions.** 442 descriptors
+were read out of SDK 10.0.400's analyzer assemblies — `Microsoft.CodeAnalysis.dll` loaded first
+behind an `AssemblyResolve` handler, without which `GetTypes()` throws and **every id reads absent**,
+which is indistinguishable from the ids not existing. Controls: `CA1051` is `True`/`Hidden` and
+`CA1401` is `True`/**`Info`** — ⚠ an earlier brief in this repository named `CA1401` as the
+`Hidden` control, and taking it as the gate would declare a working probe broken. Behaviourally, all
+120 `IDE` ids and all 320 `CA` ids were forced to `warning` with `EnforceCodeStyleInBuild=true`,
+`AnalysisMode=All` and `AnalysisLevel=latest-all`, in a fresh `classlib` outside this repository with
+empty `Directory.Build.props`/`.targets`; `IDE0055`, `IDE0160`, `IDE0290`, `IDE0380` and `CA1051` all
+fired, no `AD0001` was raised, and none of the three shapes was reported.
+
 ### Cleanup — `SK0250`
 
 **One rule, and it is here rather than folded into `SK0233` because the two answer to different
@@ -3208,8 +3318,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **357** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **321** | **90.7 %** |
+| Rules this document names | **360** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **324** | **90.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, then withdrawn or never built | **3** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
