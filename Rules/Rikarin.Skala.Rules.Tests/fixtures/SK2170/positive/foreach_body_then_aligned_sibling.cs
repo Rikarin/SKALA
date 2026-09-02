@@ -2,7 +2,7 @@ class C {
     void M(int[] data) {
         foreach (var value in data)
             Record(value);
-                Flush();
+            Flush();
     }
 
     static void Record(int value) { }

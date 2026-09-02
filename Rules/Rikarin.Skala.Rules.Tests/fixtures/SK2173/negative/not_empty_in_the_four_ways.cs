@@ -7,7 +7,7 @@ class C {
 
     bool Positional(Pair? pair) => pair is not (1, 2);
 
-    bool WithDesignation(object? value) => value is not { } bound && bound is null;
+    bool WithDesignation(object? value) => value is not { } bound;
 }
 
 sealed class Pair {

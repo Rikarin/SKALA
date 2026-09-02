@@ -205,6 +205,26 @@ HOSTED = {
     # partial indexers and partial constructors. Both are on at default warning levels. See
     # docs/plan/08 for the write-up and for the second thing that probe refuted.
     "PartialMethodParameterNameMismatch": "CS8826/CS9256",
+    # ⚠ Two more the *compiler* owns, and like `PartialMethodParameterNameMismatch` they land here
+    # rather than in `compiler()` because ReSharper files them under its own categories rather than
+    # under CompilerWarnings, so nothing above catches them and both were falling through to the
+    # Uncovered residue. Measured on SDK 10.0.400 while SK2170 and SK2171 were being written, and
+    # the first of the two reaches further than doc 17 supposed.
+    #
+    # `MisleadingBodyLikeStatement` -- an empty statement standing in for a body -- is `CS0642`,
+    # "possible mistaken empty statement", on by default. A nine-case probe read the warnings off
+    # the build: it fires for `if`, `else`, `lock`, `do`, `using` and `fixed` outright, and for
+    # `while`, `for` and `foreach` exactly when a block follows the `;`. That last clause is what
+    # matters -- `while (Step()) ;` alone is the idiomatic spin loop and is silent, and the same
+    # line followed by `{ … }` warns. So the compiler covers precisely the shape that misleads, and
+    # nothing was left for a rule to add. SK2170 ships the *indentation* half of the concept
+    # instead, which no compiler can see and which this inspection does not describe.
+    "MisleadingBodyLikeStatement": "CS0642",
+    # `LongLiteralEndingLowerL` is `CS0078`, "the 'l' suffix is easily confused with the digit '1'",
+    # on by default. The same probe confirms it fires on `1l` and on `1lu` and stays silent on
+    # `1ul`. SK2171 ships the sibling inspection the compiler does *not* cover, the `\x` escape
+    # whose length the next character decides.
+    "LongLiteralEndingLowerL": "CS0078",
 }
 HOSTED_BYKEY = bykey(HOSTED)
 

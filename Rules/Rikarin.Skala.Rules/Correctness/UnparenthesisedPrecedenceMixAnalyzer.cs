@@ -76,6 +76,19 @@ public sealed class UnparenthesisedPrecedenceMixAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ A shift under a bitwise operator is bit packing, and it is declined. `key << 8 |
+        // digest[i]` and `value << offset & mask` are how every byte of every buffer has ever been
+        // assembled, and no reader hesitates over them — the shift is visibly the thing being placed
+        // and the bitwise operator is visibly the thing placing it. Measured rather than reasoned:
+        // the rule without this line reports that shape once on Skala's own tree
+        // (`CorpusSample.KeyOf`) and once in `pathological/operators-crammed-together.cs`, and both
+        // are the idiom rather than the hazard. What is left is the pair the C precedence table
+        // actually catches people out on: arithmetic bound looser than the shift or mask that
+        // encloses it, and `&` bound tighter than `^` bound tighter than `|`.
+        if (innerFamily == PrecedenceFamily.Shift && parentFamily != PrecedenceFamily.Shift) {
+            return;
+        }
+
         // ⚠ A `(` and a `)` inserted on either side of an `#if` do not necessarily both survive into
         // the same compilation.
         if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, inner.Span)) {

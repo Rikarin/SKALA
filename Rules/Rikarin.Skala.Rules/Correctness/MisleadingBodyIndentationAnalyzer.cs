@@ -100,12 +100,17 @@ public sealed class MisleadingBodyIndentationAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        // The body is indented under the header, and the next statement is indented at least as far
-        // as the body — so the picture puts both inside a block that does not exist.
+        // The body is indented under the header, and the next statement is aligned with the body —
+        // so the picture puts both in a column, inside a block that does not exist.
+        //
+        // ⚠ Alignment, not "at least as deep", and the corpus is what settled it. The looser test
+        // reports four times on `unformatted/scramble/`, a slice whose whitespace has been
+        // randomised on purpose: there the following statement lands 2, 4 or 6 columns *past* the
+        // body, which reads as mangled or as a continuation and not as a sibling. All four are
+        // declined by asking for the column a reader would actually see.
         if (bodyIndent.Length <= headerIndent.Length
             || !bodyIndent.StartsWith(headerIndent, StringComparison.Ordinal)
-            || nextIndent.Length < bodyIndent.Length
-            || !nextIndent.StartsWith(bodyIndent, StringComparison.Ordinal)) {
+            || !string.Equals(nextIndent, bodyIndent, StringComparison.Ordinal)) {
             return;
         }
 

@@ -246,5 +246,7 @@
   "ForCanBeConvertedToForeach": "SK1083",
   "LoopCanBePartlyConvertedToQuery": "SK1084",
   "StaticMemberInitializerReferesToMemberBelow": "SK2130",
-  "UnassignedGetOnlyAutoProperty": "SK2131"
+  "UnassignedGetOnlyAutoProperty": "SK2131",
+  "VariableLengthStringHexEscapeSequence": "SK2171",
+  "SuppressNullableWarningExpressionAsInvertedIsExpression": "SK2172"
 }
