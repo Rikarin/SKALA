@@ -102,7 +102,12 @@ public static class PreprocessorFidelity {
         } finally {
             try {
                 scratch.Delete(true);
-            } catch (IOException) { }
+            } catch (IOException) {
+                // ⚠ Deliberate, and the `finally` is the reason. A scratch tree the build still has a
+                // handle on is a leaked temp directory the OS reclaims; rethrowing here would replace
+                // whatever exception is unwinding this `finally` with the cleanup's own, so the probe
+                // would report "could not delete" in place of the failure that actually stopped it.
+            }
         }
     }
 

@@ -259,6 +259,16 @@ public static class OptionDomain {
                 }
 
                 break;
+
+            case OptionValueKind.String:
+                // ⚠ Deliberately empty, and not the same "nothing" the arms above would have fallen
+                // through to. A free-form string option accepts every string — `NotAValue` is a legal
+                // value of it, which is exactly why it cannot be yielded here — so the illegal domain
+                // is genuinely empty and the caller must sweep no rejection case. Written out rather
+                // than left to a `default`, so that a kind added to `OptionValueKind` tomorrow is a
+                // compile-visible decision at this switch instead of silently inheriting "refuses
+                // nothing" (SK2009).
+                break;
         }
     }
 

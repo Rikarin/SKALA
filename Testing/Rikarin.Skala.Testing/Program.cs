@@ -1396,11 +1396,22 @@ static IReadOnlyList<string> Symbols() {
 static Rikarin.Skala.Options.FormattingOptions Resolve(string path) =>
     Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(path).Options;
 
-/// <summary>The memoised symbol set behind <c>Symbols()</c>.</summary>
-/// <remarks>
-///     ⚠ A holder type rather than a top-level local, because a top-level local is a local of the
-///     generated <c>Main</c> and a static local function may not capture one.
-/// </remarks>
-static class SymbolCache {
-    public static IReadOnlyList<string>? Value { get; set; }
+namespace Rikarin.Skala.Testing {
+    /// <summary>The memoised symbol set behind <c>Symbols()</c>.</summary>
+    /// <remarks>
+    ///     ⚠ A holder type rather than a top-level local, because a top-level local is a local of the
+    ///     generated <c>Main</c> and a static local function may not capture one.
+    ///     <para>
+    ///         ⚠ A block namespace rather than the file-scoped form every other file here uses, and not
+    ///         a style choice: this file's top-level statements are members of the generated
+    ///         <c>Program</c>, so a file-scoped namespace cannot open after them. Being in the global
+    ///         namespace instead was SK6030 — this assembly is an <c>Exe</c> that nothing references, so
+    ///         nothing downstream could collide, but the rule is about the name table and the fix costs
+    ///         two lines. The unqualified uses above keep resolving through this file's own
+    ///         <c>using Rikarin.Skala.Testing;</c>.
+    ///     </para>
+    /// </remarks>
+    static class SymbolCache {
+        public static IReadOnlyList<string>? Value { get; set; }
+    }
 }

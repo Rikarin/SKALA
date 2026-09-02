@@ -1299,7 +1299,12 @@ public static class PreferenceSweep {
         } finally {
             try {
                 scratch.Delete(true);
-            } catch (IOException) { }
+            } catch (IOException) {
+                // ⚠ Deliberate, and the `finally` is the reason. A scratch tree the oracle still has a
+                // handle on is a leaked temp directory the OS reclaims; rethrowing here would replace
+                // whatever exception is unwinding this `finally` with the cleanup's own, so the sweep
+                // would report "could not delete" in place of the failure that actually stopped it.
+            }
         }
     }
 
@@ -2333,7 +2338,7 @@ public static class PreferenceSweep {
     ///     the flat text the second one resumes relative to the landmarks the construct does know.
     /// </summary>
     static string Shape(Probe probe, string text) {
-        var lines = text.Split(" ⏎ ", StringSplitOptions.None);
+        var lines = text.Split(" ⏎ ");
         if (lines.Length < 2) {
             return "single/" + lines.Length.ToString(CultureInfo.InvariantCulture);
         }
@@ -2357,7 +2362,7 @@ public static class PreferenceSweep {
     static string Unfold(string text) =>
         string.Join(
             '\n',
-            text.Split(" ⏎ ", StringSplitOptions.None).Select(static line => line.TrimEnd())
+            text.Split(" ⏎ ").Select(static line => line.TrimEnd())
         );
 
     static string Markdown(Artefact artefact, string jsonName) {
