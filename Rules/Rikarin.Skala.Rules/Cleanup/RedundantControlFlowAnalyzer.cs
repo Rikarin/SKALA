@@ -13,9 +13,11 @@ namespace Rikarin.Skala.Rules.Cleanup;
 /// <summary><c>SK0240</c> — control flow that transfers to where control was already going.</summary>
 /// <remarks>
 ///     <para>
-///         Five shapes, one concept: a jump whose target is the next thing that would have happened
+///         Seven shapes, one concept: a jump whose target is the next thing that would have happened
 ///         anyway, a <c>default:</c> section that only breaks, a <c>case</c> label sharing its section
-///         with <c>default:</c>, a <c>catch</c> that only rethrows, and an empty <c>finally</c>.
+///         with <c>default:</c>, a <c>catch</c> that only rethrows, an empty <c>finally</c>, an
+///         <c>else</c> on a branch that never falls through, and a switch-expression arm whose value
+///         the arm below it already produces.
 ///     </para>
 ///     <para>
 ///         ⚠
@@ -71,6 +73,225 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
         context.RegisterSyntaxNodeAction(AnalyzeJump, SyntaxKind.ReturnStatement, SyntaxKind.ContinueStatement);
         context.RegisterSyntaxNodeAction(AnalyzeSwitch, SyntaxKind.SwitchStatement);
         context.RegisterSyntaxNodeAction(AnalyzeTry, SyntaxKind.TryStatement);
+        context.RegisterSyntaxNodeAction(AnalyzeIf, SyntaxKind.IfStatement);
+        context.RegisterSyntaxNodeAction(AnalyzeSwitchExpression, SyntaxKind.SwitchExpression);
+    }
+
+    /// <summary>
+    ///     An <c>else</c> hanging off a branch that never falls through.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The condition is about the <em>then</em> branch, not the <c>else</c>.</b> When the then
+    ///     branch always leaves — <c>return</c>, <c>throw</c>, <c>break</c>, <c>continue</c>,
+    ///     <c>goto</c> — nothing can reach the statement after the <c>if</c> except the path that
+    ///     already failed the condition, so <c>else</c> states a fact the control flow has already
+    ///     established. It is the shape a model writes most: the two branches are symmetric in the
+    ///     prompt, so they come out symmetric in the code.
+    ///     <para>
+    ///         ⚠ <b>The test is syntactic and therefore sound rather than complete.</b> A block whose
+    ///         last statement is a jump cannot fall out of its end; a block ending in something else
+    ///         may or may not, and is declined. Asking
+    ///         <see cref="SemanticModel.AnalyzeControlFlow(SyntaxNode)" /> instead would find more, and
+    ///         would make the whole of <c>SK0240</c> <c>requiresSemantics</c> — losing four shipped
+    ///         shapes on every loose load to gain the fifth's tail.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>A directive anywhere inside the then branch withdraws the finding.</b>
+    ///         <c>if (x) { #if TRACE return; #endif }</c> ends in a jump in one configuration and falls
+    ///         through in the other, and the parse this analyzer sees is one of the two. This is the
+    ///         only guard here that is about correctness rather than about text: the then branch is not
+    ///         deleted, so a comment in it is safe and does not withdraw anything.
+    ///     </para>
+    /// </remarks>
+    static void AnalyzeIf(SyntaxNodeAnalysisContext context) {
+        var statement = (IfStatementSyntax)context.Node;
+
+        // ⚠ A parent that is not a block cannot hold the extra statement an unwrap produces:
+        // `while (c) if (a) return; else b();` has exactly one embedded statement position.
+        if (statement.Else is not { } clause
+            || statement.Parent is not BlockSyntax
+            || !AlwaysLeaves(statement.Statement)
+            || !HasNoDirective(clause)
+            || HasDirectiveInside(statement.Statement)) {
+            return;
+        }
+
+        var tree = context.Node.SyntaxTree;
+        (TextSpan Span, string Text) edit;
+
+        if (clause.Statement is BlockSyntax block) {
+            // ⚠ Same escaping-locals rule as the sole-`catch` unwrap: a declaration, a local function
+            // or a label inside the block belongs to the block's scope, and splicing the contents into
+            // the enclosing block moves it out into a scope where it can collide.
+            if (block.Statements.Count == 0 || DeclaresSomething(block)) {
+                return;
+            }
+
+            // The braces and the keyword are what the splice deletes; the contents survive verbatim,
+            // so a comment inside the block must not withdraw the finding (#302).
+            if (RewriteGuards.ContainsCommentOrDirective(
+                    tree,
+                    TextSpan.FromBounds(clause.SpanStart, block.OpenBraceToken.Span.End)
+                )
+                || RewriteGuards.ContainsCommentOrDirective(
+                    tree,
+                    TextSpan.FromBounds(block.CloseBraceToken.SpanStart, clause.Span.End)
+                )) {
+                return;
+            }
+
+            edit = (
+                clause.Span,
+                tree.GetText(context.CancellationToken)
+                    .ToString(
+                        TextSpan.FromBounds(block.OpenBraceToken.Span.End, block.CloseBraceToken.SpanStart)
+                    )
+            );
+        } else {
+            // `else foo();` and `else if (…)` need no unwrap at all: only the keyword goes, and the
+            // embedded statement keeps whatever scope it had.
+            var span = TextSpan.FromBounds(clause.SpanStart, clause.Statement.SpanStart);
+            if (RewriteGuards.ContainsCommentOrDirective(tree, span)) {
+                return;
+            }
+
+            edit = (span, string.Empty);
+        }
+
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                Descriptor,
+                clause.ElseKeyword.GetLocation(),
+                FixEdits.Pack(edit),
+                "the `if` branch always leaves, so the statements after it are already the else case — "
+                + "`else` narrows nothing"
+            )
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ Whether control can reach the end of <paramref name="statement" />, answered on syntax.
+    /// </summary>
+    /// <remarks>
+    ///     Sound in the direction that matters: a <c>true</c> here is always right, because a jump is
+    ///     the last thing that runs. <c>false</c> is returned for everything else, including bodies
+    ///     that in fact never fall through — an <c>if</c>/<c>else</c> where both arms return, a
+    ///     <c>while (true)</c> with no <c>break</c>, an exhaustive <c>switch</c>. Those are missed
+    ///     findings, not wrong ones.
+    /// </remarks>
+    static bool AlwaysLeaves(StatementSyntax statement) => statement switch {
+        ReturnStatementSyntax or ThrowStatementSyntax => true,
+        BreakStatementSyntax or ContinueStatementSyntax or GotoStatementSyntax => true,
+        BlockSyntax { Statements.Count: > 0 } block => AlwaysLeaves(block.Statements[block.Statements.Count - 1]),
+        _ => false
+    };
+
+    static bool DeclaresSomething(BlockSyntax block) {
+        foreach (var inner in block.Statements) {
+            if (inner is LocalDeclarationStatementSyntax or LocalFunctionStatementSyntax or LabeledStatementSyntax) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     ⚠ Directives only — a comment inside a span the fix keeps is not a hazard.
+    /// </summary>
+    static bool HasDirectiveInside(SyntaxNode node) {
+        foreach (var trivia in node.DescendantTrivia(descendIntoTrivia: true)) {
+            if (trivia.IsDirective) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     A switch-expression arm whose value the arm below it already produces.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Measured against ReSharper 2025.2.6 rather than guessed at.</b> Four candidate readings
+    ///     of <c>RedundantSwitchExpressionArms</c> were put through <c>jb inspectcode</c>:
+    ///     <c>b switch { true => 1, false => 2, _ => 3 }</c> is <b>CS8510, a compiler error</b>, not a
+    ///     lint finding; a non-exhaustive switch whose arms all agree is <b>CS8509</b> and is not
+    ///     reported either; what <em>is</em> reported is an arm whose expression the trailing arm
+    ///     repeats — <c>n switch { 1 =&gt; "a", 2 =&gt; "b", _ =&gt; "b" }</c> flags <c>2 =&gt; "b"</c>.
+    ///     <para>
+    ///         ⚠ <b>Arms are taken from the bottom and the walk stops at the first disagreement</b>, and
+    ///         that is the correctness argument rather than an optimisation. Deleting arm <em>i</em> is
+    ///         safe only if everything matching its pattern lands on an arm producing the same value —
+    ///         which is exactly "every arm below it, down to the discard, has that value". A scan that
+    ///         reported any arm equal to the last one would be wrong on
+    ///         <c>{ 1 =&gt; "a", 2 =&gt; "b", _ =&gt; "a" }</c>, where deleting <c>1 =&gt; "a"</c> is
+    ///         still right but only because <c>1</c> does not match <c>2</c> — a fact this rule does not
+    ///         attempt to know.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>The whole-switch collapse is deliberately not offered.</b> ReSharper also reports
+    ///         "redundant arm<em>s</em>" plural where every arm agrees, and its fix replaces the switch
+    ///         with the value — which stops evaluating the governing expression. Here the arms go one at
+    ///         a time and <c>n switch { _ =&gt; "a" }</c> is where it stops: still a switch, still
+    ///         evaluating <c>n</c>, and nothing has been decided on the author's behalf.
+    ///     </para>
+    /// </remarks>
+    static void AnalyzeSwitchExpression(SyntaxNodeAnalysisContext context) {
+        var expression = (SwitchExpressionSyntax)context.Node;
+        var arms = expression.Arms;
+        if (arms.Count < 2) {
+            return;
+        }
+
+        var last = arms[arms.Count - 1];
+
+        // ⚠ The trailing arm has to match everything the arms above it could have matched, or deleting
+        // one of them changes which arm runs. `_ when c` is not total and neither is any pattern that
+        // tests a value.
+        if (last.Pattern is not DiscardPatternSyntax || last.WhenClause is not null) {
+            return;
+        }
+
+        var tree = context.Node.SyntaxTree;
+        for (var index = arms.Count - 2; index >= 0; index--) {
+            var arm = arms[index];
+
+            // ⚠ A `when` clause is an expression that runs, so an arm carrying one is not inert even
+            // when its value agrees; and a pattern that binds a name makes two syntactically identical
+            // expressions mean different things.
+            if (arm.WhenClause is not null
+                || BindsAName(arm.Pattern)
+                || !SyntaxFactory.AreEquivalent(arm.Expression, last.Expression, topLevel: false)) {
+                return;
+            }
+
+            var span = TextSpan.FromBounds(arm.SpanStart, arms.GetSeparator(index).Span.End);
+            if (RewriteGuards.ContainsCommentOrDirective(tree, span)) {
+                return;
+            }
+
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    Descriptor,
+                    arm.GetLocation(),
+                    FixEdits.Pack((span, string.Empty)),
+                    "the arm below produces the same value for everything this pattern matches, so the "
+                    + "arm changes no result"
+                )
+            );
+        }
+    }
+
+    /// <summary>Whether the pattern introduces a name its arm's expression could be reading.</summary>
+    static bool BindsAName(PatternSyntax pattern) {
+        foreach (var node in pattern.DescendantNodesAndSelf()) {
+            if (node is SingleVariableDesignationSyntax) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     static void AnalyzeJump(SyntaxNodeAnalysisContext context) {

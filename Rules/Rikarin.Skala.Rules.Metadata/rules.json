@@ -8584,6 +8584,84 @@
       "configuration": [
         "dotnet_diagnostic.SK1130.severity"
       ]
+    },
+    {
+      "id": "SK0280",
+      "concept": "redundant-base-list-entry",
+      "title": "The base list names an interface it already has",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantExtendsListEntry",
+      "resharperNote": "⚠ **Narrower than ReSharper's inspection, and the difference is a correctness argument rather than a scope cut.** `RedundantExtendsListEntry` reports two shapes and `jb inspectcode` 2025.2.6 was run on both: an interface implied by another *interface* in the same list (`class C : IDerived, IBase`), and an interface implied by the *base class* (`class D : B, IBase` where `B : IBase`). Skala ships only the first. Re-listing an interface on a derived class makes that class re-implement it, so the interface mapping is recomputed there — a member declared `new` in the derived class becomes the implementation instead of the base's, and deleting the entry silently changes which method an interface call reaches.\n\n⚠ **Nothing in the SDK hosts either shape, and the zero was measured.** Reading `IsEnabledByDefault`/`DefaultSeverity` out of SDK 10.0.400's analyzer assemblies gives 442 descriptors and none of them is this; a probe with all 120 `IDE` ids and all 320 `CA` ids forced to `warning`, `EnforceCodeStyleInBuild=true`, `AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on `class C : IDerived, IBase`, on a compilation where `IDE0055`, `IDE0160`, `IDE0380` and `CA1051` all fired and there was no `AD0001`.\n\n⚠ `class C : object` is **not** this finding. ReSharper does not report it either — probed in the same run.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A base list naming an interface that another entry in the same list already brings in.",
+      "rationale": "`class Buffer : IList<byte>, IEnumerable<byte>` says the same thing twice, and the second saying is the expensive one: a reader who knows `IList<T>` extends `IEnumerable<T>` has to stop and work out whether the author knew it too, or whether the second entry is there because something about this type is different. Nothing about it is. ⚠ The shape belongs disproportionately to generated code, because a model that has been asked for \"a list that can be enumerated\" writes down both nouns it was given.",
+      "examples": {
+        "bad": "interface IReader {\n    int Read();\n}\n\ninterface ISeekableReader : IReader {\n    void Seek(int offset);\n}\n\nsealed class FileReader : ISeekableReader, IReader {\n    public int Read() => 0;\n\n    public void Seek(int offset) { }\n}",
+        "good": "sealed class FileReader : ISeekableReader {\n    public int Read() => 0;\n\n    public void Seek(int offset) { }\n}"
+      },
+      "falsePositives": "⚠ **An interface implied by the *base class* is never reported**, only one implied by another interface written in the same list. Re-listing an interface on a derived type re-implements it there, so the interface mapping is recomputed in the derived type and a `new` member becomes the implementation — dropping the entry would change which method an interface call reaches. Where one interface entry implies another there is no such hazard: the type has to implement the derived interface either way, so the mapping is computed in the same place with or without the redundant name. ⚠ **A default interface member anywhere in the closure withdraws the finding.** Where an interface declares a member with a body, or re-abstracts one it inherited, the written interface set is part of deciding which implementation is most specific, and that is a question about method resolution rather than about duplication. ⚠ **A `[ComImport]` type is never reported**: the declared interface order is the vtable layout, so an entry that is redundant to C# is load-bearing to the marshaller. ⚠ **Explicit implementation does *not* withdraw it, and that is the shape most likely to be got wrong.** `void IBase.A()` needs `IBase` in the type's interface set, which it still is through the derived interface, so the code compiles and means the same thing; there is a fixture asserting it. ⚠ One entry is reported per declaration per pass: two deletions on one base list have disjoint spans but not independent commas, and the next pass over the fixed text sees the rest.",
+      "configuration": [
+        "dotnet_diagnostic.SK0280.severity"
+      ]
+    },
+    {
+      "id": "SK0281",
+      "concept": "redundant-required-members-attribute",
+      "title": "The attribute promises to set members that do not exist",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantSetsRequiredMembersAttribute",
+      "resharperNote": "⚠ **Not hosted, and the zero was measured rather than assumed.** Reading `IsEnabledByDefault`/`DefaultSeverity` out of SDK 10.0.400's analyzer assemblies gives 442 descriptors and none of them is this shape — an error log could not have answered it, because a `Hidden` rule and an absent one produce the same empty log. A behavioural probe with all 120 `IDE` ids and all 320 `CA` ids forced to `warning`, `EnforceCodeStyleInBuild=true`, `AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on a `[SetsRequiredMembers]` constructor of a type with no required members, on a compilation where `IDE0055`, `IDE0160`, `IDE0290`, `IDE0380` and `CA1051` all fired and no analyzer crashed. `jb inspectcode` 2025.2.6 reports it on the same file, and correctly declines the type that does have a required member.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`[SetsRequiredMembers]` on a constructor of a type that declares and inherits no `required` member.",
+      "rationale": "The attribute is a promise to the compiler — this constructor assigns every `required` member, so a caller need not use an object initializer. Against an empty set it promises nothing, and it is worse than noise in two directions: it tells a reader that requiredness is in play on this type when it is not, and it keeps compiling silently on the day somebody adds a `required` member that the constructor does not assign, which is the exact case the attribute exists to make loud. ⚠ Models apply it defensively, because it is the documented way to make a constructor and `required` coexist and the constructor is the part they were asked for.",
+      "examples": {
+        "bad": "using System.Diagnostics.CodeAnalysis;\n\nsealed class Options {\n    [SetsRequiredMembers]\n    public Options(string path) => Path = path;\n\n    public string Path { get; init; }\n}",
+        "good": "sealed class Options {\n    public Options(string path) => Path = path;\n\n    public string Path { get; init; }\n}"
+      },
+      "falsePositives": "⚠ **The base chain is part of the question, not a refinement of it.** `[SetsRequiredMembers]` covers the required members of the whole hierarchy, so a type with none of its own but a base that has one is doing exactly what the attribute is for. The walk runs to `object`; stopping at the declared type would have been this rule's worst false positive and there is a fixture for it. ⚠ **An error type anywhere in the base chain withdraws the finding.** A base class whose reference is missing binds to an error symbol whose member list is empty — indistinguishable from a base with no required members, and every inheriting constructor would become a false positive. ⚠ **The attribute's identity is asked, never its name**: a `SetsRequiredMembersAttribute` outside `System.Diagnostics.CodeAnalysis` means whatever its author made it mean. ⚠ The deleted span is the whole attribute list when this is its only attribute and the attribute plus a separating comma when it is not — `[]` and `[A, ]` are both parse errors, and a fix whose output does not parse means `SK9099` refuses to write the file.",
+      "configuration": [
+        "dotnet_diagnostic.SK0281.severity"
+      ]
+    },
+    {
+      "id": "SK0282",
+      "concept": "redundant-positional-property",
+      "title": "The record writes out the property its parameter generates",
+      "category": "Cleanup",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantExplicitPositionalPropertyDeclaration",
+      "resharperNote": "⚠ **Not hosted, measured the same way as `SK0280` and `SK0281`**: absent from all 442 descriptors read out of SDK 10.0.400's analyzer assemblies, and silent in a probe with all 120 `IDE` ids and all 320 `CA` ids at `warning` on a compilation where `IDE0055`, `IDE0160`, `IDE0290`, `IDE0380` and `CA1051` fired and no analyzer crashed. `jb inspectcode` 2025.2.6 reports it on the same file.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A property in a record body that restates, initializer included, the one its positional parameter already generates.",
+      "rationale": "`record Point(int X, int Y) { public int X { get; init; } = X; }` writes out character for character what the positional parameter already produces, and it costs a reader the same question every time: is this one different? ⚠ It belongs disproportionately to generated code — \"declare the properties\" is what most of a model's training data does, and the positional record is newer than most of that data, so the two forms arrive together.",
+      "examples": {
+        "bad": "record Point(int X, int Y) {\n    public int X { get; init; } = X;\n}",
+        "good": "record Point(int X, int Y);"
+      },
+      "falsePositives": "⚠ **Which accessor pair is generated depends on the record kind, and getting it wrong deletes a property that was doing something.** A `record class` and a `readonly record struct` generate `{ get; init; }`; a mutable `record struct` generates `{ get; set; }`. So `{ get; init; }` written on a mutable record struct is *not* redundant — it makes the property init-only, which the generated one is not — and it is declined. ⚠ **The initializer must be present and must be the parameter itself, asked of the symbol rather than of the spelling.** A hand-written positional property with no `= X` is not assigned by the generated constructor at all, so deleting it changes what the record stores; and `= X` binding to anything other than the primary constructor's parameter is a different program. ⚠ **An attribute, an accessor modifier, an accessor body, an expression body, a non-`public` or extra modifier, or a parameter carrying a default or an attribute all withdraw the finding**: the generated property has none of those, so anything written there is the author's. ⚠ The whole declaration is deleted with its leading trivia, so a documentation comment on it is a reason to leave it alone rather than something to remove.",
+      "configuration": [
+        "dotnet_diagnostic.SK0282.severity"
+      ]
     }
   ]
 }
