@@ -205,3 +205,8 @@ SK2071 | Skala.Correctness | Warning | The structured log template names the sam
 SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
 SK2073 | Skala.Correctness | Warning | The caught exception is not passed to the logger's exception parameter.
 SK7110 | Skala.Maintainability | Info | The logger is declared for a different type than the one that declares it.
+SK2160 | Skala.Correctness | Disabled | The clock is read from a static.
+SK2161 | Skala.Correctness | Warning | The `DateTime` has no time zone and is converted as if it had one.
+SK2162 | Skala.Correctness | Warning | The date or time `TryParse` has an implicit culture.
+SK2163 | Skala.Correctness | Warning | Elapsed time is measured with the wall clock.
+SK2164 | Skala.Correctness | Warning | The assertion's expression has side effects.

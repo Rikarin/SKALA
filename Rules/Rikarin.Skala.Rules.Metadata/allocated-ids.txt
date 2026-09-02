@@ -246,3 +246,8 @@ SK2100 ineffective-thread-static
 SK2101 pure-attribute-on-void
 SK2102 debugger-display-missing-member
 SK2103 duplicated-attribute
+SK2160 static-clock-read
+SK2161 unspecified-date-time-kind
+SK2162 implicit-date-parse-culture
+SK2163 wall-clock-elapsed
+SK2164 side-effect-in-assertion

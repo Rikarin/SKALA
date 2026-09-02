@@ -5947,6 +5947,143 @@
       "configuration": [
         "dotnet_diagnostic.SK7110.severity"
       ]
+    },
+    {
+      "id": "SK2160",
+      "concept": "static-clock-read",
+      "title": "The clock is read from a static",
+      "category": "Correctness",
+      "defaultSeverity": "none",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S6354"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A member reads DateTime.Now, DateTime.UtcNow, DateTime.Today or the DateTimeOffset equivalents from a static, so no caller and no test can give it a different time. Ships disabled; turn it on per path.",
+      "rationale": "A static clock read is a dependency the signature does not mention and the call site cannot replace. Code that depends on it can only be tested by waiting — which is what produces the `Thread.Sleep` that `SK8005` then reports — and by tests that pass in one time zone and fail in another. `TimeProvider`, .NET 8's answer, turns the read into an ordinary injected dependency: the test supplies the instant and the production path supplies `TimeProvider.System`.",
+      "examples": {
+        "bad": "public bool IsExpired(Token token) => token.ExpiresAt < DateTime.UtcNow;",
+        "good": "public bool IsExpired(Token token) => token.ExpiresAt < time.GetUtcNow();"
+      },
+      "falsePositives": "MEASUREMENT-PENDING",
+      "configuration": [
+        "dotnet_diagnostic.SK2160.severity (`none` by default; set it per path to enable)"
+      ]
+    },
+    {
+      "id": "SK2161",
+      "concept": "unspecified-date-time-kind",
+      "title": "The `DateTime` has no time zone and is converted as if it had one",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S6562",
+        "S6563",
+        "S6566"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A DateTime built by a constructor that takes no DateTimeKind — so its Kind is Unspecified — is passed to ToUniversalTime, ToLocalTime or a DateTimeOffset conversion, each of which has to invent the offset it was never given.",
+      "rationale": "`new DateTime(2026, 1, 2)` has `Kind = Unspecified`, which is not a time zone but the absence of one. Nothing goes wrong while the value is only compared with others of the same unstated zone; it goes wrong where something turns it into a fixed moment, because that conversion takes the missing offset from whichever machine is running. ⚠ **The two conversions assume opposite things about the same value**: `ToUniversalTime()` treats an `Unspecified` value as local and subtracts the machine's offset, `ToLocalTime()` treats it as UTC and adds it. One value, one `Kind`, two contradictory readings — which is why round-tripping correctly on the author's machine is not evidence of anything, and why the failure surfaces in one region, twice a year, in rows another process wrote.",
+      "examples": {
+        "bad": "var starts = new DateTime(2026, 3, 29, 2, 30, 0);\nrecord.StartsAtUtc = starts.ToUniversalTime();",
+        "good": "var starts = new DateTimeOffset(2026, 3, 29, 2, 30, 0, TimeSpan.Zero);\nrecord.StartsAtUtc = starts.UtcDateTime;"
+      },
+      "falsePositives": "⚠ **The rule reports the escape, never the value, because reporting every `DateTime` would be absurd.** A value whose zone nobody stated is not wrong while it is only compared with, formatted from or stored beside other values of the same unstated zone — that is a domain that does not model time zones, which is a decision rather than a defect. The finding is made at the one point where the value is turned into a fixed moment on the world's timeline, because that conversion has to supply an offset and takes it from whichever machine is running.\n\n**Three sinks, and only three**: `ToUniversalTime()`, `ToLocalTime()`, and the `DateTime`-to-`DateTimeOffset` conversion in both its spellings — `new DateTimeOffset(value)` and the implicit one the compiler inserts for `DateTimeOffset when = value;`. ⚠ **The implicit conversion needs the operation tree rather than the syntax**, because `DateTimeOffset when = built;` contains no `new` and no cast; it is also the commonest spelling of the defect, so a syntax-only rule would have been silent on the majority of it. A `DateTimeOffset` constructor that is handed an offset is silence: an offset that was written down is the repair.\n\n⚠ **`Kind` is proved from the constructor's parameter list, never guessed, and that is what keeps the false-positive rate at zero rather than merely low.** The only source treated as `Unspecified` is a `new DateTime(…)` whose overload takes no `DateTimeKind` — a property of the overload, so the tick-count, `Calendar` and `TimeOnly` constructors are all decided correctly without being listed. An argument spelled `DateTimeKind.Unspecified` is **not** reported: the author wrote the zone down, and the finding is about a zone nobody stated. A value arriving from a parameter, a field, a property, a parse or another assembly has a `Kind` nothing here can prove, and an unproved `Kind` is silence — which is the largest stated gap in the rule and the price of never guessing.\n\n**A local is read through only when it is assigned exactly once.** The search for a second write covers the whole enclosing member, which is wider than the local's scope; seeing a write that cannot reach the local makes the rule decline, and that over-approximation is the sound direction. Assignments, `ref`/`out` arguments and increment are all writes.\n\n⚠ **No fix, and the reason is that the fix is the finding.** The repair is to state which zone the value is in — `DateTimeKind.Utc`, `DateTimeKind.Local`, or a `DateTimeOffset` carrying a real offset — and nothing in the source says which one the author meant. An edit that picked `Utc` would be right about half the time and would silently change what the program means the other half, which is worse than the finding it removed.",
+      "configuration": [
+        "dotnet_diagnostic.SK2161.severity"
+      ]
+    },
+    {
+      "id": "SK2162",
+      "concept": "implicit-date-parse-culture",
+      "title": "The date or time `TryParse` has an implicit culture",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S6580"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A DateTime, DateTimeOffset, DateOnly, TimeOnly or TimeSpan TryParse is called on an overload with no IFormatProvider parameter, so the text is read in the process's ambient culture.",
+      "rationale": "`DateTime.TryParse(\"01/02/2026\", out var when)` returns `true` on every machine and a different day on some of them: the second of January in one culture, the first of February in another. Unlike a comparison that merely orders two strings oddly, the wrong answer here is a perfectly valid date, so nothing downstream can detect it — the record is filed under a day that never happened. ⚠ `SK2010` makes this argument for string comparison; dates are the case where the wrong answer still type-checks, still validates and still round-trips.",
+      "examples": {
+        "bad": "if (DateTime.TryParse(row[2], out var when)) {\n    order.PlacedAt = when;\n}",
+        "good": "if (DateTime.TryParse(row[2], CultureInfo.InvariantCulture, out var when)) {\n    order.PlacedAt = when;\n}"
+      },
+      "falsePositives": "⚠ **This is the quarter of issue #244 that has no host, and the boundary was measured on a pristine `net10.0` project rather than on this repository, which raises `AnalysisMode`.** `CA1305` — *Specify IFormatProvider* — ships in the SDK `IsEnabledByDefault: true` with `DefaultSeverity: Hidden`, so it never appears in a build until a repository raises it or opts into `AnalysisMode=Recommended`. Raised to `warning` on a probe, it reports `DateTime.Parse`, `DateTimeOffset.Parse`, `DateOnly.Parse`, `TimeOnly.Parse`, `TimeSpan.Parse`, `DateTime.ToString()`, `DateTime.ToString(string)`, `DateOnly.ToString()`, `TimeOnly.ToString()` and the `DateTimeOffset` equivalents — the whole `Parse` and `ToString` half of the concept, with the repaired forms correctly silent. On the same probe it reports **no `TryParse` form at all**: not `DateTime.TryParse`, not `DateTimeOffset.TryParse`, not `DateOnly.TryParse`, `TimeOnly.TryParse` or `TimeSpan.TryParse`. ADR-008 hosts `CA*` rather than rebuilding them, so what ships here is only that gap, and `S6585` — the formatting half — is deliberately not claimed.\n\n⚠ **The gap is larger in practice than in the rule list, because `TryParse` is the recommended form.** It is what gets written wherever input might be malformed, which is wherever input comes from outside the process — a CSV column, a query string, a config file, a header — and that is precisely where a date arrives written in somebody else's culture. The exception-throwing `Parse` that `CA1305` does cover is the rarer of the two in the code this analyzer exists for.\n\n**Only an overload with no `IFormatProvider` parameter is reported.** The test is on the parameter, not on the argument, so what the rule reports is the choice of an overload with nowhere to put a culture — the choice nobody makes on purpose. Every `TryParseExact` overload has the parameter and is therefore never reported.\n\n⚠ **An explicitly written `null` provider is deliberately not reported, and that is a judgement rather than an oversight.** `null` does mean the current culture, so it looks like the same defect; but the shape it appears in is almost always `TryParseExact` with a custom format string, and a custom format string decides for itself whether any culture-sensitive token is present. `\"yyyy-MM-dd\"` contains none — `-` is a literal — and is correct with a `null` provider; `\"d\"` and `\"MM/dd/yyyy\"` are not, because `/` is the culture's date separator. Reporting the class would be reporting the safe majority of it.\n\n**`TimeSpan` is covered alongside the four date types** because its parse reads the culture's decimal separator and `CA1305` leaves its `TryParse` uncovered in exactly the same way. All five types are matched by symbol and required to come from metadata, so a repository's own type of any of these names is never matched.\n\n⚠ **No fix, and `SK2010` is the precedent rather than an inconsistency.** The repair is to name a culture, and which one is the entire content of the finding: `CultureInfo.InvariantCulture` for a machine-readable timestamp, `CultureInfo.CurrentCulture` for something a person typed, and a named culture for a feed whose format is fixed by somebody else. `SK2010` declines to choose between ordinal, invariant and user-culture semantics for exactly this reason, and a date is the case where guessing wrong produces a valid answer nothing downstream can detect.",
+      "configuration": [
+        "dotnet_diagnostic.SK2162.severity"
+      ]
+    },
+    {
+      "id": "SK2163",
+      "concept": "wall-clock-elapsed",
+      "title": "Elapsed time is measured with the wall clock",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S6561"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A duration is computed by subtracting an earlier clock read from a later one, using a clock that an NTP correction or a DST transition can move backwards.",
+      "rationale": "`DateTime.Now` and `DateTime.UtcNow` track civil time, which is adjusted; they are not monotonic. An NTP correction moves the clock by the accumulated drift, in either direction, at a moment nobody chose, and `DateTime.Now` additionally jumps an hour twice a year. A duration measured across either is wrong by that amount and can be negative, so a guard written to catch a slow operation reports a fast one, a retry backoff computed from it collapses, and a timeout either fires at once or never. `Stopwatch` reads a monotonic counter that none of this touches, and the rewrite is mechanical.",
+      "examples": {
+        "bad": "var start = DateTime.UtcNow;\nDoWork();\nlogger.LogInformation(\"took {Elapsed}\", DateTime.UtcNow - start);",
+        "good": "var start = System.Diagnostics.Stopwatch.StartNew();\nDoWork();\nlogger.LogInformation(\"took {Elapsed}\", start.Elapsed);"
+      },
+      "falsePositives": "⚠ **Both ends must be this process's own clock reads, and that requirement is the whole rule.** `DateTime.UtcNow - order.PlacedAt` is \"how old is this order\", a legitimate question about civil time that a `Stopwatch` cannot answer at all; only when the earlier value also came from this program reading the clock is the subtraction a *measurement of elapsed time*. A rule that reported any `DateTime` subtraction would fire on every date calculation in every domain model, and would be switched off before it found anything.\n\n**The later end must be the clock read written in place.** `start - DateTime.UtcNow` is a negative duration and a different mistake; attaching this rule's message and this rule's fix to it would describe code it does not describe. Both operands must additionally have the same type, so the subtraction yields a `TimeSpan` and the replacement is type-identical. The `Subtract(start)` method spelling is matched as well as the operator, because it is the same operation.\n\n⚠ **The fix's preconditions are the rule's preconditions, deliberately, and that is what `hasFix: true` costs.** It is a promise about every finding rather than most of them, so a shape the fix cannot repair is a shape this rule does not report: the start must be a local, declared by a plain local declaration statement with exactly one declarator, assigned exactly once, and read exactly once — by this subtraction. ⚠ **A start time carried in a field or a property is the same defect and is not reported.** Repairing it means changing a declaration every other member can read, and ADR-005 makes a Skala fix a text-edit list against one file's original source; that is a stated gap, not a judgement that the shape is fine. A local read twice — measured against, and then logged — is excluded for the same reason: the second reader would keep the old type and stop compiling.\n\n**The fix writes `System.Diagnostics.Stopwatch.StartNew()` fully qualified and retypes the declaration to `var`**, so it needs no `using` the file may not have and no type name it could spell wrongly. ⚠ **`fixIsSafe: false` even though the edit is mechanical and type-safe.** It replaces a value-type local with a heap allocation, which is a change a hot path's author should see, and it changes what is being measured from civil time to monotonic time — which is the repair, and is still a thing a person reads before pushing.",
+      "configuration": [
+        "dotnet_diagnostic.SK2163.severity"
+      ]
+    },
+    {
+      "id": "SK2164",
+      "concept": "side-effect-in-assertion",
+      "title": "The assertion's expression has side effects",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3346"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An argument of a call to a [Conditional]-attributed method — Debug.Assert and Trace.Assert above all — assigns, increments, awaits or mutates a framework collection, so the effect happens only in the builds where the call survives.",
+      "rationale": "`[Conditional(\"DEBUG\")]` does not make the condition true in release; it deletes the call site, arguments and all. `Debug.Assert(pending.Remove(id))` therefore removes the entry in every debug run and in no release run. The bug exists only in production, vanishes under a debugger, and survives the test suite intact — because the suite is a debug build, so the effect is there and the assertion passes. It is the rare defect that running the code more carefully makes less visible.",
+      "examples": {
+        "bad": "Debug.Assert(pending.Remove(id));",
+        "good": "var removed = pending.Remove(id);\nDebug.Assert(removed);"
+      },
+      "falsePositives": "⚠ **The rule is on `[Conditional]`, not on a list of assertion methods, and the generalisation costs nothing.** `Debug.Assert` and `Trace.Assert` are the motivating case and by far the commonest, but the defect is a property of the attribute: a repository's own `[Conditional(\"TRACE\")]` logging helper deletes its arguments in exactly the same way, and a rule naming only the framework's two would be silent on the version somebody wrote themselves. The attribute is looked for on the method and on every method it overrides. The whole analyzer withdraws when `System.Diagnostics.ConditionalAttribute` does not resolve.\n\n⚠ **An xUnit, NUnit or MSTest assertion is out of scope by construction, which is the answer to the shape that would otherwise be this rule's worst false positive.** `Assert.True(map.TryGetValue(key, out var found))` is idiomatic and correct: none of the three frameworks marks its assertions `[Conditional]`, so the call is never deleted, the effect always happens, and there is nothing to report. The rule cannot reach that shape rather than reaching it and filtering it out — which also makes it disjoint from `SK8007`, whose subject is a test assertion consuming a live clock or an unseeded random value, a different question about a different set of calls.\n\n⚠ **What counts as a side effect is enumerated, never inferred.** \"Does this method mutate\" is undecidable, and a rule that guessed would report `Debug.Assert(list.Any())` and be switched off the same afternoon. Four kinds of evidence are accepted, each a fact about the syntax or about a framework symbol: an **assignment** in any spelling; an **increment or decrement**; an **`await`**, whose awaited work is what disappears rather than merely its result; and a call to a **framework collection member whose contract is to mutate**.\n\n⚠ **The collection namespaces are listed exactly, and `System.Collections.Immutable` is the reason.** A prefix test on `\"System.Collections\"` reads naturally and is wrong: `ImmutableList<T>.Add` and `ImmutableDictionary<K, V>.Remove` return a new collection and mutate nothing, so every one of them would be a false positive. `System.Collections.Frozen` is excluded for the same reason. The member must also come from metadata, so a source type's `Remove` is never matched — the rule cannot know what it does.\n\n⚠ **An `out var` was built as a fifth kind of evidence and then removed, because the compiler already reports it — and the refutation came from a fixture that would not compile rather than from an argument.** Where the variable is read below the assertion, deleting the call leaves it unassigned and the read is `CS0165`, *use of unassigned local variable*, in any build without the symbol defined; the harness's rule that a fixture which does not compile proves nothing is what surfaced it. docs/plan/08 § \"the compiler already says it\" then decides the question: a rule restating a compiler error adds a second voice and no information. Where the variable is not read, nothing is wrong at all — the value was never wanted. Both directions are now silence.\n\n**The walk descends into lambdas on purpose**: the whole argument is deleted, so an effect written inside a lambda the argument hands to `All` or `Any` is deleted with it, and stopping at the lambda boundary would be silent on the shape most likely to hide one. Every argument is inspected, not only the condition, because the call site is deleted whole. At most one finding is emitted per call.\n\n⚠ **No fix.** The two repairs are to hoist the effect into a local above the assertion and to delete the assertion, and choosing between them is the entire content of the finding — the question is whether the effect was meant to happen at all. The hoist additionally needs an identifier that does not exist yet, and inventing a name that cannot shadow a field, collide with a local or read as nonsense is not something an edit to one file's text can promise.",
+      "configuration": [
+        "dotnet_diagnostic.SK2164.severity"
+      ]
     }
   ]
 }

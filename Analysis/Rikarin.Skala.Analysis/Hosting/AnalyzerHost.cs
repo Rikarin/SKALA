@@ -163,6 +163,9 @@ public static class AnalyzerHost {
         new LogTemplateArgumentCountAnalyzer(), new LogTemplateDuplicatePropertyAnalyzer(),
         new InvisibleCharacterAnalyzer(), new CaughtExceptionNotLoggedAnalyzer(),
         new LoggerForAnotherTypeAnalyzer(),
+        new StaticClockReadAnalyzer(), new UnspecifiedDateTimeKindAnalyzer(),
+        new ImplicitDateParseCultureAnalyzer(), new WallClockElapsedAnalyzer(),
+        new SideEffectInAssertionAnalyzer(),
     ];
 
     /// <summary>
