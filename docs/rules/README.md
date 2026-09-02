@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 271 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 279 ids are allocated.
 
 ## Async
 
