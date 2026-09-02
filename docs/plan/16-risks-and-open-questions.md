@@ -667,7 +667,12 @@ absorb it. It should reference it: a canonical bump is a repository-wide reforma
 rule bump is not, and one version across both forces every repository to take the reformat to get a
 bug fix.
 
-### Q5 — Does the ReSharper severity mapping survive? — ✅ **resolved at M5: partly, and off by default**
+### Q5 — Does the ReSharper severity mapping survive? — ✅ **resolved twice, and the answer is no**
+
+⚠ **Read this heading before the section.** M5 answered "partly, and off by default" and shipped an
+opt-in bridge. That bridge has since been **removed entirely**, along with the `resharperId` field it
+depended on. The four findings below stand and are why; the "so the mechanism ships opt-in"
+paragraph at the end is superseded and is kept only as the record of what was tried.
 
 [03](03-configuration-model.md) claimed the 853 `resharper_*_highlighting` keys can configure
 Skala's rules through a mapping table. That works where a Skala rule corresponds one-to-one with a
@@ -704,13 +709,32 @@ findings are:
    live rule is owed, and until somebody does, this section rests on an example rather than a
    current measurement.
 
-**So the mechanism ships opt-in** — `skala check --resharper-severities`, or
-`"analysis": { "resharperSeverities": true }` — with the predicted precedence:
-`dotnet_diagnostic.SK…` beats the ReSharper key beats the rule's default. `skala explain <id>`
-prints the key, its value here, and the note. The headline claim survives in a smaller and truer
-form: the export *can* configure Skala's rules, one rule at a time, when someone asks it to.
+**M5's answer was that the mechanism ships opt-in** — `skala check --resharper-severities`, or
+`"analysis": { "resharperSeverities": true }` — with `dotnet_diagnostic.SK…` beating the ReSharper
+key beating the rule's default.
 
-**Residual risk: low**, and it moved from a design question to a documented per-rule decision.
+⚠ **That answer has been withdrawn and the mechanism deleted.** Finding 1 above is the reason, taken
+to its conclusion: a rule declared **one** `resharperId`, and `Testing/parity-analysis/catalogued.json`
+maps **295 inspections onto 162 rules, 49 of which cover more than one** — `SK4010` covers eleven. So
+`resharper_<x>_highlighting = none` either switched off a rule covering ten other concepts or was
+inert for the other ten. "A recorded choice, one key per rule" was a way of writing that down, not a
+way of fixing it. Skala exists to **replace** ReSharper rather than to keep speaking its
+configuration vocabulary, and nothing consumes Skala yet, so **no migration path was built and none
+is wanted** — there is deliberately no translate command.
+
+Gone with it: `--resharper-severities`, `"analysis": { "resharperSeverities": true }`, the
+`resharperId` field, the SARIF `rules[].properties.resharperSeverityKey`, and the two tests named in
+findings 3 and 4. ⚠ **`resharperNote` stays** — prose about how a concept lines up against
+ReSharper's is still worth having — and so does `supersedes`, which is a different field carrying
+`CA*`/`IDE*`/Sonar ids and is how hosting is recorded (ADR-008). ⚠ **Reading a Rider export for
+formatting *options* is untouched**; only the severity axis went.
+
+⚠ **One thing was lost that nothing replaces**: `resharperId` was the independent second source
+cross-checking the hand-written `catalogued.json`, in `verify_ledger.py` and again in C#. See
+[17](17-inspection-parity.md) § "Skala's coverage of the universe" — that map is now unchecked on its
+keys, deliberately.
+
+**Residual risk: low**, and it is no longer a design question at all.
 
 ### Q6 — Duplication across repositories?
 

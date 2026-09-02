@@ -257,7 +257,7 @@ Three namespaces arrive in the same file and all three must work:
 | Form | Example | Applies to |
 |---|---|---|
 | `dotnet_diagnostic.<id>.severity` | `dotnet_diagnostic.CA2252.severity = error` | Any Roslyn analyzer, incl. Skala's `SK####` and hosted third-party rules |
-| `resharper_<inspection>_highlighting` | `resharper_convert_to_primary_constructor_highlighting = suggestion` | ReSharper inspections — mapped to the Skala rule that reimplements them |
+| `resharper_<inspection>_highlighting` | `resharper_convert_to_primary_constructor_highlighting = suggestion` | ⚠ **Nothing.** Parsed, classified as an inspection severity so `config check` stays quiet, and then ignored |
 | `<style_key>:<severity>` | `csharp_style_namespace_declarations = file_scoped:suggestion` | Microsoft style keys with an inline severity |
 
 The middle row was written as a headline feature: **the 853 C#-relevant `resharper_*_highlighting`
@@ -265,12 +265,35 @@ keys already in the export configure Skala's rules**, via a mapping table in `ru
 (`resharperId: "ConvertToPrimaryConstructor"`), so that the author's existing Rider severity applies
 with no new configuration and adoption is a copy rather than a project.
 
-⚠ **Milestone 5 measured it against the real export, and it does not hold as stated.** It is
-[16](16-risks-and-open-questions.md) § Q5, and the answer is below.
+⚠ **Milestone 5 measured it against the real export and it did not hold as stated; the reduced
+version that shipped has since been removed outright.** The section below is kept because the four
+measurements are still the argument, and because someone will propose the feature again.
 
-### Q5, resolved: the mapping is a recorded choice, and it is off by default
+⚠ **Only the severity axis went.** Reading a Rider export for formatting and arrangement **options**
+is Skala's core premise and is untouched: `options.json`, `config check`/`explain`/`distill`/`diff`/
+`fix`/`sync`/`canonical`, and every `resharper_*` key that is not `_highlighting` are exactly as they
+were. `OptionResolver.Classify` still buckets any `_highlighting` key as `InspectionSeverity`
+precisely so that an export's three thousand inspection severities do not produce three thousand
+`SK9001`s.
 
-Four measurements, all on the export in this repository:
+### Q5, resolved twice: recorded as a choice, then removed
+
+⚠ **The mapping and the bridge are both gone.** `resharperId` is no longer a field in `rules.json`,
+`--resharper-severities` and `"analysis": { "resharperSeverities": true }` no longer exist, and
+`dotnet_diagnostic.SK….severity` is the only way to set a Skala rule's severity.
+
+**Why, beyond the four measurements below: one field could not describe the relationship.** A rule
+declared exactly one `resharperId`, while `Testing/parity-analysis/catalogued.json` maps **295
+inspections onto 162 rules, 49 of which cover more than one** — `SK4010` covers eleven. So
+`resharper_<x>_highlighting = none` either switched off a rule covering ten other concepts, or was
+inert for the other ten. It could not mean what a reader would expect it to mean, and measurement 1
+below is that same fact discovered from the other end. Skala is meant to **replace** ReSharper rather
+than keep speaking its configuration vocabulary, and nothing consumes Skala yet, so no migration path
+was built and none is wanted.
+
+The four measurements, kept because they are the standing argument:
+
+All four are on the export in this repository:
 
 **1. The correspondence is many-to-many in both directions, so there is no derivation.** For
 `SK1010` — `x != null` becoming `x is not null` — the export carries at least six inspections over
@@ -288,23 +311,26 @@ resharper_use_null_propagation_highlighting                  = hint
 Nothing computes which of those governs `SK1010`. In the other direction, `SK1034` covered what
 `use_collection_count_property`, `replace_with_single_call_to_any` and `replace_with_single_call_to_count`
 split into three (⚠ `SK1034` is retired — #281 — but the many-to-one shape it illustrates is
-unchanged and several live rules have it). The mapping is therefore **recorded in `rules.json` as a choice**, one key per
-rule, with a `resharperNote` saying which alternatives were passed over and why. It is a *function
-from Skala rule to at most one key*, never the reverse — which is the direction
-[16](16-risks-and-open-questions.md) § Q5 guessed was the safe one, and it is.
+unchanged and several live rules have it). The mapping was therefore **recorded in `rules.json` as a
+choice**, one key per rule, with a `resharperNote` saying which alternatives were passed over and
+why. ⚠ **That "function from Skala rule to at most one key" is exactly what was wrong with it**: a
+one-key field cannot describe a rule that answers eleven inspections, so the recorded choice silently
+spoke for ten it did not name. `resharperNote` survives the removal and still says which alternatives
+were passed over; the machine-readable half does not.
 
 **2. It is partial, and the gap is not exotic.** `SK1005` (file-scoped namespace) has **no**
 ReSharper inspection id. Rider drives that conversion from the *Microsoft* key
 `csharp_style_namespace_declarations = file_scoped:suggestion` and reports the result under
 `resharper_arrange_namespace_body_highlighting = hint`. One concept, two mechanisms, two severities,
-and neither of them is an inspection Skala can name. `resharperId` for that rule is `null` and the
-docs page says so.
+and neither of them is an inspection Skala can name. `resharperId` for that rule was `null`; the
+field no longer exists at all.
 
 **3. ⚠ A derived key that looks right and does not exist is worse than no mapping.**
 `ConvertToFileScopedNamespace` and `ConvertToThrowIfNull` both snake-case into plausible keys and
 JetBrains emits neither. A mapping to a key nothing sets never applies, looks like a feature and
-behaves like a comment. `RuleCatalogTests.EveryDeclaredReSharperKey_ExistsInTheExport` reads the real
-export and fails the build for it.
+behaves like a comment. `RuleCatalogTests.EveryDeclaredReSharperKey_ExistsInTheExport` read the real
+export and failed the build for it; it went with the field, because with no declared keys left there
+is nothing for it to check.
 
 **4. ⚠ Reading the keys as authoritative would switch a rule off in the repository the tool was
 built for.** The export sets
@@ -320,23 +346,22 @@ on the example. That is the decisive measurement: the 912 `resharper_*_highlight
 an export (462 `warning`, 232 `suggestion`, 110 `hint`, 93 `none`, 15 `error`) were chosen for
 ReSharper's inspections, and a value that has never been looked at is not consent.
 
-**The resolution.** The mechanism exists and is opt-in:
+**The first resolution** was to ship the mechanism opt-in, behind `skala check
+--resharper-severities` or `"analysis": { "resharperSeverities": true }`, with
+`dotnet_diagnostic.SK….severity` winning over it.
 
-```bash
-skala check --resharper-severities        # or "analysis": { "resharperSeverities": true }
-```
-
-with the precedence [16](16-risks-and-open-questions.md) § Q5 predicted:
+**The resolution that stands is that there is no mechanism.** Severity precedence is now two rows,
+not three:
 
 | | wins over | because |
 |---|---|---|
 | `dotnet_diagnostic.SK1010.severity` | everything | it names the Skala rule, so it cannot mean anything else |
-| `resharper_<inspection>_highlighting` | the rule's default | only under `--resharper-severities` |
 | `rules.json` `defaultSeverity` | — | the fallback |
 
-`skala explain <id>` prints the key a rule maps to, its value in the current configuration, and the
-note about what was passed over. So the headline claim survives in a smaller and truer form: the
-export *can* configure Skala's rules, one rule at a time, when someone asks it to.
+⚠ **The headline claim does not survive in any form**, and that is the point rather than a shortfall:
+an export's severities were chosen for ReSharper's inspections, and Skala's rules are not ReSharper's
+inspections. `skala explain <id>` still prints the `resharperNote` — the prose about how the concept
+lines up and what was passed over — and no longer prints a key, because there is no key.
 
 Severity ladder, and how the five ReSharper levels map:
 
@@ -758,7 +783,7 @@ Milestone 1 lands, and it is the obvious dogfooding test.
   "analysis": {
     "load": "binlog",                            // binlog | workspace | loose
     "binlog": "artifacts/build.binlog",
-    "resharperSeverities": false,                // ⚠ off by default — § "Severities", Q5
+    // ⚠ `resharperSeverities` was here and has been removed — § "Severities", Q5
     "hostedAnalyzers": [                          // ADR-008 — opt-in, never bundled
       { "package": "Meziantou.Analyzer", "version": "2.0.*" }
     ]

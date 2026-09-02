@@ -98,7 +98,6 @@ and this one is the parser's.** Taken from `skala <command> --help` for all sixt
 | `--show-suppressions` | | ✅ | | | | |
 | `--rules <ids>` | | ✅ | | | | |
 | `--no-formatting` | | ✅ | | | | Leaves `SK0001` out |
-| `--resharper-severities` | | ✅ | | | | Opt-in, [`plan/16`](plan/16-risks-and-open-questions.md) § Q5 |
 | `--since <ref>` | | ✅ | | | | |
 | `--baseline <file>` | | ✅ | | | | |
 | `--no-new-suppressions` | | ✅ | | | | Four mechanisms: `#pragma`, `[SuppressMessage]`, an `.editorconfig` severity, a baseline entry |

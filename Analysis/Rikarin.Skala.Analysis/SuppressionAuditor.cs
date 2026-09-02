@@ -47,9 +47,21 @@ public static class SuppressionAuditor {
         RegexOptions.CultureInvariant | RegexOptions.Compiled
     );
 
-    /// <summary><c>dotnet_diagnostic.SK1010.severity</c> and the ReSharper spelling beside it.</summary>
+    /// <summary><c>dotnet_diagnostic.SK1010.severity</c>, which is now the only spelling.</summary>
+    /// <remarks>
+    ///     ⚠ <c>resharper_[a-z0-9_]+_highlighting</c> used to be a second alternative here, matched
+    ///     "beside" the Roslyn spelling because the <c>resharper_*_highlighting</c> severity bridge
+    ///     made such a key genuinely set a Skala rule's severity. <b>That bridge has been removed</b>,
+    ///     so those keys now suppress nothing and recording one as a suppression is a false positive
+    ///     in a gate — <c>--no-new-suppressions</c> would fail a pull request for adding a line that
+    ///     cannot affect a single Skala finding. ⚠ It is not a small number: Skala's own root
+    ///     <c>.editorconfig</c> is a Rider export carrying <b>1 060</b> such keys, <b>442</b> of them
+    ///     at <c>none</c>/<c>hint</c>/<c>suggestion</c> and therefore counted here as suppressions.
+    ///     The audit compares two revisions, so a constant set cancelled out and hid this; a
+    ///     re-exported <c>.editorconfig</c> would not have.
+    /// </remarks>
     static readonly Regex SeverityPattern = new(
-        @"^\s*(?<key>dotnet_diagnostic\.(?<id>[A-Za-z]+[0-9]+)\.severity|resharper_[a-z0-9_]+_highlighting)\s*=\s*(?<value>[a-z]+)",
+        @"^\s*(?<key>dotnet_diagnostic\.(?<id>[A-Za-z]+[0-9]+)\.severity)\s*=\s*(?<value>[a-z]+)",
         RegexOptions.CultureInvariant | RegexOptions.Compiled
     );
 
@@ -262,7 +274,10 @@ public static class SuppressionAuditor {
                 continue;
             }
 
-            var id = match.Groups["id"].Success ? match.Groups["id"].Value : match.Groups["key"].Value;
+            // ⚠ `id` always participates now that the pattern has one alternative; it used to fall
+            // back to the whole `key` for a `resharper_*_highlighting` match, which carried no rule
+            // id to report.
+            var id = match.Groups["id"].Value;
             entries.Add(new SuppressionEntry(SuppressionSource.EditorConfig, id, path + " [" + section + "]", value));
         }
     }

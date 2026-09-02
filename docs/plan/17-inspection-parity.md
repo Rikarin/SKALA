@@ -99,12 +99,36 @@ missing entries. **Every entry missing from them inflates `Uncovered`.** The unc
 an *upper* bound on the gap, and the honest reading of it is "at most this many", not "exactly this
 many".
 
-⚠ **One half of that judgement is now pinned by a test, and the other half cannot be.**
-`RuleCatalogTests.TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule` asserts
-rules.json ⊆ `catalogued.json`: an inspection a *shipped* rule declares must be credited to that
-rule's own id. That is the direction with a mechanical answer, and it caught four shipped rules the
-map had omitted. The other direction — is every concept doc 08 names actually mapped from every
-inspection that expresses it? — is a reading, and no test can hold it. The bound stays a bound.
+⚠ **`catalogued.json` is now a single unchecked hand-written map, and that is a deliberate loss.**
+
+One half of that judgement *used to be* pinned by a test, in two independent places.
+`RuleCatalogTests.TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule` and
+`verify_ledger.py`'s check (1) both asserted rules.json ⊆ `catalogued.json`: whatever inspection a
+*shipped* rule named as its `resharperId`, the map had to credit to that rule's own id. It was the
+direction with a mechanical answer, and it was the **independent second source** against a map
+written by hand — two lists that had to agree. It earned its place: in a single session it caught
+**17 phantom keys, roughly 25 wrong credits, 14 under-credits, 7 entries crediting rules that do not
+exist, 3 crediting retired rules**, and `CognitiveComplexity` pointed at the cyclomatic rule instead
+of `SK7002`.
+
+**Both are gone, because `resharperId` is gone.** The field went out with the
+`resharper_*_highlighting` severity bridge: a rule could declare exactly **one** inspection id, while
+this very map credits **295 inspections to 162 rules, 49 of which cover more than one** — `SK4010`
+covers eleven. A one-inspection field was never able to describe that, so the cross-check only ever
+held the map against the *first* inspection anybody happened to write down per rule.
+
+⚠ **Nothing replaces it, and nothing is measuring this any more.** The decision was to stop measuring
+it, not to measure it differently — do not read the absence as an oversight and do not invent a
+substitute assertion. **Every inspection *name* in `catalogued.json` is now unverified**: a key that
+is a typo, a fabrication, or a real inspection credited to the wrong rule will sit there silently and
+move the published numbers. What survives is only the check on the map's *values* —
+`RuleCatalogTests.TheParityMap_CreditsOnlyIdsTheRegisterHasAllocated` and `verify_ledger.py` (1b)
+both still assert that every `SK` id it credits is one `allocated-ids.txt` actually holds. The keys
+have no such guard.
+
+The other direction — is every concept doc 08 names actually mapped from every inspection that
+expresses it? — was always a reading and no test could hold it. The bound stays a bound, and it is
+now a softer one than it was.
 
 ⚠ Only **49 of doc 08's 109 rules have a ReSharper counterpart at all**. The other 60 — the taint
 rules, the metrics, the duplication detector, the `SK9xxx` tool diagnostics — are ground ReSharper
@@ -156,7 +180,8 @@ Four more left `Uncovered` because the map was missing rules that **already ship
 `MergeCastWithTypeCheck` (`SK1015`), `PossibleInvalidOperationExceptionCollectionWasModified`
 (`SK2007`), `ReturnOfTaskProducedByUsingVariable` (`SK3007`) and `UseAwaitUsing` (`SK3503`). Each is
 named as the `resharperId` of a shipped rule in `rules.json` and each was being counted as work
-still to do. This is the direction the new test now asserts.
+still to do. ⚠ **This is the direction the test used to assert and no longer does** — `resharperId`
+has since been removed, and the section above records what that cost.
 
 Two entries were wrong rather than missing, and removing them does not move the total:
 
@@ -299,9 +324,10 @@ first reading of this said six shipped rules rather than nine. `SK2010`, `SK2014
 the three. (`SK8003` and `SK8004` are the other two ids and do not ship.)
 
 ⚠ **Why no test caught it.** `RuleCatalogTests.TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule`
-asserts the *entry exists* in `catalogued.json`. It never asks whether this pipeline reaches that
+asserted the *entry exists* in `catalogued.json`. It never asked whether this pipeline reaches that
 entry. The map was correct and inert — a mapping nothing can set, in a different place from the one
-this document already names.
+this document already names. ⚠ **That test no longer exists at all** — it went with `resharperId`,
+as recorded above — so the weaker fact it did hold is no longer held either.
 
 ### The adjudication, per rule
 

@@ -259,14 +259,6 @@ public static class DocsSite {
         Fact(builder, "Fix", rule.HasFix ? rule.FixIsSafe ? "yes, safe" : "yes, review it" : "no");
         Fact(builder, "Language version floor", rule.LanguageVersion is { } floor ? "C# " + Esc(floor) : "—");
         Fact(builder, "Since", Esc(rule.Since));
-        if (rule.ReSharperId is { } resharper) {
-            Fact(
-                builder,
-                "ReSharper",
-                "<code>" + Esc(resharper) + "</code> (<code>" + Esc(rule.ReSharperSeverityKey!) + "</code>)"
-            );
-        }
-
         if (rule.Supersedes.Count > 0) {
             Fact(builder, "Supersedes", string.Join(", ", rule.Supersedes.Select(Esc)));
         }

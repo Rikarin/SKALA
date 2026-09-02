@@ -66,14 +66,22 @@ written by hand. They are the soft edge of the whole analysis: **every entry mis
 inflates the uncovered count.** `sonar_hand.json` is the 60-rule sample classified by hand, kept so
 the projection in doc 17 can be checked rather than taken on trust.
 
-⚠ **`catalogued.json` is now pinned in the one direction a test can hold it.**
-`RuleCatalogTests.TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule` asserts
-rules.json ⊆ `catalogued.json`, matched on the `SK` id: an inspection that a *shipped* rule declares
-as its `resharperId` must be credited to that rule. Four shipped rules were missing from the map when
-that test was written. **The reverse is deliberately not asserted** — `Catalogued` means an id in
-doc 08 names the concept, allocated is enough and shipped is not required, so entries pointing at
-ids nothing implements yet are the map working correctly. What is checked instead is that every value
-is well formed and is a number the register knows. `gov.json` has no equivalent pin.
+⚠ **`catalogued.json`'s keys are pinned by nothing at all, and neither are `gov.json`'s.**
+There used to be a cross-check, in C# and again in `verify_ledger.py`: rules.json ⊆
+`catalogued.json`, matched on the `SK` id, so an inspection that a *shipped* rule declared as its
+`resharperId` had to be credited to that rule. It caught 17 phantom keys, ~25 wrong credits, 14
+under-credits and 7 entries crediting rules that do not exist. **It is gone**, because `resharperId`
+is gone — the field went out with the `resharper_*_highlighting` severity bridge, since one field
+could name one inspection while this map credits 295 inspections to 162 rules, 49 of them covering
+more than one. ⚠ **Nothing replaces it and nothing is meant to**; see doc 17. Treat every inspection
+name in this file as unverified.
+
+What is still checked is only the map's **values**:
+`RuleCatalogTests.TheParityMap_CreditsOnlyIdsTheRegisterHasAllocated` and `verify_ledger.py` (1b)
+assert every `SK` id it credits is one `allocated-ids.txt` holds. **Map ⊆ rules.json is deliberately
+not asserted** — `Catalogued` means an id in doc 08 names the concept, allocated is enough and
+shipped is not required, so entries pointing at ids nothing implements yet are the map working
+correctly.
 
 ⚠ **`editor_config_template` is the universe; `types-2026.xml` is only metadata joined onto it.**
 Getting that backwards produces a specific wrong answer, and #318 produced it: it measured

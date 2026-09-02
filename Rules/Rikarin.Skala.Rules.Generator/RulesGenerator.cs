@@ -153,9 +153,6 @@ public sealed class RulesGenerator : IIncrementalGenerator {
             builder.Append("            HasFix: ").Append(rule.HasFix ? "true" : "false").AppendLine(",");
             builder.Append("            FixIsSafe: ").Append(rule.FixIsSafe ? "true" : "false").AppendLine(",");
             builder.Append("            Retired: ").Append(rule.Retired ? "true" : "false").AppendLine(",");
-            builder.Append("            ReSharperId: ")
-                .Append(rule.ReSharperId is null ? "null" : Literal(rule.ReSharperId))
-                .AppendLine(",");
             builder.Append("            Supersedes: ").Append(StringArray(rule.Supersedes)).AppendLine(",");
             builder.Append("            Since: \"").Append(rule.Since).AppendLine("\",");
             builder.Append("            LanguageVersion: ")
@@ -292,7 +289,6 @@ internal sealed class RuleModel {
     public bool HasFix { get; private set; }
     public bool FixIsSafe { get; private set; }
     public bool Retired { get; private set; }
-    public string? ReSharperId { get; private set; }
     public List<string> Supersedes { get; } = new();
     public string Since { get; private set; } = "0.6";
     public string? LanguageVersion { get; private set; }
@@ -325,7 +321,6 @@ internal sealed class RuleModel {
             HasFix = entry["hasFix"].AsBool(),
             FixIsSafe = entry["fixIsSafe"].AsBool(),
             Retired = entry["retired"].AsBool(),
-            ReSharperId = entry["resharperId"].AsString(),
             Since = String(entry, "since", "0.6"),
             LanguageVersion = entry["languageVersion"].AsString(),
             Summary = String(entry, "summary"),
