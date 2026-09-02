@@ -2381,6 +2381,46 @@ is decidable at the call site with no taint and no inter-procedural step, becaus
 argument at the construction or at the static call, and both spellings of "I thought about this" —
 a `TimeSpan` and `RegexOptions.NonBacktracking` — are visible in the same expression.
 
+| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` (380 files) | `corpus/vulnerable` |
+|---|---|---|---|---:|---:|---:|
+| `SK5010` a pattern that can backtrack, unbounded | Semantic | **warning** | ⚠ none | 8 / 22 | **0** | 2 |
+
+⚠ **`SK5010` does not report "a regex with no timeout", and the reference trees are the argument.**
+Sonar's `S6444` reports every timeout-less regex; there are sixteen on `corpus/real` and **not one is
+a vulnerability** — twelve are `Assert.Matches(new Regex(@"MaxLevels\s*=\s*4"))` in Vixen's own tests,
+matching a fixed pattern against source the tool had just produced. So the rule reports only a
+pattern it can read and prove dangerous: a compile-time-constant pattern, an **unbounded** outer
+quantifier, and a group body that is exactly one quantified atom. ⚠ Serilog decided the second
+condition: `(\.(?<argument>[A-Za-z0-9]*)){0,1}` in `KeyValuePairSettings` is a quantified group whose
+body carries a quantifier — the shape a naive detector matches — and `{0,1}` cannot blow up. ⚠ The
+third is narrower than "the body contains a quantifier" because `(abc*)+` matches the wider test and
+is safe. The cost is coverage, stated rather than hidden: `^(\w+\s?)*$` is a real ReDoS the rule is
+silent on.
+
+⚠ **It ships at `warning` where the rest of the range ships at `error`, and not because it fires
+more.** The other four are wrong unconditionally — a callback that returns `true`, a DES key, a
+resolved DTD. A catastrophic pattern is a vulnerability only if something an attacker influences
+reaches it, and the rule does not establish that; failing a build over it would assert a fact the
+rule did not check.
+
+⚠ **Zero on `corpus/real`, from a run proved to be live.** The 380 files were staged outside the
+repository (`SK9023` puts the corpus out of `skala check`'s reach), built to a binlog — **13 036
+`CS` errors, which is the corpus, not the rule** — and analysed with `--load=binlog`, because
+`requiresSemantics: true` means `--load=loose` would have skipped the rule and produced a zero that
+meant nothing. A planted `ZzCanary.cs` in the same compilation produced exactly two `SK5010`
+findings and the 380 real files produced none, so the zero is **shape present and correctly
+declined**: the trees hold 33 regex call sites and no pattern in them nests an unbounded quantifier.
+
+⚠ **Four of ten sabotages against the analyzer turned nothing red, and three of them were the tests
+rather than the rule.** The clauses were correct; nothing depended on them. The fixtures used
+`\(a+\)+` and `[(*+]+`, where a scanner that ignored escapes or character classes still fails closed
+inside `MatchingParen` and answers "no finding" for the right reason by accident. The discriminating
+shapes are the ones where the misread *builds* a group rather than destroying one — `\(a+)+`,
+`[(]+)+` and `[](a+)+]` — and each is now the only case that fails when its clause is removed. The
+fourth was the sabotage harness's own filter, which did not run `RuleFixtureTests`. ⚠ Worth keeping:
+a sabotage that survives is as likely to be a hole in the tests as a dead clause in the rule, and
+telling those apart needs the shape that makes the clause load-bearing.
+
 ⚠ **#146 — the process is started by an unqualified name — is refuted, and Skala's own tree is the
 evidence rather than the excuse.** `Process.Start("git")` resolving through `PATH` is only a
 vulnerability if `PATH` is attacker-controlled, and that is a property of the *environment*, not of

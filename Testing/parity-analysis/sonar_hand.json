@@ -39,7 +39,7 @@
  "S5542": ["Catalogued", "SK5005 weak cipher/ECB"],
  "S3329": ["Catalogued", "SK5005 family, CBC IV predictability"],
  "S112": ["Hosted", "CA2201 do not raise reserved exception types; measured, not assumed -- see issue #176"],
- "S4036": ["Uncovered", "OS command PATH resolution; SK5002 is injection, not resolution"],
+ "S4036": ["Out of scope", "OS command PATH resolution: whether PATH is attacker-controlled is a property of the environment, not of the call site, and Skala's own six correct `Process.Start(\"git\")` call sites are the measurement. Refuted at #146; SK5002 keeps the injection half"],
  "S2674": ["Uncovered", "unchecked stream read length"],
  "S4041": ["Hosted", "CA1724 type names should not match namespaces"],
  "S1313": ["Uncovered", "hardcoded IP; SK5006 is credentials, not addresses"],

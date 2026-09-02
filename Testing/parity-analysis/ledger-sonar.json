@@ -200,6 +200,10 @@
    "proposedFix": "safe",
    "rules": [
     "S6444"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK5010"
    ]
   },
   {
