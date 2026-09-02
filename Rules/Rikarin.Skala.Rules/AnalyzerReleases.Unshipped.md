@@ -274,3 +274,6 @@ SK2171 | Skala.Correctness | Warning | The `\x` escape's length depends on what 
 SK2172 | Skala.Correctness | Warning | A null-forgiving `!` stands where it reads as a negated `is`.
 SK2173 | Skala.Correctness | Warning | `is not { }` is `is null` spelled backwards.
 SK2174 | Skala.Correctness | Info | A shift or bitwise operand groups only by precedence.
+SK2220 | Skala.Correctness | Warning | A conditionally compiled call under a directive that deletes it.
+SK2221 | Skala.Correctness | Error | The `[UnsafeAccessor]` names a member its target does not have.
+SK2222 | Skala.Correctness | Warning | `checked` is declared for some of the type's operators only.

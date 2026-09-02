@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 298 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 301 ids are allocated.
 
 ## Async
 
@@ -146,6 +146,9 @@
 | [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | safe | no |
 | [SK2201](SK2201.md) | The unsubscription passes an anonymous function | warning | — | no |
 | [SK2202](SK2202.md) | The modification sits inside a conditional invocation | warning | — | yes |
+| [SK2220](SK2220.md) | The conditionally compiled call sits under a directive that deletes it | warning | review | no |
+| [SK2221](SK2221.md) | The `[UnsafeAccessor]` names a member its target does not have | error | — | no |
+| [SK2222](SK2222.md) | The type declares `checked` for some of its operators and not the rest | warning | — | no |
 
 ## Design
 
