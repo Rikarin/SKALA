@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 302 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 321 ids are allocated.
 
 ## Async
 
@@ -313,6 +313,11 @@
 | [SK1092](SK1092.md) | Use a tuple literal instead of constructing a `Tuple` | suggestion | review | no |
 | [SK1093](SK1093.md) | Express the cast in the declaration instead | hint | safe | no |
 | [SK1094](SK1094.md) | Use nullable reference type syntax instead of an annotation attribute | warning | review | no |
+| [SK1100](SK1100.md) | The local is a name for the expression on the next line | suggestion | safe | no |
+| [SK1101](SK1101.md) | The local is declared on one line and assigned on the next | suggestion | safe | yes |
+| [SK1102](SK1102.md) | The local function is declared before the jump that ends the block | hint | safe | yes |
+| [SK1103](SK1103.md) | Both branches end with the same statements | hint | review | yes |
+| [SK1110](SK1110.md) | Collapse the forwarding overload into an optional parameter | suggestion | review | no |
 | [SK1120](SK1120.md) | A reflection call asks what `is` answers | suggestion | review | no |
 | [SK1121](SK1121.md) | A `try`/`catch` is the whole body of a `try`/`finally` | hint | safe | yes |
 | [SK1122](SK1122.md) | A nearby anonymous type has the same members in another order | hint | review | no |
