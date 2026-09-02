@@ -111,7 +111,7 @@ public sealed class BlockingOnAsyncAnalyzer : DiagnosticAnalyzer {
 
         var (span, receiver, member, producesValue) = blocking.Value;
 
-        if (AsyncContext.IsTestMethod(node)
+        if (AsyncContext.IsTestCode(node, context.SemanticModel, context.CancellationToken)
             || AsyncContext.IsUnawaitablePosition(node)
             || IsEntryPoint(node)
             || AsyncContext.InsideExpressionTree(context.SemanticModel, node, context.CancellationToken)) {

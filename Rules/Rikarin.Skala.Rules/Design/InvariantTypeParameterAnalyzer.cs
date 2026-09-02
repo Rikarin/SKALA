@@ -200,8 +200,8 @@ public sealed class InvariantTypeParameterAnalyzer : DiagnosticAnalyzer {
     ///     wrongly the second time.
     /// </remarks>
     static void Walk(INamedTypeSymbol type, ITypeParameterSymbol parameter, Occurrences occurrences) {
-        foreach (var @base in type.Interfaces) {
-            Classify(@base, parameter, Position.Covariant, occurrences);
+        foreach (var implemented in type.Interfaces) {
+            Classify(implemented, parameter, Position.Covariant, occurrences);
         }
 
         foreach (var member in type.GetMembers()) {
@@ -214,9 +214,9 @@ public sealed class InvariantTypeParameterAnalyzer : DiagnosticAnalyzer {
                     WalkProperty(property, parameter, occurrences);
                     break;
 
-                case IEventSymbol @event:
+                case IEventSymbol declaredEvent:
                     // Both accessors take the delegate, so the type is an input position.
-                    Classify(@event.Type, parameter, Position.Contravariant, occurrences);
+                    Classify(declaredEvent.Type, parameter, Position.Contravariant, occurrences);
                     break;
 
                 case IFieldSymbol field:

@@ -272,12 +272,12 @@ public sealed class MetricsAnalyzer : DiagnosticAnalyzer {
             MethodDeclarationSyntax method => method.Identifier.GetLocation(),
             ConstructorDeclarationSyntax constructor => constructor.Identifier.GetLocation(),
             DestructorDeclarationSyntax destructor => destructor.Identifier.GetLocation(),
-            OperatorDeclarationSyntax @operator => @operator.OperatorToken.GetLocation(),
+            OperatorDeclarationSyntax declaredOperator => declaredOperator.OperatorToken.GetLocation(),
             ConversionOperatorDeclarationSyntax conversion => conversion.Type.GetLocation(),
             PropertyDeclarationSyntax property => property.Identifier.GetLocation(),
             IndexerDeclarationSyntax indexer => indexer.ThisKeyword.GetLocation(),
-            EventDeclarationSyntax @event => @event.Identifier.GetLocation(),
-            DelegateDeclarationSyntax @delegate => @delegate.Identifier.GetLocation(),
+            EventDeclarationSyntax declaredEvent => declaredEvent.Identifier.GetLocation(),
+            DelegateDeclarationSyntax declaredDelegate => declaredDelegate.Identifier.GetLocation(),
             BaseTypeDeclarationSyntax type => type.Identifier.GetLocation(),
             _ => declaration.GetLocation()
         };
@@ -288,8 +288,8 @@ public sealed class MetricsAnalyzer : DiagnosticAnalyzer {
             ConstructorDeclarationSyntax constructor => constructor.Identifier.ValueText,
             PropertyDeclarationSyntax property => property.Identifier.ValueText,
             IndexerDeclarationSyntax => "this[]",
-            EventDeclarationSyntax @event => @event.Identifier.ValueText,
-            DelegateDeclarationSyntax @delegate => @delegate.Identifier.ValueText,
+            EventDeclarationSyntax declaredEvent => declaredEvent.Identifier.ValueText,
+            DelegateDeclarationSyntax declaredDelegate => declaredDelegate.Identifier.ValueText,
             BaseTypeDeclarationSyntax type => type.Identifier.ValueText,
             _ => declaration.Kind().ToString()
         };

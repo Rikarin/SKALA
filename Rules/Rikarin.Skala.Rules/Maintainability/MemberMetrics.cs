@@ -220,7 +220,7 @@ public static class MemberMetrics {
             MethodDeclarationSyntax method => method.ExplicitInterfaceSpecifier is null,
             PropertyDeclarationSyntax property => property.ExplicitInterfaceSpecifier is null,
             IndexerDeclarationSyntax indexer => indexer.ExplicitInterfaceSpecifier is null,
-            EventDeclarationSyntax @event => @event.ExplicitInterfaceSpecifier is null,
+            EventDeclarationSyntax declaredEvent => declaredEvent.ExplicitInterfaceSpecifier is null,
             BaseTypeDeclarationSyntax => true,
             DelegateDeclarationSyntax => true,
             ConstructorDeclarationSyntax => true,
@@ -277,7 +277,7 @@ public static class MemberMetrics {
         member switch {
             BaseMethodDeclarationSyntax method => method.ParameterList.Parameters.Count,
             LocalFunctionStatementSyntax local => local.ParameterList.Parameters.Count,
-            DelegateDeclarationSyntax @delegate => @delegate.ParameterList.Parameters.Count,
+            DelegateDeclarationSyntax declaredDelegate => declaredDelegate.ParameterList.Parameters.Count,
             IndexerDeclarationSyntax indexer => indexer.ParameterList.Parameters.Count,
             TypeDeclarationSyntax type => type.ParameterList?.Parameters.Count ?? 0,
             _ => 0

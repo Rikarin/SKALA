@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
@@ -93,6 +94,17 @@ public static class RuleFixtures {
     ///         territory is below the current language version or inside an <c>#if</c> can be fixtured
     ///         (#317), and <c>unsafe</c> compiles (#310).
     ///     </para>
+    ///         A fixture holding top-level statements is compiled as an executable, and until [#314]
+    ///         the corpus could not hold one at all.
+    ///     </b> Every fixture was a
+    ///     <see cref="OutputKind.DynamicallyLinkedLibrary" />, which answers a top-level program with
+    ///     <c>CS8805</c> — "Program using top-level statements must be an executable" — and
+    ///     <see cref="RuleFixtureTests.Rule_FiresExactlyWhereTheFixtureSaysItShould" /> rejects a fixture
+    ///     that does not compile. So the shape a model writes first was one no fixture could describe,
+    ///     which is how <c>SK3060</c>'s blindness to it survived: not one rule's oversight but a hole in
+    ///     the instrument. The kind is chosen from the file rather than passed in, because a fixture
+    ///     with global statements is exactly the one that needs an entry point and a fixture without
+    ///     them would draw <c>CS5001</c> from an executable.
     /// </remarks>
     public static CSharpCompilation Compile(
         string source,
@@ -108,12 +120,15 @@ public static class RuleFixtures {
             path
         );
 
+        var topLevel = tree.GetRoot() is CompilationUnitSyntax unit
+            && unit.Members.Any(static member => member is GlobalStatementSyntax);
+
         return CSharpCompilation.Create(
             "fixtures",
             [tree],
             References,
             new CSharpCompilationOptions(
-                OutputKind.DynamicallyLinkedLibrary,
+                topLevel ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: options.AllowUnsafe,
                 nullableContextOptions: NullableContextOptions.Enable,
                 specificDiagnosticOptions: OptIn

@@ -89,8 +89,8 @@ public sealed class UndocumentedNonPublicMemberAnalyzer : DiagnosticAnalyzer {
             ConstructorDeclarationSyntax constructor => constructor.Identifier,
             PropertyDeclarationSyntax property => property.Identifier,
             IndexerDeclarationSyntax indexer => indexer.ThisKeyword,
-            EventDeclarationSyntax @event => @event.Identifier,
-            DelegateDeclarationSyntax @delegate => @delegate.Identifier,
+            EventDeclarationSyntax declaredEvent => declaredEvent.Identifier,
+            DelegateDeclarationSyntax declaredDelegate => declaredDelegate.Identifier,
             BaseTypeDeclarationSyntax type => type.Identifier,
             _ => declaration.GetFirstToken()
         };

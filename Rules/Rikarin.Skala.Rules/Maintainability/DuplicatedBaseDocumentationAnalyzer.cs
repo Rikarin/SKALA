@@ -125,14 +125,14 @@ public sealed class DuplicatedBaseDocumentationAnalyzer : DiagnosticAnalyzer {
             case IPropertySymbol { OverriddenProperty: { } property }:
                 return property;
 
-            case IEventSymbol { OverriddenEvent: { } @event }:
-                return @event;
+            case IEventSymbol { OverriddenEvent: { } declaredEvent }:
+                return declaredEvent;
         }
 
         var explicitly = symbol switch {
             IMethodSymbol method => method.ExplicitInterfaceImplementations.Cast<ISymbol>().ToList(),
             IPropertySymbol property => property.ExplicitInterfaceImplementations.Cast<ISymbol>().ToList(),
-            IEventSymbol @event => @event.ExplicitInterfaceImplementations.Cast<ISymbol>().ToList(),
+            IEventSymbol declaredEvent => declaredEvent.ExplicitInterfaceImplementations.Cast<ISymbol>().ToList(),
             _ => new List<ISymbol>()
         };
         if (explicitly.Count == 1) {
@@ -144,8 +144,8 @@ public sealed class DuplicatedBaseDocumentationAnalyzer : DiagnosticAnalyzer {
         }
 
         ISymbol? implicitly = null;
-        foreach (var @interface in container.AllInterfaces) {
-            foreach (var member in @interface.GetMembers()) {
+        foreach (var implemented in container.AllInterfaces) {
+            foreach (var member in implemented.GetMembers()) {
                 if (!SymbolEqualityComparer.Default.Equals(
                         container.FindImplementationForInterfaceMember(member),
                         symbol

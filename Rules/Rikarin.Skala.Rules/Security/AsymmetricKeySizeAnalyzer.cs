@@ -153,7 +153,7 @@ public sealed class AsymmetricKeySizeAnalyzer : DiagnosticAnalyzer {
         if (Unwrap(size).ConstantValue is not { HasValue: true, Value: int bits }
             || bits <= 0
             || bits >= Floor
-            || AsyncContext.IsTestMethod(size.Syntax)) {
+            || AsyncContext.IsTestCode(size.Syntax, size.SemanticModel, context.CancellationToken)) {
             return;
         }
 

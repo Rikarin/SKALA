@@ -8141,3 +8141,229 @@ the continuation list, so it is declined a guard earlier.
 failed.** It read the fixture name out of the xUnit display name, which truncates the path, so its
 first full run reported "red: (none)" for all twenty — a measurement printing exactly what it prints
 on the day it does not run. It reads the assertion message now.
+
+## `SK0240` × `SK2009` — who owns an empty `default:` section
+
+⚠ **Two individually defensible rules were a fix loop on one shape, and this is the decision that
+settled it** ([#321]). `SK2009` counts a `default:` section as the catch-all legitimising a
+non-exhaustive enum switch. `SK0240` counts an *empty* one as dead control flow, because a `switch`
+with no matching section already does nothing. Deleting `default: break;` from
+`LayoutWriter.cs:242` cleared the `SK0240` and immediately produced
+`SK2009: switch over `DocKind` omits `Concat`, `Fill`, `IfBroken`` at the same switch. ⚠ **`SK0240`
+ships a fix, so taking it handed the author a finding they did not have.**
+
+⚠ **The batch that found it measured itself as "9 errors cleared" while quietly adding a tenth.**
+The totals moved in the direction that looks like success, and only a set-diff of the before/after
+SARIF caught it. Any repair measured by a count rather than by a diff of the finding *set* has this
+failure mode.
+
+**`SK0240` stands down; `SK2009` keeps the shape.** The ground for choosing that direction is not
+conflict-avoidance, it is that on a switch omitting enum members the section is **not dead**: it is
+the author's written statement that the rest of the enum is deliberately ignored, which is precisely
+the signal `SK2009` reads. Deleting it removes information rather than removing nothing, so `SK0240`
+was the rule that was wrong about this shape.
+
+The alternative the issue offered — `SK0240` keeps reporting but ships **no fix** here — was
+rejected. It de-automates the contradiction without settling it: an author who takes the advice by
+hand still lands on the `SK2009`, and docs/plan/10's own standard is that a finding nobody can act
+on teaches an agent to ignore the tool. It would also leave `SK0240` reporting a redundancy that is
+not one.
+
+**Mechanism.** The exhaustiveness question moved out of `EnumSwitchExhaustivenessAnalyzer` into
+`EnumSwitchCoverage.Gap`, which takes a section to answer *as though it were already deleted*.
+`SK2009` asks it with `null`; `SK0240` asks it with the section its fix would delete and stands down
+where the answer is a finding. Shared rather than duplicated for the same reason `AsyncContext` is —
+two copies of "where `SK2009` would fire" would drift and re-open the loop.
+
+⚠ **The stand-down is narrow, and one of the two positive fixtures exists to keep it narrow.**
+Because the question asked is `SK2009`'s own predicate, an *exhaustive* enum switch's empty
+`default:` is still reported and still fixed
+(`SK0240/positive/default_only_breaks_on_an_exhaustive_enum_switch.cs`), and so are the three sites
+the #321 batch deleted for real: `SpaceRules.cs` switches over `SyntaxKind` where `SK2009` declines
+as a minority filter, `CSharpDocumentBuilder.BlankLines.cs` switches over `SyntaxNode` type patterns,
+and the `int` switches in the fixture set. "`SK0240` declines an empty default on an enum switch" and
+"`SK0240` declines an empty default" are otherwise the same green run, and the second is a rule two
+thirds switched off.
+
+⚠ **The guard is opportunistic, not required, and that is deliberate.** `SK0240` stays
+`scope: Syntax` / `requiresSemantics: false`, because its member that matters — `catch (X) { throw; }`
+— is purely syntactic and `requiresSemantics: true` would stop the whole rule running without a
+project (`RuleInfo.RunsWithoutAProject`). In loose mode an enum from an unreferenced assembly does
+not resolve, the gap is empty, and `SK0240` reports exactly as before; `SK2009` is
+`requiresSemantics` and is not running there either, so the two still agree about the file in front
+of them.
+
+⚠ **Pinned from both sides, in the pattern `SK2240`/`SK1071` established, because a test running one
+rule at a time cannot see any of this.** `SK0240/negative/default_legitimises_a_nonexhaustive_enum_switch.cs`
+is the shape as written — neither rule speaks. `SK2009/positive/sk0240_fix_output_omits_members.cs`
+is that same file with the section deleted, which is literally what `SK0240`'s fix used to emit —
+`SK2009` fires and names `Fill` and `IfBroken`.
+`CleanupBatchTests.SK0240AndSK2009_DoNotHandTheEnumSwitchBackAndForth` runs both analyzers in one
+set, computes the "after" text by deleting the section rather than reading the second fixture, and
+then compares the two so the pair cannot drift into two unrelated files that each pass their own
+half.
+
+⚠ **`RuleFixtureTests.EveryFix_SilencesTheRuleAndIntroducesNoDiagnostic` could not have caught this
+and still cannot catch the general case.** It re-runs the analyzers after a fix but filters to
+`diagnostic.Id == fixture.RuleId`, so a fix that creates a *different* Skala rule's finding is green.
+Its `introduced` check covers compiler diagnostics only. A cross-rule version of that assertion over
+the whole fixture corpus is the general instrument and is not written; until it is, every rule pair
+that reads one construct in two directions needs its own paired fixtures.
+
+[#321]: https://github.com/Rikarin/SKALA/issues/321
+
+## `SK3060` and a top-level program, and what `supersedes` actually does
+
+Two findings from [#314], both probed rather than reasoned about.
+
+### `SK3060` was blind to a top-level program, and so was the fixture corpus
+
+⚠ **The rule's silence was real and the issue's stated mechanism was wrong in one particular.**
+`UnreleasedLockAnalyzer.Body` does return null for an enter in a top-level statement, but not at the
+`TypeDeclarationSyntax` arm — a global statement has no type declaration above it. The walk simply
+runs out of parents and falls off the end. The two look identical from the call site and are
+different bugs; the `TypeDeclarationSyntax` arm is what declines a *field initializer*, which is
+correct and stays.
+
+A top-level program's statements are the body of a synthesized `Main`, so the compilation unit is
+the body. `Body` now returns it. ⚠ **The unit is the body but not the search space**: a file may
+declare types beside its top-level statements, and a `Monitor.Exit` inside one of those does not run
+on the entry point's path — handing the whole unit to `DescendantNodes` would let an unrelated
+class's `finally` withdraw the finding. `Contents` descends only into the global statements, and
+`SK3060/positive/a-top-level-release-beside-a-sibling-type.cs` is what holds that.
+
+⚠ **The deeper finding is that the fixture corpus could not describe a top-level program at all.**
+`RuleFixtures.Compile` built every fixture as a `DynamicallyLinkedLibrary`, which answers top-level
+statements with `CS8805`, and `Rule_FiresExactlyWhereTheFixtureSaysItShould` rejects a fixture that
+does not compile. So this was never one rule's oversight: **no rule in the catalogue could have a
+top-level fixture, for any shape, and nothing said so.** The kind is now chosen from the file — a
+fixture with global statements gets `ConsoleApplication`, one without would draw `CS5001` from an
+executable — which makes the shape a model writes first testable for every rule, not just this one.
+
+⚠ #314 records that the #307 branch deliberately did *not* assert `SK3060`'s silence, on the ground
+that pinning a recorded gap turns it into a promise. That was right, and it is why the gap survived
+to be fixed rather than being frozen.
+
+### `supersedes` is attribution first and suppression second
+
+⚠ **Measured against the SDK with `EnforceCodeStyleInBuild` and the severities raised, on one file
+holding both shapes.** `IDE0019` lands on the declaration `var b = x as B;`; `SK1050` reports on the
+`b != null` check one line below. `IDE0020` lands on the declaration `var b = (B)x;`; `SK1015`
+reports on the `x is B` test one line above. `Supersession.Apply` pairs on
+`(rule, path, line, column)`, so **neither claim has ever suppressed anything**, and nothing measured
+that it did not.
+
+Three decisions, taken rather than asked:
+
+1. ⚠ **`IDE0019` moves from `SK1015` to `SK1050`, because `SK1015`'s claim was a misattribution and
+   not merely inert.** `SK1015` matches `is T` plus a cast and does not fire on the `as`-plus-null-check
+   shape at all — on the probe file it reported only the `is` shape and `SK1050` only the `as` one.
+   And because `RuleCatalogTests.EveryHostedDiagnostic_IsClaimedByAtMostOneRule` allows one claimant,
+   `SK1015` holding it also *blocked* the rule that implements it. ⚠ This reverses #291's reason, not
+   its measurement: #291 declined the claim for `SK1050` because it "would suppress nothing", and
+   that argument applies equally to `SK1015`'s `IDE0020` claim, which was kept — the catalogue was
+   using one argument to reject one claim and not the other.
+
+2. **The claims stay and the anchors do not move.** `SK1015` reports on the `is` test because that is
+   where the pattern goes and where the reader needs the squiggle; moving it onto the cast to satisfy
+   a matching heuristic would be calibrating the rule to the mechanism. And a claim that names the
+   owner is real information — it tells a reader which of the two analyzers to turn off — so
+   withdrawing it to avoid implying a suppression would delete a true statement to fix a false one.
+
+3. **The matching stays exact, and the fact that it is exact is now asserted**
+   (`AnalysisTests.Supersession_DoesNotReachAClaimantOnAnAdjacentLine`). Widening to a line, to a span
+   overlap or to a proximity window was rejected on the measurement: the pairs share neither line nor
+   span, so nothing short of a guess would join them, and a wrong guess deletes another analyzer's
+   true finding.
+
+⚠ **The field was already predominantly attribution and nobody had counted.** Of 123 claims in the
+catalogue, 93 are SonarQube ids and 15 are ReSharper *inspection names*; a ReSharper inspection name
+can never appear as a diagnostic in a build at all, and a Sonar id only appears when
+`SonarAnalyzer.CSharp` is in the same compilation. 11 are `IDE*` and 4 are `CA*`. So the suppression
+job was always the minority case, and reading `supersedes` as "these are suppressed for you" was
+never what the catalogue said — only what it looked like.
+
+## The test-code exemption, and why the helper stays reported
+
+[#319] is right about the mechanism and its proposed remedy does not survive contact. Both halves are
+worth recording, because the refutation is the more useful half.
+
+**Confirmed.** `AsyncContext.IsTestMethod` recognises test code by an attribute on the *enclosing
+method*. `Rules/Rikarin.Skala.Rules.Tests/RuleFixtures.cs:158` blocks on
+`.GetAwaiter().GetResult()`; it is the one method all 346 `[Fact]` callers funnel through and it
+carries no attribute of its own, so the exemption covered every caller and missed the call. Seven
+other call sites consult the same predicate as an exemption — `SK5021`, `SK5020` (twice), `SK3002`,
+`SK3004`, `SK3051`, `SK3050` — and every one of them shares the blind spot. An eighth, `SK8005`
+(`ThreadSleepInTest`), consults it *inverted*, so there the same gap is a false **negative**: a
+`Thread.Sleep` inside a shared `WaitForSettle()` helper is exactly what the rule exists to find and
+it is silently missed. That one is left alone here — widening what a rule reports is a different
+decision from widening what it excuses, and it needs its own fixtures.
+
+⚠ **Refuted, in both halves.** #319 asked for "a non-public helper declared in a test project".
+
+- *Non-public* decides nothing: `RuleFixtures` is a `public static class` and `Analyze` is
+  `public static`, so the narrow test would have left the finding exactly where it was. The issue's
+  own example fails its own criterion.
+- *Declared in a test project* is the compilation-references question, and [#303] already examined
+  and refused it, with `SK2160/positive/a-helper-class-holding-no-test-case.cs` pinning the refusal
+  in prose: a class is not test code "merely for living beside one, referencing xUnit, or being named
+  after tests".
+
+⚠ **And the refusal is now measured rather than argued.** Wiring "the compilation references a test
+framework" in and running the corpus turned **31 positive fixtures silent in one run** — every
+positive of `SK3002`, `SK3004`, `SK3050`, `SK3051`, `SK5020` and `SK5021`. The cause is that
+`RuleFixtures.References` is built from the test host's `TRUSTED_PLATFORM_ASSEMBLIES`, so *every
+fixture in the corpus* references xunit. Six rules would have passed their entire negative sets while
+switched off, which is the "a zero from a disabled check and a zero from clean code are the same
+zero" failure in its purest form. Any future rule that reasons about references has this trap waiting
+for it.
+
+**Shipped instead: the type-level question, which is #303's rule and not a new one.**
+`AsyncContext.IsTestCode` is the enclosing method's attribute *or*
+`TestFrameworks.HoldsATestCase(enclosing type)` — xUnit's own discovery rule, decidable from
+attributes alone. That closes the second blind spot the sweep found and #319 did not name: a fixture
+constructor, an `IDisposable.Dispose` teardown, a field initializer and a lambda inside a real test
+class carry no attribute and were all reported. All seven exemption sites now ask it.
+
+⚠ **So the `SK3002` finding on `RuleFixtures.Analyze` stands**, and baselining it is the honest
+outcome #319 itself allows for. Reaching it needs the call graph the issue rules out, or the
+reference sniffing #303 decided against and the 31 fixtures now argue against.
+`SK3002/positive/in-a-helper-class-holding-no-test-case.cs` pins the boundary from the reported side
+and `SK3002/negative/in-a-teardown-of-a-test-class.cs` from the excused side.
+
+## `SK2034` on Skala's own source: the count was 33, not ten
+
+⚠ **[#276]'s central number is refuted, and by more than a rounding.** Measured with the shipped rule
+rather than by reading — `skala check Analysis Core Formatting Reporting Rules Tools Distribution
+--load=loose --rules SK2034` — the tree carried **33 findings across 17 files**, not ten across five.
+The issue's table is wrong in three of its five rows: `MetricsAnalyzer.cs` has 5 rather than 4,
+`Async/AsyncVoidAnalyzer.cs` has **0** (the file contains no `@` at all; the intended file is
+`AsyncVoidThrowAnalyzer.cs`), and twelve further files holding 24 findings are missing from it
+entirely — most of them `MisleadingBodyIndentationAnalyzer.cs`, which alone has 7.
+
+**Renamed rather than exempted, which is #276's option (1) and not its option (2).** The issue warns
+against reaching for the rename reflexively, and it is right that contorting a tree to satisfy a rule
+nobody argued for is the same error as calibrating a rule to a tree. But option (2) — "narrow
+`SK2034` to exempt an escaped identifier whose name matches the syntax node type it holds" — is
+*exactly* calibrating the rule to this tree: the exemption would be shaped around Skala's own idiom
+and argued for by nobody outside it, which is the direction CLAUDE.md § 9 names as the more expensive
+mistake. The rule's own argument is general and survives: `@` on a reserved keyword is never a
+disambiguation the language asked for, so the finding is about the name.
+
+The renames follow the rule's own `good` example (`declaredType`, `declaredEvent`): `@event` →
+`declaredEvent`, `@delegate` → `declaredDelegate`, `@operator` → `declaredOperator`, `@interface` and
+`@base` → `implemented`, `@default` → `defaultPath` / `defaultExpression`, `@try` → `enclosingTry`,
+`@string` → `text`, and the seven statement captures in `MisleadingBodyIndentationAnalyzer` →
+`ifStatement`, `whileLoop`, `forLoop`, `forEachLoop`, `lockStatement`, `usingStatement`,
+`fixedStatement` — the `whileLoop` spelling being the convention `StackAllocInLoopAnalyzer` already
+records. 33 declarations and 38 references, 71 tokens. All but one are locals, `foreach` variables or
+pattern captures; the exception is `JsonValue.@string`, a private field, whose rename to `text`
+collided with the constructor parameter already called `text` and became `this.text = text`.
+
+⚠ **The instrument was checked before the zero was believed.** After the renames the same command
+reports **0**; reintroducing a single `@operator` in `MetricsAnalyzer.cs` takes it back to exactly
+**1**, at line 275. A zero from a rule that stopped running and a zero from clean code read the same
+in a report, and the control is the only thing that separates them. (⚠ The obvious control —
+measuring the vendored corpus, which has `@operator` in `QueryExpression.cs` — does *not* work:
+`Testing/` is excluded from `skala check`, which answers `SK9023: no C# files were found` rather than
+zero findings.)

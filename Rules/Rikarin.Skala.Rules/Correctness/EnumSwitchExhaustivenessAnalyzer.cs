@@ -3,11 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
-using System.Linq;
 
 namespace Rikarin.Skala.Rules.Correctness;
 
@@ -67,113 +63,36 @@ public sealed class EnumSwitchExhaustivenessAnalyzer : DiagnosticAnalyzer {
         );
     }
 
+    /// <summary>
+    ///     ⚠ The exhaustiveness question itself lives in <see cref="EnumSwitchCoverage" /> rather than
+    ///     here, because <c>SK0240</c> has to ask it too.
+    /// </summary>
+    /// <remarks>
+    ///     <c>SK0240</c> offers to delete an empty <c>default:</c> section as dead control flow, and on a
+    ///     non-exhaustive enum switch that section is the only thing keeping this rule quiet — so taking
+    ///     the fix produced an <c>SK2009</c> the author did not have ([#321]). <c>SK0240</c> now asks the
+    ///     shared predicate what its own fix would leave behind and stands down where the answer is a
+    ///     finding. Sharing the code is what makes "where <c>SK2009</c> would fire" mean the same thing
+    ///     in both rules; two copies of this logic would drift and re-open the loop.
+    /// </remarks>
     static void AnalyzeStatement(SyntaxNodeAnalysisContext context, INamedTypeSymbol? flags) {
         var statement = (SwitchStatementSyntax)context.Node;
-        var labels = statement.Sections.SelectMany(static section => section.Labels).ToArray();
-        if (labels.Any(IsCatchAll)
-            || labels.OfType<CasePatternSwitchLabelSyntax>()
-                .Any(static label =>
-                    !CanEnumerate(label.Pattern)
-                )) {
-            return;
-        }
-
-        var expressions = labels.SelectMany(Expressions);
-        Report(context, statement.Expression, statement.SwitchKeyword.GetLocation(), expressions, flags);
-    }
-
-    static void Report(
-        SyntaxNodeAnalysisContext context,
-        ExpressionSyntax governing,
-        Location location,
-        IEnumerable<ExpressionSyntax> handledExpressions,
-        INamedTypeSymbol? flags
-    ) {
-        if (context.SemanticModel.GetTypeInfo(governing, context.CancellationToken).Type
-            is not INamedTypeSymbol { TypeKind: TypeKind.Enum } type
-            || flags is not null
-            && type.GetAttributes()
-                .Any(attribute =>
-                    SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, flags)
-                )) {
-            return;
-        }
-
-        var handled = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var expression in handledExpressions) {
-            var value = context.SemanticModel.GetConstantValue(expression, context.CancellationToken);
-            if (value.HasValue && value.Value is not null) {
-                handled.Add(Key(value.Value));
-            }
-        }
-
-        var values = type.GetMembers()
-            .OfType<IFieldSymbol>()
-            .Where(static field => field.HasConstantValue && !field.IsImplicitlyDeclared)
-            .GroupBy(static field => Key(field.ConstantValue!), StringComparer.Ordinal)
-            .ToArray();
-
-        var missing = values
-            .Where(group => !handled.Contains(group.Key))
-            .Select(static group => group.First().Name)
-            .ToArray();
-
-        // ⚠ `missing > values.Length - missing` is the filter test, and it is the whole of #280's fix
-        // for the statement form. Distinct *values* rather than members, so `{ First = 0, AlsoFirst = 0 }`
-        // counts once on both sides and an alias cannot tip the comparison on its own.
-        if (missing.Length == 0 || missing.Length > values.Length - missing.Length) {
+        if (EnumSwitchCoverage.Gap(
+                context.SemanticModel,
+                statement,
+                flags,
+                null,
+                context.CancellationToken
+            ) is not { } gap) {
             return;
         }
 
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
-                location,
-                "switch over `"
-                + type.Name
-                + "` omits "
-                + string.Join(", ", missing.Take(5).Select(static name => "`" + name + "`"))
-                + (missing.Length > 5
-                        ? " and " + (missing.Length - 5).ToString(CultureInfo.InvariantCulture) + " more"
-                        : string.Empty)
+                statement.SwitchKeyword.GetLocation(),
+                EnumSwitchCoverage.Describe(gap.Type, gap.Missing)
             )
         );
     }
-
-    static string Key(object value) => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
-
-    static bool IsCatchAll(SwitchLabelSyntax label) =>
-        label is DefaultSwitchLabelSyntax
-        || label is CasePatternSwitchLabelSyntax { Pattern: var pattern }
-        && IsCatchAll(pattern);
-
-    static bool IsCatchAll(PatternSyntax pattern) =>
-        pattern is DiscardPatternSyntax or VarPatternSyntax or DeclarationPatternSyntax
-        || pattern is ParenthesizedPatternSyntax parenthesized
-        && IsCatchAll(parenthesized.Pattern);
-
-    static bool CanEnumerate(PatternSyntax pattern) =>
-        pattern is ConstantPatternSyntax
-        || pattern is ParenthesizedPatternSyntax parenthesized
-        && CanEnumerate(parenthesized.Pattern)
-        || pattern is BinaryPatternSyntax binary
-        && binary.IsKind(SyntaxKind.OrPattern)
-        && CanEnumerate(binary.Left)
-        && CanEnumerate(binary.Right);
-
-    static IEnumerable<ExpressionSyntax> Expressions(SwitchLabelSyntax label) =>
-        label switch {
-            CaseSwitchLabelSyntax simple => [simple.Value],
-            CasePatternSwitchLabelSyntax pattern => Expressions(pattern.Pattern),
-            _ => []
-        };
-
-    static IEnumerable<ExpressionSyntax> Expressions(PatternSyntax pattern) =>
-        pattern switch {
-            ConstantPatternSyntax constant => [constant.Expression],
-            BinaryPatternSyntax binary when binary.IsKind(SyntaxKind.OrPattern) =>
-                Expressions(binary.Left).Concat(Expressions(binary.Right)),
-            ParenthesizedPatternSyntax parenthesized => Expressions(parenthesized.Pattern),
-            _ => []
-        };
 }
