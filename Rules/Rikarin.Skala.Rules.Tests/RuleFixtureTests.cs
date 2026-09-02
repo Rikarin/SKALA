@@ -135,6 +135,8 @@ public sealed class RuleFixtureTests {
         new CastInDeclarationAnalyzer(), new NullableAnnotationSyntaxAnalyzer(),
         new AsyncVoidThrowAnalyzer(), new UncancellableAsyncMethodAnalyzer(),
         new AsyncVoidLambdaAnalyzer(),
+        new OverriddenParameterDefaultAnalyzer(), new RestatedCallerInfoArgumentAnalyzer(),
+        new OverwrittenParameterAnalyzer(), new CrosswiseArgumentOrderAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

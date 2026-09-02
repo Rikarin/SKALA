@@ -225,3 +225,7 @@ SK1094 | Skala.Modernization | Warning | Use nullable reference type syntax inst
 SK3050 | Skala.Async | Warning | An exception is thrown out of an `async void` body.
 SK3051 | Skala.Async | Info | The `async` method has no `CancellationToken` to forward.
 SK3052 | Skala.Async | Warning | The `async` lambda is converted to a `void`-returning delegate.
+SK2140 | Skala.Correctness | Warning | The override declares a parameter default or `params` the call site will not use.
+SK2141 | Skala.Correctness | Warning | The argument replaces what the caller-info attribute would have supplied.
+SK2142 | Skala.Correctness | Warning | The value passed for the parameter is overwritten before it is read.
+SK2143 | Skala.Correctness | Warning | Two arguments are passed crosswise to the parameters they are named after.

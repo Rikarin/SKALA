@@ -266,3 +266,7 @@ SK1094 nullable-annotation-syntax
 SK3050 async-void-throw
 SK3051 async-method-without-cancellation
 SK3052 async-void-lambda
+SK2140 overridden-parameter-default
+SK2141 restated-caller-info-argument
+SK2142 overwritten-parameter
+SK2143 crosswise-argument-order

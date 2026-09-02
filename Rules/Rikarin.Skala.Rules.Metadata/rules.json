@@ -6458,6 +6458,110 @@
       "configuration": [
         "dotnet_diagnostic.SK3052.severity"
       ]
+    },
+    {
+      "id": "SK2140",
+      "concept": "overridden-parameter-default",
+      "title": "The override declares a parameter default or `params` the call site will not use",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "OptionalParameterHierarchyMismatch",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An override or an implicit interface implementation declares a different default value, or a different `params` modifier, than the member it overrides or implements.",
+      "rationale": "A default value is not part of the call — it is baked into the call site at compile time, from the *static* type of the receiver. Through a base-class or interface reference the base's default is the one that is written into the IL, and the override's is dead text; through the derived type the override's wins. The same member therefore behaves as two different methods depending on which reference the caller happens to hold, and nothing in either declaration says so. ⚠ **`params` behaves differently from a default and the difference was measured rather than assumed.** An *override* does not get to change it at all: `params` dropped on an override still expands through the derived type, and `params` added on an override whose base has none expands through neither reference — both call sites were compiled and both answers read off the build. Expansion is decided by the base, always, so an override's own `params` keyword is dead text in both directions and there is nothing to report. An *interface implementation* is the opposite: it inherits nothing, so an implementation that drops the interface's `params` gives `((IPlain)x).Accept(\"a\", 1, 2)` compiling and `x.Accept(\"a\", 1, 2)` failing with `CS1501`, from one object. That asymmetry is the finding. ⚠ **The compiler is silent on every one of these.** It emits `CS1066` when an *explicit* interface implementation carries a default, because such a member can never be called with optional arguments at all — that case is hosted and this rule declines it. For an override, and for an implicit interface implementation, there is no diagnostic at any warning level; the shape was compiled and the build read, not assumed.",
+      "examples": {
+        "bad": "class Base {\n    public virtual void Write(string text, bool flush = false) { }\n}\n\nclass Derived : Base {\n    public override void Write(string text, bool flush = true) { }\n}",
+        "good": "class Base {\n    public virtual void Write(string text, bool flush = false) { }\n}\n\nclass Derived : Base {\n    public override void Write(string text, bool flush = false) { }\n}"
+      },
+      "falsePositives": "⚠ **Explicit interface implementations are declined, because `CS1066` already reports them** and ADR-008's answer to a diagnostic the compiler ships is to let it do the work. ⚠ **The base is the one the declaration actually names.** For an `override` that is `OverriddenMethod`; for an implicit interface implementation it is the interface member `FindImplementationForInterfaceMember` maps back to this one, and a member that implements several interface members with conflicting defaults is declined outright rather than reported against an arbitrary one of them — there is no single value to align to and a fix would have to pick. ⚠ **The whole declaration is one finding with one edit, and that is a correctness constraint rather than tidiness.** C# requires optional parameters to form a suffix, so deleting one redundant default out of two leaves `(int a = 1, int b)`, which is `CS1737` — `skala fix` applies one finding at a time, and per-parameter findings would break the build on the tool's own advice between the first edit and the second. A parameter whose default the base also declares, with the same value, is not reported; equality is on the constant, so `0` against `0` is a match and `0` against `0.0` is not — the mismatch direction is the safe one to get wrong. ⚠ **A `params` mismatch on an override is declined by construction rather than by a guard**, which is why no filter for it appears anywhere: Roslyn propagates the base's `params` onto the override's parameter symbol, so `IsParams` is equal on both sides even where no keyword is written and the comparison cannot fire. That is the correct answer for the reason the rationale gives, and it means the `params` half of this rule only ever reports interface implementations. Partial and abstract declarations have no override to compare against and are silent, as is generated code.",
+      "configuration": [
+        "dotnet_diagnostic.SK2140.severity"
+      ]
+    },
+    {
+      "id": "SK2141",
+      "concept": "restated-caller-info-argument",
+      "title": "The argument replaces what the caller-info attribute would have supplied",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "ExplicitCallerInfoArgument",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An explicit argument is passed to a `[CallerMemberName]`, `[CallerLineNumber]`, `[CallerFilePath]` or `[CallerArgumentExpression]` parameter, suppressing the substitution the parameter exists for.",
+      "rationale": "Caller-info substitution happens only when the argument is *omitted*. Supply one and the compiler steps back silently: the parameter still has a value, the call still compiles, and the diagnostic the parameter was added to carry is now whatever the caller typed. For `[CallerLineNumber]` and `[CallerFilePath]` that is a fabricated source location — a log line, an assertion message or an exception that names a place the code is not — and it is the one class of wrong data that survives review indefinitely, because nobody re-derives a line number by hand. ⚠ **This rule and `SK0232` share a span and must not disagree about it.** `SK0232` excludes caller-info parameters from its redundant-argument scan precisely because passing `null` to one is the *opposite* of redundant: omit it and the compiler substitutes a name, so the argument is the only thing keeping the value null. The two are disjoint by construction rather than by filter — `SK0232` never looks at a caller-info parameter, and this rule reports only arguments that restate the substitution exactly or fabricate a location, never `null`.",
+      "examples": {
+        "bad": "void Run() {\n    ArgumentNullException.ThrowIfNull(value, nameof(value));\n    Trace(\"started\", nameof(Run));\n}\n\nvoid Trace(string message, [CallerMemberName] string? member = null) { }",
+        "good": "void Run() {\n    ArgumentNullException.ThrowIfNull(value);\n    Trace(\"started\");\n}\n\nvoid Trace(string message, [CallerMemberName] string? member = null) { }"
+      },
+      "falsePositives": "⚠ **The general shape does not ship and the narrowing is the rule.** `OnPropertyChanged(nameof(Other))` against an `[CallerMemberName]` parameter is ordinary, correct, extremely common code — raising a change notification for a property other than the one being set is the whole point of the overload — and a rule that reports every explicit argument to a caller-info parameter reports that. So a `[CallerMemberName]` or `[CallerArgumentExpression]` argument is reported **only when it restates exactly what the compiler would have substituted**: a constant string equal to the enclosing member's name, or equal to the source text of the argument the `[CallerArgumentExpression]` names. Anything else is a deliberate value and is declined. `[CallerLineNumber]` and `[CallerFilePath]` are reported for any *constant* argument, because there is no equivalent deliberate use — nobody hand-writes a line number they mean. ⚠ **Forwarding falls out of that rather than needing a guard**: a relay passing its own `[CallerMemberName]` parameter down passes an identifier, which is not a constant, so it is never a candidate. ⚠ **Only a trailing run of arguments is reported, dropped in one edit.** A caller-info argument followed by an ordinary one cannot be deleted without moving what follows it, and two adjacent caller-info arguments reported separately would make `skala fix` loop — the same reasoning `SK0232` applies to trailing defaults. Named arguments, `ref`/`out` arguments and calls supplying more arguments than the method has parameters are declined outright: for those, \"the parameter this argument fills\" is not a fact. Every candidate deletion is re-bound speculatively and withdrawn unless the same method comes back.",
+      "configuration": [
+        "dotnet_diagnostic.SK2141.severity"
+      ]
+    },
+    {
+      "id": "SK2142",
+      "concept": "overwritten-parameter",
+      "title": "The value passed for the parameter is overwritten before it is read",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1226"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "Every path through the member assigns the parameter before anything reads it, so the value the caller passed is discarded unused.",
+      "rationale": "A parameter that is written before it is read is an argument the caller computed, passed, and never had used. Either the body was meant to use it and an assignment was put in the wrong place, or the author wanted a local and reused the parameter's name to avoid inventing one — and those are opposite defects with the same shape. The reason this is worth a warning rather than a hint is that the call site still reads as though the value matters: every caller is doing work whose result is thrown away one line into the callee, and nothing at the call site can show that.",
+      "examples": {
+        "bad": "void Render(string path) {\n    path = Path.Combine(Root, \"default.txt\");\n    Write(path);\n}",
+        "good": "void Render(string path) {\n    var resolved = Path.Combine(Root, path);\n    Write(resolved);\n}"
+      },
+      "falsePositives": "⚠ **The verdict is Roslyn's data flow, not a syntactic scan, which is what makes the conditional cases right by construction.** `if (flag) { x = 1; } Use(x);` reads the incoming value on the other path and is silent; so are `x += 1`, `x++` and `x ??= y`, all of which read before they write. The finding is exactly \"the parameter is written inside the body and its incoming value flows in nowhere\". ⚠ **`ref`, `out` and `in` parameters are excluded, and excluding them is load-bearing rather than cautious**: an `out` parameter *must* be assigned before it is read — that is its contract — and a data-flow analysis reports every correct `out` parameter as having its incoming value discarded, because it has none. Measured, not assumed: both shapes were run through `AnalyzeDataFlow` and both came back looking exactly like the defect. ⚠ **A captured parameter is declined.** Roslyn's data flow over a body containing a lambda or a local function that touches the parameter is not ordered the way the reader is, so a parameter in the `Captured` set is left alone even when the write looks unconditional — that is where this analysis stops and it is stated rather than hidden. ⚠ **Parameters only.** `S1226` also covers caught exceptions and `foreach` variables; those are separate shapes with their own legitimate uses and are not part of this rule. Bodyless declarations — abstract, extern, partial defining declarations, interface members — and generated code have nothing to analyse. **Report-only**, because the repair is a choice between \"the caller's value was meant to be used\" and \"this wanted a local\", and the rule cannot know which; that is the same reason `SK2090`–`SK2092` ship without fixes.",
+      "configuration": [
+        "dotnet_diagnostic.SK2142.severity"
+      ]
+    },
+    {
+      "id": "SK2143",
+      "concept": "crosswise-argument-order",
+      "title": "Two arguments are passed crosswise to the parameters they are named after",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2234"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "Two adjacent arguments of the same type are named after the two parameters they fill, in the opposite order.",
+      "rationale": "Two parameters of the same type next to each other are the one place a transposed call compiles and runs. Nothing at the call site marks it, the types agree, the tests that pass both values through symmetric code stay green, and the failure surfaces somewhere else entirely. The only evidence available is the names: when the argument sitting in `destination` is a variable called `source` and the argument sitting in `source` is called `destination`, the author's own naming says which way round they meant it and the call says the other.",
+      "examples": {
+        "bad": "void Copy(string source, string destination) { }\n\nvoid Run(string source, string destination) {\n    Copy(destination, source);\n}",
+        "good": "void Copy(string source, string destination) { }\n\nvoid Run(string source, string destination) {\n    Copy(source, destination);\n}"
+      },
+      "falsePositives": "⚠ **`Copy(source, destination)` called as `Copy(destination, source)` is undetectable in general, and this rule does not try.** The only sound signal is a *crosswise name match*: two **adjacent** parameters of the **same** type, filled by two plain identifiers whose own names are the two parameter names, swapped. Everything looser reports ordinary code, so everything looser is declined — non-adjacent pairs, differing parameter types, member accesses, calls, literals and any expression that is not a bare identifier. ⚠ **Names shorter than three characters are ignored.** `Max(y, x)` and `Add(b, a)` are the shapes where reversal is deliberate and a one-letter name carries no evidence about intent at all. ⚠ **A call to a method of the same name as the enclosing member is declined**, which is the guard for the deliberate reversal that does exist and is correct: a descending comparer written as `Compare(right, left)` delegating to another `Compare` is exactly the crosswise shape and exactly not a defect. ⚠ **Type parameters are excluded** — two `T` arguments to a generic helper are the same case with none of the evidence. The call must supply exactly as many arguments as the method has parameters, with no named arguments, no `ref`/`out` and no `params` expansion, so that \"the parameter this argument fills\" is a fact rather than an inference. The fix swaps the two expressions and is **not** safe to apply unreviewed — the whole finding is a question about intent, and the rule is wrong about it in exactly the cases where the author meant the reversal.",
+      "configuration": [
+        "dotnet_diagnostic.SK2143.severity"
+      ]
     }
   ]
 }

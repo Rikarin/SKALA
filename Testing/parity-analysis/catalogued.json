@@ -236,5 +236,8 @@
   "UseNullableReferenceTypesAnnotationSyntax": "SK1094",
   "UseNullableAnnotationInsteadOfAttribute": "SK1094",
   "RedundantNullnessAttributeWithNullableReferenceTypes": "SK1094",
-  "AsyncVoidThrowException": "SK3050"
+  "AsyncVoidThrowException": "SK3050",
+  "OptionalParameterHierarchyMismatch": "SK2140",
+  "BaseMemberHasParams": "SK2140",
+  "ExplicitCallerInfoArgument": "SK2141"
 }
