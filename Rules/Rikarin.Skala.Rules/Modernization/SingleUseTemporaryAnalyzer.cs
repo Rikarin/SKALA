@@ -16,8 +16,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     name adds a line and says nothing the expression did not, and a reader has to check that
 ///     nothing happens in between before they can read the two lines as one.
 ///     <para>
-///         ⚠ <b>"In between" is the entire safety argument, and it is why the rule requires the use to
-///         be the <em>very next statement</em>.</b> Inlining a temporary is normally unsafe precisely
+///         ⚠
+///         <b>
+///             "In between" is the entire safety argument, and it is why the rule requires the use to
+///             be the <em>very next statement</em>.
+///         </b> Inlining a temporary is normally unsafe precisely
 ///         because it moves the evaluation point: everything between the declaration and the use now
 ///         runs <em>before</em> the initializer instead of after it, so a side effect on either side
 ///         changes order. With nothing in between there is no order to change, and the initializer may

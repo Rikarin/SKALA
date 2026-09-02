@@ -27,8 +27,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         gets appended where the cursor was.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Hoisting is what makes the move sound, and it is a stronger fact than "the jump is
-///         last".</b> A local function may be <em>called</em> from above its own declaration, so a
+///         ⚠
+///         <b>
+///             Hoisting is what makes the move sound, and it is a stronger fact than "the jump is
+///             last".
+///         </b> A local function may be <em>called</em> from above its own declaration, so a
 ///         <c>return Inner();</c> moved above <c>int Inner() => 7;</c> still binds. Nothing else in
 ///         the block moves, no scope changes, and no name is introduced or removed — this is the only
 ///         rewrite in the batch that cannot produce <c>CS0136</c> because it declares nothing.

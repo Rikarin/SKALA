@@ -17,8 +17,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     it below the <c>if</c> states it once and leaves the branches holding only what actually
 ///     differs.
 ///     <para>
-///         ⚠ <b>The leading half of issue #108 is refuted rather than narrowed, and the reason is
-///         evaluation order.</b> A shared statement at the <em>top</em> of both branches can only be
+///         ⚠
+///         <b>
+///             The leading half of issue #108 is refuted rather than narrowed, and the reason is
+///             evaluation order.
+///         </b> A shared statement at the <em>top</em> of both branches can only be
 ///         hoisted <em>above</em> the <c>if</c>, where it now runs before the condition is evaluated
 ///         instead of after. <c>if (Advance()) { Log(); … } else { Log(); … }</c> and
 ///         <c>Log(); if (Advance()) …</c> are different programs whenever the condition or the shared
@@ -78,12 +81,12 @@ public sealed class SharedBranchTailAnalyzer : DiagnosticAnalyzer {
 
         var shared = 0;
         while (shared < then.Statements.Count
-            && shared < otherwise.Statements.Count
-            && SyntaxFactory.AreEquivalent(
-                then.Statements[then.Statements.Count - 1 - shared],
-                otherwise.Statements[otherwise.Statements.Count - 1 - shared],
-                topLevel: false
-            )) {
+               && shared < otherwise.Statements.Count
+               && SyntaxFactory.AreEquivalent(
+                   then.Statements[then.Statements.Count - 1 - shared],
+                   otherwise.Statements[otherwise.Statements.Count - 1 - shared],
+                   topLevel: false
+               )) {
             shared++;
         }
 
@@ -134,7 +137,9 @@ public sealed class SharedBranchTailAnalyzer : DiagnosticAnalyzer {
                     )
                 ),
                 "Both branches end with the same "
-                + (shared == 1 ? "statement" : shared.ToString(System.Globalization.CultureInfo.InvariantCulture) + " statements")
+                + (shared == 1
+                        ? "statement"
+                        : shared.ToString(System.Globalization.CultureInfo.InvariantCulture) + " statements")
             )
         );
     }

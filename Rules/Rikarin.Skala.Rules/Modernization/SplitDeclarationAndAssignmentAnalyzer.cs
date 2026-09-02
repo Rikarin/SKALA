@@ -17,8 +17,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     never observable before it holds something. The rewrite is the smallest one in this batch —
 ///     two lines become one and no expression moves.
 ///     <para>
-///         ⚠ <b>Only the joining half of issue #83 ships, and cutting the other half was a decision
-///         rather than an omission.</b> The issue also asks for <c>TooWideLocalVariableScope</c> —
+///         ⚠
+///         <b>
+///             Only the joining half of issue #83 ships, and cutting the other half was a decision
+///             rather than an omission.
+///         </b> The issue also asks for <c>TooWideLocalVariableScope</c> —
 ///         moving a declaration <em>into</em> the narrower block that uses it. That rewrite moves a
 ///         declaration <em>inwards</em>, which is the one direction <see cref="RewriteGuards" /> cannot
 ///         check: <c>WouldCollide</c> and <c>DeclaredElsewhereInMember</c> both answer the outward
@@ -65,7 +68,8 @@ public sealed class SplitDeclarationAndAssignmentAnalyzer : DiagnosticAnalyzer {
         }
 
         if (StatementRewrites.Next(declaration) is not ExpressionStatementSyntax {
-                Expression: AssignmentExpressionSyntax {
+                Expression:
+                AssignmentExpressionSyntax {
                     RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
                     Left: IdentifierNameSyntax left,
                     Right: { } value
