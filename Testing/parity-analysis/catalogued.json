@@ -267,5 +267,10 @@
   "EventUnsubscriptionViaAnonymousDelegate": "SK2201",
   "PossiblyUnintendedSideEffectsInsideConditionalInvocation": "SK2202",
   "VariableLengthStringHexEscapeSequence": "SK2171",
-  "SuppressNullableWarningExpressionAsInvertedIsExpression": "SK2172"
+  "SuppressNullableWarningExpressionAsInvertedIsExpression": "SK2172",
+  "InlineTemporaryVariable": "SK1100",
+  "JoinDeclarationAndInitializer": "SK1101",
+  "MoveLocalFunctionAfterJumpStatement": "SK1102",
+  "SeparateLocalFunctionsWithJumpStatement": "SK1102",
+  "ExtractCommonBranchingCode": "SK1103"
 }
