@@ -3601,12 +3601,18 @@ allocated for any of them.**
 
 ⚠ **`SK4006` is not this concept, and the map said it was.** `catalogued.json` credited ReSharper's
 `PossibleMultipleEnumeration` to `SK4006`, and `SK4006` is *Review a materialization used only by
-`foreach`* — a `ToList()` that should be **removed**. Multiple enumeration is a `ToList()` that should
-be **added**. The two are mirror images: one needs an explicit materialization and exactly one
-consumer, the other needs no materialization and two consumers, so no program satisfies both. The
-mapping was already deleted from `catalogued.json` and `ledger-resharper.json` records why; what was
-missing was anything asserting it. The refutation is now a test in `CollectionCopyAndBufferBatchTests`
-rather than a sentence here, so the day the claim stops being true the file goes red.
+`foreach`* — a `ToArray()` that should be **removed**. Multiple enumeration is a `ToArray()` that
+should be **added**. ⚠ **And "mirror images" understates it, which is what building the fixture rather
+than arguing the point turned up: the two are not merely different, they contradict each other on code
+that satisfies both.** A sequence walked once through a materialization and once more afterwards —
+`foreach (var v in source.ToArray()) …` followed by `source.Count()` — is a multiple enumeration *and*
+an `SK4006` finding, verified by running `SK4006` over exactly that file; taking `SK4006`'s advice
+there deletes the only thing keeping the second walk off the source and makes the multiple enumeration
+worse. So a map that treats one as coverage of the other does not merely overstate the catalogue, it
+records the opposite of what the tool says. The mapping was already deleted from `catalogued.json` and
+`ledger-resharper.json` records why; what was missing was anything asserting it. Four shapes now pin
+it in `CollectionCopyAndBufferBatchTests` — one satisfying neither, one each satisfying one, and the
+contradictory one — so the day any of it stops being true the file goes red.
 
 ⚠ **Neither new rule takes a `catalogued.json` key, and that was checked rather than assumed.**
 `types-2026.xml` — ReSharper's own issue-type catalogue — has no inspection for a property that copies

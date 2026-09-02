@@ -75,13 +75,16 @@ public sealed class CollectionCopyAndBufferBatchTests {
     /// <remarks>
     ///     <c>catalogued.json</c> credited ReSharper's <c>PossibleMultipleEnumeration</c> to
     ///     <c>SK4006</c>, and <c>SK4006</c> is <em>Review a materialization used only by foreach</em> —
-    ///     a <c>ToList()</c> that should be <b>removed</b>. Multiple enumeration is a
-    ///     <c>ToList()</c> that should be <b>added</b>. The two are mirror images: one needs an
-    ///     explicit materialization to exist and exactly one consumer, the other needs no
-    ///     materialization and two consumers, so no program satisfies both, and the pair below pins
-    ///     that in both directions.
+    ///     a <c>ToArray()</c> that should be <b>removed</b>. Multiple enumeration is a <c>ToArray()</c>
+    ///     that should be <b>added</b>. Three shapes pin the relation, and ⚠ <b>the third is the one
+    ///     that matters: the two are not merely different, they contradict each other on code that
+    ///     satisfies both.</b> A sequence walked once through a materialization and once more
+    ///     afterwards is a multiple enumeration <em>and</em> an <c>SK4006</c> finding, and taking
+    ///     <c>SK4006</c>'s advice there makes the multiple enumeration worse. A map that treats one as
+    ///     coverage of the other therefore does not merely overstate the catalogue; it records the
+    ///     opposite of what the tool says.
     ///     <para>
-    ///         ⚠ No <c>SK</c> id was allocated for #267 either, and for a different reason: the concept
+    ///         ⚠ No <c>SK</c> id was allocated for #267, and for a different reason again: the concept
     ///         is hosted by <c>CA1851</c>, measured <c>enabledByDefault: false, defaultSeverity:
     ///         Warning</c> against the 10.0.400 SDK, whose flow-sensitive analysis strictly dominates
     ///         what a static-type rule could report. See docs/plan/08 § <c>SK4040</c>–<c>SK4041</c>.
@@ -89,6 +92,7 @@ public sealed class CollectionCopyAndBufferBatchTests {
     /// </remarks>
     [Fact]
     public void MultipleEnumeration_IsNotTheShapeSk4006Reports() {
+        // Satisfies the multiple-enumeration shape and not SK4006's: nothing is materialized.
         const string enumeratedTwice = """
             using System.Collections.Generic;
             using System.Linq;
@@ -98,11 +102,28 @@ public sealed class CollectionCopyAndBufferBatchTests {
             }
             """;
 
-        const string materializedForOneForeach = """
+        // Satisfies neither: one walk, no materialization.
+        const string neitherShape = """
             using System.Collections.Generic;
 
             public sealed class Feed {
                 public static int Total(List<int> source) {
+                    var total = 0;
+                    foreach (var value in source) {
+                        total += value;
+                    }
+
+                    return total;
+                }
+            }
+            """;
+
+        // Satisfies SK4006's shape and not the multiple-enumeration one: one consumer.
+        const string materializedForOneForeach = """
+            using System.Linq;
+
+            public sealed class Feed {
+                public static int Total(int[] source) {
                     var total = 0;
                     foreach (var value in source.ToArray()) {
                         total += value;
@@ -113,13 +134,41 @@ public sealed class CollectionCopyAndBufferBatchTests {
             }
             """;
 
+        // ⚠ Satisfies both, and the two answers are opposite: SK4006 offers to delete the `ToArray`
+        // that is the only thing keeping the second walk off the source.
+        const string couldSatisfyBoth = """
+            using System.Collections.Generic;
+            using System.Linq;
+
+            public sealed class Feed {
+                public static int Total(IEnumerable<int> source) {
+                    var total = 0;
+                    foreach (var value in source.ToArray()) {
+                        total += value;
+                    }
+
+                    return total + source.Count();
+                }
+            }
+            """;
+
         Assert.DoesNotContain(
             Analyze(enumeratedTwice, "enumerated-twice.cs"),
             static diagnostic => diagnostic.Id == RuleIds.ImmediateMaterialization
         );
 
+        Assert.DoesNotContain(
+            Analyze(neitherShape, "neither-shape.cs"),
+            static diagnostic => diagnostic.Id == RuleIds.ImmediateMaterialization
+        );
+
         Assert.Contains(
             Analyze(materializedForOneForeach, "materialized-for-one-foreach.cs"),
+            static diagnostic => diagnostic.Id == RuleIds.ImmediateMaterialization
+        );
+
+        Assert.Contains(
+            Analyze(couldSatisfyBoth, "could-satisfy-both.cs"),
             static diagnostic => diagnostic.Id == RuleIds.ImmediateMaterialization
         );
     }
