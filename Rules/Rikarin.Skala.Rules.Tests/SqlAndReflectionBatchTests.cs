@@ -70,6 +70,39 @@ public sealed class SqlAndReflectionBatchTests {
     }
 
     /// <summary>
+    ///     ⚠ The fixture verdict with <em>only</em> this batch's four analyzers loaded.
+    /// </summary>
+    /// <remarks>
+    ///     <see cref="RuleFixtureTests.Rule_FiresExactlyWhereTheFixtureSaysItShould" /> asks the same
+    ///     question of every rule at once, which is the right default and the wrong instrument for
+    ///     two jobs. It runs two hundred analyzers over three and a half thousand files, so a
+    ///     sabotage — break a guard, see what turns red — costs a minute and a half per attempt, and
+    ///     a pass that takes that long is a pass that gets skipped. And it cannot separate "this rule
+    ///     fired" from "some other analyzer in the set threw and took this one's compilation with
+    ///     it". Scoped to four analyzers and this batch's fixtures it answers in seconds, which is
+    ///     what makes the sabotage pass something anyone will actually run.
+    /// </remarks>
+    [Theory]
+    [MemberData(nameof(Fixtures))]
+    public void EveryFixtureInTheBatch_FiresExactlyWhereItSays(string path) {
+        var fixture = RuleFixtures.All().Single(candidate => candidate.Path == path);
+        var produced = RuleFixtures
+            .Analyze(
+                RuleFixtures.Compile(File.ReadAllText(path), path),
+                Analyzers,
+                TestContext.Current.CancellationToken
+            )
+            .Where(diagnostic => diagnostic.Id == fixture.RuleId)
+            .ToArray();
+
+        Assert.True(
+            fixture.ShouldFire == produced.Length > 0,
+            $"{fixture}: {fixture.RuleId} fired {produced.Length} time(s):\n  "
+            + string.Join("\n  ", produced.Select(static d => d.Location.GetLineSpan() + ": " + d.GetMessage()))
+        );
+    }
+
+    /// <summary>
     ///     ⚠ Anti-vacuity for the test above: an analyzer set that never runs also never crashes.
     /// </summary>
     [Fact]

@@ -90,7 +90,11 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
         // ⚠ A field or a property is visible to every other method on the type, so what it has been
         // given is not a fact this method holds. A local is the only receiver whose whole life the
         // rule can see.
-        if (model.GetSymbolInfo(target.Expression, cancellation).Symbol is not ILocalSymbol command) {
+        if (model.GetSymbolInfo(target.Expression, cancellation).Symbol is not { } command) {
+            return;
+        }
+
+        if (command.Kind != SymbolKind.Local) {
             return;
         }
 
@@ -189,7 +193,7 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool Supplied(
         SyntaxNode body,
-        ILocalSymbol command,
+        ISymbol command,
         AssignmentExpressionSyntax textAssignment,
         SemanticModel model,
         System.Threading.CancellationToken cancellation,

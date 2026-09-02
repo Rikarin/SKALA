@@ -565,10 +565,25 @@ public sealed class Orders {
 }
 """,
     ("negative", "an_address_inside_a_sql_string"): """
+// ⚠ This one proves the *preceded by a word character* guard and not the apostrophe guard -- `@`
+// after `root` is skipped before the quote counting is ever consulted. Sabotaging the apostrophe
+// skip left this fixture green, which is what `a_marker_inside_a_sql_string` exists for.
 public sealed class Orders {
     public void Load(int id) {
         var command = new Command();
         command.CommandText = "select * from users where id = @id and mail = 'root@localhost'";
+        command.Parameters.AddWithValue("@id", id);
+        command.ExecuteNonQuery();
+    }
+}
+""",
+    ("negative", "a_marker_inside_a_sql_string"): """
+// A marker shape inside a `'…'` literal, with a space before it so the word-character guard cannot
+// reach it. Only the apostrophe counting declines this one.
+public sealed class Orders {
+    public void Load(int id) {
+        var command = new Command();
+        command.CommandText = "select * from tickets where id = @id and note = 'ask @support first'";
         command.Parameters.AddWithValue("@id", id);
         command.ExecuteNonQuery();
     }
