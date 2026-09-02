@@ -133,7 +133,7 @@ public static partial class SkalaCommandLine {
 
         command.SetAction(parse => {
                 if (!LoadModes.TryParse(parse.GetValue(load), out var mode)) {
-                    Console.Error.WriteLine($"skala check: --load must be binlog, workspace or loose.");
+                    Console.Error.WriteLine("skala check: --load must be binlog, workspace or loose.");
                     return ExitCodes.ConfigurationError;
                 }
 

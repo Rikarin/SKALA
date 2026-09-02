@@ -58,8 +58,7 @@ public static class McpServer {
         return ModelContextProtocol.Server.McpServer.Create(
             transport,
             options,
-            NullLoggerFactory.Instance,
-            null!
+            NullLoggerFactory.Instance
         );
     }
 
@@ -236,8 +235,7 @@ sealed class SkalaTools(string repositoryRoot) {
             ConfigCommands.Explain(
                 Path.GetFullPath(Path.Combine(repositoryRoot, path)),
                 repositoryRoot,
-                configuredOnly,
-                null
+                configuredOnly
             ).Output
         );
 
