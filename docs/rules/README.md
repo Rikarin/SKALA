@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 300 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 301 ids are allocated.
 
 ## Async
 
@@ -339,6 +339,7 @@
 | [SK5010](SK5010.md) | A pattern that can backtrack, with nothing bounding how long it may take | warning | — | no |
 | [SK5020](SK5020.md) | A cipher initialisation vector fixed at compile time | error | — | no |
 | [SK5021](SK5021.md) | An RSA or DSA key generated below 2048 bits | error | review | no |
+| [SK5030](SK5030.md) | An XML signature checked against the key the document carries | error | — | no |
 
 ## Tests
 
