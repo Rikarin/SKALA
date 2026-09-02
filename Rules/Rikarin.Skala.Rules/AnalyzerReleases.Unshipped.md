@@ -274,3 +274,5 @@ SK2171 | Skala.Correctness | Warning | The `\x` escape's length depends on what 
 SK2172 | Skala.Correctness | Warning | A null-forgiving `!` stands where it reads as a negated `is`.
 SK2173 | Skala.Correctness | Warning | `is not { }` is `is null` spelled backwards.
 SK2174 | Skala.Correctness | Info | A shift or bitwise operand groups only by precedence.
+SK1004  | Skala.Modernization | Info | Use an `extension` block instead of a static class of extension methods.
+SK1110  | Skala.Modernization | Info | A non-public overload forwards to a longer one with a constant.

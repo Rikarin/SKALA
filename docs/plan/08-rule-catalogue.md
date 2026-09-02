@@ -2094,11 +2094,11 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **325** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **290** | **89.5 %** |
+| Rules this document names | **326** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **292** | **89.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
@@ -4895,3 +4895,103 @@ map to be wrong in. `ConfusingCharAsIntegerInConstructor` — #39's third inspec
 argument widening to an `int` parameter — is uncovered for a different reason: it is a question
 about overload resolution rather than about how a literal reads, and it is a different rule from
 `SK2171`.
+
+## `SK1004` and `SK1110` — the declaration-shape batch, and the three that Roslyn already owns
+
+⚠ **The prose pass for `SK1004` and `SK1110` is owed.** What follows is the allocation register entry
+— enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+This batch was dispatched as five rules and ships **two**. The other three were measured to be owned
+by a Roslyn `IDE*` analyzer, and ADR-008 hosts rather than rebuilds. ⚠ **The measurement is the
+deliverable here, because "an `IDE*` exists for this" had been asserted about two of them and tested
+about none.**
+
+⚠ **All three `IDE*` rules sit in the middle state `IDE0059` is already recorded in, and the probe
+sharpened what that state is.** Built outside this repository with empty `Directory.Build.props` and
+`.targets` above it, SDK 10.0.400, and the SARIF error log read rather than the console — because an
+info-severity diagnostic never reaches `-v:m` and reading the console alone cannot tell "off" from
+"on and quiet":
+
+| State | `IDE0290` / `IDE0200` / `IDE0039` |
+|---|---|
+| Plain build | **not loaded at all** — absent from `tool.driver.rules` |
+| `EnforceCodeStyleInBuild=true` | declared `enabled: true`, `level: note` — and **zero results** |
+| …plus the style option set to `true` | still **zero results** |
+| …plus `dotnet_diagnostic.IDE####.severity` naming them | **all three fire**, on every shape |
+| Severity line but no `EnforceCodeStyleInBuild` | **zero results** |
+
+⚠ **The style option is not the gate and the severity line is** — even a severity line that restates
+the rule's own declared default (`suggestion`, which is `note`) is enough to make it report. That
+correction matters, because "set `csharp_style_prefer_primary_constructors`" is the advice the
+documentation gives and on its own it does nothing at build time. So in an ordinary `dotnet build` of
+an ordinary project these three report nothing whatever; they are editor diagnostics. ⚠ **Hosted all
+the same** — ADR-008 is about who owns the concept, and being silent by default is not a reason to
+rebuild it.
+
+- **[#73](https://github.com/Rikarin/SKALA/issues/73) — primary constructor — hosted by `IDE0290`.**
+  It fires on the plain assigning constructor and on a struct doing the same, correctly declines a
+  type with two constructors, and reaches *further* than the issue describes: it also reports a
+  constructor that transforms before assigning (`this.name = name.Trim()`), which it converts using a
+  field initializer.
+- **[#75](https://github.com/Rikarin/SKALA/issues/75) — forwarding lambda — hosted by `IDE0200`.** It
+  fires on `xs.Select(x => Wrap(x))`, and correctly declines `x => Combine(x, x)` (the lambda changes
+  the arguments) and `x => x.Length` (there is no method group).
+- **[#79](https://github.com/Rikarin/SKALA/issues/79) — delegate variable — hosted by `IDE0039`.** ⚠
+  **Not predicted by the dispatch, and it is the cleanest host of the three.** `IDE0039` covers the
+  `Func<>`, the `Action<>` with a statement body and the natural-typed `var f = (int v) => …` alike.
+
+⚠ **`IDE0290`'s fix does not produce an `SK2194` finding, and the premise that it would is refuted.**
+The batch was dispatched on the expectation that converting a constructor manufactures exactly the
+mutable-capture shape `SK2194` reports. It does not: `dotnet format analyzers` was run over four
+shapes — field read-only, field written by a member, and both again with the field named differently
+from the parameter — and in **every** case the shipped fixer keeps a real field and initialises it
+from the parameter (`int attempts = attempts;`) rather than deleting the field and relying on the
+capture. `SK2194` excludes field initializers by construction, so the two never meet. Verified rather
+than reasoned: Skala's own analyzers were run over the fixer's output and reported no `SK2194`, in a
+run where a planted positive in the same compilation *did* report one.
+
+⚠ **The residue `IDE0290` does not cover is `ReplaceWithPrimaryConstructorParameter`** — issue #73's
+second inspection, a field that only holds the parameter — and it is **declined rather than
+allocated**. Shipping it would push code from a declared field toward a bare capture, which is the
+state `SK2194` exists to warn about and whose repair `SK2194` gives as *declaring the field*. A rule
+whose advice is another rule's remedy in reverse is a rule the two cannot both be right about.
+
+`SK1004` `ungrouped-extension-methods` — a non-partial, non-generic `static` class whose **every**
+member is an extension method on one receiver type, named with one identifier, converted to a single
+C# 14 `extension` block. ⚠ **The syntax was confirmed to compile before any of the rule was written.**
+On SDK 10.0.400 at `LangVersion 14.0` an `extension(string s) { … }` block builds clean, and on the
+pinned Roslyn 5.9.0 it parses to `ExtensionBlockDeclarationSyntax` at `CSharp14` and at `Preview` —
+the latter being what the fixture harness compiles at. ⚠ **At `CSharp13` the same text does not report
+the feature: it recovers as a constructor named `extension` and then fails with `CS1513`**, so a
+missing language floor would have surfaced only as "the fixture does not compile". ⚠ **`SkalaRule.Parse`
+handles `"14.0"`**, which #296 makes worth checking explicitly — the table's fallback is `Preview`, and
+a floor it does not name silences its rule on every real project rather than on none. ⚠ **Both call
+forms survive the rewrite, measured**: against a block, `"x".Repeat(2)` and `StringExt.Repeat("x", 2)`
+both compile, so the conversion is source-compatible in both directions and the rule does not have to
+hunt for call sites. It is *not* binary-compatible — block members are emitted through a different
+metadata shape — which is why the fix is unsafe. The restriction to one receiver, one name and no
+method type parameters is what keeps the edits subtractive plus two braces, and that is the property
+that makes the fix reviewable. · `SK1110` `constant-forwarding-overload` — a **non-public** overload
+whose whole body forwards to a longer one, passing its parameters straight through and a compile-time
+constant for the extra, collapsed into an optional parameter. ⚠ **The public half is refused, not
+deferred.** An optional parameter's default is compiled into every call site rather than read from the
+callee, and deleting an overload from a published surface is a binary break; `RedundantOverload.Global`
+is the half of the ReSharper pair that carries the hazard and issue #112 says `.Local` may ship alone.
+Effective accessibility is computed by walking the containing types, so `public` on an `internal` class
+is reported and `protected` on a public class is not. ⚠ **Exactly two methods of that name, or
+nothing** — deleting one overload re-runs overload resolution at every call that used it, and with a
+third candidate the new winner need not be the one the body forwarded to. ⚠ **The constant is asked of
+the semantic model rather than matched on syntax**, because only a constant can *become* a default:
+`Render(text, text.Length)` is a different method, not a defaulted one. Any attribute on the forwarder
+withdraws the finding, and so do `virtual`, `override`, `abstract`, `partial` and any interface
+implementation — each is a signal that the declaration is a contract rather than a convenience.
+
+⚠ **`ConvertToExtensionBlock` is in one ReSharper export and not the other.** It is a settable key in
+the committed `editor_config_template` — which is what
+`RuleCatalogTests.EveryDeclaredReSharperKey_ExistsInTheExport` reads — and it is **absent from
+`types-2026.xml`**, the `jb inspectcode --dumpIssuesTypes` catalogue, because that dump predates the
+feature. The mapping is real; it is the dump that is behind. `SK1004` also carries a `resharperNote`,
+since the export sets the key to `hint` and the rule defaults to `suggestion`: ReSharper shipped the
+inspection quietly because `extension` blocks were days old, and Skala's audience is a model writing
+the superseded dialect on purpose.
