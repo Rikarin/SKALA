@@ -17,8 +17,16 @@ namespace Rikarin.Skala.Rules.Async;
 /// <remarks>
 ///     docs/plan/08-rule-catalogue.md § "SK3000". <c>SK3004</c> reports a token accepted and not passed
 ///     on. This reports the step before it: the method accepts none, so there is nothing to pass on and
-///     no caller can stop the work. The two are the same argument at two points in the call graph, and
-///     applying this rule's fix is what makes <c>SK3004</c> reachable on the same body.
+///     no caller can stop the work. The two are the same argument at two points in the call graph.
+///     <para>
+///         ⚠ <b>This rule's fix now does <c>SK3004</c>'s half too, and the handover it used to rely on
+///         was the defect (#328).</b> The fix appended the parameter and stopped, leaving a signature
+///         that advertised a cancellation the body dropped and a finding that had disappeared — the
+///         rule looks for the <em>parameter</em>, and the parameter was there. It now emits the
+///         parameter and the argument at every call in the body that can take one, in a single edit
+///         list, so the two rules never disagree about a body: after this fix there is nothing left for
+///         <c>SK3004</c> to say about the calls it repaired.
+///     </para>
 ///     <para>
 ///         ⚠ <b>The two are disjoint by construction, and the construction is the count.</b>
 ///         <c>SK3004</c> fires only where <em>exactly one</em> token is in scope; this fires only where
@@ -210,16 +218,17 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (Evidence(model, method, tokenType, cancellation) is not { } callee) {
+        var forwards = Forwards(model, method, tokenType, cancellation);
+        if (forwards.Count == 0) {
             return;
         }
 
         candidates.Add(
             new Candidate(
                 method.Identifier.ValueText,
-                callee,
+                forwards[0].Callee,
                 method.Identifier.GetLocation(),
-                Fix(model, method)
+                Fix(model, method, forwards)
             )
         );
     }
@@ -235,40 +244,86 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    ///     The first call in the body that would have taken a token, or null when there is none.
+    ///     Every call in the body the new parameter would be forwarded to, in source order.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Calls inside a <c>catch</c> or a <c>finally</c> do not count, for the reason <c>SK3004</c>
-    ///     excludes them: cleanup a cancellation can abort is worse than cleanup that ignores one, so
-    ///     that call is one <c>SK3004</c> would never ask anybody to forward a token to. Counting it as
-    ///     evidence would report a method whose only repair the sibling rule then declines to make.
+    ///     ⚠ <b>This is both the evidence and the fix, and #328 is what made them one list.</b> The rule
+    ///     used to answer "is there a call here that would have taken a token" and then emit a parameter
+    ///     and nothing else, so <c>ReadMessageAsync(CancellationToken cancellationToken = default)</c>
+    ///     shipped with <c>input.ReadLineAsync()</c> and <c>input.ReadAsync(…)</c> untouched — a
+    ///     signature advertising a cancellation the body drops, at every call site, invisibly. An empty
+    ///     list withdraws the finding, so <b>the parameter can never be added with nothing to forward
+    ///     it to</b>: the count is at least one by construction.
+    ///     <para>
+    ///         ⚠ Calls inside a <c>catch</c> or a <c>finally</c> do not count, for the reason
+    ///         <c>SK3004</c> excludes them: cleanup a cancellation can abort is worse than cleanup that
+    ///         ignores one, so that call is one <c>SK3004</c> would never ask anybody to forward a token
+    ///         to.
+    ///     </para>
     ///     <para>
     ///         ⚠ A call inside a nested body that declares its own token is not evidence either — that
     ///         one has a token already and is <c>SK3004</c>'s to report.
     ///     </para>
+    ///     <para>
+    ///         ⚠ <b>A call inside a <c>static</c> lambda or a <c>static</c> local function is skipped,
+    ///         and that is CS8421 rather than taste</b> — a static anonymous function cannot capture the
+    ///         enclosing method's parameter, so an argument naming it does not compile. Skipping it here
+    ///         rather than only in the fix is what keeps the two halves the same list.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>A body that also awaits something no token can reach is still reported.</b> A
+    ///         <c>CancellationToken</c> is a promise of cooperative cancellation at the awaits that can
+    ///         honour it, not of an abort — every real body mixes the two, and <c>ConfigureAwait</c>
+    ///         alone is an awaited invocation that takes no token. Declining a method because one await
+    ///         cannot take a token would decline nearly all of them; the defect #328 named is a
+    ///         parameter forwarded to <em>nothing</em>, and a non-empty list is what rules that out.
+    ///     </para>
     /// </remarks>
-    static string? Evidence(
+    static List<CancellationTokens.Forward> Forwards(
         SemanticModel model,
         MethodDeclarationSyntax method,
         INamedTypeSymbol tokenType,
         System.Threading.CancellationToken cancellation
     ) {
+        var forwards = new List<CancellationTokens.Forward>();
         foreach (var node in method.DescendantNodes()) {
             if (node is not InvocationExpressionSyntax invocation
                 || IsInsideCleanup(invocation, method)
-                || CancellationTokens.CountInScope(model, invocation, tokenType, cancellation) != 0
-                || !CancellationTokens.WantsAToken(model, invocation, tokenType, cancellation)) {
+                || IsInsideANonCapturingFunction(invocation, method)
+                || CancellationTokens.CountInScope(model, invocation, tokenType, cancellation) != 0) {
                 continue;
             }
 
-            return invocation.Expression switch {
-                MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
-                SimpleNameSyntax simple => simple.Identifier.ValueText,
-                _ => invocation.Expression.ToString()
-            };
+            if (CancellationTokens.Forwarding(model, invocation, tokenType, "cancellationToken", cancellation)
+                is { } forward) {
+                forwards.Add(forward);
+            }
         }
 
-        return null;
+        return forwards;
+    }
+
+    /// <summary>
+    ///     Whether a <c>static</c> lambda or <c>static</c> local function stands between the two.
+    /// </summary>
+    static bool IsInsideANonCapturingFunction(SyntaxNode node, SyntaxNode stop) {
+        for (var current = node.Parent;
+             current is not null && !ReferenceEquals(current, stop);
+             current = current.Parent) {
+            var modifiers = current switch {
+                AnonymousFunctionExpressionSyntax function => function.Modifiers,
+                LocalFunctionStatementSyntax local => local.Modifiers,
+                _ => default
+            };
+
+            foreach (var modifier in modifiers) {
+                if (modifier.IsKind(SyntaxKind.StaticKeyword)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     static bool IsInsideCleanup(SyntaxNode node, SyntaxNode stop) {
@@ -284,7 +339,7 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    ///     Append <c>CancellationToken cancellationToken = default</c>, spelled the way it binds here.
+    ///     Append <c>CancellationToken cancellationToken = default</c> and forward it to every call.
     /// </summary>
     /// <remarks>
     ///     ⚠ <c>CancellationToken</c> when the simple name resolves at this position, the fully
@@ -293,8 +348,18 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
     ///     syntactic — it re-parses and compares syntax diagnostics — so a missing using would pass
     ///     verification and break the build. It is also why the rule declares <c>fixIsSafe: false</c>:
     ///     a parameter added to a signature is a signature the author should look at.
+    ///     <para>
+    ///         ⚠ <b>The forwarding edits are the other half of the rewrite (#328), not a nicety.</b>
+    ///         Every edit is a zero-length insertion at a distinct offset, and <c>FixCommand</c> applies
+    ///         a finding's edits back to front, so the parameter — the leftmost of them — cannot move
+    ///         the offsets of the arguments that follow it.
+    ///     </para>
     /// </remarks>
-    static ImmutableDictionary<string, string?> Fix(SemanticModel model, MethodDeclarationSyntax method) {
+    static ImmutableDictionary<string, string?> Fix(
+        SemanticModel model,
+        MethodDeclarationSyntax method,
+        List<CancellationTokens.Forward> forwards
+    ) {
         var list = method.ParameterList;
         var name = "System.Threading.CancellationToken";
         foreach (var symbol in model.LookupNamespacesAndTypes(list.SpanStart, name: "CancellationToken")) {
@@ -307,10 +372,15 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
 
         var text = name + " cancellationToken = default";
         var parameters = list.Parameters;
-        return FixEdits.Pack(
-            parameters.Count == 0
-                ? (new TextSpan(list.CloseParenToken.SpanStart, 0), text)
-                : (new TextSpan(parameters[parameters.Count - 1].Span.End, 0), ", " + text)
-        );
+        var edits = new (TextSpan Span, string Text)[forwards.Count + 1];
+        edits[0] = parameters.Count == 0
+            ? (new TextSpan(list.CloseParenToken.SpanStart, 0), text)
+            : (new TextSpan(parameters[parameters.Count - 1].Span.End, 0), ", " + text);
+
+        for (var i = 0; i < forwards.Count; i++) {
+            edits[i + 1] = (forwards[i].Span, forwards[i].Text);
+        }
+
+        return FixEdits.Pack(edits);
     }
 }

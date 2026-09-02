@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 using System;
 
 namespace Rikarin.Skala.Rules.Async;
@@ -229,33 +230,82 @@ internal static class CancellationTokens {
         return true;
     }
 
+    /// <summary>The edit that hands one call a token, and the callee it names.</summary>
+    public readonly struct Forward {
+        public Forward(TextSpan span, string text, string callee) {
+            Span = span;
+            Text = text;
+            Callee = callee;
+        }
+
+        public TextSpan Span { get; }
+
+        public string Text { get; }
+
+        public string Callee { get; }
+    }
+
     /// <summary>
-    ///     Whether this call would take a <c>CancellationToken</c> and was not given one.
+    ///     The edit that passes <paramref name="token" /> to this call, or null when there is none.
     /// </summary>
     /// <remarks>
     ///     ⚠ The two shapes <c>SK3004</c> can repair, and no third: an omitted <em>optional</em>
     ///     parameter, or an overload that is this parameter list with a token appended and every
     ///     argument positional. Anywhere else the rule would have to choose between overloads, and a fix
     ///     that changes which method is called is not a fix.
+    ///     <para>
+    ///         ⚠ <b>The edit, not just the verdict, and both rules take it from here (#328).</b>
+    ///         <c>SK3051</c> used to answer only "would this call have taken a token", append a
+    ///         parameter, and stop — which produced a signature advertising a cancellation the body
+    ///         dropped. Its fix now emits one of these per call in the body, so "wants a token" and
+    ///         "here is the argument that gives it one" cannot drift apart between the two rules.
+    ///     </para>
     /// </remarks>
+    public static Forward? Forwarding(
+        SemanticModel model,
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol tokenType,
+        string token,
+        System.Threading.CancellationToken cancellation
+    ) {
+        if (model.GetSymbolInfo(invocation, cancellation).Symbol
+            is not IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.ReducedExtension } target) {
+            return null;
+        }
+
+        var arguments = invocation.ArgumentList.Arguments;
+        if (Supplies(arguments, target, tokenType)) {
+            return null;
+        }
+
+        var argument = Omitted(target, tokenType) is { } optional
+            ? optional.Name + ": " + token
+            : HasAppendedOverload(target, tokenType) && AllPositional(arguments, target)
+                ? token
+                : null;
+
+        if (argument is null) {
+            return null;
+        }
+
+        var list = invocation.ArgumentList;
+        return arguments.Count == 0
+            ? new Forward(new TextSpan(list.CloseParenToken.SpanStart, 0), argument, target.Name)
+            : new Forward(
+                new TextSpan(arguments[arguments.Count - 1].Span.End, 0),
+                ", " + argument,
+                target.Name
+            );
+    }
+
+    /// <summary>
+    ///     Whether this call would take a <c>CancellationToken</c> and was not given one.
+    /// </summary>
     public static bool WantsAToken(
         SemanticModel model,
         InvocationExpressionSyntax invocation,
         INamedTypeSymbol tokenType,
         System.Threading.CancellationToken cancellation
-    ) {
-        if (model.GetSymbolInfo(invocation, cancellation).Symbol
-            is not IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.ReducedExtension } target) {
-            return false;
-        }
-
-        var arguments = invocation.ArgumentList.Arguments;
-        if (Supplies(arguments, target, tokenType)) {
-            return false;
-        }
-
-        return Omitted(target, tokenType) is not null
-            || HasAppendedOverload(target, tokenType)
-            && AllPositional(arguments, target);
-    }
+    ) =>
+        Forwarding(model, invocation, tokenType, "cancellationToken", cancellation) is not null;
 }

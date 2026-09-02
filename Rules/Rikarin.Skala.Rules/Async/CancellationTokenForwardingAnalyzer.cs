@@ -2,7 +2,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 
@@ -65,24 +64,13 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
-            is not IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.ReducedExtension } target) {
-            return;
-        }
-
-        var arguments = invocation.ArgumentList.Arguments;
-        if (CancellationTokens.Supplies(arguments, target, tokenType)) {
-            return;
-        }
-
-        var edit = CancellationTokens.Omitted(target, tokenType) is { } optional
-            ? Append(invocation, arguments, optional.Name + ": " + available)
-            : CancellationTokens.HasAppendedOverload(target, tokenType)
-                && CancellationTokens.AllPositional(arguments, target)
-                ? Append(invocation, arguments, available)
-                : (Edit?)null;
-
-        if (edit is null) {
+        if (CancellationTokens.Forwarding(
+                context.SemanticModel,
+                invocation,
+                tokenType,
+                available,
+                context.CancellationToken
+            ) is not { } forward) {
             return;
         }
 
@@ -90,23 +78,10 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
             Diagnostic.Create(
                 Descriptor,
                 invocation.GetLocation(),
-                FixEdits.Pack((edit.Value.Span, edit.Value.Text)),
-                "`" + target.Name + "` takes a `CancellationToken` and `" + available + "` is not passed to it"
+                FixEdits.Pack((forward.Span, forward.Text)),
+                "`" + forward.Callee + "` takes a `CancellationToken` and `" + available + "` is not passed to it"
             )
         );
-    }
-
-    readonly record struct Edit(TextSpan Span, string Text);
-
-    static Edit? Append(
-        InvocationExpressionSyntax invocation,
-        SeparatedSyntaxList<ArgumentSyntax> arguments,
-        string text
-    ) {
-        var list = invocation.ArgumentList;
-        return arguments.Count == 0
-            ? new Edit(new TextSpan(list.CloseParenToken.SpanStart, 0), text)
-            : new Edit(new TextSpan(arguments[arguments.Count - 1].Span.End, 0), ", " + text);
     }
 
     static bool IsInsideCleanup(SyntaxNode node) {

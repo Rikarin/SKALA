@@ -191,10 +191,17 @@ public sealed class AsyncVoidShapeBatchTests {
     }
 
     /// <summary>
-    ///     ⚠ <c>SK3051</c>'s own fix, applied, is what produces the <c>SK3004</c> above.
+    ///     ⚠ <c>SK3051</c>'s fix appends the parameter <em>and</em> supplies it, so nothing is left over.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>This test asserted the opposite until #328, and the assertion it made was the defect.</b>
+    ///     It required an <c>SK3004</c> to survive the fix — which is exactly the state the issue
+    ///     objected to: a parameter added to a signature and forwarded to nothing, with the rule that
+    ///     would have said so silenced because it looks for the parameter. The finding SK3004 used to
+    ///     make here is now made by the edit instead.
+    /// </remarks>
     [Fact]
-    public void TheCancellationFix_AppendsAnOptionalTokenAndReachesSk3004() {
+    public void TheCancellationFix_AppendsAnOptionalTokenAndForwardsIt() {
         const string source = """
                               using System.IO;
                               using System.Threading;
@@ -215,9 +222,99 @@ public sealed class AsyncVoidShapeBatchTests {
             StringComparison.Ordinal
         );
 
+        Assert.Contains(
+            "File.ReadAllTextAsync(path, cancellationToken: cancellationToken)",
+            fixedText,
+            StringComparison.Ordinal
+        );
+
         var after = Analyze(fixedText, "Loader.cs");
         Assert.DoesNotContain(after, static d => d.Id == RuleIds.AsyncMethodWithoutCancellation);
-        Assert.Single(after, static d => d.Id == RuleIds.CancellationTokenNotForwarded);
+        Assert.DoesNotContain(after, static d => d.Id == RuleIds.CancellationTokenNotForwarded);
+    }
+
+    /// <summary>
+    ///     ⚠ #328's own shape: two awaited calls that can take a token, and both must get it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The regression this pins is a parameter forwarded to nothing.</b> Measured on
+    ///     <c>Tools/Rikarin.Skala.Server/LanguageServer.cs</c>, the fix added
+    ///     <c>CancellationToken cancellationToken = default</c> to <c>ReadMessageAsync</c> and left
+    ///     <c>input.ReadLineAsync()</c> and <c>input.ReadAsync(…)</c> untouched, so the signature
+    ///     advertised a cancellation the body dropped at every call site. Both shapes are here: an
+    ///     appended overload (<c>ReadLineAsync</c>) and an omitted optional parameter
+    ///     (<c>ReadToEndAsync</c> has neither, so <c>Task.Delay</c> stands in for the second).
+    ///     <para>
+    ///         ⚠ The <c>WriteAsync</c> call is deliberately one no token can reach, and the method is
+    ///         still reported. A token is a promise about the awaits that can honour it.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void TheCancellationFix_ForwardsToEveryCallThatCanTakeOne() {
+        const string source = """
+                              using System.IO;
+                              using System.Threading;
+                              using System.Threading.Tasks;
+
+                              public sealed class Channel {
+                                  readonly TextReader input = TextReader.Null;
+                                  readonly TextWriter output = TextWriter.Null;
+
+                                  public async Task PumpAsync() {
+                                      var line = await input.ReadLineAsync();
+                                      await output.WriteAsync(line);
+                                      await Task.Delay(1);
+                                  }
+                              }
+                              """;
+
+        var fixedText = Apply(source, RuleIds.AsyncMethodWithoutCancellation);
+
+        Assert.Contains(
+            "PumpAsync(CancellationToken cancellationToken = default)",
+            fixedText,
+            StringComparison.Ordinal
+        );
+
+        Assert.Contains("input.ReadLineAsync(cancellationToken)", fixedText, StringComparison.Ordinal);
+        Assert.Contains("Task.Delay(1, cancellationToken)", fixedText, StringComparison.Ordinal);
+
+        // ⚠ `TextWriter.WriteAsync(string?)` has no token-taking sibling, so it keeps its argument
+        // list — and its presence does not withdraw the finding.
+        Assert.Contains("output.WriteAsync(line)", fixedText, StringComparison.Ordinal);
+
+        var after = Analyze(fixedText, "Channel.cs");
+        Assert.DoesNotContain(after, static d => d.Id == RuleIds.AsyncMethodWithoutCancellation);
+        Assert.DoesNotContain(after, static d => d.Id == RuleIds.CancellationTokenNotForwarded);
+    }
+
+    /// <summary>
+    ///     ⚠ CS8421: a <c>static</c> lambda cannot capture the parameter, so the site is declined.
+    /// </summary>
+    /// <remarks>
+    ///     The only call that would take a token is inside a <c>static</c> lambda. Forwarding there does
+    ///     not compile and appending the parameter alone is the #328 defect, so the finding is
+    ///     withdrawn rather than half-repaired.
+    /// </remarks>
+    [Fact]
+    public void ACallInsideAStaticLambda_WithdrawsSk3051() {
+        const string source = """
+                              using System;
+                              using System.Threading;
+                              using System.Threading.Tasks;
+
+                              public sealed class Scheduler {
+                                  public async Task RunAsync() {
+                                      Func<Task> work = static () => Task.Delay(10);
+                                      await work();
+                                  }
+                              }
+                              """;
+
+        Assert.DoesNotContain(
+            Analyze(source, "Scheduler.cs"),
+            static d => d.Id == RuleIds.AsyncMethodWithoutCancellation
+        );
     }
 
     /// <summary>
