@@ -43,18 +43,47 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        // ⚠ Only constructors that *run* field initializers are evidence. C# runs them in every
-        // constructor that does not chain to `this(…)`, so a chaining constructor proves nothing
-        // either way and is skipped rather than counted as a witness or as a counterexample.
+        if (RunningConstructors(type, context.CancellationToken) is not { Count: > 0 } running) {
+            return;
+        }
+
+        foreach (var member in type.GetMembers()) {
+            context.CancellationToken.ThrowIfCancellationRequested();
+            if (member is IFieldSymbol {
+                    IsStatic: false,
+                    IsConst: false,
+                    IsImplicitlyDeclared: false,
+                    DeclaredAccessibility: Accessibility.Private
+                } field) {
+                Examine(context, type, field, running);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     The declared constructors that <em>run</em> field initializers, or <c>null</c> for a type
+    ///     whose constructors the walk cannot read.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ C# runs field initializers in every constructor that does not chain to <c>this(…)</c>, so a
+    ///     chaining constructor is evidence of nothing and is skipped rather than counted as a witness
+    ///     or as a counterexample. A primary constructor, a record's copy constructor and any other
+    ///     implicitly declared one stop the walk for the whole type: their assignments are not
+    ///     constructor statements, and guessing at them is how this rule would delete a live value.
+    /// </remarks>
+    static List<ConstructorDeclarationSyntax>? RunningConstructors(
+        INamedTypeSymbol type,
+        CancellationToken cancellation
+    ) {
         var running = new List<ConstructorDeclarationSyntax>();
         foreach (var constructor in type.InstanceConstructors) {
             if (constructor.IsImplicitlyDeclared || constructor.DeclaringSyntaxReferences.Length != 1) {
-                return;
+                return null;
             }
 
-            if (constructor.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
+            if (constructor.DeclaringSyntaxReferences[0].GetSyntax(cancellation)
                 is not ConstructorDeclarationSyntax declaration) {
-                return;
+                return null;
             }
 
             if (!declaration.Initializer.IsKind(SyntaxKind.ThisConstructorInitializer)) {
@@ -62,58 +91,46 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
             }
         }
 
-        if (running.Count == 0) {
+        return running;
+    }
+
+    /// <summary>One private instance field, against every constructor that runs its initializer.</summary>
+    static void Examine(
+        SymbolAnalysisContext context,
+        INamedTypeSymbol type,
+        IFieldSymbol field,
+        List<ConstructorDeclarationSyntax> running
+    ) {
+        if (field.DeclaringSyntaxReferences.Length != 1
+            || field.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
+            is not VariableDeclaratorSyntax { Initializer: { } initializer } declarator) {
             return;
         }
 
-        foreach (var member in type.GetMembers()) {
-            context.CancellationToken.ThrowIfCancellationRequested();
-            if (member is not IFieldSymbol {
-                    IsStatic: false,
-                    IsConst: false,
-                    IsImplicitlyDeclared: false,
-                    DeclaredAccessibility: Accessibility.Private
-                } field) {
-                continue;
-            }
-
-            if (field.DeclaringSyntaxReferences.Length != 1
-                || field.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
-                is not VariableDeclaratorSyntax { Initializer: { } initializer } declarator) {
-                continue;
-            }
-
-            if (!IsSideEffectFree(initializer.Value)
-                || ReferencedInAnOverride(type, field, context.CancellationToken)) {
-                continue;
-            }
-
-            var overwritten = true;
-            foreach (var constructor in running) {
-                if (!OverwritesBeforeAnyRead(constructor, field.Name)) {
-                    overwritten = false;
-                    break;
-                }
-            }
-
-            if (!overwritten) {
-                continue;
-            }
-
-            var span = TextSpan.FromBounds(declarator.Identifier.Span.End, initializer.Span.End);
-            if (RewriteGuards.ContainsCommentOrDirective(declarator.SyntaxTree, span)) {
-                continue;
-            }
-
-            context.ReportDiagnostic(
-                Diagnostic.Create(
-                    Descriptor,
-                    initializer.GetLocation(),
-                    FixEdits.Pack((span, string.Empty)),
-                    "the value given to `" + field.Name + "` here is overwritten by every constructor"
-                )
-            );
+        if (!IsSideEffectFree(initializer.Value)
+            || ReferencedInAnOverride(type, field, context.CancellationToken)) {
+            return;
         }
+
+        foreach (var constructor in running) {
+            if (!OverwritesBeforeAnyRead(constructor, field.Name)) {
+                return;
+            }
+        }
+
+        var span = TextSpan.FromBounds(declarator.Identifier.Span.End, initializer.Span.End);
+        if (RewriteGuards.ContainsCommentOrDirective(declarator.SyntaxTree, span)) {
+            return;
+        }
+
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                Descriptor,
+                initializer.GetLocation(),
+                FixEdits.Pack((span, string.Empty)),
+                "the value given to `" + field.Name + "` here is overwritten by every constructor"
+            )
+        );
     }
 
     /// <summary>
