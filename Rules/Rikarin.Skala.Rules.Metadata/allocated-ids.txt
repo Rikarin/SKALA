@@ -315,3 +315,7 @@ SK2171 variable-length-hex-escape
 SK2172 forgiven-is-operand
 SK2173 negated-empty-pattern
 SK2174 unparenthesised-precedence-mix
+SK2210 invalid-constant-index-or-range
+SK2211 unchanging-loop-condition
+SK2212 single-iteration-loop
+SK2213 index-of-compared-to-positive

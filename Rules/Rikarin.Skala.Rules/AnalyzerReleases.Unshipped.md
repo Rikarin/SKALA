@@ -274,3 +274,7 @@ SK2171 | Skala.Correctness | Warning | The `\x` escape's length depends on what 
 SK2172 | Skala.Correctness | Warning | A null-forgiving `!` stands where it reads as a negated `is`.
 SK2173 | Skala.Correctness | Warning | `is not { }` is `is null` spelled backwards.
 SK2174 | Skala.Correctness | Info | A shift or bitwise operand groups only by precedence.
+SK2210 | Skala.Correctness | Warning | The constant index or range cannot be valid.
+SK2211 | Skala.Correctness | Warning | Nothing the loop condition reads is changed by the loop.
+SK2212 | Skala.Correctness | Warning | The loop body cannot run more than once.
+SK2213 | Skala.Correctness | Warning | The `IndexOf` result is compared to a positive number.

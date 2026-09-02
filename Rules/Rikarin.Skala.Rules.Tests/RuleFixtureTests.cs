@@ -164,6 +164,8 @@ public sealed class RuleFixtureTests {
         new MisleadingBodyIndentationAnalyzer(), new VariableLengthHexEscapeAnalyzer(),
         new ForgivenIsOperandAnalyzer(), new NegatedEmptyPatternAnalyzer(),
         new UnparenthesisedPrecedenceMixAnalyzer(),
+        new InvalidConstantIndexOrRangeAnalyzer(), new UnchangingLoopConditionAnalyzer(),
+        new SingleIterationLoopAnalyzer(), new IndexOfComparedToPositiveAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
