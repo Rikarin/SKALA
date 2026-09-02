@@ -315,3 +315,7 @@ SK2171 variable-length-hex-escape
 SK2172 forgiven-is-operand
 SK2173 negated-empty-pattern
 SK2174 unparenthesised-precedence-mix
+SK2230 sql-fragments-run-together
+SK2231 command-parameter-not-supplied
+SK2232 assembly-loaded-outside-its-context
+SK2233 mistaken-type-argument

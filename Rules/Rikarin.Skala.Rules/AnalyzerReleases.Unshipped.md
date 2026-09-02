@@ -274,3 +274,7 @@ SK2171 | Skala.Correctness | Warning | The `\x` escape's length depends on what 
 SK2172 | Skala.Correctness | Warning | A null-forgiving `!` stands where it reads as a negated `is`.
 SK2173 | Skala.Correctness | Warning | `is not { }` is `is null` spelled backwards.
 SK2174 | Skala.Correctness | Info | A shift or bitwise operand groups only by precedence.
+SK2230 | Skala.Correctness | Warning | The concatenation fuses a word into the SQL keyword beside it.
+SK2231 | Skala.Correctness | Warning | The command's SQL names a parameter nothing supplies.
+SK2232 | Skala.Correctness | Warning | The load context's own resolver loads outside it.
+SK2233 | Skala.Correctness | Warning | The `Type` passed cannot satisfy what the API asks for.
