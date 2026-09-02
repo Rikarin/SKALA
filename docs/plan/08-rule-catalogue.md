@@ -1775,8 +1775,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **295** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **260** | **88.4 %** |
+| Rules this document names | **298** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **263** | **88.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -3529,3 +3529,75 @@ the declaration or sink the reader, write the implementation or delete the hook,
 per-instance or make the member static — and the finding is precisely the evidence that the author
 knows which and the analyzer does not. `SK2132` is the exception because there the two candidate
 repairs are not symmetric: one of them is a rename of a property that other code already calls.
+
+## `SK3540`–`SK3542` — resource and handle lifetime
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than into §
+"`SK3000` — Async, concurrency, lifetime" only to keep it out of a section several concurrent
+branches were editing.** What follows is the register doing the one job ADR-012 needs it to do — the
+numbers are taken and written down where the next milestone will read them. It is not yet the
+considered account the sections above carry, and it belongs beside `SK3530`–`SK3532`.
+
+Three rules about the same seam from three sides: what a type *declares* about a resource's lifetime
+versus what actually happens to it.
+
+- `SK3540` `dispose-method-without-interface` — a public parameterless `Dispose()` that releases
+  something, on a type that does not implement `IDisposable`. ⚠ **This is the half of the ownership
+  question `SK3502` does not ask, and the two read different declarations.** `SK3502` reads a
+  *field* — the type constructs a disposable and offers no matching contract — and says nothing about
+  how the type cleans up. This reads a *method*: the cleanup is written, public, spelled exactly the
+  way the framework spells it, and the base list is silent, so `using` does not bind, `is IDisposable`
+  is false, and every container teardown walks past it. ⚠ **The two are deliberately *not* made
+  disjoint**, unlike `SK3502`/`SK3530` and `SK3502`/`SK3532`: one type can be wrong in both ways at
+  once and each rule is then saying its own true thing about a different declaration, so suppressing
+  either would delete a finding rather than a duplicate. `supersedes` would be the wrong instrument
+  in any case — `Supersession.Apply` works on a shared span and these two report different spans — and
+  a batch test pins the choice from both ends. ⚠ **`ref struct`s are excluded and that is what keeps
+  it from contradicting `SK3532`**: a `ref struct`'s `Dispose()` *is* the disposal contract, bound by
+  the language's pattern rule with no interface anywhere, so reporting it as undeclared would report
+  the correct spelling of the thing as a defect — on exactly the declaration `SK3532` exists to say is
+  missing. ⚠ **The body must release something** — a `Dispose`, `DisposeAsync`, `Close` or
+  `GC.SuppressFinalize` call — which is what keeps a pooled object's reset out. Not hosted:
+  `CA1063` and `CA1816` both take a type that *already* implements `IDisposable` as their subject.
+  **Fix, `fixIsSafe: false`**: the edit is certain and its consequence is not, because a type that
+  becomes `IDisposable` is one every caller may wrap in a `using` and every container will now tear
+  down.
+- `SK3541` `short-lived-http-client` — a `using` owns a directly constructed `HttpClient`, so the
+  connection pool underneath it closes once per call and the sockets sit in `TIME_WAIT`. ⚠ **The
+  whole family this joins says "this is not disposed" and this one says "this is disposed".**
+  `SK3501`, `SK3502`, `SK3530` and `SK3532` each report a release that is missing; here the release is
+  present, is what the shape of every other disposable asks for, and is the defect — which is why it
+  cannot be an exception inside one of theirs. ⚠ **`new HttpClient(sharedHandler, disposeHandler:
+  false)` is excluded and it is the important exclusion**: that is the documented mitigation, the
+  sockets belong to the handler, and without the test the rule would report the fix. An entry point is
+  excluded too, because a client disposed once for the process is not one disposed per call.
+  **Fixless**: the repair is a `static readonly` client, an injected one, or `IHttpClientFactory` — a
+  decision about where the type gets its dependencies. Deleting the `using` in place would turn a
+  bounded leak into an unbounded one.
+- `SK3542` `dangerous-handle-without-ref-count` — `SafeHandle.DangerousGetHandle` where the declaring
+  type never touches the reference count. ⚠ **The finding is the missing *pair* and not the call**,
+  because the call is named dangerous and is sometimes correct. What is asked is the only question
+  answerable from one file with certainty — does the type contain a `DangerousAddRef` or a
+  `DangerousRelease` anywhere at all — and either half, anywhere in the type, withdraws it. Whether a
+  pair that exists brackets *this* call is a flow question with no safe wrong answer. The residual
+  cost is stated rather than guarded: a type that ref-counts through a helper in another file is
+  reported and should not be. **Fixless**: the repair either wraps the use in an `AddRef`/`Release`
+  pair with a `finally`, or — more often right — stops taking the raw value and hands the `SafeHandle`
+  itself to the interop call, and which one applies depends on where the value goes.
+
+⚠ **Two of the five concepts this batch was given were refuted, and neither was allocated an id.**
+Both were hosted by something already on, measured rather than assumed:
+
+- **A reference taken to storage that cannot be referenced safely** (issue #62,
+  `ByRefArgumentIsVolatileField` and `AddressOfMarshalByRefObject`) is **the C# compiler's own
+  work, on by default in both halves**: `CS0420` for a `volatile` field passed by `ref`, `CS0197` for
+  a field of a `MarshalByRefObject`. ⚠ **The compiler's version is also the more precise one** —
+  Roslyn deliberately exempts the `Interlocked` family from `CS0420`, which is the one place the
+  pattern is correct, and a Skala rule written from the inspection's description would have reported
+  it.
+- **`BeginInvoke` with no matching `EndInvoke`** (issue #174) asks the wrong question on every
+  framework Skala supports. Delegate `BeginInvoke` compiles clean on `net10.0` and throws
+  `PlatformNotSupportedException` on the first call, paired or not — measured by running it. A rule
+  distinguishing the paired case from the unpaired one would be sorting two shapes that both fail
+  identically. ⚠ **If anything is worth reporting here it is the call itself and not the missing
+  pair**, which is a different concept and needs its own issue before it gets a number.

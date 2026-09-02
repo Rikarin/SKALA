@@ -136,9 +136,11 @@ public sealed class UndeclaredDisposeAnalyzer : DiagnosticAnalyzer {
                 || member.ParameterList.Parameters.Count != 0
                 || member.TypeParameterList is not null
                 || member.ExplicitInterfaceSpecifier is not null
-                || member.Modifiers.Any(static modifier =>
-                    modifier.IsKind(SyntaxKind.StaticKeyword) || modifier.IsKind(SyntaxKind.AbstractKeyword)
-                )
+                // ⚠ No `abstract` test, and its absence is deliberate. One was written here and a
+                // sabotage proved it dead: an abstract method has no body, so `ReleasesSomething`
+                // withdraws every one of them anyway. Two guards where one is load-bearing reads as
+                // two reasons a shape is excluded, and only one of them is true.
+                || member.Modifiers.Any(static modifier => modifier.IsKind(SyntaxKind.StaticKeyword))
                 || !member.Modifiers.Any(static modifier => modifier.IsKind(SyntaxKind.PublicKeyword))
                 || member.ReturnType is not PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.VoidKeyword }) {
                 continue;
