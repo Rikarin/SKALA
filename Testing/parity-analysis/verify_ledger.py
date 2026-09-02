@@ -219,7 +219,15 @@ if ideas:
 # that lives only in the test project does not protect the file being hand-edited here.
 RULES = f"{REPO}/Rules/Rikarin.Skala.Rules.Metadata/rules.json"
 ALLOCATED = f"{REPO}/Rules/Rikarin.Skala.Rules.Metadata/allocated-ids.txt"
-shipped = {r["id"]: r for r in json.load(open(RULES))["rules"]}
+# ⚠ `retired` is filtered out, and the variable name is the reason. A rule retired AFTER shipping
+# keeps its rules.json entry -- that is how its descriptor stays resolvable for an `.editorconfig`
+# key and its docs page stays a tombstone -- so `rules.json` is a list of rules that *exist*, not a
+# list of rules that ship. Reading it unfiltered made this file demand that `catalogued.json` credit
+# an inspection to a withdrawn rule, which is the opposite of what the map should say: a retired
+# rule covers nothing and the inspection belongs to the `Hosted` bucket. Same fix as `classify.py`'s
+# `shipped_ids`, for the same reason, in the file whose comment above says the duplication is
+# deliberate.
+shipped = {r["id"]: r for r in json.load(open(RULES))["rules"] if not r.get("retired", False)}
 catalogued = json.load(open(f"{W}/catalogued.json"))
 allocated = {ln.split(None, 1)[0] for ln in open(ALLOCATED)
              if ln.strip() and not ln.startswith("#")}

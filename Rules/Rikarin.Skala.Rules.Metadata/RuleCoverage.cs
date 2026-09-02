@@ -75,10 +75,13 @@ public static class RuleCoverage {
         Cut,
 
         /// <summary>
-        ///     ⚠ Allocated, superseded by a live id, and never to be built. Distinct from
-        ///     <see cref="Cut" /> because nothing was decided against the *rule* — the id was a
-        ///     duplicate. Counting it as outstanding would put work on the roadmap that must never
-        ///     happen; counting it as cut would file a clerical error under "decisions".
+        ///     ⚠ Allocated and then disposed of — either superseded by a live id and never built
+        ///     (<c>SK6001</c>), or built, shipped and withdrawn (<c>SK1020</c>, <c>SK1034</c>, #281).
+        ///     Distinct from <see cref="Cut" /> because nothing was decided against the *concept*: in
+        ///     the first case the id was a duplicate, in the second the concept turned out to be
+        ///     hosted by a diagnostic that is on at stock. Counting either as outstanding would put
+        ///     work on the roadmap that must never happen; counting either as cut would file a
+        ///     disposal under "decisions we took about what to build".
         /// </summary>
         Retired,
 
@@ -108,14 +111,42 @@ public static class RuleCoverage {
     }
 
     /// <summary>
+    ///     Computes the coverage from the catalogue's text and the registry's <em>live</em> rules.
+    /// </summary>
+    /// <param name="catalogue">The full text of <c>docs/plan/08-rule-catalogue.md</c>.</param>
+    /// <param name="rules">Every rule in <c>rules.json</c>; retired ones are dropped here.</param>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         This overload exists so the filter cannot be applied in one caller and forgotten in
+    ///         the other.
+    ///     </b> There are exactly two callers — the <c>skala rules docs</c> generator and
+    ///     the test that asserts the generated block — and when a rule was first retired after
+    ///     shipping, only the test was updated. The generator went on counting the withdrawn rule as
+    ///     shipped, so the block it wrote and the block the test expected disagreed by two, and the
+    ///     failure read as a stale document rather than as two call sites drifting. Pass rules, not
+    ///     ids, and the question cannot be answered differently twice.
+    /// </remarks>
+    public static Result Compute(string catalogue, IEnumerable<RuleInfo> rules) =>
+        Compute(
+            catalogue,
+            (rules ?? []).Where(static rule => !rule.Retired).Select(static rule => rule.Id)
+        );
+
+    /// <summary>
     ///     Computes the coverage from the catalogue's text and the shipped registry.
     /// </summary>
     /// <param name="catalogue">The full text of <c>docs/plan/08-rule-catalogue.md</c>.</param>
-    /// <param name="shipped">Every id in <c>rules.json</c>.</param>
+    /// <param name="shipped">The ids that ship — ⚠ retired ids must already be excluded.</param>
     /// <remarks>
     ///     ⚠ A pure function of its two inputs, and it does no file IO. This assembly is loaded into
     ///     the compiler and the IDE (docs/plan/01 § ADR-006); a metadata type that reads a path at
     ///     runtime is a type that fails in the one host nobody tests.
+    ///     <para>
+    ///         ⚠ A retired id reaching <paramref name="shipped" /> is bucketed <c>Shipped</c>, because
+    ///         <c>live</c> is checked before the retired set. Prefer the <see cref="RuleInfo" />
+    ///         overload, which cannot be called wrongly.
+    ///     </para>
     /// </remarks>
     public static Result Compute(string catalogue, IEnumerable<string> shipped) {
         if (catalogue is null) {
@@ -247,9 +278,12 @@ public static class RuleCoverage {
             "§ \"Cut, with the reason\""
         );
 
+        // ⚠ "never to be built" was true while SK6001 was the only retirement and is not any more:
+        // SK1020 and SK1034 were built, shipped, and withdrawn once the host turned out to be on at
+        // stock (#281). The label has to cover both, or it quietly denies that the second kind exists.
         Row(
             builder,
-            "**Retired** — allocated, superseded, never to be built",
+            "**Retired** — allocated, then withdrawn or never built",
             result.Count(State.Retired),
             "the id stays taken for ever (ADR-012)"
         );

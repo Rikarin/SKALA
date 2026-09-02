@@ -49,7 +49,7 @@ FORMAT  3 files need formatting — run: skala format Core/Foo.cs Core/Bar.cs Co
 FIXABLE 4 findings have safe automatic fixes — run: skala fix --safe
   SK1001  Core/Foo.cs:142  Use a collection expression instead of new List<int> { … }
   SK1010  Core/Foo.cs:88   Use `is not null` instead of `!= null`
-  SK1020  Core/Bar.cs:31   Use ArgumentNullException.ThrowIfNull(source)
+  SK1030  Core/Bar.cs:31   Use `??=` instead of `x = x ?? y`
   SK1002  Core/Baz.cs:12   Use a primary constructor
 
 ACTION  2 findings need a decision

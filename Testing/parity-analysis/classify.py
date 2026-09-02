@@ -204,7 +204,9 @@ HOSTED = {
     # because `CA1829` is `on` at stock and the entry therefore filed `SK4010` as duplicating
     # something every consumer already has. Measured: `CA1829` ("use the `Length`/`Count`
     # property, not the `Count()` method") reports **0 of 4** of `SK4010`'s positives and is
-    # provably live in the same compilation, firing on `SK1034`'s `count-call.cs`. It declines
+    # provably live in the same compilation, firing on what was then `SK1034`'s `count-call.cs`
+    # fixture -- `items.Count()` on a `List<int>`; that rule is retired (#281) and `CA1829` is
+    # exactly what took the shape over, which is the same measurement read twice. It declines
     # correctly -- `values.Where(p)` returns an iterator, which has no `Count` property to prefer.
     # The inspection is `xs.Where(p).Count()` -> `xs.Count(p)`, and its host is `IDE0120`.
     "ReplaceWithSingleCallToCount": "IDE0120",
@@ -515,8 +517,16 @@ for key, why, state, sk in sorted(shadowed, key=lambda t: (str(t[3]), t[0])):
 # with nothing hosted has no purchase on a diagnostic that is switched on. Printed rather than
 # silently bucketed, because the fix is to retire the rule and that is a decision with a baseline
 # consequence in every repository holding one, not a number for this script to move.
+#
+# ⚠ `retired` is filtered out, and this is load-bearing rather than tidy. A rule retired AFTER
+# shipping keeps its rules.json entry -- that is how the descriptor stays resolvable and the docs
+# page stays a tombstone -- so reading every id in the file would count a withdrawn rule as shipped
+# and this alert could never be cleared by acting on it. It would go on naming rules that had
+# already been retired, which is the failure mode where an instrument reports the same defect for
+# ever and everyone learns to scroll past it.
 shipped_ids = {r["id"] for r in json.load(
-    open(f"{REPO}/Rules/Rikarin.Skala.Rules.Metadata/rules.json"))["rules"]}
+    open(f"{REPO}/Rules/Rikarin.Skala.Rules.Metadata/rules.json"))["rules"]
+    if not r.get("retired", False)}
 duplicating = []
 for v in universe.values():
     if out_of_scope(v) or compiler(v):

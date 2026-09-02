@@ -285,9 +285,10 @@ resharper_arrange_null_checking_pattern_highlighting         = hint
 resharper_use_null_propagation_highlighting                  = hint
 ```
 
-Nothing computes which of those governs `SK1010`. In the other direction, `SK1034` covers what
+Nothing computes which of those governs `SK1010`. In the other direction, `SK1034` covered what
 `use_collection_count_property`, `replace_with_single_call_to_any` and `replace_with_single_call_to_count`
-split into three. The mapping is therefore **recorded in `rules.json` as a choice**, one key per
+split into three (⚠ `SK1034` is retired — #281 — but the many-to-one shape it illustrates is
+unchanged and several live rules have it). The mapping is therefore **recorded in `rules.json` as a choice**, one key per
 rule, with a `resharperNote` saying which alternatives were passed over and why. It is a *function
 from Skala rule to at most one key*, never the reverse — which is the direction
 [16](16-risks-and-open-questions.md) § Q5 guessed was the safe one, and it is.
@@ -312,8 +313,10 @@ built for.** The export sets
 resharper_use_throw_if_null_method_highlighting = none
 ```
 
-so `SK1020` — the `ArgumentNullException.ThrowIfNull` rule — would be silently disabled by a value
-nobody chose for it. That is the decisive measurement: the 912 `resharper_*_highlighting` values in
+so `SK1020` — the `ArgumentNullException.ThrowIfNull` rule — would have been silently disabled by a
+value nobody chose for it. ⚠ `SK1020` is retired (#281), so the one worked example no longer fires
+and nobody has re-measured which *live* rule this export would silence; the argument does not rest
+on the example. That is the decisive measurement: the 912 `resharper_*_highlighting` values in
 an export (462 `warning`, 232 `suggestion`, 110 `hint`, 93 `none`, 15 `error`) were chosen for
 ReSharper's inspections, and a value that has never been looked at is not consent.
 

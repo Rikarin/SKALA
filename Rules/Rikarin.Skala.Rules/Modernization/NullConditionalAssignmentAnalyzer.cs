@@ -22,8 +22,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     </para>
 ///     <para>
 ///         ⚠ <c>x != null</c> is admitted only where the operand's type declares no <c>operator ==</c>, the
-///         same proof <c>SK1010</c> and <c>SK1020</c> make: <c>?.</c> tests for null, and a user-defined
-///         operator can mean anything at all.
+///         same proof <c>SK1010</c> makes: <c>?.</c> tests for null, and a user-defined operator can mean
+///         anything at all. (<c>SK1020</c> made it too, until #281 retired it.)
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

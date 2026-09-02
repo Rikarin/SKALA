@@ -196,6 +196,12 @@ overcount — [`06`](06-arrangement-and-syntax-styles.md) owns them. Both are ex
 `ledger-resharper.json` with that reason.
 
 ⚠ **Two surviving entries over-claim, and are left alone deliberately.**
+⚠ `UseThrowIfNullMethod`, `UseArgumentExceptionThrowIfMethod` and `UseCollectionCountProperty` have
+since been **removed** from `catalogued.json` — `SK1020` and `SK1034` are retired and a map entry
+crediting a withdrawn rule claims Skala answers an inspection it does not. The rows bucket `Hosted`,
+which is where they belonged; the totals did not move, because `hosted()` runs first and was already
+claiming them. The paragraph below is the over-claim as it was recorded.
+
 `UseArgumentExceptionThrowIfMethod → SK1020` and `ReplaceWithOfType → SK4010` both credit a shipped
 rule with more than it does: `SK1020` covers `ArgumentNullException.ThrowIfNull` only, and `SK4010`
 covers a `Where` fused into the operator that follows it, not `OfType`. The inspections are broader
@@ -312,9 +318,9 @@ in it, so a zero is a decline rather than a dead run.
 | `SK1006` | `IDE0063` | 3/3 — but only with `EnforceCodeStyleInBuild` **and** a severity line | rule stands, host is `code-style` |
 | `SK1010` | `IDE0078` | **0/5**, and `IDE0078` fired twice on its own shapes in the same build | rule stands; ⚠ Roslyn has no `x != null` → `x is not null` rule |
 | `SK1012` | `IDE0066` | **0/3**; `IDE0066` converts an existing `switch` *statement* and fired on one | rule stands; `SK1012`'s input is an `if`/`else if` chain |
-| `SK1020` | `CA1510` | **3/3 at stock**, `CA1510` is enabled/`Info` | ⚠ **duplicate — retire `SK1020`** |
+| `SK1020` | `CA1510` | **3/3 at stock**, `CA1510` is enabled/`Info` | ⚠ **duplicate — `SK1020` retired**, done |
 | `SK1030` | `IDE0074`, `IDE0029` | **0/4** both. ⚠ `IDE0074` is a **phantom** | rule stands; ⚠ map corrected to `IDE0054`, which is 4/4 |
-| `SK1034` | `CA1860` | **3/4 at stock**, and `CA1829` takes the fourth, both enabled/`Info` | ⚠ **duplicate — retire `SK1034`** |
+| `SK1034` | `CA1860` | **3/4 at stock**, and `CA1829` takes the fourth, both enabled/`Info` | ⚠ **duplicate — `SK1034` retired**, done |
 | `SK2010` | `CA1304/CA1305`, `CA1307/CA1310` | `Hidden` or disabled at stock; nothing until `Recommended` | rule stands, host is `opt-in` — the decision § "SK2150" already took |
 | `SK2014` | `CA1031` | disabled by default; under `All` it fires on bare `catch {}` only | rule stands; `CA1031` is about the breadth of the caught type, `SK2014` about the catch being empty |
 | `SK4010` | `CA1829`, `CA1868`, `IDE0270` | **0/4** all three | rule stands; ⚠ all three ids were wrong, see below |
@@ -346,10 +352,18 @@ records now", and **a host that is `opt-in` or `code-style` no longer shadows a 
 that cut `SK8003`/`SK8004`. **12 rows moved from `Hosted` to `Catalogued`**, covering the seven rules
 that stand; `Hosted` 91 → 80 and `Catalogued` 254 → 265 on the committed inputs.
 
-⚠ **And the residue is printed rather than bucketed.** `classify.py` now ends with an alert naming
-every shipped rule that duplicates a diagnostic which is `on` at stock. It currently names `SK1020`
-and `SK1034`, which is the list this section decided; a row appearing there in future is a new
-adjudication somebody owes, not a number for the script to move on its own.
+⚠ **And the residue is printed rather than bucketed.** `classify.py` ends with an alert naming
+every shipped rule that duplicates a diagnostic which is `on` at stock. It named `SK1020` and
+`SK1034`, which is the list this section decided; **both are now retired and the alert prints
+nothing**. A row appearing there in future is a new adjudication somebody owes, not a number for the
+script to move on its own.
+
+⚠ **The alert could not have been cleared by acting on it, and that was the subtler defect.** Both
+`classify.py` and `verify_ledger.py` read every id in `rules.json` as "shipped". A rule retired
+*after shipping* keeps its entry — that is how the descriptor stays resolvable for an
+`.editorconfig` key and the docs page stays a tombstone — so unfiltered, the alert would have gone
+on naming two rules that had already been retired. Both now filter `retired`. An instrument that
+reports the same defect for ever is one everybody learns to scroll past.
 
 ⚠ **The bucket table at the head of this section is older than all of this** — it reads `Uncovered`
 578 / `Catalogued` 92 / `Hosted` 75 against today's 401 / 265 / 80 — and is left as the record of

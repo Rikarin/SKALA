@@ -20,12 +20,13 @@ namespace Rikarin.Skala.Rules.Performance;
 ///         <c>Count</c> acquires every lock too. <c>IsEmpty</c> acquires none and allocates nothing.
 ///     </para>
 ///     <para>
-///         ⚠ <c>SK1034</c> reads <c>dict.Keys.Count()</c> and offers <c>dict.Keys.Count</c>, which is
-///         correct and still leaves the expensive half in place. This rule declares
-///         <c>supersedes: ["SK1034"]</c> and reports on the same span, so where both fire the stronger
-///         remedy wins and the weaker one stays in the report marked superseded. Matching the span is
-///         the whole mechanism — <c>Supersession.Apply</c> pairs findings by (rule, file, line,
-///         column) — which is why <c>SK1034</c> runs in this batch's own test list.
+///         ⚠ <c>SK1034</c> read <c>dict.Keys.Count()</c> and offered <c>dict.Keys.Count</c>, which was
+///         correct and still left the expensive half in place, so this rule declared
+///         <c>supersedes: ["SK1034"]</c> and reported on the same span. <c>SK1034</c> is retired
+///         (#281) and the supersession went with it: this rule now reports that shape alone, and the
+///         plain <c>Count()</c> case <c>SK1034</c> also covered belongs to <c>CA1829</c>. ⚠ Nothing
+///         offers the cheap rewrite on a <c>ConcurrentDictionary</c> any more, which is the point —
+///         on this receiver it was always the wrong half to fix.
 ///     </para>
 ///     <para>
 ///         ⚠ <c>dict.Keys.Contains(k)</c> looks like it belongs here and does not.
@@ -180,8 +181,8 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        // ⚠ `!dict.Keys.Any()` is `dict.IsEmpty` and the span reported is the negation's, which is
-        // also the span SK1034 reports for it. The supersession pairs on position.
+        // ⚠ `!dict.Keys.Any()` is `dict.IsEmpty` and the span reported is the negation's rather than
+        // the call's, because the fix rewrites the negation whole.
         if (invocation.Parent is PrefixUnaryExpressionSyntax {
                 RawKind: (int)SyntaxKind.LogicalNotExpression
             } negation) {
@@ -300,7 +301,7 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>
     ///     ⚠ Where a unary expression may replace a primary one without re-binding — the same list
-    ///     <c>SK1034</c> uses, and for the same reason.
+    ///     <c>SK1034</c> used before it was retired (#281), and for the same reason.
     /// </summary>
     static bool IsSafeBooleanPosition(InvocationExpressionSyntax invocation) =>
         invocation.Parent switch {

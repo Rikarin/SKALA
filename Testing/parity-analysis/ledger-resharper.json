@@ -2701,7 +2701,7 @@
   },
   {
    "inspection": "resharper_use_argument_exception_throw_if_method_highlighting",
-   "reason": "Hosted. Roslyn ships CA1510-CA1513 for the ArgumentNullException / ArgumentException / ArgumentOutOfRangeException / ObjectDisposedException ThrowIf* helpers, and SK1020 already ships the ThrowIfNull case. ADR-008: Skala hosts rather than rebuilds. Proposed as issue #105 and closed once the pipeline's fixed lookup put the row in Hosted."
+   "reason": "Hosted. Roslyn ships CA1510-CA1513 for the ArgumentNullException / ArgumentException / ArgumentOutOfRangeException / ObjectDisposedException ThrowIf* helpers, and CA1510 covers the ThrowIfNull case on its own -- enabled by default at `Info` with nothing configured, which is why #281 retired SK1020 rather than keeping it as a second opinion. ADR-008: Skala hosts rather than rebuilds. Proposed as issue #105 and closed once the pipeline's fixed lookup put the row in Hosted."
   }
  ]
 }

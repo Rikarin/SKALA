@@ -6,16 +6,28 @@
 # findings in every repository that has one.
 #
 # RuleCatalogTests.RuleIds_AreAppendOnly asserts that every line here is still present in
-# rules.json with the same concept. Removing a rule means marking it `retired` in rules.json,
-# never deleting its line here.
+# rules.json with the same concept. A line is never deleted.
+#
+# ⚠ A line may carry a `retired` marker after its concept, and retirement has two shapes that are
+# not interchangeable:
+#
+#   * Retired AFTER shipping — the rules.json entry stays and carries `"retired": true`. The
+#     descriptor survives disabled, so nothing new is reported but `dotnet_diagnostic.<id>.severity`
+#     still resolves instead of dangling, and docs/rules/<id>.md stays as a tombstone an old finding
+#     can be looked up in. SK1020 and SK1034 are this kind (#281).
+#   * Retired BEFORE it was ever built — there is no rules.json entry to flag, so this file is the
+#     only record. SK6001 is this kind, and it is why the marker exists at all.
+#
+# RuleCatalogTests.RetiredIds_AreRecordedInTheRegister_AndNeverShip asserts both shapes, and asserts
+# the consequence rather than the flag: a retired id's descriptor is not enabled by default.
 SK0001 file-is-not-formatted
 SK0002 line-too-long-unbreakable
 SK0003 malformed-xml-doc
 SK1005 file-scoped-namespace
 SK1010 is-null-pattern
-SK1020 argument-null-throw-if-null
+SK1020 argument-null-throw-if-null retired — CA1510 reports all three positives at stock (#281)
 SK1030 null-coalescing-assignment
-SK1034 count-property-over-linq
+SK1034 count-property-over-linq retired — CA1860 and CA1829 cover all four positives at stock (#281)
 SK1035 generic-enum-getvalues
 SK2013 exception-constructed-not-thrown
 SK2015 rethrow-loses-stack-trace

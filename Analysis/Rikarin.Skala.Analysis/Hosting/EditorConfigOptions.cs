@@ -119,10 +119,12 @@ public static class EditorConfigOptions {
         /// <remarks>
         ///     ⚠ Opt-in, and docs/plan/16 § Q5 says why in detail. The short version, measured on the
         ///     author's own export: <c>resharper_use_throw_if_null_method_highlighting = none</c>, so
-        ///     reading these keys as authoritative by default would switch <c>SK1020</c> off in the
-        ///     repository the tool was built for, without anyone deciding to. The severities in an export
-        ///     were chosen for ReSharper's inspections, not for Skala's rules, and a value that has never
-        ///     been looked at is not consent.
+        ///     reading these keys as authoritative by default would have switched <c>SK1020</c> off in
+        ///     the repository the tool was built for, without anyone deciding to. The severities in an
+        ///     export were chosen for ReSharper's inspections, not for Skala's rules, and a value that
+        ///     has never been looked at is not consent — which is the argument, and it does not rest on
+        ///     the example. ⚠ <c>SK1020</c> is retired (#281), so the only rule this was ever
+        ///     demonstrated on is one that no longer fires; re-measuring against a live rule is owed.
         /// </remarks>
         static bool TryReSharper(
             ImmutableDictionary<string, string> options,

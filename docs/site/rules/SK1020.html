@@ -12,6 +12,7 @@
 <main>
 <p class="crumb"><a href="index.html">Rules</a> / Modernization</p>
 <h1>SK1020 <span class="title">Use <code>ArgumentNullException.ThrowIfNull</code></span></h1>
+<p class="banner">⚠ <strong>Retired.</strong> The id stays allocated for ever because every baseline in every repository names it (ADR-012), and the analyzer no longer enables it, so nothing new is reported. The page is here so that an old finding can still be looked up.</p>
 <p class="lede">A hand-written null guard that <code>ArgumentNullException.ThrowIfNull</code> already is.</p>
 <table class="facts">
 <tbody>
@@ -28,7 +29,7 @@
 </tbody>
 </table>
 <h2 id="why">Why</h2>
-<p>The BCL helper is one line instead of three, captures the argument expression itself through <code>CallerArgumentExpression</code> so the message cannot drift from the parameter name, and is annotated so the nullable analysis knows the argument is non-null afterwards — which the hand-written form only manages when the <code>throw</code> is the whole <code>if</code> body.</p>
+<p>⚠ <strong>Retired (#281).</strong> <code>CA1510</code> is enabled by default at <code>Info</code> in a stock SDK build and reports all three of this rule's positive fixtures with nothing configured, which is the same visibility this rule shipped at (<code>suggestion</code>). ADR-008 is host, never rebuild, so the rule is withdrawn rather than kept as a second opinion. The id stays allocated for ever (ADR-012). The BCL helper is one line instead of three, captures the argument expression itself through <code>CallerArgumentExpression</code> so the message cannot drift from the parameter name, and is annotated so the nullable analysis knows the argument is non-null afterwards — which the hand-written form only manages when the <code>throw</code> is the whole <code>if</code> body.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
 <pre class="bad"><code>if (source is null) {

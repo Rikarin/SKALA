@@ -279,7 +279,7 @@
 | [SK1013](SK1013.md) | Use a list pattern for guarded element checks | suggestion | safe | no |
 | [SK1014](SK1014.md) | Use relational and logical patterns | suggestion | safe | no |
 | [SK1015](SK1015.md) | Use `is T t` instead of `is T` and a cast | suggestion | safe | no |
-| [SK1020](SK1020.md) | Use `ArgumentNullException.ThrowIfNull` | suggestion | safe | no |
+| [SK1020](SK1020.md) | Use `ArgumentNullException.ThrowIfNull` **(retired)** | — | safe | no |
 | [SK1022](SK1022.md) | Precompute a constant character search set | hint | safe | no |
 | [SK1023](SK1023.md) | Use a dedicated System.Threading.Lock | suggestion | safe | no |
 | [SK1025](SK1025.md) | Freeze a private lookup-only dictionary | hint | safe | no |
@@ -288,7 +288,7 @@
 | [SK1030](SK1030.md) | Use `??=` | suggestion | safe | yes |
 | [SK1031](SK1031.md) | Use a null-conditional assignment | suggestion | safe | no |
 | [SK1033](SK1033.md) | Use `TryGetValue` or `TryAdd` instead of `ContainsKey` and a second lookup | suggestion | safe | no |
-| [SK1034](SK1034.md) | Use the `Count` property, not `Count()` or `Any()` | suggestion | safe | no |
+| [SK1034](SK1034.md) | Use the `Count` property, not `Count()` or `Any()` **(retired)** | — | safe | no |
 | [SK1035](SK1035.md) | Use `Enum.GetValues<T>()` | suggestion | safe | no |
 | [SK1040](SK1040.md) | Use `T?` instead of `Nullable<T>` | suggestion | safe | no |
 | [SK1041](SK1041.md) | Use a compound assignment | suggestion | safe | yes |

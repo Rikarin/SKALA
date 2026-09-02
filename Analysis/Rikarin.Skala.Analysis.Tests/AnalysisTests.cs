@@ -111,8 +111,15 @@ public sealed class AnalysisTests {
         var (_, report) = CheckCommand.Run(Request(scratch), TestContext.Current.CancellationToken);
         var skipped = report.SkippedRules.Select(static rule => rule.RuleId).ToHashSet(StringComparer.Ordinal);
 
-        foreach (var rule in RuleCatalog.All.Where(static rule => rule.RequiresSemantics)) {
+        // ⚠ `!rule.Retired`, matching AnalyzerHost's own filter. A retired rule is not "skipped
+        // because there is no compilation" — it is not run at all, and listing it here would tell a
+        // consumer it would have fired with a project, which is the one thing that is not true of it.
+        foreach (var rule in RuleCatalog.All.Where(static rule => rule.RequiresSemantics && !rule.Retired)) {
             Assert.Contains(rule.Id, skipped);
+        }
+
+        foreach (var rule in RuleCatalog.All.Where(static rule => rule.Retired)) {
+            Assert.DoesNotContain(rule.Id, skipped);
         }
 
         Assert.DoesNotContain(RuleIds.FileScopedNamespace, skipped);

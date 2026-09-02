@@ -45,12 +45,12 @@ public sealed class NullPatternAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        // ⚠ SK1020 covers `if (x is null) throw new ArgumentNullException(nameof(x));` as one
-        // finding with one fix. Reporting SK1010 on the same span would give an agent two fixes for
-        // one line, and applying both in either order leaves the second one stale.
-        if (ThrowIfNullAnalyzer.IsArgumentNullGuard(binary)) {
-            return;
-        }
+        // ⚠ This used to yield an argument-null guard to SK1020, which owned
+        // `if (x == null) throw new ArgumentNullException(nameof(x));` as one finding with one fix.
+        // SK1020 is retired (#281 — CA1510 reports all three of its positive fixtures at `note` in a
+        // stock build), so there is no second finding to collide with and nothing left to yield to.
+        // Keeping the yield would have left SK1010 silent on a shape it owns, for the sake of a rule
+        // that no longer exists — a silence with no live reason is indistinguishable from a bug.
 
         // A comment inside the comparison is content the replacement would delete.
         if (RewriteGuards.ContainsCommentOrDirective(binary.SyntaxTree, binary.Span)) {

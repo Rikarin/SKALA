@@ -158,6 +158,23 @@ public static class ExplainCommand {
         var builder = new StringBuilder();
         builder.Append(rule.Id).Append("  ").AppendLine(rule.Title);
         builder.Append(new string('─', 78)).AppendLine();
+
+        // ⚠ First line after the rule, not a footnote. `skala explain SK1020` is what somebody runs
+        // when a diagnostic they cannot reproduce turns up in a baseline, and the answer to that
+        // question is the retirement.
+        if (rule.Retired) {
+            builder.AppendLine(
+                Wrap(
+                    "⚠ RETIRED. The id stays allocated for ever because every baseline names it "
+                    + "(ADR-012), and the analyzer no longer enables it, so nothing new is reported. "
+                    + "This text is here so an old finding can still be looked up.",
+                    78
+                )
+            );
+
+            builder.AppendLine();
+        }
+
         builder.AppendLine(rule.Summary);
         builder.AppendLine();
         builder.AppendLine(Wrap(rule.Rationale, 78));
@@ -224,13 +241,33 @@ public static class ExplainCommand {
         builder.AppendLine();
         builder.AppendLine("<!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->");
         builder.AppendLine();
+
+        // ⚠ The banner goes above the summary, because this page is what the descriptor's
+        // helpLinkUri points at. A consumer arriving from a diagnostic in an old baseline lands
+        // here, and the first thing they need to know is that nothing new will be reported.
+        // DocsSite renders the same fact in HTML; this surface had no retired handling at all.
+        if (rule.Retired) {
+            builder.AppendLine(
+                "> ⚠ **Retired.** The id stays allocated for ever because every baseline in every "
+                + "repository names it (ADR-012), and the analyzer no longer enables it, so nothing new "
+                + "is reported. This page is here so an old finding can still be looked up."
+            );
+
+            builder.AppendLine();
+        }
+
         builder.AppendLine(rule.Summary);
         builder.AppendLine();
         builder.AppendLine("| | |");
         builder.AppendLine("|---|---|");
         builder.Append("| Category | ").Append(rule.Category).AppendLine(" |");
+        if (rule.Retired) {
+            builder.AppendLine("| Status | **retired** — allocated for ever, never reported again |");
+        }
+
         builder.Append("| Default severity | ")
             .Append(rule.DefaultSeverity.ToString().ToLowerInvariant())
+            .Append(rule.Retired ? " (not enabled)" : string.Empty)
             .AppendLine(" |");
         builder.Append("| Scope | ").Append(rule.Scope).AppendLine(" |");
         builder.Append("| Needs a compilation | ").Append(rule.RequiresSemantics ? "yes" : "no").AppendLine(" |");
@@ -329,13 +366,16 @@ public static class ExplainCommand {
                     .Append(rule.Id)
                     .Append(".md) | ")
                     .Append(rule.Title.Replace("|", "\\|", StringComparison.Ordinal))
-                    .Append(" | ")
-                    .Append(rule.DefaultSeverity.ToString().ToLowerInvariant())
-                    .Append(" | ")
-                    .Append(rule.HasFix ? rule.FixIsSafe ? "safe" : "review" : "—")
-                    .Append(" | ")
-                    .Append(rule.RunsWithoutAProject ? "yes" : "no")
-                    .AppendLine(" |");
+                    // ⚠ Without this the index lists a withdrawn rule as an ordinary shipping one at
+                    // its old severity, which is the row somebody reads when deciding what Skala does.
+                        .Append(rule.Retired ? " **(retired)**" : string.Empty)
+                        .Append(" | ")
+                        .Append(rule.Retired ? "—" : rule.DefaultSeverity.ToString().ToLowerInvariant())
+                        .Append(" | ")
+                        .Append(rule.HasFix ? rule.FixIsSafe ? "safe" : "review" : "—")
+                        .Append(" | ")
+                        .Append(rule.RunsWithoutAProject ? "yes" : "no")
+                        .AppendLine(" |");
             }
 
             builder.AppendLine();
