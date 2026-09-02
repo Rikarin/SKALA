@@ -246,3 +246,7 @@ SK2100 ineffective-thread-static
 SK2101 pure-attribute-on-void
 SK2102 debugger-display-missing-member
 SK2103 duplicated-attribute
+SK2110 tostring-can-return-null
+SK2111 inert-null-suppression
+SK2112 nullable-local-never-null
+SK2113 null-forgiven-service-resolution

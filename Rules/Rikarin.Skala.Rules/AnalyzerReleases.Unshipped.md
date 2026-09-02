@@ -205,3 +205,7 @@ SK2071 | Skala.Correctness | Warning | The structured log template names the sam
 SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
 SK2073 | Skala.Correctness | Warning | The caught exception is not passed to the logger's exception parameter.
 SK7110 | Skala.Maintainability | Info | The logger is declared for a different type than the one that declares it.
+SK2110 | Skala.Correctness | Warning | `ToString()` returns null.
+SK2111 | Skala.Correctness | Warning | The null-forgiving operator suppresses nothing.
+SK2112 | Skala.Correctness | Info | The local is declared nullable and is never null.
+SK2113 | Skala.Correctness | Info | The service resolution is null-forgiven instead of required.

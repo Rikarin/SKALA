@@ -125,6 +125,8 @@ public sealed class RuleFixtureTests {
         new LogTemplateArgumentCountAnalyzer(), new LogTemplateDuplicatePropertyAnalyzer(),
         new InvisibleCharacterAnalyzer(), new CaughtExceptionNotLoggedAnalyzer(),
         new LoggerForAnotherTypeAnalyzer(),
+        new ToStringReturnsNullAnalyzer(), new InertNullSuppressionAnalyzer(),
+        new NullableLocalNeverNullAnalyzer(), new NullForgivenServiceResolutionAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
