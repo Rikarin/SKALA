@@ -193,10 +193,14 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
         // ⚠ CS0231: an optional parameter cannot follow a `params` one, so there is no edit here.
         // A parameter already called `cancellationToken` would be CS0100 whatever its type is.
         foreach (var parameter in method.ParameterList.Parameters) {
-            if (parameter.Modifiers.Count > 0
-                && parameter.Modifiers[parameter.Modifiers.Count - 1].IsKind(SyntaxKind.ParamsKeyword)
-                || string.Equals(parameter.Identifier.ValueText, "cancellationToken", StringComparison.Ordinal)) {
+            if (string.Equals(parameter.Identifier.ValueText, "cancellationToken", StringComparison.Ordinal)) {
                 return;
+            }
+
+            foreach (var modifier in parameter.Modifiers) {
+                if (modifier.IsKind(SyntaxKind.ParamsKeyword)) {
+                    return;
+                }
             }
         }
 
