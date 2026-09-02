@@ -238,6 +238,12 @@ public sealed class LayoutWriter {
                         // for why the group's own width is not the whole measurement.
                         fitter.Enter(node, CurrentColumn(), ContinuationColumn(slot.Arg1), TrailingWidth(stack));
                         break;
+
+                    default:
+                        // Concat, Fill and IfBroken are descended into below rather than written
+                        // here — ChildrenOf covers the first two and IfBroken picks its branch —
+                        // so this section is the catch-all that says so, not dead control flow.
+                        break;
                 }
             }
 
