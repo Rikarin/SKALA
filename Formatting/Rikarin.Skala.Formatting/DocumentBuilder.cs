@@ -526,8 +526,8 @@ public sealed class DocumentBuilder {
     static bool ContainsNewLine(string value) {
         // ⚠ No LINQ and no allocation: this runs once per verbatim piece and there are millions of
         // them over the reference corpus (docs/plan/13 § "The fitting pass").
-        for (var i = 0; i < value.Length; i++) {
-            if (value[i] == '\n') {
+        foreach (var item in value) {
+            if (item == '\n') {
                 return true;
             }
         }

@@ -614,8 +614,7 @@ internal static class CommandLine {
         var quoted = false;
         var any = false;
 
-        for (var i = 0; i < line.Length; i++) {
-            var c = line[i];
+        foreach (var c in line) {
             switch (c) {
                 case '"':
                     quoted = !quoted;

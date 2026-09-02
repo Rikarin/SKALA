@@ -66,8 +66,8 @@ public static class ConstructReport {
             }
 
             var owner = OwnersByLine(text, root);
-            for (var i = 0; i < owner.Length; i++) {
-                Bump(lines, owner[i]);
+            foreach (var item in owner) {
+                Bump(lines, item);
             }
 
             foreach (var index in DivergentLines(expected, actual)) {
