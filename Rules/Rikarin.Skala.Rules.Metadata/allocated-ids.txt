@@ -257,3 +257,4 @@ SK2110 tostring-can-return-null
 SK2111 inert-null-suppression
 SK2112 nullable-local-never-null
 SK2113 null-forgiven-service-resolution
+SK5010 regex-without-timeout

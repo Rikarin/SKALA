@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 240 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 230 ids are allocated.
 
 ## Async
 
@@ -279,6 +279,7 @@
 | [SK5005](SK5005.md) | A broken cipher, or a mode that leaks structure | error | — | no |
 | [SK5007](SK5007.md) | A certificate callback that accepts everything | error | — | no |
 | [SK5009](SK5009.md) | An XML reader that parses a DTD and fetches what it names | error | — | no |
+| [SK5010](SK5010.md) | A pattern that can backtrack, with nothing bounding how long it may take | warning | — | no |
 
 ## Tests
 

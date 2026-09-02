@@ -216,3 +216,4 @@ SK2110 | Skala.Correctness | Warning | `ToString()` returns null.
 SK2111 | Skala.Correctness | Warning | The null-forgiving operator suppresses nothing.
 SK2112 | Skala.Correctness | Info | The local is declared nullable and is never null.
 SK2113 | Skala.Correctness | Info | The service resolution is null-forgiven instead of required.
+SK5010 | Skala.Security | Warning | A pattern that can backtrack, run with no timeout.
