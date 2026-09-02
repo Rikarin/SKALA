@@ -26,8 +26,11 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         declined by the type question itself rather than by a special case beside it.
 ///     </para>
 ///     <para>
-///         ⚠ <b>A user-defined <c>==</c> and a user-defined <c>!=</c> need not be each other's
-///         negation.</b> Nothing in the language requires the pair to agree, so <c>!(a == b)</c> is
+///         ⚠
+///         <b>
+///             A user-defined <c>==</c> and a user-defined <c>!=</c> need not be each other's
+///             negation.
+///         </b> Nothing in the language requires the pair to agree, so <c>!(a == b)</c> is
 ///         <em>not</em> <c>a != b</c> for a type that overloads them; the negated-equality shape is
 ///         reported only when the comparison binds to <see cref="MethodKind.BuiltinOperator" />. A type
 ///         whose two operators do happen to agree is still declined, because whether they agree is not
@@ -153,7 +156,8 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static void AnalyzeNegatedEquality(SyntaxNodeAnalysisContext context, PrefixUnaryExpressionSyntax negation) {
         if (negation.Operand is not ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax comparison }
-            || !comparison.IsKind(SyntaxKind.EqualsExpression) && !comparison.IsKind(SyntaxKind.NotEqualsExpression)) {
+            || !comparison.IsKind(SyntaxKind.EqualsExpression)
+            && !comparison.IsKind(SyntaxKind.NotEqualsExpression)) {
             return;
         }
 
@@ -265,7 +269,7 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool IsPlainBoolean(SyntaxNodeAnalysisContext context, ExpressionSyntax expression) =>
         context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type
-            is { SpecialType: SpecialType.System_Boolean };
+        is { SpecialType: SpecialType.System_Boolean };
 
     /// <summary>Whether the node's own span is free of the trivia a replacement would delete.</summary>
     static bool Replaceable(ExpressionSyntax node) =>
@@ -273,8 +277,11 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>The negation of an expression, as text.</summary>
     /// <remarks>
-    ///     ⚠ <b>An equality operand is flipped rather than wrapped, and that is a termination
-    ///     requirement rather than a nicety.</b> Writing <c>flag == false</c> as <c>!(a == b)</c> would
+    ///     ⚠
+    ///     <b>
+    ///         An equality operand is flipped rather than wrapped, and that is a termination
+    ///         requirement rather than a nicety.
+    ///     </b> Writing <c>flag == false</c> as <c>!(a == b)</c> would
     ///     hand this rule's own negated-equality shape a finding on the fix's output, so one
     ///     <c>skala fix</c> pass would not settle — the defect <c>SK0240</c> records for its composite
     ///     <c>try</c> edit, in a different rule. The flip asks the same two questions that shape asks,
@@ -297,7 +304,7 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
             && !comparison.Left.IsKind(SyntaxKind.NullLiteralExpression)
             && !comparison.Right.IsKind(SyntaxKind.NullLiteralExpression)
             && context.SemanticModel.GetSymbolInfo(comparison, context.CancellationToken).Symbol
-                is IMethodSymbol { MethodKind: MethodKind.BuiltinOperator }) {
+            is IMethodSymbol { MethodKind: MethodKind.BuiltinOperator }) {
             var flipped = comparison.IsKind(SyntaxKind.EqualsExpression) ? "!=" : "==";
 
             return comparison.Left + " " + flipped + " " + comparison.Right;

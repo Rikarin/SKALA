@@ -36,8 +36,11 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         single pass.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The <c>[AttributeUsage]</c> half asks the attribute's identity rather than its
-///         name.</b> Somebody else's <c>AttributeUsageAttribute</c> in another namespace has whatever
+///         ⚠
+///         <b>
+///             The <c>[AttributeUsage]</c> half asks the attribute's identity rather than its
+///             name.
+///         </b> Somebody else's <c>AttributeUsageAttribute</c> in another namespace has whatever
 ///         defaults it declares, and they are not <c>Inherited = true</c> and
 ///         <c>AllowMultiple = false</c> because it says so.
 ///     </para>
@@ -120,7 +123,7 @@ public sealed class RedundantAttributeDetailAnalyzer : DiagnosticAnalyzer {
     static void AnalyzeUsageArguments(SyntaxNodeAnalysisContext context, AttributeSyntax attribute) {
         if (attribute.ArgumentList is not { Arguments.Count: > 1 } list
             || context.SemanticModel.GetSymbolInfo(attribute, context.CancellationToken).Symbol
-                is not IMethodSymbol { ContainingType: { Name: "AttributeUsageAttribute" } usage }
+            is not IMethodSymbol { ContainingType: { Name: "AttributeUsageAttribute" } usage }
             || usage.ContainingNamespace is not { Name: "System", ContainingNamespace.IsGlobalNamespace: true }) {
             return;
         }
