@@ -37,7 +37,7 @@ Reconcile items are *not* failures -- see below.
 A second completeness claim is checked here, about the *shipped* catalogue rather than the
 proposal queue -- see "the shipped catalogue" at the bottom of this file.
 """
-import json, os, sys
+import json, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import universe as universe_mod
@@ -218,8 +218,11 @@ if ideas:
 # design, it is edited and re-run by people who never invoke `dotnet test`, and an assertion
 # that lives only in the test project does not protect the file being hand-edited here.
 RULES = f"{REPO}/Rules/Rikarin.Skala.Rules.Metadata/rules.json"
+ALLOCATED = f"{REPO}/Rules/Rikarin.Skala.Rules.Metadata/allocated-ids.txt"
 shipped = {r["id"]: r for r in json.load(open(RULES))["rules"]}
 catalogued = json.load(open(f"{W}/catalogued.json"))
+allocated = {ln.split(None, 1)[0] for ln in open(ALLOCATED)
+             if ln.strip() and not ln.startswith("#")}
 
 # Anti-vacuity. Both loops below pass happily against an empty catalogue or an empty map, and
 # an empty file is the exact shape of the failure they exist to report.
@@ -245,6 +248,37 @@ for r in declaring:
     elif credited != r["id"]:
         fail.append(f"catalogued.json: {r['id']} ships {r['resharperId']!r} but the map credits "
                     f"it to {credited} -- one of the two is wrong and the gap hides either way")
+
+# (1b) ⚠ Every value must name an id the register has actually allocated. Nothing here checked
+#      the values at all -- a sabotage run added `"UseNameofExpression": "SK9999"` to the map and
+#      the whole file still exited 0. The C# test does check them, but with
+#      `register.Contains(id)`, a substring match against the whole of doc 08 -- which passes for
+#      an id doc 08 mentions *only in order to say it will never be built*. That is how the map
+#      came to credit five inspections to `SK2006`, `SK8001`, `SK8003` and `SK8004`, every one of
+#      them in doc 08's cut tables (`CS0177`, xUnit1001, xUnit1049, "no mechanical fix"). The
+#      bucket said "Skala covers this" for rules that were measured and declined.
+#
+#      `allocated-ids.txt` is the register (ADR-012, append-only), so it is what this asserts
+#      against. `PLANNED` is the written-reason escape hatch for a concept doc 08 specifies and
+#      has deliberately not allocated an id for yet -- CLAUDE.md forbids allocating ahead of a
+#      specification, so this list is expected to be short and non-empty.
+PLANNED = {
+    "SK1002": "doc 08 § 'SK1000 — modernization' table and § M5: primary constructors are a "
+              "declaration-shape rewrite with no safe fix, deferred rather than declined",
+    "SK6004": "doc 08 § 'SK6000 — API and design': 'the other two remain outstanding' -- "
+              "interface with one implementation is specified and not yet allocated",
+}
+for iid, sk in sorted(catalogued.items()):
+    if not re.fullmatch(r"SK[0-9]{4}", sk):
+        fail.append(f"catalogued.json: {iid!r} -> {sk!r} is not a well-formed rule id")
+    elif sk not in shipped and sk not in allocated and sk not in PLANNED:
+        fail.append(f"catalogued.json: {iid!r} is credited to {sk}, which neither ships nor is "
+                    f"allocated in allocated-ids.txt. The map is claiming coverage from a rule "
+                    f"that does not exist; either the id is wrong or the entry should be dropped "
+                    f"so the inspection returns to the measured gap")
+for sk in sorted(set(PLANNED) - set(catalogued.values())):
+    warn.append(f"reconcile: {sk} is on the PLANNED list and nothing in catalogued.json credits "
+                f"it any more -- delete its line from PLANNED")
 
 # (2) A concept that claims coverage must name a rule that exists. `coveredBy` is the shipped
 #     SK ids now covering the concept; `coverage` is "complete" (every member id listed on the
@@ -275,6 +309,107 @@ def covered(ledger, name):
             partial += 1
     return complete, partial
 
+
+# (2b) ⚠ Every concept carries a `state`, and a declined one carries its evidence. #301: the
+#      vocabulary was `{complete, partial}` and both required `coveredBy` to name a shipped rule,
+#      so there was no way to write down "we assessed this and decided not to build it". A
+#      refutation had to be filed as an exclusion with a prose reason or not at all, which made a
+#      concept that was *measured and declined* indistinguishable from one nobody had opened.
+#
+#      ⚠ The scale of that was not ~20, which is what #301 estimated. 196 of the 270 concepts had
+#      a CLOSED issue and no coverage recorded -- every one of them reading as unexamined. The
+#      losses are specific and expensive: #146 was refuted because PATH resolution is a property
+#      of the environment and not of the call site, #153 because `BindingFlags.NonPublic` scored
+#      0 true positives against 26 false ones, #169 because the null half is hosted by `CA1508`
+#      and the residue needs a value lattice this codebase does not have. None of that was
+#      anywhere the ledger could see it, so the same proposal returns in six months.
+#
+#      The four declining states are kept apart because **they have different futures**:
+#      `out-of-reach` reopens when the machinery lands, `refuted` never does.
+STATES = {
+    "unexamined",    # nobody has assessed it; no issue, or an issue with no outcome recorded
+    "proposed",      # an open GitHub issue tracks it
+    "shipped",       # one or more SK rules cover it            -> requires coveredBy
+    "hosted",        # a CA*/IDE*/compiler diagnostic covers it -> requires hostedBy + evidence
+    "refuted",       # the premise is false, or the shape does not compile -> requires evidence
+    "out-of-reach",  # real, but needs machinery Skala does not have      -> requires evidence
+    "declined",      # real and reachable, but the false-positive cost is too high -> evidence
+}
+NEEDS_EVIDENCE = {"hosted", "refuted", "out-of-reach", "declined"}
+
+# ⚠ A **ratchet, not a target**: the number of concepts carrying a decided state must never fall.
+# Raise each figure as the migration proceeds; never lower one to make a run pass, because the
+# only thing that makes this number drop is a migration being undone or a ledger being blanked.
+#
+# ⚠ It is per group and not a single total, and the sabotage run is why: with one global floor,
+# blanking every ReSharper concept left the run green, because the Sonar ledger's decided rows
+# carried the total past the floor on their own. A vacuity check another file's data can satisfy
+# is not a vacuity check.
+#
+# `ledger-sonar.ideas` sits at 2 because it is genuinely un-migrated, not because the check is
+# weak there. That gap is real and the `unexamined` warning below counts it.
+DECIDED_FLOOR = {
+    "ledger-resharper": 29,
+    "ledger-sonar": 31,
+    "ledger-sonar.ideas": 2,
+}
+
+
+def stated(ledger, name):
+    counts = {}
+    for c in ledger["concepts"]:
+        st = c.get("state")
+        counts[st] = counts.get(st, 0) + 1
+        if st not in STATES:
+            fail.append(f"{name}: concept {c['slug']!r} has state={st!r}, which is not one of "
+                        f"{sorted(STATES)}. Every concept needs one -- a row with no state is the "
+                        f"#301 gap reopening")
+            continue
+        ev = (c.get("evidence") or "").strip()
+        # ⚠ The evidence requirement is the whole point of the field. Without it `state` becomes a
+        # place to write "refuted" without having measured anything, which is worse than the gap
+        # it replaced: it looks like a decision and carries none of the reasoning that made one.
+        if st in NEEDS_EVIDENCE and not ev:
+            fail.append(f"{name}: concept {c['slug']!r} is {st!r} and carries no evidence. "
+                        f"Record the probe, the diagnostic id or the measurement that decided it")
+        if st == "hosted" and not (c.get("hostedBy") or []):
+            fail.append(f"{name}: concept {c['slug']!r} is 'hosted' and does not say what hosts "
+                        f"it -- ADR-008 needs the diagnostic id, not just the verdict")
+        if st == "shipped" and not (c.get("coveredBy") or []):
+            fail.append(f"{name}: concept {c['slug']!r} is 'shipped' and names no rule")
+        # ⚠ The two vocabularies must not drift apart. `coverage: complete` is what closes an
+        # issue, so it cannot sit on a concept whose state says nothing shipped.
+        if c.get("coverage") == "complete" and st != "shipped":
+            fail.append(f"{name}: concept {c['slug']!r} has coverage='complete' but state={st!r} "
+                        f"-- a complete coverage claim only makes sense on a shipped concept")
+    return counts
+
+
+state_counts = {}
+for _led, _name in ((rs, "ledger-resharper"), (sn, "ledger-sonar"),
+                    *(((sn["ideas"], "ledger-sonar.ideas"),) if sn.get("ideas") else ())):
+    _counts = stated(_led, _name)
+    for k, v in _counts.items():
+        state_counts[k] = state_counts.get(k, 0) + v
+    # Anti-vacuity, ⚠ **per ledger and not in total**. A migration that set every row to
+    # `unexamined` satisfies every assertion above while recording exactly what the old schema
+    # did, which is nothing. The first spelling of this counted across all three groups, and the
+    # sabotage run caught it: blanking every ReSharper concept left the run green because the
+    # Sonar ledger's 33 decided rows carried the total past the floor on their own. A vacuity
+    # check that another file's data can satisfy is not a vacuity check.
+    _tot = sum(_counts.values())
+    _dec = sum(v for k, v in _counts.items() if k in NEEDS_EVIDENCE or k == "shipped")
+    if _dec < DECIDED_FLOOR[_name]:
+        fail.append(f"{_name}: {_dec} concepts carry a decided state (shipped, hosted, refuted, "
+                    f"out-of-reach or declined) of {_tot}, and the recorded floor is "
+                    f"{DECIDED_FLOOR[_name]}. Either a migration was undone or rows were blanked; "
+                    f"every #301 assertion above passes vacuously on an all-`unexamined` ledger")
+print("states:    " + ", ".join(f"{k} {v}" for k, v in sorted(state_counts.items(),
+                                                              key=lambda kv: -kv[1])))
+if state_counts.get("unexamined"):
+    warn.append(f"{state_counts['unexamined']} concepts are still 'unexamined'. Where the issue "
+                f"is closed, the outcome exists on the issue and has not been migrated here yet "
+                f"(#301) -- this number is the remaining debt and is meant to fall")
 
 rs_complete, rs_partial = covered(rs, "ledger-resharper")
 sn_complete, sn_partial = covered(sn, "ledger-sonar")
@@ -320,9 +455,6 @@ INERT = {
     "UnusedPragmaWarningRestore": "invented; RedundantDisableWarningComment is the nearest real "
                                   "id and is a different concept (ReSharper's own disable comment)",
     "UseSearchValues": "invented; no SearchValues inspection in the dump",
-    "UseStringComparison": "invented; the real id is SpecifyStringComparison, which classify.py "
-                           "already buckets Hosted (CA1307/CA1310), so this credits nothing",
-    "XunitTestWithConsoleOutput": "invented",
     # real id, but outside the measured universe, so it credits nothing either.
     "UseUtf8StringLiteral": "real in types-2026.xml, absent from editor_config_template, so no "
                             "universe row carries it",
