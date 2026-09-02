@@ -60,7 +60,7 @@ public sealed class PredefinedTypeRule : ArrangementRule {
             if (original.Parent is UsingDirectiveSyntax
                 or NamespaceDeclarationSyntax
                 or FileScopedNamespaceDeclarationSyntax
-                || IsInsideNameOf(original)) {
+                || IsInNameOf(original)) {
                 return visited;
             }
 
@@ -91,32 +91,6 @@ public sealed class PredefinedTypeRule : ArrangementRule {
             return SyntaxFactory.PredefinedType(SyntaxFactory.Token(keyword))
                 .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
-        }
-
-        /// <summary>
-        ///     Whether the node is an argument of a <c>nameof</c>.
-        /// </summary>
-        /// <remarks>
-        ///     ⚠ Found by safety layer 2 rather than by review, which is the point of having one. The
-        ///     first version of this guard looked for a <c>MemberAccessExpressionSyntax</c> parent and
-        ///     so never matched <c>nameof(Int32)</c> at all — the identifier there is an
-        ///     <c>ArgumentSyntax</c>, two nodes below the invocation. The rewrite produced
-        ///     <c>nameof(int)</c>, the re-bind reported <c>CS1525: Invalid expression term 'int'</c>,
-        ///     and the file was reverted instead of corrupted.
-        /// </remarks>
-        static bool IsInsideNameOf(SyntaxNode node) {
-            for (var current = node; current is not null; current = current.Parent) {
-                if (current.Parent is ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax invocation }
-                    && invocation.Expression is IdentifierNameSyntax { Identifier.ValueText: "nameof" }) {
-                    return true;
-                }
-
-                if (current is StatementSyntax or MemberDeclarationSyntax) {
-                    return false;
-                }
-            }
-
-            return false;
         }
 
         /// <summary>

@@ -770,34 +770,54 @@ public sealed class LayoutWriter {
     int TrailingWidth(Stack<(int Node, int Child)> stack) {
         var total = 0;
         foreach (var (node, child) in stack) {
-            var children = document.ChildrenOf(node);
-            for (var i = child; i < children.Length; i++) {
-                var sibling = children[i];
-
-                // ⚠ A break point's own flat rendering does not count. The measure is "the rest of
-                // this line if every break point is taken", and if this one is taken the line ends
-                // here — the space it would have rendered as is never written. Counting it made this
-                // measure one column larger than the one a fill point uses on the same gap, and the
-                // two disagreeing is a non-idempotency rather than a rounding error: the fill keeps
-                // an item on the line, the item's own group then finds itself one column over and
-                // breaks, and the second pass sees a multi-line item and breaks before it. Two files
-                // out of Vixen's 4 708 did exactly that.
-                if (document.Nodes[sibling].Kind == DocKind.Line) {
-                    return total;
-                }
-
-                var width = document.PointWidthOf(sibling);
-                total = total >= Document.Unbounded || width >= Document.Unbounded
-                    ? Document.Unbounded
-                    : total + width;
-
-                if (document.HasBreak(sibling)) {
-                    return total;
-                }
+            if (AddRemainingSiblings(node, child, ref total)) {
+                return total;
             }
         }
 
         return total;
+    }
+
+    /// <summary>
+    ///     Adds the flat width of <paramref name="node" />'s children from <paramref name="child" />
+    ///     onwards to <paramref name="total" />, and says whether the line ended inside them.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ One loop rather than two. <see cref="TrailingWidth" /> and
+    ///     <see cref="TrailingAfterGroup" /> carried byte-identical copies of it and <c>SK7020</c>
+    ///     reported them as one clone group; the two measures differ in *which frames* they walk, never
+    ///     in how a frame is measured, and a change made to one copy and not the other is exactly the
+    ///     disagreement described below.
+    ///     <para>
+    ///         ⚠ A break point's own flat rendering does not count. The measure is "the rest of this line
+    ///         if every break point is taken", and if this one is taken the line ends here — the space it
+    ///         would have rendered as is never written. Counting it made this measure one column larger
+    ///         than the one a fill point uses on the same gap, and the two disagreeing is a
+    ///         non-idempotency rather than a rounding error: the fill keeps an item on the line, the
+    ///         item's own group then finds itself one column over and breaks, and the second pass sees a
+    ///         multi-line item and breaks before it. Two files out of Vixen's 4 708 did exactly that.
+    ///     </para>
+    /// </remarks>
+    /// <returns><c>true</c> when the line ended — a <c>Line</c> node or a taken break.</returns>
+    bool AddRemainingSiblings(int node, int child, ref int total) {
+        var children = document.ChildrenOf(node);
+        for (var i = child; i < children.Length; i++) {
+            var sibling = children[i];
+            if (document.Nodes[sibling].Kind == DocKind.Line) {
+                return true;
+            }
+
+            var width = document.PointWidthOf(sibling);
+            total = total >= Document.Unbounded || width >= Document.Unbounded
+                ? Document.Unbounded
+                : total + width;
+
+            if (document.HasBreak(sibling)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -825,21 +845,8 @@ public sealed class LayoutWriter {
                 continue;
             }
 
-            var children = document.ChildrenOf(node);
-            for (var i = child; i < children.Length; i++) {
-                var sibling = children[i];
-                if (document.Nodes[sibling].Kind == DocKind.Line) {
-                    return total;
-                }
-
-                var width = document.PointWidthOf(sibling);
-                total = total >= Document.Unbounded || width >= Document.Unbounded
-                    ? Document.Unbounded
-                    : total + width;
-
-                if (document.HasBreak(sibling)) {
-                    return total;
-                }
+            if (AddRemainingSiblings(node, child, ref total)) {
+                return total;
             }
         }
 
