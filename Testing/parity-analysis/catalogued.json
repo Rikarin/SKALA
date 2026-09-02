@@ -265,5 +265,7 @@
   "ShortLivedHttpClient": "SK3541",
   "MemberInitializerValueIgnored": "SK2200",
   "EventUnsubscriptionViaAnonymousDelegate": "SK2201",
-  "PossiblyUnintendedSideEffectsInsideConditionalInvocation": "SK2202"
+  "PossiblyUnintendedSideEffectsInsideConditionalInvocation": "SK2202",
+  "VariableLengthStringHexEscapeSequence": "SK2171",
+  "SuppressNullableWarningExpressionAsInvertedIsExpression": "SK2172"
 }

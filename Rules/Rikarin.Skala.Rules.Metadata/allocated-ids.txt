@@ -310,3 +310,8 @@ SK0250 redundant-discard-designation
 SK2200 overwritten-field-initializer
 SK2201 anonymous-unsubscription
 SK2202 conditional-invocation-side-effect
+SK2170 misleading-body-indentation
+SK2171 variable-length-hex-escape
+SK2172 forgiven-is-operand
+SK2173 negated-empty-pattern
+SK2174 unparenthesised-precedence-mix

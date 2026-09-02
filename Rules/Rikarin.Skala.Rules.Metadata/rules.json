@@ -7605,6 +7605,131 @@
       "configuration": [
         "dotnet_diagnostic.SK2202.severity"
       ]
+    },
+    {
+      "id": "SK2170",
+      "concept": "misleading-body-indentation",
+      "title": "The indentation says the statement is in the body and it is not",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An `if`, `else`, `while`, `for`, `foreach`, `lock`, `using` or `fixed` has a single unbraced statement as its body, and the next statement is indented as far as that body or further, so the layout claims a block the grammar does not give.",
+      "rationale": "```\nif (stale)\n    Reload();\n    Publish();\n```\n`Publish()` runs every time. Nothing about the program says so, and everything about the picture says the opposite — which is the whole failure: the reader's eye takes indentation as structure and C# does not. ⚠ **This is the one half of the concept the compiler leaves alone, and that was measured rather than assumed.** The other half — an empty statement standing in for a body, `if (x); { … }` — is `CS0642`, on by default, and it reaches further than doc 17 supposed: it covers `if`, `else`, `lock`, `do`, `using` and `fixed` outright, and covers `while`, `for` and `foreach` exactly when a block follows the `;`, which is precisely the shape that misleads. So this rule declines an empty body followed by a block and reports one followed by anything else — `while (x)`, then `;` on its own line, then a statement aligned with the `;` is a real finding the compiler is silent about. ⚠ **The first draft declined every empty body and a sabotage proved the exemption unreachable**, because `while (x) ;` puts the `;` on the header's own line, which the line test already declines. ⚠ **Indentation is not structure anywhere in C#, so nothing but a formatter is looking at it**, and Skala is a formatter: the rule reads the leading whitespace of three lines and compares them as strings, which is a question no semantic model can be asked.",
+      "examples": {
+        "bad": "if (stale)\n    Reload();\n    Publish();",
+        "good": "if (stale) {\n    Reload();\n    Publish();\n}\n\n// or, if `Publish()` really was meant to be unconditional, written so it reads that way:\nif (stale)\n    Reload();\n\nPublish();"
+      },
+      "falsePositives": "⚠ **Indentation is compared as a string prefix, never as a column number, and that is what makes the rule safe in a tab-indented file.** The header's indent must be a proper prefix of the body's, and the next statement's must equal the body's exactly; a file indented with tabs compares tab prefixes and a file indented with spaces compares space prefixes, and a line that mixes them fails the prefix test and is declined rather than guessed at. A column count would call one tab and one space the same depth and report a file that is merely inconsistent. ⚠ **Alignment, not \"at least as deep\", and the corpus is what settled it.** The looser test reports four times on `unformatted/scramble/`, a slice whose whitespace has been randomised on purpose: there the following statement lands 2, 4 or 6 columns *past* the body, which reads as mangled or as a continuation rather than as a sibling, and asking for the column a reader would actually see declines all four. ⚠ **Three lines, three separate requirements, and dropping any one of them over-fires.** The control statement must begin its own line, the body must begin a later line indented deeper than the header, and the next statement must begin a later line still, indented to exactly the body's column. `if (x) A(); B();` on one line has no layout to mislead anyone; `if (x)\\n    A();\\nB();` is correctly outdented and is the shape the rule exists to leave alone. ⚠ **A braced body is never examined**, because a block cannot lie about what it contains. ⚠ **An empty body is examined, but only where `CS0642` is silent.** The compiler reports an empty loop body when a block follows the `;` and not otherwise, so a `not`-a-block statement aligned with the `;` is this rule's and a block is the compiler's; the guard is that narrow overlap and a fixture reaches it from each side. ⚠ **The trailing embedded statement is what is measured, so an `else` is followed down**: in `if (a)\\n    A();\\nelse\\n    B();\\n    C();` the body compared against `C()` is `B()`, not `A()`. A `do` is excluded, because its body is not trailing — the `while` follows it — so nothing below can be misread as belonging to it. ⚠ **A preprocessor directive anywhere between the body and the next statement withdraws the finding**: under an `#if` the two lines are not necessarily both in the program, and the indentation of a conditionally compiled region is a convention rather than a claim. ⚠ **The rule reads the trivia of the tree as parsed** — the source as the author wrote it — exactly as `SK2063` does, and like `SK2063` it can be silenced by running the formatter, which re-indents the second statement to the truth. That is not a defect in the rule; it is the repair, applied by a different command. There is no fix, because the two repairs — brace the body, or outdent the statement — are different programs and the code contains no signal for which was meant. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2170.severity"
+      ]
+    },
+    {
+      "id": "SK2171",
+      "concept": "variable-length-hex-escape",
+      "title": "The `\\x` escape's length is decided by what follows it",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "VariableLengthStringHexEscapeSequence",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `\\x` escape in a string or character literal is written with one, two or three hex digits, so how many characters it consumes depends on the character that happens to come next.",
+      "rationale": "`\\x` is the only escape in C# whose length is not fixed: the compiler takes up to four hex digits, and it does not stop at the ones the author meant. `\"\\x41B\"` is one character, U+041B — not `A` followed by `B`. Append a letter to a string that ends in `\\x41` and its last character silently changes; the diff shows one character added and the program changed two. ⚠ **`\\u` has a fixed length of four and cannot do this**, which is why the fix is a spelling change and nothing else. ⚠ **The other two inspections this concept was drawn from are not here, and both were measured out.** `1l` is `CS0078` — \"the 'l' suffix is easily confused with the digit '1'\" — on by default, and a probe confirms it fires on `1l` and on `1lu` and stays quiet on `1ul`. A `char` argument widening to an `int` parameter is a different question about overload resolution, not about how a literal reads, and it is not this rule.",
+      "examples": {
+        "bad": "var cyrillic = \"\\x41B\";",
+        "good": "var cyrillic = \"\\u041B\";"
+      },
+      "falsePositives": "⚠ **Only the spellings where the length is genuinely undecided are reported**: a `\\x` followed by exactly four hex digits has consumed all it can and reads as one thing, so it is left alone. One, two or three digits are reported whatever follows them — including at the end of a literal, where nothing follows — because the hazard is that the next edit decides the value, not that the current text is already wrong. ⚠ **A verbatim literal has no escapes and neither does a raw string literal**, and both are skipped by the token kind rather than by scanning: `@\"\\x41B\"` is six characters and reporting it would be reporting text that does not mean what the rule assumes. ⚠ **`\\\\x41B` is a backslash followed by `x41B` and is not an escape**, so the scanner consumes both characters of every `\\\\` before looking for the next one; a rule that searched for the two-character string `\\x` would report it. Interpolated strings are scanned segment by segment through their text tokens, so the expressions inside the holes are never mistaken for literal text. The fix rewrites `\\xH`, `\\xHH` and `\\xHHH` to the `\\u` form with the digits zero-padded to four, which is the same character by construction and is why it is safe to apply without review. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2171.severity"
+      ]
+    },
+    {
+      "id": "SK2172",
+      "concept": "forgiven-is-operand",
+      "title": "The `!` before `is` reads as a negated `is`",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "SuppressNullableWarningExpressionAsInvertedIsExpression",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A null-forgiving `!` stands immediately before an `is`, where it suppresses nothing and where the two tokens read as an inverted type test.",
+      "rationale": "`x! is string` and `!(x is string)` differ by the position of one character and answer opposite questions, and the first is the one that compiles silently in every context. ⚠ **The `!` is doing nothing there, and that is measured rather than argued.** `is` never issues a nullability warning about its own operand — a pattern match is exactly the test that makes a null operand safe — so there is no warning for the `!` to suppress. A probe compiled both spellings under `#nullable enable`: `if (s! is object) { }` followed by `s.Length` reports `CS8602`, and so does the same code with the `!` removed, at the same position. ⚠ **That refutes the reason this rule was first going to ship a fix.** The suppression was assumed to carry forward into the flow state, making its removal unsafe; it does not, and the fix is fixless for the other reason instead — the repair is a guess about which program was meant.",
+      "examples": {
+        "bad": "if (value! is string) { Handle(value); }",
+        "good": "if (value is not string) { Handle(value); }\n\n// or, if the test really was meant to be positive, written without the `!` that does nothing:\nif (value is string) { Handle(value); }"
+      },
+      "falsePositives": "⚠ **Disjoint from `SK2111` by construction rather than by filter, which is why this rule is `Semantic` at all.** `SK2111` reports a `!` that suppresses nothing because nullable *warnings* are switched off at that position, or because the operand is a non-nullable value type; this rule declines both, so no `!` can be reported twice and neither rule needs to know about the other's message. What is left is the case `SK2111` deliberately does not reach: warnings on, a reference or nullable-value operand, and a `!` that is inert because of where it stands rather than because of what it stands on. ⚠ **Only a `!` that is the whole left operand of the `is`.** `list![0] is string` suppresses a real warning on `list` and is not this shape; `text!.Trim() is { Length: > 0 }` suppresses a real dereference warning and is not either. ⚠ **`(x!) is string` is declined**, and the parentheses are the reason: they say which operand the `!` binds to, which is the entire thing the reader of the bare form cannot see. Both the pattern form `x! is T t` and the type-test form `x! is T` are examined, because the parser gives them different node kinds and the reader cannot tell them apart. An operand whose type does not resolve is declined. There is no fix: `x is not T` and `x is T` are both plausible readings of `x! is T` and they are opposite programs, so an automatic repair would be the tool choosing which bug it found. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2172.severity"
+      ]
+    },
+    {
+      "id": "SK2173",
+      "concept": "negated-empty-pattern",
+      "title": "`is not { }` is a null check written backwards",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `not { }` pattern with no type, no positional clause, no subpatterns and no designation matches exactly the null values, so it is `null` spelled in a way that reads as its opposite.",
+      "rationale": "`{ }` matches every non-null value, so `not { }` matches every null one. The word on the page is `not`, the reader takes it as \"has something\", and the pattern means \"has nothing\". `x is null` says it in four characters with no inversion to hold in your head. ⚠ **`{ }` matches a boxed struct and a non-null `Nullable<T>` as well as a reference, and the rewrite keeps all of that** — `is null` on a `T?` is `!HasValue`, which is exactly what `is not { }` was already testing.",
+      "examples": {
+        "bad": "if (result is not { }) { return Failure(); }",
+        "good": "if (result is null) { return Failure(); }"
+      },
+      "falsePositives": "⚠ **The one shape that would break the rewrite cannot be written**, and the compiler is what guarantees it: `int value` in `value is not { }` is `CS8518`, \"an expression of type 'int' can never match the provided pattern\", and so is a `T` constrained to `struct`. There is therefore no compiling program in which `is not { }` stands on something `is null` would reject, and the rule needs no semantic model to know it — measured on a probe, not reasoned from the specification. An unconstrained `T` accepts both spellings and is reported. ⚠ **The pattern must be empty in all four ways.** `not { Length: 0 }` has a subpattern, `not string { }` has a type, `not (1, 2)` is positional and `not { } x` binds a designation; none of them is a null check and none is reported. The registration is on the `not` pattern itself, so the rule reaches a `case not { }:` label, a `switch` arm and a nested subpattern as well as a bare `is`, and a parenthesised `not ({ })` is declined because the parentheses are a choice about grouping that the fix would have to unpick. ⚠ **A comment or a preprocessor directive inside the pattern's span withdraws the finding rather than the fix**, so that no positive fixture can produce a report the fix cannot serve; the fix replaces the whole `not { }` span with `null`, and a fix that silently deleted a comment out of that span would be a fix nobody can review. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2173.severity"
+      ]
+    },
+    {
+      "id": "SK2174",
+      "concept": "unparenthesised-precedence-mix",
+      "title": "The shift or bitwise operand relies on precedence to group",
+      "category": "Correctness",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An operand of `<<`, `>>`, `>>>`, `&`, `|` or `^` is itself an unparenthesised binary expression from a different precedence family, so how the expression groups is a fact about the C# grammar rather than a fact on the page.",
+      "rationale": "`a << b + 1` shifts by `b + 1`. `mask & offset + 1` masks against `offset + 1`. `a | b & c` is `a | (b & c)`. Every one of those is what the grammar says and none of them is what most readers say when asked, because the shift and bitwise operators sit between arithmetic and comparison in a table nobody has memorised. ⚠ **The parentheses cost nothing and settle it**, which is the whole argument — there is no defect here to find, only a sentence that can be written so it cannot be misread. ⚠ **The boundary against `SK0209` is settled by construction, and settling it was the condition on shipping this at all.** `skala arrange` removes redundant parentheses; `ParenthesesRedundancy.MayRemove` refuses unconditionally when the parent is a shift or a bitwise operator, because `resharper_parentheses_non_obvious_operations` names exactly those. Every pair of parentheses this rule adds has such a parent, so the arranger will never take one back and `skala fix` and `skala arrange --aggressive` cannot fight.",
+      "examples": {
+        "bad": "var shifted = value << offset + 1;",
+        "good": "var shifted = value << (offset + 1);"
+      },
+      "falsePositives": "⚠ **A closed table, not a heuristic, and three of the rows it was drafted with are gone.** What is reported is one shape: an operand of a shift or bitwise operator that is itself a binary expression of a *different* precedence family, minus one exclusion below. `a & b & c` and `a + b + c` are one family throughout and are never reported; `(a + b) << 1` is already parenthesised and is never reported. ⚠ **A comparison operand under `&` or `|` is declined, and `SK2064` is the reason.** `a & b == c` only compiles when every operand is `bool`, and a `&` between two `bool` operands is `SK2064`'s subject — it reports it and offers `&&`. Reporting it here as well would be two rules on one token. Since arithmetic and shift operands never have `bool` type, the two rules are disjoint by construction: `SK2064` fires only on `bool` operands and this rule only on integral ones. ⚠ **A shift under a bitwise operator is bit packing and is declined, which is the third row measured out.** `key << 8 | digest[i]` and `value << offset & mask` are how every byte of every buffer has ever been assembled, and no reader hesitates: the shift is visibly the thing being placed and the bitwise operator visibly the thing placing it. The rule without that exclusion reports the shape once on Skala's own tree, in `CorpusSample.KeyOf`, and once in `pathological/operators-crammed-together.cs`, and both are the idiom rather than the hazard. What is left is the pair the C precedence table actually catches people out on: arithmetic bound looser than the shift or mask enclosing it, and `&` bound tighter than `^` bound tighter than `|`. ⚠ **The `?:` row was cut because the grammar makes it unreachable.** A conditional expression binds looser than every binary operator, so it can never *be* an unparenthesised binary operand; the only reachable nesting is `a ? b : c ? d : e`, which is the chained-ternary idiom every C# reader parses correctly, and reporting it would be noise. What was drafted as \"`?:` inside a larger expression\" describes no program. ⚠ **A preprocessor directive inside the operand withdraws the finding**, because a `(` and a `)` inserted on either side of an `#if` do not necessarily both survive into the same compilation. The fix inserts one character at each end of the operand's span and changes nothing else, so it cannot move a comment or reflow a line, which is why it is safe to apply without review. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2174.severity"
+      ]
     }
   ]
 }

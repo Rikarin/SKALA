@@ -161,6 +161,9 @@ public sealed class RuleFixtureTests {
         new CopyingPropertyAnalyzer(), new UnreadStringBuilderAnalyzer(),
         new OverwrittenFieldInitializerAnalyzer(), new AnonymousUnsubscriptionAnalyzer(),
         new ConditionalInvocationSideEffectAnalyzer(),
+        new MisleadingBodyIndentationAnalyzer(), new VariableLengthHexEscapeAnalyzer(),
+        new ForgivenIsOperandAnalyzer(), new NegatedEmptyPatternAnalyzer(),
+        new UnparenthesisedPrecedenceMixAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

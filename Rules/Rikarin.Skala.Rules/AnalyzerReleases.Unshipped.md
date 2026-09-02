@@ -269,3 +269,8 @@ SK0250 | Skala.Cleanup | Info | The pattern designates its match `_`.
 SK2200 | Skala.Correctness | Warning | The field initializer is overwritten by every constructor.
 SK2201 | Skala.Correctness | Warning | The unsubscription passes an anonymous function.
 SK2202 | Skala.Correctness | Warning | The modification sits inside a conditional invocation.
+SK2170 | Skala.Correctness | Warning | The indentation claims a block the body does not have.
+SK2171 | Skala.Correctness | Warning | The `\x` escape's length depends on what follows it.
+SK2172 | Skala.Correctness | Warning | A null-forgiving `!` stands where it reads as a negated `is`.
+SK2173 | Skala.Correctness | Warning | `is not { }` is `is null` spelled backwards.
+SK2174 | Skala.Correctness | Info | A shift or bitwise operand groups only by precedence.
