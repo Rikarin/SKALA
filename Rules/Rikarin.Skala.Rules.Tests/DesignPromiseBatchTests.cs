@@ -51,10 +51,13 @@ public sealed class DesignPromiseBatchTests {
     ///     ⚠ <c>SK6034</c>'s exemption is a claim the project makes, and it is keyed on nothing else.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>#330 was filed with a remedy that keyed the exemption on this repository's
-    ///     <c>allocated-ids.txt</c> and on the type names <c>RuleIds</c>/<c>ExitCodes</c>, and the issue
-    ///     then corrected itself: that is one codebase's layout carried inside a rule that ships
-    ///     elsewhere.</b> This test is what says the analyzer holds no such knowledge — the same type,
+    ///     ⚠
+    ///     <b>
+    ///         #330 was filed with a remedy that keyed the exemption on this repository's
+    ///         <c>allocated-ids.txt</c> and on the type names <c>RuleIds</c>/<c>ExitCodes</c>, and the issue
+    ///         then corrected itself: that is one codebase's layout carried inside a rule that ships
+    ///         elsewhere.
+    ///     </b> This test is what says the analyzer holds no such knowledge — the same type,
     ///     the same constant, and only the configured value moves.
     /// </remarks>
     [Fact]

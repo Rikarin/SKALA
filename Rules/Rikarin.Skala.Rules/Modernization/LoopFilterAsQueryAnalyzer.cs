@@ -68,16 +68,49 @@ public sealed class LoopFilterAsQueryAnalyzer : DiagnosticAnalyzer {
     ///     that read as mutation, and a false decline costs one hint.
     /// </remarks>
     static readonly HashSet<string> Mutators = new(StringComparer.Ordinal) {
-        "Add", "AddOrUpdate", "AddRange", "Append", "AppendFormat", "AppendLine", "Clear", "Dequeue", "Enqueue",
-        "GetOrAdd", "Insert", "InsertRange", "MoveNext", "Next", "NextDouble", "Pop", "Push", "Remove", "RemoveAll",
-        "RemoveAt", "RemoveRange", "Reset", "Set", "SetValue", "Sort", "TryAdd", "TryDequeue", "TryPop", "TryRemove",
-        "TryTake", "TryUpdate", "Write", "WriteLine"
+        "Add",
+        "AddOrUpdate",
+        "AddRange",
+        "Append",
+        "AppendFormat",
+        "AppendLine",
+        "Clear",
+        "Dequeue",
+        "Enqueue",
+        "GetOrAdd",
+        "Insert",
+        "InsertRange",
+        "MoveNext",
+        "Next",
+        "NextDouble",
+        "Pop",
+        "Push",
+        "Remove",
+        "RemoveAll",
+        "RemoveAt",
+        "RemoveRange",
+        "Reset",
+        "Set",
+        "SetValue",
+        "Sort",
+        "TryAdd",
+        "TryDequeue",
+        "TryPop",
+        "TryRemove",
+        "TryTake",
+        "TryUpdate",
+        "Write",
+        "WriteLine"
     };
 
     /// <summary>The attributes by which a method proves something about a null state.</summary>
     static readonly HashSet<string> NullStateAttributes = new(StringComparer.Ordinal) {
-        "NotNullWhenAttribute", "MaybeNullWhenAttribute", "NotNullIfNotNullAttribute", "DoesNotReturnIfAttribute",
-        "MemberNotNullAttribute", "MemberNotNullWhenAttribute"
+        "NotNullWhenAttribute",
+        "MaybeNullWhenAttribute",
+        "NotNullIfNotNullAttribute",
+        "DoesNotReturnIfAttribute",
+        "MemberNotNullAttribute",
+        "MemberNotNullWhenAttribute"
     };
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);
@@ -242,8 +275,11 @@ public sealed class LoopFilterAsQueryAnalyzer : DiagnosticAnalyzer {
     ///     Whether the condition establishes a null state the body then relies on (#329).
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>An <c>if</c> narrows for its body and a <c>Where</c> predicate does not, and the two
-    ///     rewrites are otherwise the same tokens.</b> <c>option.Default is not null</c> in the guard
+    ///     ⚠
+    ///     <b>
+    ///         An <c>if</c> narrows for its body and a <c>Where</c> predicate does not, and the two
+    ///         rewrites are otherwise the same tokens.
+    ///     </b> <c>option.Default is not null</c> in the guard
     ///     proves <c>option.Default</c> non-null inside the guard's body; in a lambda handed to
     ///     <c>Where</c> it proves nothing about the loop body, and the call that consumed it becomes
     ///     CS8604. Measured: 6 of 133 insertions on this repository moved such a condition, and only one
@@ -296,14 +332,20 @@ public sealed class LoopFilterAsQueryAnalyzer : DiagnosticAnalyzer {
     ///     Whether narrowing this expression could tell the body something it does not already know.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>The declared annotation, and <c>Nullability.FlowState</c> was tried first and is
-    ///     useless here — measured, not assumed.</b> Asked of the operand of an <c>is</c> pattern,
+    ///     ⚠
+    ///     <b>
+    ///         The declared annotation, and <c>Nullability.FlowState</c> was tried first and is
+    ///         useless here — measured, not assumed.
+    ///     </b> Asked of the operand of an <c>is</c> pattern,
     ///     Roslyn answers <c>MaybeNull</c> for every expression there is: a non-nullable property, a
     ///     non-nullable parameter and a nullable one all come back the same, because the question being
     ///     answered is the pattern's, not the program's. A guard built on it declines everything.
     ///     <para>
-    ///         ⚠ <b>A <c>var</c> iteration variable is <c>Annotated</c> whatever it iterates, and that
-    ///         is right rather than a limitation.</b> <c>var</c> infers the annotated form and leaves
+    ///         ⚠
+    ///         <b>
+    ///             A <c>var</c> iteration variable is <c>Annotated</c> whatever it iterates, and that
+    ///             is right rather than a limitation.
+    ///         </b> <c>var</c> infers the annotated form and leaves
     ///         non-nullness to the flow state — which is exactly the flow state a <c>Where</c> predicate
     ///         does not carry into the body, so <c>if (item is not null) { Use(item); }</c> really would
     ///         become CS8604.

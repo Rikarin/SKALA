@@ -226,8 +226,11 @@ public sealed class LinqChainAndLoopShapeBatchTests {
     ///     ⚠ The fix would hand the author an <c>SK2212</c>, and only a cross-rule test can see it.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b><c>EveryFix_SilencesTheRuleAndIntroducesNoDiagnostic</c> is blind to this class (#321),
-    ///     because it filters the post-fix diagnostics to the fixture's own rule id</b> — so the rewrite
+    ///     ⚠
+    ///     <b>
+    ///         <c>EveryFix_SilencesTheRuleAndIntroducesNoDiagnostic</c> is blind to this class (#321),
+    ///         because it filters the post-fix diagnostics to the fixture's own rule id
+    ///     </b> — so the rewrite
     ///     could go on producing a single-iteration loop and every existing test would stay green. This
     ///     one runs <c>SK2212</c> over both halves: the source is silent before, and the rewrite the fix
     ///     would have produced is not.

@@ -26,22 +26,31 @@ namespace Rikarin.Skala.Rules.Design;
 ///         symbols rather than over one declaration's modifiers.
 ///     </para>
 ///     <para>
-///         ⚠ <b>A project can declare which of its constants are frozen, and the analyzer knows nothing
-///         about which names those are (#330).</b> The rule's own rationale already says a value that
+///         ⚠
+///         <b>
+///             A project can declare which of its constants are frozen, and the analyzer knows nothing
+///             about which names those are (#330).
+///         </b> The rule's own rationale already says a value that
 ///         "can never change" is correctly <c>public const</c> — a protocol magic number, a format
 ///         version — and it had no way to be told. It does now:
 ///         <c>dotnet_code_quality.SK6034.frozen_constant_types</c> names the containing types whose
 ///         constants are contract, defaults to empty, and is read from the <c>.editorconfig</c> the
-///         consumer already has. ⚠ <b>The exemption is declared by the project, never recognised by the
-///         analyzer.</b> The first proposal on the issue keyed it on <c>allocated-ids.txt</c> and on the
+///         consumer already has. ⚠
+///         <b>
+///             The exemption is declared by the project, never recognised by the
+///             analyzer.
+///         </b> The first proposal on the issue keyed it on <c>allocated-ids.txt</c> and on the
 ///         type names <c>RuleIds</c>/<c>ExitCodes</c> — that is one repository's layout carried inside a
 ///         rule that ships to repositories which have neither, and it is the thing the working
 ///         agreement forbids. Skala declares its own four types in its own <c>.editorconfig</c>, like
 ///         any other consumer.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The fix drops an initialiser that is the type's default, because keeping it is
-///         <c>CA1805</c>.</b> <c>public const int Ok = 0;</c> rewritten to
+///         ⚠
+///         <b>
+///             The fix drops an initialiser that is the type's default, because keeping it is
+///             <c>CA1805</c>.
+///         </b> <c>public const int Ok = 0;</c> rewritten to
 ///         <c>public static readonly int Ok = 0;</c> is an explicit default initialiser, which is
 ///         redundant on a field and legitimate only on a <c>const</c> — so the one-token swap traded
 ///         this rule's finding for the SDK's. Only value types are dropped: <c>const string X = null;</c>
@@ -145,7 +154,7 @@ public sealed class PublicConstantAnalyzer : DiagnosticAnalyzer {
     static TextSpan? DefaultInitializer(SyntaxNodeAnalysisContext context, VariableDeclaratorSyntax variable) {
         if (variable.Initializer is not { } initializer
             || context.SemanticModel.GetDeclaredSymbol(variable, context.CancellationToken)
-                is not IFieldSymbol { HasConstantValue: true, Type.IsValueType: true } field
+            is not IFieldSymbol { HasConstantValue: true, Type.IsValueType: true } field
             || !IsTheTypesDefault(field.ConstantValue)) {
             return null;
         }
@@ -191,8 +200,10 @@ public sealed class PublicConstantAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool IsFrozenByTheProject(AnalyzerConfigOptions options, INamedTypeSymbol? containing) {
         if (containing is null
-            || !options.TryGetValue("dotnet_code_quality." + RuleIds.PublicConstantField + ".frozen_constant_types",
-                out var configured)
+            || !options.TryGetValue(
+                "dotnet_code_quality." + RuleIds.PublicConstantField + ".frozen_constant_types",
+                out var configured
+            )
             || string.IsNullOrWhiteSpace(configured)) {
             return false;
         }

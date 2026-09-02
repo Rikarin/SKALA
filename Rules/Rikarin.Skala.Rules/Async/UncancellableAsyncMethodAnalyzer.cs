@@ -19,8 +19,11 @@ namespace Rikarin.Skala.Rules.Async;
 ///     on. This reports the step before it: the method accepts none, so there is nothing to pass on and
 ///     no caller can stop the work. The two are the same argument at two points in the call graph.
 ///     <para>
-///         ⚠ <b>This rule's fix now does <c>SK3004</c>'s half too, and the handover it used to rely on
-///         was the defect (#328).</b> The fix appended the parameter and stopped, leaving a signature
+///         ⚠
+///         <b>
+///             This rule's fix now does <c>SK3004</c>'s half too, and the handover it used to rely on
+///             was the defect (#328).
+///         </b> The fix appended the parameter and stopped, leaving a signature
 ///         that advertised a cancellation the body dropped and a finding that had disappeared — the
 ///         rule looks for the <em>parameter</em>, and the parameter was there. It now emits the
 ///         parameter and the argument at every call in the body that can take one, in a single edit
@@ -252,8 +255,11 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
     ///     and nothing else, so <c>ReadMessageAsync(CancellationToken cancellationToken = default)</c>
     ///     shipped with <c>input.ReadLineAsync()</c> and <c>input.ReadAsync(…)</c> untouched — a
     ///     signature advertising a cancellation the body drops, at every call site, invisibly. An empty
-    ///     list withdraws the finding, so <b>the parameter can never be added with nothing to forward
-    ///     it to</b>: the count is at least one by construction.
+    ///     list withdraws the finding, so
+    ///     <b>
+    ///         the parameter can never be added with nothing to forward
+    ///         it to
+    ///     </b>: the count is at least one by construction.
     ///     <para>
     ///         ⚠ Calls inside a <c>catch</c> or a <c>finally</c> do not count, for the reason
     ///         <c>SK3004</c> excludes them: cleanup a cancellation can abort is worse than cleanup that
@@ -265,8 +271,11 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
     ///         one has a token already and is <c>SK3004</c>'s to report.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>A call inside a <c>static</c> lambda or a <c>static</c> local function is skipped,
-    ///         and that is CS8421 rather than taste</b> — a static anonymous function cannot capture the
+    ///         ⚠
+    ///         <b>
+    ///             A call inside a <c>static</c> lambda or a <c>static</c> local function is skipped,
+    ///             and that is CS8421 rather than taste
+    ///         </b> — a static anonymous function cannot capture the
     ///         enclosing method's parameter, so an argument naming it does not compile. Skipping it here
     ///         rather than only in the fix is what keeps the two halves the same list.
     ///     </para>
