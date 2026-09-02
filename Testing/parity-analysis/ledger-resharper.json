@@ -18,6 +18,7 @@
    "slug": "constant-type-check",
    "title": "A type check has a constant result",
    "issue": 1,
+   "state": "shipped",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -30,13 +31,21 @@
     "PatternIsRedundant",
     "RedundantTypeCheckInPattern",
     "RedundantAlwaysMatchSubpattern",
-    "RedundantNullableTypeMark"
-   ]
+    "RedundantNullableTypeMark",
+    "PatternAlwaysMatches",
+    "PatternIsAlwaysTrueOrFalse"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2121"
+   ],
+   "evidence": "Partially shipped as SK2121 (the `as` operator tests a conversion that always succeeds) -- suggestion, Semantic, safe fix. ⚠ Seven of the concept's eight inspections belong to the compiler, verified rather than assumed: CS0184, CS0183, CS0039 and CS8121, and the last two are errors, so the code does not build. Only TryCastAlwaysSucceeds survived. SK2121 folds a conversion the type hierarchy decides, which is why it is not SK2001 or SK2053 -- those fold a comparison an integral range decides. Shape present 199 times on Skala's own tree, all narrowings, all correctly declined."
   },
   {
    "slug": "suspicious-type-conversion",
    "title": "The conversion cannot succeed for the values that reach it",
    "issue": 2,
+   "state": "proposed",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -52,6 +61,7 @@
    "slug": "unintended-reference-comparison",
    "title": "The comparison is by reference where value equality was meant",
    "issue": 3,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -70,6 +80,12 @@
    "slug": "default-struct-equality-used",
    "title": "A struct with no equality members is compared",
    "issue": 4,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2011",
+    "SK2190"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -82,17 +98,13 @@
     "StructLacksIEquatable.Local",
     "TypeWithSuspiciousEqualityIsUsedInRecord.Global",
     "TypeWithSuspiciousEqualityIsUsedInRecord.Local"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK2011",
-    "SK2190"
    ]
   },
   {
    "slug": "base-equality-call-is-identity",
    "title": "`base.Equals` / `base.GetHashCode` resolves to `object`'s",
    "issue": 5,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -106,6 +118,7 @@
    "slug": "hash-code-ignores-members",
    "title": "The hash code does not include the members equality compares",
    "issue": 6,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -119,6 +132,7 @@
    "slug": "integer-overflow-and-division",
    "title": "The integral expression overflows or divides by zero",
    "issue": 7,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -136,6 +150,11 @@
    "slug": "constant-arithmetic-result",
    "title": "The arithmetic has a result the operands already fix",
    "issue": 8,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2001"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -146,16 +165,13 @@
     "MathAbsMethodIsRedundant",
     "SuspiciousMathSignMethod",
     "MathClampMinGreaterThanMax"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK2001"
    ]
   },
   {
    "slug": "suspicious-shift-count",
    "title": "The shift count makes the expression constant or is masked",
    "issue": 9,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -171,6 +187,7 @@
    "slug": "index-out-of-range",
    "title": "The index or range cannot be valid",
    "issue": 10,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -185,6 +202,7 @@
    "slug": "assignment-in-condition",
    "title": "An assignment is used where a comparison was meant",
    "issue": 11,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -199,6 +217,7 @@
    "slug": "dead-assignment",
    "title": "The assigned value is never read",
    "issue": 12,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -214,6 +233,7 @@
    "slug": "static-initializer-order",
    "title": "A static initializer reads a member declared after it",
    "issue": 13,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -226,6 +246,7 @@
    "slug": "loop-cannot-terminate",
    "title": "The loop or recursion has no exit",
    "issue": 14,
+   "state": "shipped",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -237,13 +258,21 @@
     "ConstructorInitializerLoop",
     "PossibleInfiniteInheritance",
     "ForStatementConditionIsTrue",
-    "EmptyForStatement"
-   ]
+    "EmptyForStatement",
+    "FunctionNeverReturns"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2211",
+    "SK2212"
+   ],
+   "evidence": "Shipped as SK2211 (unchanging loop condition) and SK2212 (loop body cannot run more than once) -- ⚠ cut to two of the issue's seven inspections, deliberately. Both warning, Semantic, no fix. ⚠ `while (true)` is never reported: it is the idiomatic spelling of an intentional loop with an inner break, and a rule that flags it flags correct code. What ships is narrower and decidable -- definite assignment over the body, and a body that always exits on the first iteration. FunctionNeverReturns is among the five cut and stays uncovered here."
   },
   {
    "slug": "name-hides-name",
    "title": "The declaration hides another name in scope",
    "issue": 15,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -264,6 +293,7 @@
    "slug": "bitwise-on-non-flags-enum",
    "title": "A bitwise operation is applied to an enum without `[Flags]`",
    "issue": 16,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -276,6 +306,7 @@
    "slug": "duplicate-collection-initializer-key",
    "title": "The collection initializer has duplicate keys",
    "issue": 17,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -289,6 +320,7 @@
    "slug": "event-subscription-mistakes",
    "title": "The event subscription cannot be undone or is dispatched wrongly",
    "issue": 18,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -302,6 +334,7 @@
    "slug": "format-string-mismatch",
    "title": "The format string does not match its arguments",
    "issue": 19,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -318,6 +351,11 @@
    "slug": "structured-log-template",
    "title": "The structured log template does not match its arguments",
    "issue": 20,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2016"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -336,16 +374,13 @@
     "resharper_complex_object_destructuring_problem_highlighting",
     "resharper_complex_object_in_context_destructuring_problem_highlighting",
     "resharper_positional_property_used_problem_highlighting"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK2016"
    ]
   },
   {
    "slug": "stream-read-return-ignored",
    "title": "The number of bytes actually read is ignored",
    "issue": 21,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -358,22 +393,24 @@
    "slug": "wrong-argument-name-in-exception",
    "title": "The exception names a parameter that does not exist",
    "issue": 22,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2017"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "inspections": [
     "SuspiciousParameterNameInArgumentNullException"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK2017"
    ]
   },
   {
    "slug": "mistaken-type-argument",
    "title": "The `Type` passed is the wrong one",
    "issue": 23,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -387,6 +424,7 @@
    "slug": "never-assigned-storage",
    "title": "The field or property is read but never assigned",
    "issue": 24,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -404,6 +442,12 @@
    "slug": "struct-copy-defeats-mutation",
    "title": "The struct is copied before the member is touched",
    "issue": 25,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2005",
+    "SK2191"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -411,49 +455,47 @@
    "inspections": [
     "PossiblyImpureMethodCallOnReadonlyVariable",
     "PossibleStructMemberModificationOfNonVariableStruct"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK2005",
-    "SK2191"
    ]
   },
   {
    "slug": "suppress-finalize-without-finalizer",
    "title": "`GC.SuppressFinalize` is called on a type with no finalizer",
    "issue": 26,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2032"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "inspections": [
     "GCSuppressFinalizeForTypeWithoutDestructor"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK2032"
    ]
   },
   {
    "slug": "stackalloc-in-loop",
    "title": "`stackalloc` is inside a loop",
    "issue": 27,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2033"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
    "proposedFix": "none",
    "inspections": [
     "StackAllocInsideLoop"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK2033"
    ]
   },
   {
    "slug": "enum-switch-no-default",
    "title": "The enum `switch` has no default section",
    "issue": 28,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -466,6 +508,7 @@
    "slug": "unreachable-switch-arm",
    "title": "The switch arm is unreachable given the value's range",
    "issue": 29,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -479,6 +522,7 @@
    "slug": "optional-and-params-hazards",
    "title": "The optional or `params` parameter does not behave as written",
    "issue": 30,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -498,6 +542,7 @@
    "slug": "partial-declaration-name-mismatch",
    "title": "The parameter name differs between partial declarations",
    "issue": 31,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -510,6 +555,7 @@
    "slug": "explicit-caller-info-argument",
    "title": "An explicit argument overrides a caller-info parameter",
    "issue": 32,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -522,22 +568,24 @@
    "slug": "value-parameter-not-used",
    "title": "The setter ignores `value`",
    "issue": 33,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2031"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
    "proposedFix": "none",
    "inspections": [
     "ValueParameterNotUsed"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK2031"
    ]
   },
   {
    "slug": "operator-without-checked-counterpart",
    "title": "The operator has no matching `checked` operator",
    "issue": 34,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -550,6 +598,7 @@
    "slug": "static-member-via-derived-type",
    "title": "A static member is accessed through a derived type",
    "issue": 35,
+   "state": "proposed",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -562,6 +611,7 @@
    "slug": "linear-search-in-set",
    "title": "A set or dictionary is searched linearly",
    "issue": 36,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -574,6 +624,7 @@
    "slug": "queryable-used-as-enumerable",
    "title": "`IQueryable` is silently degraded to `IEnumerable`",
    "issue": 37,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -586,6 +637,7 @@
    "slug": "misleading-statement-shape",
    "title": "The statement does not do what its shape suggests",
    "issue": 38,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -599,6 +651,7 @@
    "slug": "confusing-literal",
    "title": "The literal is easily misread",
    "issue": 39,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -613,6 +666,7 @@
    "slug": "null-suppression-reads-as-negation",
    "title": "`!` reads as a negated `is`",
    "issue": 40,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -625,6 +679,7 @@
    "slug": "with-expression-replaces-everything",
    "title": "The `with` expression rewrites every member",
    "issue": 41,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -637,6 +692,7 @@
    "slug": "side-effect-in-conditional-access",
    "title": "A side effect sits inside a conditionally-evaluated operand",
    "issue": 42,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -649,6 +705,7 @@
    "slug": "threadstatic-misuse",
    "title": "`[ThreadStatic]` is applied where it has no effect",
    "issue": 43,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -662,6 +719,11 @@
    "slug": "primary-constructor-capture",
    "title": "The primary constructor parameter is captured",
    "issue": 44,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2194"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -669,48 +731,47 @@
    "inspections": [
     "CapturedPrimaryConstructorParameterIsMutable",
     "PrimaryConstructorParameterCaptureDisallowed"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK2194"
    ]
   },
   {
    "slug": "escaped-keyword-identifier",
    "title": "The identifier is an escaped keyword",
    "issue": 45,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2034"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
    "proposedFix": "none",
    "inspections": [
     "resharper_escaped_keyword_highlighting"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK2034"
    ]
   },
   {
    "slug": "immutable-array-collection-initializer",
    "title": "`ImmutableArray<T>` is built with a collection initializer",
    "issue": 46,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2193"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "error",
    "proposedScope": "Semantic",
    "proposedFix": "unsafe",
    "inspections": [
     "resharper_immutable_array_with_collection_initializer_highlighting"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK2193"
    ]
   },
   {
    "slug": "nullability-flow-analysis",
    "title": "The expression is null on a path that dereferences it",
    "issue": 47,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -726,6 +787,7 @@
    "slug": "regex-pattern-problems",
    "title": "The regular expression pattern is malformed or suspicious",
    "issue": 48,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -738,6 +800,7 @@
    "slug": "interface-member-ambiguity",
    "title": "The member accessed through the interface is ambiguous",
    "issue": 49,
+   "state": "proposed",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -750,6 +813,7 @@
    "slug": "discarded-object-creation",
    "title": "The constructed object is discarded",
    "issue": 50,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -762,6 +826,7 @@
    "slug": "culture-sensitive-string-search",
    "title": "The string search has an implicit culture policy",
    "issue": 51,
+   "state": "shipped",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -769,29 +834,41 @@
    "inspections": [
     "StringLastIndexOfIsCultureSpecific.1",
     "StringLastIndexOfIsCultureSpecific.2",
-    "StringLastIndexOfIsCultureSpecific.3"
-   ]
+    "StringLastIndexOfIsCultureSpecific.3",
+    "StringIndexOfIsCultureSpecific.1",
+    "StringIndexOfIsCultureSpecific.2",
+    "StringIndexOfIsCultureSpecific.3",
+    "StringEndsWithIsCultureSpecific",
+    "StringStartsWithIsCultureSpecific"
+   ],
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2150"
+   ],
+   "evidence": "Shipped as SK2150 implicit-string-search-culture -- warning, Semantic, fix offered and fixIsSafe: false, because appending StringComparison.Ordinal changes what the program computes. ⚠ What it does that SK2010 does not is not the method list: a comparison returns a truth value at the site that asked, a search returns an offset that a Substring slices on three frames away. ⚠ Nothing was closed as hosted, and the measurement is why -- CA1307 is off even at AnalysisLevel=Recommended, and CA1304/CA1305/CA1309/CA1310/CA1311 are off at default. ⚠ Contains(string) and every char overload are excluded: they are already ordinal on .NET, so reporting them would advise writing down existing behaviour."
   },
   {
    "slug": "span-equality-is-reference-equality",
    "title": "`==` on spans compares memory locations",
    "issue": 52,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2192"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "inspections": [
     "StringSpanComparison"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK2192"
    ]
   },
   {
    "slug": "async-iterator-not-awaited",
    "title": "The async iterator is enumerated without `await foreach`",
    "issue": 53,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -804,6 +881,7 @@
    "slug": "async-void-rethrow",
    "title": "An exception is rethrown from an `async void` method",
    "issue": 54,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -816,6 +894,7 @@
    "slug": "elide-async-state-machine",
    "title": "The method is `async` only to return an awaited task",
    "issue": 55,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -828,6 +907,7 @@
    "slug": "inconsistent-lock-order",
    "title": "Locks are taken in inconsistent orders",
    "issue": 56,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -840,6 +920,7 @@
    "slug": "inconsistently-synchronized-field",
    "title": "The field is guarded on some paths and not others",
    "issue": 57,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -852,6 +933,7 @@
    "slug": "non-atomic-volatile-compound",
    "title": "The compound operation on a `volatile` field is not atomic",
    "issue": 58,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -864,6 +946,7 @@
    "slug": "double-checked-locking",
    "title": "The double-checked locking is not correct",
    "issue": 59,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -878,22 +961,24 @@
    "slug": "spinlock-in-readonly-field",
    "title": "A `SpinLock` is stored in a `readonly` field",
    "issue": 60,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK3021"
+   ],
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "none",
    "inspections": [
     "SpinLockInReadonlyField"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK3021"
    ]
   },
   {
    "slug": "lock-over-synchronization-primitive",
    "title": "The `lock` is taken over a synchronization primitive",
    "issue": 61,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -906,6 +991,7 @@
    "slug": "byref-to-volatile-or-remote",
    "title": "A reference is taken to storage that cannot be referenced safely",
    "issue": 62,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -919,6 +1005,7 @@
    "slug": "short-lived-httpclient",
    "title": "A short-lived `HttpClient` is created per call",
    "issue": 63,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -931,38 +1018,45 @@
    "slug": "return-of-using-variable",
    "title": "A variable captured by `using` is returned",
    "issue": 64,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK3512"
+   ],
    "proposedRange": "SK3500-SK3999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "none",
    "inspections": [
     "ReturnOfUsingVariable"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK3512"
    ]
   },
   {
    "slug": "dispose-of-using-captured-variable",
    "title": "A variable already owned by `using` is disposed again",
    "issue": 65,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK3510"
+   ],
    "proposedRange": "SK3500-SK3999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "inspections": [
     "DisposeOnUsingVariable"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK3510"
    ]
   },
   {
    "slug": "object-initializer-on-using-resource",
    "title": "The `using` resource is built with an object initializer",
    "issue": 66,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK3511"
+   ],
    "proposedRange": "SK3500-SK3999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -970,16 +1064,13 @@
    "inspections": [
     "UsingStatementResourceInitialization",
     "UsingStatementResourceInitializationExpression"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK3511"
    ]
   },
   {
    "slug": "lambda-can-be-static",
    "title": "The lambda captures nothing and is not `static`",
    "issue": 67,
+   "state": "unexamined",
    "proposedRange": "SK4000-SK4999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -995,6 +1086,7 @@
    "slug": "struct-can-be-readonly",
    "title": "The struct is never mutated and is not `readonly`",
    "issue": 68,
+   "state": "unexamined",
    "proposedRange": "SK4000-SK4999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1007,6 +1099,7 @@
    "slug": "class-can-be-sealed",
    "title": "The class is never inherited and is not `sealed`",
    "issue": 69,
+   "state": "unexamined",
    "proposedRange": "SK4000-SK4999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Compilation",
@@ -1020,6 +1113,7 @@
    "slug": "member-can-be-static",
    "title": "The instance member does not use instance state",
    "issue": 70,
+   "state": "unexamined",
    "proposedRange": "SK4000-SK4999",
    "proposedSeverity": "hint",
    "proposedScope": "Semantic",
@@ -1033,6 +1127,7 @@
    "slug": "redundant-capacity-argument",
    "title": "The capacity argument matches the default",
    "issue": 71,
+   "state": "unexamined",
    "proposedRange": "SK4000-SK4999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1045,6 +1140,7 @@
    "slug": "constant-expected-parameter",
    "title": "The parameter expects a constant and is given one at runtime",
    "issue": 72,
+   "state": "unexamined",
    "proposedRange": "SK4000-SK4999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1058,6 +1154,7 @@
    "slug": "primary-constructor",
    "title": "Use a primary constructor",
    "issue": 73,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1071,6 +1168,7 @@
    "slug": "extension-block",
    "title": "Use an `extension` block",
    "issue": 74,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1087,6 +1185,7 @@
    "slug": "closure-to-method-group",
    "title": "Use a method group instead of a forwarding lambda",
    "issue": 75,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1099,6 +1198,7 @@
    "slug": "if-statement-is-an-expression",
    "title": "Use an expression instead of an `if` statement",
    "issue": 76,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
@@ -1123,38 +1223,41 @@
    "slug": "nullable-short-form",
    "title": "Use `T?` instead of `Nullable<T>`",
    "issue": 77,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1040"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "inspections": [
     "ConvertNullableToShortForm"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK1040"
    ]
   },
   {
    "slug": "compound-assignment",
    "title": "Use a compound assignment",
    "issue": 78,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1041"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
    "proposedFix": "safe",
    "inspections": [
     "ConvertToCompoundAssignment"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK1041"
    ]
   },
   {
    "slug": "delegate-variable-to-local-function",
    "title": "Use a local function instead of a delegate variable",
    "issue": 79,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1167,22 +1270,24 @@
    "slug": "for-can-be-foreach",
    "title": "Use `foreach` over an indexed `for`",
    "issue": 80,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1083"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
    "proposedFix": "unsafe",
    "inspections": [
     "ForCanBeConvertedToForeach"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK1083"
    ]
   },
   {
    "slug": "inline-out-variable",
    "title": "Inline the `out` variable declaration",
    "issue": 81,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1195,6 +1300,7 @@
    "slug": "inline-temporary-variable",
    "title": "Inline a temporary used once",
    "issue": 82,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "hint",
    "proposedScope": "Semantic",
@@ -1207,6 +1313,7 @@
    "slug": "declaration-scope",
    "title": "Narrow or join the local declaration",
    "issue": 83,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1222,6 +1329,11 @@
    "slug": "loop-to-linq",
    "title": "Use a LINQ operator for part of the loop",
    "issue": 84,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK1084"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "hint",
    "proposedScope": "Semantic",
@@ -1230,16 +1342,13 @@
     "LoopCanBePartlyConvertedToQuery",
     "ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator",
     "ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK1084"
    ]
   },
   {
    "slug": "merge-into-conditional-access",
    "title": "Merge the `?:` into a conditional access",
    "issue": 85,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1252,6 +1361,7 @@
    "slug": "object-initializer",
    "title": "Use an object or collection initializer",
    "issue": 86,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1266,6 +1376,7 @@
    "slug": "deconstruction",
    "title": "Use deconstruction",
    "issue": 87,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1281,6 +1392,7 @@
    "slug": "discard-assignment",
    "title": "Use a discard",
    "issue": 88,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1293,6 +1405,7 @@
    "slug": "index-from-end",
    "title": "Use an index-from-end expression",
    "issue": 89,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1305,6 +1418,7 @@
    "slug": "use-nameof",
    "title": "Use `nameof`",
    "issue": 90,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1319,6 +1433,7 @@
    "slug": "pattern-matching-from-cast",
    "title": "Use pattern matching instead of a test-and-cast",
    "issue": 91,
+   "state": "proposed",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1337,6 +1452,7 @@
    "slug": "simplify-pattern",
    "title": "Simplify the pattern",
    "issue": 92,
+   "state": "proposed",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
@@ -1354,6 +1470,7 @@
    "slug": "raw-and-verbatim-strings",
    "title": "Use the string literal form that needs no escapes",
    "issue": 93,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "hint",
    "proposedScope": "Syntax",
@@ -1369,6 +1486,7 @@
    "slug": "string-interpolation-form",
    "title": "Use the interpolation form that says what it means",
    "issue": 94,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1386,6 +1504,7 @@
    "slug": "unsigned-right-shift",
    "title": "Use `>>>`",
    "issue": 95,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1398,6 +1517,7 @@
    "slug": "with-expression-copy",
    "title": "Use a `with` expression to copy",
    "issue": 96,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1414,6 +1534,7 @@
    "slug": "collection-expression-shapes",
    "title": "Use the collection expression form",
    "issue": 97,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1430,6 +1551,7 @@
    "slug": "computed-property",
    "title": "Use a computed property instead of an assigned auto-property",
    "issue": 98,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "hint",
    "proposedScope": "Semantic",
@@ -1443,6 +1565,7 @@
    "slug": "cached-empty-instances",
    "title": "Use the cached empty instance",
    "issue": 99,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1457,6 +1580,11 @@
    "slug": "linq-call-shape",
    "title": "Use the LINQ operator that says what the chain means",
    "issue": 100,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK1080"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1500,16 +1628,18 @@
     "ReplaceWithOfType.SingleOrDefault.2",
     "ReplaceWithOfType.Where",
     "resharper_replace_with_of_type_highlighting"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK1080"
    ]
   },
   {
    "slug": "redundant-linq-and-collection-calls",
    "title": "Remove the LINQ or collection call that does nothing",
    "issue": 101,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK1033",
+    "SK1081"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1521,17 +1651,13 @@
     "RedundantWithCancellation",
     "CanSimplifySetAddingWithSingleCall",
     "RedundantDictionaryContainsKeyBeforeAdding"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK1033",
-    "SK1081"
    ]
   },
   {
    "slug": "simplify-type-test-api",
    "title": "Use the operator instead of the reflection call",
    "issue": 102,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1545,6 +1671,7 @@
    "slug": "cast-expressed-elsewhere",
    "title": "Express the cast in the declaration instead",
    "issue": 103,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "hint",
    "proposedScope": "Semantic",
@@ -1560,6 +1687,7 @@
    "slug": "nrt-annotation-migration",
    "title": "Use nullable reference type syntax instead of an attribute",
    "issue": 104,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1576,6 +1704,7 @@
    "slug": "tail-recursive-call",
    "title": "Rewrite the tail-recursive call as a loop",
    "issue": 106,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "hint",
    "proposedScope": "Semantic",
@@ -1588,6 +1717,7 @@
    "slug": "local-function-placement",
    "title": "Move the local function past the jump statement",
    "issue": 107,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "hint",
    "proposedScope": "Syntax",
@@ -1601,6 +1731,7 @@
    "slug": "extract-common-branch-code",
    "title": "Extract the code the branches share",
    "issue": 108,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "hint",
    "proposedScope": "Semantic",
@@ -1619,6 +1750,7 @@
    "slug": "merge-try-statements",
    "title": "Merge the nested `try` statements",
    "issue": 109,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "hint",
    "proposedScope": "Syntax",
@@ -1631,22 +1763,24 @@
    "slug": "indexed-property",
    "title": "Use the indexer",
    "issue": 110,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1082"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "inspections": [
     "UseIndexedProperty"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK1082"
    ]
   },
   {
    "slug": "similar-anonymous-type",
    "title": "Reuse the nearby anonymous type",
    "issue": 111,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "hint",
    "proposedScope": "Semantic",
@@ -1659,6 +1793,7 @@
    "slug": "redundant-overload",
    "title": "Collapse the overload into an optional parameter",
    "issue": 112,
+   "state": "unexamined",
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1674,6 +1809,7 @@
    "slug": "namespace-matches-folder",
    "title": "The namespace does not match the file's location",
    "issue": 113,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "warning",
    "proposedScope": "Compilation",
@@ -1686,6 +1822,7 @@
    "slug": "accessibility-can-be-narrowed",
    "title": "The member is more accessible than its use requires",
    "issue": 114,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Compilation",
@@ -1703,6 +1840,7 @@
    "slug": "mutability-can-be-narrowed",
    "title": "The storage is never written after initialization",
    "issue": 115,
+   "state": "proposed",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Compilation",
@@ -1721,6 +1859,7 @@
    "slug": "parameter-type-can-be-widened",
    "title": "The parameter or return type is narrower than the code needs",
    "issue": 116,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Compilation",
@@ -1738,6 +1877,7 @@
    "slug": "type-parameter-variance",
    "title": "The type parameter could be declared variant",
    "issue": 117,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1750,6 +1890,7 @@
    "slug": "nullability-can-be-tightened",
    "title": "The declaration is nullable and never null",
    "issue": 118,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1763,6 +1904,7 @@
    "slug": "convert-to-static-class",
    "title": "The class has only static members",
    "issue": 119,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1775,22 +1917,28 @@
    "slug": "more-specific-foreach-type",
    "title": "The iteration variable could have a more specific type",
    "issue": 120,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6041"
+   ],
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
    "proposedFix": "unsafe",
    "inspections": [
     "MoreSpecificForeachVariableTypeAvailable"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK6041"
    ]
   },
   {
    "slug": "unused-local-declaration",
    "title": "The local declaration is never used",
    "issue": 121,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK6040"
+   ],
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1805,16 +1953,13 @@
     "UnusedTupleComponentInReturnValue",
     "UnusedParameterInPartialMethod",
     "PrivateFieldCanBeConvertedToLocalVariable"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK6040"
    ]
   },
   {
    "slug": "unused-member",
    "title": "The member is never accessed",
    "issue": 122,
+   "state": "proposed",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "warning",
    "proposedScope": "Compilation",
@@ -1841,6 +1986,7 @@
    "slug": "never-instantiated-or-used-type",
    "title": "The type or collection is declared and never really used",
    "issue": 123,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Compilation",
@@ -1865,6 +2011,7 @@
    "slug": "internal-member-not-documented",
    "title": "A non-public member has no documentation comment",
    "issue": 124,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "none",
    "proposedScope": "Syntax",
@@ -1877,6 +2024,7 @@
    "slug": "inheritdoc-could-be-used",
    "title": "The documentation duplicates the base member's",
    "issue": 125,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1889,38 +2037,41 @@
    "slug": "redundant-suppression-comment",
    "title": "The suppression has nothing to suppress",
    "issue": 126,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK7072"
+   ],
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "inspections": [
     "RedundantDisableWarningComment"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK7072"
    ]
   },
   {
    "slug": "empty-region",
    "title": "The region is empty",
    "issue": 127,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK7073"
+   ],
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
    "proposedFix": "safe",
    "inspections": [
     "EmptyRegion"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK7073"
    ]
   },
   {
    "slug": "redundant-cast-and-type-arguments",
    "title": "The cast or type argument is redundant",
    "issue": 128,
+   "state": "proposed",
    "proposedRange": "SK0001-SK0999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1940,6 +2091,7 @@
    "slug": "redundant-modifier",
    "title": "The modifier has no effect",
    "issue": 129,
+   "state": "proposed",
    "proposedRange": "SK0001-SK0999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1962,6 +2114,7 @@
    "slug": "redundant-declaration",
    "title": "The declaration adds nothing",
    "issue": 130,
+   "state": "proposed",
    "proposedRange": "SK0001-SK0999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1987,6 +2140,7 @@
    "slug": "redundant-control-flow",
    "title": "The control flow does nothing",
    "issue": 131,
+   "state": "proposed",
    "proposedRange": "SK0001-SK0999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -2011,6 +2165,7 @@
    "slug": "redundant-string-call",
    "title": "The string call does nothing",
    "issue": 132,
+   "state": "unexamined",
    "proposedRange": "SK0001-SK0999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -2030,6 +2185,7 @@
    "slug": "redundant-syntax-noise",
    "title": "The syntax is redundant",
    "issue": 133,
+   "state": "proposed",
    "proposedRange": "SK0001-SK0999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
@@ -2054,6 +2210,7 @@
    "slug": "redundant-argument",
    "title": "The argument or signature element is redundant",
    "issue": 134,
+   "state": "proposed",
    "proposedRange": "SK0001-SK0999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -2072,6 +2229,7 @@
    "slug": "redundant-nullable-syntax",
    "title": "The nullable annotation or directive is redundant",
    "issue": 135,
+   "state": "unexamined",
    "proposedRange": "SK0001-SK0999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -2089,6 +2247,7 @@
    "slug": "redundant-qualifier-or-using",
    "title": "The qualifier or using directive is redundant",
    "issue": 136,
+   "state": "unexamined",
    "proposedRange": "SK0001-SK0999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -2104,6 +2263,7 @@
    "slug": "redundant-with-and-initializer",
    "title": "The `with` or initializer is empty",
    "issue": 137,
+   "state": "unexamined",
    "proposedRange": "SK0001-SK0999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -2112,6 +2272,38 @@
     "RedundantWithExpression",
     "resharper_redundant_empty_with_element_highlighting",
     "RedundantEmptyObjectOrCollectionInitializer"
+   ]
+  },
+  {
+   "slug": "constant-condition-value-resharper",
+   "title": "The condition's value is already determined (ReSharper's half of #169)",
+   "issue": 169,
+   "state": "out-of-reach",
+   "evidence": "⚠ These five were credited to SK2001 (#283), which is 'a relational comparison is fixed by the integral type's range' and not this. #169 closed refuted with the residue measured: the null half is hosted by CA1508, probed -- it reports \"'s is null' is always 'false'\" and \"'s != null' is always 'true'\". The rest is real but out of reach: if (flag) { if (flag) ... }, a constant local used in a condition, a collection reassigned before a Count test, and the code HeuristicUnreachableCode marks dead behind them. Each needs a value lattice this codebase does not have, and a rule that reports only the cases flow analysis has already given up on is reporting its own blind spot. SK2062 already covers the else-if chain case, the most common shape in the examples. Reopen if the lattice gets built; #29 is blocked on the same thing.",
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Semantic",
+   "proposedFix": "none",
+   "inspections": [
+    "ConditionIsAlwaysTrueOrFalse",
+    "ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract",
+    "NonConstantEqualityExpressionHasConstantResult",
+    "ConstantNullCoalescingCondition",
+    "HeuristicUnreachableCode"
+   ]
+  },
+  {
+   "slug": "out-parameter-value-discarded",
+   "title": "The out parameter's assigned value is discarded by every caller",
+   "issue": 324,
+   "state": "proposed",
+   "proposedRange": "SK2000-SK2999",
+   "proposedSeverity": "warning",
+   "proposedScope": "Compilation",
+   "proposedFix": "none",
+   "inspections": [
+    "OutParameterValueIsAlwaysDiscarded.Global",
+    "OutParameterValueIsAlwaysDiscarded.Local"
    ]
   }
  ],
@@ -2134,19 +2326,19 @@
   },
   {
    "inspection": "ArgumentsStyleNamedExpression",
-   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id — doc 17 § 'The Option bucket covers less than its size suggests'."
   },
   {
    "inspection": "ArrangeTypeMemberModifiers",
-   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id — doc 17 § 'The Option bucket covers less than its size suggests'."
   },
   {
    "inspection": "ArrangeTypeModifiers",
-   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id — doc 17 § 'The Option bucket covers less than its size suggests'."
   },
   {
    "inspection": "ArrangeVarKeywordsInDeconstructingDeclaration",
-   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id — doc 17 § 'The Option bucket covers less than its size suggests'."
   },
   {
    "inspection": "AssignNullToNotNullAttribute",
@@ -2158,11 +2350,11 @@
   },
   {
    "inspection": "BothContextCallDeclaration.Global",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "BothContextCallUsage.Global",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "CDeclarationWithImplicitIntType",
@@ -2178,7 +2370,7 @@
   },
   {
    "inspection": "ChangeFieldTypeToSystemThreadingLock",
-   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale — doc 17 § 'Two files here are judgement, not measurement'."
   },
   {
    "inspection": "ClearAttributeIsObsolete",
@@ -2190,11 +2382,11 @@
   },
   {
    "inspection": "CommandInvasionDeclaration.Global",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "CommandInvasionUsage.Global",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "ConditionalAccessQualifierIsNonNullableAccordingToAPIContract",
@@ -2202,7 +2394,7 @@
   },
   {
    "inspection": "ConflictCqrsAttribute",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "ConstevalIfIsAlwaysConstant",
@@ -2218,7 +2410,7 @@
   },
   {
    "inspection": "ContextValueIsProvided",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "ContractAnnotationNotParsed",
@@ -2226,11 +2418,11 @@
   },
   {
    "inspection": "CqrsDebug",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "CqrsNamingRecommendation",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "DuplicateResource",
@@ -2258,7 +2450,7 @@
   },
   {
    "inspection": "MergeCastWithTypeCheck",
-   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale — doc 17 § 'Two files here are judgement, not measurement'."
   },
   {
    "inspection": "MissingAltAttributeInImgTag",
@@ -2278,7 +2470,7 @@
   },
   {
    "inspection": "MultipleCqrsEntity",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "MultipleNullableAttributesUsage",
@@ -2294,7 +2486,7 @@
   },
   {
    "inspection": "NotAssignedOutParameter",
-   "reason": "An unassigned `out` parameter is `CS0177`, a compiler error \u2014 the code does not build, so there is nothing to warn about. This is the recorded cut reason for `SK2006` in docs/plan/08."
+   "reason": "An unassigned `out` parameter is `CS0177`, a compiler error — the code does not build, so there is nothing to warn about. This is the recorded cut reason for `SK2006` in docs/plan/08."
   },
   {
    "inspection": "NotDeclaredInParentCulture",
@@ -2346,7 +2538,7 @@
   },
   {
    "inspection": "PossibleInvalidOperationExceptionCollectionWasModified",
-   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale — doc 17 § 'Two files here are judgement, not measurement'."
   },
   {
    "inspection": "PossibleMultipleEnumeration",
@@ -2358,7 +2550,7 @@
   },
   {
    "inspection": "PublicConstructorInAbstractClass",
-   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale — doc 17 § 'Two files here are judgement, not measurement'."
   },
   {
    "inspection": "PureAttributeOnVoidMethod",
@@ -2366,19 +2558,19 @@
   },
   {
    "inspection": "QueryInvasionDeclaration.Global",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "QueryInvasionUsage.Global",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "RedundantCqrsAttribute",
-   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 \u00a7 'What Skala should deliberately never cover')."
+   "reason": "CQRS plugin; framework-specific, a plugin's audience rather than the core's (doc 17 § 'What Skala should deliberately never cover')."
   },
   {
    "inspection": "RedundantParentheses",
-   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id — doc 17 § 'The Option bucket covers less than its size suggests'."
   },
   {
    "inspection": "RequiredBaseTypesConflict",
@@ -2394,7 +2586,7 @@
   },
   {
    "inspection": "ReturnOfTaskProducedByUsingVariable",
-   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale — doc 17 § 'Two files here are judgement, not measurement'."
   },
   {
    "inspection": "ServiceContractWithoutOperations",
@@ -2418,7 +2610,7 @@
   },
   {
    "inspection": "SuggestDiscardDeclarationVarStyle",
-   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id — doc 17 § 'The Option bucket covers less than its size suggests'."
   },
   {
    "inspection": "SymbolFromNotCopiedLocallyReferenceUsedWarning",
@@ -2430,15 +2622,15 @@
   },
   {
    "inspection": "UseAwaitUsing",
-   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale \u2014 doc 17 \u00a7 'Two files here are judgement, not measurement'."
+   "reason": "Already shipped by Skala. The `catalogued.json` map in Testing/parity-analysis is hand-built and stale — doc 17 § 'Two files here are judgement, not measurement'."
   },
   {
    "inspection": "UseImplicitlyTypedVariable",
-   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id — doc 17 § 'The Option bucket covers less than its size suggests'."
   },
   {
    "inspection": "UseImplicitlyTypedVariableEvident",
-   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id — doc 17 § 'The Option bucket covers less than its size suggests'."
   },
   {
    "inspection": "UseNameofForDependencyProperty",
@@ -2462,11 +2654,11 @@
   },
   {
    "inspection": "resharper_arrange_accessors_order_highlighting",
-   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id — doc 17 § 'The Option bucket covers less than its size suggests'."
   },
   {
    "inspection": "resharper_arrange_empty_string_highlighting",
-   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id \u2014 doc 17 \u00a7 'The Option bucket covers less than its size suggests'."
+   "reason": "Option-governed arrangement. Belongs to the formatter (docs/plan/06) and to an `options.json` key, not to a rule id — doc 17 § 'The Option bucket covers less than its size suggests'."
   },
   {
    "inspection": "resharper_async_method_without_await_highlighting",

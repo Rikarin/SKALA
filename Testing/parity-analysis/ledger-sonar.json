@@ -17,6 +17,11 @@
    "slug": "insecure-random-in-security-context",
    "title": "A predictable generator produces security-sensitive values",
    "issue": 140,
+   "state": "hosted",
+   "evidence": "Closed as hosted by CA5394 (ADR-008, host never rebuild). ⚠ CA5394 is untargeted: probed 7/7 on every shape including Random.Shared and a purely statistical NextDouble() -- it reports the shape, not the security-sensitive use. Narrowing it would require judging intent from identifier names, the judgement doc 08 refused when it cut SK5008. Off by default on plain net10.0; fires under AnalysisMode=All.",
+   "hostedBy": [
+    "CA5394"
+   ],
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "error",
    "proposedScope": "Semantic",
@@ -30,38 +35,41 @@
    "slug": "predictable-cipher-iv",
    "title": "The cipher initialisation vector is predictable",
    "issue": 142,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK5020"
+   ],
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "error",
    "proposedScope": "Semantic",
    "proposedFix": "none",
    "rules": [
     "S3329"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK5020"
    ]
   },
   {
    "slug": "weak-transport-or-key-parameters",
    "title": "The TLS version or key size is too weak",
    "issue": 143,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK5021"
+   ],
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "error",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "rules": [
     "S4426"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK5021"
    ]
   },
   {
    "slug": "jwt-signing-and-secrets",
    "title": "The JWT is signed or validated insecurely",
    "issue": 144,
+   "state": "unexamined",
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "error",
    "proposedScope": "Semantic",
@@ -75,6 +83,7 @@
    "slug": "insecure-temporary-or-world-writable-file",
    "title": "The file is created world-accessible or in a shared directory",
    "issue": 145,
+   "state": "proposed",
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "error",
    "proposedScope": "Semantic",
@@ -89,6 +98,8 @@
    "slug": "unqualified-executable-path",
    "title": "The process is started by an unqualified name",
    "issue": 146,
+   "state": "refuted",
+   "evidence": "⚠ PATH resolution is a property of the environment, not of the call site, so the premise that this is decidable from source is false. Process.Start(\"git\") is correct in a tool that requires git on PATH and wrong in a service that does not, and nothing in the compilation separates them. Measured on Skala itself: six non-test unqualified process starts, every one correct. SK5002 covers the decidable case (a tainted argument reaching the process start).",
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "error",
    "proposedScope": "Semantic",
@@ -101,6 +112,7 @@
    "slug": "ldap-without-authentication",
    "title": "The LDAP connection is anonymous",
    "issue": 147,
+   "state": "unexamined",
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "error",
    "proposedScope": "Semantic",
@@ -113,6 +125,8 @@
    "slug": "debug-features-in-production",
    "title": "A debugging feature is enabled unconditionally",
    "issue": 148,
+   "state": "refuted",
+   "evidence": "⚠ Most of the concept is not in C# source at all -- <DebugType>, CompilationRelaxations and startup configuration live in MSBuild and JSON, which an analyzer over a compilation cannot see. The reachable remainder is OptimizationLevel, which is Debug in every Debug build and so reports nothing. Probed: an unconditional UseDeveloperExceptionPage() gives 0 warnings under both Default and AnalysisMode=All.",
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "error",
    "proposedScope": "Semantic",
@@ -125,6 +139,7 @@
    "slug": "cleartext-protocol",
    "title": "The protocol transmits in clear text",
    "issue": 149,
+   "state": "unexamined",
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -137,6 +152,7 @@
    "slug": "unrestricted-deserialization",
    "title": "Deserialization accepts any type the payload names",
    "issue": 150,
+   "state": "unexamined",
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "error",
    "proposedScope": "Semantic",
@@ -150,6 +166,7 @@
    "slug": "xml-signature-validation",
    "title": "The XML signature is validated insecurely",
    "issue": 151,
+   "state": "unexamined",
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "error",
    "proposedScope": "Semantic",
@@ -162,22 +179,25 @@
    "slug": "regex-without-timeout",
    "title": "The regular expression runs without a timeout",
    "issue": 152,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK5010"
+   ],
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "rules": [
     "S6444"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK5010"
    ]
   },
   {
    "slug": "reflection-bypasses-accessibility",
    "title": "Reflection is used to reach a non-public member",
    "issue": 153,
+   "state": "refuted",
+   "evidence": "Refuted by measurement. BindingFlags.NonPublic appears in 26 reference-tree files and 0 Skala files; all 26 are serializer internals, test helpers or a diagnostics overlay. ⚠ Zero true positives, twenty-six false ones. The rule reports the technique rather than a misuse of it. For a range where doc 08's standing position is that a wrong security rule is worse than a missing one, 0-for-26 is not a candidate for tuning.",
    "proposedRange": "SK5000-SK5999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -190,6 +210,7 @@
    "slug": "finalizer-throws",
    "title": "The finalizer can throw",
    "issue": 154,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -202,6 +223,7 @@
    "slug": "parameter-initial-value-ignored",
    "title": "The parameter's incoming value is overwritten unread",
    "issue": 155,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -214,6 +236,7 @@
    "slug": "loop-runs-at-most-once",
    "title": "The loop body cannot run more than once",
    "issue": 156,
+   "state": "proposed",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -226,22 +249,24 @@
    "slug": "identical-operands",
    "title": "Both operands of the operator are the same expression",
    "issue": 157,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2012"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "none",
    "rules": [
     "S1764"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK2012"
    ]
   },
   {
    "slug": "duplicate-sequential-condition",
    "title": "A later condition repeats an earlier one",
    "issue": 158,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -255,6 +280,7 @@
    "slug": "collection-passed-to-itself",
    "title": "The collection is passed to its own method",
    "issue": 159,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -267,6 +293,7 @@
    "slug": "tostring-returns-null",
    "title": "`ToString()` can return null",
    "issue": 160,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -279,6 +306,7 @@
    "slug": "gethashcode-uses-mutable-state",
    "title": "The hash code depends on state that can change",
    "issue": 161,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -291,22 +319,24 @@
    "slug": "nan-comparison",
    "title": "`NaN` is used in a comparison",
    "issue": 162,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2030"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "rules": [
     "S2688"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK2030"
    ]
   },
   {
    "slug": "misreadable-operator",
    "title": "The operator sequence reads as a different operator",
    "issue": 163,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -320,6 +350,7 @@
    "slug": "sql-fragment-concatenation",
    "title": "The concatenated SQL fragments run together",
    "issue": 164,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -332,6 +363,7 @@
    "slug": "delegate-subtraction",
    "title": "A delegate is subtracted from a multicast delegate",
    "issue": 165,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -344,22 +376,24 @@
    "slug": "debug-assert-side-effects",
    "title": "The assertion's expression has side effects",
    "issue": 166,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2164"
+   ],
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "none",
    "rules": [
     "S3346"
-   ],
-   "coveredBy": [
-    "SK2164"
-   ],
-   "coverage": "complete"
+   ]
   },
   {
    "slug": "pure-attribute-on-void-method",
    "title": "`[Pure]` is applied to a method that returns nothing",
    "issue": 167,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -372,6 +406,7 @@
    "slug": "dangerous-handle-use",
    "title": "`SafeHandle.DangerousGetHandle` is called",
    "issue": 168,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -384,6 +419,8 @@
    "slug": "gratuitous-condition",
    "title": "The condition's value is already determined",
    "issue": 169,
+   "state": "out-of-reach",
+   "evidence": "⚠ The null half is hosted by CA1508, verified with a probe: it reports \"'s is null' is always 'false'\" and \"'s != null' is always 'true'\". The measured residue is real but out of reach -- if (flag) { if (flag) … }, a constant local used in a condition, a collection reassigned before a Count test. Each needs a value lattice this codebase does not have, and a rule reporting only what flow analysis has given up on is reporting its own blind spot. SK2062 already covers the else-if chain case, the most common shape in the issue's examples. Reopen if the lattice gets built; #29 is blocked on the same thing.",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -397,6 +434,7 @@
    "slug": "collection-size-comparison",
    "title": "The size comparison is always true or always false",
    "issue": 170,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -409,6 +447,7 @@
    "slug": "element-replaced-unconditionally",
    "title": "The collection element is overwritten before it is read",
    "issue": 171,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -421,6 +460,7 @@
    "slug": "empty-collection-access",
    "title": "The collection is provably empty where it is used",
    "issue": 172,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -433,6 +473,7 @@
    "slug": "accessor-uses-the-wrong-field",
    "title": "The accessor reads or writes the wrong backing field",
    "issue": 173,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -445,6 +486,7 @@
    "slug": "begininvoke-without-endinvoke",
    "title": "`BeginInvoke` has no matching `EndInvoke`",
    "issue": 174,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -457,6 +499,7 @@
    "slug": "empty-nested-block",
    "title": "The nested block is empty",
    "issue": 175,
+   "state": "proposed",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -469,6 +512,7 @@
    "slug": "general-exception-thrown",
    "title": "A general or reserved exception type is thrown",
    "issue": 176,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -481,6 +525,7 @@
    "slug": "exception-thrown-in-finally",
    "title": "An exception can be thrown from a `finally` block",
    "issue": 177,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -493,6 +538,7 @@
    "slug": "empty-method-body",
    "title": "The method body is empty",
    "issue": 178,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -505,6 +551,7 @@
    "slug": "nullreference-is-caught",
    "title": "`NullReferenceException` is caught",
    "issue": 179,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -517,6 +564,7 @@
    "slug": "non-short-circuit-boolean",
    "title": "`&` or `|` is used where `&&` or `||` was meant",
    "issue": 180,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -529,6 +577,7 @@
    "slug": "modulus-compared-for-equality",
    "title": "The modulus result is compared for equality",
    "issue": 181,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -541,6 +590,7 @@
    "slug": "argument-order-mismatch",
    "title": "The arguments are passed in a different order from the parameters",
    "issue": 182,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -553,6 +603,7 @@
    "slug": "invisible-character-in-literal",
    "title": "The literal contains an unescaped invisible character",
    "issue": 183,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -565,6 +616,7 @@
    "slug": "indexof-compared-to-positive",
    "title": "The `IndexOf` result is compared to a positive number",
    "issue": 184,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -577,6 +629,7 @@
    "slug": "stringbuilder-never-read",
    "title": "The `StringBuilder` is filled and never read",
    "issue": 185,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -589,6 +642,7 @@
    "slug": "partial-method-without-implementation",
    "title": "The `partial` method has no implementation",
    "issue": 186,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -601,6 +655,7 @@
    "slug": "guid-default-constructor",
    "title": "`new Guid()` produces the empty guid",
    "issue": 187,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -613,6 +668,7 @@
    "slug": "debuggerdisplay-references-missing-member",
    "title": "The `[DebuggerDisplay]` string names a member that does not exist",
    "issue": 188,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -625,6 +681,7 @@
    "slug": "eager-parameter-validation",
    "title": "The argument check does not run until the result is consumed",
    "issue": 189,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -638,6 +695,7 @@
    "slug": "assembly-load-context",
    "title": "The assembly is loaded into the wrong context",
    "issue": 190,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -650,6 +708,7 @@
    "slug": "contextual-keyword-collision",
    "title": "The identifier collides with a contextual keyword",
    "issue": 191,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -666,6 +725,7 @@
    "slug": "redundant-null-forgiving",
    "title": "The null-forgiving operator is unnecessary",
    "issue": 192,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -679,6 +739,7 @@
    "slug": "dispose-named-method-not-idisposable",
    "title": "The type has a `Dispose` method and does not implement `IDisposable`",
    "issue": 193,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -691,6 +752,7 @@
    "slug": "instance-code-writes-static-state",
    "title": "Instance code writes to static state",
    "issue": 194,
+   "state": "unexamined",
    "proposedRange": "SK2000-SK2999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -704,6 +766,11 @@
    "slug": "lock-not-released-on-every-path",
    "title": "The lock is not released on every path",
    "issue": 195,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK3060"
+   ],
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -712,16 +779,17 @@
     "S2222",
     "S7131",
     "S7133"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK3060"
    ]
   },
   {
    "slug": "lock-object-is-not-private-and-stable",
    "title": "The lock is taken on an object other code can also lock",
    "issue": 196,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK3061"
+   ],
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -730,48 +798,47 @@
     "S2445",
     "S2551",
     "S6507"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK3061"
    ]
   },
   {
    "slug": "this-escapes-constructor",
    "title": "`this` escapes before the object is constructed",
    "issue": 197,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK3062"
+   ],
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "none",
    "rules": [
     "S3366"
-   ],
-   "coverage": "partial",
-   "coveredBy": [
-    "SK3062"
    ]
   },
   {
    "slug": "task-method-returns-null",
    "title": "The non-`async` `Task` method returns null",
    "issue": 198,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK3020"
+   ],
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "rules": [
     "S4586"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK3020"
    ]
   },
   {
    "slug": "valuetask-consumed-incorrectly",
    "title": "The `ValueTask` is consumed more than once",
    "issue": 199,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -784,6 +851,7 @@
    "slug": "async-overload-not-used",
    "title": "The synchronous call has an awaitable overload",
    "issue": 200,
+   "state": "unexamined",
    "proposedRange": "SK3000-SK3499",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -796,6 +864,7 @@
    "slug": "owned-disposable-not-disposed-in-dispose",
    "title": "The disposable field is not disposed by `Dispose`",
    "issue": 201,
+   "state": "unexamined",
    "proposedRange": "SK3500-SK3999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -808,6 +877,7 @@
    "slug": "gc-collect-called",
    "title": "`GC.Collect` is called from application code",
    "issue": 202,
+   "state": "unexamined",
    "proposedRange": "SK4000-SK4999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -820,6 +890,7 @@
    "slug": "property-copies-a-collection",
    "title": "The property copies a collection on every read",
    "issue": 203,
+   "state": "unexamined",
    "proposedRange": "SK4000-SK4999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -832,6 +903,7 @@
    "slug": "collection-native-method-over-linq",
    "title": "The collection's own method is faster than the LINQ extension",
    "issue": 204,
+   "state": "unexamined",
    "proposedRange": "SK4000-SK4999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -850,6 +922,7 @@
    "slug": "linq-allocation-shapes",
    "title": "The LINQ chain allocates more than it needs to",
    "issue": 205,
+   "state": "unexamined",
    "proposedRange": "SK4000-SK4999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -865,6 +938,7 @@
    "slug": "substring-instead-of-start-index",
    "title": "`Substring` is called to feed a search that takes a start index",
    "issue": 206,
+   "state": "unexamined",
    "proposedRange": "SK4000-SK4999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -877,6 +951,7 @@
    "slug": "caller-info-parameter-position",
    "title": "The caller-info parameter is not last",
    "issue": 207,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -889,6 +964,7 @@
    "slug": "type-has-only-private-constructors",
    "title": "The type has only private constructors and is not static",
    "issue": 208,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -901,6 +977,7 @@
    "slug": "readonly-on-a-mutable-nonprivate-field",
    "title": "`readonly` does not protect the field's contents",
    "issue": 209,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -913,6 +990,7 @@
    "slug": "type-in-the-global-namespace",
    "title": "The type is declared in the global namespace",
    "issue": 210,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -925,6 +1003,7 @@
    "slug": "equality-contract-completeness",
    "title": "The equality members are inconsistent with each other",
    "issue": 212,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -940,6 +1019,7 @@
    "slug": "public-const-member",
    "title": "The public constant is baked into every caller",
    "issue": 213,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -952,6 +1032,7 @@
    "slug": "flags-enum-contract",
    "title": "The `[Flags]` declaration and the members disagree",
    "issue": 214,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -966,6 +1047,7 @@
    "slug": "abstract-class-has-no-abstract-members",
    "title": "The abstract class declares nothing to implement",
    "issue": 215,
+   "state": "unexamined",
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -978,118 +1060,126 @@
    "slug": "empty-type",
    "title": "The type has no members",
    "issue": 216,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6023"
+   ],
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
    "proposedFix": "none",
    "rules": [
     "S2094"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK6023"
    ]
   },
   {
    "slug": "exception-type-naming",
    "title": "The type is named like an exception and is not one",
    "issue": 217,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6021"
+   ],
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "none",
    "rules": [
     "S2166"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK6021"
    ]
   },
   {
    "slug": "method-returns-a-constant",
    "title": "The method ignores its inputs and returns a constant",
    "issue": 218,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6050"
+   ],
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
    "proposedFix": "none",
    "rules": [
     "S3400"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK6050"
    ]
   },
   {
    "slug": "is-check-against-this",
    "title": "The base type tests `this` against a derived type",
    "issue": 219,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6051"
+   ],
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "none",
    "rules": [
     "S3060"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK6051"
    ]
   },
   {
    "slug": "null-returned-instead-of-empty",
    "title": "Null is returned where an empty sequence was expected",
    "issue": 220,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6052"
+   ],
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
    "proposedFix": "unsafe",
    "rules": [
     "S1168"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK6052"
    ]
   },
   {
    "slug": "async-suffix-convention",
    "title": "The method name does not reflect its synchronicity",
    "issue": 221,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK6053"
+   ],
    "proposedRange": "SK6000-SK6999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
    "proposedFix": "unsafe",
    "rules": [
     "S4261"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK6053"
    ]
   },
   {
    "slug": "obsolete-without-explanation",
    "title": "The `[Obsolete]` attribute has no message",
    "issue": 222,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK7070"
+   ],
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
    "proposedFix": "none",
    "rules": [
     "S1123"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK7070"
    ]
   },
   {
    "slug": "duplicated-string-literal",
    "title": "The string literal is repeated",
    "issue": 223,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
@@ -1102,6 +1192,7 @@
    "slug": "hardcoded-network-address",
    "title": "The URI or IP address is hard-coded",
    "issue": 224,
+   "state": "proposed",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
@@ -1115,6 +1206,7 @@
    "slug": "gratuitous-nested-block",
    "title": "The block adds nesting and nothing else",
    "issue": 225,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
@@ -1127,6 +1219,7 @@
    "slug": "class-coupling",
    "title": "The type depends on more other types than the threshold",
    "issue": 226,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1139,6 +1232,7 @@
    "slug": "inheritance-depth",
    "title": "The inheritance chain is deeper than the threshold",
    "issue": 227,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1151,6 +1245,7 @@
    "slug": "magic-number",
    "title": "The numeric literal has no name",
    "issue": 228,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "none",
    "proposedScope": "Syntax",
@@ -1163,22 +1258,24 @@
    "slug": "goto-used",
    "title": "`goto` is used",
    "issue": 229,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK7074"
+   ],
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
    "proposedFix": "none",
    "rules": [
     "S907"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK7074"
    ]
   },
   {
    "slug": "console-used-for-logging",
    "title": "`Console` is used where a logger was meant",
    "issue": 230,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1191,6 +1288,7 @@
    "slug": "exception-logged-and-rethrown",
    "title": "The exception is both logged and rethrown",
    "issue": 231,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1203,6 +1301,7 @@
    "slug": "nested-ternary",
    "title": "The conditional expressions are nested",
    "issue": 232,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
@@ -1215,6 +1314,7 @@
    "slug": "not-implemented-stub",
    "title": "The member throws `NotImplementedException`",
    "issue": 233,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1227,22 +1327,24 @@
    "slug": "coverage-exclusion-without-justification",
    "title": "The `[ExcludeFromCodeCoverage]` attribute has no justification",
    "issue": 234,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK7071"
+   ],
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Syntax",
    "proposedFix": "none",
    "rules": [
     "S6513"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK7071"
    ]
   },
   {
    "slug": "else-if-chain-without-else",
    "title": "The `if`/`else if` chain has no final `else`",
    "issue": 235,
+   "state": "proposed",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
@@ -1255,6 +1357,7 @@
    "slug": "process-exit-called",
    "title": "The process is terminated from library code",
    "issue": 236,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1267,6 +1370,7 @@
    "slug": "logger-declaration-convention",
    "title": "The logger field is not declared or named conventionally",
    "issue": 237,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
@@ -1282,6 +1386,7 @@
    "slug": "logging-call-arguments",
    "title": "The logging call passes its arguments to the wrong parameter",
    "issue": 238,
+   "state": "unexamined",
    "proposedRange": "SK7000-SK7999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1295,70 +1400,79 @@
    "slug": "mergeable-if",
    "title": "The nested `if` statements can be combined",
    "issue": 239,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1042"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
    "proposedFix": "safe",
    "rules": [
     "S1066"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK1042"
    ]
   },
   {
    "slug": "for-loop-without-initializer-or-increment",
    "title": "The `for` loop is a `while`",
    "issue": 240,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1043"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Syntax",
    "proposedFix": "safe",
    "rules": [
     "S1264"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK1043"
    ]
   },
   {
    "slug": "is-null-or-empty",
    "title": "Use `string.IsNullOrEmpty`",
    "issue": 241,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK1044"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "rules": [
     "S3256"
-   ],
-   "coverage": "complete",
-   "coveredBy": [
-    "SK1044"
    ]
   },
   {
    "slug": "testable-time-provider",
    "title": "The clock is read from a static",
    "issue": 242,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2160"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "suggestion",
    "proposedScope": "Semantic",
    "proposedFix": "unsafe",
    "rules": [
     "S6354"
-   ],
-   "coveredBy": [
-    "SK2160"
-   ],
-   "coverage": "complete"
+   ]
   },
   {
    "slug": "datetime-kind-and-utc",
    "title": "The `DateTime` carries no time zone information",
    "issue": 243,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2161"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1367,16 +1481,17 @@
     "S6562",
     "S6563",
     "S6566"
-   ],
-   "coveredBy": [
-    "SK2161"
-   ],
-   "coverage": "partial"
+   ]
   },
   {
    "slug": "datetime-parsing-and-formatting-culture",
    "title": "The date parse or format has an implicit culture",
    "issue": 244,
+   "state": "shipped",
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2162"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1384,32 +1499,30 @@
    "rules": [
     "S6580",
     "S6585"
-   ],
-   "coveredBy": [
-    "SK2162"
-   ],
-   "coverage": "partial"
+   ]
   },
   {
    "slug": "stopwatch-for-elapsed-time",
    "title": "Elapsed time is measured with the wall clock",
    "issue": 245,
+   "state": "shipped",
+   "coverage": "complete",
+   "coveredBy": [
+    "SK2163"
+   ],
    "proposedRange": "SK1000-SK1999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
    "proposedFix": "safe",
    "rules": [
     "S6561"
-   ],
-   "coveredBy": [
-    "SK2163"
-   ],
-   "coverage": "complete"
+   ]
   },
   {
    "slug": "test-class-without-tests",
    "title": "The test class contains no tests",
    "issue": 246,
+   "state": "unexamined",
    "proposedRange": "SK8000-SK8999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1422,6 +1535,7 @@
    "slug": "assertion-argument-order",
    "title": "The assertion's expected and actual arguments are swapped",
    "issue": 247,
+   "state": "unexamined",
    "proposedRange": "SK8000-SK8999",
    "proposedSeverity": "warning",
    "proposedScope": "Semantic",
@@ -1445,7 +1559,7 @@
   {
    "rule": "S103",
    "resolution": "shipped",
-   "detail": "Shipped as `SK0002` \u2014 the formatter owns line width."
+   "detail": "Shipped as `SK0002` — the formatter owns line width."
   },
   {
    "rule": "S104",
@@ -1455,7 +1569,7 @@
   {
    "rule": "S105",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S107",
@@ -1465,17 +1579,17 @@
   {
    "rule": "S113",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S121",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S122",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S125",
@@ -1525,12 +1639,12 @@
   {
    "rule": "S1067",
    "resolution": "out-of-scope",
-   "detail": "A threshold on the existing metric family (`SK7001`\u2013`SK7006`), not a new concept \u2014 it is a configuration question for those rules."
+   "detail": "A threshold on the existing metric family (`SK7001`–`SK7006`), not a new concept — it is a configuration question for those rules."
   },
   {
    "rule": "S1109",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S1110",
@@ -1575,7 +1689,7 @@
   {
    "rule": "S1133",
    "resolution": "out-of-scope",
-   "detail": "A policy choice dressed as a defect \u2014 doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
+   "detail": "A policy choice dressed as a defect — doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
   },
   {
    "rule": "S1134",
@@ -1596,7 +1710,7 @@
   {
    "rule": "S1151",
    "resolution": "out-of-scope",
-   "detail": "A threshold on the existing metric family (`SK7001`\u2013`SK7006`), not a new concept \u2014 it is a configuration question for those rules."
+   "detail": "A threshold on the existing metric family (`SK7001`–`SK7006`), not a new concept — it is a configuration question for those rules."
   },
   {
    "rule": "S1155",
@@ -1622,7 +1736,7 @@
   {
    "rule": "S1227",
    "resolution": "out-of-scope",
-   "detail": "A policy choice dressed as a defect \u2014 doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
+   "detail": "A policy choice dressed as a defect — doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
   },
   {
    "rule": "S1244",
@@ -1632,7 +1746,7 @@
   {
    "rule": "S1301",
    "resolution": "out-of-scope",
-   "detail": "A policy choice dressed as a defect \u2014 doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
+   "detail": "A policy choice dressed as a defect — doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
   },
   {
    "rule": "S1309",
@@ -1658,7 +1772,7 @@
   {
    "rule": "S1479",
    "resolution": "out-of-scope",
-   "detail": "A threshold on the existing metric family (`SK7001`\u2013`SK7006`), not a new concept \u2014 it is a configuration question for those rules."
+   "detail": "A threshold on the existing metric family (`SK7001`–`SK7006`), not a new concept — it is a configuration question for those rules."
   },
   {
    "rule": "S1481",
@@ -1688,7 +1802,7 @@
   {
    "rule": "S1659",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S1698",
@@ -1704,7 +1818,7 @@
   {
    "rule": "S1821",
    "resolution": "out-of-scope",
-   "detail": "A policy choice dressed as a defect \u2014 doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
+   "detail": "A policy choice dressed as a defect — doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
   },
   {
    "rule": "S1848",
@@ -1778,7 +1892,7 @@
   {
    "rule": "S2092",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S2115",
@@ -1794,7 +1908,7 @@
   {
    "rule": "S2148",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S2156",
@@ -1839,7 +1953,7 @@
   {
    "rule": "S2221",
    "resolution": "out-of-scope",
-   "detail": "A policy choice dressed as a defect \u2014 doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
+   "detail": "A policy choice dressed as a defect — doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
   },
   {
    "rule": "S2223",
@@ -1967,12 +2081,12 @@
   {
    "rule": "S2387",
    "resolution": "out-of-scope",
-   "detail": "A policy choice dressed as a defect \u2014 doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
+   "detail": "A policy choice dressed as a defect — doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
   },
   {
    "rule": "S2436",
    "resolution": "out-of-scope",
-   "detail": "A threshold on the existing metric family (`SK7001`\u2013`SK7006`), not a new concept \u2014 it is a configuration question for those rules."
+   "detail": "A threshold on the existing metric family (`SK7001`–`SK7006`), not a new concept — it is a configuration question for those rules."
   },
   {
    "rule": "S2437",
@@ -2000,7 +2114,7 @@
   {
    "rule": "S2681",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S2699",
@@ -2128,7 +2242,7 @@
   {
    "rule": "S3215",
    "resolution": "out-of-scope",
-   "detail": "A policy choice dressed as a defect \u2014 doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
+   "detail": "A policy choice dressed as a defect — doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
   },
   {
    "rule": "S3216",
@@ -2281,7 +2395,7 @@
   {
    "rule": "S3330",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S3353",
@@ -2292,7 +2406,7 @@
   {
    "rule": "S3363",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S3376",
@@ -2428,12 +2542,12 @@
   {
    "rule": "S3597",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S3598",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S3600",
@@ -2483,7 +2597,7 @@
   {
    "rule": "S3874",
    "resolution": "out-of-scope",
-   "detail": "A policy choice dressed as a defect \u2014 doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
+   "detail": "A policy choice dressed as a defect — doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
   },
   {
    "rule": "S3876",
@@ -2520,7 +2634,7 @@
   {
    "rule": "S3889",
    "resolution": "hosted",
-   "detail": "ADR-008: Skala hosts rather than rebuilds. Covered by `[Obsolete]` on `Thread.Suspend`/`Resume` \u2014 the compiler reports it."
+   "detail": "ADR-008: Skala hosts rather than rebuilds. Covered by `[Obsolete]` on `Thread.Suspend`/`Resume` — the compiler reports it."
   },
   {
    "rule": "S3898",
@@ -2530,7 +2644,7 @@
   {
    "rule": "S3900",
    "resolution": "out-of-scope",
-   "detail": "A policy choice dressed as a defect \u2014 doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
+   "detail": "A policy choice dressed as a defect — doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
   },
   {
    "rule": "S3902",
@@ -2631,12 +2745,12 @@
   {
    "rule": "S3972",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S3973",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S3984",
@@ -2834,17 +2948,17 @@
   {
    "rule": "S4136",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S4144",
    "resolution": "shipped",
-   "detail": "Shipped as `SK7020` \u2014 whole-method duplication is the block detector's largest block."
+   "detail": "Shipped as `SK7020` — whole-method duplication is the block detector's largest block."
   },
   {
    "rule": "S4159",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S4200",
@@ -2860,7 +2974,7 @@
   {
    "rule": "S4210",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S4211",
@@ -2895,12 +3009,12 @@
   {
    "rule": "S4260",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S4277",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S4423",
@@ -2910,7 +3024,7 @@
   {
    "rule": "S4428",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S4462",
@@ -2926,12 +3040,12 @@
   {
    "rule": "S4502",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S4524",
    "resolution": "out-of-scope",
-   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule \u2014 doc 17 \u00a7 'The Option bucket'."
+   "detail": "The formatter owns this, through an `.editorconfig` key rather than a rule — doc 17 § 'The Option bucket'."
   },
   {
    "rule": "S4663",
@@ -2956,7 +3070,7 @@
   {
    "rule": "S5122",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S5344",
@@ -2976,12 +3090,12 @@
   {
    "rule": "S5693",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S5753",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S5856",
@@ -2997,32 +3111,32 @@
   {
    "rule": "S6419",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6420",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6421",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6422",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6423",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6424",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6575",
@@ -3038,7 +3152,7 @@
   {
    "rule": "S6640",
    "resolution": "out-of-scope",
-   "detail": "A policy choice dressed as a defect \u2014 doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
+   "detail": "A policy choice dressed as a defect — doc 17 names `S6640` specifically. Vixen is a game engine and `unsafe` is correct there."
   },
   {
    "rule": "S6664",
@@ -3082,87 +3196,87 @@
   {
    "rule": "S6797",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6798",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6800",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6802",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6803",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6930",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6931",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6932",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6934",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6960",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6961",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6962",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6964",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6965",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6967",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S6968",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S7039",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S7130",
@@ -3172,22 +3286,22 @@
   {
    "rule": "S8717",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S8718",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S8733",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S8747",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S8949",
@@ -3197,32 +3311,32 @@
   {
    "rule": "S9022",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S9023",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S9118",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S9129",
    "resolution": "out-of-scope",
-   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 \u00a7 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
+   "detail": "Framework front end (ASP.NET Core / Blazor / Azure Functions / Entity Framework / WCF / MEF / WinForms / WPF). Doc 17 § 'What Skala should deliberately never cover': a plugin's audience rather than the core's."
   },
   {
    "rule": "S1104",
    "resolution": "hosted",
-   "detail": "ADR-008: Skala hosts rather than rebuilds. Covered by `CA1051`, which ships in the .NET SDK and is on by default at `latest-recommended` \u2014 measured, not assumed: a probe with ten field shapes reports the public and the protected instance field and correctly exempts a `[StructLayout]` interop struct, a `const`, a `static readonly` and a public field on an `internal` type. #211 closed as hosted."
+   "detail": "ADR-008: Skala hosts rather than rebuilds. Covered by `CA1051`, which ships in the .NET SDK and is on by default at `latest-recommended` — measured, not assumed: a probe with ten field shapes reports the public and the protected instance field and correctly exempts a `[StructLayout]` interop struct, a `const`, a `static readonly` and a public field on an `internal` type. #211 closed as hosted."
   },
   {
    "rule": "S2357",
    "resolution": "hosted",
-   "detail": "ADR-008, with `CA1051` as for `S1104`. \u26a0 `CA1051` does not reach the `internal` instance field on a public type, which is the half of \"fields should be private\" that goes uncovered. That half is declined rather than built: an `internal` field never leaves the assembly, so \"it should have been a property\" is a style opinion about code no consumer can see, and it is the contentious half of the rule. #211 closed as hosted."
+   "detail": "ADR-008, with `CA1051` as for `S1104`. ⚠ `CA1051` does not reach the `internal` instance field on a public type, which is the half of \"fields should be private\" that goes uncovered. That half is declined rather than built: an `internal` field never leaves the assembly, so \"it should have been a property\" is a style opinion about code no consumer can see, and it is the contentious half of the rule. #211 closed as hosted."
   }
  ],
  "ideas": {
@@ -3242,6 +3356,7 @@
     "slug": "operator-precedence-unclear",
     "title": "The expression relies on non-obvious operator precedence",
     "issue": 248,
+    "state": "unexamined",
     "proposedRange": "SK7000-SK7999",
     "proposedSeverity": "suggestion",
     "proposedScope": "Syntax",
@@ -3254,6 +3369,7 @@
     "slug": "concurrent-dictionary-expensive-members",
     "title": "The `ConcurrentDictionary` member taken is the expensive one",
     "issue": 249,
+    "state": "unexamined",
     "proposedRange": "SK4000-SK4999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3266,6 +3382,7 @@
     "slug": "constructor-side-effects",
     "title": "The constructor does more than construct",
     "issue": 250,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3278,6 +3395,7 @@
     "slug": "sort-without-comparable",
     "title": "The sort has no ordering to use",
     "issue": 251,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3290,6 +3408,7 @@
     "slug": "invariant-culture-where-ordinal-meant",
     "title": "The string operation asks for invariant culture where ordinal was meant",
     "issue": 252,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3302,6 +3421,7 @@
     "slug": "ref-struct-disposal",
     "title": "The `ref struct` owns a disposable and cannot declare it",
     "issue": 253,
+    "state": "unexamined",
     "proposedRange": "SK3500-SK3999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3314,22 +3434,24 @@
     "slug": "type-name-restates-its-kind",
     "title": "The type name repeats what the type already is",
     "issue": 254,
+    "state": "shipped",
+    "coverage": "partial",
+    "coveredBy": [
+     "SK6022"
+    ],
     "proposedRange": "SK6000-SK6999",
     "proposedSeverity": "suggestion",
     "proposedScope": "Syntax",
     "proposedFix": "unsafe",
     "upstreamIssues": [
      3460
-    ],
-    "coverage": "partial",
-    "coveredBy": [
-     "SK6022"
     ]
    },
    {
     "slug": "dispose-async-pattern",
     "title": "`DisposeAsync` is not implemented correctly",
     "issue": 255,
+    "state": "unexamined",
     "proposedRange": "SK3500-SK3999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3342,6 +3464,7 @@
     "slug": "async-method-without-cancellation-token",
     "title": "The async method cannot be cancelled",
     "issue": 256,
+    "state": "unexamined",
     "proposedRange": "SK3000-SK3499",
     "proposedSeverity": "suggestion",
     "proposedScope": "Semantic",
@@ -3354,6 +3477,7 @@
     "slug": "test-attribute-missing",
     "title": "The test attribute is missing and the test silently never runs",
     "issue": 257,
+    "state": "unexamined",
     "proposedRange": "SK8000-SK8999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3367,6 +3491,7 @@
     "slug": "sql-parameter-count-mismatch",
     "title": "The command's parameters do not match its SQL",
     "issue": 258,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3379,6 +3504,7 @@
     "slug": "private-auto-property",
     "title": "The private auto-property is a field",
     "issue": 259,
+    "state": "unexamined",
     "proposedRange": "SK1000-SK1999",
     "proposedSeverity": "suggestion",
     "proposedScope": "Semantic",
@@ -3391,6 +3517,7 @@
     "slug": "path-comparison-is-os-specific",
     "title": "The path comparison assumes the file system's case rules",
     "issue": 260,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3403,22 +3530,24 @@
     "slug": "enum-constraint-needs-struct",
     "title": "The `Enum` constraint still admits a nullable",
     "issue": 261,
+    "state": "shipped",
+    "coverage": "complete",
+    "coveredBy": [
+     "SK6020"
+    ],
     "proposedRange": "SK6000-SK6999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
     "proposedFix": "safe",
     "upstreamIssues": [
      6959
-    ],
-    "coverage": "complete",
-    "coveredBy": [
-     "SK6020"
     ]
    },
    {
     "slug": "tuple-literal",
     "title": "Use a tuple literal instead of constructing a `Tuple`",
     "issue": 262,
+    "state": "unexamined",
     "proposedRange": "SK1000-SK1999",
     "proposedSeverity": "suggestion",
     "proposedScope": "Semantic",
@@ -3431,6 +3560,7 @@
     "slug": "void-method-without-effect",
     "title": "The method returns nothing and does nothing",
     "issue": 263,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3443,6 +3573,7 @@
     "slug": "type-compared-by-name",
     "title": "The type is compared by name",
     "issue": 264,
+    "state": "proposed",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3455,6 +3586,7 @@
     "slug": "method-named-like-its-type",
     "title": "The method has the same name as its type",
     "issue": 265,
+    "state": "unexamined",
     "proposedRange": "SK6000-SK6999",
     "proposedSeverity": "suggestion",
     "proposedScope": "Syntax",
@@ -3467,6 +3599,7 @@
     "slug": "exception-loses-original",
     "title": "The handler discards the exception it caught",
     "issue": 266,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3479,6 +3612,7 @@
     "slug": "multiple-enumeration",
     "title": "The sequence is enumerated more than once",
     "issue": 267,
+    "state": "unexamined",
     "proposedRange": "SK4000-SK4999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3491,6 +3625,7 @@
     "slug": "conditional-attribute-double-guarded",
     "title": "The `[Conditional]` call is also inside a `#if` for the same symbol",
     "issue": 268,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "suggestion",
     "proposedScope": "Semantic",
@@ -3503,6 +3638,7 @@
     "slug": "attribute-usage-validity",
     "title": "The attribute cannot be satisfied as applied",
     "issue": 269,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3515,6 +3651,7 @@
     "slug": "dictionary-indexer-in-foreach",
     "title": "The loop looks up a key it is already holding",
     "issue": 270,
+    "state": "unexamined",
     "proposedRange": "SK4000-SK4999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3527,6 +3664,7 @@
     "slug": "unsafe-accessor-contract",
     "title": "The `[UnsafeAccessor]` declaration does not match its target",
     "issue": 271,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "error",
     "proposedScope": "Semantic",
@@ -3542,6 +3680,7 @@
     "slug": "async-lambda-as-action",
     "title": "The `async` lambda is passed where a `void` delegate is expected",
     "issue": 272,
+    "state": "unexamined",
     "proposedRange": "SK3000-SK3499",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3554,6 +3693,7 @@
     "slug": "nested-collection-initializer-appends",
     "title": "The nested collection initializer adds to what is already there",
     "issue": 273,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "warning",
     "proposedScope": "Semantic",
@@ -3566,6 +3706,7 @@
     "slug": "is-not-empty-pattern",
     "title": "`is not { }` is a null check written backwards",
     "issue": 274,
+    "state": "unexamined",
     "proposedRange": "SK2000-SK2999",
     "proposedSeverity": "warning",
     "proposedScope": "Syntax",
@@ -3578,6 +3719,7 @@
     "slug": "get-required-service",
     "title": "The service resolution is null-forgiven instead of required",
     "issue": 275,
+    "state": "unexamined",
     "proposedRange": "SK1000-SK1999",
     "proposedSeverity": "suggestion",
     "proposedScope": "Semantic",
@@ -3590,7 +3732,7 @@
   "resolved": [
    {
     "resolution": "out-of-scope",
-    "detail": "Project and repository layout, not a defect in code, and no mechanical fix \u2014 moving files between projects.",
+    "detail": "Project and repository layout, not a defect in code, and no mechanical fix — moving files between projects.",
     "upstreamIssue": 614,
     "upstreamTitle": "NET-2005 New Rule Idea: Tests should be contained in a separate project (S3414)"
    },
@@ -3656,13 +3798,13 @@
    },
    {
     "resolution": "shipped",
-    "detail": "Shipped as `SK7004` \u2014 the type-size-in-members threshold counts methods and fields.",
+    "detail": "Shipped as `SK7004` — the type-size-in-members threshold counts methods and fields.",
     "upstreamIssue": 2935,
     "upstreamTitle": "NET-1966 New Rule Idea: Classes should not have too many methods (S1448)"
    },
    {
     "resolution": "out-of-scope",
-    "detail": "\u26a0 Undecidable as stated, and the upstream author says so: whether a string is user-facing cannot be read off the code, so the rule has no zero-false-positive form. Doc 08's shipping bar excludes it.",
+    "detail": "⚠ Undecidable as stated, and the upstream author says so: whether a string is user-facing cannot be read off the code, so the rule has no zero-false-positive form. Doc 08's shipping bar excludes it.",
     "upstreamIssue": 2960,
     "upstreamTitle": "NET-1963 New Rule Idea: detect misuse when wrapping interpolated strings with FormattableString.Invariant"
    },
@@ -3716,7 +3858,7 @@
    },
    {
     "resolution": "out-of-scope",
-    "detail": "A preference about where `global using` declarations are written, argued as a personal one upstream. The one decidable part \u2014 a file-level using duplicating a global one \u2014 is already tracked.",
+    "detail": "A preference about where `global using` declarations are written, argued as a personal one upstream. The one decidable part — a file-level using duplicating a global one — is already tracked.",
     "upstreamIssue": 6285,
     "upstreamTitle": "NET-1811 New Rule Ideas: deal with global global using statements"
    },
@@ -3872,7 +4014,7 @@
    },
    {
     "resolution": "shipped",
-    "detail": "Shipped as `SK7004` \u2014 the type-size-in-members threshold counts methods and fields.",
+    "detail": "Shipped as `SK7004` — the type-size-in-members threshold counts methods and fields.",
     "upstreamIssue": 7400,
     "upstreamTitle": "NET-1742 New Rule Idea: Classes should not have too many fields (S1820)"
    },
@@ -3884,7 +4026,7 @@
    },
    {
     "resolution": "hosted",
-    "detail": "The compiler already reports it \u2014 `CS0162`, unreachable code detected.",
+    "detail": "The compiler already reports it — `CS0162`, unreachable code detected.",
     "upstreamIssue": 7402,
     "upstreamTitle": "NET-1740 New Rule Idea: All code should be reachable (S1763)"
    },
@@ -3944,37 +4086,37 @@
    },
    {
     "resolution": "out-of-scope",
-    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) — doc 17 § 'What Skala should deliberately never cover'.",
     "upstreamIssue": 7762,
     "upstreamTitle": "NET-1702 New Rule Idea: Use Data Transfer Objects instead of Database Entities in Web Services"
    },
    {
     "resolution": "out-of-scope",
-    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) — doc 17 § 'What Skala should deliberately never cover'.",
     "upstreamIssue": 7804,
     "upstreamTitle": "NET-1701 New Rule Idea: Don't use ConfigureAwait in ASP.NET Core applications"
    },
    {
     "resolution": "out-of-scope",
-    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) — doc 17 § 'What Skala should deliberately never cover'.",
     "upstreamIssue": 7820,
     "upstreamTitle": "NET-1700 New Rule Idea: Don't declare both OnXXX() and OnXXXAsync() handler methods for the same HTTP verb"
    },
    {
     "resolution": "out-of-scope",
-    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) — doc 17 § 'What Skala should deliberately never cover'.",
     "upstreamIssue": 7827,
     "upstreamTitle": "NET-1699 New Rule Idea: Properties decorated with the BindProperty attribute should have SupportsGet=true when used in HTTP GET handler method"
    },
    {
     "resolution": "out-of-scope",
-    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) — doc 17 § 'What Skala should deliberately never cover'.",
     "upstreamIssue": 7854,
     "upstreamTitle": "NET-1698 New Rule Idea: Don't use custom logic in the getter/setter of a Dependency Property"
    },
    {
     "resolution": "out-of-scope",
-    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) \u2014 doc 17 \u00a7 'What Skala should deliberately never cover'.",
+    "detail": "Framework front end (ASP.NET Core / Razor Pages / WPF / UI thread / Web service architecture) — doc 17 § 'What Skala should deliberately never cover'.",
     "upstreamIssue": 7870,
     "upstreamTitle": "NET-1697 New Rule Idea: Don't use synchronous long-running operations on the UI thread"
    },
@@ -4052,7 +4194,7 @@
    },
    {
     "resolution": "shipped",
-    "detail": "Shipped as `SK3001` \u2014 an `async void` implementation of a `void` member is still `async void`.",
+    "detail": "Shipped as `SK3001` — an `async void` implementation of a `void` member is still `async void`.",
     "upstreamIssue": 9711,
     "upstreamTitle": "NET-1534 Rule Idea: `void` method implementations should not be `async`"
    },
