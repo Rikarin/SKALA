@@ -5077,3 +5077,25 @@ any settable member outside the parameter list. The check stays as a cheap early
 now says that is all it is, rather than reading as the guard it is not. ⚠ **A sabotage that turns
 nothing red is a finding about the code, not a gap in the fixtures**, and this one would have gone
 on looking like a load-bearing guard indefinitely.
+
+### The self-gate, and why the baseline was not touched
+
+⚠ **The self-gate fails, it failed before this batch, and updating the baseline here would have been
+the wrong repair.** `check --load=binlog --binlog artifacts/skala.binlog --require-fresh-binlog
+--gate=ci --duplication`, against a Release build made `--no-incremental`, reports **1 174 new
+findings against a baseline that accepts 433** and `metrics.duplication` at 12.94 against a limit of
+10.
+
+⚠ **`.skala/baseline.sarif` was last settled 424 commits ago** — at `cece8a48b`, since when roughly
+forty rules have shipped. The 1 174 is that drift, and the arithmetic says so: of the **105**
+`SK7020` duplication findings in the whole repository, **exactly one** names a file this batch added,
+and it is the `using` block and `Initialize` boilerplate that twelve other analyzers share verbatim.
+Two findings this batch did own — `SK7002` cognitive complexity of 16 on `SK2240`'s `Analyze` and 17
+on `RecordShape.WholeStateIsItsParameters` — were **split rather than accepted**, the way `25d4b4e7`
+split `SK2200`'s symbol walk, and both are gone from the run above.
+
+⚠ **The baseline settles after the last merge, not the first**, and nine other agents were working in
+parallel while this batch ran. A `baseline update` from inside one worktree bakes that worktree's
+tree into a file every other branch also touches, so it is left for whoever integrates last. What is
+recorded here instead is the attribution: this batch adds one duplication finding, of the kind every
+analyzer in the project already produces, and no new metric finding at all.
