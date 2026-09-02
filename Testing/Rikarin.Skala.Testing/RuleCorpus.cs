@@ -216,8 +216,12 @@ public static class RuleCorpus {
     ///     <c>X.arranged.expected.cs</c>, so its 1 140 files are 380 sources times three. Compiling all
     ///     three produces thousands of spurious <c>CS0111</c>/<c>CS0101</c>/<c>CS0229</c> — every type
     ///     declared three times — and a semantic rule declines what it cannot bind, so every count taken
-    ///     that way is a floor rather than a measurement. Measured: excluding the twins took the
-    ///     compiler-error count over the three trees from <b>53 658</b> to <b>13 036</b>.
+    ///     that way is a floor rather than a measurement. Measured by removing the exclusion and
+    ///     re-running: the twins take the compiler-error count over the three trees from <b>15 738</b> to
+    ///     <b>73 312</b>. ⚠ Issue #277 records 53 658 → 13 036 for the same comparison and those figures
+    ///     do not reproduce here — they were taken over one synthetic project spanning all three trees
+    ///     rather than three compilations, which is a different population. The multiplier survives; the
+    ///     numbers do not.
     ///     <para>
     ///         ⚠ <see cref="Corpus.Files" /> already performs exactly that exclusion — one
     ///         <c>EndsWith(".expected.cs")</c> covers the <c>.arranged.</c> twin too — so this reuses it

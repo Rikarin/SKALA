@@ -68,9 +68,15 @@ public sealed class RuleCorpusTests {
     ///     The corpus keeps three copies of every file — <c>X.cs</c>, <c>X.expected.cs</c> and
     ///     <c>X.arranged.expected.cs</c> — so its 1 140 files are 380 sources times three. Compiling all
     ///     three declares every type three times, and a semantic rule declines what it cannot bind, so
-    ///     every count taken that way is a floor rather than a measurement. Measured on this commit:
-    ///     the twins cost <b>53 175</b> compiler errors across the three trees against <b>15 738</b>
-    ///     without them.
+    ///     every count taken that way is a floor rather than a measurement. Re-measured on this commit
+    ///     by removing the exclusion: the twins cost <b>73 312</b> compiler errors across the three trees
+    ///     against <b>15 738</b> without them, both without the implicit usings.
+    ///     <para>
+    ///         ⚠ The figures issue #277 records for the same comparison — 53 658 → 13 036 — do
+    ///         <em>not</em> reproduce here, and the shape of the claim does: they were taken over one
+    ///         synthetic project spanning all three trees rather than three compilations, so they are a
+    ///         different population. The multiplier is what carries over, not the numbers.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void TheCompiledSources_AreTheTreesOwnFilesAndNotTheOracleFixtures() {
@@ -85,6 +91,19 @@ public sealed class RuleCorpusTests {
 
         Assert.Equal(VendoredTrees, RuleCorpus.Trees().ToArray());
         Assert.Equal(RuleCorpus.Sources().Count, RuleCorpus.Trees().Sum(tree => RuleCorpus.Sources(tree).Count));
+
+        // ⚠ Every file a tree's sweep compiles is under that tree, asserted rather than assumed.
+        // `skala check <path>` in the default workspace mode ignores its path argument and analyses
+        // the working directory instead (issue #284) — 4 573 findings about Skala's own source, none
+        // of them about the corpus, and nothing in the output says so. A sweep that inherited that
+        // would attribute one tree's findings to another; this is the assertion that it cannot.
+        foreach (var tree in RuleCorpus.Trees()) {
+            var root = Path.Combine(Corpus.SetRoot(Corpus.Real), tree) + Path.DirectorySeparatorChar;
+            Assert.All(
+                RuleCorpus.Sources(tree),
+                file => Assert.StartsWith(root, Path.GetFullPath(file.Path), StringComparison.Ordinal)
+            );
+        }
     }
 
     /// <summary>
