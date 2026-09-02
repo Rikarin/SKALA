@@ -5947,6 +5947,139 @@
       "configuration": [
         "dotnet_diagnostic.SK7110.severity"
       ]
+    },
+    {
+      "id": "SK2130",
+      "concept": "forward-static-initializer",
+      "title": "A static field initializer reads a field declared below it",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "StaticMemberInitializerReferesToMemberBelow",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A static field's initializer reads another static field of the same type that is declared after it, and field initializers run in declaration order, so the read sees `default` rather than the initialized value.",
+      "rationale": "Static field initializers are emitted into the static constructor in the order the fields are written down. An initializer that names a field below it therefore runs before that field has been given its value, and reads zero, or null. Nothing throws, nothing warns, and the value is wrong for the life of the process — the field is simply never right, so there is no first failure to bisect to. ⚠ **Three neighbouring shapes look identical and are all correct, which is why the rule is exact about the construct rather than about the direction of the reference.** A static *property* is a method that runs when it is called, so a getter naming a field below it reads whatever that field holds at that moment. A static *method* is ordered against nothing. And a **static constructor runs after every field initializer**, so a read from there sees a fully initialized type. Only a field initializer is ordered against other field initializers.",
+      "examples": {
+        "bad": "static class Defaults {\n    public static readonly string Path = Root + \"/cache\"; // Root is still null here\n    public static readonly string Root = \"/var/lib\";\n}",
+        "good": "static class Defaults {\n    public static readonly string Root = \"/var/lib\";\n    public static readonly string Path = Root + \"/cache\";\n}"
+      },
+      "falsePositives": "⚠ **The referenced field must carry an initializer of its own**, and that requirement is about the message being true rather than about the count. A field with no initializer reads as `default` from an earlier initializer *and* from a later one, so the declaration order is not what makes it default and a finding blaming the order would point at the wrong thing; the same holds for a field the static constructor assigns, because the static constructor runs after every initializer regardless of where the field is written down. ⚠ **A `const` is excluded on both sides**: its value is substituted at compile time, so no ordering between two of them exists. ⚠ **A read inside a lambda, an anonymous method or a local function is excluded**, and this is the exclusion that would otherwise make the rule wrong on idiomatic code — `static Func<int> f = () => later;` stores a delegate whose body runs when somebody invokes it, long after every initializer has finished, and deferring the read is the ordinary way to *repair* this defect. `nameof(Later)` reads nothing and is excluded. ⚠ **Only within one file.** A `partial` type's parts have no stated initializer order between them; it follows the order the files reach the compiler, which is a build detail rather than something the source says. That is the case ReSharper's own description calls the worst one, and declining it is the honest answer, because a cross-file finding would not be reproducible from the file it lands in — which is exactly what `scope: Semantic` promises the analysis cache. A read of another type's static field is excluded: that type's initializers run on first access, not in this type's order. Report-only, because the repair is to move a declaration and which of the two moves is right depends on what else in the type depends on the order. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2130.severity"
+      ]
+    },
+    {
+      "id": "SK2131",
+      "concept": "unassigned-get-only-property",
+      "title": "The get-only property is never assigned",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "UnassignedGetOnlyAutoProperty",
+      "resharperNote": "The export carries six inspections for issue #24's concept — `UnassignedField.Global`, `UnassignedField.Local`, `UnassignedReadonlyField`, `UnassignedGetOnlyAutoProperty`, `NotNullOrRequiredMemberIsNotInitialized` and `PropertyFieldKeywordIsNeverAssigned`. Skala ships the fourth and only the fourth, and the reason is measured rather than a matter of taste: the three field inspections describe what `CS0649` already reports, and `--resharper-severities` maps the one inspection this rule actually covers. The others have no Skala id and none is proposed until somebody can say what they would add to the compiler.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A property with only a `get` accessor, no initializer and no constructor that assigns it can be written from nowhere, so it holds `default` for the life of every instance.",
+      "rationale": "⚠ **This is the one shape of issue #24 the compiler leaves entirely alone, and the narrowing was measured rather than argued.** A probe built at `AnalysisMode=All` reports `CS0649` for a `private`, an `internal` and a `private readonly` field that nothing assigns, so the field half of the concept belongs to the compiler and there is nothing to add. A `public` field draws no `CS0649` and cannot: any consumer outside the compilation may write it, so the claim is not decidable here either. What remains is the property half, and it is decidable for a reason worth stating — **a property with only a `get` accessor and no initializer can be assigned from nowhere but a constructor of its own declaring type**, every part of that type is in this compilation because a type cannot be split across assemblies, and a source generator's part is compiled source like any other. \"Nothing assigns it\" is therefore a fact this analysis establishes rather than a guess about callers, which is the difference between this rule and the field half it declines.",
+      "examples": {
+        "bad": "sealed class Window {\n    public int Width { get; }        // nothing ever assigns it: always 0\n\n    public bool IsWide => Width > 800;\n}",
+        "good": "sealed class Window {\n    public int Width { get; }\n\n    public Window(int width) => Width = width;\n\n    public bool IsWide => Width > 800;\n}"
+      },
+      "falsePositives": "⚠ **A non-nullable reference type under nullable warnings is declined, because `CS8618` already reports it** — verified on the same probe, with an explicit constructor and with an implicit one. ADR-008 makes hosting a platform diagnostic the right outcome, and a second finding on the same declaration under a Skala id would be the same defect counted twice. What survives the exclusion is everything `CS8618` cannot see, and the probe measured that too: a value type, a nullable reference type, and any get-only property in a nullable-oblivious file all draw nothing at all from the compiler. ⚠ **The annotation half of the nullable context is deliberately not consulted, only the warning half** — a file with annotations on and warnings off gets no `CS8618`, and that is a real configuration in which this rule is the only thing that will speak. An unconstrained type parameter falls on the declined side, which is the conservative direction. ⚠ **The declaring type is walked through its symbol rather than through the file the finding is in**, so a `partial` part in generated source — the generator that writes the constructor — is read even though the analyzer does not *report* in generated code; a rule that skipped those parts would fire on every generated-constructor type, which is the wall that closed #114 and #115. The residue in front of which no compilation-local analysis can go is **reflection**: `FieldInfo.SetValue` against the compiler-generated backing field writes the property from outside the language, and no analyzer can see it. ⚠ **A positional record property is never examined, by construction rather than by a filter** — this rule reads a property *declaration*, and a positional record's property has none, because the parameter is where it is written down; no test on `IsImplicitlyDeclared` is performed, and the shape would be declined anyway because a positional property is `{ get; init; }`. An expression-bodied property, a property carrying any attribute, an `abstract` or `extern` one, and anything with a `set` or `init` accessor are all outside the shape. Report-only: the property is permanently `default` and saying what it should be instead is the one thing the declaration does not contain. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2131.severity"
+      ]
+    },
+    {
+      "id": "SK2132",
+      "concept": "mismatched-backing-field",
+      "title": "The accessor uses another property's backing field",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S4275"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A property that has a conventionally named backing field of its own reads or writes a different field — one that conventionally backs another property of the same type.",
+      "rationale": "The copy-paste defect in hand-written properties: the second property is written by duplicating the first and one of the two field names is not changed. It is silent in every direction — the type compiles, the property runs, the getter returns somebody else's value and the setter writes over it — and a test that exercises one property at a time can pass while both are wrong. ⚠ **The reason this needs a rule at all is that nothing else looks**: the compiler has no opinion about which field an accessor reaches for, and a reviewer reading two nearly identical five-line properties is reading exactly the shape human attention is worst at.",
+      "examples": {
+        "bad": "sealed class Contact {\n    string firstName = \"\";\n    string lastName = \"\";\n\n    public string FirstName {\n        get => firstName;\n        set => firstName = value;\n    }\n\n    public string LastName {\n        get => firstName;          // returns the first name\n        set => lastName = value;\n    }\n}",
+        "good": "sealed class Contact {\n    string firstName = \"\";\n    string lastName = \"\";\n\n    public string FirstName {\n        get => firstName;\n        set => firstName = value;\n    }\n\n    public string LastName {\n        get => lastName;\n        set => lastName = value;\n    }\n}"
+      },
+      "falsePositives": "⚠ **A name match between a property and a field is a convention, not a fact, and a great deal of correct code breaks it deliberately** — `Count` over `_items` and `Value` over `_inner` are ordinary indirection. A rule that treated \"this accessor touches a field that is not named after me\" as the finding would report both, so **two conditions must hold together, and they are conditions about two properties rather than one**: the property being examined must itself have a conventionally named field of *exactly its own type* — which puts `Count` over `_items` out, because no `_count` exists — and the field the accessor actually touches must be the conventionally named field of a **different property of the same type** — which puts `_inner` behind `Value` out unless there is also an `Inner` property, at which point the two names have been crossed rather than chosen. The accepted spellings are `_name`, `name`, `m_name` and `_Name` for a property `Name`; a field whose staticness differs from the property's, and a `const`, are never candidates. ⚠ **The type equality is load-bearing rather than tidiness**: without it a `List<string> _name` behind a `string Name` would count as the property's own field and the fix would propose text that does not compile. ⚠ **The accessor must be nothing but the field access** — `get => _items.Count;`, and a getter that logs before returning, are declined by the shape test rather than by a list of exceptions, because the moment an accessor does something in addition to reaching for storage, what it reaches for is a decision rather than a name that was mistyped. `this._name` is accepted as the same shape as `_name`; a setter must be exactly `field = value`, so a setter that transforms `value` is out. The fix rewrites the field reference to the property's own field and is **not** marked safe: it is the one repair in this batch that changes what the program computes, which is the whole point of the finding, and the author may equally have meant to rename the property. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2132.severity"
+      ]
+    },
+    {
+      "id": "SK2133",
+      "concept": "unimplemented-partial-method",
+      "title": "The called `partial` method has no implementation",
+      "category": "Correctness",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S3251"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `partial void` with no implementing declaration is erased together with every call to it, arguments included, so a call that reads as a hook does nothing at all.",
+      "rationale": "⚠ **A `partial` method with no implementation is legal, and erasing it is the feature — so the declaration on its own is never the finding.** The call is. When no implementing declaration exists the compiler removes the defining declaration *and every call to it*, and argument evaluation goes with the call, so work written into an argument silently does not happen. ⚠ **Requiring a call is also what makes the rule decidable rather than merely narrow**: a classic `partial void` may carry no accessibility modifier and is therefore implicitly `private`, so every caller it can ever have is inside the declaring type, which is in this compilation in full. \"Nothing calls it\" and \"something calls it\" are both facts here, not guesses about the rest of the world — which is the difference between this rule and the field half of #24, and it is why an unimplemented hook nobody has taken up is left alone.",
+      "examples": {
+        "bad": "partial class Importer {\n    partial void OnRowRead(Row row);\n\n    void Read() {\n        OnRowRead(Parse(next));   // Parse(next) never runs\n    }\n}",
+        "good": "partial class Importer {\n    partial void OnRowRead(Row row);\n\n    void Read() {\n        var row = Parse(next);\n        OnRowRead(row);\n    }\n}\n\npartial class Importer {\n    partial void OnRowRead(Row row) => log.Add(row);\n}"
+      },
+      "falsePositives": "⚠ **The other half of issue #186 is a compile error, and it was verified as one rather than assumed.** A C# 9 extended partial method — one with an accessibility modifier, a non-`void` return type, or an `out` parameter — *must* have an implementation, and a probe compiling one without gives `CS8795`. That half needs no rule and cannot reach a compiling analysis; it is excluded here by requiring `void` rather than by hoping. On the classic form the same probe draws nothing at all — no `CS`, no `CA`, at `AnalysisMode=All` — which is what makes this the half worth a rule. ⚠ **An unimplemented `partial void` that nothing calls is deliberately left alone**: it is an extension point nobody has taken up, it costs nothing at runtime, and reporting it would put a finding on the language feature rather than on a mistake. Every part of the declaring type is walked, generated parts included, so a call from generated source counts as a call and an implementation in generated source counts as an implementation — the finding is about a hook the *compilation* leaves empty, not about one file. Nested types are covered because the walk is over the whole declaration. The side-effect clause in the message is syntactic and deliberately generous — a call, a construction, an `await`, an assignment or an increment anywhere in an argument is enough — and it changes only the wording, never whether the finding exists, so being wrong in the loud direction costs a sentence rather than a false positive. Report-only, because the two repairs run in opposite directions: writing the implementing part is right when the hook was meant to do something, deleting the declaration and its calls is right when it was not, and nothing in the source says which. Generated code is excluded from reporting.",
+      "configuration": [
+        "dotnet_diagnostic.SK2133.severity"
+      ]
+    },
+    {
+      "id": "SK2134",
+      "concept": "instance-write-to-static",
+      "title": "Instance code writes to its own type's static field",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2696",
+        "S3010"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An instance constructor, method or accessor assigns a static field of its own type, so the last instance to run the line wins for every other instance and every thread.",
+      "rationale": "The write reads as per-instance initialization and is not. There is one slot: two objects that were meant to carry different values carry the same one, and two threads that construct at the same time lose an update between them. ⚠ **It survives review because the line is short and looks local** — `count++` in a constructor is four characters that describe a per-object act and perform a process-wide one — and it survives testing because a test that constructs one object never sees it.",
+      "examples": {
+        "bad": "sealed class Session {\n    static Session? current;\n\n    public Session(string user) {\n        current = this;      // every session overwrites the last\n        User = user;\n    }\n\n    public string User { get; }\n}",
+        "good": "sealed class Session {\n    [ThreadStatic] static Session? current;\n\n    Session(string user) => User = user;\n\n    public static Session Begin(string user) => current = new Session(user);\n\n    public string User { get; }\n}"
+      },
+      "falsePositives": "⚠ **`CA2211` is a different question, and it was verified to be rather than assumed.** A probe at `AnalysisMode=All` reports `CA2211` on a `public static` field and says nothing about a `private static` one: it is about a field's *visibility*, it lands on the declaration, and it is silent about who writes it. This rule never reads visibility and never reports a declaration — it reports the write. The two overlap on exactly one shape, a public static field written from instance code, and there they say two different true things about it. ⚠ **Lazy initialization is the look-alike, and it is declined by recognising the guard rather than the name.** `_instance ??= new()` is instance code writing static state on purpose: the guard is what makes it write-once, so \"the last one wins\" is not true of it. A `??=`, an `x ?? y` right-hand side, and an assignment under an `if`, `while` or conditional whose condition mentions that same field together with `null` or `default` are all declined — the last form is what covers double-checked locking, where the inner test is the one the walk finds. The guard test is deliberately loose, because every shape it recognises produces silence and none of them can produce a finding. ⚠ **Only the enclosing type's own static fields.** `Console.Out = …` and `CultureInfo.DefaultThreadCurrentCulture = …` are process-wide settings being set deliberately, usually once, by code that knows it; they are a different concept with a different answer, and admitting them would have made the exclusion list carry the rule. A `[ThreadStatic]` field is declined: it is one slot per thread and the sharing the finding complains about is not there. ⚠ **A write inside a lambda or a local function is declined**, because where it runs is not where it is written — a delegate handed to a scheduler is no longer instance code in the sense the finding means. `Interlocked.Increment(ref total)` is declined by construction rather than by a filter: it is an argument, not an assignment, so no assignment node exists for the rule to visit. ⚠ **A counter incremented from a constructor is reported, and that is intended rather than an oversight** — it is the canonical shape of this concept, it is not atomic, and the fixtures pin it positive so that nobody later mistakes it for a false positive and adds an exclusion. Report-only: making the state per-instance and making the member static change the type in opposite directions, and the assignment does not say which was meant. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2134.severity"
+      ]
     }
   ]
 }

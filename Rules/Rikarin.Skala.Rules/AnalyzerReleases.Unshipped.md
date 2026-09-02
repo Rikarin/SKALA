@@ -205,3 +205,8 @@ SK2071 | Skala.Correctness | Warning | The structured log template names the sam
 SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
 SK2073 | Skala.Correctness | Warning | The caught exception is not passed to the logger's exception parameter.
 SK7110 | Skala.Maintainability | Info | The logger is declared for a different type than the one that declares it.
+SK2130 | Skala.Correctness | Warning | A static field initializer reads a field declared below it.
+SK2131 | Skala.Correctness | Warning | A get-only auto-property nothing ever assigns.
+SK2132 | Skala.Correctness | Warning | An accessor reaches for another property's backing field.
+SK2133 | Skala.Correctness | Info | A called `partial void` with no implementing declaration.
+SK2134 | Skala.Correctness | Warning | Instance code assigns its own type's static field.

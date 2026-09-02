@@ -223,5 +223,7 @@
   "UseDeconstruction": "SK1070",
   "UseWithExpressionToCopyRecord": "SK1071",
   "RedundantSpreadElement": "SK1072",
-  "UseEventArgsEmptyField": "SK1073"
+  "UseEventArgsEmptyField": "SK1073",
+  "StaticMemberInitializerReferesToMemberBelow": "SK2130",
+  "UnassignedGetOnlyAutoProperty": "SK2131"
 }

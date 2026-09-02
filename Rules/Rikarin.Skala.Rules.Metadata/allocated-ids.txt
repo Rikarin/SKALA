@@ -246,3 +246,8 @@ SK2100 ineffective-thread-static
 SK2101 pure-attribute-on-void
 SK2102 debugger-display-missing-member
 SK2103 duplicated-attribute
+SK2130 forward-static-initializer
+SK2131 unassigned-get-only-property
+SK2132 mismatched-backing-field
+SK2133 unimplemented-partial-method
+SK2134 instance-write-to-static
