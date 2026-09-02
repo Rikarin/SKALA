@@ -30,8 +30,11 @@ public enum CorpusVerdict {
     Declined,
 
     /// <summary>
-    ///     ⚠ The rule reported nothing and <em>its own positive fixture, compiled into the same
-    ///     compilation, reported nothing either</em>. The zero says nothing about the tree; it says the
+    ///     ⚠ The rule reported nothing and
+    ///     <em>
+    ///         its own positive fixture, compiled into the same
+    ///         compilation, reported nothing either
+    ///     </em>. The zero says nothing about the tree; it says the
     ///     instrument did not work here. Never report this as "clean".
     /// </summary>
     Silent,
@@ -53,8 +56,7 @@ public enum CorpusVerdict {
 /// </remarks>
 public sealed record PlantedShape(string RuleId, string Name, string Source) {
     /// <summary>A synthetic path, inside the tree so that findings on it are reportable.</summary>
-    public string PathIn(string treeRoot) =>
-        Path.Combine(treeRoot, "__planted__", RuleId + "." + Name + ".cs");
+    public string PathIn(string treeRoot) => Path.Combine(treeRoot, "__planted__", RuleId + "." + Name + ".cs");
 }
 
 /// <summary>What one tree's sweep produced, with the error bars beside the counts.</summary>
@@ -232,8 +234,7 @@ public static class RuleCorpus {
     public static IReadOnlyList<CorpusFile> Sources(string? tree = null) => [
         .. Corpus.Files(Corpus.Real)
             .Where(file => tree is null
-                || file.RelativePath.StartsWith(tree + "/", StringComparison.Ordinal)
-            )
+                || file.RelativePath.StartsWith(tree + "/", StringComparison.Ordinal))
     ];
 
     /// <summary>
