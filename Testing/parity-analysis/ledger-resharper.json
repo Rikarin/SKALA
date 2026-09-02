@@ -374,6 +374,13 @@
     "resharper_complex_object_destructuring_problem_highlighting",
     "resharper_complex_object_in_context_destructuring_problem_highlighting",
     "resharper_positional_property_used_problem_highlighting"
+   ],
+   "coverage": "partial",
+   "coveredBy": [
+    "SK2016",
+    "SK2070",
+    "SK2071",
+    "SK2073"
    ]
   },
   {

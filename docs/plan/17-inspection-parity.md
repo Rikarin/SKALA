@@ -278,6 +278,83 @@ are the formatter's output as a whole, and `SK0001` "the file is not formatted" 
 diagnostic that reports them. Treating those 40-odd inspections as 40 missing rules would be the
 clearest possible case of the double-count.
 
+## ⚠ Hosted and Catalogued were making the same claim about 18 rows, and only one could be right
+
+`hosted()` runs before `catalogued()` and `break`s, so an inspection in both maps bucketed `Hosted`
+and the Skala rule crediting it was shadowed — its `catalogued.json` entry never took effect.
+**18 rows were in that state, naming 11 distinct `SK` ids, 9 of which ship.**
+([#281](https://github.com/Rikarin/SKALA/issues/281))
+
+⚠ **The count was found by importing `classify.py` and asking `catalogued()` about every row the run
+bucketed `Hosted`, not by intersecting the two maps by hand.** `hosted()` and `catalogued()` both
+fall back to `*_BYKEY`, so three of the eighteen match on the `resharper_*_highlighting` export key
+rather than on the inspection id, and a set intersection on ids alone misses them — which is how the
+first reading of this said six shipped rules rather than nine. `SK2010`, `SK2014` and `SK4010` are
+the three. (`SK8003` and `SK8004` are the other two ids and do not ship.)
+
+⚠ **Why no test caught it.** `RuleCatalogTests.TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule`
+asserts the *entry exists* in `catalogued.json`. It never asks whether this pipeline reaches that
+entry. The map was correct and inert — a mapping nothing can set, in a different place from the one
+this document already names.
+
+### The adjudication, per rule
+
+ADR-008 is *host, never rebuild*; its corollary is that Skala must be **worth using with nothing
+hosted**. Those two sentences give opposite answers for a diagnostic nobody has turned on, so the
+question is not "does a `CA*`/`IDE*` exist" but "what does a consumer see with nothing configured".
+Each Roslyn diagnostic the hosted map names was run against the Skala rule's **own positive
+fixtures**, in a probe built outside this repository with empty `Directory.Build.props`/`.targets`
+above it, SDK 10.0.400, results read from SARIF; every configuration carried a canary proved to fire
+in it, so a zero is a decline rather than a dead run.
+
+| Rule | Hosted map said | Measured on the rule's own positives | Verdict |
+|---|---|---|---|
+| `SK1006` | `IDE0063` | 3/3 — but only with `EnforceCodeStyleInBuild` **and** a severity line | rule stands, host is `code-style` |
+| `SK1010` | `IDE0078` | **0/5**, and `IDE0078` fired twice on its own shapes in the same build | rule stands; ⚠ Roslyn has no `x != null` → `x is not null` rule |
+| `SK1012` | `IDE0066` | **0/3**; `IDE0066` converts an existing `switch` *statement* and fired on one | rule stands; `SK1012`'s input is an `if`/`else if` chain |
+| `SK1020` | `CA1510` | **3/3 at stock**, `CA1510` is enabled/`Info` | ⚠ **duplicate — retire `SK1020`** |
+| `SK1030` | `IDE0074`, `IDE0029` | **0/4** both. ⚠ `IDE0074` is a **phantom** | rule stands; ⚠ map corrected to `IDE0054`, which is 4/4 |
+| `SK1034` | `CA1860` | **3/4 at stock**, and `CA1829` takes the fourth, both enabled/`Info` | ⚠ **duplicate — retire `SK1034`** |
+| `SK2010` | `CA1304/CA1305`, `CA1307/CA1310` | `Hidden` or disabled at stock; nothing until `Recommended` | rule stands, host is `opt-in` — the decision § "SK2150" already took |
+| `SK2014` | `CA1031` | disabled by default; under `All` it fires on bare `catch {}` only | rule stands; `CA1031` is about the breadth of the caught type, `SK2014` about the catch being empty |
+| `SK4010` | `CA1829`, `CA1868`, `IDE0270` | **0/4** all three | rule stands; ⚠ all three ids were wrong, see below |
+
+⚠ **`IDE0074` does not exist in practice, and it was crediting two rows.** It is in the tool's
+supported-rule descriptor list with the title "Use compound assignment", so it is loaded rather than
+missing, and it is **never emitted**. Six canonical `x = x ?? y` shapes — local, instance field,
+static field, property, `this.`-qualified, string-with-literal — under
+`dotnet_diagnostic.IDE0074.severity = warning` *and* `dotnet_style_prefer_compound_assignment =
+true:warning` *and* `AnalysisMode=All` *and* `EnforceCodeStyleInBuild=true` all reported **`IDE0054`**
+and none reported `IDE0074`. So two rows bucketed `Hosted` on a diagnostic that reports nothing,
+which is the worst of the two failure modes: the concept really is hosted, and the id recording it
+was not the one doing the hosting.
+
+⚠ **`CA1829` was a near-miss that mattered more than a plain error would have.** `CA1829` is `on` at
+stock, so `"ReplaceWithSingleCallToCount": "CA1829"` filed `SK4010` as duplicating something every
+consumer already has. It reports **0 of 4** of `SK4010`'s positives while firing on `SK1034`'s
+`count-call.cs` in the same compilation — a correct decline, because `values.Where(p)` returns an
+iterator and an iterator has no `Count` property to prefer. `CA1868` and `IDE0270` were hedged as
+"-adjacent" and are simply different rules (a `Contains` guard on a set, and null-check
+simplification). The real host of all three inspections is **`IDE0120` "Simplify LINQ expression"**,
+4/4 on the fixtures and `code-style`, so it says nothing in a default build either.
+
+### What changed in the pipeline
+
+A hosted entry now carries the state defined in [08](08-rule-catalogue.md) § "What the hosted map
+records now", and **a host that is `opt-in` or `code-style` no longer shadows a rule that ships**.
+`package` and `on` still do — a consumer running NUnit has NUnit.Analyzers, which is the reasoning
+that cut `SK8003`/`SK8004`. **12 rows moved from `Hosted` to `Catalogued`**, covering the seven rules
+that stand; `Hosted` 91 → 80 and `Catalogued` 254 → 265 on the committed inputs.
+
+⚠ **And the residue is printed rather than bucketed.** `classify.py` now ends with an alert naming
+every shipped rule that duplicates a diagnostic which is `on` at stock. It currently names `SK1020`
+and `SK1034`, which is the list this section decided; a row appearing there in future is a new
+adjudication somebody owes, not a number for the script to move on its own.
+
+⚠ **The bucket table at the head of this section is older than all of this** — it reads `Uncovered`
+578 / `Catalogued` 92 / `Hosted` 75 against today's 401 / 265 / 80 — and is left as the record of
+what was measured then rather than restated. Read `classify.py`'s own output for current figures.
+
 ## The uncovered set, ranked by what fires on real code
 
 **This is the work queue**, and it is the section [08](08-rule-catalogue.md)'s next revision should

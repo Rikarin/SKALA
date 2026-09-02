@@ -3851,7 +3851,7 @@ so **none of them costs the incremental cache anything** — the warm path is av
 that does not enable a compilation-scoped rule, and after M9 that is still only `SK3001` and
 `SK7020`.
 
-| Id | Scope | Fix | Fixtures (+/−) | `corpus/real` (380) | Vixen (4 680) | Cost |
+| Id | Scope | Fix | Fixtures (+/−) | `corpus/real` sources (380 of 1 140) | Vixen checkout (4 680) | Cost |
 |---|---|---|---:|---:|---:|---:|
 | `SK2007` collection modified during enumeration | Semantic | `.ToList()` | 3 / 8 | 0 | **0** | 54.5 ms |
 | `SK3004` `CancellationToken` accepted, not passed on | Semantic | a named or appended argument | 3 / 9 | 0 | **0** | 68.2 ms |
@@ -3930,7 +3930,7 @@ M8 is the `SK5xxx` milestone and the last one, because a wrong security rule is 
 one. Nine ids, **five** ship, all at `error` — the range's default, unchanged, because a security
 rule's severity comes from what it means rather than from how much it fires.
 
-| Id | Scope | Fix | Fixtures (+/−) | corpus/vulnerable | corpus/safe | `corpus/real` (380) | Vixen (4 717) |
+| Id | Scope | Fix | Fixtures (+/−) | corpus/vulnerable | corpus/safe | `corpus/real` sources (380 of 1 140) | Vixen checkout (4 717) |
 |---|---|---|---:|---:|---:|---:|---:|
 | `SK5001` request data concatenated into SQL | Semantic | ⚠ none | 4 / 10 | 6 | **0** | 0 | 0 |
 | `SK5002` request data reaches a process start | Semantic | ⚠ none | 3 / 7 | 4 | **0** | 0 | 0 |
@@ -4111,7 +4111,7 @@ is decidable at the call site with no taint and no inter-procedural step, becaus
 argument at the construction or at the static call, and both spellings of "I thought about this" —
 a `TimeSpan` and `RegexOptions.NonBacktracking` — are visible in the same expression.
 
-| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` (380 files) | `corpus/vulnerable` |
+| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` sources (380 of 1 140) | `corpus/vulnerable` |
 |---|---|---|---|---:|---:|---:|
 | `SK5010` a pattern that can backtrack, unbounded | Semantic | **warning** | ⚠ none | 8 / 22 | **0** | 2 |
 
@@ -4232,8 +4232,9 @@ is immediately below.
 #### ⚠ The SDK reading, corrected: "off" and "Hidden" are not the same state, and the table above conflates them
 
 ⚠ **The section above says the default state of every `CA*` in this area is "off". For roughly a
-third of the family that is wrong, and the difference is the difference between a rule a consumer
-can turn on with one `.editorconfig` line and one they must reach `AnalysisMode` for.** The claim
+third of the family that is wrong — though ⚠ **not for the reason this paragraph gave**, which
+§ "The reconciliation" below refutes with the measurement: both groups are one `.editorconfig` line
+from visible, and neither needs `AnalysisMode`.** The claim
 that `analysislevelsecurity_10_default.globalconfig` carries no rule entries is **confirmed** — it
 holds a header, `is_global` and `global_level` and nothing else — and `analysislevel_10_default`
 holds exactly one (`CA1516 = none`). So the default state of a security `CA` really is whatever its
@@ -4255,6 +4256,77 @@ entirely** when an `.editorconfig` forces it to `silent`. Hidden diagnostics do 
 log at all, so a SARIF zero and an absent analyzer look identical. The descriptor dump is the only
 instrument that answers the question, and every state below comes from it rather than from a build's
 silence.
+
+##### ⚠ The reconciliation, and the half of the correction above that is itself wrong
+
+The two readings above look contradictory — eleven security ids are `IsEnabledByDefault = true,
+DefaultSeverity = Hidden` *by descriptor*, and yet **no `CA5xxx` appears in a default build's SARIF
+at any level**. They are not. **Descriptor state and shipped default are two different
+measurements**, and both are right:
+
+1. **Nothing overrides the descriptor.** The csc command line at stock carries exactly one injected
+   globalconfig, `Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig`
+   — twelve lines, one `CA` entry, `CA1516 = none`. `analysislevelsecurity_10_default.globalconfig`
+   is empty **and is never passed to csc at all** in a default build; the per-category configs appear
+   only when a category-specific `AnalysisMode<Category>` is set. So the effective severity of these
+   eleven is their descriptor default, `Hidden`.
+2. **An error log cannot represent `Hidden`.** Proved twice, once on a 26-hit rule: `CA1822`
+   (enabled/`Info`) is 26 `note` results at stock, 26 warnings when raised, and **0** at `silent` and
+   **0** at `none`. `CA1401` behaves identically at one hit. Hidden and off are byte-for-byte
+   indistinguishable in SARIF. The console is weaker still — those 26 `note` results produce **zero**
+   console lines at `-v n`, and 52 once raised to `warning`.
+
+⚠ **The explanation that is *not* the answer, tested rather than assumed: the analyzers are loaded.**
+The stock `/analyzer:` list carries both `Microsoft.CodeAnalysis.NetAnalyzers.dll` and
+`Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll`, and there is no separate
+`Microsoft.NetCore.Analyzers.dll` anywhere in the SDK — the security analyzers are merged into the
+first of those. "The SDK references only some of the assemblies" cannot be the mechanism.
+
+⚠ **And the sentence this section opens with is wrong.** It says the descriptor split is "the
+difference between a rule a consumer can turn on with one `.editorconfig` line and one they must
+reach `AnalysisMode` for". Measured at stock `AnalysisLevel`, with no `AnalysisMode` and no property
+changes: ten of the eleven `Hidden` ids fire from a single `dotnet_diagnostic.<id>.severity = warning`
+line, with exactly the counts `AnalysisMode=All` produces — **and so do `CA5390` and `CA5394`, which
+are `IsEnabledByDefault = false`.** One `.editorconfig` line lifts both groups. So
+`enabled + Hidden` and `disabled` are **not two states a consumer can distinguish**, and recording
+them apart credits the ledger with a difference the shipped product does not have. (`CA3075` is
+excluded from this: seventeen candidate shapes across `net10.0` and `netstandard2.0` produced
+nothing even under `All` with it raised, while `CA3076` and `CA5372` fired in the same probe. Whether
+that is a bad shape or a framework gate was not established.)
+
+⚠ **`IsEnabledByDefault = true` also overstates "already running".** The analyzer is *loaded and
+available* in every consumer build and does no measurable work until something raises it:
+`ReportAnalyzer` total analyzer time is 0.010 s at stock against 0.033 s with the eleven raised, and
+the four analyzers that produce findings go from `<1 %` to 1–9 % of the total. Weak evidence — the
+timing resolution is coarse — and reported as such.
+
+##### What the hosted map records now
+
+`Testing/parity-analysis/classify.py` recorded only that a `CA*`/`IDE*` **exists**. It now records
+the weakest configuration a consumer needs before that diagnostic says anything, in five states
+keyed to measured behaviour rather than to the descriptor:
+
+| State | Meaning | Entries |
+|---|---|---:|
+| `on` | in a stock build's error log with nothing configured | 17 |
+| `opt-in` | nothing at stock; **one** `dotnet_diagnostic.<id>.severity` line makes it visible | 7 |
+| `code-style` | an `IDE*`: a severity line is not enough, it also needs `EnforceCodeStyleInBuild=true`. ⚠ `AnalysisMode=All` reaches **no** `IDE*` at all — 96 results, zero of them IDE | 38 |
+| `compiler` | a `CS####` the compiler emits unconditionally | 3 |
+| `package` | the test framework's own analyzer, present exactly when the consumer references the framework | — |
+
+⚠ **45 of the 65 entries name a diagnostic that produces nothing in a default build** (7 `opt-in`
+plus 38 `code-style`). That is the size of what "exists" was hiding. Seven of the nine
+shipped rules #281 found shadowed were being counted as duplicates of a diagnostic that says
+nothing; the other two duplicate one that really is `on`, and retire.
+
+⚠ **Three of the five states are the same three [#299](https://github.com/Rikarin/SKALA/issues/299)
+proposed, and the partition is not.** That issue proposed on-and-visible / on-but-hidden /
+off-until-opted-in, split on the descriptor. The measurement above collapses the last two into
+`opt-in` and splits `code-style` out of them instead — because `EnforceCodeStyleInBuild` is a real
+consumer-visible difference and the descriptor's `Hidden`/`disabled` distinction is not. ⚠ **Fourteen of
+the seventeen `on` entries are `Info`**, i.e. `note` in SARIF and invisible on the console; they
+count as `on` because they are in the error log, an IDE shows them, and Skala's own equivalents ship
+at `suggestion` — the same visibility. What they are not is a warning anybody sees scroll past.
 
 | `CA*` | Behavioural coverage — what it actually caught | Measured default state |
 |---|---|---|
@@ -4368,11 +4440,45 @@ returns at `CompilationStart` without registering anything. That is the correct 
 also why the trees cannot be the measurement here — `corpus/vulnerable` and `corpus/safe` are, and
 the test project needed the package added before its own fixtures would compile at all.
 
-⚠ **Two file counts in this document are stale, noticed while taking that reading and not
-reconciled here.** The tables above label `corpus/real` as "380 files" and Vixen separately as
-"4 681 files". On disk today `Testing/corpus/real` holds 1 140 `.cs` files *including* Vixen's 600.
-Whatever those figures counted, they do not count what a `find -name '*.cs'` counts now, and every
-row quoting them is quoting a number nobody has re-derived.
+#### ⚠ What the two corpus columns are measured over — and the reading that was wrong
+
+This block used to say that two file counts in this document were stale and that "every row quoting
+them is quoting a number nobody has re-derived" ([#312](https://github.com/Rikarin/SKALA/issues/312)).
+⚠ **Both counts have now been re-derived and the staleness reading is refuted.** They are two
+different trees, and the headers were under-specified rather than wrong.
+
+**`corpus/real` — 380 sources, not 1 140 files, and the difference is deliberate.** The corpus keeps
+three copies of every source, `X.cs` beside `X.expected.cs` and `X.arranged.expected.cs`, so
+`Testing/corpus/real` holds 1 140 `.cs` files and **1 140 = 380 × 3 exactly** — 110 Newtonsoft, 70
+Serilog and 200 Vixen sources. Every sweep in this document staged the 380 originals and left the
+oracle twins behind, because compiling all three copies produces about eleven thousand spurious
+`CS0111`/`CS0101` that say nothing about any rule; § "The sweep, and what its zero is a zero of"
+records that decision at the point it was taken, and the figure recurs as "380 sources in 1 140
+files" in three other places here. So **the scope of every `corpus/real` zero in these tables is the
+380 sources**, which is the scope the sweeps intended and the narrower of the two readings the old
+header allowed. The headers now say `corpus/real` sources (380 of 1 140).
+
+**The Vixen column is a different tree, and it is not the corpus copy.** `corpus/real/vixen` holds
+200 of the 380 staged sources; the Vixen column is the **full working checkout**, outside this
+repository, and the three adjacent tables quote **4 680**, **4 681** and **4 717** because they
+measured it on different days rather than because one of them is wrong. ⚠ **4 717 is a count the
+checkout really produces**: `git ls-tree -r --name-only 44b88648 | grep -c '\.cs$'` — Vixen's head on
+2026-08-27, the day `dff9c86` recorded the M7 sweep — is exactly 4 717, and the working tree today,
+less `obj`, `bin` and the agent worktrees under `.claude`, is 4 726. ⚠ **That is a match, not a
+reproduction**: nothing recorded which Vixen commit any of these three runs was pointed at, so the
+right reading is that the column is the external checkout at three moments a few files apart, and
+**4 680 and 4 681 are marked rather than restated** — 36 and 37 short of the tracked count on that
+day, by an exclusion policy nobody wrote down. The tree they name is certain; the last two digits are
+not, and no conclusion in either table turns on them — `SK8005`'s 25 findings were each read
+individually.
+
+⚠ **What had no instrument either way was the arithmetic**, which is the part worth fixing rather
+than re-deriving. A source added to one vendored tree and not given its two twins moves 380 and 1 140
+apart silently while every header here keeps saying 380.
+`ProvenanceTests.TheCorpus_IsTheSizeEveryPublishedSweepMeasured` now asserts the staged count, the
+on-disk count, that the second is exactly three times the first, and the per-tree split. It
+deliberately does not parse these headers: a test that rewrote the prose when the corpus moved would
+let the corpus move unreviewed.
 
 ⚠ **#150 — deserialization accepts any type the payload names — is refuted as hosted, and the
 hosting is better than what Skala could write.** `CA2326` and `CA2327` between them caught seven of
@@ -4512,7 +4618,7 @@ emitted seventeen distinct `CA` ids, twelve of them in the security family — s
 
 **`SK5020` and `SK5021` ship. The other three do not, and half of #143 does not.**
 
-| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` (380 files) | `corpus/vulnerable` |
+| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` sources (380 of 1 140) | `corpus/vulnerable` |
 |---|---|---|---|---:|---:|---:|
 | `SK5020` a cipher initialisation vector fixed at compile time | Semantic | **error** | ⚠ none | 9 / 23 | **0**, shape absent | 6 |
 | `SK5021` an RSA or DSA key generated below 2048 bits | Semantic | **error** | yes, `fixIsSafe: false` | 7 / 17 | **0**, shape absent | 3 |
@@ -4736,7 +4842,7 @@ M7 is the `SK4xxx`/`SK6xxx`/`SK8xxx` milestone. Those three ranges list twenty-t
 ship. The bar did the same job it did in M5 and M6, and this time it was not the false-positive
 clause that bit — it was the reference trees having almost nothing of the shape.
 
-| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` (380 files) | Vixen (4 681 files) |
+| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` sources (380 of 1 140) | Vixen checkout (4 681) |
 |---|---|---|---|---:|---:|---:|
 | `SK4010` a `Where` the next operator could have taken | Semantic | suggestion | safe | 4 / 10 | 0 | 0 |
 | `SK6003` abstract type with a public constructor | Syntax | suggestion | safe | 3 / 9 | **1** | 0 |
