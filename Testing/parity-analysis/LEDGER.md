@@ -114,10 +114,52 @@ ledgers reached **13 concepts** for all 84, and every one of the 13 had already 
 Two things now record it, and `verify_ledger.py` asserts both.
 
 **Concepts carry `coverage` and `coveredBy`.** `coverage` is `complete` (every inspection or `S####`
-listed on the concept is covered) or `partial`; `coveredBy` names the shipped `SK` ids. Today:
-**13 complete / 6 partial** on ReSharper, **10 / 1** on Sonar, **1 / 1** on the idea list. A
+listed on the concept is covered) or `partial`; `coveredBy` names the shipped `SK` ids. A
 `complete` claim is what closes a GitHub issue, so the verifier requires it to name at least one id
-that is actually in `rules.json`.
+that is actually in `rules.json`. ⚠ Read the counts from a run, not from here.
+
+**Every concept also carries a `state`, and a declined one carries its `evidence`.** The vocabulary
+above was `{complete, partial}` and **both required `coveredBy` to name a shipped rule**, so there
+was no way to write down *"we assessed this and decided not to build it"* (#301). A refutation had
+to be filed as an exclusion with a prose reason or not at all, which made a concept that was
+**measured and declined indistinguishable from one nobody had opened**.
+
+| `state` | Means | Requires |
+|---|---|---|
+| `unexamined` | Nobody has assessed it, or the outcome is on a closed issue and not yet migrated here | — |
+| `proposed` | An open GitHub issue tracks it | — |
+| `shipped` | One or more `SK` rules cover it | `coveredBy` |
+| `hosted` | A `CA*`/`IDE*`/compiler diagnostic covers it (ADR-008) | `hostedBy` + `evidence` |
+| `refuted` | The premise is false, or the shape does not compile | `evidence` |
+| `out-of-reach` | Real, but needs machinery Skala does not have | `evidence` |
+| `declined` | Real and reachable, but the false-positive cost is too high | `evidence` |
+
+⚠ **The four declining states are kept apart because they have different futures.** `out-of-reach`
+reopens the day the machinery lands; `refuted` never does. Collapsing them into one "not doing it"
+bucket is what the old schema effectively did.
+
+⚠ **The evidence requirement is the point of the field, not decoration.** Without it `state` becomes
+a place to write `refuted` without having measured anything — which is *worse* than the gap it
+replaced, because it looks like a decision and carries none of the reasoning that made one. The
+verifier fails a declining state with an empty `evidence`, and that assertion is sabotage-tested.
+
+⚠ **The scale of what was being lost was not the ~20 #301 estimated: 196 of 270 concepts had a
+CLOSED issue and no coverage recorded**, every one of them reading as unexamined. Four examples of
+what that was throwing away, now migrated with the closing comments quoted rather than paraphrased:
+
+- **#146** `unqualified-executable-path` — *refuted*: PATH resolution is a property of the
+  environment, not of the call site, so the premise that it is decidable from source is false. Six
+  unqualified process starts on Skala itself, every one correct.
+- **#153** `reflection-bypasses-accessibility` — *refuted*: `BindingFlags.NonPublic` scores **0 true
+  positives against 26 false ones**; the rule reports the technique rather than a misuse of it.
+- **#140** `insecure-random-in-security-context` — *hosted* by `CA5394`, with the honest note that
+  `CA5394` is untargeted (7/7 on every shape, `Random.Shared` included).
+- **#169** `gratuitous-condition` — *out-of-reach*: the null half is `CA1508`, and the residue needs
+  a value lattice this codebase does not have.
+
+The remaining `unexamined` count is printed by every run and warned on. **It is the debt, and it is
+meant to fall.** A per-ledger floor on the number of decided concepts ratchets it: raise each figure
+as the migration proceeds, never lower one to make a run pass.
 
 ⚠ **Every `complete` concept turned out to be an issue that was already closed.** The reconciliation
 produced **zero** new closures. The expectation going in was that proposals would duplicate shipped

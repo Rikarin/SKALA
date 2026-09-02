@@ -12,11 +12,17 @@ here is part of the solution, the build or the test run.
 to `$W` left `universe.py` with no metadata to join and silently produced a universe with 888
 entries and 0 of them described. `$W` holds only the SARIF reports.
 
+⚠ **Step 1 is committed now and you should not re-run it casually.** `types-2026.xml` is in git:
+it is a dumped snapshot of an external tool's catalogue, ReSharper is being retired, and re-dumping
+from a later release would silently move every parity number measured against it. While it was
+gitignored, `verify_ledger.py`'s strongest assertion did not run in any fresh clone and the run
+still printed `0 failures` (#311).
+
 ```bash
 W=/tmp/parity && mkdir -p $W
 P=$(git rev-parse --show-toplevel)/Testing/parity-analysis
 
-# 1. ReSharper's own catalogue, from whichever jb is being used to measure.
+# 1. ReSharper's own catalogue. COMMITTED — re-dump only deliberately, and say that you did.
 jb inspectcode --dumpIssuesTypes -o=$P/types-2026.xml -f=Xml
 
 # 2. The universe: the C#-relevant inspections in the author's export, plus metadata.
@@ -68,6 +74,25 @@ that test was written. **The reverse is deliberately not asserted** — `Catalog
 doc 08 names the concept, allocated is enough and shipped is not required, so entries pointing at
 ids nothing implements yet are the map working correctly. What is checked instead is that every value
 is well formed and is a number the register knows. `gov.json` has no equivalent pin.
+
+⚠ **`editor_config_template` is the universe; `types-2026.xml` is only metadata joined onto it.**
+Getting that backwards produces a specific wrong answer, and #318 produced it: it measured
+`catalogued.json`'s keys against the XML and reported 26 of them as fabrications. **The real count
+against that reference is 29**, and the three the issue missed —`CognitiveComplexity`,
+`SelfAssignment`, `ReplaceWithOfType` — are missing because the measurement matched *substrings*:
+all three occur in the file only inside longer ids (`CppClangTidyReadabilityFunctionCognitiveComplexity`,
+`cplusplus.SelfAssignment`, `ReplaceWithOfType.1`). ⚠ **But 29 is the wrong question.** Fourteen of
+them are real, live, correctly mapped inspections that merely post-date the dump —
+`ConvertToExtensionBlock`, `MoveToExtensionBlock`, the three `NUnit*`, `ShortLivedHttpClient` and
+the rest all carry a `resharper_*_highlighting` key in the export. The dump is **known-incomplete by
+construction**, which is exactly why 81 of the 888 C#-proper rows carry `id: null`. Checking keys
+against the XML would fail on correct entries. `verify_ledger.py` checks them against the universe,
+which is the reference that answers the question actually being asked.
+
+⚠ **A claim that used to stand in `universe.py` and is false**: the comment on the `types-2026.xml`
+load said it "covers plugin + newer-C# inspections that the 2025.2.6 base dump omits (NUnit, EF,
+logging templates, `ConvertToExtensionBlock`, ...)". `grep -c 'Id="NUnit'` is **0**, and no id in
+the file contains `ExtensionBlock`. Every example the comment gave is one the file does not have.
 
 ⚠ **The maps used to be looked up by inspection id, and that was a silent failure mode.**
 `universe.py` can only attach an id by joining the export key against the issue-type dump, and that
