@@ -44,8 +44,8 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
     /// </summary>
     /// <remarks>
     ///     ⚠ The three <c>ReaderWriterLockSlim</c> rows are what makes the mismatched-release bug fall
-    ///     out of the same mechanism instead of needing a branch of its own. Pairing is per <em>enter
-    ///     method</em>, not per type, so an <c>EnterWriteLock</c> whose <c>finally</c> calls
+    ///     out of the same mechanism instead of needing a branch of its own. Pairing is keyed on the
+    ///     enter method and not on the type, so an <c>EnterWriteLock</c> whose <c>finally</c> calls
     ///     <c>ExitReadLock</c> has no matching <c>ExitWriteLock</c> anywhere: it is reported by the
     ///     ordinary "no matching release" path, and the fact that the author did write <em>a</em> release
     ///     in <em>a</em> <c>finally</c> never enters into it. Collapsing these rows to "an Exit* call"
@@ -62,8 +62,7 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
     ///     </para>
     /// </remarks>
     static readonly (string Owner, string Enter, string Release)[] Protocols = {
-        ("System.Threading.Monitor", "Enter", "Exit"),
-        ("System.Threading.Monitor", "TryEnter", "Exit"),
+        ("System.Threading.Monitor", "Enter", "Exit"), ("System.Threading.Monitor", "TryEnter", "Exit"),
         ("System.Threading.ReaderWriterLockSlim", "EnterReadLock", "ExitReadLock"),
         ("System.Threading.ReaderWriterLockSlim", "EnterWriteLock", "ExitWriteLock"),
         ("System.Threading.ReaderWriterLockSlim", "EnterUpgradeableReadLock", "ExitUpgradeableReadLock")
@@ -124,8 +123,13 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
         foreach (var node in body.DescendantNodes()) {
             if (node is not InvocationExpressionSyntax release
                 || !string.Equals(Called(release), protocol.Release, StringComparison.Ordinal)
-                || !IsCallTo(release, protocol.Release, protocol.Owner, context.SemanticModel,
-                    context.CancellationToken)) {
+                || !IsCallTo(
+                    release,
+                    protocol.Release,
+                    protocol.Owner,
+                    context.SemanticModel,
+                    context.CancellationToken
+                )) {
                 continue;
             }
 
@@ -203,8 +207,8 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
         }
 
         var member = enter.FirstAncestorOrSelf<MemberDeclarationSyntax>();
-        foreach (var node in declaration.DescendantNodes(
-                     node => node == declaration || node is not TypeDeclarationSyntax
+        foreach (var node in declaration.DescendantNodes(node => node == declaration
+                     || node is not TypeDeclarationSyntax
                  )) {
             if (node is not InvocationExpressionSyntax release
                 || !string.Equals(Called(release), protocol.Release, StringComparison.Ordinal)
