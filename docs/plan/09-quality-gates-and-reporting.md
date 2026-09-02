@@ -86,12 +86,27 @@ A finding the baseline accepts carries a SARIF `suppressions` entry:
 }]
 ```
 
-⚠ **This is what makes the uploaded report say what the gate decided.** Before it, the baseline
+⚠ **This is what makes the stored report say what the gate decided.** Before it, the baseline
 governed the verdict and was invisible in the file: all 446 results went to code scanning with no
 suppression on them, so a page that answers "what is wrong with master" listed **428 long-accepted
-findings as open alerts** while the gate reading the same run counted 0 new. Code scanning shows a
-suppressed result as dismissed rather than open, so the alert list and `newIssues` are now the same
-set — see the invariant below.
+findings as open alerts** while the gate reading the same run counted 0 new.
+
+⚠ **The sentence that used to end that paragraph — "code scanning shows a suppressed result as
+dismissed rather than open" — is false, and it was believed for two milestones.** GitHub's SARIF
+support documentation does not mention `suppressions` anywhere; the property is absent from every
+supported-properties table and is simply not consumed. Measured on `Rikarin/SKALA`: all five open
+`SK6034` alerts were findings the committed baseline accepts, matched by (rule, path, line), and in
+one run **1 145 of 1 163 results were baselined** — a 98 % noise alert list in which the 18 findings
+the gate failed on could not be seen. Writing the suppression was necessary and not sufficient
+(#332).
+
+⚠ **So the upload gets a narrower file, and the format does not change.** `check
+--output-unsuppressed <path>` writes a second SARIF from the same run with the suppressed results
+left out; `.github/workflows/skala.yml` uploads that one and keeps `--output`'s full file for the
+artefact, the PR comment and `report`. The narrowing takes `results` only: the `rules` table stays
+whole, because it is every rule that could have fired and that is what makes two runs comparable, and
+so does `invocations[0]`, which is the only place the gate verdict and the load summary appear at
+all.
 
 ⚠ **Suppressed, never dropped.** Filtering the accepted findings out is a different and false claim
 — "this run did not find them" rather than "this repository has accepted them" — and `skala report`,
@@ -110,8 +125,9 @@ decision. The bucket travels in `properties.baseline`, as it always has.
 
 ### The verdict and the page cannot disagree
 
-An alert is open on the code-scanning page exactly when its result carries no `suppressions`. With a
-baseline in play and no `--since`, that set is `RunReport.New` — the set `newIssues` counts. It holds
+A result is open in the report exactly when it carries no `suppressions`, and — since the upload is
+`--output-unsuppressed`'s file — an alert exists on the code-scanning page for exactly that set. With
+a baseline in play and no `--since`, it is `RunReport.New`, the set `newIssues` counts. It holds
 by construction, not by agreement: `CheckCommand` evaluates the gate against one `RunReport`, stores
 the verdict on that object, and writes the SARIF from the same object, so both sides are functions of
 the same `Finding.Bucket`. `SarifSuppressionTests.TheOpenResults_AreExactlyWhatTheGateCountsAsNew`
@@ -413,15 +429,22 @@ Vixen  ·  4691 files  ·  1 348 236 lines  ·  binlog artifacts/build.binlog (f
   Editor/Vixen.Editor.Profiler/GpuTimelineView.cs
     ⟳ 33:5    suggestion  SK1002  Use a primary constructor
 
-  212 findings  ·  198 fixable (`skala fix`)  ·  4 new since origin/master
+  212 findings  ·  198 safe fixes (`skala fix`)  ·  14 unsafe fixes (`skala fix --include …`, review each)  ·  4 new since origin/master
   duplication 1.8 % (gate 3.0 %)  ·  cognitive complexity p95 9 (gate 15)
   gate `ci`: PASS in 3 m 41 s
 ```
 
-Rules for this output: findings that a fix exists for are marked and counted, because the next
-command is obvious; the gate result is one line and is the last line; timing is always shown, because
-a tool whose cost is invisible gets blamed for the build being slow; and the totals line is stable
-enough to diff between runs.
+Rules for this output: findings that a fix exists for are marked; the gate result is one line and is
+the last line; timing is always shown, because a tool whose cost is invisible gets blamed for the
+build being slow; and the totals line is stable enough to diff between runs.
+
+⚠ **The counted fixes are split, and "fixable" is not a word this line may use.** `skala fix`
+defaults to `--safe` — its own help calls that "the default and the only unqualified mode" — so one
+total beside that command name counts precisely the fixes it declines. The line this replaced read
+`1 157 findings · 297 fixable (skala fix)` on a tree where `skala fix --safe --dry-run` reported
+nothing to apply: **0 of the 297 were safe**, and applying the seven unsafe rules individually landed
+5 edits of 316, with three rules reverted as defective (#328, #329, #330). The safe count prints even
+at zero, because "0 safe fixes" is the fact that stops the reader typing the bare command (#334).
 
 `--summary` prints only the last three lines. `skala report` re-renders a stored SARIF without
 re-running anything, which is what CI uses to produce a PR comment from an artifact.

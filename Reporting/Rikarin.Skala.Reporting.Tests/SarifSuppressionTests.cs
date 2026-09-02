@@ -137,6 +137,78 @@ public sealed class SarifSuppressionTests {
     }
 
     /// <summary>
+    ///     ⚠ <b>GitHub code scanning does not read <c>suppressions</c>.</b> Its SARIF support
+    ///     documentation does not mention the property, and on this repository all five open
+    ///     <c>SK6034</c> alerts were findings the committed baseline accepts — raised open, with the
+    ///     accepted status ignored. So the upload gets a narrowed log and everything else keeps the
+    ///     full one (#332).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Both directions, in one test, deliberately.</b> Asserting only that the accepted finding
+    ///     is absent from the narrowed log passes just as well when the writer drops suppressed results
+    ///     from every log — which is the outcome the issue explicitly forbids, because <c>report</c>,
+    ///     <c>trend</c> and <c>baseline</c> all read the full file. Asserting only that it is present in
+    ///     the full log passes when the narrowing does nothing at all.
+    /// </remarks>
+    [Fact]
+    public void TheNarrowedUpload_DropsWhatTheBaselineAccepts_AndTheFullReportKeepsIt() {
+        var report = Baselined(
+            At("SK2001", 10) with { Bucket = BaselineBucket.Existing },
+            At("SK1010", 20) with { Bucket = BaselineBucket.Existing, Suppression = SuppressionKind.Pragma },
+            At("SK3002", 30, SkalaSeverity.Error) with { Bucket = BaselineBucket.New }
+        );
+
+        static string[] RuleIds(JsonElement results) =>
+            [.. results.EnumerateArray().Select(static r => r.GetProperty("ruleId").GetString() ?? string.Empty)];
+
+        var full = RuleIds(Results(report));
+        var narrowed = RuleIds(
+            JsonDocument.Parse(SarifWriter.Serialize(SarifWriter.BuildWithoutSuppressed(report)))
+                .RootElement
+                    .GetProperty("runs")[0]
+                    .GetProperty("results")
+        );
+
+        // Present in the full log — the accepted finding and the pragma-suppressed one both survive,
+        // suppressed rather than dropped.
+        Assert.Equal(["SK2001", "SK1010", "SK3002"], full);
+
+        // Absent from the narrowed one, which carries only what code scanning should raise.
+        Assert.Equal(["SK3002"], narrowed);
+        Assert.DoesNotContain("SK2001", narrowed);
+    }
+
+    /// <summary>
+    ///     ⚠ The narrowing takes results and nothing else.
+    /// </summary>
+    /// <remarks>
+    ///     <c>rules</c> is every rule that could have fired, which is what makes two runs comparable
+    ///     (doc 09), and <c>invocations[0]</c> is the only place the gate verdict and the load summary
+    ///     appear at all — the console prints neither. A narrowed file missing either would be a
+    ///     different report rather than the same report with the accepted findings hidden.
+    /// </remarks>
+    [Fact]
+    public void TheNarrowedUpload_KeepsTheRulesTableAndTheGateVerdict() {
+        var report = Baselined(At("SK2001", 10) with { Bucket = BaselineBucket.Existing }) with {
+            Gate = new GateResult("ci", false, ["1 new finding(s)"])
+        };
+
+        var run = JsonDocument.Parse(SarifWriter.Serialize(SarifWriter.BuildWithoutSuppressed(report)))
+            .RootElement
+                .GetProperty("runs")[0];
+
+        Assert.Empty(run.GetProperty("results").EnumerateArray());
+        Assert.Equal(
+            RuleCatalog.All.Count,
+            run.GetProperty("tool").GetProperty("driver").GetProperty("rules").GetArrayLength()
+        );
+
+        var invocation = run.GetProperty("invocations")[0].GetProperty("properties");
+        Assert.Equal("ci", invocation.GetProperty("gate").GetString());
+        Assert.False(invocation.GetProperty("gatePassed").GetBoolean());
+    }
+
+    /// <summary>
     ///     ⚠ A finding can be suppressed in the source <em>and</em> accepted by the baseline, and the
     ///     two are separate claims. <c>Baseline.Write</c> writes suppressed findings for exactly this
     ///     reason: removing the pragma must not turn an accepted finding new.

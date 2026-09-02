@@ -29,7 +29,38 @@ public static class SarifWriter {
     /// </remarks>
     public const string FingerprintVersion = Fingerprints.Version1;
 
-    public static SarifLog Build(RunReport report) {
+    public static SarifLog Build(RunReport report) => Build(report, false);
+
+    /// <summary>
+    ///     The same log with every suppressed result left out, for a consumer that cannot read
+    ///     <c>suppressions</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>GitHub code scanning does not consume the <c>suppressions</c> property.</b> Its SARIF
+    ///     support documentation does not mention it at all, and on this repository every open
+    ///     <c>SK6034</c> alert was a finding <c>.skala/baseline.sarif</c> accepts — raised as open, with
+    ///     the accepted status ignored. In one run 1 145 of 1 163 results were baselined, so the alert
+    ///     list was 98 % noise and the 18 findings the gate actually failed on were invisible in it.
+    ///     <para>
+    ///         ⚠ <b>This is a second, narrower file, never a change to the main one.</b> The full log is
+    ///         correct SARIF and it is what <c>report</c>, <c>trend</c> and <c>baseline</c> read; a
+    ///         result can also legitimately carry two suppressions from different mechanisms (see
+    ///         <see cref="Suppressions" />). Only the upload needs the narrow view.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The <c>rules</c> table and the <c>invocations</c> entry are <b>not</b> narrowed with the
+    ///         results. <c>rules</c> is every rule that could have fired, which is what makes two runs
+    ///         comparable, and the invocation carries the gate verdict and the load summary — the two
+    ///         facts the console never prints. Dropping either would make the narrowed file a different
+    ///         report rather than the same report with the accepted findings hidden.
+    ///     </para>
+    /// </remarks>
+    public static SarifLog BuildWithoutSuppressed(RunReport report) => Build(report, true);
+
+    /// <summary>Whether the finding would carry a SARIF <c>suppressions</c> entry.</summary>
+    public static bool IsSuppressed(Finding finding) => Suppressions(finding).Count > 0;
+
+    static SarifLog Build(RunReport report, bool excludeSuppressed) {
         var driver = new ToolComponent {
             Name = "Skala",
             Version = report.ToolVersion,
@@ -47,7 +78,11 @@ public static class SarifWriter {
 
         var run = new Run {
             Tool = new() { Driver = driver, Extensions = Extensions(report) },
-            Results = [.. report.Findings.Select(finding => BuildResult(report, finding))],
+            Results = [
+                .. report.Findings
+                    .Where(finding => !excludeSuppressed || !IsSuppressed(finding))
+                    .Select(finding => BuildResult(report, finding))
+            ],
             Invocations = [BuildInvocation(report)]
         };
 

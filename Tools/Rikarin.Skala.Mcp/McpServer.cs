@@ -79,7 +79,9 @@ public static class McpServer {
 
                                 Before claiming work is finished, call skala_verify. Exit 0 or it is not finished.
                                   - Formatting: call skala_format. Never format by hand.
-                                  - Fixable findings: call skala_fix with safeOnly, then verify again.
+                                  - Findings with a safe fix: call skala_fix with safeOnly, then verify again.
+                                    A finding skala_verify puts under ACTION has no safe fix even when one
+                                    exists for it; those need the decision, not the command.
                                   - Findings needing a decision: fix the code. Do not add `#pragma warning disable`,
                                     do not lower a severity in .editorconfig, do not add to a baseline — all three are
                                     visible in review and all three are reverted.

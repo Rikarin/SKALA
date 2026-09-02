@@ -145,7 +145,32 @@ public sealed record RunReport {
     public IEnumerable<Finding> Reportable =>
         Findings.Where(static finding => finding.Suppression == SuppressionKind.None);
 
-    public IEnumerable<Finding> Fixable => Reportable.Where(static finding => finding.HasFix);
+    /// <summary>
+    ///     The findings <c>skala fix</c>, invoked with no arguments, would actually change.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>There is deliberately no <c>Fixable</c> property.</b> There was, it counted every
+    ///     finding carrying a fix, and every renderer printed that total beside the words
+    ///     <c>skala fix</c> — which defaults to <c>--safe</c> and calls that "the default and the only
+    ///     unqualified mode". On this repository the line read <c>fixable 297 (skala fix)</c> while
+    ///     <c>skala fix --safe --dry-run</c> reported nothing to apply: <b>0 of those 297 were safe</b>.
+    ///     A property that cannot be printed truthfully next to a command name is not worth keeping, so
+    ///     the two sets are named separately and a caller has to say which one it means.
+    /// </remarks>
+    public IEnumerable<Finding> SafelyFixable =>
+        Reportable.Where(static finding => finding is { HasFix: true, FixIsSafe: true });
+
+    /// <summary>
+    ///     The findings carrying a fix <c>skala fix</c> applies only when <c>--include</c> names its rule.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not a smaller batch of the same work. Every one of the seven unsafe rules was applied
+    ///     individually to this repository: 3 landed, 3 were reverted as defective — one of them
+    ///     emitting code that does not compile (#328, #329, #330) — and 1 had nothing to offer. 5 edits
+    ///     of 316 survived review, so this count is a reading list, not a queue.
+    /// </remarks>
+    public IEnumerable<Finding> UnsafelyFixable =>
+        Reportable.Where(static finding => finding is { HasFix: true, FixIsSafe: false });
 }
 
 /// <summary>The version stamped into every report.</summary>
@@ -172,14 +197,27 @@ public static class ReportTotals {
     public static string Render(RunReport report) {
         var builder = new StringBuilder();
         var findings = report.Reportable.Count();
-        var fixable = report.Fixable.Count();
+        var safe = report.SafelyFixable.Count();
+        var unsafeFixes = report.UnsafelyFixable.Count();
         builder.Append(findings.ToString(CultureInfo.InvariantCulture))
             .Append(findings == 1 ? " finding" : " findings");
 
-        if (fixable > 0) {
+        // ⚠ The safe count is printed even at zero, whenever anything carries a fix at all. "0 safe
+        // fixes (`skala fix`)" beside a large unsafe count is the whole point: it is the line that
+        // stops a reader running the bare command and watching nothing happen. What used to stand
+        // here printed one total called "fixable" against `skala fix`, which defaults to `--safe` —
+        // so the number named exactly the fixes that command declines.
+        if (safe > 0 || unsafeFixes > 0) {
             builder.Append("  ·  ")
-                .Append(fixable.ToString(CultureInfo.InvariantCulture))
-                .Append(" fixable (`skala fix`)");
+                .Append(safe.ToString(CultureInfo.InvariantCulture))
+                .Append(safe == 1 ? " safe fix (`skala fix`)" : " safe fixes (`skala fix`)");
+        }
+
+        if (unsafeFixes > 0) {
+            builder.Append("  ·  ")
+                .Append(unsafeFixes.ToString(CultureInfo.InvariantCulture))
+                .Append(unsafeFixes == 1 ? " unsafe fix" : " unsafe fixes")
+                .Append(" (`skala fix --include …`, review each)");
         }
 
         var suppressed = report.Findings.Count(static f => f.Suppression != SuppressionKind.None);
