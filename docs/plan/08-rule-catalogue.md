@@ -3181,12 +3181,22 @@ negative fixtures.
 "pass the key you trust", and which key that is — and where it comes from — is the decision the rule
 exists to force. There is no substitution to apply.
 
-⚠ **The reference-tree zero is a `null` type lookup, not a clean bill of health.**
-`System.Security.Cryptography.Xml` is a NuGet package rather than part of the shared framework, so in
-a compilation that does not reference it `GetTypeByMetadataName` returns null and the rule never
-runs. Neither reference tree references it. That is the correct behaviour and it is also why the
-zero there proves nothing about the rule; `corpus/vulnerable` and `corpus/safe` are the measurement,
-and the test project needed the package added before its own fixtures would compile.
+⚠ **The reference-tree zero is "shape textually absent", established by grep rather than by a
+sweep — which is the stronger statement, because it removes the question of whether the analysis
+ran.** `SignedXml`, `Cryptography.Xml` and `CheckSignature` appear in **zero** of the 1 140 `.cs`
+files under `Testing/corpus/real` (330 Newtonsoft.Json, 210 Serilog, 600 Vixen). A sweep over that
+tree could only have produced the same zero with an extra unanswered question attached, because
+`System.Security.Cryptography.Xml` is a NuGet package rather than part of the shared framework: in a
+compilation that does not reference it, `GetTypeByMetadataName` returns null and the analyzer
+returns at `CompilationStart` without registering anything. That is the correct behaviour and it is
+also why the trees cannot be the measurement here — `corpus/vulnerable` and `corpus/safe` are, and
+the test project needed the package added before its own fixtures would compile at all.
+
+⚠ **Two file counts in this document are stale, noticed while taking that reading and not
+reconciled here.** The tables above label `corpus/real` as "380 files" and Vixen separately as
+"4 681 files". On disk today `Testing/corpus/real` holds 1 140 `.cs` files *including* Vixen's 600.
+Whatever those figures counted, they do not count what a `find -name '*.cs'` counts now, and every
+row quoting them is quoting a number nobody has re-derived.
 
 ⚠ **#150 — deserialization accepts any type the payload names — is refuted as hosted, and the
 hosting is better than what Skala could write.** `CA2326` and `CA2327` between them caught seven of
