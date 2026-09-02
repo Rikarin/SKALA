@@ -244,5 +244,7 @@
   "RedundantCollectionCopyCall": "SK1081",
   "UseIndexedProperty": "SK1082",
   "ForCanBeConvertedToForeach": "SK1083",
-  "LoopCanBePartlyConvertedToQuery": "SK1084"
+  "LoopCanBePartlyConvertedToQuery": "SK1084",
+  "StaticMemberInitializerReferesToMemberBelow": "SK2130",
+  "UnassignedGetOnlyAutoProperty": "SK2131"
 }

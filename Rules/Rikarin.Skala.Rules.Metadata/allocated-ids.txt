@@ -280,3 +280,8 @@ SK1081 redundant-sequence-call
 SK1082 indexer-over-element-at
 SK1083 foreach-over-indexed-for
 SK1084 loop-filter-as-query
+SK2130 forward-static-initializer
+SK2131 unassigned-get-only-property
+SK2132 mismatched-backing-field
+SK2133 unimplemented-partial-method
+SK2134 instance-write-to-static

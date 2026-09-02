@@ -239,3 +239,8 @@ SK1081 | Skala.Modernization | Warning | Remove the LINQ or collection call that
 SK1082 | Skala.Modernization | Info | Use the indexer.
 SK1083 | Skala.Modernization | Info | Use `foreach` over an indexed `for`.
 SK1084 | Skala.Modernization | Hidden | Use a LINQ operator for part of the loop.
+SK2130 | Skala.Correctness | Warning | A static field initializer reads a field declared below it.
+SK2131 | Skala.Correctness | Warning | A get-only auto-property nothing ever assigns.
+SK2132 | Skala.Correctness | Warning | An accessor reaches for another property's backing field.
+SK2133 | Skala.Correctness | Info | A called `partial void` with no implementing declaration.
+SK2134 | Skala.Correctness | Warning | Instance code assigns its own type's static field.

@@ -181,6 +181,9 @@ public static class AnalyzerHost {
         new OfTypeChainAnalyzer(), new RedundantSequenceCallAnalyzer(),
         new IndexerOverElementAtAnalyzer(), new ForeachOverIndexedForAnalyzer(),
         new LoopFilterAsQueryAnalyzer(),
+        new ForwardStaticInitializerAnalyzer(), new UnassignedGetOnlyPropertyAnalyzer(),
+        new MismatchedBackingFieldAnalyzer(), new UnimplementedPartialMethodAnalyzer(),
+        new InstanceWriteToStaticAnalyzer(),
     ];
 
     /// <summary>
