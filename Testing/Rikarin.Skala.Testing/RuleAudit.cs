@@ -80,6 +80,7 @@ public static class RuleAudit {
 
         var builder = new StringBuilder();
         var findings = new List<Finding>();
+        var failures = new List<string>();
         var errors = 0;
 
         foreach (var unit in loaded.Units) {
@@ -99,6 +100,12 @@ public static class RuleAudit {
             );
 
             findings.AddRange(outcome.Findings);
+            failures.AddRange(
+                outcome.Diagnostics
+                    .Where(static diagnostic => diagnostic.Id is "SK9030")
+                    .Select(static diagnostic => diagnostic.Message)
+            );
+
             errors += unit.Compilation.GetDiagnostics()
                 .Count(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
         }
@@ -111,12 +118,45 @@ public static class RuleAudit {
             .AppendLine(" error(s), so semantic findings are a floor rather than a count.");
         builder.AppendLine();
 
+        // ⚠ Before anything else, and unconditionally. A crashed analyzer reports no finding, which
+        // is indistinguishable from a rule that correctly declined — and this instrument's whole
+        // purpose is to be read as "the rule said nothing". Until #128's sabotage pass, the `SK`
+        // prefix filter below silently discarded every `AD0001`: two working guards were nearly
+        // deleted as dead because breaking them produced 309 analyzer exceptions and `audit`
+        // printed "no change". `SK9030` was never read at all.
+        failures.AddRange(
+            findings
+                .Where(static finding => finding.RuleId is "AD0001")
+                .Select(static finding => finding.Message)
+        );
+
+        if (failures.Count > 0) {
+            builder.Append("⚠ ")
+                .Append(failures.Count.ToString(CultureInfo.InvariantCulture))
+                .AppendLine(
+                    failures.Count == 1
+                        ? " analyzer failure. Every count below is a floor of a broken run."
+                        : " analyzer failures. Every count below is a floor of a broken run."
+                );
+
+            foreach (var failure in failures.Distinct(StringComparer.Ordinal)
+                         .OrderBy(static f => f, StringComparer.Ordinal)) {
+                builder.Append("    ").AppendLine(failure);
+            }
+
+            builder.AppendLine();
+        }
+
         var skala = findings
             .Where(static finding => finding.RuleId.StartsWith("SK", StringComparison.Ordinal))
             .ToList();
 
         if (skala.Count == 0) {
-            builder.AppendLine("no Skala rule fired.");
+            builder.AppendLine(
+                failures.Count == 0
+                    ? "no Skala rule fired."
+                    : "no Skala rule fired — but see the analyzer failures above, which is a different statement."
+            );
             return builder.ToString();
         }
 
