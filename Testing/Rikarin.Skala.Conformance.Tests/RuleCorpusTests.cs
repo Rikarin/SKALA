@@ -191,8 +191,11 @@ public sealed class RuleCorpusTests {
             .Order(StringComparer.Ordinal)
             .ToList();
 
+        // ⚠ 48 when pinned, of the 247 rules that declare requiresSemantics. The floor is a collapse
+        // detector rather than a ratchet on rule quality: a loose load makes this exactly 0, and a
+        // rule legitimately becoming quieter must not have to argue with a tight number.
         Assert.True(
-            semantic.Count >= 20,
+            semantic.Count >= 30,
             $"only {semantic.Count.ToString(CultureInfo.InvariantCulture)} rule(s) that declare requiresSemantics fired over the three "
             + "trees. A loose load skips all of them, so this number collapsing to nothing means the sweep "
             + $"has fallen back to the mode the corpus could never measure with: {string.Join(", ", semantic)}"
