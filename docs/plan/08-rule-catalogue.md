@@ -6805,3 +6805,74 @@ the whole fixture corpus is the general instrument and is not written; until it 
 that reads one construct in two directions needs its own paired fixtures.
 
 [#321]: https://github.com/Rikarin/SKALA/issues/321
+
+## `SK3060` and a top-level program, and what `supersedes` actually does
+
+Two findings from [#314], both probed rather than reasoned about.
+
+### `SK3060` was blind to a top-level program, and so was the fixture corpus
+
+⚠ **The rule's silence was real and the issue's stated mechanism was wrong in one particular.**
+`UnreleasedLockAnalyzer.Body` does return null for an enter in a top-level statement, but not at the
+`TypeDeclarationSyntax` arm — a global statement has no type declaration above it. The walk simply
+runs out of parents and falls off the end. The two look identical from the call site and are
+different bugs; the `TypeDeclarationSyntax` arm is what declines a *field initializer*, which is
+correct and stays.
+
+A top-level program's statements are the body of a synthesized `Main`, so the compilation unit is
+the body. `Body` now returns it. ⚠ **The unit is the body but not the search space**: a file may
+declare types beside its top-level statements, and a `Monitor.Exit` inside one of those does not run
+on the entry point's path — handing the whole unit to `DescendantNodes` would let an unrelated
+class's `finally` withdraw the finding. `Contents` descends only into the global statements, and
+`SK3060/positive/a-top-level-release-beside-a-sibling-type.cs` is what holds that.
+
+⚠ **The deeper finding is that the fixture corpus could not describe a top-level program at all.**
+`RuleFixtures.Compile` built every fixture as a `DynamicallyLinkedLibrary`, which answers top-level
+statements with `CS8805`, and `Rule_FiresExactlyWhereTheFixtureSaysItShould` rejects a fixture that
+does not compile. So this was never one rule's oversight: **no rule in the catalogue could have a
+top-level fixture, for any shape, and nothing said so.** The kind is now chosen from the file — a
+fixture with global statements gets `ConsoleApplication`, one without would draw `CS5001` from an
+executable — which makes the shape a model writes first testable for every rule, not just this one.
+
+⚠ #314 records that the #307 branch deliberately did *not* assert `SK3060`'s silence, on the ground
+that pinning a recorded gap turns it into a promise. That was right, and it is why the gap survived
+to be fixed rather than being frozen.
+
+### `supersedes` is attribution first and suppression second
+
+⚠ **Measured against the SDK with `EnforceCodeStyleInBuild` and the severities raised, on one file
+holding both shapes.** `IDE0019` lands on the declaration `var b = x as B;`; `SK1050` reports on the
+`b != null` check one line below. `IDE0020` lands on the declaration `var b = (B)x;`; `SK1015`
+reports on the `x is B` test one line above. `Supersession.Apply` pairs on
+`(rule, path, line, column)`, so **neither claim has ever suppressed anything**, and nothing measured
+that it did not.
+
+Three decisions, taken rather than asked:
+
+1. ⚠ **`IDE0019` moves from `SK1015` to `SK1050`, because `SK1015`'s claim was a misattribution and
+   not merely inert.** `SK1015` matches `is T` plus a cast and does not fire on the `as`-plus-null-check
+   shape at all — on the probe file it reported only the `is` shape and `SK1050` only the `as` one.
+   And because `RuleCatalogTests.EveryHostedDiagnostic_IsClaimedByAtMostOneRule` allows one claimant,
+   `SK1015` holding it also *blocked* the rule that implements it. ⚠ This reverses #291's reason, not
+   its measurement: #291 declined the claim for `SK1050` because it "would suppress nothing", and
+   that argument applies equally to `SK1015`'s `IDE0020` claim, which was kept — the catalogue was
+   using one argument to reject one claim and not the other.
+
+2. **The claims stay and the anchors do not move.** `SK1015` reports on the `is` test because that is
+   where the pattern goes and where the reader needs the squiggle; moving it onto the cast to satisfy
+   a matching heuristic would be calibrating the rule to the mechanism. And a claim that names the
+   owner is real information — it tells a reader which of the two analyzers to turn off — so
+   withdrawing it to avoid implying a suppression would delete a true statement to fix a false one.
+
+3. **The matching stays exact, and the fact that it is exact is now asserted**
+   (`AnalysisTests.Supersession_DoesNotReachAClaimantOnAnAdjacentLine`). Widening to a line, to a span
+   overlap or to a proximity window was rejected on the measurement: the pairs share neither line nor
+   span, so nothing short of a guess would join them, and a wrong guess deletes another analyzer's
+   true finding.
+
+⚠ **The field was already predominantly attribution and nobody had counted.** Of 123 claims in the
+catalogue, 93 are SonarQube ids and 15 are ReSharper *inspection names*; a ReSharper inspection name
+can never appear as a diagnostic in a build at all, and a Sonar id only appears when
+`SonarAnalyzer.CSharp` is in the same compilation. 11 are `IDE*` and 4 are `CA*`. So the suppression
+job was always the minority case, and reading `supersedes` as "these are suppressed for you" was
+never what the catalogue said — only what it looked like.

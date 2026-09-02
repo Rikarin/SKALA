@@ -390,6 +390,48 @@ public sealed class AnalysisTests {
     }
 
     /// <summary>
+    ///     ⚠ <b>Supersession is exact, and a claim whose spans do not coincide suppresses nothing.</b>
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The mechanism pairs on <c>(rule, path, line, column)</c> and nothing measured whether a
+    ///         given <c>supersedes</c> claim ever matches, so an inert claim looked exactly like a
+    ///         working one — and read as coverage. Probed against the SDK on one file ([#314]):
+    ///         <c>IDE0019</c> lands on the declaration and <c>SK1050</c> reports on the null check a line
+    ///         below; <c>IDE0020</c> lands on the declaration and <c>SK1015</c> reports on the
+    ///         <c>is</c> test a line above. Neither pair has ever suppressed anything.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ This pins the semantics rather than a defect. Widening the match to a line, to an
+    ///         overlap or to a proximity window was rejected: the measured pairs share neither line nor
+    ///         span, so nothing short of a guess would join them, and a wrong guess deletes a true
+    ///         finding from another analyzer. <c>supersedes</c> is therefore read as attribution first —
+    ///         which is all 93 SonarQube ids and all 15 ReSharper inspection names in the catalogue can
+    ///         ever be, since those ids only appear at all when that analyzer is in the same build — and
+    ///         as best-effort suppression second. Anything that widens this has to argue with this test.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void Supersession_DoesNotReachAClaimantOnAnAdjacentLine() {
+        var skala = new Finding {
+            RuleId = RuleIds.FileScopedNamespace,
+            Severity = SkalaSeverity.Info,
+            Message = "skala",
+            Path = "/a.cs",
+            Line = 3,
+            Column = 1
+        };
+
+        var offByALine = skala with { RuleId = "IDE0161", Message = "roslyn", Line = 4 };
+        var offByAColumn = skala with { RuleId = "IDE0161", Message = "roslyn", Column = 2 };
+
+        Assert.All(
+            Supersession.Apply([skala, offByALine, offByAColumn]).Where(static f => f.RuleId == "IDE0161"),
+            static finding => Assert.Equal(SuppressionKind.None, finding.Suppression)
+        );
+    }
+
+    /// <summary>
     ///     docs/plan/15 § M5's definition of done, as a test rather than as a claim.
     /// </summary>
     /// <remarks>

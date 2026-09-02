@@ -120,7 +120,7 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
 
         var found = false;
         var deferred = false;
-        foreach (var node in body.DescendantNodes()) {
+        foreach (var node in Contents(body)) {
             if (node is not InvocationExpressionSyntax release
                 || !string.Equals(Called(release), protocol.Release, StringComparison.Ordinal)
                 || !IsCallTo(
@@ -279,9 +279,31 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>The nearest enclosing function, or <c>null</c> where there is none.</summary>
     /// <remarks>
-    ///     ⚠ Stops at the type declaration rather than running to the root, so an enter in a field
-    ///     initializer or in a top-level statement declines instead of being judged against some outer
-    ///     function it does not run inside.
+    ///     <para>
+    ///         ⚠ Stops at the type declaration rather than running to the root, so an enter in a field
+    ///         initializer declines instead of being judged against some outer function it does not run
+    ///         inside.
+    ///     </para>
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             A top-level program's compilation unit <em>is</em> a body, and until [#314] this
+    ///             returned null for one.
+    ///         </b> The declining mechanism was not the
+    ///         <see cref="TypeDeclarationSyntax" /> arm — a global statement has no type declaration
+    ///         above it — but the walk running out of parents and falling off the end, which looks
+    ///         identical from the call site and is a different bug. A top-level program's statements are
+    ///         the body of a synthesized <c>Main</c>, so <c>Monitor.Enter(gate);</c> with no
+    ///         <c>try</c>/<c>finally</c> there is exactly the defect this rule exists for — and a
+    ///         top-level program is the shape a model writes first.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The compilation unit is the body, but it is not the search space:
+    ///         <see cref="Contents" /> descends only into the global statements, because a file may
+    ///         declare types <em>beside</em> its top-level statements and a release written inside one of
+    ///         those does not run on this path. Handing the whole unit to
+    ///         <c>DescendantNodes</c> would let an unrelated class's <c>finally</c> silence the finding.
+    ///     </para>
     /// </remarks>
     static SyntaxNode? Body(SyntaxNode node) {
         for (var current = node.Parent; current is not null; current = current.Parent) {
@@ -295,12 +317,38 @@ public sealed class UnreleasedLockAnalyzer : DiagnosticAnalyzer {
                 case LocalFunctionStatementSyntax:
                 case AnonymousFunctionExpressionSyntax:
                     return current;
+                case GlobalStatementSyntax { Parent: CompilationUnitSyntax unit }:
+                    return unit;
                 case TypeDeclarationSyntax:
                     return null;
             }
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     The nodes a body's releases may be found in.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Everything under an ordinary body, but only the <em>global statements</em> of a compilation
+    ///     unit. A top-level file's type declarations are members of the same unit and their code does
+    ///     not run on the entry point's path, so a <c>Monitor.Exit</c> inside one is neither the release
+    ///     nor evidence that the author wrote one.
+    /// </remarks>
+    static IEnumerable<SyntaxNode> Contents(SyntaxNode body) {
+        if (body is not CompilationUnitSyntax unit) {
+            return body.DescendantNodes();
+        }
+
+        var statements = new List<SyntaxNode>();
+        foreach (var member in unit.Members) {
+            if (member is GlobalStatementSyntax global) {
+                statements.AddRange(global.DescendantNodesAndSelf());
+            }
+        }
+
+        return statements;
     }
 
     /// <summary>Whether a node of either kind sits between <paramref name="node" /> and its body.</summary>
