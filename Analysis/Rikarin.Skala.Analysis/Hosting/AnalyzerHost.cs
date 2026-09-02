@@ -202,6 +202,8 @@ public static class AnalyzerHost {
         new MisleadingBodyIndentationAnalyzer(), new VariableLengthHexEscapeAnalyzer(),
         new ForgivenIsOperandAnalyzer(), new NegatedEmptyPatternAnalyzer(),
         new UnparenthesisedPrecedenceMixAnalyzer(),
+        new WithExpressionRewritesAllAnalyzer(), new MalformedRegexPatternAnalyzer(),
+        new DeferredArgumentCheckAnalyzer(),
     ];
 
     /// <summary>

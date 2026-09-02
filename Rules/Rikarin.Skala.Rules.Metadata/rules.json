@@ -7730,6 +7730,83 @@
       "configuration": [
         "dotnet_diagnostic.SK2174.severity"
       ]
+    },
+    {
+      "id": "SK2240",
+      "concept": "with-expression-rewrites-all",
+      "title": "The `with` expression rewrites every member",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "WithExpressionModifiesAllMembers",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "9.0",
+      "summary": "A `with` expression assigns every positional parameter of the record it copies, so it constructs a wholly new value through the copy constructor and reads as a copy of the old one.",
+      "rationale": "`p with { X = a, Y = b }` on a `record Point(int X, int Y)` is `new Point(a, b)` spelled longer: nothing of `p` survives it. The cost is not the ceremony, it is what happens next — add a member to the record and the `with` silently starts carrying that member across from `p`, which is the one value the author had already decided not to keep. The constructor call cannot do that: adding a parameter is a compile error at every call site, which is the whole point of writing it that way. ⚠ **The question is decidable and is asked as a set comparison, not as a shape match**: the names assigned by the initializer against the positional parameters of the record's primary constructor. That is why the rule is `Semantic` — the parameter list is a fact about the symbol, not about the page.",
+      "examples": {
+        "bad": "var moved = point with { X = x, Y = y };",
+        "good": "var moved = new Point(x, y);"
+      },
+      "falsePositives": "⚠ **The record's whole instance state must be its positional parameters, and the predicate is `SK1071`'s because the hazard is `SK1071`'s read backwards.** `with` invokes the copy constructor, which copies *every* field; `new T(…)` sets only the parameters. Where the record holds anything else — a field, an event, a settable property outside the parameter list, a base record — the rewrite silently drops it, so all of those decline. ⚠ **`sealed` is required for the same reason `SK1071` requires it, in the opposite direction**: `x with { … }` returns *x*'s runtime type through the virtual clone and `new T(…)` returns exactly `T`, so on an unsealed record holding a derived instance the two forms produce different objects. ⚠ **Every positional property must be the auto-property the record synthesized**, asked by comparing the property's declaring syntax against the parameter's — they are the same `ParameterSyntax` for a positional record. ⚠ **`IsImplicitlyDeclared` is the obvious test for that and it is the wrong one: it is `false` for a positional record property**, because the parameter is where the property is written down. A rule testing it as `true` would match nothing and pass every negative fixture. ⚠ **Disjoint from `SK0230` by construction.** `SK0230` reports `x with { }`, an initializer with no assignments; this rule requires an assignment for every positional parameter and a record with at least one, so no `with` expression can be reported by both. ⚠ **Disjoint from `SK1071` by construction, and the guard that makes it so is the one that stops the two rules fixing each other in a loop.** `SK1071` rewrites `new R(x.A, x.B, c)` into `x with { C = c }` — an initializer that sets *fewer* than all the members, which this rule declines. In the other direction the hazard is real and is guarded explicitly: `x with { X = x.X, Y = b }` assigns every member and would fix to `new T(x.X, b)`, which is exactly `SK1071`'s shape and would be fixed straight back. Any assignment whose value is the same member read off the same receiver therefore withdraws the finding, and a fixture asserts the round trip terminates. ⚠ **The receiver must be a simple local or parameter name.** `GetPoint() with { X = a, Y = b }` rewrites to `new Point(a, b)`, which drops the call entirely — an evaluation the original performed and the replacement does not. ⚠ **The fix is not safe and null is the reason.** `with` dereferences its operand, so a null receiver throws a `NullReferenceException` that `new T(…)` does not; the rewrite therefore removes a throw, which is a change a person has to look at. It is the same reason `SK0230` carries `fixIsSafe: false`. A named argument, a `ref`/`out` argument and an initializer holding a comment or a preprocessor directive all decline. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2240.severity"
+      ]
+    },
+    {
+      "id": "SK2241",
+      "concept": "malformed-regex-pattern",
+      "title": "The regular expression pattern does not parse",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "RegExpInspections",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A compile-time-constant pattern is passed to a `System.Text.RegularExpressions` API that will reject it, so the call throws an `ArgumentException` the first time it runs.",
+      "rationale": "`new Regex(\"(\")` compiles, ships, and throws on the line that first executes it. The pattern is a constant, so whether it parses was decided when it was typed — nothing about the program's inputs can change the answer — and the only thing standing between the defect and the user is whether a test happened to reach that line. ⚠ **Finding it without running it is the entire value of the rule, and the measurement says nothing else does.** A probe built outside this repository, with empty `Directory.Build.props`/`.targets` above it, reports nothing at all on `new Regex(\"(\")`, `new Regex(\"[a-\")`, `new Regex(\"*abc\")` and `Regex.IsMatch(s, \"(\")` — in the SDK's default state, and still nothing with `AnalysisMode=All`. ⚠ **The oracle is `Regex` itself, not a parser of this rule's own.** The analyzer constructs the pattern with the same options the call passes and reports what the constructor threw, so the rule cannot disagree with the runtime it is predicting. Parsing is not matching, so no pattern can make the analyzer backtrack.",
+      "examples": {
+        "bad": "var matcher = new Regex(\"(unclosed\");",
+        "good": "var matcher = new Regex(@\"\\(unclosed\");"
+      },
+      "falsePositives": "⚠ **The `[GeneratedRegex]` half of the concept is already an on-by-default compiler error and is deliberately not reported.** `SYSLIB1042` — \"The specified regex is invalid\" — fails the build on `[GeneratedRegex(\"(\")]` with no `AnalysisMode`, no `.editorconfig` and no analyzer package, which a probe confirmed behaviourally in the pristine default state. Reporting it here would be a second finding on a line that already does not compile. The rule registers on invocations and object creations only, so the attribute form is out of reach by construction. ⚠ **`SYSLIB1045` was probed and is orthogonal, not overlapping.** It is `Hidden` by default — it stays silent even at `AnalysisMode=All` and fires only when set explicitly — and when it does fire it fires *identically* on malformed and well-formed patterns, because it says \"use `GeneratedRegexAttribute`\" and never reads the pattern. ⚠ **Only a compile-time constant is examined.** A pattern built at runtime is a value this rule cannot have an opinion about, and an interpolated or concatenated pattern that Roslyn does not fold to a constant declines. ⚠ **The options argument has to be readable, because it decides what parses.** `RegexOptions.IgnorePatternWhitespace` and `RegexOptions.ECMAScript` change which patterns are legal, so a call passing options the model cannot fold to a constant declines rather than guessing — asking `Regex` the wrong question would produce exactly the false positive the bar forbids. ⚠ **\"Suspicious\" is not reported and the omission is deliberate.** A redundant or unusual construct is a judgement, and the half of that concept with an objective test — catastrophic backtracking — is already `SK5010`'s. What is left here is the half with no judgement in it at all: the pattern either parses or it does not, and `Regex` is the one that says which. There is no fix, because a pattern that does not parse does not say what it was meant to be. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2241.severity"
+      ]
+    },
+    {
+      "id": "SK2242",
+      "concept": "deferred-argument-check",
+      "title": "The argument check does not run until the result is enumerated",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S4456"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An iterator method validates an argument before its first `yield`, so the exception is not thrown by the call that passed the bad argument but by whatever later enumerates the result.",
+      "rationale": "A method containing `yield` does not run when it is called. The call returns an enumerator and the body starts at the first `MoveNext`, which means the guard at the top of it — the one written precisely so that a bad argument is rejected *early* — is the one part of the method guaranteed not to be early. The `ArgumentNullException` surfaces inside a `foreach` somewhere else entirely, with a stack trace naming the consumer rather than the caller that broke the contract, and a caller that never enumerates never sees it at all. ⚠ **`yield` anywhere in the body makes the whole method lazy**, including the statements above the `yield`, which is what makes this decidable rather than a heuristic: there is no execution in which the guard runs at call time. The repair is the two-method shape — an eager wrapper that validates and returns, and a private iterator that yields.",
+      "examples": {
+        "bad": "public IEnumerable<string> Lines(string text) {\n    ArgumentNullException.ThrowIfNull(text);\n    foreach (var line in text.Split('\\n')) {\n        yield return line;\n    }\n}",
+        "good": "public IEnumerable<string> Lines(string text) {\n    ArgumentNullException.ThrowIfNull(text);\n    return LinesCore(text);\n}\n\nstatic IEnumerable<string> LinesCore(string text) {\n    foreach (var line in text.Split('\\n')) {\n        yield return line;\n    }\n}"
+      },
+      "falsePositives": "⚠ **The `async` half of the concept is measured out rather than deferred, and upstream reached the same place.** An `async` method's exception lands on the returned task, which is a real difference — but the overwhelming majority of call sites `await` the call in the statement that makes it, and there the exception surfaces at exactly the position it would have anyway. SonarQube publishes the two halves separately and puts only the iterator rule, `S4456`, in its default `Sonar way` profile; the `async` rule `S4457` is excluded from it. The iterator half is the one where deferral is unconditional, so it is the half that ships. ⚠ **Only a check the caller violated is reported**, which means a `throw` of an `ArgumentException` or one of its subtypes, or a call to a `ThrowIf…` helper on `ArgumentNullException`, `ArgumentException` or `ArgumentOutOfRangeException`. A method that throws `InvalidOperationException` before its first `yield` is describing its own state rather than its caller's mistake, and moving that throw earlier is not obviously right. ⚠ **The guard must sit before the first `yield` in source order**, because that is what makes it a guard: a throw *after* a `yield` is already running inside the enumeration and is where the author put it on purpose. ⚠ **A throw inside a `try`, `catch` or `finally` is declined.** That is error translation rather than an entry check, and hoisting it out of the handler it sits in would change which exception the caller sees. ⚠ **A throw inside a nested lambda or local function is not this method's guard** and is skipped, along with the `yield` statements of any nested local function — those belong to the nested iterator, not to this one. The scan therefore descends the method's own body only. ⚠ **`IAsyncEnumerable<T>` iterators are reported too**, because the deferral there is the iterator's and not the `async` machinery's: an `async` iterator still does not start until something enumerates it, so the guard is deferred for this rule's reason rather than for `S4457`'s. ⚠ **Disjoint from `SK3030`, which is about a call site and not a declaration.** `SK3030` reports an async iterator invoked as a statement and never enumerated; this reports the declaration of an iterator whose guard is deferred. The two register on different node kinds and cannot see the same code. There is no fix: the repair splits one method into two, and the name, the accessibility and the placement of the second are design decisions with no signal in the source — a span edit that guessed them would be a rewrite of a public surface nobody asked for. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2242.severity"
+      ]
     }
   ]
 }

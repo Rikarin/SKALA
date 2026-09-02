@@ -315,3 +315,6 @@ SK2171 variable-length-hex-escape
 SK2172 forgiven-is-operand
 SK2173 negated-empty-pattern
 SK2174 unparenthesised-precedence-mix
+SK2240 with-expression-rewrites-all
+SK2241 malformed-regex-pattern
+SK2242 deferred-argument-check
