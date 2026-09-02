@@ -21,8 +21,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     slow operation reports a fast one, and a timeout computed from it fires immediately or never.
 ///     <c>Stopwatch</c> reads a monotonic counter that none of this touches.
 ///     <para>
-///         ⚠ <b>Both ends must be the process's own clock reads, and that is what makes the rule
-///         precise rather than noisy.</b> <c>DateTime.UtcNow - order.PlacedAt</c> is "how old is this
+///         ⚠
+///         <b>
+///             Both ends must be the process's own clock reads, and that is what makes the rule
+///             precise rather than noisy.
+///         </b> <c>DateTime.UtcNow - order.PlacedAt</c> is "how old is this
 ///         order", a legitimate question about wall-clock time that <c>Stopwatch</c> cannot answer at
 ///         all; only when the earlier value also came from this program reading the clock is the
 ///         subtraction a <em>measurement of elapsed time</em>. Requiring both ends is the difference
@@ -63,9 +66,7 @@ public sealed class WallClockElapsedAnalyzer : DiagnosticAnalyzer {
     /// </summary>
     static void AnalyzeSubtractCall(SyntaxNodeAnalysisContext context) {
         var invocation = (InvocationExpressionSyntax)context.Node;
-        if (invocation.Expression is not MemberAccessExpressionSyntax {
-                Name.Identifier.ValueText: "Subtract"
-            } access
+        if (invocation.Expression is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Subtract" } access
             || invocation.ArgumentList.Arguments.Count != 1) {
             return;
         }

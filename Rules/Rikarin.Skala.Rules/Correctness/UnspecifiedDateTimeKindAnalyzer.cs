@@ -14,8 +14,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     absolute instant, so the machine's own time zone decides what moment it means.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>Reporting every <c>DateTime</c> would be absurd, so the rule reports the escape rather than
-///     the value.</b> A <c>DateTime</c> that is only ever compared with, formatted from or stored beside
+///     ⚠
+///     <b>
+///         Reporting every <c>DateTime</c> would be absurd, so the rule reports the escape rather than
+///         the value.
+///     </b> A <c>DateTime</c> that is only ever compared with, formatted from or stored beside
 ///     other values of the same unstated zone is internally consistent and no worse than the domain it
 ///     models. The defect appears at the one point where the value is turned into a fixed moment on the
 ///     world's timeline, because that conversion has to supply an offset and it takes the offset from
@@ -68,9 +71,7 @@ public sealed class UnspecifiedDateTimeKindAnalyzer : DiagnosticAnalyzer {
 
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
-        if (model.GetOperation(invocation, cancellation) is not IInvocationOperation {
-                Instance: { } instance
-            } call
+        if (model.GetOperation(invocation, cancellation) is not IInvocationOperation { Instance: { } instance } call
             || !Clock.IsFrameworkType(call.TargetMethod.ContainingType, context.Compilation, "System.DateTime")
             || !IsUnspecified(instance, model, cancellation, context.Compilation)) {
             return;
@@ -106,9 +107,7 @@ public sealed class UnspecifiedDateTimeKindAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
 
-        if (model.GetOperation(creation, cancellation) is not IObjectCreationOperation {
-                Arguments.Length: 1
-            } operation
+        if (model.GetOperation(creation, cancellation) is not IObjectCreationOperation { Arguments.Length: 1 } operation
             || !Clock.IsFrameworkType(operation.Type, context.Compilation, "System.DateTimeOffset")
             || !IsUnspecified(operation.Arguments[0].Value, model, cancellation, context.Compilation)) {
             return;

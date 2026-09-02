@@ -16,32 +16,47 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     program does one thing in a debug build and another in the build that ships.
 /// </summary>
 /// <remarks>
-///     ⚠ <b><c>Debug.Assert</c> is <c>[Conditional("DEBUG")]</c>, which does not mean the condition
-///     evaluates to <c>true</c> in release — it means the <em>call site is deleted</em>, arguments and
-///     all.</b> <c>Debug.Assert(items.Remove(key))</c> removes the item in every debug run and in no
+///     ⚠
+///     <b>
+///         <c>Debug.Assert</c> is <c>[Conditional("DEBUG")]</c>, which does not mean the condition
+///         evaluates to <c>true</c> in release — it means the <em>call site is deleted</em>, arguments and
+///         all.
+///     </b> <c>Debug.Assert(items.Remove(key))</c> removes the item in every debug run and in no
 ///     release run. The resulting bug exists only in production, disappears the moment anybody attaches a
 ///     debugger or runs the test suite, and every reproduction attempt confirms the code is fine.
 ///     <para>
-///         ⚠ <b>The rule is on <c>[Conditional]</c>, not on a list of assertion methods, and that is a
-///         generalisation that costs nothing.</b> <c>Debug.Assert</c> and <c>Trace.Assert</c> are the
+///         ⚠
+///         <b>
+///             The rule is on <c>[Conditional]</c>, not on a list of assertion methods, and that is a
+///             generalisation that costs nothing.
+///         </b> <c>Debug.Assert</c> and <c>Trace.Assert</c> are the
 ///         motivating case and the commonest one, but the defect is a property of the attribute: a
 ///         repository's own <c>[Conditional("TRACE")]</c> logging helper deletes its arguments exactly the
 ///         same way, and a rule naming only the framework's two would be silent on the version somebody
 ///         wrote themselves.
 ///     </para>
 ///     <para>
-///         ⚠ <b>An xUnit, NUnit or MSTest assertion is out of scope by construction, which is the answer
-///         to the shape that would otherwise be this rule's worst false positive.</b>
+///         ⚠
+///         <b>
+///             An xUnit, NUnit or MSTest assertion is out of scope by construction, which is the answer
+///             to the shape that would otherwise be this rule's worst false positive.
+///         </b>
 ///         <c>Assert.True(map.TryGetValue(key, out var found))</c> is idiomatic and correct: none of the
 ///         three frameworks marks its assertions <c>[Conditional]</c>, so the call is never deleted, the
 ///         effect always happens, and there is no defect to report. This rule cannot reach it, rather
 ///         than reaching it and filtering it out.
 ///     </para>
 ///     <para>
-///         ⚠ <b>An <c>out var</c> the code below reads was built as a fifth kind of evidence and
-///         then removed, because the compiler already reports it.</b> With the call deleted the
-///         variable is never assigned, so the reader below it is <c>CS0165</c> — <i>use of unassigned
-///         local variable</i> — in any build without the symbol defined. The positive fixture written
+///         ⚠
+///         <b>
+///             An <c>out var</c> the code below reads was built as a fifth kind of evidence and
+///             then removed, because the compiler already reports it.
+///         </b> With the call deleted the
+///         variable is never assigned, so the reader below it is <c>CS0165</c> —
+///         <i>
+///             use of unassigned
+///             local variable
+///         </i> — in any build without the symbol defined. The positive fixture written
 ///         for it could not be made to compile, which is how this was found rather than argued.
 ///         docs/plan/08 § "the compiler already says it": a rule that restates a compiler error adds
 ///         a second voice and no information.
@@ -87,8 +102,11 @@ public sealed class SideEffectInAssertionAnalyzer : DiagnosticAnalyzer {
     );
 
     /// <summary>
-    ///     ⚠ <b>The mutable collection namespaces, listed exactly — and the reason is
-    ///     <c>System.Collections.Immutable</c>.</b>
+    ///     ⚠
+    ///     <b>
+    ///         The mutable collection namespaces, listed exactly — and the reason is
+    ///         <c>System.Collections.Immutable</c>.
+    ///     </b>
     /// </summary>
     /// <remarks>
     ///     A prefix test on <c>"System.Collections"</c> reads naturally and is wrong:
