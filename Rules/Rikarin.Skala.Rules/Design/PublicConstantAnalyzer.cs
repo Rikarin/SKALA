@@ -42,8 +42,20 @@ namespace Rikarin.Skala.Rules.Design;
 ///         </b> The first proposal on the issue keyed it on <c>allocated-ids.txt</c> and on the
 ///         type names <c>RuleIds</c>/<c>ExitCodes</c> — that is one repository's layout carried inside a
 ///         rule that ships to repositories which have neither, and it is the thing the working
-///         agreement forbids. Skala declares its own four types in its own <c>.editorconfig</c>, like
-///         any other consumer.
+///         agreement forbids.
+///     </para>
+///     <para>
+///         ⚠
+///         <b>
+///             Skala itself does not set the key, and the reason is worth knowing before adding
+///             another option like it.
+///         </b> Its root <c>.editorconfig</c> is <c>root = true</c> plus the
+///         ReSharper export byte for byte — ADR-015, asserted by <c>EditorConfigIngestionTests</c> —
+///         its digest is what 2 814 conformance fixtures record as the configuration they were frozen
+///         under, and <c>ChainWalk_StopsAtRoot</c> asserts there is no nested one. So this repository
+///         has nowhere to put a <c>dotnet_code_quality.*</c> key that does not either break an
+///         invariant or oblige a re-freeze of the corpus. Measured with the key set anyway, the rule
+///         falls from 162 findings on this tree to 108.
 ///     </para>
 ///     <para>
 ///         ⚠

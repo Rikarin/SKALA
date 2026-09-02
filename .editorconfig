@@ -1,18 +1,5 @@
 root = true
 
-# ⚠ SK6034 (#330): the constants this project has promised never to change, declared by the project
-# rather than recognised by the analyzer. Rule ids are permanent under ADR-012 — `allocated-ids.txt`
-# is append-only and `RuleCatalogTests` asserts it — and the exit codes are a published CLI contract,
-# so a caller holding the old copy holds the right one. `static readonly` would also forbid the
-# constant positions this tree already writes, such as `[InlineData(RuleIds.…, 6)]`.
-#
-# ⚠ It sits above the export rather than below it, and that is ADR-015 rather than taste:
-# `EditorConfigIngestionTests.RepositoryEditorConfig_IsTheTemplateWithRootAdded` asserts this file
-# *ends* with `editor_config_template` byte for byte, so anything of Skala's own goes here, beside
-# `root = true`.
-[*.cs]
-dotnet_code_quality.SK6034.frozen_constant_types = ArrangeIds, ConfigDiagnosticIds, ExitCodes, FormatDiagnosticIds
-
 [*]
 charset = utf-8
 end_of_line = lf
