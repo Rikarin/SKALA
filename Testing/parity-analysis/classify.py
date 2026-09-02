@@ -242,6 +242,25 @@ HOSTED = {
     # `1ul`. SK2171 ships the sibling inspection the compiler does *not* cover, the `\x` escape
     # whose length the next character decides.
     "LongLiteralEndingLowerL": "CS0078",
+    # ⚠ The `if`-to-`?:` pair is hosted by `IDE0045` and `IDE0046`, which is why issue #76 closes
+    # without an SK id. Measured behaviourally on a probe built outside this repository with empty
+    # Directory.Build.props/.targets and a `root = true` .editorconfig above it, SDK 10.0.400,
+    # net10.0. Both sit in the same middle state `IDE0059` does and it was established the same way:
+    # a plain build does not even *load* the code-style analyzers -- with `EnforceCodeStyleInBuild`
+    # unset the csc `/analyzer:` list holds only the NetAnalyzers and the source generators -- and
+    # with it set but no severity in .editorconfig the SARIF holds `CA1822` and no IDE result of any
+    # kind. Raising `dotnet_diagnostic.IDE0045/IDE0046.severity` to warning produced
+    # `IDE0045: 'if' statement can be simplified` on `if (c) { x = 1; } else { x = 2; }` and
+    # `IDE0046` three times, on the if/else `return` form *and* on the `if (c) { return 1; } return
+    # 2;` fall-through form. ⚠ `AnalysisMode=All` plus `AnalysisLevel=latest-all` produced zero IDE
+    # diagnostics, so those two properties do not reach code-style severities at all.
+    #
+    # ⚠ Only these two of issue #76's thirteen inspections are recorded here, because only these two
+    # were measured. The `ReplaceWith*Assignment`, `RemoveRedundantOrStatement`, `ConvertIfToOr`,
+    # `ConvertIfDoToWhile` and `SimplifyConditional*` rows describe different rewrites and stay in
+    # the residue until somebody probes them.
+    "ConvertIfStatementToConditionalTernaryExpression": "IDE0045",
+    "ConvertIfStatementToReturnStatement": "IDE0046",
 }
 HOSTED_BYKEY = bykey(HOSTED)
 

@@ -2101,6 +2101,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **328** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **293** | **89.6 %** |
+| Rules this document names | **329** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **294** | **89.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -5389,3 +5391,121 @@ map to be wrong in. `ConfusingCharAsIntegerInConstructor` — #39's third inspec
 argument widening to an `int` parameter — is uncovered for a different reason: it is a question
 about overload resolution rather than about how a literal reads, and it is a different rule from
 `SK2171`.
+
+## `SK1100`–`SK1103` — statements that move
+
+⚠ **The prose pass for `SK1100`–`SK1103` is owed.** What follows is the allocation register entry —
+enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+**These four are the first rules in the catalogue whose fix moves a statement**, rather than
+rewriting an expression in place, and that is what the batch is actually about. Every earlier
+`SK1xxx` rewrite replaces text with text at the same position: `SK1042` merges two conditions,
+`SK1043` swaps a header, `SK1010` changes an operator. These four delete a statement from one place
+and write it back in another, which adds two failure modes the expression rewrites never had — a
+name that stops binding because it left its scope, and a comment stranded beside the line that moved
+out from under it.
+
+⚠ **All four get their soundness from one structural fact rather than from an analysis, and that is
+the pattern worth taking from this batch.** Each rule has an obvious general form that is undecidable
+and a narrow form that is free, and the narrow form is the one that ships:
+
+- `SK1100` `single-use-temporary` — `var t = X(); return t;`. The general rule needs the initializer
+  to be pure, because inlining moves the evaluation point past whatever stood in between. ⚠ **With
+  the use required to be the *very next statement* there is nothing in between, so there is no order
+  to change and the initializer may do anything at all.** That is why it ships `fixIsSafe: true`
+  rather than as the "must require a pure initializer" rule [#82](https://github.com/Rikarin/SKALA/issues/82) proposed. ⚠ **The declared type is a
+  second hazard and `var` is not the only answer to it**: `object M() { long v = 1; return v; }`
+  boxes a `long` where `return 1;` boxes an `int`, so an explicit type is admitted only when it
+  equals the initializer's type exactly. The reference count is taken over the whole member, because
+  a local function written below the `return` is hoisted and can read the local from above its own
+  declaration.
+- `SK1101` `split-declaration-and-assignment` — `int x; x = e;`. ⚠ **It needs no semantic model, and
+  that is a fact about C# lookup rather than a shortcut**: an identifier written immediately after
+  `T x;` in the same statement list resolves to that local, because a simple name finds the innermost
+  enclosing declaration and nothing can be declared between two adjacent statements. So the rule runs
+  under `--load=loose`, which is the mode an agent's scratch file is analysed in.
+- `SK1102` `local-function-before-jump` — the block's `return` written after the local functions it
+  precedes. ⚠ **Hoisting is a stronger fact than "the jump is last"**: after the move the `return`
+  calls a local function declared *below* it and still binds, which is what the positive fixture is
+  written to show. ⚠ **The only rewrite in the batch that cannot produce `CS0136`, because it
+  introduces and removes no name at all.**
+- `SK1103` `shared-branch-tail` — both branches of an `if`/`else` ending with the same statements.
+  ⚠ **An early jump inside a branch turned out to be safe, and that is why no jump appears in the
+  guards.** The worry is `if (c) { if (d) break; Log(); } else { Other(); Log(); }` — the hoisted
+  `Log()` looks as though it becomes reachable on the `break` path. It does not: the statement lands
+  directly after the `if`, and every transfer that skipped it inside the branch skips the position
+  after the `if` exactly as it skipped the position before it.
+
+### ⚠ Issue #76 is closed as hosted, and the probe is what closed it
+
+⚠ **`IDE0045` and `IDE0046` cover the `if`-to-`?:` rewrite, so [#76](https://github.com/Rikarin/SKALA/issues/76) ships no id.** Measured
+behaviourally on a probe built outside this repository with empty `Directory.Build.props`/`.targets`
+and a `root = true` `.editorconfig` above it, SDK 10.0.400, `net10.0`. Both diagnostics sit in the
+same **middle state** `IDE0059` does, and the three states were separated the same way `SK2111`'s
+`IDE0080` check separated them:
+
+- ⚠ **A plain build does not merely hide the code-style analyzers, it does not load them.** With
+  `EnforceCodeStyleInBuild` unset, the `csc` `/analyzer:` list holds only the NetAnalyzers, the
+  interop generators and the two source generators. Every `IDE*` is structurally absent.
+- With `EnforceCodeStyleInBuild=true` and no `.editorconfig`, the SARIF holds `CA1822` twelve times
+  and **no IDE result of any kind** — so the defaults are below `note`, which is state (b),
+  enabled-but-hidden, and not state (a).
+- Raising `dotnet_diagnostic.IDE0045.severity` and `IDE0046.severity` to `warning` produced
+  `IDE0045: 'if' statement can be simplified` on `if (c) { x = 1; } else { x = 2; }` and `IDE0046`
+  **three times** — on the `if`/`else` `return` form *and* on the `if (c) { return 1; } return 2;`
+  fall-through form, which is the shape a rule here would most have wanted.
+- ⚠ **`AnalysisMode=All` with `AnalysisLevel=latest-all` produced zero `IDE*` diagnostics.** Those
+  two properties do not reach code-style severities at all, which is worth writing down because the
+  usual "hosted at `AnalysisMode=All`" shorthand is wrong for every `IDE*`.
+- The instrument was checked before the zeros were believed: `IDE0055` and `IDE0161` were raised as
+  controls in the same builds and both fired, and a bulk `dotnet_analyzer_diagnostic.severity =
+  warning` sweep surfaced `IDE0008`, `IDE0022`, `IDE0040`, `IDE0060`, `IDE0061`, `IDE0062` and
+  `IDE0130` across every probe file.
+
+⚠ **Only two of #76's thirteen inspections are recorded as hosted, because only two were measured.**
+`ConvertIfStatementToConditionalTernaryExpression` → `IDE0045` and `ConvertIfStatementToReturnStatement`
+→ `IDE0046` go into `classify.py`'s `HOSTED` map. The `ReplaceWithSimpleAssignment.*`,
+`ReplaceWithSingleAssignment.*`, `RemoveRedundantOrStatement.*`, `ConvertIfToOrExpression`,
+`ConvertIfDoToWhile`, `SimplifyConditionalOperator`, `SimplifyConditionalTernaryExpression` and
+`InvertCondition.1` rows describe different rewrites, were not probed, and stay in the Uncovered
+residue. Claiming them would deflate the measured gap on an assumption, which is the one direction a
+hand-written map must never be wrong in.
+
+### ⚠ Two halves of two issues are refuted rather than deferred
+
+⚠ **[#83](https://github.com/Rikarin/SKALA/issues/83)'s `TooWideLocalVariableScope` is cut, and the reason is a rule this session already broke.**
+Narrowing a declaration's scope moves it **inwards**, and that is the one direction `RewriteGuards`
+cannot check: both `WouldCollide` and `DeclaredElsewhereInMember` answer the *outward* question, and
+[#304](https://github.com/Rikarin/SKALA/issues/304) is a rule that emitted a token-equivalent program failing `CS0136` for exactly that blind
+spot. Shipping half the concept with a guard is worth more than all of it with a fix that breaks
+builds. `JoinNullCheckWithUsage` and `MoveVariableDeclarationInsideLoopCondition` are the same
+inward move and are cut with it; none of the three is in `catalogued.json`, so all three still count
+against the measured gap.
+
+⚠ **[#108](https://github.com/Rikarin/SKALA/issues/108)'s *leading* half is refuted on evaluation order, not narrowed.** A shared statement at the
+top of both branches can only be hoisted *above* the `if`, where it runs before the condition is
+evaluated instead of after it. `if (Advance()) { Log(); … } else { Log(); … }` and
+`Log(); if (Advance()) …` are different programs whenever the condition or the shared statement can
+observe the other, and separating the two cases is purity analysis of two arbitrary expressions. The
+trailing half has no such problem because the destination is immediately after the `if`. The
+`Duplicated*` inspections of the same issue — `DuplicatedStatements`,
+`DuplicatedSequentialIfBodies`, `DuplicatedChainedIfBodies`, `DuplicatedSwitchExpressionArms`,
+`DuplicatedSwitchSectionBodies` — and `ConditionalTernaryEqualBranch` are all left uncovered and out
+of the map: `SK7020` already owns token-hash duplication, and whether these are new ids or new
+detection shapes on it is the question [#108](https://github.com/Rikarin/SKALA/issues/108) itself raises and this batch did not answer.
+
+### What each rule does with a comment on code it moves
+
+⚠ **The rule is uniform across the four and it is worth stating once**: a comment inside a span the
+fix *copies* is carried through verbatim; a comment anywhere the fix *deletes* withdraws the finding.
+`StatementRewrites.DeletesAuthoredText` is that distinction, and it is written against the raw text
+rather than the trivia list because `DescendantTrivia` includes a node's *leading* trivia ([#302](https://github.com/Rikarin/SKALA/issues/302)) and
+would silently reach outside the region it was asked about. `SK1100` therefore declines when anything
+is written above the declaration or between it and the `return`; `SK1101` declines on a comment
+between the two lines; `SK1103` declines on a comment anywhere in either copy of the tail, because
+one copy is deleted and the other written back and either duplicating the comment or losing it is a
+fix nobody can review. ⚠ **`SK1102` is the exception and deliberately so**: comments *inside* the
+local functions are common and must not cost the finding, so the jump is inserted at the start of the
+first local function's **full** span — above its documentation comment rather than between the
+comment and the declaration — and only a comment written above the jump itself withdraws it.

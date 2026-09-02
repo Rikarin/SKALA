@@ -204,6 +204,8 @@ public static class AnalyzerHost {
         new UnparenthesisedPrecedenceMixAnalyzer(),
         new XmlSignatureAnalyzer(),
         new PredictableInitializationVectorAnalyzer(), new AsymmetricKeySizeAnalyzer(),
+        new SingleUseTemporaryAnalyzer(), new SplitDeclarationAndAssignmentAnalyzer(),
+        new LocalFunctionBeforeJumpAnalyzer(), new SharedBranchTailAnalyzer(),
     ];
 
     /// <summary>

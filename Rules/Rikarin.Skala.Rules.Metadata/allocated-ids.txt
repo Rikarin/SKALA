@@ -318,3 +318,7 @@ SK2174 unparenthesised-precedence-mix
 SK5030 xml-signature-unverified-key
 SK5020 predictable-cipher-initialization-vector
 SK5021 undersized-asymmetric-key
+SK1100 single-use-temporary
+SK1101 split-declaration-and-assignment
+SK1102 local-function-before-jump
+SK1103 shared-branch-tail

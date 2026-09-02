@@ -7811,6 +7811,107 @@
       "configuration": [
         "dotnet_diagnostic.SK5021.severity"
       ]
+    },
+    {
+      "id": "SK1100",
+      "concept": "single-use-temporary",
+      "title": "The local is a name for the expression on the next line",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "InlineTemporaryVariable",
+      "resharperNote": "The export sets `InlineTemporaryVariable` to `hint`, and Skala ships this at `suggestion`. Reading the ReSharper key therefore lowers the rule to Roslyn `Hidden`, where only `--include-hints` shows it. The higher default is deliberate: ReSharper's inspection covers every single-use temporary, most of which are separated from their use by other statements and are genuinely a matter of taste, while this rule only reports the adjacent case, where the two lines are one statement written as two.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A local is initialised and the very next statement hands it straight back, so the name stands for an expression that is used once, immediately.",
+      "rationale": "`var result = Compute(); return result;` is an extract-variable that was never undone. The name adds a line and says nothing the expression did not, and a reader still has to check that nothing happens between the two lines before they can read them as one. ⚠ **The adjacency requirement is the whole safety argument rather than a narrowing of it.** Inlining a temporary is normally unsafe because it moves the evaluation point — everything between the declaration and the use would start running before the initializer instead of after it. With nothing in between there is no order to change, so the initializer may have any side effect it likes and the rewrite is still exact. That is what lets this ship as a fix applicable without review, rather than as the \"must require a pure initializer\" rule the issue proposed. ⚠ **Nothing in the .NET SDK reports this shape.** `IDE0059` is the neighbouring diagnostic and its subject is a value that is *overwritten or never read*; measured on a `net10.0` probe with `EnforceCodeStyleInBuild=true` and every code-style severity raised, `var t = Compute(); return t;` drew `IDE0008` and nothing else.",
+      "examples": {
+        "bad": "var result = Compute(order);\nreturn result;",
+        "good": "return Compute(order);"
+      },
+      "falsePositives": "The use must be the statement *immediately* after the declaration, and must be a `return` or a `throw` naming the local and nothing else — `return result.Value;` is a different rewrite and is not reported. ⚠ **The declared type is the second hazard and `var` is not the only answer to it.** `object M() { long v = 1; return v; }` boxes a `long` where `return 1;` boxes an `int`: the declaration performed a conversion the `return` then did not have to, and deleting it moves that conversion silently. So either the declaration is `var`, in which case the local's type *is* the initializer's and there is nothing to lose, or the initializer's type is asked for and must equal the declared type exactly. ⚠ **The single-use count is taken over the whole member and not the enclosing block**, because a local function declared further down is hoisted and may read the local from above its own declaration; a count that stopped at the block would delete a declaration something still needs. `using var`, `await using var`, `const`, `ref` and `scoped` locals are excluded outright — each says something about the local beyond its value and none of it survives deletion — as is a declaration with more than one declarator. A comment anywhere in the region the fix rewrites, the declaration's own leading trivia included, withdraws the finding rather than being deleted with the line. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK1100.severity"
+      ]
+    },
+    {
+      "id": "SK1101",
+      "concept": "split-declaration-and-assignment",
+      "title": "The local is declared on one line and assigned on the next",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "JoinDeclarationAndInitializer",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A local declared without an initializer is assigned by the very next statement, so two lines carry one declaration.",
+      "rationale": "`int count; count = Read();` is the C-era habit that a model has read a great deal of, and it costs a reader the one guarantee the joined form gives for free: that the variable is never observable before it holds something. The rewrite is the smallest in this batch — two lines become one, no expression moves and no scope changes. ⚠ **Nothing in the .NET SDK reports it.** Measured on a `net10.0` probe with `EnforceCodeStyleInBuild=true`, `AnalysisMode=All` and every code-style diagnostic raised to `warning`, `int x; x = 3; return x;` produced `IDE0130` and `CA1822` and nothing about the split. ⚠ **It needs no semantic model, and that is a fact about C# lookup rather than a shortcut**: an identifier written immediately after `T x;` in the same statement list resolves to that local, because a simple name finds the innermost enclosing declaration and nothing can be declared between two adjacent statements. So the rule runs under `--load=loose`, which is the mode an agent's scratch file is analysed in and exactly where this shape arrives.",
+      "examples": {
+        "bad": "int count;\ncount = Read(source);",
+        "good": "int count = Read(source);"
+      },
+      "falsePositives": "⚠ **Only the joining half of the issue ships, and cutting the other half was a decision rather than an omission.** The same issue asks for `TooWideLocalVariableScope` — moving a declaration *into* the narrower block that uses it. That rewrite moves a declaration **inwards**, which is the one direction `RewriteGuards` cannot check: both `WouldCollide` and `DeclaredElsewhereInMember` answer the outward question, and a rule shipped in this repository has already emitted a token-equivalent program failing `CS0136` for exactly that blind spot. Half a concept with a guard is worth more than all of it with a fix that breaks builds. The assignment must be the *immediately* following statement in the same statement list, must be a plain `=` — a compound assignment reads the target as well as writing it and cannot be an initializer — and its left side must be the bare identifier, so `this.x = …` and `x.Field = …` are never matched. ⚠ **A mention of the local anywhere inside the assigned value withdraws the finding**, because `int x; x = Parse(s, out x);` is legal and `int x = Parse(s, out x);` is not; `nameof(x)` is caught with it, which costs a finding nobody will miss. A declaration with more than one declarator is excluded — joining one declarator and leaving the other where it was is a different edit — as are `using`, `await using`, `const`, `ref` and any local carrying attributes. A comment between the two lines withdraws the finding rather than being deleted with them. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK1101.severity"
+      ]
+    },
+    {
+      "id": "SK1102",
+      "concept": "local-function-before-jump",
+      "title": "The local function is declared before the jump that ends the block",
+      "category": "Modernization",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "MoveLocalFunctionAfterJumpStatement",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A block whose last statement is a jump has one or more local function declarations written directly above it, so the declarations read as work done before the block is left.",
+      "rationale": "A local function declaration is not an executable statement, so the jump is the last thing the block does no matter where it is written. Moving the jump above the run puts the page in the order the program is in. ⚠ **Hoisting is what makes the move sound, and it is a stronger fact than \"the jump is last\"**: a local function may be called from above its own declaration, so `return Inner();` moved above `int Inner() => 7;` still binds. ⚠ **This is the only rewrite in the batch that cannot produce `CS0136`, because it introduces and removes no name at all** — nothing but the jump statement changes position, and a jump declares nothing. ⚠ **Nothing in the .NET SDK reports the shape.** On the same `net10.0` probe with every code-style diagnostic raised, a method holding a local function before its `return` drew `IDE0062`, `IDE0061` and `IDE0060` — all about the function, none about where it sits.",
+      "examples": {
+        "bad": "Work();\n\nvoid Work() { }\n\nreturn;",
+        "good": "Work();\n\nreturn;\n\nvoid Work() { }"
+      },
+      "falsePositives": "⚠ **This rule is cosmetic and says so by shipping at `hint`** — Roslyn `Hidden`, reached only through `--include-hints` or an explicit severity. Nothing it reports is a defect and nothing it changes affects behaviour. The argument for spending an id on it is the one this tool exists for: a local function is the last thing added to a method and gets appended where the cursor was, which is why generated code carries the misordering far more often than hand-written code does. ⚠ **`goto` is deliberately not one of the jumps.** Every other jump has one destination the reader can see from the statement itself; a `goto`'s label may be anywhere in the member, including above the local functions, so \"the block ends here\" is not what the statement says — `SK7074` reports unstructured `goto` and this rule has nothing to add to it. The jump must be the block's last statement and must be directly preceded by at least one local function; the whole run of them is skipped in one move. ⚠ **Comments inside the local functions are untouched and that is the point of where the jump lands**: the fix inserts it at the start of the first local function's *full* span, above its documentation comment rather than between the comment and the declaration. The only comment at risk is one written above the jump itself, and that one withdraws the finding. A preprocessor directive anywhere in the reordered region withdraws it too, because the jump could move out of a conditional block it was inside or into one it was not. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK1102.severity"
+      ]
+    },
+    {
+      "id": "SK1103",
+      "concept": "shared-branch-tail",
+      "title": "Both branches end with the same statements",
+      "category": "Modernization",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "ExtractCommonBranchingCode",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The `if` and the `else` block end with the same run of statements, so the shared tail is written twice and can drift apart in one place only.",
+      "rationale": "Duplication inside one member is where it is least visible and most likely to drift, because the two copies sit close enough to look like one. Moving the shared tail below the `if` states it once and leaves each branch holding only what actually differs. ⚠ **An early jump inside a branch is safe, and working that out is what let the rule ship.** The worry is `if (c) { if (d) break; Log(); } else { Other(); Log(); }` — the hoisted `Log()` looks as though it becomes reachable on the `break` path. It does not: the statement lands directly after the `if`, and every control transfer that skipped it inside the branch — `return`, `throw`, `break`, `continue`, `goto`, `yield break` — skips the position after the `if` exactly as it skipped the position before it. That is why no jump appears in the guards. ⚠ **Nothing in the .NET SDK reports the shape**, measured on the same `net10.0` probe: shared trailing statements in `if`/`else` drew only `CA1822`, `CA1002` and `CA1062`.",
+      "examples": {
+        "bad": "if (retry) {\n    Delay();\n    Send(request);\n} else {\n    Prepare();\n    Send(request);\n}",
+        "good": "if (retry) {\n    Delay();\n} else {\n    Prepare();\n}\n\nSend(request);"
+      },
+      "falsePositives": "⚠ **The leading half of the issue is refuted rather than narrowed, and the reason is evaluation order.** A shared statement at the *top* of both branches can only be hoisted *above* the `if`, where it would run before the condition is evaluated instead of after it. `if (Advance()) { Log(); … } else { Log(); … }` and `Log(); if (Advance()) …` are different programs whenever the condition or the shared statement can observe the other, and deciding that requires purity analysis of two arbitrary expressions. The trailing half has no such problem, because the destination is immediately after the `if` and nothing is reordered relative to anything. ⚠ **What the guards are about is names.** A statement moved out of a branch leaves that branch's scope, so anything it names which the branch declared stops binding, and anything it *declares* moves outwards into the enclosing block — the scope move C# answers with `CS0136`. Every name either block declares anywhere is collected, and a mention of one of them in the moved statements withdraws the finding; so does the moved run declaring anything itself. It over-bails, counting names in a branch's own nested lambda that could never conflict, and over-bailing costs findings where the alternative costs builds. ⚠ **The whole shared run is one finding**, because reporting the last statement alone would fire again on the next one after its own fix. Both branches must be blocks and must keep at least one statement — a branch consumed entirely is a finding about the condition rather than about the tail — and the `if` itself must sit in a statement list, which excludes every arm of an `else if` chain because there is nowhere after it to put the moved statements. Structural equivalence ignores trivia, so a comment anywhere in either copy of the tail withdraws the finding: one copy is deleted and the other written back, and either duplicating a comment or losing it is a fix nobody can review. The fix is not marked safe — it changes the shape of a member and wants an eye on it. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK1103.severity"
+      ]
     }
   ]
 }

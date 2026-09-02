@@ -277,3 +277,7 @@ SK2174 | Skala.Correctness | Info | A shift or bitwise operand groups only by pr
 SK5030 | Skala.Security | Error | An XML signature checked against the key the document carries.
 SK5020 | Skala.Security | Error | A cipher initialisation vector fixed at compile time.
 SK5021 | Skala.Security | Error | An RSA or DSA key generated below 2048 bits.
+SK1100  | Skala.Modernization | Info | The local names an expression used once, on the next line.
+SK1101  | Skala.Modernization | Info | The local is declared on one line and assigned on the next.
+SK1102  | Skala.Modernization | Hidden | A local function is declared before the jump that ends the block.
+SK1103  | Skala.Modernization | Hidden | Both branches of the `if` end with the same statements.
