@@ -205,6 +205,23 @@ HOSTED = {
     # partial indexers and partial constructors. Both are on at default warning levels. See
     # docs/plan/08 for the write-up and for the second thing that probe refuted.
     "PartialMethodParameterNameMismatch": "CS8826/CS9256",
+    # ⚠ `RemoveConstructorInvocation` is `CA1806` at *stock* settings, which is stronger than the
+    # usual "hosted at AnalysisMode=All". Measured on a probe built outside this repository with
+    # empty Directory.Build.props/.targets above it, SDK 10.0.400, no AnalysisMode and no
+    # .editorconfig: `isEnabledByDefault: true`, `defaultLevel: note`, and it reports `new Foo();`,
+    # `new Foo(3);`, `new InvalidOperationException(…);` and `new Timer(…);` alike -- the
+    # side-effecting-constructor exemption issue #50 asks for does not exist in CA1806 either.
+    # `_ = new Widget();` is correctly silent. IDE0058 covers the same four lines. See docs/plan/08.
+    "RemoveConstructorInvocation": "CA1806",
+    # ⚠ `IDE0059` covers the local-assignment shapes and is the *middle* state, not "on": the
+    # descriptor says isEnabledByDefault true / defaultLevel note, tagged
+    # EnforceOnBuild_HighlyRecommended, and yet `EnforceCodeStyleInBuild=true` on its own produced
+    # no IDE0059 at all on the probe -- it appeared only once dotnet_diagnostic.IDE0059.severity was
+    # raised in an .editorconfig. Hosted all the same: ADR-008 is about who owns the concept.
+    # `MemberInitializerValueIgnored`, the fourth inspection of the same issue, is *not* hosted by
+    # anything and ships as SK2200; it is in catalogued.json rather than here.
+    "RedundantAssignment": "IDE0059",
+    "AssignmentIsFullyDiscarded": "IDE0059",
 }
 HOSTED_BYKEY = bykey(HOSTED)
 

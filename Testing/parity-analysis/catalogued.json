@@ -159,7 +159,6 @@
   "RedundantArgumentDefaultValue": "SK0232",
   "RedundantDelegateCreation": "SK0232",
   "RedundantLambdaParameterType": "SK0232",
-  "UnusedAnonymousMethodSignature": "SK0232",
   "RedundantAttributeParentheses": "SK0233",
   "RedundantLambdaSignatureParentheses": "SK0233",
   "RedundantPatternParentheses": "SK0233",
@@ -180,7 +179,6 @@
   "RedundantNullableDirective": "SK0242",
   "RedundantQualifier": "SK0243",
   "RedundantOverriddenMember": "SK0244",
-  "RedundantDiscardDesignation": "SK0250",
   "UsePatternMatching": "SK1050",
   "SafeCastIsUsedAsTypeCheck": "SK1050",
   "UseNegatedPatternInIsExpression": "SK1050",
@@ -249,6 +247,8 @@
   "LoopCanBePartlyConvertedToQuery": "SK1084",
   "StaticMemberInitializerReferesToMemberBelow": "SK2130",
   "UnassignedGetOnlyAutoProperty": "SK2131",
+  "UnusedAnonymousMethodSignature": "SK0232",
+  "RedundantDiscardDesignation": "SK0250",
   "PossibleInvalidCastExceptionInForeachLoop": "SK2180",
   "PossibleMistakenCallToGetType": "SK2181",
   "AccessToStaticMemberViaDerivedType": "SK2183",
@@ -262,5 +262,8 @@
   "StringSpanComparison": "SK2192",
   "ImmutableArrayWithCollectionInitializer": "SK2193",
   "CapturedPrimaryConstructorParameterIsMutable": "SK2194",
-  "ShortLivedHttpClient": "SK3541"
+  "ShortLivedHttpClient": "SK3541",
+  "MemberInitializerValueIgnored": "SK2200",
+  "EventUnsubscriptionViaAnonymousDelegate": "SK2201",
+  "PossiblyUnintendedSideEffectsInsideConditionalInvocation": "SK2202"
 }

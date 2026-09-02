@@ -266,3 +266,6 @@ SK3542 | Skala.Lifetime | Warning | `DangerousGetHandle` with nothing holding th
 SK4040 | Skala.Performance | Info | Return the collection instead of copying it at every read.
 SK4041 | Skala.Performance | Warning | A `StringBuilder` is filled and its text is never read.
 SK0250 | Skala.Cleanup | Info | The pattern designates its match `_`.
+SK2200 | Skala.Correctness | Warning | The field initializer is overwritten by every constructor.
+SK2201 | Skala.Correctness | Warning | The unsubscription passes an anonymous function.
+SK2202 | Skala.Correctness | Warning | The modification sits inside a conditional invocation.

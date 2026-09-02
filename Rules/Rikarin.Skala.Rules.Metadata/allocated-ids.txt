@@ -307,3 +307,6 @@ SK3542 dangerous-handle-without-ref-count
 SK4040 copying-property
 SK4041 unread-string-builder
 SK0250 redundant-discard-designation
+SK2200 overwritten-field-initializer
+SK2201 anonymous-unsubscription
+SK2202 conditional-invocation-side-effect
