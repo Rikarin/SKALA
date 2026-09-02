@@ -210,9 +210,33 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
     ///     symbol.
     /// </summary>
     /// <remarks>
-    ///     Roslyn's own <c>IDE0004</c> family is the standing reminder that "the types allow it" and "the
-    ///     program means the same thing" are different questions. Speculative binding answers the second
-    ///     one exactly, at the cost of one bind per candidate suffix.
+    ///     <para>
+    ///         Roslyn's own <c>IDE0004</c> family is the standing reminder that "the types allow it" and
+    ///         "the program means the same thing" are different questions. Speculative binding answers the
+    ///         second one exactly, at the cost of one bind per candidate suffix.
+    ///     </para>
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             <see cref="SymbolEqualityComparer.Default" /> is right here, and it was wrong in
+    ///             SK0234 — checked rather than assumed.
+    ///         </b>
+    ///         SK0234 had to move to <c>IncludeNullability</c> because deleting a written type argument
+    ///         lets inference reach a type argument that differs only in its annotation (#320). This
+    ///         branch cannot: <see cref="RestatesItsDefault" /> deletes an argument only when it is a
+    ///         <em>constant equal to the parameter's own default</em>, and the compiler then supplies
+    ///         that identical value in its place — so inference sees the same input either way.
+    ///         Measured: with <c>M&lt;T&gt;(T a, T b = default!)</c> and a non-null <c>string a</c>,
+    ///         <c>M(a, null)</c> and <c>M(a)</c> both bind <c>T = string?</c>, because the omitted
+    ///         default participates in nullable inference exactly as the written <c>null</c> does. The
+    ///         same definition without the optional parameter binds <c>T = string</c>, which is what
+    ///         makes the equality real rather than coincidental.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ SK0234's shape is also out of reach here by construction: it turns on
+    ///         <c>StringComparer.Ordinal</c>, which is not a constant, and a non-constant argument is
+    ///         never a candidate for deletion.
+    ///     </para>
     /// </remarks>
     static bool BindsToTheSameMethod(
         SyntaxNodeAnalysisContext context,

@@ -143,7 +143,25 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
             SpeculativeBindingOption.BindAsExpression
         );
 
-        if (!SymbolEqualityComparer.Default.Equals(speculated.Symbol, method)) {
+        // ⚠ **IncludeNullability, because `SymbolEqualityComparer.Default` ignores the nullable
+        // annotations on type arguments** — so `CreateBuilder<string>` and `CreateBuilder<string?>`
+        // compared *equal* and the sentence above was stated but not implemented. It shipped four
+        // false positives into Skala's own `Analysis/`, all the same shape (#320):
+        //
+        //     ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal)
+        //
+        // `StringComparer` implements `IEqualityComparer<string?>`, so inference reaches
+        // `T = string?`, the builder becomes `ImmutableHashSet<string?>.Builder`, and deleting the
+        // type argument is a `CS8619` — an error in any tree with warnings-as-errors. Measured, not
+        // assumed: the written symbol comes back `NotAnnotated` and the speculated one `Annotated`,
+        // and `.Default` says True where `.IncludeNullability` says False.
+        //
+        // ⚠ This is *not* the trap `SameNullability` documents above. That one is about
+        // `GetTypeInfo` on a written `TypeSyntax`, which returns `NullableAnnotation.None` for
+        // `string` and `string?` alike and therefore rejects every cast. `GetSymbolInfo` on an
+        // invocation is a different API and carries real annotations on the constructed method's
+        // type arguments, so the comparer discriminates here where it could not there.
+        if (!SymbolEqualityComparer.IncludeNullability.Equals(speculated.Symbol, method)) {
             return;
         }
 
