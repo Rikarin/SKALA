@@ -302,3 +302,4 @@ SK2231 | Skala.Correctness | Warning | The command's SQL names a parameter nothi
 SK2232 | Skala.Correctness | Warning | The load context's own resolver loads outside it.
 SK2233 | Skala.Correctness | Warning | The `Type` passed cannot satisfy what the API asks for.
 SK0260 | Skala.Cleanup | Warning | The boolean expression says the same thing twice.
+SK0261 | Skala.Cleanup | Warning | The attribute writes out what the language already supplies.

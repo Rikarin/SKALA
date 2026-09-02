@@ -94,6 +94,7 @@ public sealed class RuleFixtureTests {
         new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
         new RedundantDiscardDesignationAnalyzer(),
         new RedundantDeclarationAnalyzer(), new RedundantBooleanExpressionAnalyzer(),
+        new RedundantAttributeDetailAnalyzer(),
         new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(),
         new MergedConditionalAccessAnalyzer(), new DiscardAssignmentAnalyzer(),
         new InlineOutVariableAnalyzer(),

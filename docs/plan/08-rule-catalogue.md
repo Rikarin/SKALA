@@ -352,6 +352,41 @@ enclosing scope and so has to answer the name-collision question `RewriteGuards.
 for, and `RedundantSwitchExpressionArms`, which needs the exhaustiveness model none of these shapes
 ask for. Neither is refuted; neither has an id.
 
+### Cleanup — `SK0261`
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK0261` | The attribute writes out what the language already supplies | Semantic | safe |
+
+`SK0261` covers two of [#130](https://github.com/Rikarin/SKALA/issues/130)'s fourteen:
+`RedundantAttributeSuffix` (`[SerializableAttribute]`) and `RedundantAttributeUsageProperty`
+(`Inherited = true`, `AllowMultiple = false`). With it, #130 stands at eight of fourteen.
+
+⚠ **Neither is hosted, and both zeros are verified.** None of the 440 descriptors reflected out of
+SDK 10.0.400's analyzer assemblies is either shape, and a probe with all 120 `IDE` ids at `warning`,
+`AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on either — on a compilation where
+`IDE0055`, `IDE0161`, `IDE0100`, `IDE0075` and `IDE0380` fired and no `AD0001` was raised. Neither is
+a compiler warning.
+
+⚠ **Dropping the suffix is a lookup, not a string operation.** `[FooAttribute]` resolves to
+`FooAttribute`, but `[Foo]` searches for **both** `Foo` and `FooAttribute` — so a type named `Foo` in
+scope changes what the shortened form means, or makes it `CS1614` when both are attribute classes.
+The rule asks `LookupNamespacesAndTypes` at the attribute's own position and withdraws if anything
+comes back. That is **stricter than the language on purpose**: a non-attribute `Foo` beside an
+attribute `FooAttribute` is in fact still unambiguous and is declined anyway, because "is the other
+candidate an attribute class" is a second question and getting it wrong changes which type is
+applied.
+
+⚠ **A guard written here was dead and the sabotage is what said so.** The suffix branch first carried
+the usual comment-or-directive check over `name.Span`. That span is the tail of a **single identifier
+token**, and an identifier cannot contain trivia — no fixture can put a `//`, a `/*` or a `#` inside
+it, so deleting the guard turned nothing red. It is removed rather than left standing with a fixture
+that does not reach it. The `[AttributeUsage]` branch spans several tokens and keeps its guard, which
+`comment_inside_the_deleted_argument_span.cs` does reach.
+
+⚠ Only a **simple** name is reported: a qualified `[System.SerializableAttribute]` carries a second
+redundancy in its qualifier, and that is `SK0243`'s span and concept.
+
 ### Cleanup — `SK0250`
 
 ⚠ **The prose pass on this block is owed**, like the two above it: it is written as one rule lands and

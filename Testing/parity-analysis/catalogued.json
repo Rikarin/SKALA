@@ -305,5 +305,7 @@
   "RedundantDefaultMemberInitializer": "SK0244",
   "EmptyConstructor": "SK0244",
   "EmptyDestructor": "SK0244",
-  "EmptyNamespace": "SK0244"
+  "EmptyNamespace": "SK0244",
+  "RedundantAttributeSuffix": "SK0261",
+  "RedundantAttributeUsageProperty": "SK0261"
 }
