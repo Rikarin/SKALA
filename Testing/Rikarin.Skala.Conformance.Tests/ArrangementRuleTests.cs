@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
@@ -47,15 +48,50 @@ public sealed class ArrangementRuleTests {
         bool removeUnused = false,
         IReadOnlyList<KeyValuePair<string, string>>? overrides = null
     ) {
+        var result = Attempt(source, aggressive, only, removeUnused, overrides);
+        Assert.NotEqual(ArrangementOutcome.Reverted, result.Outcome);
+        return result.Text;
+    }
+
+    /// <summary>
+    ///     The same run as <see cref="Arrange" />, with the outcome and the diagnostics left for the
+    ///     caller to assert on.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="Arrange" /> swallows the interesting half. A rule whose precondition is wrong
+    ///     does not produce wrong output — the safety re-bind catches it and the file comes back
+    ///     <see cref="ArrangementOutcome.Reverted" /> carrying <c>SK9098</c> — so a test that only reads
+    ///     the text is asserting about the safety net rather than about the rule, and its failure names
+    ///     <c>NotEqual(Reverted)</c> in a shared helper instead of the case that broke. The two
+    ///     regression tests for #326 want to say "this rewrite was never attempted", which is a
+    ///     statement about <see cref="ArrangementResult.Diagnostics" />.
+    /// </remarks>
+    static ArrangementResult Attempt(
+        string source,
+        bool aggressive = false,
+        string? only = null,
+        bool removeUnused = false,
+        IReadOnlyList<KeyValuePair<string, string>>? overrides = null
+    ) {
         const string path = "/arrangement/Probe.cs";
         var text = SourceText.From(source);
         var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, path);
+
+        // ⚠ The kind is chosen from the file, exactly as `RuleFixtures.Compile` chose it in #314. A
+        // probe holding top-level statements is an executable; compiled as a library it draws
+        // `CS8805` — "Program using top-level statements must be an executable" — which is present
+        // before and after the rewrite and so cancels out of the safety layer's `appeared` set. The
+        // probe would still be a probe, but of a compilation no `skala arrange` run ever sees, and
+        // SK0213's regression case is precisely about the top-level shape.
+        var topLevel = tree.GetRoot() is CompilationUnitSyntax unit
+            && unit.Members.Any(static member => member is GlobalStatementSyntax);
+
         var compilation = CSharpCompilation.Create(
             "probe",
             [tree],
             SharedFrameworkReferences.Value,
             new CSharpCompilationOptions(
-                OutputKind.DynamicallyLinkedLibrary,
+                topLevel ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable
             )
@@ -66,7 +102,7 @@ public sealed class ArrangementRuleTests {
             overrides
         ).Options;
 
-        var result = Arranger.Arrange(
+        return Arranger.Arrange(
             path,
             text,
             new ArrangementOptions(options, ArrangementScope.Full, aggressive),
@@ -74,6 +110,23 @@ public sealed class ArrangementRuleTests {
             removeUnused ? UsingsRule.Unused(compilation.GetSemanticModel(tree), tree) : null,
             null,
             only is null ? ArrangementFilter.All : new ArrangementFilter([only], [])
+        );
+    }
+
+    /// <summary>
+    ///     Asserts the run never reached the safety layer, and returns its text.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ "Not reverted" is not the property these tests want. A rewrite that <em>was</em> produced
+    ///     and then reverted leaves the file byte-identical, so every <c>Assert.Contains</c> about the
+    ///     original text still passes — the bug is invisible to the assertions and visible only in the
+    ///     outcome. The two rewrites #326 found had exactly that shape: correct output, on disk, for the
+    ///     wrong reason. So the assertion is that <c>SK9098</c> never appeared.
+    /// </remarks>
+    static string Declined(ArrangementResult result) {
+        Assert.DoesNotContain(
+            result.Diagnostics,
+            diagnostic => diagnostic.Id is ArrangeIds.Reverted or ArrangeIds.SymbolChanged
         );
 
         Assert.NotEqual(ArrangementOutcome.Reverted, result.Outcome);
@@ -358,6 +411,87 @@ public sealed class ArrangementRuleTests {
         Assert.Contains("Take(1, 2)", arranged, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     ⚠ #326 (1). A discard imposes no target type, so the explicit type name stays.
+    /// </summary>
+    /// <remarks>
+    ///     <c>ObjectCreationRule.TargetTypeOf</c> answered a simple assignment with
+    ///     <c>GetTypeInfo(assignment.Left).Type</c>, and ⚠ <b>a discard infers its type from the
+    ///     right-hand side</b> — so for <c>_ = new Regex(p, o)</c> the model answered <c>Regex</c>, the
+    ///     "target equals created type" precondition passed, and the rewrite produced <c>_ = new(p, o)</c>:
+    ///     <c>CS8754: There is no target type for 'new(string, RegexOptions)'</c>. The question the
+    ///     precondition means to ask is what the position <em>imposes</em>, and a discard imposes
+    ///     nothing; it takes whatever it is given. Found on
+    ///     <c>Rules/…/Correctness/MalformedRegexPatternAnalyzer.cs</c> as an <c>SK9098</c> revert.
+    ///     <para>
+    ///         ⚠ <c>held</c> is the control and it is not decoration. Both arms are the same
+    ///         <c>SimpleAssignmentExpression</c> case, so without it the test would still pass with the
+    ///         rule switched off entirely, and "the discard was left alone" would be measuring nothing.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void ObjectCreation_LeavesADiscardAssignmentExplicitBecauseADiscardIsNoTarget() {
+        var arranged = Declined(
+            Attempt(
+                """
+                using System.Text.RegularExpressions;
+
+                namespace P;
+
+                public class C {
+                    public void Discarded(string pattern, RegexOptions options) {
+                        _ = new Regex(pattern, options);
+                    }
+
+                    public Regex Assigned(string pattern, RegexOptions options) {
+                        Regex held;
+                        held = new Regex(pattern, options);
+                        return held;
+                    }
+                }
+                """,
+                only: ArrangeIds.ObjectCreation
+            )
+        );
+
+        Assert.Contains("_ = new Regex(pattern, options);", arranged, StringComparison.Ordinal);
+        Assert.Contains("held = new(pattern, options);", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #326 (1), the other half: the guard asks the model, not the spelling.
+    /// </summary>
+    /// <remarks>
+    ///     A local genuinely named <c>_</c> is a real target — a declared <c>_</c> in scope wins over the
+    ///     discard — so <c>assignment.Left is IdentifierNameSyntax { Identifier.ValueText: "_" }</c> is a
+    ///     guard that reads the same and is wrong, and it would cost this rewrite for no reason. This
+    ///     fixture is what separates the two, and it is the one that goes red if the guard is ever
+    ///     rewritten syntactically for speed.
+    /// </remarks>
+    [Fact]
+    public void ObjectCreation_StillRewritesAnAssignmentToALocalNamedUnderscore() {
+        var arranged = Declined(
+            Attempt(
+                """
+                using System.Text.RegularExpressions;
+
+                namespace P;
+
+                public class C {
+                    public Regex M(string pattern, RegexOptions options) {
+                        Regex _;
+                        _ = new Regex(pattern, options);
+                        return _;
+                    }
+                }
+                """,
+                only: ArrangeIds.ObjectCreation
+            )
+        );
+
+        Assert.Contains("_ = new(pattern, options);", arranged, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void NamespaceBody_IsLeftAloneWhenTheFileHasMoreThanOne() {
         // A file-scoped namespace must be the only one in its file, so this is not a style question.
@@ -376,6 +510,56 @@ public sealed class ArrangementRuleTests {
 
         Assert.DoesNotContain("namespace A;", arranged, StringComparison.Ordinal);
         Assert.DoesNotContain("namespace B;", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #326 (2). A top-level program keeps its block namespace.
+    /// </summary>
+    /// <remarks>
+    ///     Top-level statements are members of the generated <c>Program</c>, so a file-scoped namespace
+    ///     cannot open after them: the rewrite is
+    ///     <c>CS8956: File-scoped namespace must precede all other members in a file</c>. Found on
+    ///     <c>Testing/Rikarin.Skala.Testing/Program.cs</c> by the first
+    ///     <c>skala arrange --check</c> anything had ever run over master, as an <c>SK9098</c> revert —
+    ///     the promise held and the file was left untouched, which is exactly why it went unnoticed:
+    ///     the output was right and the reason was wrong.
+    ///     <para>
+    ///         ⚠ The assertion that matters is <see cref="Declined" />'s, not the two
+    ///         <c>Assert.Contains</c> lines. Restore the old guard and the text assertions still pass,
+    ///         because a reverted rewrite leaves the file byte-identical; only the absence of
+    ///         <c>SK9098</c> separates "the rule declined" from "the rule tried and was caught".
+    ///     </para>
+    ///     <para>
+    ///         ⚠ This fixture was impossible before #314. Every arrangement probe compiled as a
+    ///         <see cref="OutputKind.DynamicallyLinkedLibrary" />, which answers top-level statements
+    ///         with <c>CS8805</c> — present before and after, so it cancels out of the safety layer's
+    ///         appeared-set and the probe measures a compilation no real run produces.
+    ///         <see cref="Attempt" /> now picks the kind from the file the same way
+    ///         <c>RuleFixtures.Compile</c> does.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void NamespaceBody_IsLeftAloneInATopLevelProgram() {
+        var arranged = Declined(
+            Attempt(
+                """
+                using System;
+
+                Console.WriteLine("the entry point");
+
+                namespace P
+                {
+                    public class C {
+                        public int N;
+                    }
+                }
+                """,
+                only: ArrangeIds.NamespaceBody
+            )
+        );
+
+        Assert.DoesNotContain("namespace P;", arranged, StringComparison.Ordinal);
+        Assert.Contains("namespace P", arranged, StringComparison.Ordinal);
     }
 
     [Fact]
