@@ -206,6 +206,8 @@ public static class AnalyzerHost {
         new PredictableInitializationVectorAnalyzer(), new AsymmetricKeySizeAnalyzer(),
         new SingleUseTemporaryAnalyzer(), new SplitDeclarationAndAssignmentAnalyzer(),
         new LocalFunctionBeforeJumpAnalyzer(), new SharedBranchTailAnalyzer(),
+        new InvalidConstantIndexOrRangeAnalyzer(), new UnchangingLoopConditionAnalyzer(),
+        new SingleIterationLoopAnalyzer(), new IndexOfComparedToPositiveAnalyzer(),
     ];
 
     /// <summary>

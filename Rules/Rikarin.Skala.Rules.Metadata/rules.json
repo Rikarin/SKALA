@@ -7912,6 +7912,110 @@
       "configuration": [
         "dotnet_diagnostic.SK1103.severity"
       ]
+    },
+    {
+      "id": "SK2210",
+      "concept": "invalid-constant-index-or-range",
+      "title": "The constant index or range cannot be valid",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "NegativeIndex",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A constant index or range that no collection length can make valid, so the element access throws for every input.",
+      "rationale": "Three shapes, and what they have in common is that the length never enters the arithmetic. `x[^0]` is one past the end whatever `x` holds — `^0` is `Length - 0`, not the last element — and it throws on a full collection and an empty one alike; it is the language wart that catches everyone once, and `^1` is what was meant. A range whose start is fixed above its end, `x[3..1]` or `x[^1..^3]`, is rejected by `Range.GetOffsetAndLength` before any length is consulted. A negative constant index throws from every positional indexer. ⚠ **This is not SK2001 and not SK2053.** SK2001 folds a *comparison* the operand type's range decides and SK2053 one a count's non-negativity decides; neither looks at an element access at all, and no type range or count contract says anything about `^0`. The fact this rule adds is the indexing contract itself: the offset `^0` denotes, the ordering `Range` requires of its endpoints, and the non-negativity every positional indexer requires of its argument — each provable from the constants on the page with no knowledge of the length whatsoever. There is no fix, for SK2001's reason: the rule can prove the access throws and cannot know whether `^1`, `1..3` or `0` was intended.",
+      "examples": {
+        "bad": "var last = values[^0];",
+        "good": "var last = values[^1];"
+      },
+      "falsePositives": "⚠ **`^0` is only reported where it indexes an element, never where it bounds a range.** `x[..^0]` is the whole collection and `x[^0..]` is an empty slice; both are legal, both are measured to be legal on an empty collection too, and a rule that folded them in with `x[^0]` would report the two spellings people use deliberately. The distinction is the syntactic parent: an index argument of an element access is reported, an endpoint of a range expression is not. ⚠ **A reversed range is reported only where both endpoints are constants of the same kind.** `a..b` compares directly and `^a..^b` compares the other way round — the start is `Length - a` and the end is `Length - b`, so it is invalid exactly when `b > a`. A mixed `3..^1` and a range with an omitted endpoint depend on the length and are declined. `2..2` and `^3..^1` are empty and forward respectively, and neither is reported. ⚠ **A negative constant index is declined on arrays, because `CS0251` already owns them**, and it is measured rather than assumed: the compiler reports `a[-1]` on an array and stays silent on `\"abc\"[-1]`, `list[-1]` and `span[-1]`, which all throw at run time. The receiver must be a `string`, a `Span`, a `ReadOnlySpan`, a `Memory`, a `ReadOnlyMemory` or a type implementing `IList`, `IList<T>` or `IReadOnlyList<T>` whose indexer takes a single `int`; a dictionary is excluded outright, since `map[-1]` is an ordinary key lookup and not an out-of-range access. A user-defined indexer outside those contracts is free to give a negative argument any meaning it likes and is never reported. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2210.severity"
+      ]
+    },
+    {
+      "id": "SK2211",
+      "concept": "unchanging-loop-condition",
+      "title": "Nothing the loop condition reads is changed by the loop",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "LoopVariableIsNeverChangedInsideLoop",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "Every local and parameter the loop condition reads keeps its value for the whole loop, and nothing in the body can leave it, so the loop either never runs or never stops.",
+      "rationale": "⚠ **An infinite loop is usually the point, so \"the loop has no exit\" is the wrong question to ask.** `while (true)` is the event loop, the reactor and the retry pump, and a rule that reported it would be reporting the shape every server is built out of. The narrower and answerable question is whether the condition can ever come out differently: a loop whose condition reads only locals and parameters, none of which the body writes, evaluates the same expression to the same value on every pass. Combined with a body that cannot `break`, `return` or `throw` its way out, the loop is decided before it starts — it runs zero times or it hangs — and the increment that was meant to be there is missing. That is a defect no `while (true)` is, and it is provable from definite-assignment alone, with no value reasoning and no lattice.",
+      "examples": {
+        "bad": "var i = 0;\nwhile (i < count) {\n    Sum(i);\n}",
+        "good": "var i = 0;\nwhile (i < count) {\n    Sum(i);\n    i++;\n}"
+      },
+      "falsePositives": "⚠ **A condition that reads anything but a local or a parameter is declined, and that exclusion is the rule's whole false-positive story.** `while (!stopped)` on a field, `while (queue.Count > 0)`, `while (reader.Read())` and `while (token.IsCancellationRequested)` all read state some other statement, some other thread or some other object changes, and none of them is decidable here; only locals and parameters have a single writer this analysis can enumerate. A method call, a property, an element access, `this`, a field and an `await` anywhere in the condition each withdraw the finding. ⚠ **So does an increment, a decrement or an assignment in the condition itself, and that guard was missing until the corpus found it.** Newtonsoft's `while (digits-- != 0)` writes `digits` in the condition, so the body has no reason to — and the rule reported a loop that terminates perfectly well. `AnalyzeDataFlow` is asked about the *body* and answers correctly; the question was the incomplete half. ⚠ **A constant condition is not reported.** `while (true)` and `for (;;)` are the idiom, and the rule is deliberately silent on them — the finding is a condition that *could* have changed and does not, not one that was never going to. ⚠ **The body is checked for an exit and the check over-bails.** Any `return`, `throw`, `break`, `goto` or `yield break` anywhere in the body withdraws the finding, whether or not it is reachable, because a rule that told somebody their loop hangs when a `return` two branches down ends it is a wrong finding rather than a noisy one. A `for` loop with any incrementor is declined for the same reason. ⚠ **A condition variable that any lambda or local function in the member so much as mentions withdraws the finding**, because a delegate created before the loop and invoked inside it writes through the closure without the write appearing in the body's data flow. A `ref` local is declined: its value can change through the alias. Writes made by passing a variable as a `ref` or `out` argument inside the body are counted as writes, so the loop that hands its counter to a helper is not reported. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2211.severity"
+      ]
+    },
+    {
+      "id": "SK2212",
+      "concept": "single-iteration-loop",
+      "title": "The loop body cannot run more than once",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S1751"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "Every path through the loop body ends in a jump out of it, so the loop is an `if` that has been given the shape of a loop.",
+      "rationale": "A body that always `break`s or `return`s consumes exactly one element and stops. Either the jump is in the wrong place — it belongs under a condition that is missing — or the loop is, and what was wanted is `FirstOrDefault`, a single `if`, or an index. The shape survives review because it reads as a loop and is one only in the grammar: the word `foreach` promises repetition the body has already ruled out. ⚠ **The question is settled by control flow, not by looking at the last statement**, and that is what makes it decidable rather than a heuristic. It is also what gets `break` right inside a nested `switch`, where the `break` binds to the switch and leaves the loop running — the reading a syntactic rule gets wrong, and the one this rule has a fixture for. There is no fix: which of the two readings was meant is exactly what the rule cannot know, and `S1751` marks its own quick fix infeasible for the same reason.",
+      "examples": {
+        "bad": "foreach (var item in items) {\n    Handle(item);\n    break;\n}",
+        "good": "foreach (var item in items) {\n    Handle(item);\n    if (Done(item)) { break; }\n}"
+      },
+      "falsePositives": "⚠ **A body whose endpoint is unreachable is not automatically a body that jumps out, and this is the rule's main guard.** Control can fail to reach the end because every path jumps — the finding — or because a statement in the body never completes. A nested loop with a constant-true condition is the way that happens on purpose, so a body containing one is declined outright, as is a body containing any `goto`, whose cycles this analysis does not chase. ⚠ **A jump the rule can point at is required, and the corpus is why.** The first draft also reported a body with an unreachable endpoint and no exit point at all, reasoning that only an always-`throw` body could be left once the two guards above had run. Vixen's `GlBindingPlan.Build` refuted that: a `switch` expression over an *error type* — `DescriptorKind` was `CS0246` in that compilation — makes the endpoint unreachable too, and the same shape with the enum resolved is correctly declined, measured on a probe that compiles. Requiring a `return`, a `break` or a `goto` that leaves the loop closes a class this rule cannot enumerate. The price is a body that throws on every path, which is a different finding from a loop that runs once. ⚠ **A `continue` for this loop withdraws the finding.** `continue` ends the iteration and not the loop, so a body ending in one has an unreachable endpoint and still runs to completion; the brief that produced this rule named it as the trap and there is a fixture for it. ⚠ **A `break` belonging to a nested `switch`, or to a nested loop, does not count**, because the exit points come from `AnalyzeControlFlow` over the body region and Roslyn binds those jumps to their own enclosing statement rather than to this loop. A `break` in a `switch` section whose loop therefore keeps running is a negative fixture. ⚠ **A `return` or `throw` inside a lambda or a local function declared in the body belongs to that lambda**, not to the loop, and the same region analysis excludes it. A loop with no body statements at all is not reported: there is no jump, and an empty loop is a different finding. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2212.severity"
+      ]
+    },
+    {
+      "id": "SK2213",
+      "concept": "index-of-compared-to-positive",
+      "title": "The `IndexOf` result is compared to a positive number",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2692"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A search that reports absence as `-1` is tested with `> 0`, which also rejects a match at the first position.",
+      "rationale": "`IndexOf` answers two questions at once: whether the value is there, and where. `> 0` conflates them, and the element at position 0 falls down the gap — present, and reported absent. It survives every test whose fixture does not begin with the needle, which is most of them, and fails the day a caller passes a string that starts with what it is looking for. `>= 0` is the test for presence and `Contains` says it without an index at all. ⚠ **This is the carve-out SK2053 names and declines.** SK2053 proves a comparison from the framework contract that a count is never negative; `IndexOf` is the framework member whose negative result is *meaningful*, which is why SK2053's own false-positive note excludes it and why the two can never report the same expression. SK2001 is further away still: it decides a comparison from the operand type's range, and `IndexOf` returns an `int`, whose range settles nothing about zero.",
+      "examples": {
+        "bad": "if (path.IndexOf(':') > 0) { Split(path); }",
+        "good": "if (path.IndexOf(':') >= 0) { Split(path); }"
+      },
+      "falsePositives": "⚠ **`> 0` is a correct test when \"found, but not at the start\" is what was meant**, and the rule cannot tell the two apart — which is why the fix is offered as one to review rather than one `skala fix` applies unasked. The escape hatch is spelling it unambiguously: `>= 1` says \"found at or after position 1\" with no second reading, and is deliberately **not** reported, so a codebase that means it can say so once and never see the rule again. `>= 0`, `!= -1`, `== -1` and `< 0` are the correct spellings of presence and absence and none of them is reported. ⚠ **Only a closed set of search methods is covered**, each of which is documented to return `-1` for absence: `IndexOf`, `LastIndexOf`, `IndexOfAny` and `LastIndexOfAny` on `string`; the static `Array.IndexOf` and `Array.LastIndexOf`; `IndexOf` and `LastIndexOf` on `List<T>`, on `IList<T>` and on the `System.Collections.IList` interface; and the `MemoryExtensions` span searches. A method called `IndexOf` on a type outside that set may return anything at all and is not reported — the same reasoning that stops SK2053 trusting a hand-written `Count`. The constant must be the literal `0` on either side, so `0 < s.IndexOf(c)` is reported and `n < s.IndexOf(c)` is not. The fix replaces the `>` operator token with `>=` and touches nothing else. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2213.severity"
+      ]
     }
   ]
 }

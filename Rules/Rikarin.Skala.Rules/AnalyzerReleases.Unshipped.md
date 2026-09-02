@@ -281,3 +281,7 @@ SK1100  | Skala.Modernization | Info | The local names an expression used once, 
 SK1101  | Skala.Modernization | Info | The local is declared on one line and assigned on the next.
 SK1102  | Skala.Modernization | Hidden | A local function is declared before the jump that ends the block.
 SK1103  | Skala.Modernization | Hidden | Both branches of the `if` end with the same statements.
+SK2210 | Skala.Correctness | Warning | The constant index or range cannot be valid.
+SK2211 | Skala.Correctness | Warning | Nothing the loop condition reads is changed by the loop.
+SK2212 | Skala.Correctness | Warning | The loop body cannot run more than once.
+SK2213 | Skala.Correctness | Warning | The `IndexOf` result is compared to a positive number.

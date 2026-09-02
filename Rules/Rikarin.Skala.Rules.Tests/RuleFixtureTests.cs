@@ -168,6 +168,8 @@ public sealed class RuleFixtureTests {
         new PredictableInitializationVectorAnalyzer(), new AsymmetricKeySizeAnalyzer(),
         new SingleUseTemporaryAnalyzer(), new SplitDeclarationAndAssignmentAnalyzer(),
         new LocalFunctionBeforeJumpAnalyzer(), new SharedBranchTailAnalyzer(),
+        new InvalidConstantIndexOrRangeAnalyzer(), new UnchangingLoopConditionAnalyzer(),
+        new SingleIterationLoopAnalyzer(), new IndexOfComparedToPositiveAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

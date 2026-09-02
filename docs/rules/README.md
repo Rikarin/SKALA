@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 305 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 302 ids are allocated.
 
 ## Async
 
@@ -146,6 +146,10 @@
 | [SK2200](SK2200.md) | The field initializer is overwritten by every constructor | warning | safe | no |
 | [SK2201](SK2201.md) | The unsubscription passes an anonymous function | warning | — | no |
 | [SK2202](SK2202.md) | The modification sits inside a conditional invocation | warning | — | yes |
+| [SK2210](SK2210.md) | The constant index or range cannot be valid | warning | — | no |
+| [SK2211](SK2211.md) | Nothing the loop condition reads is changed by the loop | warning | — | no |
+| [SK2212](SK2212.md) | The loop body cannot run more than once | warning | — | no |
+| [SK2213](SK2213.md) | The `IndexOf` result is compared to a positive number | warning | review | no |
 
 ## Design
 

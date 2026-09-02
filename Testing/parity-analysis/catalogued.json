@@ -272,5 +272,9 @@
   "JoinDeclarationAndInitializer": "SK1101",
   "MoveLocalFunctionAfterJumpStatement": "SK1102",
   "SeparateLocalFunctionsWithJumpStatement": "SK1102",
-  "ExtractCommonBranchingCode": "SK1103"
+  "ExtractCommonBranchingCode": "SK1103",
+  "NegativeIndex": "SK2210",
+  "IndexingByInvalidRange": "SK2210",
+  "ZeroIndexFromEnd": "SK2210",
+  "LoopVariableIsNeverChangedInsideLoop": "SK2211"
 }

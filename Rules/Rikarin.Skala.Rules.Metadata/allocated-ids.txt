@@ -322,3 +322,7 @@ SK1100 single-use-temporary
 SK1101 split-declaration-and-assignment
 SK1102 local-function-before-jump
 SK1103 shared-branch-tail
+SK2210 invalid-constant-index-or-range
+SK2211 unchanging-loop-condition
+SK2212 single-iteration-loop
+SK2213 index-of-compared-to-positive
