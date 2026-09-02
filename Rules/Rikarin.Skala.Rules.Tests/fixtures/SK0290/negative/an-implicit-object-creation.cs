@@ -1,8 +1,10 @@
 public static class ImplicitCreation {
-    // `new(5)` is an `ImplicitObjectCreationExpression`, a different syntax kind. The type is not
-    // written here at all — it comes from the target — so there is nothing redundant to remove.
-    public static int? Go(int value) {
-        int? wrapped = new(value);
+    // ⚠ `new(…)` is an `ImplicitObjectCreationExpression`, a different syntax kind, and it does not
+    // even mean the same thing: under a `T?` target the constructor bound is `T`'s, so
+    // `int? wrapped = new(value);` is `CS1729` — measured — and `new()` leaves `wrapped` holding
+    // zero rather than null. Nothing is written here to be redundant.
+    public static int? Go() {
+        int? wrapped = new();
         return wrapped;
     }
 }
