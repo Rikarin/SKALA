@@ -6990,25 +6990,26 @@
     },
     {
       "id": "SK3061",
-      "concept": "lock-over-shared-object",
-      "title": "The `lock` is taken over an object other code can also lock",
+      "concept": "ineffective-lock-target",
+      "title": "The `lock` target is not the object other threads take",
       "category": "Async",
       "defaultSeverity": "warning",
-      "scope": "Semantic",
+      "scope": "Compilation",
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
       "resharperId": null,
       "supersedes": [
-        "S2551"
+        "S2445",
+        "S6507"
       ],
       "since": "2.0",
       "languageVersion": null,
-      "summary": "A `lock` taken over `this`, over a `Type`, or over a `string` — three objects whose identity is shared with code the type does not control.",
-      "rationale": "A lock excludes exactly the threads that take the same monitor, so which object the monitor lives on is the whole contract. `lock (this)` publishes that contract to every holder of a reference: an unrelated caller writing `lock (theObject)` now participates in the type's critical section, and a caller that blocks inside one deadlocks the type from the outside. A `Type` object is one per type per process, and a literal `string` is interned, so both are shared with every assembly loaded — including ones written years apart that never heard of each other. ⚠ **The bug is invisible in the file that has it**: the code reads as a correct critical section, and the second participant is somewhere else entirely.",
+      "summary": "A `lock` taken over an object created in the same invocation, or over a field the type reassigns, so the monitor it takes is not the monitor another thread takes.",
+      "rationale": "A `lock` excludes exactly the threads that take the same monitor, and the monitor lives on the object — so which object it is, is the entire contract. Both shapes here break it in the same way and read as correct: a local initialized with `new` gives every invocation its own monitor, so the critical section excludes nobody and the whole construct is a no-op; a field the type reassigns gives whoever entered before the reassignment a different monitor from whoever enters after, so two threads sit inside the same `lock` body at the same time. ⚠ **Neither produces a symptom that points at the lock.** The code compiles, the critical section is right there in the file, and the corruption it was supposed to prevent shows up as a data bug somewhere else.",
       "examples": {
-        "bad": "sealed class Cache {\n    readonly Dictionary<string, int> entries = new();\n\n    public void Put(string key, int value) {\n        lock (this) {\n            entries[key] = value;\n        }\n    }\n}",
-        "good": "sealed class Cache {\n    readonly Lock gate = new();\n\n    readonly Dictionary<string, int> entries = new();\n\n    public void Put(string key, int value) {\n        lock (gate) {\n            entries[key] = value;\n        }\n    }\n}"
+        "bad": "sealed class Meter {\n    int count;\n\n    public void Bump() {\n        var gate = new object();   // a new monitor every call; this excludes nobody\n\n        lock (gate) {\n            count++;\n        }\n    }\n}",
+        "good": "sealed class Meter {\n    readonly Lock gate = new();\n\n    int count;\n\n    public void Bump() {\n        lock (gate) {\n            count++;\n        }\n    }\n}"
       },
       "falsePositives": "MEASUREMENT-OWED",
       "configuration": [

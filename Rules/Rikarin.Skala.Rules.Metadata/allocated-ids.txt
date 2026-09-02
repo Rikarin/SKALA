@@ -286,5 +286,5 @@ SK2132 mismatched-backing-field
 SK2133 unimplemented-partial-method
 SK2134 instance-write-to-static
 SK3060 unreleased-lock
-SK3061 lock-over-shared-object
+SK3061 ineffective-lock-target
 SK3062 constructor-publishes-this
