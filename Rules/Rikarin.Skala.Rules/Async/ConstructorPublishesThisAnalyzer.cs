@@ -28,6 +28,9 @@ namespace Rikarin.Skala.Rules.Async;
 ///             reader is outside the constructor's control
 ///         </em>: process-wide static state, or a thread
 ///         the constructor itself starts. Everything else is declined, and the negative fixture set,
+///         the four real shapes with it. So the rule reports only publication whose second reader is
+///         <em>outside the constructor's control</em>: process-wide static state, or a thread the
+///         constructor itself starts. Everything else is declined, and the negative fixture set,
 ///         which is more than twice the size of the positive one, is where that promise is kept.
 ///     </para>
 ///     <list type="number">
