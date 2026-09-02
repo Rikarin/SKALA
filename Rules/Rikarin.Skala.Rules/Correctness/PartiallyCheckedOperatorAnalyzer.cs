@@ -97,7 +97,7 @@ public sealed class PartiallyCheckedOperatorAnalyzer : DiagnosticAnalyzer {
                         "`"
                         + type.Name
                         + "` declares `operator checked "
-                        + Spelling(declaredChecked[0])
+                        + Spelling(declaredChecked)
                         + "` and no `operator checked "
                         + pair.Spelling
                         + "`, so overflow traps on one and wraps on the other inside the same `checked` block"
@@ -133,8 +133,25 @@ public sealed class PartiallyCheckedOperatorAnalyzer : DiagnosticAnalyzer {
         return true;
     }
 
-    static string Spelling(IMethodSymbol method) =>
-        Checkable.Values.FirstOrDefault(pair => string.Equals(pair.Checked, method.Name, System.StringComparison.Ordinal))
-            .Spelling
-        ?? "operator";
+    /// <summary>How to spell the checked operator the type <em>did</em> declare, for the message.</summary>
+    /// <remarks>
+    ///     ⚠ <b>Reads the list rather than indexing it, and the reason is a crash this actually had.</b>
+    ///     The earlier form was <c>declaredChecked[0]</c>, safe only because the opt-in predicate ten
+    ///     lines above guarantees the list is not empty. Sabotaging that predicate to measure how noisy
+    ///     the bare shape is did not produce the flood of findings it was meant to — it produced
+    ///     <c>ArgumentOutOfRangeException</c>, reported as <c>AD0001</c> on seven unrelated fixtures,
+    ///     and <em>a crashed analyzer declines every negative fixture it was supposed to decline</em>.
+    ///     A message helper that cannot throw is worth more than the one character it saves.
+    /// </remarks>
+    static string Spelling(List<IMethodSymbol> declared) {
+        foreach (var method in declared) {
+            foreach (var pair in Checkable.Values) {
+                if (string.Equals(pair.Checked, method.Name, System.StringComparison.Ordinal)) {
+                    return pair.Spelling;
+                }
+            }
+        }
+
+        return "operator";
+    }
 }
