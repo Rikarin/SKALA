@@ -3657,3 +3657,55 @@ reports *"'NeverInstantiated' is an internal class that is apparently never inst
 **off by default** (`isEnabledByDefault: false`, `defaultLevel: warning`), so the work there is
 enabling and mapping rather than writing an analyzer. What `SK6062` ships is the one part of that
 issue no assembly boundary touches: a *local*.
+
+### ⚠ Three zeros on the reference trees, each classified, and one of them says nothing at all
+
+Swept over all three vendored trees — 380 source files, `.expected.cs` excluded — staged outside the
+repository because the corpus is unreachable through `skala check` in place (`SK9023`), built into
+real projects with empty `Directory.Build.props`/`.targets` above them, and read through
+`--load=binlog`. ⚠ **`--load=loose` would have skipped all three rules** (issue #277) and
+`--load=workspace` ignores its path argument (issue #284), so binlog is the only mode in which this
+measurement means anything. The load carried **14 460 CS diagnostics across 29, 11 and 24 distinct
+codes** — the slice does not compile, which is the normal state of it — and produced **197 `SK` findings
+across 26 distinct rules**, no `AD0001` and no `SK9030`. That last pair of numbers is the evidence the
+analysis ran at all, and is why the three zeros below are readable.
+
+⚠ **`<ImplicitUsings>` was set to `enable` and the difference is not cosmetic.** The slice omits the
+generated file, and its absence lies in both directions. CS-error lines in the MSBuild log, disabled
+then enabled: serilog **1 694 → 972**, vixen **9 534 → 8 218**, newtonsoft **1 808 → 1 806**. A sweep
+run without it is measuring a different program on two of the three trees.
+
+**The instrument was verified before any zero was reported**, in the pipeline rather than in the
+harness: one file carrying all three shapes was planted into the serilog project, rebuilt, and swept.
+All three fired — `SK6060` on `IPlantedFactory<T>`, `SK6061` on a `[CallerMemberName]` parameter
+followed by an `int level = 0`, `SK6062` on a `List<string>` filled in a loop. The file was deleted and
+the sweep returned to zero.
+
+| Rule | Findings | Classification |
+|---|---:|---|
+| `SK6060` | 0 | **Shape present, correctly declined** — 2 candidates, 2 different reasons |
+| `SK6061` | 0 | ⚠ **Shape absent** — the corpus contains no caller-info attribute at all |
+| `SK6062` | 0 | **Shape present, correctly declined** — 68 candidates |
+
+- **`SK6060`.** Exactly two generic interfaces with an unannotated type parameter exist across the
+  three trees, and each is declined for a different one of the rule's reasons. `ISyncCodec<T>`
+  (`vixen/Core/Vixen.Net.Engine/SyncField.cs`) has `void Write(ref BitWriter, in T)` and
+  `bool Read(ref BitReader, out T)` — the `in` is contravariant and the `out` parameter is
+  **invariant**, so neither modifier is legal and the compiler agrees. `IInlineBuffer<T>`
+  (`vixen/Core/Vixen.Core.Collections/InlineBuffer.cs`) declares one member,
+  `static abstract int Capacity { get; }`, which does not mention `T` at all — the unused-type-parameter
+  guard, which is a different finding.
+- **`SK6061`.** ⚠ **This zero is worth nothing and saying so is the point.** A search of all 380 files
+  finds no `[CallerMemberName]`, `[CallerFilePath]`, `[CallerLineNumber]` or
+  `[CallerArgumentExpression]` anywhere. The rule was never given the chance to be wrong here, and its
+  false-positive evidence is the fixture set and the planted probe, not this sweep.
+- **`SK6062`.** 68 locals initialised to a `new` collection of a type the rule classifies, and every one
+  of them is read somewhere in its member. That is the zero that carries weight in this batch.
+
+⚠ **`SK6062` was sweepable and the brief assumed it would not be**, which is worth recording because
+the reasoning generalises. A usage-based rule cannot be measured on a source slice when the usage it
+asks about lives outside the slice — most of the callers are missing, so "nothing uses this" is a
+statement about the vendoring rather than about the code. `SK6062` asks only about a **local**, and
+every reference to a local is inside the member that declares it and therefore inside the slice. The
+same property that makes the rule decidable across the assembly boundary makes it measurable on an
+incomplete tree. `SK6060` and `SK6061` are declaration-shape questions and were never usage-based.
