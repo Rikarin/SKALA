@@ -22,12 +22,6 @@ namespace Rikarin.Skala.Rules.Async;
 ///         <c>button.Click += OnClick;</c> in a constructor is the overwhelmingly common
 ///         <em>legitimate</em> shape — nearly every UI type ever written contains it — and a rule that
 ///         reports it is worse than no rule at all, because it would be dismissed wholesale and take
-///         the four real shapes with it. So the rule reports only publication whose
-///         <em>
-///             second
-///             reader is outside the constructor's control
-///         </em>: process-wide static state, or a thread
-///         the constructor itself starts. Everything else is declined, and the negative fixture set,
 ///         the four real shapes with it. So the rule reports only publication whose second reader is
 ///         <em>outside the constructor's control</em>: process-wide static state, or a thread the
 ///         constructor itself starts. Everything else is declined, and the negative fixture set,
@@ -275,16 +269,10 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
             Diagnostic.Create(
                 Descriptor,
                 assignment.GetLocation(),
-                // ⚠ Not "before this constructor returns". The subscription is often the last
-                // statement of a sealed type's constructor, where that claim is not true and a reader
-                // who checks will stop believing the rest of the message. What is true everywhere is
-                // the escape itself: the object is reachable from state that outlives it before the
-                // caller has been given the reference, so nobody can undo the subscription if a later
-                // initializer throws, and any thread can raise the event from then on.
                 "the constructor subscribes to "
                 + where
-                + ", so this object is reachable from an event that outlives it before the caller "
-                + "has the reference to unsubscribe it"
+                + ", so a half-built object is reachable from an event that outlives it and can be "
+                + "raised before this constructor returns"
             )
         );
     }
@@ -298,21 +286,6 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
     ///     until somebody calls <c>Start</c>. The rule requires the <c>Start()</c> to be in the same
     ///     constructor and then looks back for where that thread was made, so the field-and-start-later
     ///     shape is declined by construction rather than by a filter.
-    ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             And starting a thread as the last act of a <c>sealed</c> type's constructor is not
-    ///             a finding either, because there is nothing left to race.
-    ///         </b> This gate exists because the
-    ///         first draft reported <c>VideoPlayer</c> on the reference tree and that finding was
-    ///         <em>wrong</em>: <c>Thread.Start</c>, <c>Task.Run</c> and <c>QueueUserWorkItem</c> all
-    ///         publish a memory barrier, so everything the constructor wrote before them is visible to
-    ///         the new thread. The hazard needs something that still changes afterwards — a statement
-    ///         following the start, or a derived constructor, which a sealed type cannot have. ⚠ This
-    ///         is the one gate in this rule that shapes A, B and C deliberately do <em>not</em> share:
-    ///         storing a reference in static state is not a barrier and buys no ordering, and the defect
-    ///         there is that the object is reachable at all rather than that it is unfinished.
-    ///     </para>
     /// </remarks>
     static void StartedOnAnotherThread(
         SyntaxNodeAnalysisContext context,
@@ -321,10 +294,6 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
         INamedTypeSymbol owner,
         Starters starters
     ) {
-        if (!StillUnderConstruction(invocation, declaration, owner)) {
-            return;
-        }
-
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
             is not IMethodSymbol { ContainingType: { } container } method) {
             return;
@@ -348,40 +317,6 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
         if (scheduler is not null) {
             Escapes(context, invocation.ArgumentList.Arguments, invocation, owner, scheduler);
         }
-    }
-
-    /// <summary>
-    ///     Whether anything can still change this object after the thread start at <paramref name="start" />.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Two ways, and both have to be absent before the rule stays quiet. A type that is not
-    ///     <c>sealed</c> has a derived constructor that runs after this one, so the object keeps being
-    ///     written wherever in the body the start sits. And a statement that follows the start — at any
-    ///     enclosing level up to the constructor body, so a start at the end of an <c>if</c> block that
-    ///     is itself the last statement counts as following nothing — is the constructor still writing
-    ///     after it has published.
-    /// </remarks>
-    static bool StillUnderConstruction(
-        ExpressionSyntax start,
-        ConstructorDeclarationSyntax declaration,
-        INamedTypeSymbol owner
-    ) {
-        if (!owner.IsSealed) {
-            return true;
-        }
-
-        for (SyntaxNode? current = start; current is not null && current != declaration; current = current.Parent) {
-            if (current is not StatementSyntax statement || statement.Parent is not BlockSyntax block) {
-                continue;
-            }
-
-            var index = block.Statements.IndexOf(statement);
-            if (index >= 0 && index < block.Statements.Count - 1) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     static void Escapes(
