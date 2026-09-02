@@ -2562,3 +2562,110 @@ is off under `AnalysisMode=Default`, and ADR-008's answer to that is to enable i
 The one gap found is that `CA2201` matches the exact type, so a `Win32Exception` — which derives from
 the `ExternalException` it does report — passes; that is not what the issue is about and does not
 justify an id.
+
+## `SK2130`–`SK2134` — members, backing fields, and the order things are initialized in
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK2000 —
+Correctness" only to keep it out of a section several concurrent branches were editing.** What
+follows is the register doing the one job ADR-012 needs it to do — the numbers are taken and written
+down where the next milestone will read them — plus, for three of the five, the measurement that
+decided what the rule is *for*, because in this batch that measurement is most of the content. It is
+not yet the considered account the sections above carry, and it belongs beside `SK2030`–`SK2034`.
+
+**Five rules about storage: where a value comes from, when it arrives, and who else can see it.**
+
+⚠ **Three of the five were narrowed by a probe rather than by argument, and the probe is what makes
+them worth an id at all.** A single file compiled at `AnalysisMode=All` was read for what the
+platform already says about each proposed shape. The answers moved two rules and refuted a third's
+larger half:
+
+| Shape | What the platform says |
+|---|---|
+| `private` / `internal` / `private readonly` field, never assigned | `CS0649` |
+| `public` field, never assigned | nothing — and it is not decidable, since any consumer may write it |
+| get-only auto-property, non-nullable reference, nullable warnings on | `CS8618` |
+| get-only auto-property, value type or nullable reference, or warnings off | **nothing** |
+| extended `partial` method with no implementation | `CS8795` — a compile **error** |
+| classic `partial void` with no implementation, called | **nothing** |
+| instance code writing a `private static` field | nothing; `CA2211` fires on a **public** static field's *declaration* |
+| static field initializer reading a field below it | **nothing** |
+| *instance* field initializer reading another instance field | `CS0236` — a compile **error** |
+
+- `SK2130` `forward-static-initializer` — a static field initializer that reads a static field of the
+  same type declared below it, which reads `default` because initializers run in declaration order.
+  ⚠ **Being exact about the construct is the whole rule, because three neighbours look identical and
+  are all correct.** A static *property* runs when it is called; a static *method* is ordered against
+  nothing; and a **static constructor runs after every field initializer**, so a read from there sees
+  a fully initialized type. ⚠ **The referenced field must carry an initializer of its own**, and that
+  is about the message being true rather than about the count — a field without one reads `default`
+  from above it as well, so the declaration order is not what makes it wrong and a finding blaming
+  the order would be pointing at the wrong thing. ⚠ **The instance version of this concept does not
+  exist**: `CS0236` forbids an instance field initializer from referencing any instance member at
+  all, which is why the rule is `static` only and needs no exclusion to say so. Cross-file pairs in a
+  `partial` type are declined, because the order between parts follows the order the files reach the
+  compiler. Report-only: the repair moves a declaration, and which of the two moves is right depends
+  on what else in the type depends on the order.
+- `SK2131` `unassigned-get-only-property` — a `{ get; }` with no initializer that no constructor
+  assigns. ⚠ **Issue #24 proposed six ReSharper inspections and five of them dissolve, which is worth
+  as much as the one that shipped.** The three field inspections are `CS0649`; the public-field case
+  is not decidable in a compilation at all; and the non-nullable-reference property is `CS8618`,
+  hosted under ADR-008 rather than duplicated. What survives is the half the compiler is silent about
+  — a value type, a nullable reference, or anything in a nullable-oblivious file — and ⚠ **it is
+  decidable for a reason worth writing down: a `{ get; }` with no initializer can be assigned from
+  nowhere but a constructor of its own declaring type**, and every part of that type is in this
+  compilation, because a type cannot be split across assemblies and a generator's part is compiled
+  source like any other. That makes it *not* the usage-based rule the concept looked like. The
+  residue is reflection against the compiler-generated backing field, which nothing compilation-local
+  can see. Report-only: the property is permanently `default`, and saying what it should hold instead
+  is the one thing the declaration does not contain.
+- `SK2132` `mismatched-backing-field` — an accessor reaching for a field that backs a different
+  property. The only rule in the batch with a fix. ⚠ **The name convention is a convention, not a
+  fact, and correct code breaks it constantly** — `Count` over `_items`, `Value` over `_inner` — so
+  two conditions must hold **together, about two properties rather than one**: the examined property
+  must itself have a conventionally named field of exactly its own type, and the field the accessor
+  touches must be the conventionally named field of a *different* property of the same type. The
+  first condition is what declines `Count`/`_items`; the second is what declines `Value`/`_inner`
+  unless an `Inner` property also exists, at which point the names have been crossed rather than
+  chosen. ⚠ **The accessor must be nothing but the field access**, which declines
+  `get => _items.Count;` and a getter that logs first by construction: an accessor that does anything
+  besides reach for storage is stating a decision. The fix is `fixIsSafe: false` because it changes
+  what the program computes, which is exactly the point of the finding.
+- `SK2133` `unimplemented-partial-method` — a `partial void` with no implementing declaration that
+  something calls. ⚠ **The declaration alone is never the finding, and that is the difference between
+  this rule and `S3251` as stated.** An unimplemented `partial` method is legal and erasing it is the
+  feature; the defect is that the *call* is erased with it, argument evaluation included, so work
+  written into an argument silently does not happen. ⚠ **Requiring a call is also what makes the rule
+  decidable rather than merely narrow**: a classic `partial void` carries no accessibility modifier
+  and is therefore implicitly `private`, so every caller it can ever have is inside the declaring
+  type, which is in this compilation in full. ⚠ **The other half of #186 is `CS8795` and was verified
+  as a compile error**, so it can never reach a compiling analysis; `ReturnsVoid` keeps it out by
+  construction rather than by hope, and that half is refuted rather than shipped. Report-only,
+  because writing the implementation and deleting the hook are opposite repairs and the source does
+  not say which.
+- `SK2134` `instance-write-to-static` — an instance member assigning a static field of its own type.
+  ⚠ **`CA2211` was verified to be a different question rather than assumed to be**: it fires on a
+  *public* static field's declaration, is silent on a private one, and says nothing about who writes
+  it. This rule never reads visibility and never reports a declaration. ⚠ **Lazy initialization is
+  the look-alike and is declined by recognising the guard, not the name** — `??=`, an `x ?? y`
+  right-hand side, and an assignment under a condition mentioning that same field together with
+  `null` or `default`, which is also what covers double-checked locking. ⚠ **A counter incremented
+  from a constructor is reported on purpose**, and a fixture pins it positive so that nobody later
+  mistakes it for a false positive and excludes it: it is shared mutable state, `++` is not atomic,
+  and `Interlocked.Increment` — which is declined by construction, being an argument rather than an
+  assignment — is the repair. Only the enclosing type's own static fields, so a process-wide setting
+  on somebody else's type is out. Report-only: the two repairs change the type in opposite
+  directions.
+
+⚠ **`SK2131` and `SK2132` are the pair that could collide, and they cannot — by construction rather
+than by a filter.** Both read a property. `SK2131` requires an *auto*-property, which has no accessor
+body at all; `SK2132` requires an accessor body that is a field reference. No property can be both,
+and a batch test asserts that on the one file where it would show rather than trusting the argument.
+`SK2130` and `SK2134` are disjoint for the same kind of reason: a static field initializer is neither
+instance code nor an assignment expression.
+
+⚠ **Four of the five ship report-only, and the reason is the same one each time rather than four
+different ones.** In every case two repairs exist that move the code in opposite directions — hoist
+the declaration or sink the reader, write the implementation or delete the hook, make the state
+per-instance or make the member static — and the finding is precisely the evidence that the author
+knows which and the analyzer does not. `SK2132` is the exception because there the two candidate
+repairs are not symmetric: one of them is a rename of a property that other code already calls.

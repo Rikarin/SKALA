@@ -74,6 +74,9 @@ public sealed class MismatchedBackingFieldAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ Not sabotage-testable, and that is a property of the rule rather than a gap in the
+        // fixtures: `own` is the name the fix writes, so there is nothing to report without it. It
+        // is also the first of the two conditions — the one that declines `Count` over `_items`.
         var own = Conventional(symbol);
         if (own is null) {
             return;
@@ -90,6 +93,13 @@ public sealed class MismatchedBackingFieldAnalyzer : DiagnosticAnalyzer {
                 continue;
             }
 
+            // ⚠ `touched == own` survived a sabotage that turned nothing red, and it is kept anyway
+            // rather than deleted. `OwnerOf` skips the property being examined, so in every ordinary
+            // shape an accessor using its own field already finds no other owner — which is why the
+            // sabotage was green. It is not green in one case: a single field can be conventional
+            // for two properties when one of them is spelled with a leading underscore (`_Name`
+            // backs both `Name` and `_Name`), and without this test that produces a finding whose
+            // fix replaces a name with itself — a `skala fix` loop rather than a repair.
             if (context.SemanticModel.GetSymbolInfo(reference, context.CancellationToken).Symbol
                 is not IFieldSymbol touched
                 || SymbolEqualityComparer.Default.Equals(touched, own)

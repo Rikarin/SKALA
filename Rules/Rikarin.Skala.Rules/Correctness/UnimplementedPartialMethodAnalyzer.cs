@@ -84,6 +84,10 @@ public sealed class UnimplementedPartialMethodAnalyzer : DiagnosticAnalyzer {
 
         context.RegisterSyntaxNodeAction(
             node => {
+                // ⚠ A gate rather than a guard, and a sabotage proved it: removing the syntactic
+                // test turns nothing red, because `Unimplemented` asks the symbol the same question
+                // and answers it correctly. It stays because it keeps `GetDeclaredSymbol` off every
+                // method declaration in a type that happens to hold one unimplemented hook.
                 var method = (MethodDeclarationSyntax)node.Node;
                 if (!method.Modifiers.Any(SyntaxKind.PartialKeyword)
                     || method.Body is not null
