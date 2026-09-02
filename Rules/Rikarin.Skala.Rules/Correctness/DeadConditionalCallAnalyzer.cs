@@ -23,8 +23,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     statement before the compiler ever sees it. The two mechanisms cancel, and the author who wrote
 ///     both plainly meant the call to happen somewhere.
 ///     <para>
-///         ⚠ <b>The redundant shape is deliberately not this rule, and the reason is measured rather
-///         than argued.</b> The sibling shape — <c>[Conditional("DEBUG")]</c> called inside
+///         ⚠
+///         <b>
+///             The redundant shape is deliberately not this rule, and the reason is measured rather
+///             than argued.
+///         </b> The sibling shape — <c>[Conditional("DEBUG")]</c> called inside
 ///         <c>#if DEBUG</c> — is belt and braces: the guard duplicates what the attribute already does
 ///         and nothing is broken. It is also <em>unobservable</em> from any compilation that does not
 ///         define the symbol, because the region is disabled text and holds no invocation node to
@@ -78,7 +81,10 @@ public sealed class DeadConditionalCallAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (context.SemanticModel.GetOperation(invocation, context.CancellationToken) is not IInvocationOperation call) {
+        if (context.SemanticModel.GetOperation(
+                invocation,
+                context.CancellationToken
+            ) is not IInvocationOperation call) {
             return;
         }
 
@@ -173,8 +179,10 @@ public sealed class DeadConditionalCallAnalyzer : DiagnosticAnalyzer {
             switch (directive) {
                 // `#if !X` — the branch was taken, so `X` is not defined.
                 case IfDirectiveTriviaSyntax conditionalDirective
-                    when conditionalDirective.Condition is PrefixUnaryExpressionSyntax
-                    { RawKind: (int)SyntaxKind.LogicalNotExpression, Operand: IdentifierNameSyntax negated }:
+                    when conditionalDirective.Condition is PrefixUnaryExpressionSyntax {
+                        RawKind: (int)SyntaxKind.LogicalNotExpression,
+                        Operand: IdentifierNameSyntax negated
+                    }:
                     result.Add(negated.Identifier.ValueText);
                     break;
 

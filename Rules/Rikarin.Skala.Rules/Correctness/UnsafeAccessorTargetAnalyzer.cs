@@ -18,8 +18,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     called. That is a compile-time-knowable fact reported at run time, which is exactly the trade an
 ///     analyzer exists to undo.
 ///     <para>
-///         ⚠ <b>The target type must be declared in this compilation's own source, and that restriction
-///         is the whole reason the rule can be trusted.</b> A reference assembly does not carry private
+///         ⚠
+///         <b>
+///             The target type must be declared in this compilation's own source, and that restriction
+///             is the whole reason the rule can be trusted.
+///         </b> A reference assembly does not carry private
 ///         members — stripping them is what a reference assembly is for — so
 ///         <c>GetMembers("secret")</c> against a type from a referenced assembly returns nothing
 ///         whether the member is absent or merely invisible. Reporting on that would turn every correct
@@ -89,7 +92,8 @@ public sealed class UnsafeAccessorTargetAnalyzer : DiagnosticAnalyzer {
         // This needs no member list, so it holds for a target in any assembly.
         var declaredName = attribute.NamedArguments
             .FirstOrDefault(pair => pair.Key == "Name")
-            .Value.Value as string;
+            .Value.Value
+            as string;
 
         if (kind == AccessorKind.Constructor) {
             if (declaredName is not null && declaredName != ".ctor") {

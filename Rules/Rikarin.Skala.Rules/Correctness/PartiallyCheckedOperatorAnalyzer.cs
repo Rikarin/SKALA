@@ -13,8 +13,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     for the rest, so <c>checked</c> traps on one operator of the same type and wraps on another.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>"No checked operator" is an observation; "checked on some and not others" is a defect, and
-///     the difference is the whole specification of this rule.</b> A type that declares no
+///     ⚠
+///     <b>
+///         "No checked operator" is an observation; "checked on some and not others" is a defect, and
+///         the difference is the whole specification of this rule.
+///     </b> A type that declares no
 ///     <c>checked</c> operator at all has simply not opted into C# 11's user-defined checked
 ///     arithmetic, and there is nothing to report: <c>checked</c> around it means what it has always
 ///     meant. But a type that declares <c>operator checked +</c> and not <c>operator checked -</c> has
@@ -23,8 +26,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     for the author's intent comes from the type itself, so the rule never has to guess whether
 ///     overflow matters here.
 ///     <para>
-///         ⚠ <b>The eight operators that <em>have</em> a checked form are listed, and the list was
-///         measured against the compiler rather than remembered.</b> Binary <c>+</c>, <c>-</c>,
+///         ⚠
+///         <b>
+///             The eight operators that <em>have</em> a checked form are listed, and the list was
+///             measured against the compiler rather than remembered.
+///         </b> Binary <c>+</c>, <c>-</c>,
 ///         <c>*</c>, <c>/</c>; unary <c>-</c>; <c>++</c>; <c>--</c>; and the <b>explicit</b> conversion.
 ///         Every other operator is rejected outright: <c>CS9023</c> for unary <c>+</c>, <c>%</c>,
 ///         <c>&amp;</c>, <c>&lt;&lt;</c> and <c>==</c>, and <c>CS9024</c> for an <c>implicit</c>
@@ -42,16 +48,18 @@ public sealed class PartiallyCheckedOperatorAnalyzer : DiagnosticAnalyzer {
     static readonly DiagnosticDescriptor Descriptor = SkalaRule.Descriptor(RuleIds.PartiallyCheckedOperatorSet);
 
     /// <summary>The unchecked metadata name of each operator that has a checked form, and its pair.</summary>
-    static readonly Dictionary<string, (string Checked, string Spelling)> Checkable = new(System.StringComparer.Ordinal) {
-        ["op_Addition"] = ("op_CheckedAddition", "+"),
-        ["op_Subtraction"] = ("op_CheckedSubtraction", "-"),
-        ["op_Multiply"] = ("op_CheckedMultiply", "*"),
-        ["op_Division"] = ("op_CheckedDivision", "/"),
-        ["op_UnaryNegation"] = ("op_CheckedUnaryNegation", "-"),
-        ["op_Increment"] = ("op_CheckedIncrement", "++"),
-        ["op_Decrement"] = ("op_CheckedDecrement", "--"),
-        ["op_Explicit"] = ("op_CheckedExplicit", "explicit conversion")
-    };
+    static readonly Dictionary<string, (string Checked, string Spelling)> Checkable = new(
+        System.StringComparer.Ordinal
+    ) {
+            ["op_Addition"] = ("op_CheckedAddition", "+"),
+            ["op_Subtraction"] = ("op_CheckedSubtraction", "-"),
+            ["op_Multiply"] = ("op_CheckedMultiply", "*"),
+            ["op_Division"] = ("op_CheckedDivision", "/"),
+            ["op_UnaryNegation"] = ("op_CheckedUnaryNegation", "-"),
+            ["op_Increment"] = ("op_CheckedIncrement", "++"),
+            ["op_Decrement"] = ("op_CheckedDecrement", "--"),
+            ["op_Explicit"] = ("op_CheckedExplicit", "explicit conversion")
+        };
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);
 
@@ -63,7 +71,10 @@ public sealed class PartiallyCheckedOperatorAnalyzer : DiagnosticAnalyzer {
 
     static void Analyze(SymbolAnalysisContext context) {
         var type = (INamedTypeSymbol)context.Symbol;
-        if (!SkalaRule.MeetsLanguageVersion(context.Compilation, RuleCatalog.Get(RuleIds.PartiallyCheckedOperatorSet).LanguageVersion)) {
+        if (!SkalaRule.MeetsLanguageVersion(
+                context.Compilation,
+                RuleCatalog.Get(RuleIds.PartiallyCheckedOperatorSet).LanguageVersion
+            )) {
             return;
         }
 
@@ -72,7 +83,11 @@ public sealed class PartiallyCheckedOperatorAnalyzer : DiagnosticAnalyzer {
             .Where(static method => method.MethodKind is MethodKind.UserDefinedOperator or MethodKind.Conversion)
             .ToList();
 
-        var declaredChecked = operators.Where(static method => method.Name.StartsWith("op_Checked", System.StringComparison.Ordinal))
+        var declaredChecked = operators.Where(static method => method.Name.StartsWith(
+                "op_Checked",
+                System.StringComparison.Ordinal
+            )
+        )
             .ToList();
 
         // The whole predicate: the type has to have opted in somewhere, or there is no defect here.
