@@ -275,22 +275,10 @@ public sealed class EscapeFreeStringLiteralAnalyzer : DiagnosticAnalyzer {
     ///     its own end-of-line and therefore separates by the same count, which is the intended answer —
     ///     a reader who wrote a comment between two calls has said they are two things.
     /// </remarks>
-    static bool Separated(StatementSyntax previous, StatementSyntax next) {
-        var newlines = 0;
-        foreach (var trivia in previous.GetTrailingTrivia()) {
-            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia)) {
-                newlines++;
-            }
-        }
+    static bool Separated(StatementSyntax previous, StatementSyntax next) =>
+        Newlines(previous.GetTrailingTrivia()) + Newlines(next.GetLeadingTrivia()) > 1;
 
-        foreach (var trivia in next.GetLeadingTrivia()) {
-            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia)) {
-                newlines++;
-            }
-        }
-
-        return newlines > 1;
-    }
+    static int Newlines(SyntaxTriviaList trivia) => trivia.Count(static one => one.IsKind(SyntaxKind.EndOfLineTrivia));
 
     /// <summary>
     ///     The name at the root of an invocation chain — the <c>builder</c> in
