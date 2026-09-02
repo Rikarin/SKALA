@@ -26,7 +26,15 @@ public sealed class NewCodeTests : IDisposable {
     public void Dispose() {
         try {
             Directory.Delete(root, true);
-        } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        } catch (IOException) {
+            // The same argument as `Scratch.Dispose` in LoadingTests: a temp directory that will not
+            // delete is not a test result, and failing here would report a finding that does not
+            // exist.
+        } catch (UnauthorizedAccessException) {
+            // ⚠ This one is specific to the real `git init` above: git writes objects and packs
+            // read-only, so a recursive delete of a repository is the case that raises this rather
+            // than IOException. Both mean the same thing here — cleanup did not happen.
+        }
     }
 
     void Git(params string[] arguments) {

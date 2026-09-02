@@ -299,7 +299,11 @@ public static class SuppressionAuditor {
         } finally {
             try {
                 File.Delete(temporary);
-            } catch (IOException) { }
+            } catch (IOException) {
+                // Cleanup of a `Path.GetTempFileName()` scratch file, in a `finally`. Throwing here
+                // would replace the audit's real result — or the real exception on the way out —
+                // with a cleanup failure, and the file is somewhere the OS reclaims anyway.
+            }
         }
     }
 

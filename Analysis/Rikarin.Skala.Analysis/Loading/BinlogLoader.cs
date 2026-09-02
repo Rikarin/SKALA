@@ -30,8 +30,15 @@ namespace Rikarin.Skala.Analysis.Loading;
 ///     correct, and it costs one real build, which CI is doing anyway.
 /// </remarks>
 public static class BinlogLoader {
-    /// <summary>Where a binlog is looked for when none is named.</summary>
-    public static readonly string[] Conventions = [
+    /// <summary>Where a binlog is looked for when none is named, in the order they are tried.</summary>
+    /// <remarks>
+    ///     ⚠ <c>ImmutableArray</c> rather than <c>string[]</c>, and the order is the contract. A
+    ///     <c>public static readonly string[]</c> is writable by every caller that can see it
+    ///     (<c>SK6031</c>): one <c>Conventions[0] = …</c> from anywhere in the process silently
+    ///     redirects the default binlog lookup for every subsequent load, and the message at the
+    ///     failure site would keep printing the list it no longer searched.
+    /// </remarks>
+    public static readonly ImmutableArray<string> Conventions = [
         Path.Combine("artifacts", "skala.binlog"), Path.Combine("artifacts", "build.binlog"),
         Path.Combine(
             "artifacts",

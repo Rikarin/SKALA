@@ -125,7 +125,7 @@ public static class EditorConfigOptions {
         ///     been looked at is not consent.
         /// </remarks>
         static bool TryReSharper(
-            System.Collections.Immutable.ImmutableDictionary<string, string> options,
+            ImmutableDictionary<string, string> options,
             string diagnosticId,
             out ReportDiagnostic severity
         ) {
@@ -166,7 +166,12 @@ public static class EditorConfigOptions {
                 if (File.Exists(path)) {
                     configs.Add(AnalyzerConfig.Parse(File.ReadAllText(path), Path.GetFullPath(path)));
                 }
-            } catch (IOException) { }
+            } catch (IOException) {
+                // The same best-effort read as `For` above, and for the same reason: a config that
+                // cannot be read is a config that does not apply. Handing the generator driver the
+                // rest of the chain beats failing the run, and the SK9001 family is where a
+                // configuration problem is reported.
+            }
         }
 
         return configs.Count == 0 ? null : new SetProvider(AnalyzerConfigSet.Create(configs.ToImmutable()));

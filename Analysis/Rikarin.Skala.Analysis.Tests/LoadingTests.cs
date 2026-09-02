@@ -21,7 +21,11 @@ public sealed class Scratch : IDisposable {
     public void Dispose() {
         try {
             Directory.Delete(Root, true);
-        } catch (IOException) { }
+        } catch (IOException) {
+            // A scratch directory under the temp directory that will not delete — a handle another
+            // process still holds, most often — is not a test result. Failing the test here would
+            // report a finding that does not exist; the OS reclaims the directory either way.
+        }
     }
 }
 
