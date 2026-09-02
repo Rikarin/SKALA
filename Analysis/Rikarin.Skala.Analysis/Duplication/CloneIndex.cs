@@ -228,11 +228,11 @@ internal sealed class CloneIndex {
     static byte[] WritePayload(List<Entry> entries) {
         var total = 0;
         foreach (var entry in entries) {
-            total += (entry.Path.Length * 3)
+            total += entry.Path.Length * 3
                 + entry.ContentHash.Length
                 + 32
-                + (entry.Tokens.Count * 6)
-                + (entry.Tokens.Runs.Length * 5);
+                + entry.Tokens.Count * 6
+                + entry.Tokens.Runs.Length * 5;
         }
 
         var writer = new Buffer(total);

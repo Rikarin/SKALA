@@ -210,15 +210,15 @@ internal sealed class TokenStream {
     /// </remarks>
     public int RunCovering(int first, int past) {
         var low = 0;
-        var high = (Runs.Length / 3) - 1;
+        var high = Runs.Length / 3 - 1;
         while (low <= high) {
-            var middle = low + ((high - low) / 2);
-            if (Runs[(middle * 3) + 1] <= first) {
+            var middle = low + (high - low) / 2;
+            if (Runs[middle * 3 + 1] <= first) {
                 low = middle + 1;
             } else if (Runs[middle * 3] > first) {
                 high = middle - 1;
             } else {
-                return past <= Runs[(middle * 3) + 1] ? middle : -1;
+                return past <= Runs[middle * 3 + 1] ? middle : -1;
             }
         }
 
@@ -226,7 +226,7 @@ internal sealed class TokenStream {
     }
 
     /// <summary>The token period of run <paramref name="run" />: one element and its separator.</summary>
-    public int StrideOf(int run) => Runs[(run * 3) + 2];
+    public int StrideOf(int run) => Runs[run * 3 + 2];
 
     /// <summary>
     ///     Lexes one file, minus its header — <b>issue #323</b>.
@@ -620,7 +620,7 @@ internal sealed class TokenStream {
 
     static string ComputeFingerprint() {
         var stream = Lex(Canary);
-        var bytes = new byte[(stream.Count * 10) + (stream.Runs.Length * 4) + 8];
+        var bytes = new byte[stream.Count * 10 + stream.Runs.Length * 4 + 8];
         var at = 0;
         for (var i = 0; i < stream.Count; i++) {
             BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(at), stream.Codes[i]);
