@@ -134,7 +134,12 @@ public sealed class SortWithoutOrderingAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>The type whose ordering is being asked for, or <c>null</c> if this is not a sort.</summary>
     static ITypeSymbol? Ordered(IMethodSymbol method, Frame frame) {
-        var definition = method.OriginalDefinition;
+        // ⚠ Unreduce before counting parameters. Called as an extension, `OrderBy(key)` presents one
+        // parameter and `OrderBy(key, comparer)` presents two — so a count of 2 against the reduced
+        // form selects exactly the overload that *supplies* the ordering and misses every one that
+        // does not. The rule read as working because `List<T>.Sort()` covered the positives while the
+        // whole LINQ arm was inverted; the comparer negative is what exposed it.
+        var definition = (method.ReducedFrom ?? method).OriginalDefinition;
         var container = method.ContainingType?.OriginalDefinition;
 
         // `List<T>.Sort()`. Every other overload takes a `Comparison<T>` or an `IComparer<T>`, which

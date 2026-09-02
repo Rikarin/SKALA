@@ -88,7 +88,12 @@ public sealed class QueryableDegradedToEnumerableAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (!ReturnsASequence(method, sequence, ordered)) {
+        // ⚠ `AsEnumerable` is itself an `Enumerable` extension returning `IEnumerable<T>`, so without
+        // this it is the *first* thing the rule reports — the rule would fire on the one call that is
+        // the sanctioned way to say "yes, client-side, deliberately", which is reporting its own fix.
+        // The negative fixture claimed this was excluded structurally and it was not; only what is
+        // chained *after* the call is excluded by the receiver's type, never the call itself.
+        if (method.Name == "AsEnumerable" || !ReturnsASequence(method, sequence, ordered)) {
             return;
         }
 
