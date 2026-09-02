@@ -21,8 +21,15 @@
 ## Rule metadata
 
 `Rules/Rikarin.Skala.Rules.Metadata/rules.json`, one entry per rule, the single source for the
-analyzer's `DiagnosticDescriptor`, the docs page, the `explain` text, the SARIF `rules[]` block, and
-the ReSharper severity mapping:
+analyzer's `DiagnosticDescriptor`, the docs page, the `explain` text and the SARIF `rules[]` block:
+
+⚠ **There is no `resharperId` any more.** It was removed with the `resharper_*_highlighting` severity
+bridge: one field could name one inspection, while a rule routinely covers several — `SK4010` covers
+eleven — so `resharper_<x>_highlighting = none` either switched off a rule covering ten other
+concepts or was inert for the other ten. Every "declares no `resharperId`" and "its `resharperId` is
+…" remark further down this document is history, not the current shape of the file. `resharperNote`
+stays: it is prose about how a concept lines up against ReSharper's. `supersedes` stays and is
+unrelated — it carries `CA*`/`IDE*`/Sonar ids and is how hosting is recorded (ADR-008).
 
 ```jsonc
 {
@@ -34,7 +41,6 @@ the ReSharper severity mapping:
   "requiresSemantics": true,
   "hasFix": true,
   "fixIsSafe": true,                   // safe fixes may be applied by `--fix` without review
-  "resharperId": "ConvertToPrimaryConstructor",
   "supersedes": ["IDE0290"],           // Roslyn/third-party rules this replaces; both firing is deduped
   "since": "0.3",
   "languageVersion": "12.0",           // never fires below this LangVersion

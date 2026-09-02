@@ -273,8 +273,9 @@ run over a changed tree must produce byte-identical findings to a run with `--no
 ⚠ **`dotnet_diagnostic.SK1010.severity` needs a `SyntaxTreeOptionsProvider` on the *compilation*.**
 That is where Roslyn's driver reads rule severities from; `csc` sets one from its analyzer config and
 a hand-built `CSharpCompilation` does not. Without it, a repository turns a rule off, the IDE agrees,
-and CI keeps reporting it. Mechanism 3 in § "Suppression" above is that provider, and the same
-provider is where the opt-in `resharper_*_highlighting` mapping lands
+and CI keeps reporting it. Mechanism 3 in § "Suppression" above is that provider. ⚠ It used to carry
+a second, opt-in axis reading `resharper_*_highlighting`; **that bridge has been removed** and
+`dotnet_diagnostic.SK….severity` is now the only way to set a Skala rule's severity
 ([03](03-configuration-model.md) § "Severities").
 
 Duplication detection ([09](09-quality-gates-and-reporting.md)) has its own index with its own

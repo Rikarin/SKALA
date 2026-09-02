@@ -34,8 +34,11 @@ because "I could not verify the thing you asked me to verify" is not a pass.
 Exit codes: 0 all checks ran and passed, 1 a check failed, 2 a check could not run.
 Reconcile items are *not* failures -- see below.
 
-A second completeness claim is checked here, about the *shipped* catalogue rather than the
-proposal queue -- see "the shipped catalogue" at the bottom of this file.
+⚠ `catalogued.json`'s inspection NAMES are checked by nothing. The cross-check that held them
+-- against each shipped rule's `resharperId` -- went with that field and the
+`resharper_*_highlighting` severity bridge, deliberately and with no replacement. Only the map's
+*values* are still asserted, against `allocated-ids.txt`. See "the shipped catalogue" at the
+bottom of this file, and docs/plan/17.
 """
 import json, os, re, sys
 
@@ -202,21 +205,26 @@ if ideas:
 
 # --------------------------------------------------- the shipped catalogue
 # ⚠ Everything above this line checks the *proposal* queue: that no ReSharper inspection or
-# Sonar rule can be dropped from the ledger without a word. Nothing checked the other
-# direction -- that a rule which has actually **shipped** is recorded as having shipped --
-# and the cost of that was measured: 84 rules landed in `rules.json` while `catalogued.json`
-# went almost entirely un-updated, so every inspection those rules cover kept being counted
-# `Uncovered`. The published parity gap was inflated by work that was already done, and
-# doc 17's residue -- which is the work queue -- was counting it as still owed.
+# Sonar rule can be dropped from the ledger without a word.
 #
-# A zero from a disabled instrument and a zero from clean code are the same zero. These two
-# assertions are what stop the map from going quiet again.
+# ⚠ THE KEYS OF `catalogued.json` ARE NO LONGER CHECKED BY ANYTHING. There used to be a check
+# here -- (1), rules.json subset of catalogued.json, matched on the SK id -- reading each shipped
+# rule's `resharperId` and demanding the map credit that inspection to that rule. It was the
+# independent second source against a hand-written map: two lists that had to agree. It found 17
+# phantom keys, ~25 wrong credits, 14 under-credits, 7 entries crediting rules that do not exist,
+# 3 crediting retired rules, and `CognitiveComplexity` pointed at the cyclomatic rule instead of
+# `SK7002`. `resharperId` was removed with the `resharper_*_highlighting` severity bridge -- one
+# field could name only one inspection while a rule routinely covers several -- so the check has
+# no second source to compare against and is gone. docs/plan/17 records the loss. **Nothing
+# replaces it, deliberately**: the decision was to stop measuring this, not to measure it
+# differently. Treat every inspection NAME in `catalogued.json` as unverified.
 #
-# ⚠ The first of them is *also* asserted in C#, by
-# `RuleCatalogTests.TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule`. The
-# duplication is deliberate and not an oversight: this pipeline is outside the solution by
-# design, it is edited and re-run by people who never invoke `dotnet test`, and an assertion
-# that lives only in the test project does not protect the file being hand-edited here.
+# What survives is (1b) below, on the map's *values*: every `SK` id it credits must be an id
+# `allocated-ids.txt` actually holds. That is also asserted in C# by
+# `RuleCatalogTests.TheParityMap_CreditsOnlyIdsTheRegisterHasAllocated`, and the duplication is
+# deliberate: this pipeline is outside the solution by design, it is edited and re-run by people
+# who never invoke `dotnet test`, and an assertion that lives only in the test project does not
+# protect the file being hand-edited here.
 RULES = f"{REPO}/Rules/Rikarin.Skala.Rules.Metadata/rules.json"
 ALLOCATED = f"{REPO}/Rules/Rikarin.Skala.Rules.Metadata/allocated-ids.txt"
 # ⚠ `retired` is filtered out, and the variable name is the reason. A rule retired AFTER shipping
@@ -232,30 +240,14 @@ catalogued = json.load(open(f"{W}/catalogued.json"))
 allocated = {ln.split(None, 1)[0] for ln in open(ALLOCATED)
              if ln.strip() and not ln.startswith("#")}
 
-# Anti-vacuity. Both loops below pass happily against an empty catalogue or an empty map, and
-# an empty file is the exact shape of the failure they exist to report.
+# Anti-vacuity. The loop below passes happily against an empty catalogue or an empty map, and
+# an empty file is the exact shape of the failure it exists to report.
 if len(shipped) < 50:
     fail.append(f"rules.json holds {len(shipped)} rules; that is not the catalogue, and every "
                 f"check below would pass vacuously against it")
 if len(catalogued) < 100:
     fail.append(f"catalogued.json holds {len(catalogued)} entries; that is not the map, and the "
                 f"parity-map check below would pass vacuously against it")
-
-# (1) rules.json subset of catalogued.json, matched on the SK id. An inspection that a shipped
-#     rule declares as its `resharperId` and the map does not credit to that rule is measured
-#     as an uncovered gap by classify.py -- work already done, back on the queue.
-declaring = [r for r in shipped.values() if r.get("resharperId")]
-if len(declaring) < 10:
-    fail.append(f"only {len(declaring)} shipped rules declare a resharperId; the parity-map "
-                f"check has nothing to assert against")
-for r in declaring:
-    credited = catalogued.get(r["resharperId"])
-    if credited is None:
-        fail.append(f"catalogued.json: {r['id']} ships {r['resharperId']!r} and the parity map "
-                    f"does not mention it -- classify.py will count that inspection Uncovered")
-    elif credited != r["id"]:
-        fail.append(f"catalogued.json: {r['id']} ships {r['resharperId']!r} but the map credits "
-                    f"it to {credited} -- one of the two is wrong and the gap hides either way")
 
 # (1b) ⚠ Every value must name an id the register has actually allocated. Nothing here checked
 #      the values at all -- a sabotage run added `"UseNameofExpression": "SK9999"` to the map and
@@ -613,8 +605,8 @@ else:
               f"{_residue} to neither, {len(set(OUTSIDE_BOTH) & set(catalogued))} excused")
         ran("parity-map key existence (union)",
             f"{known} of {len(catalogued)} known to one of the two inputs")
-print(f"shipped:   {len(shipped)} rules, {len(declaring)} declaring a resharperId, "
-      f"{len(catalogued)} parity-map entries")
+print(f"shipped:   {len(shipped)} rules, {len(catalogued)} parity-map entries "
+      f"(⚠ their inspection names are checked by nothing -- see 'the shipped catalogue' above)")
 print(f"coverage:  resharper {rs_complete} complete / {rs_partial} partial, "
       f"sonar {sn_complete} complete / {sn_partial} partial, "
       f"sonar-ideas {id_complete} complete / {id_partial} partial")
