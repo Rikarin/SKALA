@@ -118,9 +118,13 @@ public sealed class TypePatternAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        // ⚠ The node question, deliberately: the fix's second edit is `LineSpanOf(first)`, so the
-        // comment above the declaration really is inside the text this deletes.
-        if (RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(first)) {
+        // ⚠ TWO edits, so two questions, and asking only the first is what this used to do (#325).
+        // The fix deletes the declaration's whole line — `LineSpanOf`, hence the node question on
+        // `first` — and separately REWRITES the `is` test, so a comment inside the test is text the
+        // second edit destroys. `negative/a-comment-inside-the-rewritten-test.cs` is that case, and
+        // it fired before the second guard existed.
+        if (RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(first)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(test.SyntaxTree, test.Span)) {
             return;
         }
 

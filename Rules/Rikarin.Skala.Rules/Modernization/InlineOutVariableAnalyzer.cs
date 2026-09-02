@@ -107,9 +107,11 @@ public sealed class InlineOutVariableAnalyzer : DiagnosticAnalyzer {
         }
 
         if (NullComparison.InsideExpressionTree(model, following, cancellation)
-            // ⚠ The node question, deliberately: the fix's second edit is `LineSpanOf(statement)`,
-            // so the comment above the declaration really is inside the text this deletes.
-            || RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(statement)) {
+            // ⚠ TWO edits, so two questions (#325). The fix deletes the declaration's whole line —
+            // `LineSpanOf`, hence the node question on `statement` — and separately rewrites the
+            // `out` argument, so a comment inside that argument is text the second edit destroys.
+            || RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(statement)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(target.SyntaxTree, target.Span)) {
             return;
         }
 

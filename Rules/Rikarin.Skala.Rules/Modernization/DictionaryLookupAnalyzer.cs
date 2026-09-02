@@ -160,9 +160,12 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        // ⚠ The node question, deliberately: the fix's second edit is `LineSpanOf(first)`, so the
-        // comment above the declaration really is inside the text this deletes.
-        if (RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(first)) {
+        // ⚠ TWO edits, so two questions (#325). The fix deletes the declaration's whole line —
+        // `LineSpanOf`, hence the node question on `first` — and separately rewrites the
+        // `ContainsKey` call into `TryGetValue`, so a comment inside that call is text the second
+        // edit destroys.
+        if (RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(first)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(invocation.SyntaxTree, invocation.Span)) {
             return;
         }
 
