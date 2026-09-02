@@ -3677,3 +3677,24 @@ seventeen times. That is issue #298 still live, and it is invisible in the termi
 `skala check` writes `SK9030` only into the SARIF's `toolExecutionNotifications` and does not fail the
 gate (#295). Neither of this batch's analyzers throws, asserted in
 `CollectionCopyAndBufferBatchTests.NoAnalyzerThrows` rather than left to the same silence.
+
+**The reference trees.** `Testing/corpus/real` — the vendored Vixen, Serilog and Newtonsoft.Json — is
+unreachable through `skala check` in place (`SK9023`), so it was copied outside the repository, given
+a `net10.0` project with empty `Directory.Build.props`/`.targets` beside it, and swept the same way.
+⚠ **`<ImplicitUsings>` moves the number a long way and in one direction: 53 658 CS errors with it
+disabled, 47 280 with it enabled**, so the slice really is missing the generated usings file and a
+sweep taken without it is measuring a differently-broken tree. Both rules report **zero** across
+75 514 results, of which 71 757 are CS diagnostics — the corpus does not compile and the analyzers run
+in it anyway. `SK4041`'s shape is present there: relaxing the rule finds **36 sites**, including
+`Newtonsoft.Json`'s `MemoryTraceWriter`, and the shipped rule declines every one of them because each
+ends in `builder.ToString()`.
+
+⚠ **The 36 were briefly recorded as false positives, and the cause is a trap worth writing down:
+`skala check` runs the analyzers compiled into the CLI binary, and `git checkout` on a rule's source
+does not rebuild it.** The relaxed build used for the census was still in
+`Tools/Rikarin.Skala.Cli/bin/Release` when the corpus was first swept, so the relaxed rule's findings
+were reported under the shipped rule's id — indistinguishable in the output from a rule that
+over-fires. It was caught only because the first "false positive" inspected had its `ToString()` four
+lines below the declaration, which no version of the rule should ever have reported. **A sweep taken
+after any experiment on a rule's source needs the tool rebuilt first, and the cheap guard is
+`--no-cache` plus a rebuild, not one or the other.**
