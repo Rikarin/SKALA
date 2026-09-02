@@ -364,8 +364,11 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///     A <c>finally { }</c> with nothing in it.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>An empty <c>finally</c> is the <c>catch</c>'s mirror image and it is the member of
-    ///     [#131]'s thirteen that the shipped rule's own accounting had lost.</b> It reads as a
+    ///     ⚠
+    ///     <b>
+    ///         An empty <c>finally</c> is the <c>catch</c>'s mirror image and it is the member of
+    ///         [#131]'s thirteen that the shipped rule's own accounting had lost.
+    ///     </b> It reads as a
     ///     guarantee — this runs whatever happens — and there is nothing to run, so every question it
     ///     raises has the answer "nothing happens here".
     ///     <para>
@@ -420,12 +423,12 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool LosesText(SyntaxTree tree, TryStatementSyntax statement) =>
         RewriteGuards.ContainsCommentOrDirective(
-                tree,
-                TextSpan.FromBounds(statement.SpanStart, statement.Block.OpenBraceToken.Span.End)
-            )
-            || RewriteGuards.ContainsCommentOrDirective(
-                tree,
-                TextSpan.FromBounds(statement.Block.CloseBraceToken.SpanStart, statement.Span.End)
+            tree,
+            TextSpan.FromBounds(statement.SpanStart, statement.Block.OpenBraceToken.Span.End)
+        )
+        || RewriteGuards.ContainsCommentOrDirective(
+            tree,
+            TextSpan.FromBounds(statement.Block.CloseBraceToken.SpanStart, statement.Span.End)
         );
 
     /// <summary>
@@ -471,5 +474,4 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
 
         return true;
     }
-
 }
