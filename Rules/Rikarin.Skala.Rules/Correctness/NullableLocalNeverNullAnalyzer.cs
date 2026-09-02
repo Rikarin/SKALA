@@ -109,7 +109,7 @@ public sealed class NullableLocalNeverNullAnalyzer : DiagnosticAnalyzer {
             }
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(nullable)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(nullable.SyntaxTree, nullable.Span)) {
             return;
         }
 

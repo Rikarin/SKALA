@@ -200,7 +200,7 @@ public sealed class OverriddenParameterDefaultAnalyzer : DiagnosticAnalyzer {
         }
 
         foreach (var edit in edits) {
-            if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, edit.Span)) {
+            if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, edit.Span)) {
                 return;
             }
         }

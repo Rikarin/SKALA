@@ -47,8 +47,14 @@ public sealed class ForAsWhileAnalyzer : DiagnosticAnalyzer {
 
         // The header is replaced wholesale except for the condition, so anything a person wrote in
         // the empty clauses would be deleted.
-        if (RewriteGuards.ContainsCommentOrDirective(tree, TextSpan.FromBounds(header.Start, condition.SpanStart))
-            || RewriteGuards.ContainsCommentOrDirective(tree, TextSpan.FromBounds(condition.Span.End, header.End))) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
+                tree,
+                TextSpan.FromBounds(header.Start, condition.SpanStart)
+            )
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
+                tree,
+                TextSpan.FromBounds(condition.Span.End, header.End)
+            )) {
             return;
         }
 

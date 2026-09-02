@@ -129,14 +129,14 @@ public sealed class LoopFilterAsQueryAnalyzer : DiagnosticAnalyzer {
         // place. Both carry source text across, so comments inside the surviving parts are kept and a
         // comment inside a part that would be *deleted* withdraws the finding.
         var head = TextSpan.FromBounds(guard.IfKeyword.SpanStart, guard.CloseParenToken.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirective(loop.SyntaxTree, head)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(loop.SyntaxTree, head)) {
             return;
         }
 
         var text = loop.SyntaxTree.GetText(cancellation);
         var kept = guard.Statement;
         var body = loop.Statement;
-        if (RewriteGuards.ContainsCommentOrDirective(
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                 loop.SyntaxTree,
                 TextSpan.FromBounds(kept.Span.End, body.Span.End)
             )) {

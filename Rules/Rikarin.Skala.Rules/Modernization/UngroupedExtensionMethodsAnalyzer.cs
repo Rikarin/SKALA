@@ -159,7 +159,7 @@ public sealed class UngroupedExtensionMethodsAnalyzer : DiagnosticAnalyzer {
         // `static ` and the receiver parameter, so this is cheap to ask and rare to hit.
         foreach (var (span, text) in edits) {
             if (text.Length == 0
-                && RewriteGuards.ContainsCommentOrDirective(declaration.SyntaxTree, span)) {
+                && RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(declaration.SyntaxTree, span)) {
                 return;
             }
         }

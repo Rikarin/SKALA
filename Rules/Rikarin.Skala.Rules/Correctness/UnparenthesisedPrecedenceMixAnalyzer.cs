@@ -97,7 +97,7 @@ public sealed class UnparenthesisedPrecedenceMixAnalyzer : DiagnosticAnalyzer {
 
         // ⚠ A `(` and a `)` inserted on either side of an `#if` do not necessarily both survive into
         // the same compilation.
-        if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, inner.Span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, inner.Span)) {
             return;
         }
 

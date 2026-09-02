@@ -65,7 +65,7 @@ public sealed class ConstantForwardingOverloadAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(declaration.SyntaxTree, declaration.Span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(declaration.SyntaxTree, declaration.Span)) {
             return;
         }
 

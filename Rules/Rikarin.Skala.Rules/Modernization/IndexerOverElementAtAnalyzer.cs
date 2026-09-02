@@ -171,7 +171,7 @@ public sealed class IndexerOverElementAtAnalyzer : DiagnosticAnalyzer {
         // Everything from the `.` to the end of the call becomes `[index]`. The index is carried
         // across as source text so whatever was written inside the parentheses survives verbatim.
         var span = TextSpan.FromBounds(access.OperatorToken.SpanStart, invocation.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirective(invocation.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(invocation.SyntaxTree, span)) {
             return;
         }
 

@@ -102,8 +102,7 @@ public sealed class PatternSimplificationAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(pattern)
-            || RewriteGuards.ContainsCommentOrDirective(pattern.SyntaxTree, pattern.FullSpan)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(pattern.SyntaxTree, pattern.Span)) {
             return;
         }
 

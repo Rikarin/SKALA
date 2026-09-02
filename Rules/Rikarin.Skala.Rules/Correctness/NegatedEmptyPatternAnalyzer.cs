@@ -70,7 +70,7 @@ public sealed class NegatedEmptyPatternAnalyzer : DiagnosticAnalyzer {
         // ⚠ The finding is withdrawn rather than the fix, so that no positive fixture can produce a
         // report the fix cannot serve. The fix replaces the whole `not { }` span, and a fix that
         // silently deleted a comment out of that span would be a fix nobody can review.
-        if (RewriteGuards.ContainsCommentOrDirective(not)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(not.SyntaxTree, not.Span)) {
             return;
         }
 

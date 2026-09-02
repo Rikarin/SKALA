@@ -273,7 +273,7 @@ public sealed class RedundantBooleanExpressionAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>Whether the node's own span is free of the trivia a replacement would delete.</summary>
     static bool Replaceable(ExpressionSyntax node) =>
-        !RewriteGuards.ContainsCommentOrDirective(node.SyntaxTree, node.Span);
+        !RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(node.SyntaxTree, node.Span);
 
     /// <summary>The negation of an expression, as text.</summary>
     /// <remarks>

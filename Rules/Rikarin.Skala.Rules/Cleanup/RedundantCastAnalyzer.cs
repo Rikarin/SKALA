@@ -224,7 +224,7 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
             edits.Add((TextSpan.FromBounds(name.SpanStart, tuple.Arguments[i].Expression.SpanStart), string.Empty));
         }
 
-        if (edits.Count == 0 || RewriteGuards.ContainsCommentOrDirective(tuple.SyntaxTree, tuple.Span)) {
+        if (edits.Count == 0 || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tuple.SyntaxTree, tuple.Span)) {
             return;
         }
 
@@ -239,7 +239,7 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
     }
 
     static void Report(SyntaxNodeAnalysisContext context, TextSpan span, string replacement, string message) {
-        if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span)) {
             return;
         }
 

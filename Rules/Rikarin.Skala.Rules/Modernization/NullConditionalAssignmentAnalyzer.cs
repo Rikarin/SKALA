@@ -99,7 +99,7 @@ public sealed class NullConditionalAssignmentAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(statement)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(statement.SyntaxTree, statement.Span)) {
             return;
         }
 

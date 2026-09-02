@@ -117,7 +117,7 @@ public sealed class RestatedCallerInfoArgumentAnalyzer : DiagnosticAnalyzer {
                 list.CloseParenToken.SpanStart
             );
 
-            if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, span)) {
+            if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span)) {
                 return;
             }
 

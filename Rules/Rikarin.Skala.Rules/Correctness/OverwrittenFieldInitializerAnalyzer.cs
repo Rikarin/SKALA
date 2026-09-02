@@ -119,7 +119,7 @@ public sealed class OverwrittenFieldInitializerAnalyzer : DiagnosticAnalyzer {
         }
 
         var span = TextSpan.FromBounds(declarator.Identifier.Span.End, initializer.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirective(declarator.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(declarator.SyntaxTree, span)) {
             return;
         }
 

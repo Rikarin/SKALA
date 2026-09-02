@@ -96,7 +96,7 @@ public sealed class CastInDeclarationAnalyzer : DiagnosticAnalyzer {
         // ⚠ From the declared type to the cast's operand — the two spans the fix rewrites, and
         // nothing above them. Asking the whole statement reads its leading trivia, and a comment
         // on the line above is not text this fix removes.
-        if (RewriteGuards.ContainsCommentOrDirective(
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                 statement.SyntaxTree,
                 TextSpan.FromBounds(statement.Declaration.Type.SpanStart, cast.Expression.SpanStart)
             )) {

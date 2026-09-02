@@ -98,7 +98,7 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
         }
 
         var span = invocation.Span;
-        if (RewriteGuards.ContainsCommentOrDirective(invocation.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(invocation.SyntaxTree, span)) {
             return;
         }
 

@@ -142,7 +142,7 @@ public sealed class RedundantAttributeDetailAnalyzer : DiagnosticAnalyzer {
             }
 
             var span = TextSpan.FromBounds(list.Arguments[index - 1].Span.End, argument.Span.End);
-            if (RewriteGuards.ContainsCommentOrDirective(argument.SyntaxTree, span)) {
+            if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(argument.SyntaxTree, span)) {
                 continue;
             }
 

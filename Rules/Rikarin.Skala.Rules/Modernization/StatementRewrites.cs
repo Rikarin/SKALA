@@ -40,14 +40,14 @@ internal static class StatementRewrites {
                 return true;
             }
 
-            if (RewriteGuards.ContainsCommentOrDirective(tree, TextSpan.FromBounds(start, span.Start))) {
+            if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, TextSpan.FromBounds(start, span.Start))) {
                 return true;
             }
 
             start = span.End;
         }
 
-        return RewriteGuards.ContainsCommentOrDirective(tree, TextSpan.FromBounds(start, outer.End));
+        return RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, TextSpan.FromBounds(start, outer.End));
     }
 
     /// <summary>

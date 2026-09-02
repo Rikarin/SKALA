@@ -160,12 +160,9 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(first)
-            || first.HasLeadingTrivia
-            && RewriteGuards.ContainsCommentOrDirective(
-                first.SyntaxTree,
-                first.FullSpan
-            )) {
+        // ⚠ The node question, deliberately: the fix's second edit is `LineSpanOf(first)`, so the
+        // comment above the declaration really is inside the text this deletes.
+        if (RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(first)) {
             return;
         }
 
@@ -228,7 +225,7 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(statement)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(statement.SyntaxTree, statement.Span)) {
             return;
         }
 

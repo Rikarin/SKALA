@@ -112,7 +112,7 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
         // ⚠ The two spans the fix rewrites, not the statement. Asking the statement reads its
         // leading trivia, so a comment on the line above declined a declaration whose own text the
         // fix never touches.
-        if (RewriteGuards.ContainsCommentOrDirective(
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                 statement.SyntaxTree,
                 TextSpan.FromBounds(statement.Declaration.Type.SpanStart, value.Span.End)
             )) {

@@ -98,8 +98,8 @@ public sealed class MergeableTryAnalyzer : DiagnosticAnalyzer {
 
         // ⚠ Asked over exactly the two spans that vanish, never over the node (#302): a comment
         // above the statement, or inside the body or a handler, is text this edit keeps.
-        if (RewriteGuards.ContainsCommentOrDirective(outer.SyntaxTree, head)
-            || RewriteGuards.ContainsCommentOrDirective(outer.SyntaxTree, neck)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(outer.SyntaxTree, head)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(outer.SyntaxTree, neck)) {
             return;
         }
 

@@ -126,7 +126,7 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
             || FeedsALoggerTemplate(model, invocation, logger, cancellation)
             || OffersAFormattableStringOverload(model, invocation, cancellation)
             || NullComparison.InsideExpressionTree(model, invocation, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(invocation)) {
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(invocation.SyntaxTree, invocation.Span)) {
             return;
         }
 
@@ -143,7 +143,7 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
         if (NullComparison.InsideExpressionTree(model, hole, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(hole)) {
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(hole.SyntaxTree, hole.Span)) {
             return;
         }
 

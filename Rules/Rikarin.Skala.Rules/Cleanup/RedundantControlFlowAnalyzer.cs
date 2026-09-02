@@ -31,7 +31,7 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         does not touch. Measured, not read: a <c>// deliberate</c> above the <c>catch</c> took the
 ///         count from 1 to 0, and the same above <c>default:</c> did too. This is the shape recorded as
 ///         [#302], and the two branches here now ask
-///         <see cref="RewriteGuards.ContainsCommentOrDirective(SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan)" />
+///         <see cref="RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan)" />
 ///         over the deleted span instead. ⚠ The sibling rules were probed the same way and are clean:
 ///         <c>SK0241</c> deletes from a keyword to the next token and guards only that keyword's
 ///         <em>trailing</em> trivia, and <c>SK0244</c> deletes a declaration's <em>full</em> span, so
@@ -199,7 +199,7 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
             // and it is behaviour-preserving for the same reason the single-label case is: every
             // value the section named now falls off the end of the switch, which is what `break` did.
             if (section.Statements.Count == 1 && section.Statements[0].IsKind(SyntaxKind.BreakStatement)) {
-                if (!RewriteGuards.ContainsCommentOrDirective(tree, section.Span)
+                if (!RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, section.Span)
                     && HasNoDirective(section)
                     && !HasGoto(statement, SyntaxKind.GotoDefaultStatement)
                     && (section.Labels.Count == 1 || !HasGoto(statement, SyntaxKind.GotoCaseStatement))
@@ -228,7 +228,7 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
 
             foreach (var label in section.Labels) {
                 if (label.IsKind(SyntaxKind.DefaultSwitchLabel)
-                    || RewriteGuards.ContainsCommentOrDirective(tree, LabelSpan(label))
+                    || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, LabelSpan(label))
                     || !HasNoDirective(label)) {
                     continue;
                 }
@@ -359,7 +359,7 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
         }
 
         var tree = context.Node.SyntaxTree;
-        if (RewriteGuards.ContainsCommentOrDirective(tree, clause.Span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, clause.Span)) {
             return false;
         }
 
@@ -401,7 +401,7 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     static bool IsDeletableEmptyFinally(SyntaxTree tree, TryStatementSyntax statement) =>
         statement.Finally is { Block.Statements.Count: 0 } clause
         && HasNoDirective(clause)
-        && !RewriteGuards.ContainsCommentOrDirective(tree, clause.Span);
+        && !RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, clause.Span);
 
     /// <summary>The text between the try block's braces, which is what an unwrap leaves behind.</summary>
     static string BlockContents(SyntaxNodeAnalysisContext context, TryStatementSyntax statement) =>
@@ -475,11 +475,11 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
     ///     onwards, so those two spans are the ones asked about.
     /// </remarks>
     static bool LosesText(SyntaxTree tree, TryStatementSyntax statement) =>
-        RewriteGuards.ContainsCommentOrDirective(
+        RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
             tree,
             TextSpan.FromBounds(statement.SpanStart, statement.Block.OpenBraceToken.Span.End)
         )
-        || RewriteGuards.ContainsCommentOrDirective(
+        || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
             tree,
             TextSpan.FromBounds(statement.Block.CloseBraceToken.SpanStart, statement.Span.End)
         );

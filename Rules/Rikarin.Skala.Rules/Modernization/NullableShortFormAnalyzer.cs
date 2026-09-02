@@ -58,7 +58,7 @@ public sealed class NullableShortFormAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(node)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(node.SyntaxTree, node.Span)) {
             return;
         }
 

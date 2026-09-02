@@ -120,8 +120,8 @@ public sealed class SharedBranchTailAnalyzer : DiagnosticAnalyzer {
 
         // Both copies of the tail are deleted and one is written back. A comment in either copy is
         // therefore either duplicated or lost, and neither is a fix anybody can review.
-        if (RewriteGuards.ContainsCommentOrDirective(tree, moved)
-            || RewriteGuards.ContainsCommentOrDirective(tree, otherwiseMoved)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, moved)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, otherwiseMoved)) {
             return;
         }
 

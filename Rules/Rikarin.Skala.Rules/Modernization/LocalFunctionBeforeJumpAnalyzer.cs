@@ -78,7 +78,10 @@ public sealed class LocalFunctionBeforeJumpAnalyzer : DiagnosticAnalyzer {
         var head = statements[first];
 
         // A comment above the jump belongs to the jump and would be left behind by the move.
-        if (RewriteGuards.ContainsCommentOrDirective(tree, TextSpan.FromBounds(jump.FullSpan.Start, jump.SpanStart))) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
+                tree,
+                TextSpan.FromBounds(jump.FullSpan.Start, jump.SpanStart)
+            )) {
             return;
         }
 

@@ -124,7 +124,7 @@ public sealed class CopyingPropertyAnalyzer : DiagnosticAnalyzer {
         // ⚠ The whole expression is replaced by the source's text, so a comment anywhere inside the
         // call is text the fix would delete. `SpanContainsComment` over the *node* rather than over
         // the line, because trivia above a declaration is not inside it (#302).
-        if (RewriteGuards.ContainsCommentOrDirective(body)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(body.SyntaxTree, body.Span)) {
             return;
         }
 

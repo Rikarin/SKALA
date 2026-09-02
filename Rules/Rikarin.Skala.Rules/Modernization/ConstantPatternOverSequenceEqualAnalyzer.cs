@@ -129,7 +129,8 @@ public sealed class ConstantPatternOverSequenceEqualAnalyzer : DiagnosticAnalyze
             reported = not;
         }
 
-        if (!PatternSafety.IsPatternSafeContext(reported) || RewriteGuards.ContainsCommentOrDirective(reported)) {
+        if (!PatternSafety.IsPatternSafeContext(reported)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(reported.SyntaxTree, reported.Span)) {
             return;
         }
 

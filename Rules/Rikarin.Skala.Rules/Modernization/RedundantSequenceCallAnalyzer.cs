@@ -231,7 +231,7 @@ public sealed class RedundantSequenceCallAnalyzer : DiagnosticAnalyzer {
     static void Report(SyntaxNodeAnalysisContext context, TextSpan span, string replacement, string message) {
         // ⚠ The edit deletes text. A comment or a directive inside the span is content, and deleting
         // content is not a fix.
-        if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span)) {
             return;
         }
 

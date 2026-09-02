@@ -148,7 +148,7 @@ public sealed class WithExpressionCopyAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(creation)
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(creation.SyntaxTree, creation.Span)
             || NullComparison.InsideExpressionTree(model, creation, cancellation)) {
             return;
         }

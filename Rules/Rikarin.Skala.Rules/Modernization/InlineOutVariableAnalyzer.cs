@@ -107,8 +107,9 @@ public sealed class InlineOutVariableAnalyzer : DiagnosticAnalyzer {
         }
 
         if (NullComparison.InsideExpressionTree(model, following, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(statement)
-            || RewriteGuards.ContainsCommentOrDirective(statement.SyntaxTree, statement.FullSpan)) {
+            // ⚠ The node question, deliberately: the fix's second edit is `LineSpanOf(statement)`,
+            // so the comment above the declaration really is inside the text this deletes.
+            || RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(statement)) {
             return;
         }
 

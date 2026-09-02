@@ -98,7 +98,7 @@ public sealed class ReorderedAnonymousTypeAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (RewriteGuards.ContainsCommentOrDirective(creation.SyntaxTree, creation.Span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(creation.SyntaxTree, creation.Span)) {
             return;
         }
 

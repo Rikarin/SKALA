@@ -220,7 +220,7 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
             edits.Add((right.Span, string.Empty));
         }
 
-        if (edits.Count == 0 || RewriteGuards.ContainsCommentOrDirective(range.SyntaxTree, range.Span)) {
+        if (edits.Count == 0 || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(range.SyntaxTree, range.Span)) {
             return;
         }
 
@@ -254,7 +254,7 @@ public sealed class RedundantSyntaxAnalyzer : DiagnosticAnalyzer {
     }
 
     static void Report(SyntaxNodeAnalysisContext context, TextSpan span, string replacement, string message) {
-        if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span)) {
             return;
         }
 

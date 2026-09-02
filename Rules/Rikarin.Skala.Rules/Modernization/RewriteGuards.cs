@@ -60,42 +60,39 @@ internal static class RewriteGuards {
         SyntaxFactory.AreEquivalent(left, right, false);
 
     /// <summary>
-    ///     ⚠ Whether a span a fix is about to delete or rewrite contains something a person wrote.
+    ///     ⚠ Whether the text a fix is about to delete or rewrite contains something a person wrote.
     /// </summary>
     /// <remarks>
     ///     A comment inside the text a rewrite removes is content, and a fix that silently deletes it
     ///     is a fix nobody can review. A preprocessor directive is worse: removing one half of an
     ///     <c>#if</c> does not merely lose text, it stops the file parsing under the other symbol set.
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             This overload asks over <c>FullSpan</c>, so it sees the comment written ABOVE the
-    ///             node, and that is deliberate rather than the defect #302 describes.
-    ///         </b> A fix that
-    ///         deletes a whole <em>line</em> — anything reaching for <see cref="LineSpanOf" /> — really
-    ///         does carry the leading comment away with it, and for those callers <c>FullSpan</c> is
-    ///         the only correct question. A fix that rewrites a <em>span inside</em> the node does not,
-    ///         and for those callers this overload over-declines exactly the way
-    ///         <c>SpanContainsComment</c> did: silently, on documented code, with every negative still
-    ///         passing.
+    ///         ⚠ <b>This asks over exactly the span it is given and nothing else</b>, which is the
+    ///         question all but a handful of call sites actually have. Its counterpart
+    ///         <see cref="ContainsCommentOrDirectiveAroundTheDeclaration" /> reaches <c>FullSpan</c>
+    ///         and therefore the comment written ABOVE the node; the two are different questions, and
+    ///         picking the wrong one is silent in both directions — see that method's remarks for
+    ///         which call site needs which, and <c>RewriteGuardTests</c> for the pinned list.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>So the two overloads are not a correct one and a broken one</b>, which is how #302
-    ///         reads them — they are two different questions, and which one a call site needs is
-    ///         decided by what its fix rewrites. Pass the node when the edit takes the line; pass
-    ///         <c>(tree, node.Span)</c> when it takes less. There are 56 node-overload call sites and
-    ///         nothing classifies them, so the audit is real work and is not this method's to do: a
-    ///         blanket switch to <c>Span</c> would make the line-deleting rules eat comments, which is
-    ///         a great deal worse than a missed finding.
+    ///         ⚠
+    ///         <b>
+    ///             It walks trivia rather than scanning text, and that is a fix rather than a
+    ///             refactor (#325).
+    ///         </b> This was <c>IndexOf("//") || IndexOf("/*") || IndexOf('#')</c> over
+    ///         the span's characters, which cannot tell a comment from a <em>string literal</em>
+    ///         containing one. <c>SK4034</c> went silent on
+    ///         <c>entries.OrderBy(…).Where(e =&gt; e != "https://example.com")</c> — the `//` of a URL
+    ///         read as a comment — and every one of the ten call sites #302 moved here inherited the
+    ///         same blind spot. ⚠ <b>That is #302's own failure shape wearing the other mask</b>: a
+    ///         rule dead on ordinary code, with every negative still passing, because a rule that
+    ///         never fires declines everything it is supposed to decline. A `#` in a literal, a `/*`
+    ///         in a regex and a Windows path all did it too.
     ///     </para>
     /// </remarks>
-    public static bool ContainsCommentOrDirective(SyntaxNode node) {
-        foreach (var trivia in node.DescendantTrivia(descendIntoTrivia: true)) {
-            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
-                || trivia.IsDirective) {
+    public static bool ContainsCommentOrDirectiveWithinTheEdit(SyntaxTree tree, TextSpan edit) {
+        foreach (var trivia in tree.GetRoot().DescendantTrivia(edit, descendIntoTrivia: true)) {
+            if (IsCommentOrDirective(trivia) && trivia.FullSpan.OverlapsWith(edit)) {
                 return true;
             }
         }
@@ -103,13 +100,50 @@ internal static class RewriteGuards {
         return false;
     }
 
-    /// <summary>The same question over a raw span, for a rewrite that deletes part of a node.</summary>
-    public static bool ContainsCommentOrDirective(SyntaxTree tree, TextSpan span) {
-        var text = tree.GetText().ToString(span);
-        return text.IndexOf("//", System.StringComparison.Ordinal) >= 0
-            || text.IndexOf("/*", System.StringComparison.Ordinal) >= 0
-            || text.IndexOf('#') >= 0;
+    /// <summary>
+    ///     ⚠ The same question widened to the trivia ABOVE the node, for a fix that carries it away.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>This is not the defect #302 describes, and it is not the default either.</b> It asks
+    ///     over <c>FullSpan</c>, so it sees the doc comment written above a declaration — text that
+    ///     most fixes never touch. A fix that rewrites a span <em>inside</em> the node must not ask
+    ///     this question: it then declines on documented code, silently, with every negative still
+    ///     passing, which is exactly how #302 survived. Use
+    ///     <see cref="ContainsCommentOrDirectiveWithinTheEdit" /> there.
+    ///     <para>
+    ///         ⚠ <b>Only two shapes of fix may ask it</b>, and #325 audited all 33 call sites to find
+    ///         them. The first is a fix that deletes the node's whole <em>line</em> — anything
+    ///         reaching for <see cref="LineSpanOf" />, or deleting <c>FullSpan</c> outright — where
+    ///         the leading comment really is inside the edit. The second is a fix that deletes the
+    ///         node entirely by its <c>Span</c>: the comment above is not deleted but is
+    ///         <em>orphaned</em>, left introducing whatever member follows, which is worse than
+    ///         losing it. <c>SK1003</c> is the second shape and
+    ///         <c>fixtures/SK1003/negative/comments.cs</c> pins it.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>The name is the whole point.</b> Both questions used to be spelled
+    ///         <c>ContainsCommentOrDirective</c> and told apart only by arity, so copying a line from
+    ///         a line-deleting rule into a span-rewriting one compiled and was wrong — which is how
+    ///         the idiom spread to four hand-written copies, one of them carrying this doc comment's
+    ///         ancestor verbatim (#302, #325). A call site now has to say which question it means.
+    ///     </para>
+    /// </remarks>
+    public static bool ContainsCommentOrDirectiveAroundTheDeclaration(SyntaxNode node) {
+        foreach (var trivia in node.DescendantTrivia(descendIntoTrivia: true)) {
+            if (IsCommentOrDirective(trivia)) {
+                return true;
+            }
+        }
+
+        return false;
     }
+
+    static bool IsCommentOrDirective(SyntaxTrivia trivia) =>
+        trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+        || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+        || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
+        || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+        || trivia.IsDirective;
 
     /// <summary>
     ///     The full span of a statement including the trivia that would be orphaned by deleting it.

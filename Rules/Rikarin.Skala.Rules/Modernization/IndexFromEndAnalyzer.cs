@@ -96,7 +96,7 @@ public sealed class IndexFromEndAnalyzer : DiagnosticAnalyzer {
 
         if (!IsAdmittedOffset(model, subtraction.Right, cancellation)
             || NullComparison.InsideExpressionTree(model, access, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(access.ArgumentList)) {
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(access.SyntaxTree, argument.Expression.Span)) {
             return;
         }
 

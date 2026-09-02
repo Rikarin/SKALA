@@ -69,7 +69,7 @@ public sealed class CompoundAssignmentAnalyzer : DiagnosticAnalyzer {
         // Everything between the target and the binary operator disappears. A comment in there is
         // content, and a directive is worse than content.
         var deleted = TextSpan.FromBounds(assignment.Left.Span.End, binary.OperatorToken.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirective(assignment.SyntaxTree, deleted)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(assignment.SyntaxTree, deleted)) {
             return;
         }
 

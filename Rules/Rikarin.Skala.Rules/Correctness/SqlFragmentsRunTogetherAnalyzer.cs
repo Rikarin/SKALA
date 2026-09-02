@@ -162,7 +162,7 @@ public sealed class SqlFragmentsRunTogetherAnalyzer : DiagnosticAnalyzer {
         // fix is withheld there — but a `/*` or a `#` inside the SQL text itself is ordinary content
         // and must not withhold anything, which a span covering the literals would let it do.
         var between = TextSpan.FromBounds(left.Span.End, right.SpanStart);
-        var properties = RewriteGuards.ContainsCommentOrDirective(left.SyntaxTree, between)
+        var properties = RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(left.SyntaxTree, between)
             ? null
 
             // The edit inserts one space immediately before the left literal's closing quote, so it

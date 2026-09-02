@@ -92,7 +92,7 @@ public sealed class GetTypeOnATypeAnalyzer : DiagnosticAnalyzer {
         // span — `RewriteGuards.ContainsCommentOrDirective` and not a trivia walk above the node,
         // which is what issue #302 records going wrong.
         var span = invocation.Span;
-        var properties = RewriteGuards.ContainsCommentOrDirective(invocation.SyntaxTree, span)
+        var properties = RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(invocation.SyntaxTree, span)
             ? null
             : FixEdits.Pack((span, access.Expression.ToString()));
 

@@ -77,7 +77,10 @@ public sealed class DiscardAssignmentAnalyzer : DiagnosticAnalyzer {
             } local
             || IsRead(model, local, declarator, cancellation)
             || NameIsTaken(model, statement.SpanStart, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(statement)) {
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
+                statement.SyntaxTree,
+                statement.Declaration.Span
+            )) {
             return;
         }
 
@@ -107,7 +110,7 @@ public sealed class DiscardAssignmentAnalyzer : DiagnosticAnalyzer {
         if (model.GetDeclaredSymbol(designation, cancellation) is not ILocalSymbol local
             || IsRead(model, local, designation, cancellation)
             || NameIsTaken(model, argument.SpanStart, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(argument)) {
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(argument.SyntaxTree, declaration.Span)) {
             return;
         }
 

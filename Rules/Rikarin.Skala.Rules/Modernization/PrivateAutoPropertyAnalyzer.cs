@@ -122,7 +122,7 @@ public sealed class PrivateAutoPropertyAnalyzer : DiagnosticAnalyzer {
         // reaches the property's *leading* trivia, so asking it silenced the rule on every property
         // carrying a `/// <summary>` — which is most of them in a documented codebase.
         var removed = TextSpan.FromBounds(property.Identifier.Span.End, accessors.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirective(property.SyntaxTree, removed)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(property.SyntaxTree, removed)) {
             return;
         }
 

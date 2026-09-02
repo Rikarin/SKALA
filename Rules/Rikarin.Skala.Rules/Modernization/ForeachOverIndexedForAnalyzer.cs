@@ -162,7 +162,7 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
         // The whole header is replaced, so a comment or a directive inside it is content the fix
         // would delete.
         var header = TextSpan.FromBounds(loop.ForKeyword.SpanStart, loop.CloseParenToken.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirective(loop.SyntaxTree, header)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(loop.SyntaxTree, header)) {
             return;
         }
 

@@ -140,9 +140,10 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
         }
 
         if (NullComparison.InsideExpressionTree(model, statement, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(statement)
-            || RewriteGuards.ContainsCommentOrDirective(statement.SyntaxTree, statement.FullSpan)
-            || RewriteGuards.ContainsCommentOrDirective(check)) {
+            // ⚠ The node question, deliberately: the fix's second edit is `LineSpanOf(statement)`,
+            // so the comment above the declaration really is inside the text this deletes.
+            || RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(statement)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(check.SyntaxTree, check.Span)) {
             return;
         }
 
@@ -181,7 +182,7 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
         if (!IsReferenceTypeTest(model, tested, cancellation)
             || !NullComparison.IsRewritable(model, operand, cancellation)
             || NullComparison.InsideExpressionTree(model, comparison, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(comparison)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(comparison.SyntaxTree, comparison.Span)
             || !IsPatternSafeContext(comparison)) {
             return;
         }
@@ -212,7 +213,7 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
         if (model.GetTypeInfo(tested, cancellation).Type is not { } type
             || type.TypeKind == TypeKind.Error
             || NullComparison.InsideExpressionTree(model, negation, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(negation)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(negation.SyntaxTree, negation.Span)
             || !IsPatternSafeContext(negation)) {
             return;
         }
@@ -260,7 +261,7 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
         }
 
         if (NullComparison.InsideExpressionTree(model, test, cancellation)
-            || RewriteGuards.ContainsCommentOrDirective(test)
+            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(test.SyntaxTree, test.Span)
             || !IsPatternSafeContext(test)) {
             return;
         }

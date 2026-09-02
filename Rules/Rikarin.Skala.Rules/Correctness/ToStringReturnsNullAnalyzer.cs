@@ -88,7 +88,7 @@ public sealed class ToStringReturnsNullAnalyzer : DiagnosticAnalyzer {
                 continue;
             }
 
-            if (RewriteGuards.ContainsCommentOrDirective(expression)) {
+            if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(expression.SyntaxTree, expression.Span)) {
                 continue;
             }
 

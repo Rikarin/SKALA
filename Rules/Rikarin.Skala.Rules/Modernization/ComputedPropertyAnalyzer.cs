@@ -142,7 +142,7 @@ public sealed class ComputedPropertyAnalyzer : DiagnosticAnalyzer {
         // on every documented property — measured with a probe file, where four of this batch's
         // five rules went quiet because the probe's own marker comments were in the way.
         var rewritten = TextSpan.FromBounds(accessors.SpanStart, property.SemicolonToken.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirective(property.SyntaxTree, rewritten)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(property.SyntaxTree, rewritten)) {
             return;
         }
 

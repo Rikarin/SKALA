@@ -127,7 +127,7 @@ public sealed class OfTypeChainAnalyzer : DiagnosticAnalyzer {
         // type argument is carried across as *source text*, so an alias or a `using`-shortened name
         // stays spelled the way the file spells it and no directive is needed that the file lacks.
         var span = TextSpan.FromBounds(filterAccess.Name.SpanStart, outer.Span.End);
-        if (RewriteGuards.ContainsCommentOrDirective(outer.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(outer.SyntaxTree, span)) {
             return;
         }
 

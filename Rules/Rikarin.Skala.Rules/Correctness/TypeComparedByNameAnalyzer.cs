@@ -169,7 +169,7 @@ public sealed class TypeComparedByNameAnalyzer : DiagnosticAnalyzer {
             + TypeNameWriting.At(named, model, whole.SpanStart)
             + ")";
 
-        var properties = RewriteGuards.ContainsCommentOrDirective(whole.SyntaxTree, whole.Span)
+        var properties = RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(whole.SyntaxTree, whole.Span)
             ? null
             : FixEdits.Pack((whole.Span, replacement));
 
