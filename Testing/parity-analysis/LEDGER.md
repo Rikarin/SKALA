@@ -148,17 +148,34 @@ this section was being written, as twelve agents shipped rules and appended to t
 first measured the map was 142 entries of which **107** were load-bearing, **18** shadowed and **17**
 inert — a quarter of it doing nothing. Read the current split from a run.
 
-⚠ **The 18 shadowed entries are the interesting ones.** `SK1006`, `SK1010`, `SK1012`, `SK1020`,
-`SK1030` and `SK1034` each ship a rule for a concept the hosted map says Roslyn already covers
-(IDE0063, IDE0078, IDE0066, CA1510, IDE0074, CA1860). ADR-008 is *host, never rebuild*. Either those
-hosted entries are wrong or six shipped rules are duplicates. Both readings are load-bearing for the
-parity headline and neither is written down anywhere else.
+⚠ **The 18 shadowed entries were the interesting ones, and they have since been adjudicated.**
+`SK1006`, `SK1010`, `SK1012`, `SK1020`, `SK1030` and `SK1034` each shipped a rule for a concept the
+hosted map said Roslyn already covers (IDE0063, IDE0078, IDE0066, CA1510, IDE0074, CA1860). ADR-008
+is *host, never rebuild*, so either those hosted entries were wrong or six shipped rules were
+duplicates. **The answer turned out to be neither, and the distinction that resolved it is the state
+the host is in** — recorded now in `classify.py`'s `host_state`:
+
+- `IDE0063`, `IDE0078`, `IDE0066`, `IDE0074` are **code-style**: off unless somebody sets
+  `EnforceCodeStyleInBuild` and an `.editorconfig` key. A host nobody has turned on shadows nothing,
+  and `SK1006`, `SK1010`, `SK1012` and `SK1030` are the ones actually reporting the concept in a
+  build with nothing configured. They stay.
+- `CA1510` (for `SK1020`) and `CA1860`/`CA1829` (for `SK1034`) are **on at stock** — enabled by
+  default at `Info`, no configuration at all. Those two rules were genuine duplicates and are
+  **retired** (#281). ⚠ Measured, not reasoned: a probe outside the repository with an empty
+  `Directory.Build.props`/`.targets` and a `root = true` `.editorconfig` above it, read from a SARIF
+  2.1 error log because all of it fires at `note` and prints nothing on the console. 3/3 and 4/4 of
+  the two rules' positive fixtures respectively.
+
+⚠ `classify.py` prints an alert for any remaining row in the second state. It reads zero now, and
+`shipped_ids` excludes `retired` entries so that acting on the alert can actually clear it.
 
 ## Entries that over-claim
 
-`catalogued.json` maps `UseArgumentExceptionThrowIfMethod` → `SK1020`. The shipped `SK1020` covers
-`ArgumentNullException.ThrowIfNull` only, so the concept is broader than the rule credited with it;
-the ledger proposes it anyway and narrowing is a decision for whoever specifies the rest.
+⚠ `catalogued.json` used to map `UseThrowIfNullMethod` and `UseArgumentExceptionThrowIfMethod` →
+`SK1020` and `UseCollectionCountProperty` → `SK1034`. All three are **removed**: those rules are
+retired, and a map entry crediting a withdrawn rule claims Skala answers an inspection it does not.
+The rows bucket `Hosted` now, which is where they always belonged. The bucket totals did not move,
+because `hosted()` runs before `catalogued()` and was already claiming them.
 
 ⚠ This section previously also named `ReplaceWithOfType` → `SK4010` as a deliberate over-claim.
 **That was moot and nobody had checked**: `ReplaceWithOfType` is not an inspection id — only the

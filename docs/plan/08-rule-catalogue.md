@@ -403,7 +403,7 @@ performance wins that read as style:
 
 | ID | Instead of | Use |
 |---|---|---|
-| `SK1020` | `if (x is null) throw new ArgumentNullException(…)` | `ArgumentNullException.ThrowIfNull(x)` (and the `ArgumentOutOfRangeException.Throw*` family) |
+| `SK1020` | `if (x is null) throw new ArgumentNullException(…)` | `ArgumentNullException.ThrowIfNull(x)` (and the `ArgumentOutOfRangeException.Throw*` family) — ⚠ **retired after shipping** (#281): `CA1510` is on at stock, see § "Retired after shipping" |
 | `SK1021` | `new Regex(literal)` | `[GeneratedRegex]` partial method |
 | `SK1022` | `IndexOfAny(char[])` / repeated `Contains` on a constant set | `SearchValues<T>` |
 | `SK1023` | `lock (new object())` | `System.Threading.Lock` |
@@ -417,7 +417,7 @@ performance wins that read as style:
 | `SK1031` | `if (x is not null) x.P = v` | `x?.P = v` (C# 14) |
 | `SK1032` | `params T[]` | `params ReadOnlySpan<T>` where callers permit |
 | `SK1033` | `Dictionary.ContainsKey` then indexer | `TryGetValue` / `TryAdd` / `CollectionsMarshal` |
-| `SK1034` | `.Count() > 0`, `.Any()` on `ICollection` | `.Count > 0` |
+| `SK1034` | `.Count() > 0`, `.Any()` on `ICollection` | `.Count > 0` — ⚠ **retired after shipping** (#281): `CA1860`/`CA1829` are on at stock, see § "Retired after shipping" |
 | `SK1035` | `Enum.GetValues(typeof(T))` | `Enum.GetValues<T>()` |
 | `SK1036` | manual `IAsyncEnumerable` consumption via `MoveNextAsync` loops | `await foreach` |
 
@@ -1537,12 +1537,19 @@ are narrower than the issues asked for.** Named here rather than silently droppe
   the comparer the table was *constructed* with. For an `OrdinalIgnoreCase` table the two disagree,
   and nothing at the call site says which kind of table it is.
 
-⚠ `SK4033` declares `supersedes: ["SK1034"]`, and it is the first rule to supersede another Skala
-rule rather than a foreign analyzer id. `SK1034` reads `dict.Keys.Count()` and offers
-`dict.Keys.Count`, which is correct and still wrong: on a `ConcurrentDictionary` the cost is `.Keys`
+⚠ `SK4033` declared `supersedes: ["SK1034"]`, and it was the first rule to supersede another Skala
+rule rather than a foreign analyzer id. `SK1034` read `dict.Keys.Count()` and offered
+`dict.Keys.Count`, which was correct and still wrong: on a `ConcurrentDictionary` the cost is `.Keys`
 taking every lock in the table and materialising a whole new collection, and the answer is
-`dict.Count`. Where both fire on the same span the stronger remedy wins and `SK1034` stays in the
+`dict.Count`. Where both fired on the same span the stronger remedy won and `SK1034` stayed in the
 report marked superseded, which is what `Supersession.Apply` is for.
+
+⚠ **`SK1034` is retired (#281) and the supersession went with it.** The pairing is gone because the
+weaker finding is: `dict.Keys.Count()` is reported once now, by `SK4033`, and the plain `Count()`
+shape `SK1034` also covered belongs to `CA1829`. Nothing reports the cheap rewrite on a
+`ConcurrentDictionary` any more, which is the point — it was always the wrong half to fix. This
+paragraph stays because `Supersession.Apply` is still the mechanism and `SK4032`'s `S4635` claim
+still uses it; what is gone is the only Skala-to-Skala instance of it.
 
 #### What the batch measured
 
@@ -2174,6 +2181,36 @@ as "public API without doc comments (opt-in, per path)"; `SK7010` is that rule, 
 that shipped. ADR-012 makes both ids permanent, so the fix is not renumbering: `SK6001` is **retired
 before it was ever built**, `SK7010` is the live id, and this note is what stops somebody
 implementing `SK6001` in three years.
+
+### Retired after shipping
+
+⚠ **A different disposal from a cut and from `SK6001`'s, and the registry records it differently.**
+These rules shipped, fired, and are withdrawn because ADR-008 says host rather than rebuild and the
+host turned out to be *on with nothing configured* — not opt-in, not code-style, not a setting
+somebody has to find. Their `rules.json` entries stay, carrying `"retired": true`, so the descriptor
+survives disabled, `dotnet_diagnostic.<id>.severity` still resolves in every `.editorconfig` that
+names it, and `docs/rules/<id>.md` stays as a tombstone an old finding can be looked up in.
+
+The measurement was taken outside this repository, on a project with an empty
+`Directory.Build.props`, an empty `Directory.Build.targets` and a `root = true` `.editorconfig`
+above it, SDK 10.0.400, reading a SARIF 2.1 error log — ⚠ **all of it fires at `note`, which prints
+nothing on the console, so a console-only reading would have measured zero and concluded the
+opposite.** `CA1822` and `CA2211` were carried through the same build as canaries.
+
+| Id | Concept | Host | Positive fixtures it covers at stock |
+|---|---|---|---|
+| `SK1020` | `argument-null-throw-if-null` | `CA1510` (enabled, `note`) | 3 / 3 |
+| `SK1034` | `count-property-over-linq` | `CA1860` (enabled, `note`) | 3 / 4 |
+| `SK1034` | " | `CA1829` (enabled, `note`) | 1 / 4 — the `Count()` shape |
+
+Both shipped at `suggestion`, which is the same visibility `note` delivers, so the host gives every
+consumer exactly what the rule gave them, for free. `SK1020` is **retired after shipping** and
+`SK1034` is **retired after shipping**; #281 is the adjudication and `Testing/parity-analysis/`
+carries the alert that found them.
+
+⚠ `CA1511` covers the sibling `ArgumentException.ThrowIfNullOrEmpty` shape and is in the same
+enabled/`note` state, but none of `SK1020`'s fixtures carry that shape — it is recorded here so the
+next reader does not re-derive it.
 
 ### Reasons that justify a cut
 
@@ -3790,6 +3827,12 @@ findings, and eight are tool diagnostics. (M6 takes the total to twenty-nine —
 ¹ `SK0001` over Vixen is the M3 formatting diff, which doc 15 § M3 records as deliberately deferred.
 The 301 on `corpus/real/` is not a defect count: those files are *inputs*, vendored unformatted on
 purpose, and the rule is reporting exactly that.
+
+⚠ This table is the M5 measurement as it stood and is left at its original numbers. `SK1020` and
+`SK1034` have since been **retired after shipping** (#281) — see the section of that name. ⚠ Their
+`corpus/real` and `Vixen` columns, 2 and 0 and 0 and 0, are worth reading twice now: the rules
+scored almost nothing on both reference trees, and nobody asked at the time what *was* reporting
+those shapes. `CA1510`, `CA1860` and `CA1829` were, at `note`, in every consumer's build.
 
 The catalogue above lists thirty-six `SK1xxx` ids. Nine shipping is the shipping bar doing its job
 rather than the milestone falling short: **a rule ships when it has a fix, zero false positives on

@@ -1600,8 +1600,8 @@
   },
   {
    "rule": "S1155",
-   "resolution": "shipped",
-   "detail": "Shipped as `SK1034`."
+   "resolution": "hosted",
+   "detail": "ADR-008: Skala hosts rather than rebuilds. Covered by `CA1860`, which is enabled by default at `Info` in a stock SDK build. \u26a0 This read `shipped as SK1034` until #281 retired that rule: CA1860 reports three of SK1034's four positive fixtures at stock and CA1829 the fourth, measured on a probe outside the repository via a SARIF error log."
   },
   {
    "rule": "S1172",
@@ -3752,7 +3752,7 @@
    },
    {
     "resolution": "out-of-scope",
-    "detail": "A policy choice, and the same one Sonar's own `S3900` states. Skala's position is `SK1020`: report the hand-written guard that a helper already is, not the absence of a guard.",
+    "detail": "A policy choice, and the same one Sonar's own `S3900` states. Skala's position was `SK1020`: report the hand-written guard that a helper already is, not the absence of a guard. \u26a0 #281 retired `SK1020` because `CA1510` makes exactly that report at stock; the position is unchanged and it is now Roslyn that states it.",
     "upstreamIssue": 7035,
     "upstreamTitle": "NET-1834 New Rule Idea: Non-nullable parameters of public methods should be validated against null"
    },

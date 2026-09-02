@@ -497,8 +497,23 @@ public sealed class RuleCatalogTests {
         // the exact shape of the failure this test exists to report.
         Assert.True(map.Count > 100, $"{ParityMapPath} holds {map.Count} entries; that is not the map.");
 
-        var mapped = RuleCatalog.All.Where(static rule => rule.ReSharperId is not null).ToList();
+        // ⚠ Retired rules are excluded. A withdrawn rule keeps its `resharperId` — the entry stays so
+        // the descriptor and the docs page survive — but it covers nothing, so the parity map must
+        // *not* credit that inspection to it. Crediting it would put the concept in `Catalogued`,
+        // which claims Skala answers the inspection, when the honest bucket is `Hosted`.
+        var mapped = RuleCatalog.All
+            .Where(static rule => rule.ReSharperId is not null && !rule.Retired)
+            .ToList();
+
         Assert.True(mapped.Count >= 10, $"Only {mapped.Count} rules declare a ReSharper inspection id.");
+
+        foreach (var rule in RuleCatalog.All.Where(static rule => rule.Retired && rule.ReSharperId is not null)) {
+            Assert.False(
+                map.ContainsKey(rule.ReSharperId!),
+                $"{rule.ReSharperId} is credited to {rule.Id}, which is retired. A retired rule covers "
+                + "nothing; leave the inspection to the Hosted bucket rather than claiming it."
+            );
+        }
 
         var uncredited = new List<string>();
         foreach (var rule in mapped) {
