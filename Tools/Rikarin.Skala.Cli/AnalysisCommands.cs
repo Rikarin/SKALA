@@ -75,14 +75,6 @@ public static partial class SkalaCommandLine {
             Description = "Leave SK0001 out; report only the analyzers' findings."
         };
 
-        // ⚠ Off by default. docs/plan/16 § Q5: the severities in a Rider export were chosen for
-        // ReSharper's inspections, and the author's own export would have switched SK1020 off.
-        // ⚠ SK1020 is retired (#281); the argument stands, the worked example no longer fires.
-        var resharperSeverities = new Option<bool>("--resharper-severities") {
-            Description =
-                "Let a resharper_*_highlighting key set a Skala rule's severity. dotnet_diagnostic.SK… still wins."
-        };
-
         // ⚠ docs/plan/09 § "New-code definition": the three scopings are composable, so they are
         // three options rather than one mode. `--since` alone answers "did this branch make things
         // worse", `--baseline` alone answers "did anything new appear", and together they answer
@@ -126,7 +118,7 @@ public static partial class SkalaCommandLine {
         command.Arguments.Add(paths);
         foreach (var option in new Option[] {
                      load, binlog, project, requireFresh, gate, format, output, includeHints, noCache, noColor,
-                     showSuppressions, rules, define, noFormatting, resharperSeverities, since, baseline,
+                     showSuppressions, rules, define, noFormatting, since, baseline,
                      noNewSuppressions, record, summary, duplication, profile
                  }) {
             command.Options.Add(option);
@@ -152,7 +144,6 @@ public static partial class SkalaCommandLine {
                     Rules = parse.GetValue(rules) ?? [],
                     Define = ParseDefines(parse.GetValue(define)),
                     IncludeFormatting = !parse.GetValue(noFormatting),
-                    ReadReSharperSeverities = parse.GetValue(resharperSeverities),
                     Output = parse.GetValue(output),
                     Since = parse.GetValue(since),
 

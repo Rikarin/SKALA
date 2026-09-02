@@ -415,78 +415,32 @@ public sealed class RuleCatalogTests {
     }
 
     /// <summary>
-    ///     The ReSharper mapping table, which is docs/plan/16 § Q5's answer in code.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Derived from the inspection id rather than stored, so the table cannot drift from the
-    ///     rule. The direction that is safe is many-to-one: a ReSharper key may set the severity of
-    ///     every Skala rule that maps to it, and <c>dotnet_diagnostic.SK…</c> overrides it. See doc 03
-    ///     § "Severities".
-    /// </remarks>
-    [Fact]
-    public void EveryReSharperMapping_ProducesAWellFormedHighlightingKey() {
-        foreach (var rule in RuleCatalog.All.Where(static rule => rule.ReSharperId is not null)) {
-            var key = rule.ReSharperSeverityKey;
-            Assert.NotNull(key);
-            Assert.StartsWith("resharper_", key, StringComparison.Ordinal);
-            Assert.EndsWith("_highlighting", key, StringComparison.Ordinal);
-            Assert.DoesNotContain("__", key, StringComparison.Ordinal);
-            Assert.Equal(key.ToLowerInvariant(), key);
-        }
-    }
-
-    /// <summary>
-    ///     ⚠ docs/plan/16 § Q5, as a build-enforced fact: a declared inspection id must be a key the
-    ///     real export actually contains.
-    /// </summary>
-    /// <remarks>
-    ///     The derivation from inspection id to key is mechanical, which makes it easy to write down an
-    ///     id that snake-cases into a key JetBrains never emits — <c>ConvertToFileScopedNamespace</c>
-    ///     and <c>ConvertToThrowIfNull</c> both looked right and neither exists. A mapping to a key
-    ///     nothing sets is a mapping that silently never applies, which is the worst kind: it looks like
-    ///     a feature and behaves like a comment.
-    /// </remarks>
-    [Fact]
-    public void EveryDeclaredReSharperKey_ExistsInTheExport() {
-        var export = Path.Combine(RepositoryRoot, ".editorconfig");
-        var keys = File.ReadAllLines(export)
-            .Select(static line => line.Split('=')[0].Trim())
-            .Where(static key => key.EndsWith("_highlighting", StringComparison.Ordinal))
-            .ToHashSet(StringComparer.Ordinal);
-
-        Assert.NotEmpty(keys);
-
-        foreach (var rule in RuleCatalog.All.Where(static rule => rule.ReSharperId is not null)) {
-            Assert.True(
-                keys.Contains(rule.ReSharperSeverityKey!),
-                $"{rule.Id} declares ReSharper inspection '{rule.ReSharperId}', which derives to "
-                + $"'{rule.ReSharperSeverityKey}' — and the export sets no such key. "
-                + "A mapping nothing can set is a mapping that never applies."
-            );
-        }
-    }
-
-    /// <summary>
     ///     ⚠ The parity measurement's inspection → <c>SK</c> map, pinned in the one direction that is
-    ///     assertable: whatever a shipped rule claims from ReSharper, the map must credit to that rule.
+    ///     still assertable: every id it credits must be an id the register has actually allocated.
     /// </summary>
     /// <remarks>
     ///     <c>Testing/parity-analysis/catalogued.json</c> is hand-written, and its README calls it the
     ///     soft edge of the whole analysis for a reason: an inspection missing from it falls through to
     ///     the <c>Uncovered</c> residue, so an omission does not read as a mistake in the map — it reads
-    ///     as a gap in the product. Four rules that ship today were being counted as uncovered for
-    ///     exactly that reason, which is what this direction catches.
+    ///     as a gap in the product.
     ///     <para>
-    ///         ⚠ <b>The reverse is deliberately not asserted.</b> The <c>Catalogued</c> bucket means "an
-    ///         <c>SK</c> id in doc 08 already names this concept" — allocated is enough and shipped is
-    ///         not required, so entries pointing at ids doc 08 names but nothing implements yet are the
-    ///         map working correctly. A test demanding map ⊆ <c>rules.json</c> would have to be deleted
-    ///         the day one of those is specified. What is checked instead is the weaker fact that holds
-    ///         either way: every value is well formed and is a number the register knows about.
+    ///         ⚠ <b>This test used to assert rules.json ⊆ catalogued.json as well</b>, matching on the
+    ///         <c>SK</c> id: whatever inspection a shipped rule named as its <c>resharperId</c>, the map
+    ///         had to credit to that rule. That half is gone with the field (and so is
+    ///         <c>verify_ledger.py</c>'s copy of it), which leaves the *keys* of the map — the
+    ///         inspection names — checked by nothing at all. docs/plan/17 records the loss; it is an
+    ///         accepted consequence of removing a field that could name only one inspection per rule
+    ///         when a rule routinely covers several.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Map ⊆ rules.json is still deliberately not asserted.</b> The <c>Catalogued</c>
+    ///         bucket means "an <c>SK</c> id in doc 08 already names this concept" — allocated is
+    ///         enough and shipped is not required, so entries pointing at ids doc 08 names but nothing
+    ///         implements yet are the map working correctly.
     ///     </para>
     /// </remarks>
     [Fact]
-    public void TheParityMap_CreditsEveryShippedReSharperMappingToItsOwnRule() {
+    public void TheParityMap_CreditsOnlyIdsTheRegisterHasAllocated() {
         Assert.True(File.Exists(ParityMapPath), $"{ParityMapPath} does not exist; it is what this test reads.");
 
         var map = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -496,44 +450,9 @@ public sealed class RuleCatalogTests {
             }
         }
 
-        // ⚠ Anti-vacuity. Both loops below pass happily against an empty map, and an empty map is
+        // ⚠ Anti-vacuity. The loop below passes happily against an empty map, and an empty map is
         // the exact shape of the failure this test exists to report.
         Assert.True(map.Count > 100, $"{ParityMapPath} holds {map.Count} entries; that is not the map.");
-
-        // ⚠ Retired rules are excluded. A withdrawn rule keeps its `resharperId` — the entry stays so
-        // the descriptor and the docs page survive — but it covers nothing, so the parity map must
-        // *not* credit that inspection to it. Crediting it would put the concept in `Catalogued`,
-        // which claims Skala answers the inspection, when the honest bucket is `Hosted`.
-        var mapped = RuleCatalog.All
-            .Where(static rule => rule.ReSharperId is not null && !rule.Retired)
-            .ToList();
-
-        Assert.True(mapped.Count >= 10, $"Only {mapped.Count} rules declare a ReSharper inspection id.");
-
-        foreach (var rule in RuleCatalog.All.Where(static rule => rule.Retired && rule.ReSharperId is not null)) {
-            Assert.False(
-                map.ContainsKey(rule.ReSharperId!),
-                $"{rule.ReSharperId} is credited to {rule.Id}, which is retired. A retired rule covers "
-                + "nothing; leave the inspection to the Hosted bucket rather than claiming it."
-            );
-        }
-
-        var uncredited = new List<string>();
-        foreach (var rule in mapped) {
-            var credited = map.TryGetValue(rule.ReSharperId!, out var id) ? id : null;
-            if (!string.Equals(credited, rule.Id, StringComparison.Ordinal)) {
-                uncredited.Add($"{rule.ReSharperId} — {rule.Id} ships it, the map says {credited ?? "nothing"}");
-            }
-        }
-
-        Assert.True(
-            uncredited.Count == 0,
-            "These shipped rules declare a ReSharper inspection the parity map does not credit to them:\n  "
-            + string.Join("\n  ", uncredited)
-            + "\n\nDirection asserted: rules.json ⊆ catalogued.json, matched on the SK id. An inspection a "
-            + "shipped rule covers and the map omits is counted uncovered by docs/plan/17, which inflates "
-            + "the residue and puts work already done back on the queue."
-        );
 
         var register = File.ReadAllText(CataloguePath);
         Assert.True(
@@ -591,43 +510,6 @@ public sealed class RuleCatalogTests {
             + "⚠ An id doc 08 names only in a CUT table is NOT such a mapping: the concept was measured and "
             + "declined, so crediting an inspection to it reports coverage that will never exist."
         );
-    }
-
-    /// <summary>
-    ///     ⚠ A rule whose ReSharper key the export sets to something surprising must say so.
-    /// </summary>
-    /// <remarks>
-    ///     The measurement behind docs/plan/16 § Q5:
-    ///     <c>
-    /// resharper_use_throw_if_null_method_highlighting
-    ///  = none
-    ///     </c>. Any rule whose key is not simply its own default is a rule where reading the key
-    ///     changes behaviour, and the note is what makes that a decision rather than a surprise.
-    /// </remarks>
-    [Fact]
-    public void EveryRuleWhoseExportSeverityDiffers_CarriesANote() {
-        var export = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var line in File.ReadAllLines(Path.Combine(RepositoryRoot, ".editorconfig"))) {
-            var parts = line.Split('=', 2);
-            if (parts.Length == 2 && parts[0].Trim().EndsWith("_highlighting", StringComparison.Ordinal)) {
-                export[parts[0].Trim()] = parts[1].Trim();
-            }
-        }
-
-        foreach (var rule in RuleCatalog.All.Where(static rule => rule.ReSharperId is not null)) {
-            if (!export.TryGetValue(rule.ReSharperSeverityKey!, out var value)) {
-                continue;
-            }
-
-            if (!string.Equals(value, rule.DefaultSeverity.ToString().ToLowerInvariant(), StringComparison.Ordinal)) {
-                Assert.False(
-                    string.IsNullOrEmpty(rule.ReSharperNote),
-                    $"{rule.Id} defaults to '{rule.DefaultSeverity.ToString().ToLowerInvariant()}' and the export sets "
-                    + $"'{rule.ReSharperSeverityKey}' to '{value}'. Reading the key changes behaviour, so rules.json "
-                    + "must carry a `resharperNote` saying so."
-                );
-            }
-        }
     }
 
     /// <summary>

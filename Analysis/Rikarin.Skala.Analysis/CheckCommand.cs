@@ -57,23 +57,6 @@ public sealed record CheckRequest {
     public IReadOnlyList<string> Rules { get; init; } = [];
 
     /// <summary>
-    ///     Whether a <c>resharper_*_highlighting</c> key may set a Skala rule's severity.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Off by default, and docs/plan/16 § Q5 records the measurement that decided it: the author's
-    ///     own export sets <c>resharper_use_throw_if_null_method_highlighting = none</c>, so reading
-    ///     these keys as authoritative would have switched SK1020 off in the repository the tool was
-    ///     built for, without anyone deciding to. The reasoning does not depend on the example — a
-    ///     severity chosen for a ReSharper inspection is not consent for a Skala rule — but ⚠
-    ///     <b>
-    ///         the
-    ///         one worked example is now a retired rule
-    ///     </b> (#281), and nobody has re-measured which
-    ///     <em>live</em> rule that export would silence. <c>dotnet_diagnostic.SK…</c> always wins over it.
-    /// </remarks>
-    public bool ReadReSharperSeverities { get; init; }
-
-    /// <summary>
     ///     A git ref: only findings on lines it changed count as new (docs/plan/09 § "New-code definition").
     /// </summary>
     public string? Since { get; init; }
@@ -200,10 +183,6 @@ public static class CheckCommand {
         var toolConfig = Path.Combine(root, ToolConfiguration.FileName);
         var hosted = HostedAnalyzers.Load(HostedAnalyzers.Read(toolConfig));
         var codeStyle = RoslynCodeStyle.Load();
-        var resharperSeverities =
-            request.ReadReSharperSeverities
-            || HostedAnalyzers.ReadsReSharperSeverities(toolConfig);
-
         diagnostics.AddRange(hosted.Diagnostics);
         diagnostics.AddRange(codeStyle.Diagnostics);
         var analyzers = codeStyle.Analyzers.AddRange(hosted.Analyzers);
@@ -258,7 +237,7 @@ public static class CheckCommand {
         // CPU. Roslyn's driver is already concurrent within a compilation, which is where the
         // parallelism that matters is.
         foreach (var unit in loaded.Units) {
-            var (options, fingerprint, severities) = EditorConfigOptions.For(unit, root, resharperSeverities);
+            var (options, fingerprint, severities) = EditorConfigOptions.For(unit, root);
 
             // ⚠ The severity table has to live on the *compilation*, not on the analyzer options:
             // that is where Roslyn's driver reads `dotnet_diagnostic.X.severity` from.

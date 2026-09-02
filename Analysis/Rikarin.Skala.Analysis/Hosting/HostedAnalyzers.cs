@@ -48,35 +48,6 @@ public static class HostedAnalyzers {
         "packages"
     );
 
-    /// <summary>
-    ///     Whether <c>skala.jsonc</c> asks for <c>resharper_*_highlighting</c> to set rule severities.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Default false. docs/plan/03 § "Severities" and docs/plan/16 § Q5: the values in an export
-    ///     were chosen for ReSharper's inspections, and the author's own export sets
-    ///     <c>resharper_use_throw_if_null_method_highlighting = none</c>.
-    /// </remarks>
-    public static bool ReadsReSharperSeverities(string? toolConfigPath) {
-        if (toolConfigPath is null || !File.Exists(toolConfigPath)) {
-            return false;
-        }
-
-        try {
-            using var document = JsonDocument.Parse(
-                File.ReadAllText(toolConfigPath),
-                new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }
-            );
-
-            return document.RootElement.TryGetProperty("analysis", out var analysis)
-                && analysis.TryGetProperty("resharperSeverities", out var value)
-                && value.ValueKind == JsonValueKind.True;
-        } catch (JsonException) {
-            return false;
-        } catch (IOException) {
-            return false;
-        }
-    }
-
     /// <summary>Reads <c>analysis.hostedAnalyzers</c> out of <c>skala.jsonc</c>.</summary>
     public static ImmutableArray<HostedPackage> Read(string? toolConfigPath) {
         if (toolConfigPath is null || !File.Exists(toolConfigPath)) {

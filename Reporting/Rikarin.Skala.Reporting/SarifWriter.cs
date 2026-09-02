@@ -192,10 +192,13 @@ public static class SarifWriter {
                 descriptor.SetProperty("languageVersion", floor);
             }
 
-            if (rule.ReSharperSeverityKey is { } key) {
-                descriptor.SetProperty("resharperSeverityKey", key);
-            }
-
+            // ⚠ There was a `resharperSeverityKey` property here, and its removal is a SARIF format
+            // change. It named the `resharper_*_highlighting` key that could set this rule's
+            // severity; that bridge is gone, so the property described a mechanism that no longer
+            // exists. Nothing pinned it — no test read it, and a baseline matches on the result
+            // fingerprints in `results[]`, never on a `rules[]` property — so an existing baseline
+            // keeps matching. `.skala/baseline.sarif` still carries the property until the next
+            // `skala baseline update` rewrites it.
             if (skipped.TryGetValue(rule.Id, out var reason)) {
                 descriptor.SetProperty("skipped", reason);
             }

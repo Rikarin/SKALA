@@ -25,9 +25,16 @@ public static class EditorConfigOptions {
     ///     resolved view is per source path — that is the whole point of scoped sections — so hashing
     ///     the global view would let an edit to a <c>[Testing/**]</c> section leave every cache key
     ///     unmoved, which is a stale finding by construction.
+    ///     <para>
+    ///         ⚠ The fingerprint used to carry a <c>|resharper</c> suffix when the
+    ///         <c>resharper_*_highlighting</c> severity bridge was switched on. The bridge is gone and
+    ///         so is the suffix — and that changes no existing cache key, because the suffix was only
+    ///         ever appended for a run that opted in. Every run that did not is fingerprinted exactly
+    ///         as before.
+    ///     </para>
     /// </remarks>
     public static (AnalyzerOptions Options, string Fingerprint, SyntaxTreeOptionsProvider? Severities)
-        For(CompilationUnit unit, string repositoryRoot, bool readReSharperSeverities = false) {
+        For(CompilationUnit unit, string repositoryRoot) {
         var paths = unit.AnalyzerConfigPaths.IsEmpty
             ? Discover(unit, repositoryRoot)
             : unit.AnalyzerConfigPaths;
@@ -60,8 +67,8 @@ public static class EditorConfigOptions {
         var set = AnalyzerConfigSet.Create(configs.ToImmutable());
         return (
             new AnalyzerOptions([], new SetProvider(set)),
-            fingerprint.ToString() + (readReSharperSeverities ? "|resharper" : string.Empty),
-            new SeverityProvider(set, readReSharperSeverities)
+            fingerprint.ToString(),
+            new SeverityProvider(set)
         );
     }
 
@@ -77,8 +84,7 @@ public static class EditorConfigOptions {
     ///     this. That is the failure where a repository turns a rule off, the IDE agrees, and CI keeps
     ///     reporting it.
     /// </remarks>
-    sealed class SeverityProvider(AnalyzerConfigSet set, bool readReSharperSeverities)
-        : SyntaxTreeOptionsProvider {
+    sealed class SeverityProvider(AnalyzerConfigSet set) : SyntaxTreeOptionsProvider {
         public override GeneratedKind IsGenerated(SyntaxTree tree, CancellationToken cancellationToken) =>
             GeneratedKind.Unknown;
 
@@ -88,16 +94,10 @@ public static class EditorConfigOptions {
             CancellationToken cancellationToken,
             out ReportDiagnostic severity
         ) {
-            var options = set.GetOptionsForSourcePath(tree.FilePath);
-
-            // ⚠ Precedence, and it is the whole of docs/plan/16 § Q5's mechanism half:
-            // `dotnet_diagnostic.SK1010.severity` always wins, because it names the Skala rule and
-            // therefore cannot mean anything else.
-            if (options.TreeOptions.TryGetValue(diagnosticId, out severity)) {
-                return true;
-            }
-
-            return readReSharperSeverities && TryReSharper(options.AnalyzerOptions, diagnosticId, out severity);
+            // ⚠ `dotnet_diagnostic.SK1010.severity` is the only spelling, because it names the Skala
+            // rule and therefore cannot mean anything else. There used to be a second, opt-in axis
+            // here reading `resharper_*_highlighting`; it is gone, and doc 16 § Q5 records why.
+            return set.GetOptionsForSourcePath(tree.FilePath).TreeOptions.TryGetValue(diagnosticId, out severity);
         }
 
         public override bool TryGetGlobalDiagnosticValue(
@@ -105,51 +105,7 @@ public static class EditorConfigOptions {
             CancellationToken cancellationToken,
             out ReportDiagnostic severity
         ) {
-            if (set.GlobalConfigOptions.TreeOptions.TryGetValue(diagnosticId, out severity)) {
-                return true;
-            }
-
-            return readReSharperSeverities
-                && TryReSharper(set.GlobalConfigOptions.AnalyzerOptions, diagnosticId, out severity);
-        }
-
-        /// <summary>
-        ///     The <c>resharper_*_highlighting</c> key a Skala rule names, if the configuration sets it.
-        /// </summary>
-        /// <remarks>
-        ///     ⚠ Opt-in, and docs/plan/16 § Q5 says why in detail. The short version, measured on the
-        ///     author's own export: <c>resharper_use_throw_if_null_method_highlighting = none</c>, so
-        ///     reading these keys as authoritative by default would have switched <c>SK1020</c> off in
-        ///     the repository the tool was built for, without anyone deciding to. The severities in an
-        ///     export were chosen for ReSharper's inspections, not for Skala's rules, and a value that
-        ///     has never been looked at is not consent — which is the argument, and it does not rest on
-        ///     the example. ⚠ <c>SK1020</c> is retired (#281), so the only rule this was ever
-        ///     demonstrated on is one that no longer fires; re-measuring against a live rule is owed.
-        /// </remarks>
-        static bool TryReSharper(
-            ImmutableDictionary<string, string> options,
-            string diagnosticId,
-            out ReportDiagnostic severity
-        ) {
-            severity = ReportDiagnostic.Default;
-            if (Rules.Metadata.RuleCatalog.Find(diagnosticId) is not { ReSharperSeverityKey: { } key }) {
-                return false;
-            }
-
-            if (!options.TryGetValue(key, out var value)) {
-                return false;
-            }
-
-            severity = value switch {
-                "error" => ReportDiagnostic.Error,
-                "warning" => ReportDiagnostic.Warn,
-                "suggestion" => ReportDiagnostic.Info,
-                "hint" => ReportDiagnostic.Hidden,
-                "none" => ReportDiagnostic.Suppress,
-                _ => ReportDiagnostic.Default
-            };
-
-            return severity != ReportDiagnostic.Default;
+            return set.GlobalConfigOptions.TreeOptions.TryGetValue(diagnosticId, out severity);
         }
     }
 

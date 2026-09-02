@@ -55,8 +55,16 @@ public enum RuleScope {
 /// </summary>
 /// <remarks>
 ///     docs/plan/08-rule-catalogue.md § "Rule metadata". The single source for the analyzer's
-///     <c>DiagnosticDescriptor</c>, the <c>docs/rules/</c> page, the <c>skala explain</c> text, the
-///     SARIF <c>rules[]</c> block and the ReSharper severity mapping.
+///     <c>DiagnosticDescriptor</c>, the <c>docs/rules/</c> page, the <c>skala explain</c> text and the
+///     SARIF <c>rules[]</c> block.
+///     <para>
+///         ⚠ There is no longer a <c>ReSharperId</c>, and with it went the
+///         <c>resharper_*_highlighting</c> severity bridge. One field named one inspection while a
+///         rule routinely covers several, so <c>resharper_&lt;x&gt;_highlighting = none</c> either
+///         silenced a rule covering ten other concepts or was inert for the other ten — it could not
+///         mean what a reader expected. <see cref="ReSharperNote" /> stays: it is prose about how a
+///         concept lines up against ReSharper's, not a machine-readable mapping.
+///     </para>
 /// </remarks>
 public sealed record RuleInfo(
     string Id,
@@ -69,7 +77,6 @@ public sealed record RuleInfo(
     bool HasFix,
     bool FixIsSafe,
     bool Retired,
-    string? ReSharperId,
     IReadOnlyList<string> Supersedes,
     string Since,
     string? LanguageVersion,
@@ -80,53 +87,9 @@ public sealed record RuleInfo(
     string FalsePositives,
     IReadOnlyList<string> Configuration,
     string? ReSharperNote) {
-    /// <summary>
-    ///     The <c>resharper_*_highlighting</c> key this rule's severity can be read from, or null.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Derived, not stored, and the derivation is the answer to docs/plan/16 § Q5. ReSharper's
-    ///     key is its inspection id in snake_case with a <c>resharper_</c> prefix and a
-    ///     <c>_highlighting</c> suffix — <c>ConvertToFileScopedNamespace</c> becomes
-    ///     <c>resharper_convert_to_file_scoped_namespace_highlighting</c> — so the mapping table is one
-    ///     field per rule rather than a second file to keep in sync.
-    /// </remarks>
-    public string? ReSharperSeverityKey =>
-        ReSharperId is null ? null : "resharper_" + SnakeCase(ReSharperId) + "_highlighting";
-
     /// <summary>Whether the rule can run at all under <c>--load=loose</c>.</summary>
     public bool RunsWithoutAProject => !RequiresSemantics && Scope != RuleScope.Compilation;
 
     /// <summary>⚠ Compilation-scoped rules are never cached per file. See <see cref="RuleScope" />.</summary>
     public bool IsCacheable => Scope != RuleScope.Compilation;
-
-    internal static string SnakeCase(string pascal) {
-        var builder = new System.Text.StringBuilder(pascal.Length + 8);
-        for (var i = 0; i < pascal.Length; i++) {
-            var c = pascal[i];
-            if (char.IsUpper(c)) {
-                // ⚠ A run of capitals is one word: `ConvertToASCII` is `convert_to_ascii`, not
-                // `convert_to_a_s_c_i_i`. ReSharper's own keys are written that way.
-                var startsWord = i > 0
-                    && (!char.IsUpper(pascal[i - 1]) || i + 1 < pascal.Length && char.IsLower(pascal[i + 1]));
-                if (startsWord && builder.Length > 0 && builder[builder.Length - 1] != '_') {
-                    builder.Append('_');
-                }
-
-                builder.Append(char.ToLowerInvariant(c));
-            } else if (c == '.') {
-                // ⚠ ReSharper's severity-scoped inspections are spelled `MemberCanBeMadeStatic.Global`
-                // and `.Local`, and the exported key separates the two halves with an underscore like
-                // any other word boundary. Without this the id derives to a key ending `._global`,
-                // which JetBrains never emits — a mapping that looks like a feature and behaves like a
-                // comment. EveryDeclaredReSharperKey_ExistsInTheExport is what catches that.
-                if (builder.Length > 0 && builder[builder.Length - 1] != '_') {
-                    builder.Append('_');
-                }
-            } else {
-                builder.Append(c);
-            }
-        }
-
-        return builder.ToString();
-    }
 }

@@ -3,8 +3,13 @@
   "version": 1,
   "notes": [
     "docs/plan/08-rule-catalogue.md is the specification. This file is the single source for the",
-    "analyzer's DiagnosticDescriptor, the docs/rules/ page, the `skala explain` text, the SARIF",
-    "rules[] block and the ReSharper severity mapping.",
+    "analyzer's DiagnosticDescriptor, the docs/rules/ page, the `skala explain` text and the SARIF",
+    "rules[] block.",
+    "",
+    "⚠ `resharperId` was removed along with the resharper_*_highlighting severity bridge. One field",
+    "could name one inspection while a rule routinely covers several -- SK4010 covers eleven -- so",
+    "the mapping could not mean what a reader expected. `resharperNote` stays: it is prose recording",
+    "how a concept lines up against ReSharper's, not a machine-readable severity mapping.",
     "",
     "ADR-012: an id is allocated once and never re-purposed. RuleCatalogTests.RuleIds_AreAppendOnly",
     "reads Rules/Rikarin.Skala.Rules.Metadata/allocated-ids.txt and fails the build when an id in it",
@@ -29,7 +34,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.6",
       "languageVersion": null,
@@ -54,7 +58,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.2",
       "languageVersion": null,
@@ -79,7 +82,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.4",
       "languageVersion": null,
@@ -102,7 +104,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -131,7 +132,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -158,7 +158,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "9.0",
@@ -184,7 +183,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "7.1",
@@ -210,7 +208,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "9.0",
@@ -235,7 +232,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -260,7 +256,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -288,7 +283,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -313,7 +307,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -341,7 +334,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -370,7 +362,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -396,7 +387,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -421,7 +411,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "10.0",
@@ -446,7 +435,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -472,7 +460,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -498,7 +485,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -528,7 +514,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "7.0",
@@ -553,7 +538,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "IDE0028",
         "IDE0300",
@@ -582,7 +566,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "IDE0161"
       ],
@@ -611,7 +594,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "ConvertToUsingDeclaration",
       "supersedes": [
         "IDE0063"
       ],
@@ -638,7 +620,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "MergeIntoPattern",
       "supersedes": [],
       "since": "0.6",
       "languageVersion": "9.0",
@@ -664,7 +645,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "MergeCastWithTypeCheck",
       "supersedes": [
         "IDE0019",
         "IDE0020"
@@ -692,7 +672,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseThrowIfNullMethod",
       "supersedes": [],
       "retired": true,
       "since": "0.6",
@@ -719,7 +698,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "ConvertToNullCoalescingCompoundAssignment",
       "supersedes": [
         "IDE0074"
       ],
@@ -746,7 +724,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.2",
       "languageVersion": "14.0",
@@ -771,7 +748,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "CanSimplifyDictionaryLookupWithTryGetValue",
       "supersedes": [],
       "since": "1.2",
       "languageVersion": "7.0",
@@ -796,7 +772,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseCollectionCountProperty",
       "supersedes": [],
       "retired": true,
       "since": "0.6",
@@ -823,7 +798,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.6",
       "languageVersion": null,
@@ -848,7 +822,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -873,7 +846,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -898,7 +870,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "PossibleInvalidOperationExceptionCollectionWasModified",
       "supersedes": [],
       "since": "1.2",
       "languageVersion": null,
@@ -923,7 +894,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -948,7 +918,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -973,7 +942,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -998,7 +966,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -1023,7 +990,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "ObjectCreationAsStatement",
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1048,7 +1014,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -1073,7 +1038,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "PossibleIntendedRethrow",
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1098,7 +1062,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "CA2254"
       ],
@@ -1125,7 +1088,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "AsyncVoidMethod",
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1151,7 +1113,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1176,7 +1137,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "MethodSupportsCancellation",
       "supersedes": [],
       "since": "1.2",
       "languageVersion": null,
@@ -1202,7 +1162,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -1227,7 +1186,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "ReturnOfTaskProducedByUsingVariable",
       "supersedes": [],
       "since": "1.2",
       "languageVersion": null,
@@ -1252,7 +1210,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "NotDisposedResource",
       "supersedes": [],
       "since": "1.2",
       "languageVersion": "8.0",
@@ -1277,7 +1234,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -1302,7 +1258,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "UseAwaitUsing",
       "supersedes": [],
       "since": "1.2",
       "languageVersion": "8.0",
@@ -1328,7 +1283,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.0",
       "languageVersion": null,
@@ -1353,7 +1307,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.1",
       "languageVersion": null,
@@ -1378,7 +1331,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.1",
       "languageVersion": null,
@@ -1403,7 +1355,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.1",
       "languageVersion": null,
@@ -1428,7 +1379,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.1",
       "languageVersion": null,
@@ -1453,7 +1403,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.1",
       "languageVersion": null,
@@ -1478,7 +1427,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "CA1012"
       ],
@@ -1505,7 +1453,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -1530,7 +1477,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1556,7 +1502,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1582,7 +1527,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1608,7 +1552,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1634,7 +1577,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1660,7 +1602,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1686,7 +1627,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1711,7 +1651,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.8",
       "languageVersion": null,
@@ -1737,7 +1676,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -1762,7 +1700,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -1787,7 +1724,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -1812,7 +1748,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.0",
       "languageVersion": null,
@@ -1837,7 +1772,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -1862,7 +1796,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.1",
       "languageVersion": null,
@@ -1885,7 +1818,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.2",
       "languageVersion": null,
@@ -1908,7 +1840,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.2",
       "languageVersion": null,
@@ -1931,7 +1862,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.6",
       "languageVersion": null,
@@ -1954,7 +1884,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.6",
       "languageVersion": null,
@@ -1979,7 +1908,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.6",
       "languageVersion": null,
@@ -2002,7 +1930,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.6",
       "languageVersion": null,
@@ -2027,7 +1954,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "0.2",
       "languageVersion": null,
@@ -2050,7 +1976,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "8.0",
@@ -2075,7 +2000,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "9.0",
@@ -2100,7 +2024,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "7.2",
@@ -2125,7 +2048,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -2152,7 +2074,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -2178,7 +2099,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "8.0",
@@ -2203,7 +2123,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "11.0",
@@ -2228,7 +2147,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "11.0",
@@ -2253,7 +2171,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -2278,7 +2195,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -2303,7 +2219,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -2328,7 +2243,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -2353,7 +2267,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -2378,7 +2291,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -2403,7 +2315,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -2436,7 +2347,6 @@
         "good": "public int Count { get => field; set => field = System.Math.Max(0, value); }"
       },
       "falsePositives": "Only non-virtual class properties with explicit get and set bodies and a same-type private, non-readonly, non-volatile, uninitialized field are supported. Partial containing types, directives, field comments/attributes, property attributes, initializers, generic type-parameter storage, non-nullable reference storage, other consumers, other-instance accesses, nameof, ref escapes, caller-expression capture, nested functions and existing field identifiers are excluded. C# 14 is required. Both accessors must use the field; types with explicit layout or Serializable attributes are excluded. Reflection and serializers depending on the private field's name/layout are outside the proof.",
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2461,7 +2371,6 @@
         "good": "static readonly System.Buffers.SearchValues<char> Separators = System.Buffers.SearchValues.Create(\" ,;|\\t\");"
       },
       "falsePositives": "Initial coverage is char arrays with 4 or more distinct constant characters and at most 256 characters, used exclusively as the values argument of framework span IndexOfAny, IndexOfAnyExcept, ContainsAny or ContainsAnyExcept. Array/collection initializers and constant-string ToCharArray are supported. String.IndexOfAny, byte sets, mutable/escaping storage, partial types, directives, comments, expression trees and other-file source constants are excluded. Other static initializers and static constructors are excluded to avoid reentrant initialization differences. Requires metadata SearchValues and compatible search overloads; small sets are left alone. Measure performance for the target workload. Reflection on the private field is outside the proof.",
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2486,7 +2395,6 @@
         "good": "static readonly System.Collections.Frozen.FrozenDictionary<string, int> Codes = System.Collections.Frozen.FrozenDictionary.ToFrozenDictionary(new System.Collections.Generic.Dictionary<string, int>() { { \"ok\", 200 } });"
       },
       "falsePositives": "Only private static readonly fields in non-partial classes, constructed with the parameterless framework Dictionary constructor and constant key/value collection entries, are supported. Keys must be non-nullable integral/char or string; nullable value annotations are preserved. All uses must be indexer reads, Count, ContainsKey or TryGetValue. Mutation, enumeration, Keys/Values, aliases, escapes, custom comparers, nonconstant entries, other-file constants, directives, field comments/attributes and expression trees are excluded. Requires the framework FrozenDictionary factory. Startup work increases and runtime gains require measurement. Reflection and private-field serialization are outside the proof.",
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2511,7 +2419,6 @@
         "good": "// Choose mutable storage, an immutable replacement API, or an explicit local copy according to intent."
       },
       "falsePositives": "The catalogue's ambiguous mutable-struct/readonly-field entry is implemented as lost mutation through readonly storage, not a ban on readonly fields inside mutable structs. Only direct readonly field receivers and non-readonly void source struct methods with a top-level assignment/increment/decrement of an instance field are supported. Constructors and init accessors of the field's declaring type, readonly members/types, read-only methods, reference types, extensions, metadata/other-file method bodies, conditional methods, expression trees, nested/conditional writes, properties and in parameters are excluded. This is report-only: removing readonly or changing an API needs author intent.",
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2536,7 +2443,6 @@
         "good": "Consume((System.ReadOnlySpan<int>)[1, 2, 3]); // After reviewing the overload's behavior."
       },
       "falsePositives": "Only nonempty explicit/implicit array creations with initializers passed as the last argument to a params array parameter are reported. Requires C# 12 and an accessible same-type overload with matching preceding parameter types/ref kinds, return type and a ReadOnlySpan of the same element type. Existing arrays, empty allocations, named/omitted arguments, dynamic calls, expression trees, await elements, pointer element types and missing or inaccessible alternatives are excluded. Expanded params calls and declaration changes belong outside this initial call-site rule. Report-only because overload semantics and actual allocation elimination require review.",
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2561,7 +2467,6 @@
         "good": "readonly System.Threading.Lock gate = new(); void M() { lock (gate) { Work(); } }"
       },
       "falsePositives": "Only a single private readonly object field in a class, initialized directly with new object() or target-typed new(), is supported. There must be at least one lock use; every bound reference in the file, including constructed generic types, must be a direct lock target. Monitor calls, aliases, casts, escapes, reassignment, attributes, interior comments and lock bodies containing yields are excluded. Partial containing types and files with directives are excluded so references in another source file or inactive branch cannot escape the proof. C# 13 and a metadata System.Threading.Lock with the required API are mandatory. Reflection-based access to private fields is outside the proof. Shared monitors used for Wait/Pulse are never converted.",
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2586,7 +2491,6 @@
         "good": "// Choose a domain-appropriate comparison, or retain intentional exact equality with a scoped suppression."
       },
       "falsePositives": "The initial scope requires a direct built-in addition, subtraction, multiplication, division or remainder operand of a built-in, non-lifted float/double == or != comparison. Plain variable comparisons, property change guards, decimal/integral arithmetic, custom operators, constant-folded comparisons, and comparisons against constant zero, NaN or infinity are excluded. Source constant dependencies must stay in the same file, including transitive initializers. It does not trace earlier arithmetic through variables or method calls. Exact floating-point contracts may be intentional and can require suppression; no automatic fix is offered.",
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2611,7 +2515,6 @@
         "good": "int M<T>(T value, T other) where T : struct, IComparable<T> => value.CompareTo(other); // after reviewing copy semantics"
       },
       "falsePositives": "Only explicit boxing casts immediately used as an interface method receiver are reported. The source must be a type parameter constrained to a value type and to the target interface, directly or through an inherited interface. Reference-type and unconstrained generic casts, object casts, extension methods, retained boxes, interface property access and expression trees are excluded. The rule identifies a boxing conversion, not an exact runtime allocation count; JIT optimization and deliberate copy semantics can make retaining it appropriate. No automatic fix is offered.",
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2636,7 +2539,6 @@
         "good": "// Measure and consider a reviewed in/ref API, or retain the by-value snapshot intentionally."
       },
       "falsePositives": "Only explicit identity-converted local/parameter arguments to by-value struct parameters in for/foreach/while/do bodies are supported. The threshold is strictly exceeded; invalid, zero or negative values fall back to 64. Size counts primitive field payload, including decimal and compiler backing fields, and recursively known same-file non-generic non-partial structs. Explicit/auto layout, other-file and metadata structs, generic structs, references, native integers, pointers, fixed buffers, ref fields and unknown fields contribute zero rather than an invented size. Layout attributes depending on another source file's constants are excluded. Padding and StructLayout.Size are ignored. in/ref/out arguments, factories, conversions, nested callable bodies and constructor calls are excluded. JIT copy elision and intentional value isolation require review. skala.size.lower_bound records the proven payload bound.",
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2662,7 +2564,6 @@
         "good": "// Explain why an example is retained, or remove obsolete code and rely on version history."
       },
       "falsePositives": "Only standalone ordinary // groups on consecutive lines and standalone /* */ comments are examined. XML documentation, inline comments, inactive preprocessor text, strings, fenced/code-tagged examples, URLs, prose, single statements, malformed comments, incomplete parses and groups over 8192 characters or 100 line comments are excluded. A 128-opening-delimiter budget bounds parser work. The complete stripped block must parse using the file's language options and contain at least two code-like atomic statements; unsupported statement forms are skipped. No semantic binding is claimed. Unlabelled multi-statement examples can still match; add a meaningful explanation or suppress the hint. No automatic deletion is offered.",
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2687,7 +2588,6 @@
         "good": "void Write(string value) {\n    if (value is null) {\n        throw new ArgumentNullException(nameof(value));\n    }\n}"
       },
       "falsePositives": "The argument is located by the *constructor symbol's* parameter named `paramName`, never by position, so the overloads where the same slot is a message — `ArgumentException(message, innerException)`, `ArgumentNullException(message, innerException)` — are not touched, and a named argument is followed to the right slot. Only a plain string literal is examined: `nameof`, a constant, an interpolation, a variable and an empty literal are all left alone. ⚠ **The names in scope are every parameter the C# scoping rules put there**, which is deliberately more than the enclosing method: a lambda's and a local function's own parameters, an indexer's parameters, the implicit `value` of a `set`, `init`, `add` and `remove` accessor, the containing type's primary-constructor parameters, and the parameters of every enclosing function — so a nested local function that validates its caller's argument by name is correct and is not reported. The walk stops at a `static` lambda or `static` local function, whose enclosing parameters it may not name, and at the containing type, whose outer type's primary constructor is not in scope. ⚠ **A literal that resembles nothing in scope is a deliberate false negative.** The rule reports only where exactly one parameter in scope is a case-only difference or a single edit — insertion, deletion, substitution or adjacent transposition — away from the literal, and both names are at least three characters long. Where two parameters are equally close, or none is, the rule cannot say which name was meant; reporting there would be a finding whose repair `skala fix` could not write, and doc 08 ships this rule with a safe fix. A `paramName` copied from a different overload, or left behind by a rename to an unrelated word, is therefore silent rather than guessed at.",
-      "resharperId": "SuspiciousParameterNameInArgumentNullException",
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2712,7 +2612,6 @@
         "good": "[Obsolete(\"Use SaveAsync; this overload blocks the calling thread.\")]\npublic void Save() { }"
       },
       "falsePositives": "Only attributes that semantically resolve to `System.ObsoleteAttribute` are inspected, so a user attribute with the same short name is ignored. The message argument is resolved against the constructor's parameter list, so the positional and `message:` spellings are one answer. A non-constant expression is accepted without inspection rather than guessed at. Empty, whitespace and TODO/FIXME/TBD/N/A placeholders are not treated as messages; the rule cannot assess whether otherwise substantive prose actually names a replacement. `DiagnosticId` and `UrlFormat` are not accepted as substitutes, because neither is shown in the compiler's warning text.",
-      "resharperId": null,
       "supersedes": [
         "S1123"
       ],
@@ -2739,7 +2638,6 @@
         "good": "[ExcludeFromCodeCoverage(Justification = \"Thin P/Invoke shim; exercised by the integration suite.\")]\nsealed class GeneratedShim { }"
       },
       "falsePositives": "⚠ The rule is silent where `Justification` does not exist on the bound attribute type — it arrived in .NET 5, and demanding it of a `netstandard2.0` or `net472` compilation would be demanding something the language cannot express. The property is looked up on the symbol rather than inferred from the target framework moniker. Only attributes that semantically resolve to `System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute` are inspected, so a user attribute with the same short name is ignored. A `Justification` that is present and not constant-foldable counts as written. Empty, whitespace and TODO/FIXME/TBD/N/A placeholders are not reasons; the rule cannot assess whether otherwise substantive prose is true.",
-      "resharperId": null,
       "supersedes": [
         "S6513"
       ],
@@ -2766,7 +2664,6 @@
         "good": "// Delete both directives; the code they bracketed is gone."
       },
       "falsePositives": "⚠ This is the decidable half of the concept and the other half is deliberately not attempted. Deciding that a suppressed warning *no longer fires* requires knowing what the compilation reports without the pragma, which an analyzer cannot ask: pragma filtering is applied to compiler diagnostics before `Compilation.GetDiagnostics` returns, an analyzer cannot enumerate the other analyzers in the run, and re-analysing from inside an analyzer is re-entrant. Only the analysis host is in a position to answer it, and doing so is a separate feature. What ships is the degenerate case: no source token between a `disable` and the `restore` that lifts it, or between a `disable` and end of file. A region holding only other `#pragma warning` directives also counts as empty, so nested empty brackets are one edit rather than several passes. Every other trivia is content and the rule stays quiet — a comment, a `#region`, and in particular inactive `#if` text, which is code under another set of preprocessor symbols. Numeric and `CS`-prefixed ids are matched as one id; a `restore` naming other ids does not close a `disable`, and a bare `restore` closes every one.",
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2791,7 +2688,6 @@
         "good": "// Delete the directives; the members they grouped are gone."
       },
       "falsePositives": "Only whitespace counts as nothing. A comment, a `#pragma`, a `#if` and in particular inactive `#if` text are all content, and the rule stays quiet — a region that still says something to a reader is not the residue this is about, and inactive text is code under another set of preprocessor symbols. The one exception is a nested region, so that a region holding only another region is one edit rather than two `skala fix` passes. A `#region` the parser could not match to an `#endregion` is skipped, because deleting one half of an unbalanced pair would be an edit made on a guess.",
-      "resharperId": "EmptyRegion",
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2816,7 +2712,6 @@
         "good": "// Extract the search, return early, or use a flag — whichever says what the loop means."
       },
       "falsePositives": "⚠ Report-only, and this is one of the two rules the catalogue's shipping bar allows no fix for. Breaking out of nested loops is a real use with no mechanical rewrite: a flag, an extracted method and an early return are all correct and choosing between them is a design decision about what the loop means, so an edit that guessed would be worse than the `goto`. Every `goto` to a label is reported, including one inside a `switch` section, because the label is not confined to the switch. `goto case` and `goto default` are never reported. Generated code is excluded, which is where nearly all remaining `goto` lives — parser and state-machine generators emit it by design.",
-      "resharperId": null,
       "supersedes": [
         "S907"
       ],
@@ -2843,7 +2738,6 @@
         "good": "if (double.IsNaN(result)) { Report(); }"
       },
       "falsePositives": "Only `==` and `!=` between two floating-point operands are examined, and exactly one side must be a compile-time constant NaN: `double.NaN`, `float.NaN`, a `const` initialized from one, or a constant expression that folds to NaN. `!=` is reported alongside `==` because it is always true rather than always false; it carries its own message and a negated fix. NaN reached through a non-constant field, property, method result or parameter is one indirection the rule does not follow, because a `static readonly double` is not decidable from the comparison alone. Lifted comparisons on nullable operands, user-defined equality operators, operands whose own type is not `float` or `double` before conversion, and comparisons with NaN on both sides are excluded; the last names no operand to test. Relational comparisons with NaN are also constant and are deliberately not reported, because the rewrite is not a single `IsNaN` call. SK2003 excludes NaN sentinels, so the two rules do not overlap.",
-      "resharperId": null,
       "supersedes": [
         "S2688"
       ],
@@ -2870,7 +2764,6 @@
         "good": "public int Retries { get => retries; set => retries = value; }"
       },
       "falsePositives": "Only accessors with a body are examined; auto-properties, abstract, extern, interface and partial declarations have none. Three shapes earn an exemption because the discard is legible as deliberate rather than accidental: a body with no statements at all (`set { }`), a body that only throws, and an accessor or member carrying `[Obsolete]`. That is the line: an empty setter announces that it ignores the write, and a setter that does work while ignoring it does not. `value` counts as read wherever it is mentioned in the body, including inside a lambda, a local function, a nested accessor and `nameof(value)` — the last is conservative on purpose, since a name mentioned is a name the author had in mind. Statements the file's preprocessor directives disable are not in the body, so a setter emptied by `#if` reads as the empty exemption. The rule does not judge whether the value stored is the right one, only whether one was read.",
-      "resharperId": "ValueParameterNotUsed",
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2895,7 +2788,6 @@
         "good": "sealed class Reader : IDisposable {\n    public void Dispose() => stream.Dispose();\n}"
       },
       "falsePositives": "Reported only for `GC.SuppressFinalize(this)` written as a statement directly inside a block, in a sealed class that derives straight from object and declares no finalizer in a single non-partial declaration. Every part of that is load-bearing. ⚠ An unsealed type is excluded because a derived type may declare a finalizer, which makes the base's call the thing that suppresses it; a type with any base class other than object is excluded for the same reason one level up. A partial or multi-file declaration is excluded so the answer stays decidable from the file the finding is in, which is what `scope: Semantic` promises the cache. Structs are excluded: they cannot have finalizers at all, so the call is redundant there too, but it also boxes and that is a different finding. An argument that is not literally `this`, a call in an expression-bodied member, and a call as an embedded statement under an `if` are all excluded, because the fix is a deletion and each of those has no statement to delete or leaves a construct behind that does not compile. Reflection or a runtime-registered finalizer is outside the proof.",
-      "resharperId": "GCSuppressFinalizeForTypeWithoutDestructor",
       "resharperNote": "The export sets `resharper_gc_suppress_finalize_for_type_without_destructor_highlighting` to `warning` and Skala defaults the rule to `suggestion`, so `--resharper-severities` raises it. The lower default is deliberate: the call is harmless at runtime, so this is source noise rather than a defect, and a gate that fails on it would fail on tidiness.",
       "supersedes": [],
       "since": "1.3",
@@ -2921,7 +2813,6 @@
         "good": "Span<byte> buffer = stackalloc byte[64];\nfor (var i = 0; i < count; i++) {\n    Fill(buffer, i); // after deciding the iterations may share one buffer\n}"
       },
       "falsePositives": "Purely syntactic: the enclosing `for`, `foreach`, `while` or `do` is found by walking outward and stopping at a lambda, an anonymous method, a local function or a member body, because a separate frame releases its own stack on return. Positions a loop evaluates only once are excluded — a `for` initializer or declaration, and a `foreach` source expression — while conditions and incrementors are reported, since a loop re-evaluates those. ⚠ A loop that cannot reach a second iteration is excluded and this is the judgement the rule makes deliberately: `do { … } while (false)`, `while (false)`, and a body whose direct statements include an unconditional `break`, `return` or `throw`. That last exclusion is withdrawn when the body contains a `continue` or a `goto` of its own, because either can reach the `stackalloc` again and the `break` then proves nothing. Conditional exits, loop bounds and recursion are not analysed; a loop whose body always exits through an `if` is still reported, because proving that needs the dataflow this rule does not do.",
-      "resharperId": "StackAllocInsideLoop",
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -2946,7 +2837,6 @@
         "good": "void Register(Type declaredType, EventInfo declaredEvent) { }"
       },
       "falsePositives": "⚠ **Reserved keywords only, and that is what keeps the rule off load-bearing escapes.** Every `@` a language feature can *require* is on a contextual keyword — `@field` once `field` became the backing-field keyword, `@value` in an accessor, `@extension`, `@record`, `@var`, `@async`, `@await` — and a contextual keyword is a legal identifier without the escape, so an escape on one is disambiguation rather than a name to change. None of them is reported. Only the declaring identifier is reported, never a reference to it: a name that comes from another assembly must be escaped at every use site and the author cannot rename it, so reporting uses would be reporting something nobody can fix, and it would multiply one finding by its call count. Constructors and destructors are skipped because their identifier repeats the type's, which is already reported once. Namespace name parts and query continuations are not examined. Verbatim strings, interpolated verbatim strings and `@` inside documentation or comments are not identifiers and are never seen.",
-      "resharperId": "EscapedKeyword",
       "resharperNote": "⚠ ReSharper publishes this one as an `.editorconfig` key with no inspection id in its issue-type dump, so `resharperId` carries the id that derives to the real key — `resharper_escaped_keyword_highlighting`, which the export sets to `warning`. Skala defaults the rule to `suggestion`, so `--resharper-severities` raises it: an escaped keyword compiles and runs correctly, and the cost is entirely to the reader.",
       "supersedes": [],
       "since": "1.3",
@@ -2964,7 +2854,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -2989,7 +2878,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2166"
       ],
@@ -3016,7 +2904,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -3041,7 +2928,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2094"
       ],
@@ -3076,7 +2962,6 @@
         "good": "int? total = null;"
       },
       "falsePositives": "The name is bound before anything is reported, so a user-defined `Nullable<T>` is never touched. Positions where the short form is not legal syntax are excluded rather than rewritten: the unbound `typeof(Nullable<>)`, a `cref` or `nameof` argument, a `using` alias, a member-access receiver, a pointer element type, and any pattern or `is` type test, because C# rejects a nullable value type in a pattern. Comments and preprocessor directives inside the type name are excluded because the rewrite deletes the text they live in.",
-      "resharperId": "ConvertNullableToShortForm",
       "supersedes": [],
       "since": "2.0",
       "configuration": [
@@ -3101,7 +2986,6 @@
         "good": "count += 1;"
       },
       "falsePositives": "The direction is safe and the reverse is not: C# defines `x op= y` as `x = (T)(x op y)` with an explicit conversion back to the target's type, which the long form lacks — `byte b; b = b + 1;` does not compile at all, so the rule never sees the shapes where the conversion differs. A cast on the right-hand side is therefore never unwrapped: `long l; l = (int)(l + 1);` truncates and `l += 1` does not. Only whole expression statements are reported, the target must be a chain of plain names so that the two forms evaluate it the same number of times, and the binary operator's left operand must be that same target textually — which excludes `x = x + a + b`, whose left operand is `x + a`. `&&` and `||` have no compound spelling and are excluded. Comments and preprocessor directives between the target and the operator are excluded because the fix deletes that text.",
-      "resharperId": "ConvertToCompoundAssignment",
       "supersedes": [],
       "since": "2.0",
       "configuration": [
@@ -3127,7 +3011,6 @@
         "good": "if (order != null && order.IsPaid) {\n    Ship(order);\n}"
       },
       "falsePositives": "A whole chain is one finding reported at its top, so the fix never overlaps another and the rule is silent after its own fix. Any `else` anywhere in the chain excludes it, as does an outer body holding anything besides the inner `if`. An operand that `&&` would capture — `||`, `??`, a conditional or an assignment — is parenthesised rather than merged flat. Names a merged condition introduces (a pattern variable, an `out var`) have their scope widened by the rewrite, so the whole member is scanned for a colliding declaration first and the finding is dropped if one exists; the scan deliberately over-bails, counting names that could never conflict. Comments and preprocessor directives anywhere outside the surviving body exclude the chain, and so does a `#` inside a condition's string literal.",
-      "resharperId": null,
       "supersedes": [
         "S1066"
       ],
@@ -3154,7 +3037,6 @@
         "good": "while (!reader.EndOfStream) {\n    Consume(reader.ReadLine());\n}"
       },
       "falsePositives": "`for (;;)` is deliberately not reported: it is the idiomatic infinite loop, and `while (true)` says nothing the original did not. A declaration, an initializer or an incrementor in any clause excludes the loop — converting a `for (int i = 0; c;)` would have to lift the declaration into the enclosing scope, which is a different rewrite with a different risk. Comments and preprocessor directives inside the empty clauses exclude it too, because the fix replaces the whole header.",
-      "resharperId": null,
       "supersedes": [
         "S1264"
       ],
@@ -3181,7 +3063,6 @@
         "good": "if (string.IsNullOrEmpty(name)) {\n    return \"anonymous\";\n}"
       },
       "falsePositives": "`x.Length == 0` and `x == \"\"` are both reported and are the same check: string `==` is ordinal value equality that compares lengths first. `string.Empty` counts as the literal. ⚠ The rule this one must not become is `IsNullOrWhiteSpace`: `x == null || x.Trim().Length == 0` is a different predicate — true for a single space, where `IsNullOrEmpty` is false — and nothing separates the two shapes except what stands between the receiver and `.Length`. Two guards therefore do two different jobs: the emptiness test must be on the same expression the null test named, which is what excludes `Trim()`, and that expression must be a chain of plain names, which is what excludes the double evaluation a call or an indexer would suffer. The receiver must also bind to `System.String`, so an array's `Length` is never matched, and the null test must come first. A longer `||` chain is only matched where the pair is a single subexpression, which left-associativity makes true for `x == null || x.Length == 0 || y` and false for `y || x == null || x.Length == 0`. Comments and preprocessor directives inside the expression exclude it.",
-      "resharperId": null,
       "supersedes": [
         "S3256"
       ],
@@ -3200,7 +3081,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "DisposeOnUsingVariable",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -3225,7 +3105,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UsingStatementResourceInitialization",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -3250,7 +3129,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "ReturnOfUsingVariable",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -3275,7 +3153,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S4586"
       ],
@@ -3302,7 +3179,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "SpinLockInReadonlyField",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -3327,7 +3203,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "NotAccessedOutParameterVariable",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "7.0",
@@ -3352,7 +3227,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "MoreSpecificForeachVariableTypeAvailable",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -3377,7 +3251,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "LambdaExpressionCanBeMadeStatic",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "9.0",
@@ -3403,7 +3276,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "MemberCanBeMadeStatic.Local",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -3428,7 +3300,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "StructCanBeMadeReadOnly",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "7.2",
@@ -3453,7 +3324,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantCapacityArgument",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -3478,7 +3348,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1215"
       ],
@@ -3505,7 +3374,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3717"
       ],
@@ -3532,7 +3400,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1147"
       ],
@@ -3559,7 +3426,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2139"
       ],
@@ -3586,7 +3452,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S106"
       ],
@@ -3613,7 +3478,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "S6602",
         "S6603",
@@ -3643,7 +3507,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "7.0",
@@ -3668,7 +3531,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "S4635"
       ],
@@ -3695,7 +3557,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -3720,7 +3581,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "S6607"
       ],
@@ -3747,7 +3607,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3903"
       ],
@@ -3774,7 +3633,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3887"
       ],
@@ -3801,7 +3659,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1694"
       ],
@@ -3828,7 +3685,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3453"
       ],
@@ -3855,7 +3711,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2339"
       ],
@@ -3882,7 +3737,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2952"
       ],
@@ -3909,7 +3763,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "8.0",
@@ -3934,7 +3787,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -3959,7 +3811,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "AsyncIteratorInvocationWithoutAwaitForeach",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "8.0",
@@ -3984,7 +3835,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "ReplaceAsyncWithTaskReturn",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4010,7 +3860,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "RedundantWithExpression",
       "resharperNote": "⚠ ReSharper rates `RedundantWithExpression` a *suggestion* and `RedundantEmptyObjectOrCollectionInitializer` a *warning*; Skala reports one concept at `warning` and reading `resharper_redundant_with_expression_highlighting` therefore lowers both. The severity split is the same observation this rule's `fixIsSafe: false` records: the empty initializer is nothing, and the empty `with` is an allocation somebody may have meant.",
       "supersedes": [],
       "since": "2.0",
@@ -4036,7 +3885,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantToStringCall",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -4061,7 +3909,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantArgumentDefaultValue",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -4086,7 +3933,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantAttributeParentheses",
       "resharperNote": "⚠ ReSharper rates `RedundantAttributeParentheses` a *hint* and rates `RedundantAnonymousTypePropertyName`, one of the other eight shapes under this id, a *warning*. Skala reports the concept at `suggestion`, so reading `resharper_redundant_attribute_parentheses_highlighting` raises the whole concept to whatever that one key says.",
       "supersedes": [],
       "since": "2.0",
@@ -4112,7 +3958,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantCast",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -4137,7 +3982,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4162,7 +4006,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2187"
       ],
@@ -4189,7 +4032,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "S3415"
       ],
@@ -4216,7 +4058,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "InheritdocConsiderUsage",
       "resharperNote": "⚠ The export sets `resharper_inheritdoc_consider_usage_highlighting = none` and this rule defaults to `suggestion`. Reading the ReSharper key — off by default, doc 03 § \"Severities\" — switches it off. The difference is deliberate rather than an oversight: this rule fires only where the two comments are *identical*, which ReSharper's inspection does not require, so the finding it produces is narrower and does not need the low severity that keeps the wider one usable. docs/plan/16 § Q5.",
       "supersedes": [],
       "since": "1.3",
@@ -4242,7 +4083,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "InternalOrPrivateMemberNotDocumented",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4267,7 +4107,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantJumpStatement",
       "supersedes": [
         "RedundantEmptySwitchSection",
         "RedundantCatchClause",
@@ -4301,7 +4140,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantAbstractModifier",
       "supersedes": [
         "SealedMemberInSealedClass",
         "RedundantRecordClassKeyword",
@@ -4332,7 +4170,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantNullableDirective",
       "supersedes": [
         "UnusedNullableDirective"
       ],
@@ -4359,7 +4196,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantQualifier",
       "supersedes": [
         "RedundantBaseQualifier"
       ],
@@ -4386,7 +4222,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantOverriddenMember",
       "supersedes": [
         "EmptyDestructor",
         "EmptyConstructor",
@@ -4417,7 +4252,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UsePatternMatching",
       "supersedes": [
         "IDE0078",
         "IDE0083"
@@ -4445,7 +4279,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "DoubleNegationInPattern",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "9.0",
@@ -4470,7 +4303,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "MergeConditionalExpression",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "7.0",
@@ -4495,7 +4327,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseDiscardAssignment",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "7.0",
@@ -4520,7 +4351,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "InlineOutVariableDeclaration",
       "supersedes": [
         "IDE0018"
       ],
@@ -4547,7 +4377,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "SuspiciousLockOverSynchronizationPrimitive",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4572,7 +4401,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "NonAtomicCompoundOperator",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4597,7 +4425,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "NonVolatileFieldInDoubleCheckLocking",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4622,7 +4449,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "InconsistentOrderOfLocks",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4647,7 +4473,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "InconsistentlySynchronizedField",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4672,7 +4497,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S110"
       ],
@@ -4700,7 +4524,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1200"
       ],
@@ -4728,7 +4551,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3358"
       ],
@@ -4756,7 +4578,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1192"
       ],
@@ -4785,7 +4606,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "PossibleLossOfFraction",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4810,7 +4630,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UselessBinaryOperation",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4835,7 +4654,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "ShiftExpressionRealShiftCountIsZero",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -4860,7 +4678,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3981"
       ],
@@ -4887,7 +4704,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2197"
       ],
@@ -4914,7 +4730,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1048"
       ],
@@ -4941,7 +4756,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1163"
       ],
@@ -4968,7 +4782,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1696"
       ],
@@ -4995,7 +4808,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -5020,7 +4832,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "ThreadStaticAtInstanceField",
       "resharperNote": "The export carries two inspections for this concept — `ThreadStaticAtInstanceField` and `ThreadStaticFieldHasInitializer` — both at `warning`, and Skala reports them as one rule because they are one question asked of one declaration. `--resharper-severities` maps the first; the second has no separate Skala id and never will.",
       "supersedes": [],
       "since": "1.3",
@@ -5046,7 +4857,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "S3603"
       ],
@@ -5073,7 +4883,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S4545"
       ],
@@ -5100,7 +4909,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -5125,7 +4933,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "PossibleUnintendedReferenceComparison",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -5150,7 +4957,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "BaseObjectEqualsIsObjectEquals",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -5175,7 +4981,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -5200,7 +5005,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "NonReadonlyMemberInGetHashCode",
       "supersedes": [
         "S2328"
       ],
@@ -5227,7 +5031,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1210",
         "S3897"
@@ -5263,7 +5066,6 @@
         "good": "if (ready == pending) { Start(); }\n\n// and the two shapes that are already correct and are never reported:\nwhile ((line = reader.ReadLine()) != null) { Handle(line); }\nif ((ok = TryLoad())) { Use(); }"
       },
       "falsePositives": "Only a simple `=` is examined, and only where it is the complete condition of an `if`, `while`, `do` or `for`. ⚠ **An assignment nested inside the condition is never reported** — `while ((line = reader.ReadLine()) != null)`, `if ((node = node.Parent) is not null)` and `if (Init() && (handle = Open()) != Invalid)` are the read-assign-test idiom and are correct; the assignment there is an operand, not the condition. ⚠ **An extra pair of parentheses withdraws the finding**: `if ((ok = TryLoad()))` is the long-standing convention for saying the assignment is deliberate, and a rule that ignored it would leave no way to write the intended code. Compound assignments — `flag |= Check()`, `count += 1` — are a different shape with a different repair and are not reported. A `for` statement's initialiser and incrementor are not conditions and are not examined. ⚠ **A `?:` condition is not examined, and the reason is the grammar rather than a judgement**: assignment binds looser than `?:`, so `x = flag = other ? 1 : 2` parses as `x = (flag = (other ? 1 : 2))` and a bare assignment can never be a ternary condition. Writing one requires the parentheses this rule already exempts, so the first draft's `ConditionalExpression` registration was a guard that could not fire. There is no fix, because the repair is a choice the rule cannot make: `==` and a parenthesised assignment are both plausible and they are different programs. Generated code is excluded.",
-      "resharperId": "AssignmentInConditionalExpression",
       "supersedes": [],
       "since": "1.3",
       "configuration": [
@@ -5288,7 +5090,6 @@
         "good": "if (options.verbose || options.diagnostics) { Trace(); }\n\n// and the NaN-preserving zero, which is the same shape on a different type and is never reported:\nvar delta = x - x;"
       },
       "falsePositives": "⚠ **The six comparison operators are not examined at all**, because `csc` already reports every shape this rule could have reported: `CS1718` covers simple names, `this.` paths, member access to a field, static fields, strings and reference equality, and it is on by default. The one comparison shape the compiler leaves silent is a property access, and `SK2012` already covers that with a proof about the accessor bodies this rule does not have. ⚠ **Doc 08's sentence that `CS1717`/`CS1718` \"reach the identifier spellings only\" is wrong and was refuted by this measurement** — it is true of properties, which is the example it was written from, and false of fields reached through a member access. ⚠ **Floating-point operands are excluded outright.** `x - x` on a `double` is 0 for every finite value and NaN for NaN and the infinities, which is a real technique for propagating NaN and is textually identical to the defect; `double`, `float`, `decimal` and their nullable forms never reach the report. ⚠ **Only side-effect-free paths of locals, parameters, fields, `this` and `base` are compared.** An invocation on either side is two evaluations that may differ — `reader.Read() - reader.Read()` is not a defect — and a property access is a method call whose two evaluations the rule does not attempt to prove equal. ⚠ **`Math.Max(x, x)` and `a.CompareTo(a)` are invocations, not operators, and are outside the subject entirely**; a generator emitting them is not reported. A user-defined operator, a lifted (nullable-operand) operation and an operand of an unresolved type are all excluded, because none of them has the meaning the rule assumes. `+`, `*`, `<<` and `>>` are not examined: doubling, squaring and shifting by oneself are ordinary arithmetic. `=` is not examined either — the compiler's own `CS1717` says it, and `SK2012` says the rest. Generated code is excluded.",
-      "resharperId": null,
       "supersedes": [
         "S1764"
       ],
@@ -5315,7 +5116,6 @@
         "good": "if (mode == Mode.Fast) { Fast(); } else if (mode == Mode.Careful) { Careful(); }"
       },
       "falsePositives": "⚠ **Sequential `if` statements are deliberately not reported, and that is the rule's main exclusion.** Two separate `if`s testing the same thing are only pointless when nothing between them changed the answer, and the first body usually did exactly that — `if (dirty) { Flush(); } if (dirty) { … }` needs the bodies read before it means anything. Only conditions inside one `if`/`else if` chain, where no statement can run between the two tests, are compared. ⚠ **The condition must be side-effect free**: an invocation, an `await`, an assignment, an `++` or a `--` anywhere in either condition withdraws the finding, because `if (Read()) … else if (Read())` really is two different questions. ⚠ **Structural equality, never text.** `SyntaxFactory.AreEquivalent` compares the trees ignoring trivia, so layout, line breaks and comments do not decide it, and neither does a shared sub-expression: only complete conditions are compared with each other, never their parts. Element access is excluded because an indexer is a call. A condition containing a preprocessor directive is excluded, because the two branches of an `#if` are not the same program. ⚠ **The side-effect test is asked once, of the later condition, and once is enough**: `IsRepeatable` is a pure function of the syntax and the structural comparison compares the syntax, so two equal conditions always answer it the same way. A second copy of the guard was in the first draft and a sabotage proved no test could reach it. Every later condition is compared against every earlier one in its own chain and the finding points at the repeat, not at the original. There is no fix: which of the two conditions was meant to be something else, and what, is the entire content of the bug. Generated code is excluded.",
-      "resharperId": null,
       "supersedes": [
         "S1862",
         "S2760"
@@ -5343,7 +5143,6 @@
         "good": "remaining -= 1;\n\n// or, if assignment really was meant, written so it reads that way:\nremaining = -1;"
       },
       "falsePositives": "⚠ **Two conditions must hold together, and each one alone would over-fire.** The `=` and the unary operator must be adjacent with no trivia between them, and the unary operator must be separated from its operand by trivia. `x = -1` and `x = - 1` fail the first; `x =-1` and `x=-1` fail the second, and they are how a negative literal gets written in a hurry and in a compressed style. Only the asymmetric spelling — where the spacing groups the two operator characters together and pushes the operand away — is reported, whether or not there is a space before the `=`. ⚠ **A third condition, \"there is space before the `=`\", was in the first draft and was removed because a sabotage could not reach it**: no fixture separated it from the other two, and `x=- 1` groups and pushes exactly as `x =- 1` does, so declining it was an exemption with no argument behind it. ⚠ **The rule reads the trivia of the tree as parsed**, which is the source as the author wrote it; it draws no conclusion from what the formatter would produce, and running the formatter over the file is one of the ways to make the finding go away. Only `-`, `+` and `!` are considered: they are the unary operators whose characters also start a compound assignment (`-=`, `+=`, `!=`). A `~` or a `&` has no such reading. Compound assignments themselves are not examined, and neither is any binary operator, and neither is a variable declarator's `=`, which is not an assignment expression. ⚠ There is **no fix**, deliberately: `x -= 1` and `x = -1` are both plausible readings and they are different programs, so an automatic repair would have to guess which bug it was looking at. ⚠ **Measured on the 4 459-file corpus, and the second condition is what earned its place there.** The shipped rule reports nothing. Widened to look only at the `=`/sign adjacency, it reports **17** occurrences, every one of them inside `Testing/corpus/unformatted/collapse/` — a slice whose whole purpose is to strip whitespace, so `GoalIndex = -1;` is stored as `GoalIndex=-1;`. The operand is not pushed away from the sign in any of them, which is why the rule declines all 17. A tool that reads whitespace for meaning meets machine-mangled whitespace sooner than most, and this is what that looks like. Generated code is excluded.",
-      "resharperId": null,
       "supersedes": [
         "S2757"
       ],
@@ -5370,7 +5169,6 @@
         "good": "if (node != null && node.Ready) { Use(node); }\n\n// and the two shapes that are never reported:\nvar masked = flags & FileAttributes.ReadOnly;   // integral and enum operands\nif (ValidateName(x) & ValidateAge(x)) { }       // both sides must run, so & is deliberate"
       },
       "falsePositives": "⚠ **Integral and enum operands are excluded, and nothing else in this rule matters as much.** `flags & Mask`, `a | b` on `int`, and every `[Flags]` combination are `&`/`|` used correctly and have no `&&` form at all; the rule reads the operand types and fires only where both are exactly non-nullable `System.Boolean`. ⚠ **`bool?` is excluded too, and it is not the same exclusion.** Lifted `&` and `|` on nullable booleans are three-valued — `null & false` is `false`, not `null` — and `&&`/`||` cannot express that, so the rewrite would change the answer rather than the evaluation order. A user-defined `operator &` or `operator |`, and any operand whose type did not resolve, are excluded for the same reason: the operator does not mean what the rule assumes. ⚠ **A right operand with a side effect is deliberate and is never reported.** An invocation, an assignment, an `await`, an `++`, an object creation or an element access on the right is the documented reason to reach for `&` — both validators must run so both messages are collected — and short-circuiting it would delete work. Only a right operand built from names, member-access paths, literals, `is`/`as` tests and comparisons over them is reported. ⚠ **A mixed bitwise expression is declined rather than reported**, because `&` and `|` bind tighter than `&&` and `||` and swapping one token inside `a | b & c` regroups the whole expression. If the node's parent, or either of its operands, is another `&`, `|` or `^`, the rule stays silent — an under-report in the one place where the fix could silently change the program. `^` is not examined at all: it has no short-circuiting form. The fix replaces the single operator token and nothing else, so it is safe to apply without review. Generated code is excluded.",
-      "resharperId": null,
       "supersedes": [
         "S2178"
       ],
@@ -5389,7 +5187,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3400"
       ],
@@ -5416,7 +5213,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3060"
       ],
@@ -5443,7 +5239,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1168"
       ],
@@ -5470,7 +5265,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S4261"
       ],
@@ -5497,7 +5291,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "DuplicateKeyCollectionInitialization",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -5522,7 +5315,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2114"
       ],
@@ -5549,7 +5341,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S4143"
       ],
@@ -5576,7 +5367,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S4158"
       ],
@@ -5603,7 +5393,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseIndexFromEndExpression",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "8.0",
@@ -5628,7 +5417,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseNameOfInsteadOfToString",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "6.0",
@@ -5653,7 +5441,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseRawString",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -5678,7 +5465,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseStringInterpolationWhenPossible",
       "resharperNote": "⚠ The export sets `resharper_use_string_interpolation_when_possible_highlighting` to `hint` and this rule defaults to `suggestion`. ReSharper's inspection covers the whole `string.Format` surface, including the argument shapes whose rewrite is not sound, so a low severity is how it stays usable; this rule declines those shapes by analysis instead and can afford to be seen. Reading the ReSharper key would lower it. docs/plan/16 § Q5.",
       "supersedes": [],
       "since": "1.3",
@@ -5704,7 +5490,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseUnsignedRightShiftOperator",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "11.0",
@@ -5729,7 +5514,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseDeconstruction",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "7.0",
@@ -5755,7 +5539,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseWithExpressionToCopyRecord",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "9.0",
@@ -5780,7 +5563,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantSpreadElement",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": "12.0",
@@ -5805,7 +5587,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseEventArgsEmptyField",
       "supersedes": [],
       "since": "1.3",
       "languageVersion": null,
@@ -5830,7 +5611,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "StructuredMessageTemplateProblem",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -5855,7 +5635,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "DuplicateItemInLoggerTemplate",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -5880,7 +5659,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "S2479"
       ],
@@ -5907,7 +5685,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "S6667",
         "S6668"
@@ -5935,7 +5712,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "S3416",
         "S6672"
@@ -5963,7 +5739,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -5988,7 +5763,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "BitwiseOperatorOnEnumWithoutFlags",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6013,7 +5787,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "TryCastAlwaysSucceeds",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6038,7 +5811,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "StringLastIndexOfIsCultureSpecific.1",
       "supersedes": [
         "CA1310"
       ],
@@ -6065,7 +5837,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "CA1309"
       ],
@@ -6092,7 +5863,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6117,7 +5887,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "PossibleUnintendedQueryableAsEnumerable",
       "resharperNote": "⚠ The export sets `resharper_possible_unintended_queryable_as_enumerable_highlighting = suggestion` and this rule defaults to `warning`. ReSharper reports the whole family of implicit `IQueryable` → `IEnumerable` conversions, including the deliberate ones, so a low severity is how that inspection stays usable; this rule reports only a *composable* operator that bound to `Enumerable`, which is never deliberate, so it can afford the severity the consequence deserves. docs/plan/16 § Q5.",
       "supersedes": [],
       "since": "2.0",
@@ -6143,7 +5912,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6168,7 +5936,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2225"
       ],
@@ -6195,7 +5962,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [
         "S8970"
       ],
@@ -6222,7 +5988,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "VariableCanBeNotNullable",
       "resharperNote": "⚠ The export sets `resharper_variable_can_be_not_nullable_highlighting = warning` and this rule defaults to `suggestion`. ReSharper reports the whole family — locals, parameters and return types — from a solution-wide index; this rule reports only the local, whose annotation nothing outside the method can depend on, so a lower default is the honest one for a narrower claim. Reading the ReSharper key — off by default, doc 03 § \"Severities\" — raises it. docs/plan/16 § Q5.",
       "supersedes": [],
       "since": "2.0",
@@ -6248,7 +6013,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6273,7 +6037,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "ReplaceAutoPropertyWithComputedProperty",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "6.0",
@@ -6298,7 +6061,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6323,7 +6085,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "7.0",
@@ -6348,7 +6109,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "CanReplaceCastWithVariableType",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6373,7 +6133,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "UseNullableReferenceTypesAnnotationSyntax",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "8.0",
@@ -6398,7 +6157,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "AsyncVoidThrowException",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6424,7 +6182,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6449,7 +6206,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "AsyncVoidLambda",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6474,7 +6230,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "OptionalParameterHierarchyMismatch",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6499,7 +6254,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "ExplicitCallerInfoArgument",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6524,7 +6278,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1226"
       ],
@@ -6551,7 +6304,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2234"
       ],
@@ -6578,7 +6330,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S6354"
       ],
@@ -6605,7 +6356,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S6562",
         "S6563",
@@ -6634,7 +6384,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S6580"
       ],
@@ -6661,7 +6410,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S6561"
       ],
@@ -6688,7 +6436,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3346"
       ],
@@ -6715,7 +6462,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "ReplaceWithOfType",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6740,7 +6486,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantEnumerableCastCall",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6765,7 +6510,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "UseIndexedProperty",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6790,7 +6534,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "ForCanBeConvertedToForeach",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6815,7 +6558,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "LoopCanBePartlyConvertedToQuery",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6841,7 +6583,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "StaticMemberInitializerReferesToMemberBelow",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -6866,7 +6607,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "UnassignedGetOnlyAutoProperty",
       "resharperNote": "The export carries six inspections for issue #24's concept — `UnassignedField.Global`, `UnassignedField.Local`, `UnassignedReadonlyField`, `UnassignedGetOnlyAutoProperty`, `NotNullOrRequiredMemberIsNotInitialized` and `PropertyFieldKeywordIsNeverAssigned`. Skala ships the fourth and only the fourth, and the reason is measured rather than a matter of taste: the three field inspections describe what `CS0649` already reports, and `--resharper-severities` maps the one inspection this rule actually covers. The others have no Skala id and none is proposed until somebody can say what they would add to the compiler.",
       "supersedes": [],
       "since": "2.0",
@@ -6892,7 +6632,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S4275"
       ],
@@ -6919,7 +6658,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3251"
       ],
@@ -6946,7 +6684,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2696",
         "S3010"
@@ -6974,7 +6711,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantDiscardDesignation",
       "resharperNote": "⚠ ReSharper rates this a *suggestion* and Skala matches it. The neighbouring inspection `resharper_csharp_prefer_explicit_discard_declaration` is **not** this key: that one is the `out var _` ⇔ `out _` style choice, it is a tier-A option, and Skala already performs it through `SK0217`. Reading the two as one concept is how this id would have become a double-count.",
       "supersedes": [],
       "since": "2.0",
@@ -7000,7 +6736,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2222",
         "S7131",
@@ -7029,7 +6764,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2445",
         "S6507"
@@ -7057,7 +6791,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3366"
       ],
@@ -7084,7 +6817,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "PossibleInvalidCastExceptionInForeachLoop",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7109,7 +6841,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "PossibleMistakenCallToGetType",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7134,7 +6865,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7159,7 +6889,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "AccessToStaticMemberViaDerivedType",
       "resharperNote": "⚠ The export sets `resharper_access_to_static_member_via_derived_type_highlighting` to `warning` and this rule defaults to `suggestion`, so reading the ReSharper key changes behaviour. The lower default is deliberate: the two spellings resolve to the same member, so nothing the program does is wrong — what is wrong is what the line says. docs/plan/16 § Q5.",
       "supersedes": [],
       "since": "2.0",
@@ -7185,7 +6914,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "PossibleInterfaceMemberAmbiguity",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7210,7 +6938,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "TypeParameterCanBeVariant",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7235,7 +6962,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3343"
       ],
@@ -7262,7 +6988,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "CollectionNeverQueried.Local",
       "resharperNote": "⚠ The export sets `resharper_collection_never_queried_local_highlighting` to `warning` and this rule defaults to `suggestion`, so importing the key raises it. The gap is deliberate: ReSharper answers the question across a whole solution and can see the reader this analyzer cannot, so its confidence is not available here. What ships is the slice one compilation can prove — a local, every one of whose references is a discarded write — and a slice that is narrower than the inspection it maps to does not inherit the inspection's severity.",
       "supersedes": [],
       "since": "2.0",
@@ -7288,7 +7013,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7313,7 +7037,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "PossiblyImpureMethodCallOnReadonlyVariable",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7338,7 +7061,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "StringSpanComparison",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7363,7 +7085,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "ImmutableArrayWithCollectionInitializer",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7388,7 +7109,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "CapturedPrimaryConstructorParameterIsMutable",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "12.0",
@@ -7413,7 +7133,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2953"
       ],
@@ -7440,7 +7159,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "ShortLivedHttpClient",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7465,7 +7183,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3869"
       ],
@@ -7492,7 +7209,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2365"
       ],
@@ -7519,7 +7235,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3063"
       ],
@@ -7546,7 +7261,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "MemberInitializerValueIgnored",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7571,7 +7285,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "EventUnsubscriptionViaAnonymousDelegate",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7596,7 +7309,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "PossiblyUnintendedSideEffectsInsideConditionalInvocation",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7621,7 +7333,6 @@
       "requiresSemantics": false,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7646,7 +7357,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "VariableLengthStringHexEscapeSequence",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7671,7 +7381,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "SuppressNullableWarningExpressionAsInvertedIsExpression",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7696,7 +7405,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7721,7 +7429,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7746,7 +7453,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S6377"
       ],
@@ -7773,7 +7479,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S3329"
       ],
@@ -7800,7 +7505,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S4426"
       ],
@@ -7827,7 +7531,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "InlineTemporaryVariable",
       "resharperNote": "The export sets `InlineTemporaryVariable` to `hint`, and Skala ships this at `suggestion`. Reading the ReSharper key therefore lowers the rule to Roslyn `Hidden`, where only `--include-hints` shows it. The higher default is deliberate: ReSharper's inspection covers every single-use temporary, most of which are separated from their use by other statements and are genuinely a matter of taste, while this rule only reports the adjacent case, where the two lines are one statement written as two.",
       "supersedes": [],
       "since": "2.0",
@@ -7853,7 +7556,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "JoinDeclarationAndInitializer",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7878,7 +7580,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "MoveLocalFunctionAfterJumpStatement",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7903,7 +7604,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "ExtractCommonBranchingCode",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7928,7 +7628,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "NegativeIndex",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7953,7 +7652,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "LoopVariableIsNeverChangedInsideLoop",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -7978,7 +7676,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S1751"
       ],
@@ -8005,7 +7702,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2692"
       ],
@@ -8032,7 +7728,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -8057,7 +7752,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -8082,7 +7776,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "11.0",
@@ -8107,7 +7800,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "WithExpressionModifiesAllMembers",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "9.0",
@@ -8132,7 +7824,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "RegExpInspections",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -8157,7 +7848,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S4456"
       ],
@@ -8184,7 +7874,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "ConvertToExtensionBlock",
       "resharperNote": "⚠ **The export sets `resharper_convert_to_extension_block_highlighting` to `hint` and this rule defaults to `suggestion`**, so reading the key lowers the severity. The gap is deliberate and it is about how new the syntax is rather than about how much the concept is worth: ReSharper shipped the inspection at `hint` in 2025.2 because `extension` blocks were days old and it did not want to light up every extension class in every solution at once. Skala's audience is a model writing the older dialect on purpose, which is exactly the population the concept is for, so it is reported at `suggestion`. ⚠ **The inspection id is also not in `types-2026.xml`.** `ConvertToExtensionBlock` appears in the `editor_config_template` export and *not* in `jb inspectcode --dumpIssuesTypes`, which is what `RuleCatalogTests.EveryDeclaredReSharperKey_ExistsInTheExport` reads — the two exports disagree because the issue-types dump predates the feature. The mapping is real and settable; it is the dump that is behind.",
       "supersedes": [],
       "since": "2.0",
@@ -8210,7 +7899,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "RedundantOverload.Local",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -8235,7 +7923,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "CanSimplifyIsInstanceOfType",
       "supersedes": [
         "CanSimplifyIsAssignableFrom"
       ],
@@ -8262,7 +7949,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "TryStatementsCanBeMerged",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -8287,7 +7973,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": "SimilarAnonymousTypeNearby",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -8312,7 +7997,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "ExtractCommonPropertyPattern",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "9.0",
@@ -8337,7 +8021,6 @@
       "requiresSemantics": false,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2857"
       ],
@@ -8364,7 +8047,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -8389,7 +8071,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -8414,7 +8095,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": "PossibleMistakenSystemTypeArgument",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -8439,7 +8119,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
@@ -8464,7 +8143,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2053"
       ],
@@ -8491,7 +8169,6 @@
       "requiresSemantics": true,
       "hasFix": false,
       "fixIsSafe": false,
-      "resharperId": null,
       "supersedes": [
         "S2612"
       ],
@@ -8518,7 +8195,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantBoolCompare",
       "resharperNote": "⚠ Five ReSharper inspections, one concept: `RedundantBoolCompare`, `DoubleNegationOperator`, `NegativeEqualityExpression`, `RedundantTernaryExpression` and `RedundantLogicalConditionalExpressionOperand`. ReSharper rates the first four a *warning* and the last a *suggestion*; Skala reports the concept at `warning`.\n\n⚠ **Two of the five are hosted by Roslyn and three are not, and that was measured rather than assumed.** Reflecting over `Microsoft.CodeAnalysis.CodeStyle` in SDK 10.0.400 — 440 descriptors, read out of the assemblies because an error log cannot tell `Hidden` from absent — `IDE0100` (\"remove redundant equality\") covers `x == true` and `x != false`, and `IDE0075` (\"simplify conditional expression\") covers `c ? true : false`. **Both are `IsEnabledByDefault: true` with `DefaultSeverity: Hidden`**, so a plain `dotnet build` emits neither: the code-style analyzers are not loaded at all without `EnforceCodeStyleInBuild`, and even then a `Hidden` rule needs an explicit `dotnet_diagnostic.IDExxxx.severity` line before it says anything. Skala ships over them on the reasoning `SK1005` already uses for `IDE0161`. ⚠ **The other three are verified zeros, not unchecked ones**: with all 120 `IDE` ids forced to `warning` and `IDE0055`, `IDE0161`, `IDE0100`, `IDE0075` and `IDE0380` all firing on the same compilation, nothing reported `!!x`, `!(a == b)` or `x && true` — and there was no `AD0001`, so no analyzer crashed silently past them.",
       "supersedes": [
         "DoubleNegationOperator",
@@ -8549,7 +8225,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantAttributeSuffix",
       "resharperNote": "⚠ Two ReSharper inspections, one concept: `RedundantAttributeSuffix` (a *warning*) and `RedundantAttributeUsageProperty` (a *suggestion*). Skala reports the concept at `warning`.\n\n⚠ **Neither is hosted, and both zeros are verified rather than assumed.** Reflecting over SDK 10.0.400's analyzer assemblies gives 440 descriptors and none of them is either shape; a probe with all 120 `IDE` ids forced to `warning`, `AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on `[SerializableAttribute]` or on `Inherited = true`, on a compilation where `IDE0055`, `IDE0161`, `IDE0100`, `IDE0075` and `IDE0380` all fired and no `AD0001` was raised. Neither shape is a compiler warning either.",
       "supersedes": [
         "RedundantAttributeUsageProperty"
@@ -8577,7 +8252,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "ReplaceSequenceEqualWithConstantPattern",
       "supersedes": [],
       "since": "2.0",
       "languageVersion": "11.0",
@@ -8602,7 +8276,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantExtendsListEntry",
       "resharperNote": "⚠ **Narrower than ReSharper's inspection, and the difference is a correctness argument rather than a scope cut.** `RedundantExtendsListEntry` reports two shapes and `jb inspectcode` 2025.2.6 was run on both: an interface implied by another *interface* in the same list (`class C : IDerived, IBase`), and an interface implied by the *base class* (`class D : B, IBase` where `B : IBase`). Skala ships only the first. Re-listing an interface on a derived class makes that class re-implement it, so the interface mapping is recomputed there — a member declared `new` in the derived class becomes the implementation instead of the base's, and deleting the entry silently changes which method an interface call reaches.\n\n⚠ **Nothing in the SDK hosts either shape, and the zero was measured.** Reading `IsEnabledByDefault`/`DefaultSeverity` out of SDK 10.0.400's analyzer assemblies gives 442 descriptors and none of them is this; a probe with all 120 `IDE` ids and all 320 `CA` ids forced to `warning`, `EnforceCodeStyleInBuild=true`, `AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on `class C : IDerived, IBase`, on a compilation where `IDE0055`, `IDE0160`, `IDE0380` and `CA1051` all fired and there was no `AD0001`.\n\n⚠ `class C : object` is **not** this finding. ReSharper does not report it either — probed in the same run.",
       "supersedes": [],
       "since": "2.0",
@@ -8628,7 +8301,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantSetsRequiredMembersAttribute",
       "resharperNote": "⚠ **Not hosted, and the zero was measured rather than assumed.** Reading `IsEnabledByDefault`/`DefaultSeverity` out of SDK 10.0.400's analyzer assemblies gives 442 descriptors and none of them is this shape — an error log could not have answered it, because a `Hidden` rule and an absent one produce the same empty log. A behavioural probe with all 120 `IDE` ids and all 320 `CA` ids forced to `warning`, `EnforceCodeStyleInBuild=true`, `AnalysisMode=All` and `AnalysisLevel=latest-all` reported nothing on a `[SetsRequiredMembers]` constructor of a type with no required members, on a compilation where `IDE0055`, `IDE0160`, `IDE0290`, `IDE0380` and `CA1051` all fired and no analyzer crashed. `jb inspectcode` 2025.2.6 reports it on the same file, and correctly declines the type that does have a required member.",
       "supersedes": [],
       "since": "2.0",
@@ -8654,7 +8326,6 @@
       "requiresSemantics": true,
       "hasFix": true,
       "fixIsSafe": true,
-      "resharperId": "RedundantExplicitPositionalPropertyDeclaration",
       "resharperNote": "⚠ **Not hosted, measured the same way as `SK0280` and `SK0281`**: absent from all 442 descriptors read out of SDK 10.0.400's analyzer assemblies, and silent in a probe with all 120 `IDE` ids and all 320 `CA` ids at `warning` on a compilation where `IDE0055`, `IDE0160`, `IDE0290`, `IDE0380` and `CA1051` fired and no analyzer crashed. `jb inspectcode` 2025.2.6 reports it on the same file.",
       "supersedes": [],
       "since": "2.0",

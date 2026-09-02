@@ -212,10 +212,6 @@ public static class ExplainCommand {
             builder.AppendLine("configuration: " + string.Join(", ", rule.Configuration));
         }
 
-        if (rule.ReSharperSeverityKey is { } key) {
-            builder.AppendLine("ReSharper: " + rule.ReSharperId + "  (" + key + ")");
-        }
-
         if (rule.ReSharperNote is { Length: > 0 } note) {
             builder.AppendLine(Wrap(note, 78));
         }
@@ -276,14 +272,6 @@ public static class ExplainCommand {
             .AppendLine(" |");
         builder.Append("| Language version floor | ").Append(rule.LanguageVersion ?? "—").AppendLine(" |");
         builder.Append("| Since | ").Append(rule.Since).AppendLine(" |");
-        if (rule.ReSharperId is { } resharper) {
-            builder.Append("| ReSharper | `")
-                .Append(resharper)
-                .Append("` (`")
-                .Append(rule.ReSharperSeverityKey)
-                .AppendLine("`) |");
-        }
-
         if (rule.Supersedes.Count > 0) {
             builder.Append("| Supersedes | ").Append(string.Join(", ", rule.Supersedes)).AppendLine(" |");
         }
