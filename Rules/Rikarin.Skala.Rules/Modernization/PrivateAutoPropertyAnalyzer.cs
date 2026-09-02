@@ -175,11 +175,11 @@ public sealed class PrivateAutoPropertyAnalyzer : DiagnosticAnalyzer {
             }
 
             if (name.Ancestors()
-                .OfType<InvocationExpressionSyntax>()
-                .Any(static invocation => invocation.Expression is IdentifierNameSyntax {
-                        Identifier.ValueText: "nameof"
-                    }
-                )) {
+                    .OfType<InvocationExpressionSyntax>()
+                    .Any(static invocation => invocation.Expression is IdentifierNameSyntax {
+                            Identifier.ValueText: "nameof"
+                        }
+                    )) {
                 continue;
             }
 
@@ -193,8 +193,10 @@ public sealed class PrivateAutoPropertyAnalyzer : DiagnosticAnalyzer {
             if (reference.Parent is AssignmentExpressionSyntax assignment && assignment.Left == reference) {
                 written = true;
                 read |= !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression);
-            } else if (reference.Parent is PrefixUnaryExpressionSyntax prefix && IsIncrement(prefix.OperatorToken)
-                || reference.Parent is PostfixUnaryExpressionSyntax postfix && IsIncrement(postfix.OperatorToken)) {
+            } else if (reference.Parent is PrefixUnaryExpressionSyntax prefix
+                       && IsIncrement(prefix.OperatorToken)
+                       || reference.Parent is PostfixUnaryExpressionSyntax postfix
+                       && IsIncrement(postfix.OperatorToken)) {
                 written = true;
                 read = true;
             } else {

@@ -126,20 +126,20 @@ public sealed class DeclarationBatchTests {
     [Fact]
     public void CastInDeclaration_IsSilentOnEveryWrittenType() {
         const string source = """
-            using System.IO;
+                              using System.IO;
 
-            public sealed class Written {
-                public TextWriter A() {
-                    TextWriter writer = (TextWriter)new StringWriter();
-                    return writer;
-                }
+                              public sealed class Written {
+                                  public TextWriter A() {
+                                      TextWriter writer = (TextWriter)new StringWriter();
+                                      return writer;
+                                  }
 
-                public object B() {
-                    object boxed = (object)42;
-                    return boxed;
-                }
-            }
-            """;
+                                  public object B() {
+                                      object boxed = (object)42;
+                                      return boxed;
+                                  }
+                              }
+                              """;
 
         Assert.DoesNotContain(
             RuleFixtures.Analyze(

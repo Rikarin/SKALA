@@ -155,7 +155,8 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
             ObjectCreationExpressionSyntax creation when AsTupleName(creation.Type) is not null =>
                 creation.ArgumentList,
             InvocationExpressionSyntax {
-                Expression: MemberAccessExpressionSyntax {
+                Expression:
+                MemberAccessExpressionSyntax {
                     RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
                     Name.Identifier.ValueText: "Create"
                 }
