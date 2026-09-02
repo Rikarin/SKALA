@@ -392,8 +392,13 @@ nested-context shapes were dropped rather than tested against a compilation that
 trap `SK0240`'s deleted iterator guard was committed into once already.
 ### Cleanup — `SK0250`
 
-⚠ **The prose pass on this block is owed**, like the two above it: it is written as one rule lands and
-records what was measured rather than reading as a considered section.
+**One rule, and it is here rather than folded into `SK0233` because the two answer to different
+options.** `SK0233` collects the redundant *punctuation* shapes of the `Redundancies in Code` family;
+`SK0250` reports a redundant `_` designation, and the reason it was held back from that block turned
+out to be the wrong reason, recorded below rather than quietly corrected. ⚠ **A block of one is what
+this range looks like when a concept is declined on measurement and then re-admitted on a different
+reading of the same inspection** — the id is new, the inspection is not, and the two readings are
+what the paragraphs below separate.
 
 | ID | Rule | Scope | Floor | Fix |
 |---|---|---|---|---|
@@ -5041,7 +5046,6 @@ rule declaring `requiresSemantics`, and all four of these do (#277). A loose run
 four zeros that mean "the analysis never ran". The false-positive evidence for this batch is
 therefore its negative fixture set (9, 8, 10 and 9 files) and the probe, and not a corpus count.
 ## `SK2140`–`SK2143` — what a parameter promises and what the call site does
-## `SK2130`–`SK2134` — members, backing fields, and the order things are initialized in
 
 **This block belongs beside `SK2013`–`SK2017` and reports a different silence.** Those rules report a
 handler that destroys the evidence of a failure; these four report a *parameter list* that says one
@@ -5337,11 +5341,33 @@ and `try-parse-exact-has-a-provider`, `SK2163` on `the-start-is-not-a-clock-read
 to a valid one**: replacing a condition with `if (false)` fails the build under `TreatWarningsAsErrors`
 (`CS0162`), so the run went red with *zero* failing tests. A non-zero exit code is not evidence that a
 sabotage worked, and the count of failures is what has to be read.
-down where the next milestone will read them — plus, for three of the five, the measurement that
-decided what the rule is *for*, because in this batch that measurement is most of the content. It is
-not yet the considered account the sections above carry, and it belongs beside `SK2030`–`SK2034`.
+
+## `SK2130`–`SK2134` — members, backing fields, and the order things are initialized in
+
+⚠ **This block's own opening paragraph was destroyed by a merge and is rewritten here, which is why
+it was invisible to the prose-pass census**: the surviving fragment began mid-sentence and no longer
+contained the words the census greps for, so a block owing prose was not counted as owing any. Its
+heading had been carried up the document as well, landing between the `SK2140`–`SK2143` heading and
+the `SK2140` body — two headings adjacent, one section's content under the other's name — and both
+halves are repaired together.
 
 **Five rules about storage: where a value comes from, when it arrives, and who else can see it.**
+
+This block belongs beside `SK2030`–`SK2034`, and the line between the two groups is what the finding
+rests on. Those five report a written operation that is wrong wherever it appears: comparing with
+`NaN`, discarding a setter's `value`, a `stackalloc` inside a loop. Every one of them is decided by
+the statement it sits on. The five here are decided by a *relationship between declarations* — which
+field is declared above which, which property a backing field belongs to, whether a `partial`
+declaration has a partner, which type a static field is written from — so all five are `Semantic`
+where three of `SK2030`–`SK2034` are `Syntax`, and none of them can be read off the line it reports.
+
+⚠ **That is also why only `SK2132` carries a fix, and why it is the one fix in the batch marked
+unsafe.** The other four report a value that is permanently wrong, and the value it should have held
+instead is the one thing the declarations do not contain: reordering two fields, writing the missing
+constructor assignment, implementing the `partial` method or deleting its call, and moving a static
+write are each a decision rather than an edit. `SK2132` is the exception because the crossed name is
+the repair — and its fix changes what the program computes, which is exactly the point of the
+finding rather than a hazard beside it.
 
 ⚠ **Three of the five were narrowed by a probe rather than by argument, and the probe is what makes
 them worth an id at all.** A single file compiled at `AnalysisMode=All` was read for what the
