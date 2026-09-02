@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaFormatOnly generated=2026-08-31
+// skala-oracle: resharper=2025.2.6 config=sha256:e256d0b9ed35b14f profile=SkalaFormatOnly generated=2026-09-02
 // ArgListExpression, MakeRefExpression, RefTypeExpression and RefValueExpression occurred nowhere.
 // They are four of the thirty-seven absent node kinds and they are cheap to pin: `__arglist(…)` and
 // `__refvalue(…, T)` both carry argument lists, which is the one thing about them a formatter can get

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaFormatOnly generated=2026-08-29
+// skala-oracle: resharper=2025.2.6 config=sha256:e256d0b9ed35b14f profile=SkalaFormatOnly generated=2026-09-02
 // SK-DIV-0077's anonymous-method half, on its own file, and no option is globbed to it.
 //
 // ⚠ This fixture is expected to disagree with the oracle and exists to hold the disagreement still.
