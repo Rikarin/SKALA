@@ -274,3 +274,7 @@ SK2171 | Skala.Correctness | Warning | The `\x` escape's length depends on what 
 SK2172 | Skala.Correctness | Warning | A null-forgiving `!` stands where it reads as a negated `is`.
 SK2173 | Skala.Correctness | Warning | `is not { }` is `is null` spelled backwards.
 SK2174 | Skala.Correctness | Info | A shift or bitwise operand groups only by precedence.
+SK1120 | Skala.Modernization | Info | A reflection call asks what `is` answers.
+SK1121 | Skala.Modernization | Hidden | A `try`/`catch` is the whole body of a `try`/`finally`.
+SK1122 | Skala.Modernization | Hidden | A nearby anonymous type has the same members in another order.
+SK1123 | Skala.Modernization | Hidden | Two `or` alternatives test the same property.
