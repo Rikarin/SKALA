@@ -1519,8 +1519,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **256** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **221** | **86.7 %** |
+| Rules this document names | **260** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **225** | **86.9 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -2562,3 +2562,85 @@ is off under `AnalysisMode=Default`, and ADR-008's answer to that is to enable i
 The one gap found is that `CA2201` matches the exact type, so a `Win32Exception` — which derives from
 the `ExternalException` it does report — passes; that is not what the issue is about and does not
 justify an id.
+
+## Nullability — `SK2110`–`SK2113`
+
+⚠ **The prose pass on this block is owed.** The rows below are the allocation register doing its one
+job — the numbers are taken and written down where the next milestone will read them — and they were
+written as each rule landed rather than as the considered account the sections above carry. They
+belong beside § "SK2000 — Correctness" and are appended here only to keep out of a section several
+concurrent branches were editing.
+
+⚠ **Every one of these carries the same trap and it is worth stating once.** `GetTypeInfo` on a
+written `TypeSyntax` answers `NullableAnnotation.None` for `string` and for `string?` alike — the
+annotation of a *type reference* is not the annotation of the symbol it names — so a rule that
+compares annotations there is silent on every input and looks exactly like a rule with nothing to
+find. The question is `Nullability.FlowState`. And the third flow state, `None`, is what every
+expression has in a nullable-oblivious compilation: it is neither `MaybeNull` nor `NotNull`, so
+`!= MaybeNull` silently treats the unmigrated world as proven non-null and `== NotNull` withdraws
+from it. Which is right differs per rule here, which is why `NullabilityFacts` exposes the context
+rather than a verdict.
+
+- `SK2110` `tostring-can-return-null` — an override of `object.ToString()` returning a null constant,
+  reported only where the compiler is silent. ⚠ **The boundary against `CS8603` is the rule, and it
+  was probed rather than assumed**: the .NET 10.0.400 SDK reports `CS8603` on
+  `override string ToString() { return null; }` under NRT and is silent on
+  `override string? ToString() => null;` — legal because `object.ToString()` is itself annotated
+  `string?` — and on the same return under `#nullable disable`. ⚠ It reads `GetConstantValue`, never
+  a flow state, which is why it works in the nullable-oblivious files that are half its reason to
+  exist. ([#160](https://github.com/Rikarin/SKALA/issues/160))
+- `SK2111` `inert-null-suppression` — a `!` standing where no nullable warning could have been
+  issued: warnings off at that position, or a non-nullable value-type operand.
+  ([#192](https://github.com/Rikarin/SKALA/issues/192))
+- `SK2112` `nullable-local-never-null` — a local declared `T?` on a reference type, assigned once
+  with a value the flow analysis proves non-null and never assigned again.
+  ([#118](https://github.com/Rikarin/SKALA/issues/118))
+- `SK2113` `null-forgiven-service-resolution` — `provider.GetService<T>()!` where
+  `GetRequiredService<T>()` moves the failure to the line that asked for the service.
+  ([#275](https://github.com/Rikarin/SKALA/issues/275))
+
+⚠ **`SK2111` ships half of its issue and the other half is cut for a defect rather than for noise.**
+`S8969` — a `!` on an expression the compiler already proves non-null — was specified and dropped,
+because two things it cannot see make it wrong. A `!` may be suppressing a *nested* nullability
+warning (`List<string?> a = b!;` suppresses `CS8619`) that the operand's own flow state says nothing
+about; and removing one `!` can make another necessary, since in `x!.A(); x!.B();` the second
+operand is non-null precisely *because of* the first suppression — so a rule reporting both hands
+`skala fix` a pair of edits that together reintroduce the warning. What ships needs no flow analysis
+at all and so cannot have either problem. `Testing/.../SK2111/negative/proven_not_null_is_out_of_scope.cs`
+is the record of the cut.
+
+⚠ **`IDE0080` does not host `SK2111`, and the check was an instrument first.**
+`CSharpRemoveUnnecessaryNullableWarningSuppressionsDiagnosticAnalyzer` ships in the .NET 10.0.400
+SDK, and a probe carrying all three shapes reported nothing from it under
+`EnforceCodeStyleInBuild=true`, `AnalysisMode=All` and
+`dotnet_diagnostic.IDE0080.severity = warning`. That silence means something only because the same
+build reported `IDE0090` and `IDE0059` from the same analyzer set under the same `.editorconfig`,
+and because `dotnet format analyzers --diagnostics IDE0080` reported nothing on the same files while
+`--diagnostics IDE0090` reported the control.
+
+⚠ **`SK2112` ships one of its issue's two inspections and the other is cut because an analyzer
+cannot answer it.** `ReturnTypeCanBeNotNullable` narrows a *method's* return annotation, which
+propagates to every call site through `var`: `var x = M();` infers `string?` today and `string`
+afterwards, so a later `x = null` becomes a new warning in a file the analyzer never saw. A
+`DiagnosticAnalyzer` is handed one syntax tree and cannot enumerate callers; ReSharper answers it
+from a solution-wide index and Skala has none at analysis time. `VariableCanBeNotNullable` is what
+ships, and the same cascade *inside* one method is guarded directly by declining any local that
+feeds a `var` declaration.
+
+⚠ **A fifth concept was measured and refuted, and no id was allocated for it.** Issue #47 — "the
+expression is null on a path that dereferences it", ReSharper's `PossibleNullReferenceException`,
+`ExpressionIsAlwaysNull`, `ConstantConditionalAccessQualifier` and
+`PossibleInvalidOperationException` — is hosted by the compiler wherever nullable reference types
+are enabled. Measured, not assumed: a probe carrying one shape per inspection, built with the .NET
+10.0.400 SDK, produced `CS8602` for the dereference of a `string?`, `CS8600` for its assignment to a
+`string`, `CS8604` for passing it to a non-nullable parameter and `CS8629` for `.Value` on an `int?`
+— all four inspections' ground, from the compiler, at `warning`. What is left is the `#nullable
+disable` case, and that is not a gap this catalogue can fill: with the context off, every
+expression's `NullableFlowState` is `None`, so the compiler's own flow analysis has not been run and
+there is nothing to read. Reporting there would require a null-value dataflow engine that Skala does
+not have and that no rule in this document assumes. ⚠ **The one thing that does survive there was
+also measured**: `CA1062` fired on the public methods of the same probe's `#nullable disable` file,
+so the argument-validation half of the concept is already covered by an analyzer the SDK ships, and
+ADR-008's answer to a check being off is to turn it on rather than to rebuild it. The residual — a
+local definitely assigned `null` and then dereferenced, in a nullable-oblivious file — drew nothing
+from any analyzer in the probe and is the honest size of the gap.

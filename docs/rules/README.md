@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 229 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 233 ids are allocated.
 
 ## Async
 
@@ -96,6 +96,10 @@
 | [SK2101](SK2101.md) | `[Pure]` is applied to a method that returns nothing | warning | safe | no |
 | [SK2102](SK2102.md) | The `[DebuggerDisplay]` string names a member that does not exist | warning | — | no |
 | [SK2103](SK2103.md) | The attribute is applied twice with the same arguments | warning | review | no |
+| [SK2110](SK2110.md) | `ToString()` returns null | warning | review | no |
+| [SK2111](SK2111.md) | The null-forgiving operator suppresses nothing | warning | safe | no |
+| [SK2112](SK2112.md) | The local is declared nullable and is never null | suggestion | safe | no |
+| [SK2113](SK2113.md) | The service resolution is null-forgiven instead of required | suggestion | safe | no |
 
 ## Design
 
