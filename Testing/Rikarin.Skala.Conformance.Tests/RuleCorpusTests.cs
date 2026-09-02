@@ -26,7 +26,9 @@ public sealed class RuleCorpusTests {
     /// </summary>
     /// <remarks>
     ///     Committed positives that still fire when compiled as one mass compilation rather than one
-    ///     file at a time. Measured at 960 of 1 131 (84.9%) on the commit that introduced this file.
+    ///     file at a time. Measured at 1 006 of 1 183 (85.0%) on the commit that introduced this file,
+    ///     and at 960 of 1 131 (84.9%) four merges earlier — the fraction held while 52 fixtures were
+    ///     added, which is what an absolute floor is supposed to let happen.
     ///     <para>
     ///         ⚠ An <em>absolute</em> floor rather than a fraction, because the fixture tree only ever
     ///         grows: a new fixture can raise <see cref="CorpusRecall.Fired" /> and can never lower it,
@@ -36,10 +38,10 @@ public sealed class RuleCorpusTests {
     ///         bind them.
     ///     </para>
     /// </remarks>
-    const int RecallFloor = 960;
+    const int RecallFloor = 1006;
 
     /// <summary>The fraction below which the mass compile has stopped modelling the fixture tree.</summary>
-    /// <remarks>⚠ Coarse on purpose. 0.849 when pinned; this catches a collapse, not a drift.</remarks>
+    /// <remarks>⚠ Coarse on purpose. 0.850 when pinned; this catches a collapse, not a drift.</remarks>
     const double RecallFractionFloor = 0.75;
 
     /// <summary>
