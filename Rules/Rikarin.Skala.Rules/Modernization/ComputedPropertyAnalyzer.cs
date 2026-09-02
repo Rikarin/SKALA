@@ -75,9 +75,7 @@ public sealed class ComputedPropertyAnalyzer : DiagnosticAnalyzer {
         if (property.Parent is not ClassDeclarationSyntax owner
             || property.Initializer is not { } initializer
             || property.AttributeLists.Count != 0
-            || property.ExpressionBody is not null
-            || property.ContainsDirectives
-            || property.SpanContainsComment()) {
+            || property.ExpressionBody is not null) {
             return;
         }
 
@@ -139,16 +137,20 @@ public sealed class ComputedPropertyAnalyzer : DiagnosticAnalyzer {
             }
         }
 
+        // ⚠ The span the fix rewrites, not the declaration. Asking the whole `PropertyDeclaration`
+        // reads its *leading* trivia too, so a `/// <summary>` on the line above silenced the rule
+        // on every documented property — measured with a probe file, where four of this batch's
+        // five rules went quiet because the probe's own marker comments were in the way.
+        var rewritten = TextSpan.FromBounds(accessors.SpanStart, property.SemicolonToken.Span.End);
+        if (RewriteGuards.ContainsCommentOrDirective(property.SyntaxTree, rewritten)) {
+            return;
+        }
+
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
                 property.Identifier.GetLocation(),
-                FixEdits.Pack(
-                    (
-                        TextSpan.FromBounds(accessors.SpanStart, property.SemicolonToken.Span.End),
-                        "=> " + initializer.Value + ";"
-                    )
-                ),
+                FixEdits.Pack((rewritten, "=> " + initializer.Value + ";")),
                 "The property can only ever hold `" + RewriteGuards.Trim(initializer.Value.ToString()) + "`"
             )
         );

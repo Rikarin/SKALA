@@ -60,8 +60,6 @@ public sealed class PrivateAutoPropertyAnalyzer : DiagnosticAnalyzer {
             || property.Parent is not TypeDeclarationSyntax owner
             || property.AttributeLists.Count != 0
             || property.ExpressionBody is not null
-            || property.ContainsDirectives
-            || property.SpanContainsComment()
             || !property.Modifiers.Any(SyntaxKind.PrivateKeyword)) {
             return;
         }
@@ -120,11 +118,16 @@ public sealed class PrivateAutoPropertyAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ The accessor list, not the declaration. `PropertyDeclarationSyntax.DescendantTrivia`
+        // reaches the property's *leading* trivia, so asking it silenced the rule on every property
+        // carrying a `/// <summary>` — which is most of them in a documented codebase.
+        var removed = TextSpan.FromBounds(property.Identifier.Span.End, accessors.Span.End);
+        if (RewriteGuards.ContainsCommentOrDirective(property.SyntaxTree, removed)) {
+            return;
+        }
+
         var edits = new List<(TextSpan Span, string Text)> {
-            (
-                TextSpan.FromBounds(property.Identifier.Span.End, accessors.Span.End),
-                property.Initializer is null ? ";" : string.Empty
-            )
+            (removed, property.Initializer is null ? ";" : string.Empty)
         };
 
         // ⚠ `{ get; }` says "assignable from a constructor and nowhere else", and `readonly` is what

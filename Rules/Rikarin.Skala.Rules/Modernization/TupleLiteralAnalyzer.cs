@@ -66,9 +66,7 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
             || statement.AwaitKeyword.RawKind != (int)SyntaxKind.None
             || statement.Modifiers.Count > 0
             || statement.AttributeLists.Count > 0
-            || statement.Declaration.Variables.Count != 1
-            || statement.ContainsDirectives
-            || statement.SpanContainsComment()) {
+            || statement.Declaration.Variables.Count != 1) {
             return;
         }
 
@@ -108,6 +106,16 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
 
         if (model.GetDeclaredSymbol(declarator, cancellation) is not ILocalSymbol local
             || !OnlyReadsElements(model, statement, local, cancellation)) {
+            return;
+        }
+
+        // ⚠ The two spans the fix rewrites, not the statement. Asking the statement reads its
+        // leading trivia, so a comment on the line above declined a declaration whose own text the
+        // fix never touches.
+        if (RewriteGuards.ContainsCommentOrDirective(
+                statement.SyntaxTree,
+                TextSpan.FromBounds(statement.Declaration.Type.SpanStart, value.Span.End)
+            )) {
             return;
         }
 
