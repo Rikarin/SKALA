@@ -209,65 +209,72 @@ neither covering it.
 
 ⚠ **This section is owed prose about work that ended in refutations rather than rules, and the owed
 half is the part that has to be written down.** A batch was scoped to close out the remainder of
-[#131](https://github.com/Rikarin/SKALA/issues/131), [#129](https://github.com/Rikarin/SKALA/issues/129),
-[#130](https://github.com/Rikarin/SKALA/issues/130), [#135](https://github.com/Rikarin/SKALA/issues/135)
-and [#178](https://github.com/Rikarin/SKALA/issues/178) with new ids. It shipped **no new id**: two
-shapes belonged inside `SK0240`, which now holds them, and everything else was measured and found not
-to be a rule. What is still owed is the corpus evidence for the shapes nobody has looked at
-(`RedundantIfElseBlock`, `RedundantSwitchExpressionArms`) and a decision on whether `#130`'s remainder
-justifies a *semantic* sibling to `SK0244`, which is the one live option this section did not close.
+[#131](https://github.com/Rikarin/SKALA/issues/131),
+[#129](https://github.com/Rikarin/SKALA/issues/129),
+[#130](https://github.com/Rikarin/SKALA/issues/130),
+[#135](https://github.com/Rikarin/SKALA/issues/135) and
+[#178](https://github.com/Rikarin/SKALA/issues/178) with new ids. It shipped **no new id**: two
+shapes belonged inside `SK0240`, which now holds them, and everything else was measured and found
+not to be a rule. What is still owed is the corpus evidence for the shapes nobody has looked at
+(`RedundantIfElseBlock`, `RedundantSwitchExpressionArms`) and a decision on whether `#130`'s
+remainder justifies a *semantic* sibling to `SK0244`, which is the one live option this section did
+not close.
 
-⚠ **[#292] is refuted: `SK0210` already sees the global-duplication shape, and the measurement that
-said otherwise was wrong.** The issue reports that a file-level `using X;` duplicated by a
-`global using X;` is CS8933 and that "CS8019 is silent", so `UsingsRule.Unused` — which reads CS8019
-alone — cannot see it. Measured across ten shapes (SDK implicit usings, a user-written `global using`
-in another file, both directives in the same file, `using static`, a global alias, a using inside a
-namespace, and a multi-directive ordering case): **CS8019 fires alongside CS8933 every time**, the
-name is already in the removal set, and the arranger already deletes the directive. The decisive
-comparison is the set built from CS8019 against the set built from CS8019 ∪ CS8933 — identical in all
-ten. **Adding CS8933 would be a strict no-op**, so it was not added; the note against `SK0210` above,
-and the same claim in `SK0243`'s `falsePositives`, are both wrong on this point. The one shape that
-starts with neither diagnostic is a using *inside* a namespace declaration, where it is genuinely
-load-bearing until the arranger hoists it out — and the pipeline's own re-bind pass removes it in the
-same run, which is SK-FUZZ-0018's fix working rather than a gap.
+⚠ **[#292](https://github.com/Rikarin/SKALA/issues/292) is refuted: `SK0210` already sees the
+global-duplication shape, and the measurement that said otherwise was wrong.** The issue reports
+that a file-level `using X;` duplicated by a `global using X;` is CS8933 and that "CS8019 is
+silent", so `UsingsRule.Unused` — which reads CS8019 alone — cannot see it. Measured across ten
+shapes (SDK implicit usings, a user-written `global using` in another file, both directives in the
+same file, `using static`, a global alias, a using inside a namespace, and a multi-directive
+ordering case): **CS8019 fires alongside CS8933 every time**, the name is already in the removal
+set, and the arranger already deletes the directive. The decisive comparison is the set built from
+CS8019 against the set built from CS8019 ∪ CS8933 — identical in all ten. **Adding CS8933 would be a
+strict no-op**, so it was not added; the note against `SK0210` above, and the same claim in
+`SK0243`'s `falsePositives`, are both wrong on this point. The one shape that starts with neither
+diagnostic is a using *inside* a namespace declaration, where it is genuinely load-bearing until the
+arranger hoists it out — and the pipeline's own re-bind pass removes it in the same run, which is
+SK-FUZZ-0018's fix working rather than a gap.
 
-⚠ **[#135]'s remainder is refuted with the compiler as the witness, and the reason is stronger than
-the loader-dependence already recorded.** `RedundantNotNullConstraint` describes a shape that cannot
-exist: `notnull` may not be combined with `class`, `struct` or `unmanaged` in either order — every
-combination is CS0449 — so no legal program has a `notnull` made redundant by a sibling constraint,
-and it is clean under both an enabled and a disabled annotation context. The three
-`RedundantNullableAnnotationOn*Constraint` inspections are the other half: `where T : class?` and
-`where T : IComparable?` are **clean and meaningful** where annotations are enabled, and where they
-are disabled **the compiler already reports CS8632**. Either the annotation says something or the
-compiler has already said it does not; there is nothing left for a Skala rule to add.
+⚠ **[#135](https://github.com/Rikarin/SKALA/issues/135)'s remainder is refuted with the compiler as
+the witness, and the reason is stronger than the loader-dependence already recorded.**
+`RedundantNotNullConstraint` describes a shape that cannot exist: `notnull` may not be combined with
+`class`, `struct` or `unmanaged` in either order — every combination is CS0449 — so no legal program
+has a `notnull` made redundant by a sibling constraint, and it is clean under both an enabled and a
+disabled annotation context. The three `RedundantNullableAnnotationOn*Constraint` inspections are
+the other half: `where T : class?` and `where T : IComparable?` are **clean and meaningful** where
+annotations are enabled, and where they are disabled **the compiler already reports CS8632**. Either
+the annotation says something or the compiler has already said it does not; there is nothing left
+for a Skala rule to add.
 
-⚠ **[#178] is refuted on the shipping bar rather than on the shape.** An empty method body is a
-shape, not a defect: a virtual no-op hook, an interface implementation with nothing to do and an empty
-`Dispose()` are all correct, `SK2014` owns the empty `catch`, `SK6023` owns the type whose body is
-empty, and `SK7090` owns the not-implemented stub. What survives those exclusions is a non-virtual,
-uncommented, private method with an empty body — and **there is no fix**, for the reason `SK6023`
-gives about deleting a type: something may name it, including code the compilation cannot see. A rule
-with no fix does not meet this document's bar, so no id was allocated (ADR-012: an id is permanent,
-and one is not allocated for a concept that will not ship).
+⚠ **[#178](https://github.com/Rikarin/SKALA/issues/178) is refuted on the shipping bar rather than
+on the shape.** An empty method body is a shape, not a defect: a virtual no-op hook, an interface
+implementation with nothing to do and an empty `Dispose()` are all correct, `SK2014` owns the empty
+`catch`, `SK6023` owns the type whose body is empty, and `SK7090` owns the not-implemented stub.
+What survives those exclusions is a non-virtual, uncommented, private method with an empty body —
+and **there is no fix**, for the reason `SK6023` gives about deleting a type: something may name it,
+including code the compilation cannot see. A rule with no fix does not meet this document's bar, so
+no id was allocated (ADR-012: an id is permanent, and one is not allocated for a concept that will
+not ship).
 
-⚠ **The corpus slice does not compile, and the missing implicit-usings file is 22 % of why.** Over the
-380 source files of `Testing/corpus/real/`, a loose compilation reports **11 590 CS errors** without a
-`GlobalUsings.g.cs` tree and **9 029 with one** — 2 561 errors, 5 743 → 4 370 `CS0246` and
+⚠ **The corpus slice does not compile, and the missing implicit-usings file is 22 % of why.** Over
+the 380 source files of `Testing/corpus/real/`, a loose compilation reports **11 590 CS errors**
+without a `GlobalUsings.g.cs` tree and **9 029 with one** — 2 561 errors, 5 743 → 4 370 `CS0246` and
 4 474 → 3 496 `CS0103`, attributable to a file the slice omits. `SK0240` is `Syntax`-scope and runs
 anyway, which was verified rather than assumed: six planted shapes were dropped into a copy of the
 corpus outside the repository and **all six fired** under `--load=loose`, with no `SK9030` in the
 SARIF's `toolExecutionNotifications`. Against the unmodified corpus `SK0240` reports **2** findings,
-one of them the new `case`-label shape
-(`Vixen.Audio/Effects/DistortionEffect.cs`, `case DistortionCurve.SoftClip: default:`). The empty
-`finally` reports **0**, and that zero is **shape absent**: all twelve files containing a `finally`
-have a body in it. ⚠ This is also why a *semantic* rule cannot be measured on this slice at all — a
-compilation with 9 000 errors answers a symbol question with whatever it managed to bind.
+one of them the new `case`-label shape, in `Vixen.Audio/Effects/DistortionEffect.cs` where
+`case DistortionCurve.SoftClip:` shares a section with `default:`. The empty `finally` reports **0**,
+and that zero is **shape
+absent**: all twelve files containing a `finally` have a body in it. ⚠ This is also why a *semantic*
+rule cannot be measured on this slice at all — a compilation with 9 000 errors answers a symbol
+question with whatever it managed to bind.
 
 ⚠ **`RuleFixtures.Compile` does not pass `allowUnsafe`, so no fixture for an `unsafe` shape can
-compile.** Found while considering the nested-`unsafe` half of `RedundantUnsafeContext` for `SK0241`:
-`unsafe class C { unsafe void M() { … } }` is CS0227 in the fixture harness. The nested-context shapes
-were dropped rather than tested against a compilation that rejects them — the trap `SK0240`'s deleted
-iterator guard was committed into once already.
+compile.** Found while considering the nested-`unsafe` half of `RedundantUnsafeContext` for
+`SK0241`: `unsafe class C { unsafe void M() { … } }` is CS0227 in the fixture harness. The
+nested-context shapes were dropped rather than tested against a compilation that rejects them — the
+trap `SK0240`'s deleted iterator guard was committed into once already.
 
 ## SK1000 — Modernization
 
