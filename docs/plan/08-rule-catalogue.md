@@ -3633,3 +3633,59 @@ decidable — subtracting a delegate combined literally on the line, `d -= (Acti
 nowhere in either reference tree and is not a shape anybody writes. What remains of the concept after
 that is the anonymous-function case, which is `SK2201`, so the rule is not lost: it is the same defect
 approached from the operand rather than from the operator. No id is allocated for the general form.
+
+### The measurement, and every zero classified
+
+Two reference trees and the three vendored corpus slices, all on SDK 10.0.400.
+
+| Tree | Load | Binlog coverage (`SK9021`) | CS diagnostics | `SK2200` | `SK2201` | `SK2202` |
+|---|---|---|---|---|---|---|
+| Skala | `--load=binlog --require-fresh-binlog` | 591 of 593 (100 %) | 11 across 2 codes (`CS9335` ×10, `CS8933` ×1) | 0 | 0 | 0 |
+| Vixen | `--load=binlog --require-fresh-binlog` | 4 651 of 4 726 (98 %) | 161 across 8 codes | 0 | 0 | **1** |
+| corpus `newtonsoft` | `--load=binlog` | n/a (own project) | 2 619 | 0 | 0 | 0 |
+| corpus `serilog` | `--load=binlog` | n/a (own project) | 1 125 | 0 | 0 | 0 |
+| corpus `vixen` | `--load=binlog` | n/a (own project) | 11 113 | 0 | 0 | 0 |
+
+⚠ **Both binlogs were built with `--no-incremental` and read with `--require-fresh-binlog`, and the
+first Vixen pair was discarded because the build was incremental.** An incremental build's binlog is
+not stale — its mtime is seconds old — it is *partial*, and a sweep over a third of a tree that comes
+back green is worse than no sweep because it is believed. The re-taken Vixen run reproduced the same
+coverage (98 %) and the same finding, so nothing changed by it; the discipline is the point.
+
+⚠ **The corpus is three copies of every file.** `Testing/corpus/real/` carries `X.cs`,
+`X.expected.cs` and `X.arranged.expected.cs` side by side — 380 sources in 1 140 files — and
+compiling all of them together produced 11 260 `CS0111` and 2 112 `CS0101` before the duplicates were
+excluded. It also needs one project per slice: the three vendored libraries collide with each other.
+**`<ImplicitUsings>` moves the number and does not fix it: 13 036 CS errors disabled → 10 996
+enabled**, 2 040 fewer, still dominated by `CS0246` for packages the slice does not carry. The corpus
+is a formatter fixture set, not a compilable tree, and a semantic rule's zero on it is worth much less
+than the same zero on Vixen.
+
+**The instrument was verified before any zero was believed.** A file carrying all three shapes was
+planted in `Core/Rikarin.Skala.Options/`, the solution rebuilt, and `skala check --load=binlog` run
+over it: `SK2200`, `SK2201` and `SK2202` each reported, on the right lines, through the real pipeline
+rather than through the fixture harness. The file was then deleted.
+
+Classifying the zeros:
+
+- `SK2201` — **shape absent.** Zero occurrences of `-=` with an anonymous function anywhere in Vixen
+  or in Skala's compiled sources. The one occurrence in the whole repository is
+  `Testing/corpus/constructs/syntax/event-accessors.cs`, a formatter construct fixture that is not a
+  `Compile` item and is in no compilation.
+- `SK2200` — **shape absent, and measured rather than assumed.** The obvious explanation for the zero
+  was the side-effect-free-initializer guard, since `= new()` and `= []` are how Vixen writes most
+  initializers. ⚠ **That explanation is wrong**: with the guard temporarily removed and the CLI
+  rebuilt — the relaxation confirmed live by `SK2200/−/an-allocating-initializer` going red — the
+  Vixen sweep still reports **0**. What the rule declines is not what makes the tree quiet.
+- `SK2202` — **one true finding and nine correct declines**, all in the same sweep. See the
+  initializer-member note above.
+- ⚠ **The `d -= (a + b)` shape `S3172` needs is absent from both trees**, which is the measurement
+  behind refusing to allocate an id for the general form.
+
+⚠ **Two analyzers crash on both reference trees and neither is in this batch.**
+`RedundantArgumentAnalyzer` (`SK0232`) threw `AD0001` 17 times on Skala's own tree and 92 times on
+Vixen — "Index was outside the bounds of the array" — and `RedundantCastAnalyzer` threw twice on
+Vixen. `skala check` records this as `SK9030` in the SARIF's `toolExecutionNotifications` and **does
+not fail the gate** (issue #295), so both have been silently reporting nothing for the rest of every
+run they crash in. That is a pre-existing defect on `master` and is written down here rather than
+fixed in this batch. None of `SK2200`–`SK2202` appears in any `SK9030`.
