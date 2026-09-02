@@ -80,11 +80,10 @@ public sealed class UnchangingLoopConditionAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        foreach (var variable in variables) {
-            if (written.WrittenInside.Contains(variable, SymbolEqualityComparer.Default)
-                || IsReachableFromAClosure(context.Node, variable)) {
-                return;
-            }
+        if (variables.Any(variable => written.WrittenInside.Contains(variable, SymbolEqualityComparer.Default)
+                || IsReachableFromAClosure(context.Node, variable)
+            )) {
+            return;
         }
 
         context.ReportDiagnostic(
@@ -213,10 +212,15 @@ public sealed class UnchangingLoopConditionAnalyzer : DiagnosticAnalyzer {
                 continue;
             }
 
-            foreach (var identifier in node.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()) {
-                if (string.Equals(identifier.Identifier.ValueText, variable.Name, System.StringComparison.Ordinal)) {
-                    return true;
-                }
+            if (node.DescendantNodesAndSelf()
+                    .OfType<IdentifierNameSyntax>()
+                    .Any(identifier => string.Equals(
+                            identifier.Identifier.ValueText,
+                            variable.Name,
+                            StringComparison.Ordinal
+                        )
+                    )) {
+                return true;
             }
         }
 
