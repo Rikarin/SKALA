@@ -105,7 +105,7 @@ issue; what was declined and why is in each rule's `falsePositives` in `rules.js
 |---|---|---|---|---|
 | `SK0230` | The `with` expression or object initializer is empty | Syntax | [#137](https://github.com/Rikarin/SKALA/issues/137) | 3 of 3 |
 | `SK0231` | The string call produces the string it was given | Semantic | [#132](https://github.com/Rikarin/SKALA/issues/132) | 5 of 8 |
-| `SK0232` | The argument or signature element is redundant | Semantic | [#134](https://github.com/Rikarin/SKALA/issues/134) | 3 of 7 |
+| `SK0232` | The argument or signature element is redundant | Semantic | [#134](https://github.com/Rikarin/SKALA/issues/134) | 4 of 7 |
 | `SK0233` | The syntax is redundant | Syntax | [#133](https://github.com/Rikarin/SKALA/issues/133) | 9 of 13 |
 | `SK0234` | The cast or type argument is redundant | Semantic | [#128](https://github.com/Rikarin/SKALA/issues/128) | 4 of 8 |
 ### Cleanup — `SK0240`–`SK0249`
@@ -174,13 +174,27 @@ overrides `M`, dropping the qualifier in `B` turns a non-virtual call to `A.M` i
 reaches `C.M`. The member must be one nothing can override further, or the containing type must be
 `sealed`.
 
-⚠ **`SK0210` has a measured gap, and it is a bug report rather than a rule.** `UnusedImportClause` is
-`SK0210`'s remit and it ships; `RedundantUsingDirective.Global` is `SK0210`'s remit and it does not
-fire. `UsingsRule.Unused` builds its removal set from Roslyn's **CS8019** alone
-(`Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/UsingsRule.cs`), and a file-level `using X;`
-duplicated by a `global using X;` is reported by the compiler as **CS8933** — measured on a probe
-project, where the using is genuinely redundant and CS8019 is silent. Nothing in `SK0243` claims that
-inspection: shipping it here would be a second id for one concept.
+⚠ **`SK0210`'s "measured gap" was refuted, and the paragraph that stood here was wrong.** It said
+`RedundantUsingDirective.Global` does not fire because `UsingsRule.Unused` builds its removal set from
+**CS8019** alone while the compiler reports a file-level `using X;` duplicated by a `global using X;`
+as **CS8933**, "measured on a probe project, where the using is genuinely redundant and CS8019 is
+silent". Re-measured directly against Roslyn, over four arrangements of the shape — the namespace used
+in the same file, used only in another file, two `global using`s in different files, and both
+directives in one file — the compiler reports **CS8019 alongside** CS8933 (or `CS0105`) in every one:
+
+```
+A file-level using duplicated by a global using, namespace used
+  Use.cs CS8933 [Hidden] line 0: The using directive for 'System.Text' appeared previously as global using
+  Use.cs CS8019 [Hidden] line 0: Unnecessary using directive.
+```
+
+CS8933 is *additional*, not *instead of*. ⚠ The likeliest way the original measurement reached the
+opposite conclusion is that both diagnostics are **Hidden**, so neither appears in `dotnet build`
+output at any verbosity — a build that prints no CS8019 is not a compilation that produced none. So
+`UsingsRule.Unused` does see the shape, and `RedundantUsingDirective.Global` is `SK0210`'s remit and
+appears to be within it; what is still owed is an end-to-end `arrange` check that the directive is
+actually removed, which is a smaller question than the one this paragraph asked. Nothing in `SK0243`
+claims that inspection either way: shipping it here would be a second id for one concept.
 
 `SK0244` covers six of [#130](https://github.com/Rikarin/SKALA/issues/130)'s fourteen: an empty
 finalizer, an empty sole constructor, an empty namespace, a `: base()` with no arguments, a member
@@ -198,6 +212,73 @@ declaring one, even empty, clears `beforefieldinit`, so deleting it is a timing 
 inside this catalogue: it asks for `class Foo { }` to become `class Foo;`, and `SK6023` reports those
 same braces as an unfinished declaration. Two shipped rules disagreeing about one span is worse than
 neither covering it.
+
+### Cleanup — `SK0250`
+
+⚠ **The prose pass on this block is owed**, like the two above it: it is written as one rule lands and
+records what was measured rather than reading as a considered section.
+
+| ID | Rule | Scope | Floor | Fix |
+|---|---|---|---|---|
+| `SK0250` | The discard designation is redundant | Syntax | 9 | safe |
+
+`SK0250` covers `RedundantDiscardDesignation`, the fourth of
+[#133](https://github.com/Rikarin/SKALA/issues/133)'s thirteen and the one that issue refused. It
+reports a *designation* of `_` on a declaration or recursive pattern — `o is string _`,
+`o is Point { X: 0 } _`, `case int _:` — where the pattern means the same with nothing after it.
+
+⚠ **The refusal recorded on #133 was right and its stated reason was wrong, and the real reason is
+worse.** #133 declined the inspection because "`out var _` becomes `out _` only where nothing named
+`_` is in scope, and answering that needs a symbol lookup that would make the whole rule semantic".
+That reads the inspection as the `var _` ⇔ `_` style choice — and **that choice is
+`resharper_csharp_prefer_explicit_discard_declaration`, a tier-A option Skala already performs**
+through `SK0217`'s `DiscardDeclarationRule` (`ArgumentStyleRule.cs`), in both directions, against the
+oracle. Shipping it would not have cost `SK0233` its syntactic scope; it would have been one edit
+owned by two ids, which is the double-count doc 17 § "Inspection ids are not concepts" exists to
+prevent and the same trap #133 already records for `SK0209`. The option registry answers this before
+the code does, and it was not asked.
+
+The designation reading has neither problem. A designation position **declares**; it can never refer
+to something already in scope, so there is no lookup and the rule is syntactic — it runs and is
+measurable under `--load=loose`.
+
+⚠ **It is a separate id from `SK0233` because its language floor is not `SK0233`'s.** `o is string` is
+C# 1 — that is the `is` operator — but `case string:`, `string => …` and `Point(int, int)` are bare
+*type patterns*, which the compiler refuses below C# 9 with `CS8400: Feature 'type pattern' is not
+available in C# 8.0`. `languageVersion` is per rule, so folding this into `SK0233` would either put a
+9.0 floor on nine shapes that have none — an empty attribute argument list is C# 1 — or declare a
+floor the registry does not hold. The floor is the concept boundary here, not the taste.
+
+**What the other four issues in this batch have left.** ⚠ Two are now empty and the entries are
+refutations, not deferrals:
+
+- [#132](https://github.com/Rikarin/SKALA/issues/132) — **nothing shippable remains.**
+  `RedundantToStringCallForValueType` and `RedundantStringInterpolation`'s single-hole form were
+  refused with reasons that still stand. `RedundantVerbatimPrefix`'s identifier form is `SK2034`'s
+  concept. ⚠ `RedundantStringType` is **not a C# inspection at all**: the export's own description is
+  "Redundant string type", it carries no more than that, and no C# construct answers to it.
+- [#136](https://github.com/Rikarin/SKALA/issues/136) — **nothing shippable remains, and the reason
+  changed.** Its two uncovered inspections are both `SK0210`'s, and the CS8933 story that put one of
+  them on the queue is refuted above.
+- [#133](https://github.com/Rikarin/SKALA/issues/133) — after `SK0250`, ten of thirteen.
+  `RedundantFixedPointerDeclaration` is unsafe-code-only. ⚠ `RedundantPropertyParentheses`
+  ("Parameterless property parentheses are redundant") and `RedundantArrayLowerBoundSpecification`
+  ("Redundant array lower bound specification") are **Visual Basic**, not C#: neither
+  `Property Foo()` nor `Dim a(0 To 5)` has a C# spelling, and the export mixes every language
+  ReSharper inspects into one file — it also contains `ConvertToVbAutoProperty` and a thousand
+  `CppClangTidy*` entries. #133 recorded them as "could not be identified from the export with enough
+  confidence", which was the right caution and the wrong conclusion.
+- [#134](https://github.com/Rikarin/SKALA/issues/134) — four of seven after
+  `UnusedAnonymousMethodSignature` joined `SK0232`. `RedundantExplicitParamsArrayCreation` and
+  `RedundantCallerArgumentExpressionDefaultValue` stay refused. `RedundantImmediateDelegateInvocation`
+  is left: its fix inlines a lambda body into an expression position, which is a rewrite and not a
+  deletion, and it does not belong under a title that says "argument or signature element".
+- [#128](https://github.com/Rikarin/SKALA/issues/128) — still four of eight, and the crash under it
+  was the finding. `RedundantTypeArgumentsInsideNameof` is real but **the fix needs C# 14**:
+  `nameof(List<int>)` cannot become `nameof(List)` (`CS0305`), only `nameof(List<>)`, and unbound
+  generics in `nameof` are `CS9202` below 14.0 — measured. Like `SK0250`'s floor, that is a separate
+  id's problem rather than a branch of `SK0234`, and nobody has specified it yet, so no id is taken
+  for it.
 
 ## SK1000 — Modernization
 
@@ -1775,8 +1856,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **295** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **260** | **88.4 %** |
+| Rules this document names | **296** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **261** | **88.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |

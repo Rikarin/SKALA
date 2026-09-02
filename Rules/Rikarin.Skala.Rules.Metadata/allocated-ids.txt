@@ -285,3 +285,4 @@ SK2131 unassigned-get-only-property
 SK2132 mismatched-backing-field
 SK2133 unimplemented-partial-method
 SK2134 instance-write-to-static
+SK0250 redundant-discard-designation

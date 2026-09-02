@@ -4372,6 +4372,32 @@
       ]
     },
     {
+      "id": "SK0250",
+      "concept": "redundant-discard-designation",
+      "title": "The discard designation is redundant",
+      "category": "Cleanup",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "RedundantDiscardDesignation",
+      "resharperNote": "⚠ ReSharper rates this a *suggestion* and Skala matches it. The neighbouring inspection `resharper_csharp_prefer_explicit_discard_declaration` is **not** this key: that one is the `out var _` ⇔ `out _` style choice, it is a tier-A option, and Skala already performs it through `SK0217`. Reading the two as one concept is how this id would have become a double-count.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "9.0",
+      "summary": "A pattern whose match is designated `_` — `o is string _`, `o is Point { X: 1 } _` — where the designation declares nothing and the pattern means the same without it.",
+      "rationale": "A designation is the reader's answer to \"what is this match called\", and `_` is the answer \"it is not called anything\" written down. Deleting it removes a question rather than an answer: `o is string _` makes a reader look for the `_` further along the expression, and `o is string` does not. It is also the shape a model reaches for by habit, because `case string _:` was the only spelling C# had before type patterns arrived in C# 9 and most of the training data predates them.",
+      "examples": {
+        "bad": "if (value is string _) {\n    return 1;\n}\n\nreturn value switch {\n    int _ => 2,\n    Point { X: 0 } _ => 3,\n    _ => 0\n};",
+        "good": "if (value is string) {\n    return 1;\n}\n\nreturn value switch {\n    int => 2,\n    Point { X: 0 } => 3,\n    _ => 0\n};"
+      },
+      "falsePositives": "⚠ **A `var _` pattern is never matched, and the reason is a rule that already ships rather than a difficulty.** `M(out var _)` becomes `M(out _)` under `resharper_csharp_prefer_explicit_discard_declaration`, which is a **tier-A** option performed by `SK0217`'s `DiscardDeclarationRule` in both directions and checked against the oracle. Reporting the same edit here would be the double-count doc 17 § \"Inspection ids are not concepts\" exists to prevent — and it is the same trap `SK0233` records for `SK0209`, found the same way, by reading the option registry before allocating. ⚠ It also could not be done: `o is var _` does not become `o is var`, and a bare `_` directly under an `is` is **CS0246**, because the parser reads it as a type name. `case _:` is **CS0103** for the same reason. Only a *designation* on a declaration or recursive pattern is reported, which is the position where `_` is unambiguously the discard. ⚠ **That is also what keeps the rule syntactic.** A designation declares; it never refers to something already in scope, so there is no lookup to do — which is exactly the lookup that made the `out var _` reading a semantic rule, and the stated reason it was refused for `SK0233`. Being syntactic, this rule still runs under `--load=loose`. ⚠ **The 9.0 floor is measured, not assumed.** `o is string` is C# 1 — it is the `is` operator — but `case string:`, `string => …` and `Point(int, int)` are bare *type patterns*, and below C# 9 the compiler answers `CS8400: Feature 'type pattern' is not available`. A single rule cannot be right about the floor in one pattern position and wrong in another, so it is silent below 9.0 everywhere. ⚠ A designation that is a real name is not this rule at any severity: `o is string text` names something, and whether that name is used is `SK6040`'s question and not a redundancy in the pattern. A comment or a directive inside the span the fix deletes withdraws the finding, and the span is asked, never the node — the defect #302 describes and `SK0243` carried.",
+      "configuration": [
+        "dotnet_diagnostic.SK0250.severity"
+      ]
+    },
+    {
       "id": "SK0244",
       "concept": "redundant-declaration",
       "title": "The declaration adds nothing",

@@ -92,6 +92,7 @@ public sealed class RuleFixtureTests {
         new DuplicatedBaseDocumentationAnalyzer(), new UndocumentedNonPublicMemberAnalyzer(),
         new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
         new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
+        new RedundantDiscardDesignationAnalyzer(),
         new RedundantDeclarationAnalyzer(),
         new TestAndCastPatternAnalyzer(), new PatternSimplificationAnalyzer(),
         new MergedConditionalAccessAnalyzer(), new DiscardAssignmentAnalyzer(),
