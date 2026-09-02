@@ -924,10 +924,22 @@ because two fixtures that differ in shape prove only that the shapes differ, whi
 not either rule looks.
 
 ⚠ **`SK3051` and `SK3004` are the same argument at two points in the call graph, separated by a
-count.** `SK3004` fires only where *exactly one* `CancellationToken` is in scope; `SK3051` only where
-there are *none*. No body satisfies both, and applying `SK3051`'s fix is what moves a body from the
+count.** `SK3004` reports a call with *exactly one* `CancellationToken` in scope; a call is evidence
+for `SK3051` only where there are *none*. Applying `SK3051`'s fix is what moves a body from the
 second set into the first — the pair is a chain rather than an overlap, and the test asserts the
 handover on one file rather than on two.
+
+⚠ **The disjointness claim is per call and not per body, and two sabotages are why it is written
+that way.** `SK3051`'s draft carried a second, method-level "declares no `CancellationToken`" check,
+which would have made the stronger per-body claim true. Sabotaging it turned nothing red: the scopes
+enclosing a call inside a body are a superset of the ones enclosing its declaration, so a method with
+a token parameter cannot contain a call with none, and the check was dead code no sabotage could
+kill. It is deleted, on `SK3043`'s precedent. ⚠ **Underneath it was a worse one.** The negative
+fixture meant to pin the count declared its parameter as `cancellationToken`, so the CS0100 guard
+silenced the rule before the count was ever consulted — the fixture was green and proved nothing.
+Renaming the parameter to `token` made the count load-bearing, and only then did sabotaging it turn
+the fixture red. Two guards, one hidden underneath the other, and only removing the first made the
+second reachable.
 
 ⚠ **`SK3051` is the batch's expensive decision and the fix is what costs it.** Appending a parameter
 — even an optional one — is CS0123 at any method group conversion, because optional parameters do not

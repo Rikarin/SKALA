@@ -173,9 +173,11 @@ public sealed class AsyncVoidShapeBatchTests {
         Assert.Single(without, static d => d.Id == RuleIds.AsyncMethodWithoutCancellation);
         Assert.DoesNotContain(without, static d => d.Id == RuleIds.CancellationTokenNotForwarded);
 
+        // ⚠ `token`, not `cancellationToken`. The conventional name would hit SK3051's CS0100 guard
+        // first, and the second half would then pass without the token count deciding anything.
         var with = source.Replace(
             "LoadAsync(string path)",
-            "LoadAsync(string path, CancellationToken cancellationToken)",
+            "LoadAsync(string path, CancellationToken token)",
             StringComparison.Ordinal
         );
 

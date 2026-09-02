@@ -207,11 +207,13 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
 
-        // ⚠ The disjointness with SK3004, as a number: none in scope here, exactly one there.
-        if (CancellationTokens.CountInScope(model, method, tokenType, cancellation) != 0) {
-            return;
-        }
-
+        // ⚠ There is no method-level "declares no CancellationToken" check here, and its absence is
+        // measured rather than assumed. The draft carried one; sabotaging it turned nothing red,
+        // because `Evidence` already requires *zero* tokens in scope at the call — and the scopes
+        // enclosing a call inside this body are a superset of the ones enclosing the declaration, so
+        // a body with a token parameter can never produce an invocation with none. The check was dead
+        // code no sabotage could kill. `negative/the-method-already-takes-a-token.cs` stays as the pin
+        // on the behaviour, which is now `Evidence`'s to keep.
         if (model.GetDeclaredSymbol(method, cancellation) is not { } declared
             || declared.ReturnType is not INamedTypeSymbol returned
             || !tasks.Contains(returned.OriginalDefinition)
