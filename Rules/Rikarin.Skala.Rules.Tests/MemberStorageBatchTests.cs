@@ -76,10 +76,10 @@ public sealed class MemberStorageBatchTests {
             }
 
             foreach (var diagnostic in RuleFixtures.Analyze(
-                RuleFixtures.Compile(File.ReadAllText(fixture.Path), fixture.Path),
-                Analyzers,
-                TestContext.Current.CancellationToken
-            )) {
+                         RuleFixtures.Compile(File.ReadAllText(fixture.Path), fixture.Path),
+                         Analyzers,
+                         TestContext.Current.CancellationToken
+                     )) {
                 seen.Add(diagnostic.Id);
             }
         }

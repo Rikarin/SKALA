@@ -30,7 +30,15 @@ public readonly record struct FormatterTags(bool Enabled, string Off, string On,
     ///     that says the *configurable* tags are off, and the oracle keeps honouring
     ///     <see cref="BuiltinOff" /> under it.
     /// </remarks>
-    public static FormatterTags None { get; }
+    /// <remarks>
+    ///     ⚠ <c>=&gt; default</c> rather than <c>{ get; }</c>, and <c>SK2131</c> is what asked for the
+    ///     change. Both spellings produce the same value; only this one <em>says</em> so. A get-only
+    ///     auto-property with no initializer and no constructor is indistinguishable from one somebody
+    ///     forgot to assign, which is the whole of what that rule reports — and a sentinel whose entire
+    ///     job is to be the default value is exactly the declaration that should not be ambiguous
+    ///     about it.
+    /// </remarks>
+    public static FormatterTags None => default;
 
     /// <summary>
     ///     The two tags <c>jb cleanupcode</c> honours whatever the four keys say.

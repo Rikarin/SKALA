@@ -13,20 +13,29 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <c>SK2131</c> — a get-only auto-property with no initializer that nothing ever assigns.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>This is the one shape of issue #24 the compiler leaves entirely alone, and the narrowing was
-///     measured rather than reasoned.</b> A probe built at <c>AnalysisMode=All</c> reports
+///     ⚠
+///     <b>
+///         This is the one shape of issue #24 the compiler leaves entirely alone, and the narrowing was
+///         measured rather than reasoned.
+///     </b> A probe built at <c>AnalysisMode=All</c> reports
 ///     <c>CS0649</c> for a <c>private</c>, an <c>internal</c> and a <c>private readonly</c> field that
 ///     nothing assigns, so the field half of the concept is the compiler's already and there is nothing
 ///     to add. A <c>public</c> field gets no <c>CS0649</c> — and cannot: any consumer outside the
 ///     compilation may write it, so the claim is not decidable here either. What is left is the
-///     property half, and it is decidable for a reason that is worth stating: <b>a property with only a
-///     <c>get</c> accessor and no initializer can be assigned from nowhere but a constructor of its own
-///     declaring type</b>. Every part of that type is in this compilation — a type cannot be split
+///     property half, and it is decidable for a reason that is worth stating:
+///     <b>
+///         a property with only a
+///         <c>get</c> accessor and no initializer can be assigned from nowhere but a constructor of its own
+///         declaring type
+///     </b>. Every part of that type is in this compilation — a type cannot be split
 ///     across assemblies, and a source generator's part is compiled source like any other — so "nothing
 ///     assigns it" is a fact this analysis can establish rather than a guess about callers.
 ///     <para>
-///         ⚠ <b>A non-nullable reference type under nullable warnings is declined, because
-///         <c>CS8618</c> already reports it</b> — verified on the same probe, on both an explicit and an
+///         ⚠
+///         <b>
+///             A non-nullable reference type under nullable warnings is declined, because
+///             <c>CS8618</c> already reports it
+///         </b> — verified on the same probe, on both an explicit and an
 ///         implicit constructor. ADR-008: hosting a diagnostic the platform already emits is the right
 ///         outcome, and reporting it a second time under a Skala id would put two findings on one
 ///         declaration. What survives the exclusion is everything <c>CS8618</c> cannot see: value types,
@@ -42,8 +51,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         same wall that closed #114 and #115; here the wall is only in front of reflection.
 ///     </para>
 ///     <para>
-///         ⚠ <b>A positional record property is never seen, and that is by construction rather than by
-///         a filter.</b> This rule reads <see cref="PropertyDeclarationSyntax" />, and a positional
+///         ⚠
+///         <b>
+///             A positional record property is never seen, and that is by construction rather than by
+///             a filter.
+///         </b> This rule reads <see cref="PropertyDeclarationSyntax" />, and a positional
 ///         record's property has none — the parameter is where it is written down — so no test on
 ///         <c>IsImplicitlyDeclared</c> is needed and none is performed. The shape would be declined
 ///         anyway, because a positional property is <c>{ get; init; }</c> rather than <c>{ get; }</c>.
@@ -85,8 +97,8 @@ public sealed class UnassignedGetOnlyPropertyAnalyzer : DiagnosticAnalyzer {
         // for everything below and costs one pass over the member list.
         var type = (INamedTypeSymbol)context.Symbol;
         if (!type.GetMembers()
-            .OfType<IPropertySymbol>()
-            .Any(static property => property is { IsReadOnly: true, IsAbstract: false, IsExtern: false })) {
+                .OfType<IPropertySymbol>()
+                .Any(static property => property is { IsReadOnly: true, IsAbstract: false, IsExtern: false })) {
             return;
         }
 
@@ -111,8 +123,7 @@ public sealed class UnassignedGetOnlyPropertyAnalyzer : DiagnosticAnalyzer {
             SyntaxKind.SimpleAssignmentExpression
         );
 
-        context.RegisterSymbolEndAction(
-            end => {
+        context.RegisterSymbolEndAction(end => {
                 foreach (var pair in candidates) {
                     if (assigned.ContainsKey(pair.Key)) {
                         continue;
@@ -193,5 +204,4 @@ public sealed class UnassignedGetOnlyPropertyAnalyzer : DiagnosticAnalyzer {
         !symbol.Type.IsValueType
         && symbol.NullableAnnotation != NullableAnnotation.Annotated
         && (context.SemanticModel.GetNullableContext(property.SpanStart) & NullableContext.WarningsEnabled) != 0;
-
 }

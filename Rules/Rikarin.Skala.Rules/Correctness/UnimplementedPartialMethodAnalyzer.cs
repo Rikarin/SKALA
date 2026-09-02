@@ -13,10 +13,16 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     <c>SK2133</c> — a <c>partial void</c> with no implementation that something calls anyway.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>A <c>partial</c> method with no implementation is legal, and erasing it is the feature —
-///     so the declaration on its own is never the finding.</b> The call is. When no implementing
-///     declaration exists the compiler removes the defining declaration <em>and every call to it,
-///     arguments included</em>, so a statement that reads as a call to a hook runs nothing, and any
+///     ⚠
+///     <b>
+///         A <c>partial</c> method with no implementation is legal, and erasing it is the feature —
+///         so the declaration on its own is never the finding.
+///     </b> The call is. When no implementing
+///     declaration exists the compiler removes the defining declaration
+///     <em>
+///         and every call to it,
+///         arguments included
+///     </em>, so a statement that reads as a call to a hook runs nothing, and any
 ///     work written into its arguments is deleted with it.
 ///     <para>
 ///         ⚠ <b>The other half of issue #186 is a compile error and was verified as one.</b> A C# 9
@@ -115,16 +121,13 @@ public sealed class UnimplementedPartialMethodAnalyzer : DiagnosticAnalyzer {
                 // declaration; `PartialDefinitionPart` covers the other direction defensively.
                 var definition = (called.PartialDefinitionPart ?? called).OriginalDefinition;
                 if (Unimplemented(definition)) {
-                    calls.Add(
-                        (definition, invocation.ArgumentList.Arguments.Any(static a => DoesWork(a.Expression)))
-                    );
+                    calls.Add((definition, invocation.ArgumentList.Arguments.Any(static a => DoesWork(a.Expression))));
                 }
             },
             SyntaxKind.InvocationExpression
         );
 
-        context.RegisterSymbolEndAction(
-            end => {
+        context.RegisterSymbolEndAction(end => {
                 foreach (var pair in declarations) {
                     var count = 0;
                     var sideEffecting = false;
@@ -151,8 +154,8 @@ public sealed class UnimplementedPartialMethodAnalyzer : DiagnosticAnalyzer {
                             + (count == 1 ? "one call site are" : count + " call sites are")
                             + " erased"
                             + (sideEffecting
-                                ? " — including the arguments, one of which does work that will therefore not happen"
-                                : "")
+                                    ? " — including the arguments, one of which does work that will therefore not happen"
+                                    : "")
                         )
                     );
                 }

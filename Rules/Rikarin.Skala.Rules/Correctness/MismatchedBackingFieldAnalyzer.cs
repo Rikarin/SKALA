@@ -18,8 +18,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     the first and one of the two field names is not changed. The type compiles, the property runs,
 ///     and it returns somebody else's value.
 ///     <para>
-///         ⚠ <b>The whole difficulty is that a name match between a property and a field is a
-///         convention, not a fact, and plenty of correct code deliberately breaks it.</b>
+///         ⚠
+///         <b>
+///             The whole difficulty is that a name match between a property and a field is a
+///             convention, not a fact, and plenty of correct code deliberately breaks it.
+///         </b>
 ///         <c>Count</c> over <c>_items</c> and <c>Value</c> over <c>_inner</c> are ordinary
 ///         indirection, and a rule that treated "this accessor touches a field whose name is not mine"
 ///         as the finding would report both. Two conditions must therefore hold together before
@@ -85,7 +88,8 @@ public sealed class MismatchedBackingFieldAnalyzer : DiagnosticAnalyzer {
         foreach (var accessor in property.AccessorList.Accessors) {
             var reference = accessor.IsKind(SyntaxKind.GetAccessorDeclaration)
                 ? Returned(accessor)
-                : accessor.IsKind(SyntaxKind.SetAccessorDeclaration) || accessor.IsKind(SyntaxKind.InitAccessorDeclaration)
+                : accessor.IsKind(SyntaxKind.SetAccessorDeclaration)
+                    || accessor.IsKind(SyntaxKind.InitAccessorDeclaration)
                     ? Written(accessor)
                     : null;
 
@@ -166,8 +170,8 @@ public sealed class MismatchedBackingFieldAnalyzer : DiagnosticAnalyzer {
             RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
             Right: IdentifierNameSyntax { Identifier.ValueText: "value" }
         } assignment
-            ? Storage(assignment.Left)
-            : null;
+                ? Storage(assignment.Left)
+                : null;
     }
 
     /// <summary>
@@ -176,10 +180,7 @@ public sealed class MismatchedBackingFieldAnalyzer : DiagnosticAnalyzer {
     static ExpressionSyntax? Storage(ExpressionSyntax expression) =>
         expression switch {
             IdentifierNameSyntax => expression,
-            MemberAccessExpressionSyntax {
-                Expression: ThisExpressionSyntax,
-                Name: IdentifierNameSyntax
-            } => expression,
+            MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax, Name: IdentifierNameSyntax } => expression,
             _ => null
         };
 

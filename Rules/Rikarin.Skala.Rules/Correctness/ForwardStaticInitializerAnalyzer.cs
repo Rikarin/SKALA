@@ -18,8 +18,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     declared later reads that field's <c>default</c> rather than its initialized value. Nothing
 ///     throws and nothing warns; the field simply holds zero, or null, for the life of the process.
 ///     <para>
-///         ⚠ <b>Being exact about which construct this is matters more here than anywhere else in the
-///         batch, because three neighbouring shapes look identical and are all correct.</b> A static
+///         ⚠
+///         <b>
+///             Being exact about which construct this is matters more here than anywhere else in the
+///             batch, because three neighbouring shapes look identical and are all correct.
+///         </b> A static
 ///         <em>property</em> is a method that runs when it is called, so a getter naming a field below
 ///         it returns whatever the field holds at that moment. A static <em>method</em> is not ordered
 ///         against anything. And a <c>static</c> constructor runs <em>after</em> every field
@@ -92,7 +95,7 @@ public sealed class ForwardStaticInitializerAnalyzer : DiagnosticAnalyzer {
 
             var reported = new HashSet<string>(StringComparer.Ordinal);
             foreach (var identifier in declarator.Initializer.Value.DescendantNodesAndSelf()
-                .OfType<IdentifierNameSyntax>()) {
+                         .OfType<IdentifierNameSyntax>()) {
                 if (Deferred(identifier, declarator.Initializer.Value) || InNameof(identifier)) {
                     continue;
                 }
