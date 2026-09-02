@@ -97,13 +97,13 @@ public static class NamingFixCommand {
 
         try {
             return await RunCoreAsync(
-                    request,
-                    target,
-                    reportablePaths,
-                    codeStyle.Analyzers,
-                    codeStyle.NamingFixer,
-                    cancellation
-                )
+                request,
+                target,
+                reportablePaths,
+                codeStyle.Analyzers,
+                codeStyle.NamingFixer,
+                cancellation
+            )
                 .ConfigureAwait(false);
         } catch (Exception exception) when (exception is IOException
                                                 or InvalidOperationException
@@ -225,7 +225,7 @@ public static class NamingFixCommand {
 
         if (attempted == MaximumRenames
             && await FindFirstAsync(solution, analyzers, allowed, rejected, cancellation).ConfigureAwait(false)
-                is not null) {
+            is not null) {
             return new NamingFixOutcome(
                 applied,
                 [],
@@ -262,7 +262,7 @@ public static class NamingFixCommand {
             var guard = FixCommand.TagGuard(path, beforeText.ToString());
             if (!guard.IsEmpty
                 && (await after.GetTextChangesAsync(before, cancellation).ConfigureAwait(false))
-                .Any(change => guard.Touches(change.Span))) {
+                    .Any(change => guard.Touches(change.Span))) {
                 return new NamingFixOutcome(
                     0,
                     [],
@@ -301,15 +301,15 @@ public static class NamingFixCommand {
             }
 
             var diagnostics = await compilation.WithAnalyzers(
-                    analyzers,
-                    new CompilationWithAnalyzersOptions(
-                        project.AnalyzerOptions,
-                        null,
-                        true,
-                        false,
-                        false
-                    )
+                analyzers,
+                new CompilationWithAnalyzersOptions(
+                    project.AnalyzerOptions,
+                    null,
+                    true,
+                    false,
+                    false
                 )
+            )
                 .GetAnalyzerDiagnosticsAsync(cancellation)
                 .ConfigureAwait(false);
 
