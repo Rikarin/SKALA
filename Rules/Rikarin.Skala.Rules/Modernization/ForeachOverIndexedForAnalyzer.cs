@@ -312,9 +312,19 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
     ///     A name for the element that nothing in the member already uses, derived from the collection's.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Both halves of the scoping guard are asked, for the reason <c>RewriteGuards</c> documents:
-    ///     a lookup answers what is in scope at the loop and a member scan answers what a neighbouring
-    ///     scope declares, and <c>CS0136</c> is about the second.
+    ///     ⚠ Both halves of <c>RewriteGuards</c>' scoping guard are asked — a lookup answers what is in
+    ///     scope at the loop and a member scan answers what a neighbouring scope declares — <b>and
+    ///     neither of them is enough here.</b> The new name is declared <em>outside</em> a body that
+    ///     stays where it is, so what collides with it is what the <em>loop itself</em> declares:
+    ///     <c>LookupSymbols</c> at the loop's start position cannot see a pattern variable scoped to an
+    ///     <c>if</c> inside the body, and <c>DeclaredElsewhereInMember</c> skips every node overlapping
+    ///     the span being moved, which is the whole loop.
+    ///     <para>
+    ///         ⚠ Found by reading a corpus finding rather than by a test: Serilog's
+    ///         <c>MessageTemplate.GetElementsOfTypeToArray</c> loops over <c>tokens</c> and its body
+    ///         declares <c>if (tokens[i] is TResult token)</c>, so the obvious element name was already
+    ///         taken and the fix produced <c>CS0136</c>. The third scan is what stops it.
+    ///     </para>
     /// </remarks>
     static string? ElementName(
         string receiver,
@@ -349,7 +359,8 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
             }
 
             if (RewriteGuards.WouldCollide(model, loop.SpanStart, candidate, cancellation)
-                || RewriteGuards.DeclaredElsewhereInMember(loop, candidate)) {
+                || RewriteGuards.DeclaredElsewhereInMember(loop, candidate)
+                || DeclaredInside(loop, candidate)) {
                 continue;
             }
 
@@ -357,5 +368,31 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     Whether the loop itself declares <paramref name="name" /> anywhere inside it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The third scan, and the one the two in <c>RewriteGuards</c> cannot stand in for. The new
+    ///     iteration variable is declared in the header and its scope is the body, so every name the
+    ///     body introduces — a pattern variable, an <c>out var</c>, a local, a nested loop's own
+    ///     variable — is a name it would shadow. The index's own declarator is skipped, because that
+    ///     declaration is what the fix deletes.
+    /// </remarks>
+    static bool DeclaredInside(ForStatementSyntax loop, string name) {
+        foreach (var node in loop.DescendantNodes()) {
+            if (loop.Declaration is not null && node.Span.OverlapsWith(loop.Declaration.Span)) {
+                continue;
+            }
+
+            foreach (var declared in RewriteGuards.DeclaredNames(node)) {
+                if (string.Equals(declared, name, StringComparison.Ordinal)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
