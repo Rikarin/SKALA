@@ -139,25 +139,19 @@ public sealed class TestAndCastPatternAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (NullComparison.InsideExpressionTree(model, statement, cancellation)
-            // ⚠ The node question, deliberately: the fix's second edit is `LineSpanOf(statement)`,
-            // so the comment above the declaration really is inside the text this deletes.
-            || RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(statement)
-            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(check.SyntaxTree, check.Span)) {
+        if (NullComparison.InsideExpressionTree(model, statement, cancellation)) {
             return;
         }
 
-        var replacement = conversion.Left + " is " + tested + " " + name;
-        context.ReportDiagnostic(
-            Diagnostic.Create(
-                Descriptor,
-                Location.Create(statement.SyntaxTree, check.Span),
-                FixEdits.Pack(
-                    (check.Span, replacement),
-                    (RewriteGuards.LineSpanOf(statement), string.Empty)
-                ),
-                "The conversion and the null check are one pattern: `" + RewriteGuards.Trim(replacement) + "`"
-            )
+        PatternMerge.ReportOrDecline(
+            context,
+            Descriptor,
+            statement,
+            check.Span,
+            conversion.Left,
+            tested,
+            name,
+            "The conversion and the null check are one pattern"
         );
     }
 

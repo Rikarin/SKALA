@@ -123,22 +123,15 @@ public sealed class TypePatternAnalyzer : DiagnosticAnalyzer {
         // `first` — and separately REWRITES the `is` test, so a comment inside the test is text the
         // second edit destroys. `negative/a-comment-inside-the-rewritten-test.cs` is that case, and
         // it fired before the second guard existed.
-        if (RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(first)
-            || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(test.SyntaxTree, test.Span)) {
-            return;
-        }
-
-        var replacement = test.Left + " is " + tested + " " + name;
-        context.ReportDiagnostic(
-            Diagnostic.Create(
-                Descriptor,
-                Location.Create(statement.SyntaxTree, test.Span),
-                FixEdits.Pack(
-                    (test.Span, replacement),
-                    (RewriteGuards.LineSpanOf(first), string.Empty)
-                ),
-                "The test and the cast are one pattern: `" + RewriteGuards.Trim(replacement) + "`"
-            )
+        PatternMerge.ReportOrDecline(
+            context,
+            Descriptor,
+            first,
+            test.Span,
+            test.Left,
+            tested,
+            name,
+            "The test and the cast are one pattern"
         );
     }
 
