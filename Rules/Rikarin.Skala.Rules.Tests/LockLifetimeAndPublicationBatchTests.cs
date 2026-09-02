@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Async;
 using Rikarin.Skala.Rules.Correctness;
@@ -215,6 +216,71 @@ public sealed class LockLifetimeAndPublicationBatchTests {
 
         Assert.DoesNotContain(diagnostics, static diagnostic => diagnostic.Id == "AD0001");
     }
+
+    /// <summary>
+    ///     ⚠ <b>A <c>lock</c> in a top-level program is examined</b> (#307), and the two rules that are
+    ///     still blind to one are named by measurement rather than by reading.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The synthesized <c>Program</c> type declares itself at the <c>CompilationUnitSyntax</c>,
+    ///         so <c>SK3061</c>'s <c>OfType&lt;TypeDeclarationSyntax&gt;()</c> filter dropped the whole
+    ///         file. ⚠ It cannot be a fixture: the harness compiles a <c>DynamicallyLinkedLibrary</c> and
+    ///         top-level statements in one are <c>CS8805</c>, so the fixture would fail to compile and
+    ///         prove nothing. The compilation is built here with <c>ConsoleApplication</c> instead.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The same source is run twice, once at top level and once inside a class, and the two
+    ///         results are compared rather than each asserted alone. A single assertion would pass on the
+    ///         day the rule stopped firing anywhere.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b><c>SK3060</c> is blind to the same file and is deliberately not asserted either
+    ///         way.</b> It declines through a different mechanism — its <c>Body</c> walk returns
+    ///         <c>null</c> at a type declaration, which is what makes a field initializer decline too —
+    ///         so pinning its silence here would turn a recorded gap into a promise. ⚠ <c>SK3044</c>,
+    ///         which #307 named alongside <c>SK3061</c>, has an <em>empty</em> gap: it reports on a
+    ///         field, and top-level statements declare only locals.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void SK3061_ExaminesALockInATopLevelProgram() {
+        const string body = """
+                            var gate = new object();
+
+                            lock (gate) {
+                                System.Console.WriteLine("one monitor per invocation");
+                            }
+                            """;
+
+        var top = Ids(TopLevel(body));
+        var inside = Ids(
+            RuleFixtures.Compile("static class Runner { static void Go() { " + body + " } }", "inside.cs")
+        );
+
+        Assert.Contains("SK3061", inside);
+        Assert.Contains("SK3061", top);
+    }
+
+    static string[] Ids(Compilation compilation) =>
+        RuleFixtures.Analyze(
+                (CSharpCompilation)compilation,
+                Analyzers,
+                TestContext.Current.CancellationToken
+            )
+            .Select(static diagnostic => diagnostic.Id)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+    /// <summary>The same compilation the fixture harness builds, as an executable.</summary>
+    static CSharpCompilation TopLevel(string source) =>
+        CSharpCompilation.Create(
+            "top-level",
+            [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Preview), "top.cs")],
+            RuleFixtures.References,
+            new CSharpCompilationOptions(OutputKind.ConsoleApplication)
+        );
 
     /// <summary>
     ///     ⚠ <b>Shape A's exclusion is a static <em>field</em>, because that is all <c>SK2134</c> can
