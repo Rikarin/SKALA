@@ -285,3 +285,8 @@ SK2131 unassigned-get-only-property
 SK2132 mismatched-backing-field
 SK2133 unimplemented-partial-method
 SK2134 instance-write-to-static
+SK2170 misleading-body-indentation
+SK2171 variable-length-hex-escape
+SK2172 forgiven-is-operand
+SK2173 negated-empty-pattern
+SK2174 unparenthesised-precedence-mix

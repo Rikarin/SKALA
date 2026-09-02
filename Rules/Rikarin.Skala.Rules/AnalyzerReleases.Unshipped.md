@@ -244,3 +244,8 @@ SK2131 | Skala.Correctness | Warning | A get-only auto-property nothing ever ass
 SK2132 | Skala.Correctness | Warning | An accessor reaches for another property's backing field.
 SK2133 | Skala.Correctness | Info | A called `partial void` with no implementing declaration.
 SK2134 | Skala.Correctness | Warning | Instance code assigns its own type's static field.
+SK2170 | Skala.Correctness | Warning | The indentation claims a block the body does not have.
+SK2171 | Skala.Correctness | Warning | The `\x` escape's length depends on what follows it.
+SK2172 | Skala.Correctness | Warning | A null-forgiving `!` stands where it reads as a negated `is`.
+SK2173 | Skala.Correctness | Warning | `is not { }` is `is null` spelled backwards.
+SK2174 | Skala.Correctness | Info | A shift or bitwise operand groups only by precedence.
