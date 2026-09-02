@@ -1115,9 +1115,11 @@ class library with empty `Directory.Build.props`/`.targets` above it, one shape 
 | `lock (readonly object field)` | silent | silent |
 | `lock (mutable object field)` | silent | silent |
 
-⚠ `CA2002` is documented as being about weak-identity *types* — `String`, `MarshalByRefObject`,
-`Thread`, `MemberInfo`, the fatal exceptions — and neither `this` nor a `Type` is one of those, so
-the first two rows are behaviour the documentation does not describe. ⚠ **Its default state is
+⚠ The first two rows are the ones to know about. `CA2002`'s own shipped description says only that
+"an object is said to have a weak identity when it can be directly accessed across application
+domain boundaries", which reads as a rule about a handful of framework *types* and gives no reason
+to expect `lock (this)` or `lock (typeof(T))` to be reported — they are, and that was found by
+measuring rather than by reading. ⚠ **Its default state is
 "off", not "hidden"**: the shipped descriptor reads `IsEnabledByDefault=False`,
 `DefaultSeverity=Warning`, tagged `EnabledRuleInAggressiveMode`, and the SDK lists it only in
 `analysislevel_10_all.globalconfig`. So it is invisible in an ordinary build **and visible in
