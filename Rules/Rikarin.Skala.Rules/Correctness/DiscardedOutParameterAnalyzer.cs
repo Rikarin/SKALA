@@ -257,10 +257,9 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
     /// <remarks>
     ///     ⚠ Asked of the operation tree rather than of the syntax, because syntax answers it wrongly:
     ///     <c>M(out _)</c> parses its <c>_</c> as an ordinary <see cref="IdentifierNameSyntax" /> and
-    ///     only binding says it is a discard. <c>out var _</c> is the other spelling — a
-    ///     <see cref="DeclarationExpressionSyntax" /> whose designation is a discard — and it arrives as
-    ///     an <see cref="IDeclarationExpressionOperation" /> wrapping an
-    ///     <see cref="IDiscardOperation" />.
+    ///     only binding says it is a discard, while <c>out var _</c> and <c>out int _</c> are
+    ///     <see cref="DeclarationExpressionSyntax" /> nodes with a discard designation. See
+    ///     <see cref="IsDiscard" /> for what the operation tree does with the three of them.
     /// </remarks>
     static void Record(OperationAnalysisContext context, ConcurrentBag<CallSite> calls) {
         var invocation = (IInvocationOperation)context.Operation;
@@ -272,9 +271,22 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
         }
     }
 
-    static bool IsDiscard(IOperation value) =>
-        value is IDiscardOperation
-        || value is IDeclarationExpressionOperation declaration && declaration.Expression is IDiscardOperation;
+    /// <summary>Whether the argument passed to an <c>out</c> parameter is a discard.</summary>
+    /// <remarks>
+    ///     ⚠ <b>One test, and the second one that was written here was dead code — measured, not
+    ///     assumed.</b> The draft also unwrapped an <see cref="IDeclarationExpressionOperation" />
+    ///     looking for a discard inside it, because <c>out var _</c> and <c>out int _</c> are
+    ///     <see cref="DeclarationExpressionSyntax" /> nodes and <c>out _</c> is not. In the operation
+    ///     tree they are not distinguishable: all three arrive as a bare
+    ///     <see cref="IDiscardOperation" />, and sabotaging the unwrap left every fixture green —
+    ///     including <c>positive/an-explicitly-typed-discard</c>, written specifically to reach it.
+    ///     The syntactic difference is real and the semantic one does not exist, which is the reason
+    ///     the question is asked of the operation at all.
+    /// </remarks>
+    static bool IsDiscard(IOperation value) => value is IDiscardOperation;
+
+    /// <summary>The empty count table a method nobody calls is measured against.</summary>
+    static readonly Dictionary<int, (int Total, int Discarded)> NoCalls = new();
 
     static void Report(
         CompilationAnalysisContext context,
@@ -302,16 +314,26 @@ public sealed class DiscardedOutParameterAnalyzer : DiagnosticAnalyzer {
         }
 
         foreach (var pair in candidates) {
-            if (referenced.ContainsKey(pair.Value.Name)
-                || !seen.TryGetValue(pair.Key, out var byOrdinal)) {
+            if (referenced.ContainsKey(pair.Value.Name)) {
                 continue;
             }
 
+            // ⚠ A method with no call sites at all must reach the count below rather than be skipped
+            // here, or the guard that refuses it is never the line that refuses it — and a guard no
+            // sabotage can reach is not a guard. This spelling was found by sabotaging the wrong line
+            // and getting no fixture red.
+            if (!seen.TryGetValue(pair.Key, out var byOrdinal)) {
+                byOrdinal = NoCalls;
+            }
+
             foreach (var parameter in pair.Value.Parameters) {
-                // ⚠ Guard 3. No call site is not unanimity, it is an absence of evidence.
-                if (!byOrdinal.TryGetValue(parameter.Ordinal, out var counts)
-                    || counts.Total == 0
-                    || counts.Discarded != counts.Total) {
+                byOrdinal.TryGetValue(parameter.Ordinal, out var counts);
+
+                // ⚠ Guard 3, and it is `Total == 0` that carries it. Zero call sites is an absence of
+                // evidence, not unanimity — and `0 discarded of 0` passes the unanimity test on its
+                // own, which is exactly how this rule would fire on every uncalled `private` helper in
+                // every tree.
+                if (counts.Total == 0 || counts.Discarded != counts.Total) {
                     continue;
                 }
 
