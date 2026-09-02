@@ -2,7 +2,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 using System.Linq;
@@ -70,36 +69,27 @@ public sealed class PlainEnumBitwiseAnalyzer : DiagnosticAnalyzer {
         );
     }
 
+    // ⚠ **There is deliberately no `OperatorMethod: null` guard here, and a sabotage is why.** The
+    // first draft carried one on all three shapes, described as "keeps this to the built-in enum
+    // operators". Removing it turned nothing red, and the reason is not a missing fixture: C# will
+    // not let an operator be declared on an enum type, and an enum converts implicitly to nothing
+    // that could declare one, so a `|` whose operand type is an enum can never resolve to a
+    // user-defined method. The operand-type check below is the whole guard, and it was doing all the
+    // work already. `negative/user-defined-operator.cs` stays, because a `Mask` struct with its own
+    // `|` is exactly what that check has to decline.
+
     static void AnalyzeBinary(SyntaxNodeAnalysisContext context, INamedTypeSymbol? flags) {
         var binary = (BinaryExpressionSyntax)context.Node;
-
-        // ⚠ `OperatorMethod: null` keeps this to the built-in enum operators. A user-defined `|`
-        // on a wrapper struct is somebody's designed API, not a member combination.
-        if (context.SemanticModel.GetOperation(context.Node, context.CancellationToken)
-            is not IBinaryOperation { OperatorMethod: null }) {
-            return;
-        }
-
         Report(context, binary.OperatorToken, binary.Left, flags);
     }
 
     static void AnalyzeAssignment(SyntaxNodeAnalysisContext context, INamedTypeSymbol? flags) {
         var assignment = (AssignmentExpressionSyntax)context.Node;
-        if (context.SemanticModel.GetOperation(context.Node, context.CancellationToken)
-            is not ICompoundAssignmentOperation { OperatorMethod: null }) {
-            return;
-        }
-
         Report(context, assignment.OperatorToken, assignment.Left, flags);
     }
 
     static void AnalyzeUnary(SyntaxNodeAnalysisContext context, INamedTypeSymbol? flags) {
         var unary = (PrefixUnaryExpressionSyntax)context.Node;
-        if (context.SemanticModel.GetOperation(context.Node, context.CancellationToken)
-            is not IUnaryOperation { OperatorMethod: null }) {
-            return;
-        }
-
         Report(context, unary.OperatorToken, unary.Operand, flags);
     }
 
