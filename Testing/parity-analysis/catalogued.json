@@ -223,5 +223,7 @@
   "UseDeconstruction": "SK1070",
   "UseWithExpressionToCopyRecord": "SK1071",
   "RedundantSpreadElement": "SK1072",
-  "UseEventArgsEmptyField": "SK1073"
+  "UseEventArgsEmptyField": "SK1073",
+  "BitwiseOperatorOnEnumWithoutFlags": "SK2120",
+  "TryCastAlwaysSucceeds": "SK2121"
 }
