@@ -301,3 +301,6 @@ SK2230 | Skala.Correctness | Warning | The concatenation fuses a word into the S
 SK2231 | Skala.Correctness | Warning | The command's SQL names a parameter nothing supplies.
 SK2232 | Skala.Correctness | Warning | The load context's own resolver loads outside it.
 SK2233 | Skala.Correctness | Warning | The `Type` passed cannot satisfy what the API asks for.
+SK5040 | Skala.Security | Error | An XML resolver put back where the platform resolves nothing.
+SK5041 | Skala.Security | Error | The key-derivation salt is fixed at compile time.
+SK5042 | Skala.Security | Error | A file or directory created writable by every local user.

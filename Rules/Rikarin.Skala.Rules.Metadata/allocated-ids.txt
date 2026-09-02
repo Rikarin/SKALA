@@ -342,3 +342,6 @@ SK2230 sql-fragments-run-together
 SK2231 command-parameter-not-supplied
 SK2232 assembly-loaded-outside-its-context
 SK2233 mistaken-type-argument
+SK5040 xml-resolver-reenabled
+SK5041 fixed-key-derivation-salt
+SK5042 world-writable-file-mode

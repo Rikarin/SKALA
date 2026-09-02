@@ -1,11 +1,9 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using Rikarin.Skala.Rules.Async;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
-using System.Linq;
 
 namespace Rikarin.Skala.Rules.Security;
 
@@ -155,112 +153,32 @@ public sealed class PredictableInitializationVectorAnalyzer : DiagnosticAnalyzer
 
     /// <summary>Whether an expression's value is fixed at compile time, and how it is written.</summary>
     /// <remarks>
-    ///     ⚠ Every case here is decided from the expression itself. Nothing resolves a local, because
+    ///     ⚠ Every case is decided from the expression itself. Nothing resolves a local, because
     ///     the allocate-then-fill shape (<c>new byte[16]</c> handed to
     ///     <c>RandomNumberGenerator.Fill</c>) is correct code that a resolving rule would report.
+    ///     <para>
+    ///         ⚠ The constant test itself lives in <see cref="ConstantBytes" /> and is shared with
+    ///         <c>SK5041</c>, which asks the same question of a key-derivation salt. An expression that
+    ///         is a constant IV is a constant salt, and the two rules must not be able to disagree about
+    ///         which expressions those are. What stays here is the part that is about ciphers: the
+    ///         wording, and <c>aes.IV = aes.Key</c>, which is not a constant at all.
+    ///     </para>
     /// </remarks>
     static string? Predictable(IOperation value, Known known) {
-        var operation = Unwrap(value);
-
-        // ⚠ On syntax, because `[1, 2, …]` lowers to an operation kind this analyzer would have to
-        // name to match, and naming it pins the Roslyn version the rule compiles against.
-        if (operation.Syntax is CollectionExpressionSyntax collection && AllLiterals(collection)) {
-            return "the initialisation vector is a list of constants";
+        // `aes.IV = aes.Key` — not a constant, so ConstantBytes cannot see it, and as broken as one.
+        if (ConstantBytes.Unwrap(value) is IPropertyReferenceOperation { Property.Name: "Key" } property
+            && Inherits(property.Property.ContainingType, known.Symmetric)) {
+            return "the key is used as the initialisation vector";
         }
 
-        switch (operation) {
-            // `new byte[16]` — an array of zeros, written at the assignment, so nothing filled it.
-            case IArrayCreationOperation { Initializer: null }:
-                return "the initialisation vector is an array of zeros";
-
-            // `new byte[] { 1, 2, … }` and `[1, 2, …]`.
-            case IArrayCreationOperation { Initializer: { } initializer }
-                when initializer.ElementValues.All(static element => Unwrap(element).ConstantValue.HasValue):
-                return "the initialisation vector is a list of constants";
-
-            case IInvocationOperation invocation:
-                return FromCall(invocation, known);
-
-            // `static readonly byte[] Iv = { 1, 2, … }`.
-            case IFieldReferenceOperation { Field: { IsStatic: true } field } when ConstantArrayField(field):
-                return "the initialisation vector is the constant field `" + field.Name + "`";
-
-            // `aes.IV = aes.Key`.
-            case IPropertyReferenceOperation { Property.Name: "Key" } property
-                when Inherits(property.Property.ContainingType, known.Symmetric):
-                return "the key is used as the initialisation vector";
-
-            default:
-                return null;
-        }
-    }
-
-    static string? FromCall(IInvocationOperation invocation, Known known) {
-        if (invocation.Arguments.Length != 1 || !Unwrap(invocation.Arguments[0].Value).ConstantValue.HasValue) {
-            return null;
-        }
-
-        var containing = invocation.TargetMethod.ContainingType;
-        if (invocation.TargetMethod.Name == "GetBytes" && Inherits(containing, known.Encoding)) {
-            return "the initialisation vector is the bytes of a literal string";
-        }
-
-        if (SymbolEqualityComparer.Default.Equals(containing, known.Convert)
-            && (invocation.TargetMethod.Name == "FromBase64String"
-                || invocation.TargetMethod.Name == "FromHexString")) {
-            return "the initialisation vector is decoded from a literal";
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    ///     Whether a field is declared with an explicit list of literal elements.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Decided on syntax, and the list must be non-empty. A field initialised
-    ///     <c>= new byte[16]</c> is the allocate-then-fill shape and a static constructor may well
-    ///     fill it; <c>= { 1, 2, 3 }</c> cannot be anything but a hard-coded value.
-    /// </remarks>
-    static bool ConstantArrayField(IFieldSymbol field) {
-        foreach (var reference in field.DeclaringSyntaxReferences) {
-            if (reference.GetSyntax() is not VariableDeclaratorSyntax { Initializer.Value: { } initializer }) {
-                continue;
-            }
-
-            var elements = initializer switch {
-                ArrayCreationExpressionSyntax { Initializer: { } list } => list.Expressions.Count,
-                ImplicitArrayCreationExpressionSyntax implicitly => implicitly.Initializer.Expressions.Count,
-                InitializerExpressionSyntax braces => braces.Expressions.Count,
-                CollectionExpressionSyntax collection => collection.Elements.Count,
-                _ => 0
-            };
-
-            if (elements > 0 && AllLiterals(initializer)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    static bool AllLiterals(ExpressionSyntax initializer) {
-        var expressions = initializer switch {
-            ArrayCreationExpressionSyntax { Initializer: { } list } => list.Expressions.ToArray(),
-            ImplicitArrayCreationExpressionSyntax implicitly => implicitly.Initializer.Expressions.ToArray(),
-            InitializerExpressionSyntax braces => braces.Expressions.ToArray(),
-            CollectionExpressionSyntax collection => collection.Elements
-                .OfType<ExpressionElementSyntax>()
-                .Select(static element => element.Expression)
-                .ToArray(),
-            _ => System.Array.Empty<ExpressionSyntax>()
+        return ConstantBytes.Classify(value, known.Encoding, known.Convert, out var fieldName) switch {
+            ConstantByteKind.ZeroArray => "the initialisation vector is an array of zeros",
+            ConstantByteKind.LiteralList => "the initialisation vector is a list of constants",
+            ConstantByteKind.LiteralStringBytes => "the initialisation vector is the bytes of a literal string",
+            ConstantByteKind.DecodedLiteral => "the initialisation vector is decoded from a literal",
+            ConstantByteKind.ConstantField => "the initialisation vector is the constant field `" + fieldName + "`",
+            _ => null
         };
-
-        return expressions.Length > 0
-            && expressions.All(static expression =>
-                expression is LiteralExpressionSyntax
-                    or PrefixUnaryExpressionSyntax { Operand: LiteralExpressionSyntax }
-            );
     }
 
     /// <summary>The symbol an expression names, for the "the key is also the IV" comparison.</summary>

@@ -166,6 +166,8 @@ public sealed class RuleFixtureTests {
         new UnparenthesisedPrecedenceMixAnalyzer(),
         new XmlSignatureAnalyzer(),
         new PredictableInitializationVectorAnalyzer(), new AsymmetricKeySizeAnalyzer(),
+        new XmlResolverReenabledAnalyzer(), new FixedKeyDerivationSaltAnalyzer(),
+        new WorldWritableFileModeAnalyzer(),
         new SingleUseTemporaryAnalyzer(), new SplitDeclarationAndAssignmentAnalyzer(),
         new LocalFunctionBeforeJumpAnalyzer(), new SharedBranchTailAnalyzer(),
         new InvalidConstantIndexOrRangeAnalyzer(), new UnchangingLoopConditionAnalyzer(),
