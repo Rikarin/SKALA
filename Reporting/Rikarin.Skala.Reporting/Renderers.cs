@@ -477,7 +477,9 @@ public static class AgentRenderer {
 ///     </para>
 /// </remarks>
 static class Lines {
-    internal static StringBuilder Line(this StringBuilder builder) => builder.Append('\n');
+    extension(StringBuilder builder) {
+        internal StringBuilder Line() => builder.Append('\n');
 
-    internal static StringBuilder Line(this StringBuilder builder, string text) => builder.Append(text).Append('\n');
+        internal StringBuilder Line(string text) => builder.Append(text).Append('\n');
+    }
 }
