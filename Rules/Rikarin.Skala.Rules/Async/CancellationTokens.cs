@@ -255,6 +255,7 @@ internal static class CancellationTokens {
         }
 
         return Omitted(target, tokenType) is not null
-            || HasAppendedOverload(target, tokenType) && AllPositional(arguments, target);
+            || HasAppendedOverload(target, tokenType)
+            && AllPositional(arguments, target);
     }
 }

@@ -33,8 +33,11 @@ namespace Rikarin.Skala.Rules.Async;
 ///         is in the message.
 ///     </para>
 ///     <para>
-///         ⚠ <b>This rule is <see cref="RuleScope.Compilation" />-scoped for the same reason
-///         <c>SK3001</c> is, and it is the fix that costs it.</b> Appending a parameter — even an
+///         ⚠
+///         <b>
+///             This rule is <see cref="RuleScope.Compilation" />-scoped for the same reason
+///             <c>SK3001</c> is, and it is the fix that costs it.
+///         </b> Appending a parameter — even an
 ///         optional one — breaks a method group conversion: <c>Func&lt;Task&gt; f = LoadAsync;</c> is
 ///         CS0123 the moment <c>LoadAsync</c> gains a parameter, because optional parameters do not
 ///         participate in delegate conversion. Whether a method is used that way is not visible in the
@@ -101,7 +104,10 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
                                     Descriptor,
                                     candidate.Location,
                                     candidate.Fix,
-                                    "`" + candidate.Name + "` calls `" + candidate.Callee
+                                    "`"
+                                    + candidate.Name
+                                    + "` calls `"
+                                    + candidate.Callee
                                     + "`, which takes a `CancellationToken`, and accepts none to give it"
                                 )
                             );
@@ -283,7 +289,9 @@ public sealed class UncancellableAsyncMethodAnalyzer : DiagnosticAnalyzer {
     }
 
     static bool IsInsideCleanup(SyntaxNode node, SyntaxNode stop) {
-        for (var current = node.Parent; current is not null && !ReferenceEquals(current, stop); current = current.Parent) {
+        for (var current = node.Parent;
+             current is not null && !ReferenceEquals(current, stop);
+             current = current.Parent) {
             if (current is CatchClauseSyntax or FinallyClauseSyntax) {
                 return true;
             }

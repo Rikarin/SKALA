@@ -97,7 +97,11 @@ public sealed class AsyncVoidShapeBatchTests {
         // The same body, written as the declaration the lambda was hiding.
         var declaration = lambda
             .Replace("public void Run(Action callback) => callback();", "", StringComparison.Ordinal)
-            .Replace("public void Wire() {\n        Run(async () => {", "public async void Wire() {", StringComparison.Ordinal)
+            .Replace(
+                "public void Wire() {\n        Run(async () => {",
+                "public async void Wire() {",
+                StringComparison.Ordinal
+            )
             .Replace("        });\n    }", "    }", StringComparison.Ordinal);
 
         var fromDeclaration = Analyze(declaration, "Wiring.cs");

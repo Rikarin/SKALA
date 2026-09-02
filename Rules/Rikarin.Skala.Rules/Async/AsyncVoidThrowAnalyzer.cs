@@ -26,8 +26,11 @@ namespace Rikarin.Skala.Rules.Async;
 ///         production.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Lambdas are not matched at all, and that is what makes this disjoint from
-///         <c>SK3052</c>.</b> An <c>async</c> lambda converted to a <c>void</c>-returning delegate is
+///         ⚠
+///         <b>
+///             Lambdas are not matched at all, and that is what makes this disjoint from
+///             <c>SK3052</c>.
+///         </b> An <c>async</c> lambda converted to a <c>void</c>-returning delegate is
 ///         <c>async void</c> too, and it is reported once, at the conversion, by <c>SK3052</c> — which
 ///         is where the remedy is. Reporting the throw inside it as well would be two findings about
 ///         one mistake with only one of them actionable, so the owner has to be a declaration that

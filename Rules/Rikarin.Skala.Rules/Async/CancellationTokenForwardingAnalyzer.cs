@@ -78,7 +78,7 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
         var edit = CancellationTokens.Omitted(target, tokenType) is { } optional
             ? Append(invocation, arguments, optional.Name + ": " + available)
             : CancellationTokens.HasAppendedOverload(target, tokenType)
-            && CancellationTokens.AllPositional(arguments, target)
+                && CancellationTokens.AllPositional(arguments, target)
                 ? Append(invocation, arguments, available)
                 : (Edit?)null;
 
