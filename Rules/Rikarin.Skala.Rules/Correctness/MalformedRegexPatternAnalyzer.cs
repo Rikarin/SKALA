@@ -26,8 +26,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         Construction parses; it does not match. No pattern can make this backtrack.
 ///     </para>
 ///     <para>
-///         ⚠ <b><c>SYSLIB1042</c> already owns the <c>[GeneratedRegex]</c> half, as an on-by-default
-///         compiler error</b> — measured on a probe outside this repository with empty
+///         ⚠
+///         <b>
+///             <c>SYSLIB1042</c> already owns the <c>[GeneratedRegex]</c> half, as an on-by-default
+///             compiler error
+///         </b> — measured on a probe outside this repository with empty
 ///         <c>Directory.Build.props</c>/<c>.targets</c> above it, in the SDK's pristine default state.
 ///         This rule registers on invocations and object creations only, so the attribute form is out of
 ///         reach by construction rather than by filter.

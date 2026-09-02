@@ -4985,3 +4985,95 @@ deliberate null-object are all correct and all indistinguishable from a stub. Re
 neighbour in spirit and is the case a reader spots unaided. No id is allocated for either concept:
 ADR-012 makes an id permanent, and a number taken for a rule nobody has specified is a number that
 cannot be given back.
+
+### The measurement
+
+`skala check --load=binlog --binlog … --require-fresh-binlog --no-cache`, against a Release CLI
+rebuilt for the run, over one project per library created outside this repository with empty
+`Directory.Build.props`/`.targets` above it.
+
+⚠ **The corpus keeps three variants of every file and compiling all three is what produces the
+spurious duplicate-member flood.** `X.cs`, `X.expected.cs` and `X.arranged.expected.cs` are the
+formatter's input and its two oracles; putting all three in one project gave **7 920 `CS0111` and
+1 380 `CS0101` on Vixen alone**, and keeping only the originals removes both entirely. Any finding
+count taken without that step is also three times the real one.
+
+⚠ **A bare project has `ImplicitUsings` off and the corpus assumes it on.** Enabling it on Vixen
+takes `CS0246` from **9 146 to 7 856** and removes all 16 `CS0066`. What is left is missing package
+references the extracted sources never carried, which no project setting can supply.
+
+| tree | files | `CS` | Skala findings | distinct rules | `SK2240` | `SK2241` | `SK2242` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Vixen | 200 | 11 113 | 313 | 25 | 0 | 0 | 0 |
+| Serilog | 70 | 1 125 | 155 | 22 | 0 | 0 | 0 |
+| Newtonsoft.Json | 110 | 2 619 | 297 | 39 | 0 | 0 | 0 |
+| rest of the corpus | 1 265 | 48 665 | 2 329 | 62 | 0 | 0 | 0 |
+
+**`SK9021` is zero on all four**, which is what makes the zeros above claims about the whole tree:
+every `.cs` file under each project was named by the recorded compilation, so nothing was silently
+outside it. `SK9030` is zero — no analyzer crashed — and `SK9010` is zero, so nothing was skipped as
+unparseable.
+
+⚠ **The instrument was verified before any zero was believed.** A file declaring one instance of
+each of the three shapes was planted in the Vixen project, the binlog rebuilt `--no-incremental`,
+and `skala check` re-run: all three fired, with the right messages and the right locations. It was
+deleted afterwards. Without that step "the shape is not there" and "the analysis never ran" are the
+same reading.
+
+**Every zero is then classified by widening each rule to its bare shape**, with a second
+implementation written separately from the analyzers so that "the guard declined it" is not being
+proved by the code under test:
+
+- **`SK2240` — shape present in quantity, correctly declined.** 472 `with` expressions across the
+  four trees and Skala's own source. The dominant reason is the receiver: **361 of the 472** have a
+  receiver that is not a simple name — `Fleet.Everything() with { … }`,
+  `FoliageEcology.Tree with { … }` — where the rewrite would drop an evaluation the original
+  performed. 36 more have a receiver that is not a local or a parameter, and 69 stand on a record
+  with no primary constructor. ⚠ **The rule's own question — is every positional member assigned —
+  is reached six times in everything measured, all six in Skala's own source, and declines all
+  six.** Its recall is therefore unmeasurable on the material available, exactly as `SK6050`'s is,
+  and that is stated rather than hidden behind the zero.
+- **`SK2241` — shape present, every instance well-formed.** 23 call sites pass a pattern; 21 of them
+  pass a compile-time constant and every one of those parses. The remaining two build the pattern at
+  runtime and decline.
+- **`SK2242` — shape absent.** 72 iterator methods across everything measured, and **not one of them
+  validates an argument at all**, before or after its first `yield`. The zero is the absence of the
+  guard, not a rule declining to report one.
+
+### Refuted, with the measurement
+
+⚠ **#263's bare shape has 94 instances in real code and not one of them is a placeholder.** Empty
+`void` methods: 17 in Vixen, 72 in Serilog, 2 in Newtonsoft.Json, 3 in Skala's own source. **71 of
+Serilog's 72 are a single class** — `SilentLogger : ILogger`, whose entire purpose is to do nothing.
+Vixen's 17 are 11 `virtual`/`protected internal virtual` extension points and 6 interface
+implementations with nothing to do. ⚠ **Not one instance anywhere is `private`**, which settles it:
+`SK6050`'s escape hatch — restrict to the one accessibility where every caller is visible — would
+leave this rule with no instances at all, and removing that restriction leaves a rule whose every
+measured instance is correct code. That is the same wall, reached from the other side. (The rest of
+the corpus adds 324 more, 114 of them `private`, but those files are formatter fixtures rather than
+programs and are not evidence about how anybody writes.)
+
+⚠ **A classifier written for this measurement got Serilog's 72 wrong, and only the raw listing
+caught it.** It put all 72 in "visible, none of the above" because `ILogger` does not resolve in a
+tree carrying 1 125 `CS` errors, so `FindImplementationForInterfaceMember` returns nothing for every
+one of them. The count was right and the reason was wrong — which would have made the refutation
+look weaker than it is, and is the same failure mode as a parity map keyed on a null id.
+
+⚠ **#273's bare shape is all but absent, so it could not be measured in either direction.** Nested
+collection initializers: 3 in Vixen, 6 in the rest of the corpus, and **0 in Serilog, 0 in
+Newtonsoft.Json and 0 in Skala's own source** — with all 9 standing on a target that does not
+resolve, so not even their get-only/settable split can be read. A rule whose shape does not occur in
+any tree available here cannot be given the false-positive story doc 08's bar asks for. The design
+argument above stands on its own and the count adds nothing to it, which is itself the answer.
+
+### One guard was found dead by its own sabotage
+
+⚠ **`SK2240`'s `assigned.Count != constructor.Parameters.Length` check is unreachable as a decision,
+and the sabotage sweep is what proved it.** Weakening it to `>` turned *nothing* red — no fixture
+changed verdict. The loop below it already looks every positional parameter up by name and returns
+when one is missing, so the count can only disagree when the initializer assigns a member that is
+not a positional parameter, and `WholeStateIsItsParameters` has already ruled that out by rejecting
+any settable member outside the parameter list. The check stays as a cheap early-out and its comment
+now says that is all it is, rather than reading as the guard it is not. ⚠ **A sabotage that turns
+nothing red is a finding about the code, not a gap in the fixtures**, and this one would have gone
+on looking like a load-bearing guard indefinitely.

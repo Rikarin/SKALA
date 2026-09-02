@@ -102,7 +102,11 @@ static class RecordShape {
     ///     this one", and it is also why only records declared in source match: a record from metadata
     ///     has no declaring syntax to compare, and nothing else in the symbol tells the two apart.
     /// </remarks>
-    public static bool DeclaredBy(IPropertySymbol property, IParameterSymbol parameter, CancellationToken cancellation) {
+    public static bool DeclaredBy(
+        IPropertySymbol property,
+        IParameterSymbol parameter,
+        CancellationToken cancellation
+    ) {
         if (property.DeclaringSyntaxReferences.Length != 1 || parameter.DeclaringSyntaxReferences.Length != 1) {
             return false;
         }

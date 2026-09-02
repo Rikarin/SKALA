@@ -124,9 +124,8 @@ public sealed class DeferredArgumentCheckAnalyzer : DiagnosticAnalyzer {
     ///     and a <c>yield</c> inside a nested local function makes <em>it</em> the iterator.
     /// </remarks>
     static System.Collections.Generic.IEnumerable<SyntaxNode> Own(BlockSyntax body) =>
-        body.DescendantNodes(
-            node => ReferenceEquals(node, body)
-                || node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
+        body.DescendantNodes(node => ReferenceEquals(node, body)
+            || node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)
         );
 
     /// <summary>
@@ -179,7 +178,9 @@ public sealed class DeferredArgumentCheckAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>Whether the node sits inside a <c>try</c>, <c>catch</c> or <c>finally</c> of this body.</summary>
     static bool InsideHandler(SyntaxNode node, BlockSyntax body) {
-        for (var current = node.Parent; current is not null && !ReferenceEquals(current, body); current = current.Parent) {
+        for (var current = node.Parent;
+             current is not null && !ReferenceEquals(current, body);
+             current = current.Parent) {
             if (current is TryStatementSyntax) {
                 return true;
             }

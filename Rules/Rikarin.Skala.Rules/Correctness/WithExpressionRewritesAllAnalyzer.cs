@@ -33,8 +33,11 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         that has at least one, so the two can never see the same expression.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Disjoint from <c>SK1071</c>, and the guard that makes it so is what stops the pair
-///         fixing each other forever.</b> <c>SK1071</c> turns <c>new R(x.A, x.B, c)</c> into
+///         ⚠
+///         <b>
+///             Disjoint from <c>SK1071</c>, and the guard that makes it so is what stops the pair
+///             fixing each other forever.
+///         </b> <c>SK1071</c> turns <c>new R(x.A, x.B, c)</c> into
 ///         <c>x with { C = c }</c> — an initializer setting <em>fewer</em> than all the members, which
 ///         this rule declines. The other direction is the live hazard:
 ///         <c>x with { X = x.X, Y = b }</c> assigns every member and would fix to <c>new T(x.X, b)</c>,
@@ -83,12 +86,17 @@ public sealed class WithExpressionRewritesAllAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ The count is an early-out and *not* the guard, which a sabotage established: weakening it
+        // to `>` turns no fixture red. The loop below looks every positional parameter up by name and
+        // returns as soon as one is missing, and `WholeStateIsItsParameters` has already rejected any
+        // settable member outside the parameter list — so the initializer cannot assign a name that is
+        // not a parameter, and the counts cannot disagree in the direction the loop misses.
         if (Assignments(model, with, receiver, cancellation) is not { } assigned
             || assigned.Count != constructor.Parameters.Length) {
             return;
         }
 
-        // The set comparison the rule is: every positional parameter assigned, none left to copy.
+        // The set comparison the rule *is*: every positional parameter assigned, none left to copy.
         var arguments = new ExpressionSyntax[constructor.Parameters.Length];
         for (var i = 0; i < constructor.Parameters.Length; i++) {
             if (!assigned.TryGetValue(constructor.Parameters[i].Name, out var value)) {
@@ -177,10 +185,10 @@ public sealed class WithExpressionRewritesAllAnalyzer : DiagnosticAnalyzer {
     /// </summary>
     static bool CarriesAcross(ExpressionSyntax value, IdentifierNameSyntax member, IdentifierNameSyntax receiver) =>
         value is MemberAccessExpressionSyntax {
-                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
-                Expression: IdentifierNameSyntax source,
-                Name: IdentifierNameSyntax read
-            }
+            RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
+            Expression: IdentifierNameSyntax source,
+            Name: IdentifierNameSyntax read
+        }
         && string.Equals(source.Identifier.ValueText, receiver.Identifier.ValueText, System.StringComparison.Ordinal)
         && string.Equals(read.Identifier.ValueText, member.Identifier.ValueText, System.StringComparison.Ordinal);
 }
