@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 229 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 232 ids are allocated.
 
 ## Async
 
@@ -24,6 +24,9 @@
 | [SK3042](SK3042.md) | The double-checked locking is not correct | warning | — | no |
 | [SK3043](SK3043.md) | Locks are taken in inconsistent orders | warning | — | no |
 | [SK3044](SK3044.md) | The field is guarded on some paths and not others | warning | — | no |
+| [SK3050](SK3050.md) | An exception is thrown out of an `async void` body | warning | — | yes |
+| [SK3051](SK3051.md) | The `async` method has no `CancellationToken` to forward | suggestion | review | no |
+| [SK3052](SK3052.md) | The `async` lambda is converted to a `void`-returning delegate | warning | — | no |
 
 ## Cleanup
 
