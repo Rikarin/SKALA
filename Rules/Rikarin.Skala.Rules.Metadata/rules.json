@@ -6127,6 +6127,111 @@
       "configuration": [
         "dotnet_diagnostic.SK2154.severity"
       ]
+    },
+    {
+      "id": "SK2110",
+      "concept": "tostring-can-return-null",
+      "title": "`ToString()` returns null",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "S2225"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An override of `object.ToString()` returns a null constant on some path.",
+      "rationale": "String interpolation, `string.Concat`, every structured logger and most of the BCL call `ToString()` and assume the result is a string. A null comes back as a `NullReferenceException` or a silently absent value somewhere else entirely, and the type that caused it is named nowhere in the stack. ⚠ **The rule exists only where the compiler is silent, and that boundary was measured rather than assumed.** A probe built with the .NET 10.0.400 SDK reports `CS8603` on `public override string ToString() { return null; }` in a nullable-enabled context — so the rule declines there, because ADR-008's answer to a diagnostic the platform already ships is to use it. What the probe found the compiler saying nothing about is the other two shapes: `public override string? ToString() => null;`, which is legal and warning-free because `object.ToString()` is itself annotated as returning `string?`, and the same `return null;` under `#nullable disable`. Those are what this reports.",
+      "examples": {
+        "bad": "public override string? ToString() => null;",
+        "good": "public override string? ToString() => string.Empty;"
+      },
+      "falsePositives": "⚠ **Constants only.** The reported expression is one whose value the compiler already knows is null — a `null` literal, a `default`, or a cast of either. A `ToString()` that returns a *variable* which might be null is flow analysis, and in the two contexts this rule covers there is no flow state to read: under `#nullable disable` every expression's `NullableFlowState` is `None`, which is not `MaybeNull` and is not evidence of anything. Reporting on a guess there is how a rule acquires the false positives that get it switched off. ⚠ **The nullable context does not silence this rule and that is deliberate**, inverting the usual direction: `#nullable disable` is precisely where `CS8603` is absent and so precisely where the rule is worth having. ⚠ **Only overrides of `object.ToString()`.** A `ToString(string format)` overload, an explicit `IFormattable.ToString`, and any unrelated method spelled `ToString` are left alone — their contracts are their own. ⚠ **`return null;` inside a lambda or a local function nested in `ToString()` is not this method's return** and is not reported. ⚠ The fix writes `string.Empty` and is `fixIsSafe: false`: it changes what the method returns, which is the point, but a caller that tests the result for null is relying on the bug and should see the change.",
+      "configuration": [
+        "dotnet_diagnostic.SK2110.severity"
+      ]
+    },
+    {
+      "id": "SK2111",
+      "concept": "inert-null-suppression",
+      "title": "The null-forgiving operator suppresses nothing",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "S8970"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A `!` stands where no nullable warning could be issued, so it hides nothing and reads as though a decision were made.",
+      "rationale": "`!` is the strongest claim a C# author can make — *I know better than the compiler here* — and every reader has to stop and work out what was known. Where nullable warnings are switched off at that position, or where the operand is a non-nullable value type, there was never a warning to suppress: the operator is decoration, it survives every migration untouched, and it makes the file look as though its nullability was thought about when it was not. ⚠ **Not hosted by `IDE0080`, and that was measured, not assumed.** `CSharpRemoveUnnecessaryNullableWarningSuppressionsDiagnosticAnalyzer` ships in the .NET 10.0.400 SDK, and a probe carrying all three shapes reported nothing from it — with `EnforceCodeStyleInBuild=true`, `AnalysisMode=All` and `dotnet_diagnostic.IDE0080.severity = warning`, and with `IDE0090` and `IDE0059` firing from the same analyzer set on the same build to prove the code-style analyzers really ran. `dotnet format analyzers --diagnostics IDE0080` reported nothing on the same files while `--diagnostics IDE0090` reported the control.",
+      "examples": {
+        "bad": "#nullable disable\nvar length = text!.Length;",
+        "good": "#nullable disable\nvar length = text.Length;"
+      },
+      "falsePositives": "⚠ **The flow-state half of this concept is deliberately not implemented.** `S8969` — a `!` on an expression the compiler has already proved non-null — was specified, and cut for two reasons that are defects rather than noise. First, a `!` can suppress a *nested* nullability warning rather than a dereference (`List<string?> a = b!;` suppresses `CS8619`), and the operand's own flow state says nothing about that. Second, removing one `!` can make another necessary: in `x!.A(); x!.B();` the second operand is non-null *because of* the first suppression, so a rule reporting both hands `skala fix` a pair of edits that together reintroduce the warning. Neither is answerable from one expression's flow state, so the rule asks a question that has an answer instead. ⚠ **What is left is provable without flow analysis at all.** Either nullable *warnings* are disabled at that position — in which case no diagnostic could have been issued there, whatever the operand — or the operand is a non-nullable value type, on which `!` has never suppressed anything. `int?` is excluded: `!` on a nullable value type suppresses `CS8629`. An unconstrained type parameter is excluded, because it is not known to be a value type. ⚠ **`GetService<T>()!` is declined and reported by `SK2113` instead.** That `!` is not inert — it is the wrong answer to a real warning — and the two rules are disjoint by construction rather than by filter, so no expression can produce both.",
+      "configuration": [
+        "dotnet_diagnostic.SK2111.severity"
+      ]
+    },
+    {
+      "id": "SK2112",
+      "concept": "nullable-local-never-null",
+      "title": "The local is declared nullable and is never null",
+      "category": "Correctness",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "VariableCanBeNotNullable",
+      "resharperNote": "⚠ The export sets `resharper_variable_can_be_not_nullable_highlighting = warning` and this rule defaults to `suggestion`. ReSharper reports the whole family — locals, parameters and return types — from a solution-wide index; this rule reports only the local, whose annotation nothing outside the method can depend on, so a lower default is the honest one for a narrower claim. Reading the ReSharper key — off by default, doc 03 § \"Severities\" — raises it. docs/plan/16 § Q5.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A local is declared `T?`, is assigned once with a value the compiler proves non-null, and is never assigned again.",
+      "rationale": "The reverse direction of the nullable migration. A `?` the flow analysis proves unnecessary is a null check every subsequent line has to justify for nothing, and it trains the reader to stop believing the annotations — which is the whole value of having them. The declaration is the one place the claim can be corrected, and for a local it can be corrected without asking anybody, because nothing outside the method can see it.",
+      "examples": {
+        "bad": "string? name = user.DisplayName ?? \"anonymous\";\nreturn name.Length;",
+        "good": "string name = user.DisplayName ?? \"anonymous\";\nreturn name.Length;"
+      },
+      "falsePositives": "⚠ **Locals only, and the two halves of `ReturnTypeCanBeNotNullable` are cut with a reason.** Narrowing a *method's* return annotation propagates to every call site through `var`: `var x = M();` infers `string?` today and `string` afterwards, so a later `x = null` becomes a new warning in a file the analyzer never saw. A `DiagnosticAnalyzer` is handed one syntax tree and cannot enumerate callers, so the rule would be right about the method and wrong about the program. ReSharper does it from a solution-wide index; Skala has no such index at analysis time and says so rather than guessing. The same cascade inside one method is guarded directly: a local used to initialise a `var` declaration is declined. ⚠ **Reference types only.** `int? i = 1;` is not the same edit at all — removing that `?` changes the type, not an annotation, and breaks `HasValue`, boxing and comparison to null. ⚠ **A single assignment.** The initialiser must exist and its flow state must be `NotNull`, and no other assignment to the local may appear anywhere in the enclosing member, lambdas and local functions included; `ref` and `out` uses are declined because the callee decides the value. ⚠ **The rule withdraws where nullable annotations are disabled at the declaration.** There the flow state of every expression is `NullableFlowState.None`, which is not `NotNull` — the `?` is already `CS8632` and removing it is the compiler's finding, not this one. A rule that read `NullableAnnotation` instead of the flow state would report nothing at all in either context, because `GetTypeInfo` on a written `TypeSyntax` returns `NullableAnnotation.None` for `string` and `string?` alike.",
+      "configuration": [
+        "dotnet_diagnostic.SK2112.severity"
+      ]
+    },
+    {
+      "id": "SK2113",
+      "concept": "null-forgiven-service-resolution",
+      "title": "The service resolution is null-forgiven instead of required",
+      "category": "Correctness",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`GetService<T>()!` suppresses the warning that says the service may not be registered; `GetRequiredService<T>()` throws where the mistake is.",
+      "rationale": "`GetService<T>()` returns null for a service nobody registered, and the `!` is the author asserting that somebody did. When the assertion is wrong the program does not fail at the resolution — it fails at the first use, with a `NullReferenceException` that names neither the service type nor the container. `GetRequiredService<T>()` is the same call with the assertion moved into the framework: it throws an `InvalidOperationException` naming the service type, at the line that asked for it. The `!` is not redundant here, which is why `SK2111` declines it; it is the wrong answer to a real warning.",
+      "examples": {
+        "bad": "var clock = provider.GetService<IClock>()!;",
+        "good": "var clock = provider.GetRequiredService<IClock>();"
+      },
+      "falsePositives": "⚠ **The generic extension only.** `provider.GetService<T>()` and `GetKeyedService<T>()` on `Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions` are reported, in either call form, because the fix is a rename inside a class the call site has already resolved — so the `using` that made the call compile makes the fix compile. `provider.GetService(typeof(T))!`, the `IServiceProvider` interface method, is **declined**: its `GetRequiredService` counterpart lives in an extension class the file may not have imported, and a fix that does not compile is worse than no fix. ⚠ **The nullable context does not silence this rule.** It reads the `!` token and the callee's symbol, never a flow state, so it reports the same code under `#nullable disable` — where the mistake is identical and the compiler is silent. ⚠ **Only where the `!` is written.** `GetService<T>()` whose result is null-checked, coalesced or assigned to a nullable local is the API used correctly and is never reported. ⚠ A user-defined `GetService<T>` on some other type is not this method and is resolved by containing type rather than by name.",
+      "configuration": [
+        "dotnet_diagnostic.SK2113.severity"
+      ]
     }
   ]
 }

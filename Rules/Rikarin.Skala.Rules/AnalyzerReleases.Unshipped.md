@@ -212,3 +212,7 @@ SK2151 | Skala.Correctness | Warning | The string equality test asks for invaria
 SK2152 | Skala.Correctness | Warning | The path comparison assumes the file system's case rules.
 SK2153 | Skala.Correctness | Warning | The IQueryable is silently degraded to IEnumerable.
 SK2154 | Skala.Correctness | Warning | The sort has no ordering to use.
+SK2110 | Skala.Correctness | Warning | `ToString()` returns null.
+SK2111 | Skala.Correctness | Warning | The null-forgiving operator suppresses nothing.
+SK2112 | Skala.Correctness | Info | The local is declared nullable and is never null.
+SK2113 | Skala.Correctness | Info | The service resolution is null-forgiven instead of required.

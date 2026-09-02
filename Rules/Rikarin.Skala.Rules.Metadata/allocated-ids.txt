@@ -253,3 +253,7 @@ SK2151 invariant-culture-comparison
 SK2152 platform-dependent-path-comparison
 SK2153 queryable-degraded-to-enumerable
 SK2154 sort-without-ordering
+SK2110 tostring-can-return-null
+SK2111 inert-null-suppression
+SK2112 nullable-local-never-null
+SK2113 null-forgiven-service-resolution

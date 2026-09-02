@@ -229,5 +229,6 @@
   "StringLastIndexOfIsCultureSpecific.1": "SK2150",
   "StringLastIndexOfIsCultureSpecific.2": "SK2150",
   "StringLastIndexOfIsCultureSpecific.3": "SK2150",
-  "PossibleUnintendedQueryableAsEnumerable": "SK2153"
+  "PossibleUnintendedQueryableAsEnumerable": "SK2153",
+  "VariableCanBeNotNullable": "SK2112"
 }

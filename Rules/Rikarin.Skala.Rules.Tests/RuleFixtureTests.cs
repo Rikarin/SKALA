@@ -129,6 +129,8 @@ public sealed class RuleFixtureTests {
         new ImplicitStringSearchCultureAnalyzer(), new InvariantCultureComparisonAnalyzer(),
         new PlatformDependentPathComparisonAnalyzer(), new QueryableDegradedToEnumerableAnalyzer(),
         new SortWithoutOrderingAnalyzer(),
+        new ToStringReturnsNullAnalyzer(), new InertNullSuppressionAnalyzer(),
+        new NullableLocalNeverNullAnalyzer(), new NullForgivenServiceResolutionAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
