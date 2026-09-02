@@ -157,6 +157,7 @@ public sealed class RuleFixtureTests {
         new SpanReferenceComparisonAnalyzer(), new ImmutableArrayCollectionInitializerAnalyzer(),
         new MutableCapturedPrimaryParameterAnalyzer(),
         new UndeclaredDisposeAnalyzer(), new ShortLivedHttpClientAnalyzer(), new DangerousHandleAnalyzer(),
+        new CopyingPropertyAnalyzer(), new UnreadStringBuilderAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

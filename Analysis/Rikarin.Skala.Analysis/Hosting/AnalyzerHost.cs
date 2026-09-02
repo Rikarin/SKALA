@@ -195,6 +195,7 @@ public static class AnalyzerHost {
         new SpanReferenceComparisonAnalyzer(), new ImmutableArrayCollectionInitializerAnalyzer(),
         new MutableCapturedPrimaryParameterAnalyzer(),
         new UndeclaredDisposeAnalyzer(), new ShortLivedHttpClientAnalyzer(), new DangerousHandleAnalyzer(),
+        new CopyingPropertyAnalyzer(), new UnreadStringBuilderAnalyzer(),
     ];
 
     /// <summary>

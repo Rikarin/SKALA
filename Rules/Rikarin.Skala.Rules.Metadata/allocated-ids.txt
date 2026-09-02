@@ -304,3 +304,5 @@ SK2194 mutable-captured-primary-parameter
 SK3540 dispose-method-without-interface
 SK3541 short-lived-http-client
 SK3542 dangerous-handle-without-ref-count
+SK4040 copying-property
+SK4041 unread-string-builder

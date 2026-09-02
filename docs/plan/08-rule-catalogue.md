@@ -2006,6 +2006,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **314** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **279** | **89.1 %** |
+| Rules this document names | **297** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **262** | **88.5 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -4296,3 +4298,171 @@ Both were hosted by something already on, measured rather than assumed:
   distinguishing the paired case from the unpaired one would be sorting two shapes that both fail
   identically. ⚠ **If anything is worth reporting here it is the call itself and not the missing
   pair**, which is a different concept and needs its own issue before it gets a number.
+## `SK4040`–`SK4041` — collections copied on every read, and buffers nobody reads
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than into § "SK4000 —
+Performance" only to keep it out of a section several concurrent branches were editing.** What
+follows is the register doing the one job ADR-012 needs it to do — the numbers are taken and written
+down where the next milestone will read them. It belongs beside `SK4030`–`SK4034`.
+
+**Two rules shipped out of five issues, and ⚠ the three that did not ship are the more useful half of
+the result.** The batch was opened on issues #203, #185, #69, #72 and #267. Three of them turned out
+to be covered by an analyzer that already ships in the .NET SDK, and each disposition rests on a
+measured default state rather than on a rule's documentation: a probe was built **outside this
+repository**, with empty `Directory.Build.props`/`.targets` beside it so that Skala's own raised
+`AnalysisMode` could not colour the answer, and the descriptors were then read directly out of
+`Microsoft.CodeAnalysis.NetAnalyzers.dll` shipped with SDK 10.0.400.
+
+- `SK4040` a **property** whose getter is one call that allocates a fresh copy of a collection the
+  property's own type already accepts. Property syntax reads as a field read — that is the whole of
+  the convention, and it is why a caller writes `Items.Count` and then `Items[0]` and pays for two
+  copies without seeing either. ⚠ **The reported shape is narrower than "a property that copies", and
+  deliberately so: the copy has to be one the property could simply have skipped.** Where the source
+  already converts to the property's type by identity or by reference, deleting the materializing
+  call is an edit that keeps the signature; where the call also converts — `int[] Items =>
+  list.ToArray();` — there is no edit that keeps the declared type, and a finding with no available
+  answer is one the reader argues with instead of acting on. ⚠ **A deliberate defensive copy has
+  exactly this shape and nothing tells the two apart.** That is not a hole to close later — whether a
+  caller should see later mutations is a decision about the API, held nowhere in the source — and it
+  is why the rule ships at `suggestion` rather than at the `warning` the proposal asked for, and why
+  the fix is `fixIsSafe: false`. The right answer to a deliberate copy is often to keep it and move it
+  behind a method, whose parentheses admit the work, and only a person can choose that.
+- `SK4041` a local `StringBuilder` that is constructed, appended to, and never read. ⚠ **It is almost
+  never a performance mistake by intent; it is a missing line** — usually the `return
+  builder.ToString();` that was never written. ⚠ **A builder handed to anything else escapes, and the
+  rule stands down at the first sign of it rather than reasoning about it**: an argument, an
+  assignment, a `return`, a second local aliasing it, or any reference inside a lambda or a local
+  function ends the analysis for that local. The default is "this is a read" and only nine mutating
+  members count as writes, so a member added to `StringBuilder` in a later framework silences the rule
+  instead of making it wrong. ⚠ **No fix, and the reason is the finding.** The edit that repairs it is
+  the read the author did not write; deleting the builder is the other candidate and is wrong whenever
+  an append's argument has side effects, so the rule reports and stops, as `SK4024` does.
+
+⚠ **Three concepts were measured and closed against analyzers that already ship, and no id was
+allocated for any of them.**
+
+- **Issue #69** — "the class is never inherited and is not `sealed`" — is **`CA1852`**, measured
+  `enabledByDefault: true, defaultSeverity: Hidden`. That is the middle of the three states rather
+  than "off": the analyzer runs in every build and its findings are invisible until a repository
+  raises the severity, which is what ADR-008 already says to do. A probe confirms the behaviour as
+  well as the state — `CA1852` reports the `internal` class that nothing derives from, is silent on
+  the `public` one, and is silent on the `internal` one that has a derived type. ⚠ **The silence on
+  `public` is not a gap a Skala rule could fill**, and it is the same assembly-boundary problem that
+  closed #114 and #119: "never inherited" is not answerable from one compilation for a type another
+  assembly can see.
+- **Issue #72** — "the parameter expects a constant and is given one at runtime" — is **`CA1857`**,
+  measured `enabledByDefault: true, defaultSeverity: Warning`, and it is the one probed rule that
+  fires in an ordinary `dotnet build` with no `AnalysisMode` raised at all. It covers both halves the
+  issue named: it reports a `[ConstantExpected]` parameter given a variable, and it reports a constant
+  outside a declared `Min`/`Max` range. There is no residue.
+- **Issue #267** — "the sequence is enumerated more than once" — is **`CA1851`**, measured
+  `enabledByDefault: false, defaultSeverity: Warning`. Off, so ADR-008's answer is to enable it — the
+  same disposition #169's null half took against `CA1508`. ⚠ **What settled it was not the existence
+  of the rule but its measured coverage against a thirteen-shape probe**, because the specification
+  this batch would have shipped was "report where the receiver's static type is `IEnumerable<T>`", and
+  `CA1851` is flow-sensitive rather than type-sensitive and therefore strictly better: it reports the
+  two-operator chain, the `foreach` followed by a LINQ call, two `foreach` loops, a `Where` result
+  walked twice and an enumeration inside a loop; it declines a `List<T>` **assigned to an
+  `IEnumerable<T>` local**, which a static-type rule reports and is wrong about, and it declines the
+  branch where only one walk happens at run time. Its own residue is real and small — it says nothing
+  about a field — and a rule for that alone would be a narrower duplicate of a better analysis.
+
+⚠ **`SK4006` is not this concept, and the map said it was.** `catalogued.json` credited ReSharper's
+`PossibleMultipleEnumeration` to `SK4006`, and `SK4006` is *Review a materialization used only by
+`foreach`* — a `ToArray()` that should be **removed**. Multiple enumeration is a `ToArray()` that
+should be **added**. ⚠ **And "mirror images" understates it, which is what building the fixture rather
+than arguing the point turned up: the two are not merely different, they contradict each other on code
+that satisfies both.** A sequence walked once through a materialization and once more afterwards —
+`foreach (var v in source.ToArray()) …` followed by `source.Count()` — is a multiple enumeration *and*
+an `SK4006` finding, verified by running `SK4006` over exactly that file; taking `SK4006`'s advice
+there deletes the only thing keeping the second walk off the source and makes the multiple enumeration
+worse. So a map that treats one as coverage of the other does not merely overstate the catalogue, it
+records the opposite of what the tool says. The mapping was already deleted from `catalogued.json` and
+`ledger-resharper.json` records why; what was missing was anything asserting it. Four shapes now pin
+it in `CollectionCopyAndBufferBatchTests` — one satisfying neither, one each satisfying one, and the
+contradictory one — so the day any of it stops being true the file goes red.
+
+⚠ **Neither new rule takes a `catalogued.json` key, and that was checked rather than assumed.**
+`types-2026.xml` — ReSharper's own issue-type catalogue — has no inspection for a property that copies
+a collection and none for an unread `StringBuilder`; the nearest names, `CollectionNeverQueried` and
+`RedundantCollectionCopyCall`, are different concepts and the latter is already mapped to `SK1081`.
+
+⚠ **`SK4040` overlaps `CA1819` on exactly one shape and disagrees with it about everything else.**
+`CA1819` was measured `enabledByDefault: false, defaultSeverity: Warning` and asks about the
+property's *type*: it reports `int[] P => field;`, which copies nothing, and it is silent on
+`IReadOnlyList<T> P => xs.ToList();`, which is the whole of this concept. The one shape both see is
+`T[] P => array.ToArray();`, and there they say two different true things — one about exposure, one
+about cost.
+
+⚠ **Nothing in the SDK reports `SK4041`'s shape.** The probe at `AnalysisMode=All` produced only
+`CA1834` on the same code, which is about `Append(char)` versus `Append(string)` and fires whether or
+not the buffer is ever read.
+
+⚠ **`SK4041` sits in the performance band and issue #185 proposed the correctness one, and the id is
+what it is.** The concept is dead work — an allocation and an `O(n)` copy whose result is discarded —
+which is a defensible reading of `SK4000`–`SK4999`, and SonarSource classifies the same rule as a code
+smell rather than a bug. The number was allocated from this batch's reserved range and ADR-012 makes
+it permanent either way; recording the discrepancy here is what stops it being rediscovered as a
+mistake.
+
+**The measurement.** Both rules were swept over Skala's own source through a fresh Release binlog —
+`dotnet build Skala.slnx -c Release --no-incremental -bl:`, then `check --load=binlog
+--require-fresh-binlog`. ⚠ **The `--no-incremental` half is not optional and the flags are what make
+the number readable**: an incremental build's binlog is not stale, it is *partial*, and
+`--require-fresh-binlog` is what turns that into an error rather than a plausible answer from a
+fraction of the tree. `SK9021` reports **590 of 592 selected files, 100 % coverage** — the two
+uncovered files are in no compilation — with **11 CS diagnostics in the load** (`CS9335` × 10,
+`CS8933` × 1) and **zero CS errors**, over 1 457 findings in total.
+
+The instrument was verified before either zero was believed. A probe file planting one
+`IReadOnlyList<string> Items => entries.ToList();` and one filled-and-dropped `StringBuilder` into
+`Rikarin.Skala.Core` made both rules fire through the same binlog pipeline, at the right lines and
+with the right messages, which is the only check that sees a real reference set rather than the
+fixture harness's. ⚠ **The probe had to be edited before it would build, and the reason is the one the
+CA-probing rule is about**: `CA1822` rejected the method as an *error* under this repository's raised
+`AnalysisMode`. That is why the `CA*` probes for this batch were built outside the repository with
+empty `Directory.Build.props`/`.targets` beside them. The probe was then deleted and the binlog
+rebuilt.
+
+- **`SK4040` reports zero, and the shape is absent.** Relaxing *both* discriminating guards — the
+  plain-name-path test and the conversion test — and re-sweeping still finds nothing: Skala's source
+  contains no property whose whole getter is a materializing call. A grep for the arrow form
+  corroborates it, returning 21 hits of which every one is a rule fixture, a batch-test string literal
+  or `rules.json` prose. ⚠ **This is the weakest of the three kinds of zero and it is reported as
+  such**: it is evidence the rule does not over-fire and no evidence at all about how often the shape
+  occurs in the wild.
+- **`SK4041`'s shape is present 147 times and declined 147 times.** Relaxing the rule to report every
+  `StringBuilder` local with at least one append — the whole population — finds 147 in Skala's source,
+  and the shipped rule reports none of them. Spot-checked rather than assumed:
+  `DiagnosticCache.CompilationFingerprint` returns `builder.ToString()` and is declined by the read;
+  `BaselineCommand` hands its builder to `Describe(builder, …)` and is declined by the escape. ⚠ **147
+  declined and zero reported is the number that says the rule is worth having**, because it is the
+  count of times the analysis had to be right.
+
+⚠ **The sweep also turned up something that is not this batch's**: `SK9030` records that
+`RedundantArgumentAnalyzer` (`SK0232`) throws `AD0001` and is disabled for the rest of the run,
+seventeen times. That is issue #298 still live, and it is invisible in the terminal report because
+`skala check` writes `SK9030` only into the SARIF's `toolExecutionNotifications` and does not fail the
+gate (#295). Neither of this batch's analyzers throws, asserted in
+`CollectionCopyAndBufferBatchTests.NoAnalyzerThrows` rather than left to the same silence.
+
+**The reference trees.** `Testing/corpus/real` — the vendored Vixen, Serilog and Newtonsoft.Json — is
+unreachable through `skala check` in place (`SK9023`), so it was copied outside the repository, given
+a `net10.0` project with empty `Directory.Build.props`/`.targets` beside it, and swept the same way.
+⚠ **`<ImplicitUsings>` moves the number a long way and in one direction: 53 658 CS errors with it
+disabled, 47 280 with it enabled**, so the slice really is missing the generated usings file and a
+sweep taken without it is measuring a differently-broken tree. Both rules report **zero** across
+75 514 results, of which 71 757 are CS diagnostics — the corpus does not compile and the analyzers run
+in it anyway. `SK4041`'s shape is present there: relaxing the rule finds **36 sites**, including
+`Newtonsoft.Json`'s `MemoryTraceWriter`, and the shipped rule declines every one of them because each
+ends in `builder.ToString()`.
+
+⚠ **The 36 were briefly recorded as false positives, and the cause is a trap worth writing down:
+`skala check` runs the analyzers compiled into the CLI binary, and `git checkout` on a rule's source
+does not rebuild it.** The relaxed build used for the census was still in
+`Tools/Rikarin.Skala.Cli/bin/Release` when the corpus was first swept, so the relaxed rule's findings
+were reported under the shipped rule's id — indistinguishable in the output from a rule that
+over-fires. It was caught only because the first "false positive" inspected had its `ToString()` four
+lines below the declaration, which no version of the rule should ever have reported. **A sweep taken
+after any experiment on a rule's source needs the tool rebuilt first, and the cheap guard is
+`--no-cache` plus a rebuild, not one or the other.**

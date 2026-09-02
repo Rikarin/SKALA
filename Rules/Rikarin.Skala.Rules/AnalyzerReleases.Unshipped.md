@@ -263,3 +263,5 @@ SK2194 | Skala.Correctness | Warning | A captured primary constructor parameter 
 SK3540 | Skala.Lifetime | Warning | A `Dispose` method the type never declares.
 SK3541 | Skala.Lifetime | Warning | The `HttpClient` is disposed at the end of the call.
 SK3542 | Skala.Lifetime | Warning | `DangerousGetHandle` with nothing holding the handle open.
+SK4040 | Skala.Performance | Info | Return the collection instead of copying it at every read.
+SK4041 | Skala.Performance | Warning | A `StringBuilder` is filled and its text is never read.
