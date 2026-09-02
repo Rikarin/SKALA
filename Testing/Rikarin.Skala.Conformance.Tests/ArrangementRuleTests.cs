@@ -669,6 +669,108 @@ public sealed class ArrangementRuleTests {
         Assert.DoesNotContain("using System;", first.Text, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     ⚠ #292, as an assertion rather than an open issue: <c>SK0210</c> does see a file-level
+    ///     <c>using</c> that a <c>global using</c> duplicates.
+    /// </summary>
+    /// <remarks>
+    ///     The issue reports that this shape is <c>CS8933</c> and that <c>CS8019</c> is silent, which
+    ///     would mean <see cref="UsingsRule.Unused" /> — whose filter reads <c>CS8019</c> alone —
+    ///     cannot see it, and that the fix is to add <c>CS8933</c> to that filter. **It does not
+    ///     reproduce.** Roslyn reports <c>CS8019</c> alongside <c>CS8933</c> in every shape measured,
+    ///     so the name is in the removal set already and adding <c>CS8933</c> is a strict no-op.
+    ///     <para>
+    ///         ⚠ The <c>Unused</c> assertion is what makes this a test of the filter rather than of
+    ///         the pipeline. Asserting only that the directive is gone from the output would stay green
+    ///         if some later rule removed it for an unrelated reason, which is the shape of the defect
+    ///         SK-FUZZ-0018 was: the answer arriving from somewhere other than where it was asked for.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The ordering case is here because #292 asked for it. Removing the duplicated directive
+    ///         must leave the survivors sorted and must not disturb them; two unrelated usings, given
+    ///         out of order, come back in order with the redundant one gone.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Sabotaged twice, and the first sabotage stayed green — which is the refutation
+    ///         restated as an experiment.</b> Swapping the filter from <c>CS8019</c> to <c>CS8933</c>
+    ///         leaves this test passing, because on this shape the two diagnostics land on the same
+    ///         directive and either one puts the name in the set. That is precisely why adding
+    ///         <c>CS8933</c> to the filter is a no-op rather than a fix. Making the filter match
+    ///         <em>neither</em> turns the test red at the <c>Unused</c> assertion, so it is not passing
+    ///         vacuously.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void AUsingDuplicatedByAGlobalUsing_IsSeenByTheCs8019FilterAndRemoved() {
+        const string source = """
+                              using System.Text;
+                              using System.Xml;
+                              using System.Reflection;
+
+                              public class Probe {
+                                  public StringBuilder A() => new();
+
+                                  public XmlDocument B() => new();
+
+                                  public Assembly D() => typeof(Probe).Assembly;
+                              }
+                              """;
+
+        const string path = "/arrangement/Probe.cs";
+        var text = SourceText.From(source);
+        var tree = CSharpSyntaxTree.ParseText(
+            text,
+            CSharpFormatter.ParseOptions,
+            path,
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+        var compilation = CSharpCompilation.Create(
+            "probe",
+            [
+                CSharpSyntaxTree.ParseText(
+                    SourceText.From("global using global::System.Text;"),
+                    CSharpFormatter.ParseOptions,
+                    "GlobalUsings.g.cs",
+                    cancellationToken: TestContext.Current.CancellationToken
+                ),
+                tree
+            ],
+            SharedFrameworkReferences.Value,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
+        );
+
+        var model = compilation.GetSemanticModel(tree);
+
+        // ⚠ The compiler says both things about one directive, which is the whole refutation.
+        var ids = model.GetDiagnostics(null, TestContext.Current.CancellationToken)
+            .Where(static d => d.Id is "CS8019" or "CS8933")
+            .Select(static d => d.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.Contains("CS8933", ids);
+        Assert.Contains("CS8019", ids);
+
+        var unused = UsingsRule.Unused(model, tree, TestContext.Current.CancellationToken);
+        Assert.Contains("System.Text", unused);
+
+        var options = OptionResolver.Resolve(
+            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs")
+        ).Options;
+
+        var arranged = ArrangementPipeline.Run(
+            path,
+            text,
+            new PhaseOneOptions(options),
+            new ArrangementOptions(options),
+            compilation,
+            unused,
+            cancellation: TestContext.Current.CancellationToken
+        ).Text;
+
+        Assert.DoesNotContain("using System.Text;", arranged, StringComparison.Ordinal);
+        Assert.Contains("using System.Reflection;\nusing System.Xml;", arranged, StringComparison.Ordinal);
+    }
+
     /// <summary>One arrange-and-format pipeline run over a loose source string.</summary>
     /// <param name="implicitUsings">
     ///     ⚠ Whether the compilation carries the SDK's <c>global using</c>s, as
