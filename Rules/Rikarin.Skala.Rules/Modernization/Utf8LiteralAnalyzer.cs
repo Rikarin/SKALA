@@ -34,7 +34,7 @@ public sealed class Utf8LiteralAnalyzer : DiagnosticAnalyzer {
             || invocation.Parent is not ArgumentSyntax argument
             || argument.Parent?.Parent is not InvocationExpressionSyntax consumer
             || invocation.ContainsDirectives
-            || invocation.SpanContainsComment()) {
+            || RewriteGuards.ContainsCommentOrDirective(invocation.SyntaxTree, invocation.Span)) {
             return;
         }
 

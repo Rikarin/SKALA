@@ -102,7 +102,7 @@ public sealed class CountPropertyAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (invocation.SpanContainsComment()) {
+        if (RewriteGuards.ContainsCommentOrDirective(invocation.SyntaxTree, invocation.Span)) {
             return;
         }
 
@@ -236,20 +236,5 @@ public sealed class CountPropertyAnalyzer : DiagnosticAnalyzer {
                     return false;
             }
         }
-    }
-}
-
-/// <summary>A comment inside a span the fix replaces is content the fix would delete.</summary>
-internal static class SyntaxSpanExtensions {
-    public static bool SpanContainsComment(this SyntaxNode node) {
-        foreach (var trivia in node.DescendantTrivia()) {
-            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
-                || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

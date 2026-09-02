@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp;
 using Rikarin.Skala.Rules.Metadata;
 using System.Reflection;
 
@@ -671,5 +672,81 @@ public sealed class RuleCatalogTests {
         // ⚠ And the claims are not vacuous: something has to be claimed, or the assertion above passes
         // on an empty map for as long as nobody notices `supersedes` stopped being read.
         Assert.NotEmpty(owners);
+    }
+
+    /// <summary>
+    ///     Every <c>languageVersion</c> the registry declares is one <c>SkalaRule</c> can map.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Mechanical, cheap, and nothing asserted it.</b> A floor the switch does not name used
+    ///     to fall back to <c>Preview</c>, which silences the rule on every real project rather than on
+    ///     none — registered, in the SARIF <c>rules[]</c>, in <c>docs/rules/</c>, and reporting nothing
+    ///     anywhere. It is not hypothetical: the table had no <c>"6.0"</c> arm while <c>SK1061</c>
+    ///     declared <c>6.0</c> as its floor, and it was caught by an agent noticing rather than by
+    ///     anything in the build (#296).
+    ///     <para>
+    ///         ⚠ This is the half of the fix that matters, because it is the half that can be loud. The
+    ///         runtime fallback cannot throw — <c>Parse</c> runs inside an analyzer callback, where a
+    ///         throw is an <c>AD0001</c> Roslyn swallows — so the registry has to be checked here,
+    ///         before anything ships, and the failure has to name the value.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void EveryDeclaredLanguageVersion_IsRecognised() {
+        var declared = RuleCatalog.All
+            .Where(static rule => !string.IsNullOrEmpty(rule.LanguageVersion))
+            .Select(static rule => rule.LanguageVersion!)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray();
+
+        // ⚠ The registry has to actually declare some, or this passes by asking nothing — the same
+        // vacuous green the `supersedes` map is guarded against above.
+        Assert.NotEmpty(declared);
+
+        var unmapped = declared
+            .Where(static value => !SkalaRule.TryParseLanguageVersion(value, out _))
+            .ToArray();
+
+        Assert.True(
+            unmapped.Length == 0,
+            "`rules.json` declares a `languageVersion` that `SkalaRule.TryParseLanguageVersion` does "
+            + "not name, so every rule carrying it is compared against a floor nobody wrote and fires "
+            + "where it should not. Add the arm:\n  "
+            + string.Join("\n  ", unmapped)
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ An unrecognised floor over-fires rather than silencing its rule.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The direction is the whole point of #296 and it is worth pinning on its own</b>, because
+    ///     the fact above only holds while the registry is the only source of floors. <c>Preview</c> as
+    ///     a fallback meant "never fire" — the failure a linter cannot report, since a rule that reports
+    ///     nothing looks exactly like a codebase with nothing wrong. <c>Default</c> means "always fire",
+    ///     which is noisy and gets attributed to the rule that produced it.
+    ///     <para>
+    ///         ⚠ The compilation must be pinned to a <em>concrete</em> version for this to measure
+    ///         anything. Under <c>LanguageVersion.Preview</c> — the harness default — the old
+    ///         <c>Preview</c> fallback also returned <c>true</c>, so the bug and the fix agree and the
+    ///         test would pass either way.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void AnUnrecognisedLanguageVersion_DoesNotSilenceItsRule() {
+        var compilation = RuleFixtures.Compile("class C { }", "probe.cs", LanguageVersion.CSharp12);
+
+        Assert.True(
+            SkalaRule.MeetsLanguageVersion(compilation, "7.4"),
+            "an unrecognised `languageVersion` floor silenced its rule instead of over-firing. That is "
+            + "the #296 defect: one typo in `rules.json` and the rule is dead everywhere, with no error "
+            + "and nothing in the report to say so."
+        );
+
+        // ⚠ And the recognised floors still gate, or the assertion above would pass on a
+        // `MeetsLanguageVersion` that had simply stopped comparing anything.
+        Assert.False(SkalaRule.MeetsLanguageVersion(compilation, "13.0"));
+        Assert.True(SkalaRule.MeetsLanguageVersion(compilation, "12.0"));
     }
 }

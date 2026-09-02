@@ -98,7 +98,7 @@ public sealed class FieldBackedPropertyAnalyzer : DiagnosticAnalyzer {
                 || use.Parent is PrefixUnaryExpressionSyntax prefix
                 && prefix.IsKind(SyntaxKind.AddressOfExpression)
                 || CallerArgumentSafety.CapturesText(model, use, cancellation)
-                || use.SpanContainsComment()) {
+                || RewriteGuards.ContainsCommentOrDirective(use.SyntaxTree, use.Span)) {
                 return;
             }
 

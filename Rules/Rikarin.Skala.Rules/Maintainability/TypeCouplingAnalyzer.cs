@@ -136,7 +136,7 @@ public sealed class TypeCouplingAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var symbol = model.GetSymbolInfo(name, cancellation).Symbol;
+        var symbol = SymbolOf(model, name, cancellation);
         var type = symbol switch {
             INamedTypeSymbol named => named,
             IMethodSymbol method => method.ContainingType,
@@ -147,6 +147,48 @@ public sealed class TypeCouplingAnalyzer : DiagnosticAnalyzer {
         };
 
         Add(type, self, into, 0);
+    }
+
+    /// <summary>
+    ///     ⚠ <c>GetSymbolInfo</c>, which can throw out of Roslyn on code that does not bind.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>The throw is inside the compiler, not inside anything this rule indexes.</b>
+    ///     <c>MemberSemanticModel.GetBoundLambdaOrQuery</c> gets an empty <c>OneOrMany</c> back and
+    ///     indexes it, so <c>GetSymbolInfo</c> raises <c>IndexOutOfRangeException</c> from
+    ///     <c>GetEnclosingBinderInternal</c>. The shape that reaches it is a query expression in a
+    ///     position the binder rejects before it ever descends —
+    ///     <c>Func&lt;int&gt; v = new() { P = (from item in items select null) };</c>, which carries
+    ///     both <c>CS1729</c> and <c>CS1958</c>, so the query has no bound node to return
+    ///     (<c>Testing/corpus/pathological/target-typed-new-of-a-delegate-with-a-query.cs</c>, #315).
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             There is nothing to test in advance, which is why this is a <c>catch</c> and not a
+    ///             guard.
+    ///         </b> The question "would asking about this name throw" is answerable only by
+    ///         asking, and every cheaper proxy — does the file have errors, is the name inside a query —
+    ///         either costs a full <c>GetDiagnostics</c> per declaration or declines on ordinary code.
+    ///         The exception type is narrow and the call it wraps is one, so nothing else can fall in
+    ///         here; a cancellation is <c>OperationCanceledException</c> and passes straight through.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Declining is already this rule's declared behaviour</b>, not a new concession: an
+    ///         unresolved reference is skipped rather than counted, and the class remarks say a zero
+    ///         from <c>SK7081</c> means "the analysis declined". A coupling metric has nothing to say
+    ///         about code that does not bind. What it must not do is <em>throw</em> — Roslyn turns that
+    ///         into <c>AD0001</c> and drops the analyzer for the rest of the compilation, so every
+    ///         type-coupling finding in any project containing one such file disappears and the run
+    ///         still reports success. <c>CorpusCrashTests</c> is what now notices.
+    ///     </para>
+    /// </remarks>
+    static ISymbol? SymbolOf(SemanticModel model, SimpleNameSyntax name, CancellationToken cancellation) {
+        try {
+            return model.GetSymbolInfo(name, cancellation).Symbol;
+        } catch (System.IndexOutOfRangeException) {
+            return null;
+        }
     }
 
     /// <summary>

@@ -380,9 +380,13 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
                 continue;
             }
 
+            // ⚠ All three, and the third is a different direction rather than more of the same: the
+            // first two ask what the loop would collide with outwards, `DeclaredWithin` asks what the
+            // body it wraps already declares. The header's own declarator is exempt — the fix deletes
+            // it, so it is not there to collide with.
             if (RewriteGuards.WouldCollide(model, loop.SpanStart, candidate, cancellation)
                 || RewriteGuards.DeclaredElsewhereInMember(loop, candidate)
-                || DeclaredInside(loop, candidate)) {
+                || RewriteGuards.DeclaredWithin(loop, candidate, loop.Declaration?.Span)) {
                 continue;
             }
 
@@ -390,31 +394,5 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
         }
 
         return null;
-    }
-
-    /// <summary>
-    ///     Whether the loop itself declares <paramref name="name" /> anywhere inside it.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ The third scan, and the one the two in <c>RewriteGuards</c> cannot stand in for. The new
-    ///     iteration variable is declared in the header and its scope is the body, so every name the
-    ///     body introduces — a pattern variable, an <c>out var</c>, a local, a nested loop's own
-    ///     variable — is a name it would shadow. The index's own declarator is skipped, because that
-    ///     declaration is what the fix deletes.
-    /// </remarks>
-    static bool DeclaredInside(ForStatementSyntax loop, string name) {
-        foreach (var node in loop.DescendantNodes()) {
-            if (loop.Declaration is not null && node.Span.OverlapsWith(loop.Declaration.Span)) {
-                continue;
-            }
-
-            foreach (var declared in RewriteGuards.DeclaredNames(node)) {
-                if (string.Equals(declared, name, StringComparison.Ordinal)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }

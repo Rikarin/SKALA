@@ -95,7 +95,7 @@ public sealed class SearchValuesAnalyzer : DiagnosticAnalyzer {
             if (expression.Parent is not ArgumentSyntax { NameColon: null } argument
                 || argument.Parent?.Parent is not InvocationExpressionSyntax invocation
                 || invocation.ContainsDirectives
-                || invocation.SpanContainsComment()
+                || RewriteGuards.ContainsCommentOrDirective(invocation.SyntaxTree, invocation.Span)
                 || model.GetOperation(invocation, cancellation) is not IInvocationOperation call
                 || call.TargetMethod.Name is not ("IndexOfAny"
                     or "IndexOfAnyExcept"

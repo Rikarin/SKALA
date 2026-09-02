@@ -66,6 +66,28 @@ internal static class RewriteGuards {
     ///     A comment inside the text a rewrite removes is content, and a fix that silently deletes it
     ///     is a fix nobody can review. A preprocessor directive is worse: removing one half of an
     ///     <c>#if</c> does not merely lose text, it stops the file parsing under the other symbol set.
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             This overload asks over <c>FullSpan</c>, so it sees the comment written ABOVE the
+    ///             node, and that is deliberate rather than the defect #302 describes.
+    ///         </b> A fix that
+    ///         deletes a whole <em>line</em> — anything reaching for <see cref="LineSpanOf" /> — really
+    ///         does carry the leading comment away with it, and for those callers <c>FullSpan</c> is
+    ///         the only correct question. A fix that rewrites a <em>span inside</em> the node does not,
+    ///         and for those callers this overload over-declines exactly the way
+    ///         <c>SpanContainsComment</c> did: silently, on documented code, with every negative still
+    ///         passing.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>So the two overloads are not a correct one and a broken one</b>, which is how #302
+    ///         reads them — they are two different questions, and which one a call site needs is
+    ///         decided by what its fix rewrites. Pass the node when the edit takes the line; pass
+    ///         <c>(tree, node.Span)</c> when it takes less. There are 56 node-overload call sites and
+    ///         nothing classifies them, so the audit is real work and is not this method's to do: a
+    ///         blanket switch to <c>Span</c> would make the line-deleting rules eat comments, which is
+    ///         a great deal worse than a missed finding.
+    ///     </para>
     /// </remarks>
     public static bool ContainsCommentOrDirective(SyntaxNode node) {
         foreach (var trivia in node.DescendantTrivia(descendIntoTrivia: true)) {
@@ -159,6 +181,58 @@ internal static class RewriteGuards {
         var root = ScopeRoot(moved);
         foreach (var node in root.DescendantNodes()) {
             if (node.Span.OverlapsWith(moved.Span)) {
+                continue;
+            }
+
+            foreach (var declared in DeclaredNames(node)) {
+                if (string.Equals(declared, name, System.StringComparison.Ordinal)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Whether anything <em>inside</em> <paramref name="scope" /> declares <paramref name="name" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         The inward question, and the one neither guard above can answer. Both of those were
+    ///         built for a declaration moving <em>outwards</em>.
+    ///     </b>
+    ///     <see cref="WouldCollide" /> asks
+    ///     <c>LookupSymbols</c> at the destination, which by definition cannot see a name scoped to a
+    ///     block nested below that position; <see cref="DeclaredElsewhereInMember" /> skips every node
+    ///     overlapping the span being moved. A rule that introduces a binding into a scope it does not
+    ///     own — a <c>foreach</c> variable around an existing body, a declaration pushed down into the
+    ///     narrower block that uses it — collides in the opposite direction, and both guards pass it.
+    ///     <para>
+    ///         ⚠ <b>The failure is not a false positive, it is a fix that does not compile.</b>
+    ///         <c>SK1083</c> on Serilog's <c>MessageTemplate.GetElementsOfTypeToArray</c> would have
+    ///         written <c>foreach (var token in tokens)</c> around a body already declaring
+    ///         <c>if (tokens[i] is TResult token)</c> — <c>CS0136</c>, and token-equivalent, so
+    ///         <c>SK9099</c>'s promise says nothing about it. Found by a corpus sweep and not by any
+    ///         fixture, because no hand-written fixture happens to declare a name inside the loop it
+    ///         rewrites (#304).
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Named separately rather than folded into the two above</b>, so the direction is
+    ///         visible at the call site instead of being implicit in which helper somebody reached for.
+    ///         A rule introducing a name needs this one; a rule lifting a declaration out needs the
+    ///         other two; a rule doing both — <c>SK1083</c> is one — needs all three.
+    ///     </para>
+    ///     <para>
+    ///         <paramref name="ignore" /> is the span the fix itself deletes, whose declarations are
+    ///         therefore not going to be there to collide with. <c>SK1083</c> passes the <c>for</c>
+    ///         header's own declarator.
+    ///     </para>
+    /// </remarks>
+    public static bool DeclaredWithin(SyntaxNode scope, string name, TextSpan? ignore = null) {
+        foreach (var node in scope.DescendantNodes()) {
+            if (ignore is { } skipped && node.Span.OverlapsWith(skipped)) {
                 continue;
             }
 

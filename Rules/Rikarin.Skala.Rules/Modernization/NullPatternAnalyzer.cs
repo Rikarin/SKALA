@@ -53,7 +53,7 @@ public sealed class NullPatternAnalyzer : DiagnosticAnalyzer {
         }
 
         // A comment inside the comparison is content the replacement would delete.
-        if (binary.SpanContainsComment()) {
+        if (RewriteGuards.ContainsCommentOrDirective(binary.SyntaxTree, binary.Span)) {
             return;
         }
 

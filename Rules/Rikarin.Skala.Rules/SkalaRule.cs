@@ -88,24 +88,69 @@ public static class SkalaRule {
         return !(csharp.LanguageVersion < Parse(floor));
     }
 
+    /// <summary>
+    ///     Maps a rule's declared <c>languageVersion</c> onto the Roslyn version it means.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         Public, and the <c>Try</c> shape, so that a test can ask the question the switch
+    ///         cannot ask about itself
+    ///     </b> — <c>RuleCatalogTests.EveryDeclaredLanguageVersion_IsRecognised</c>
+    ///     walks every distinct non-null <c>languageVersion</c> in <c>rules.json</c> through here and
+    ///     names the value it could not map. Nothing asserted that before, and the table shipped
+    ///     without a <c>"6.0"</c> arm while <c>SK1061</c> declared <c>6.0</c> as its floor (#296).
+    /// </remarks>
+    public static bool TryParseLanguageVersion(string floor, out LanguageVersion version) {
+        switch (floor) {
+            case "6.0": version = LanguageVersion.CSharp6; return true;
+            case "7.0": version = LanguageVersion.CSharp7; return true;
+            case "7.1": version = LanguageVersion.CSharp7_1; return true;
+            case "7.2": version = LanguageVersion.CSharp7_2; return true;
+            case "7.3": version = LanguageVersion.CSharp7_3; return true;
+            case "8.0": version = LanguageVersion.CSharp8; return true;
+            case "9.0": version = LanguageVersion.CSharp9; return true;
+            case "10.0": version = LanguageVersion.CSharp10; return true;
+            case "11.0": version = LanguageVersion.CSharp11; return true;
+            case "12.0": version = LanguageVersion.CSharp12; return true;
+            case "13.0": version = LanguageVersion.CSharp13; return true;
+            case "14.0": version = LanguageVersion.CSharp14; return true;
+            default: version = LanguageVersion.Default; return false;
+        }
+    }
+
+    /// <summary>
+    ///     ⚠ An unrecognised floor over-fires. It used to under-fire, which is worse.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         The old fallback was <see cref="LanguageVersion.Preview" />, so a floor the table did
+    ///         not name silenced its rule on every real project rather than on none.
+    ///     </b> The rule was still
+    ///     registered, still in the SARIF <c>rules[]</c>, still in <c>docs/rules/</c>, and reported
+    ///     nothing anywhere — one typo in <c>rules.json</c> and a rule is dead with no error (#296).
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             The fallback is <see cref="LanguageVersion.Default" /> rather than a throw, and the
+    ///             reason is this batch's own lesson.
+    ///         </b> <c>Parse</c> runs inside an analyzer callback, so
+    ///         a throw here is not a loud failure — Roslyn catches it, reports <c>AD0001</c>, and drops
+    ///         the analyzer for the rest of the compilation, which silences the rule *and* every other
+    ///         rule that analyzer hosts while the run still reports success (#315, #298, #295).
+    ///         Throwing would have swapped a quiet under-fire for a quieter one. <c>Default</c> is 0,
+    ///         below every concrete version a compilation reports, so the floor is met everywhere and
+    ///         the rule fires where it does not belong — noisy, attributable, and noticed.
+    ///     </para>
+    ///     <para>
+    ///         The loud failure belongs at build time instead, where it can be loud:
+    ///         <c>EveryDeclaredLanguageVersion_IsRecognised</c> is a red test naming the value, and it
+    ///         is the half of #296 that matters, since it fires before anything ships.
+    ///     </para>
+    /// </remarks>
     static LanguageVersion Parse(string floor) =>
-        floor switch {
-            // ⚠ The table's fallback is `Preview`, so a floor this switch does not name silences its
-            // rule on every real project rather than on none. `nameof` is C# 6 and SK1061 declares it.
-            "6.0" => LanguageVersion.CSharp6,
-            "7.0" => LanguageVersion.CSharp7,
-            "7.1" => LanguageVersion.CSharp7_1,
-            "7.2" => LanguageVersion.CSharp7_2,
-            "7.3" => LanguageVersion.CSharp7_3,
-            "8.0" => LanguageVersion.CSharp8,
-            "9.0" => LanguageVersion.CSharp9,
-            "10.0" => LanguageVersion.CSharp10,
-            "11.0" => LanguageVersion.CSharp11,
-            "12.0" => LanguageVersion.CSharp12,
-            "13.0" => LanguageVersion.CSharp13,
-            "14.0" => LanguageVersion.CSharp14,
-            _ => LanguageVersion.Preview
-        };
+        TryParseLanguageVersion(floor, out var version) ? version : LanguageVersion.Default;
 }
 
 /// <summary>

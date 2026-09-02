@@ -36,7 +36,7 @@ public sealed class SpanDecodingAnalyzer : DiagnosticAnalyzer {
                 Expression: MemberAccessExpressionSyntax access
             } copy
             || invocation.ContainsDirectives
-            || invocation.SpanContainsComment()) {
+            || RewriteGuards.ContainsCommentOrDirective(invocation.SyntaxTree, invocation.Span)) {
             return;
         }
 
