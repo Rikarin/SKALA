@@ -36,8 +36,7 @@ public sealed class RegexTimeoutTests {
     [InlineData(@"prefix(a+)+suffix")]
     [InlineData(@"(a+)+?")]
     [InlineData(@"([^x]+)+")]
-    public void TheScanner_ReadsTheNestedQuantifier(string pattern) =>
-        Assert.Equal(1, Findings(pattern).Length);
+    public void TheScanner_ReadsTheNestedQuantifier(string pattern) => Assert.Single(Findings(pattern));
 
     /// <summary>
     ///     Patterns that must stay silent. ⚠ These are the ones that decide whether the rule ships:
