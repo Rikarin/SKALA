@@ -915,6 +915,13 @@ declines still ends the process when it rethrows, and a lambda has no written re
 `Register(async () => await X())` against a `Register(Action)` is `async void` that no search for the
 keyword finds.
 
+⚠ **`catalogued.json` credited `AsyncVoidLambda` to `SK3001`, and `SK3001` cannot see a lambda.** It
+registers on `MethodDeclaration` alone. The parity map is hand-written judgement, and doc 17 § "The
+soft edge" says a *missing* entry inflates the residue — this is the other direction and it is worse:
+a wrong entry marks a concept covered and takes it off the queue, so the gap it hides is one nothing
+will ever count again. The entry now points at `SK3052`, and `AsyncVoidThrowException` — absent
+entirely — points at `SK3050`.
+
 ⚠ **The three are disjoint by construction and the construction is the owner, not a `supersedes`.**
 `SK3050` requires the nearest `async` owner to be a *declaration* that writes `void` in its own
 source; `SK3052` requires a lambda or anonymous method, which writes no return type at all; `SK3005`
