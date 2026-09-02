@@ -328,32 +328,13 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         for (var i = 0; i < sql.Length; i++) {
-            var c = sql[i];
-
-            if (c == '\'') {
-                i = SkipQuoted(sql, i);
+            var skipped = SkipNonBinding(sql, i);
+            if (skipped != i) {
+                i = skipped;
                 continue;
             }
 
-            if (c == '-' && i + 1 < sql.Length && sql[i + 1] == '-') {
-                while (i < sql.Length && sql[i] != '\n') {
-                    i++;
-                }
-
-                continue;
-            }
-
-            if (c == '/' && i + 1 < sql.Length && sql[i + 1] == '*') {
-                i += 2;
-                while (i + 1 < sql.Length && !(sql[i] == '*' && sql[i + 1] == '/')) {
-                    i++;
-                }
-
-                i++;
-                continue;
-            }
-
-            if (c != '@' || (i > 0 && IsNameCharacter(sql[i - 1]))) {
+            if (sql[i] != '@' || (i > 0 && IsNameCharacter(sql[i - 1]))) {
                 continue;
             }
 
@@ -362,20 +343,11 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
             // `@` — not a name character — so it read `@identity` as a parameter and reported a
             // missing binding for a T-SQL global. Found by the fixture that exists for it.
             if (i + 1 < sql.Length && sql[i + 1] == '@') {
-                i += 2;
-                while (i < sql.Length && IsNameCharacter(sql[i])) {
-                    i++;
-                }
-
-                i--;
+                i = EndOfName(sql, i + 2) - 1;
                 continue;
             }
 
-            var end = i + 1;
-            while (end < sql.Length && IsNameCharacter(sql[end])) {
-                end++;
-            }
-
+            var end = EndOfName(sql, i + 1);
             if (end > i + 1 && seen.Add(sql.Substring(i + 1, end - i - 1))) {
                 found.Add(sql.Substring(i + 1, end - i - 1));
             }
@@ -384,6 +356,47 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
         }
 
         return found;
+    }
+
+    /// <summary>
+    ///     The last index of the run starting at <paramref name="index" /> that cannot hold a binding
+    ///     — a <c>'…'</c> literal or either kind of SQL comment — or <paramref name="index" /> itself
+    ///     where the character starts none of them.
+    /// </summary>
+    static int SkipNonBinding(string sql, int index) {
+        var c = sql[index];
+        if (c == '\'') {
+            return SkipQuoted(sql, index);
+        }
+
+        if (c == '-' && index + 1 < sql.Length && sql[index + 1] == '-') {
+            var end = index;
+            while (end < sql.Length && sql[end] != '\n') {
+                end++;
+            }
+
+            return end;
+        }
+
+        if (c != '/' || index + 1 >= sql.Length || sql[index + 1] != '*') {
+            return index;
+        }
+
+        var close = index + 2;
+        while (close + 1 < sql.Length && !(sql[close] == '*' && sql[close + 1] == '/')) {
+            close++;
+        }
+
+        return close + 1;
+    }
+
+    static int EndOfName(string sql, int start) {
+        var end = start;
+        while (end < sql.Length && IsNameCharacter(sql[end])) {
+            end++;
+        }
+
+        return end;
     }
 
     /// <summary>The index of the closing apostrophe, treating <c>''</c> as an escaped one.</summary>
