@@ -477,13 +477,30 @@ INERT = {
 #    `types-2026.xml`, quietly carried on export-only and reported failures it had no grounds to
 #    report. Neither is a pass and neither said so in the register's own vocabulary. Both inputs
 #    are committed, so this path fires only if somebody deletes one -- and then it says which.
+#
+# ⚠ **Unreadable counts as absent, and it took a sabotage run to notice.** The first spelling of
+#    this tested `os.path.exists` only. A `types-2026.xml` that was present but truncated
+#    mid-element still crashed -- `ElementTree.ParseError`, exit 1, no SKIP, nothing in the
+#    register -- which is the same defect one layer in, and the one the comment above was already
+#    congratulating itself for having fixed. Both inputs are therefore *read* here, once, and any
+#    failure to read one is a skip that names the exception.
 TYPES_XML, EXPORT_FILE = universe_mod.TYPES_XML, universe_mod.EXPORT
-_missing_inputs = [p for p in (TYPES_XML, EXPORT_FILE) if not os.path.exists(p)]
-_how_missing = ("absent: " + ", ".join(os.path.relpath(p, REPO) for p in _missing_inputs)
-                + " -- both are committed; restore from git rather than regenerating")
+_absent = [p for p in (TYPES_XML, EXPORT_FILE) if not os.path.exists(p)]
+if _absent:
+    _how_missing = ("absent: " + ", ".join(os.path.relpath(p, REPO) for p in _absent)
+                    + " -- both are committed; restore from git rather than regenerating")
+    _xml_ids = _ec_keys = None
+else:
+    _how_missing = None
+    try:
+        _xml_ids, _ec_keys = universe_mod.issue_type_ids(), universe_mod.export_keys()
+    except Exception as exc:                                     # noqa: BLE001 -- see above
+        _how_missing = (f"unreadable: {type(exc).__name__}: {exc} -- both inputs are committed; "
+                        f"restore from git rather than regenerating")
+        _xml_ids = _ec_keys = None
 
-uni = universe_mod.build() if not _missing_inputs else {}
-if _missing_inputs:
+uni = universe_mod.build() if _how_missing is None else {}
+if _how_missing:
     skipped("parity-map key validity", _how_missing)
 else:
     if len(uni) < 500:
@@ -556,15 +573,13 @@ OUTSIDE_BOTH = {
                            "dotnet/ResXResourceManager and a Rider global-settings export. "
                            "Absent from jb 2025.2.6 (dump and binaries) and from the export",
 }
-if _missing_inputs:
+if _how_missing:
     skipped("parity-map key existence (union)", _how_missing)
 else:
-    _xml_ids = universe_mod.issue_type_ids()
-    _ec_keys = universe_mod.export_keys()
-    # Anti-vacuity, and deliberately separate from the missing-input skip above: a *present but
-    # truncated* input is the failure a presence test cannot see. An empty XML makes every key
-    # fall through to the export, and an empty export makes the union the XML alone -- which is
-    # precisely the wrong instrument this check exists to avoid being.
+    # Anti-vacuity, and deliberately separate from the missing-input skip above: a *present,
+    # readable but short* input is the failure a presence test cannot see. An empty XML makes
+    # every key fall through to the export, and an empty export makes the union the XML alone --
+    # which is precisely the wrong instrument this check exists to avoid being.
     if len(_xml_ids) < 1000 or len(_ec_keys) < 500:
         # ⚠ Both a failure AND a skip. The failure says the data is wrong; the skip is what keeps
         # this check's name out of the "ran" column, because it did not. Recording only the
