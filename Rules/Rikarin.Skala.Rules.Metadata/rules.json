@@ -5947,6 +5947,136 @@
       "configuration": [
         "dotnet_diagnostic.SK7110.severity"
       ]
+    },
+    {
+      "id": "SK2150",
+      "concept": "implicit-string-search-culture",
+      "title": "A string search has an implicit culture policy",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "StringLastIndexOfIsCultureSpecific.1",
+      "supersedes": [
+        "CA1310"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A string IndexOf, LastIndexOf, StartsWith or EndsWith call takes a string and no StringComparison, so the ambient culture decides where the match is.",
+      "rationale": "`SK2010` covers the comparison half of the culture question; this is the search half, and it fails in a way comparison does not — it returns an *offset*. A `LastIndexOf(\"-\")` that finds a different index on a Turkish machine than on an invariant one does not throw and does not compare unequal: it hands back a number that a `Substring` then slices on, so the defect surfaces as a truncated identifier three call frames away. The ambient culture is a process setting nothing in the file mentions.",
+      "examples": {
+        "bad": "var cut = key.LastIndexOf(\"-\");",
+        "good": "var cut = key.LastIndexOf(\"-\", StringComparison.Ordinal);"
+      },
+      "falsePositives": "⚠ **The method table is the framework's, not a guess, and most of `System.String` is deliberately absent from it.** `Contains(string)`, `IndexOf(char)`, `LastIndexOf(char)`, `StartsWith(char)` and `EndsWith(char)` are *already ordinal* on .NET, so reporting them would be telling the author to spell out the behaviour they already have. Only the four methods whose `string` overload documents current-culture semantics are inspected: `IndexOf`, `LastIndexOf`, `StartsWith` and `EndsWith`, and only where the first argument is a `string`. Any overload already taking a `StringComparison` or a `CultureInfo` is silent, as is any lookalike method on a type that is not `System.String`. ⚠ **The fix is `fixIsSafe: false` against the issue's proposal.** Appending `StringComparison.Ordinal` changes what the program computes — that is the whole point of the finding — and doc 08 reserves `fixIsSafe: true` for edits that do not. ⚠ **The issue also claims this is \"the same fix `SK2010` already emits\"; `SK2010` emits no fix at all** (`hasFix: false`), because for a comparison there is no way to choose between ordinal, invariant and user-culture semantics. Search is different only because an offset into a string is an ordinal question by construction. The inserted type name is qualified as `System.StringComparison` wherever `StringComparison` does not already bind at the call site, so the edit compiles in a file with no `using System;`.",
+      "configuration": [
+        "dotnet_diagnostic.SK2150.severity"
+      ]
+    },
+    {
+      "id": "SK2151",
+      "concept": "invariant-culture-comparison",
+      "title": "A string equality test asks for invariant culture where ordinal was meant",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [
+        "CA1309"
+      ],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An equality-shaped string operation is given StringComparison.InvariantCulture, which still runs the full linguistic comparison it was reached for to avoid.",
+      "rationale": "`StringComparison.InvariantCulture` is culture-*stable*, not culture-*free*. It still walks the collation tables, so it costs an order of magnitude more than `Ordinal` and it still answers `true` for sequences that are not the same string — a zero-width joiner and an empty string compare equal under it. For the things equality is actually asked about — identifiers, dictionary keys, protocol tokens, file names — `Ordinal` is what was meant. ⚠ **This is the mirror image of `SK2010`, and the harder one to see.** `SK2010` reports a policy that is *missing*; this reports one that is *stated and wrong*, which reads as deliberate and therefore survives review.",
+      "examples": {
+        "bad": "if (string.Equals(scheme, \"https\", StringComparison.InvariantCulture)) { }",
+        "good": "if (string.Equals(scheme, \"https\", StringComparison.Ordinal)) { }"
+      },
+      "falsePositives": "⚠ **`CultureInfo.InvariantCulture` is never reported, and the exclusion is structural rather than a filter.** Invariant culture is *correct* for round-tripping formatted data — `value.ToString(CultureInfo.InvariantCulture)`, `decimal.Parse(text, CultureInfo.InvariantCulture)` — and a rule that could not tell the two apart would be advising authors to corrupt their own serialisation. This rule keys on the `System.StringComparison` enum, which formatting and parsing APIs do not accept, so a `CultureInfo` argument cannot reach it. ⚠ **Ordering is excluded on purpose.** `Compare` and `CompareTo` are silent: a comparison whose result feeds a sort is the one place linguistic collation is legitimately wanted, and a sort that must not be linguistic is a design decision rather than a slip. Only the equality-shaped members are inspected — `Equals`, `StartsWith`, `EndsWith`, `Contains`, `IndexOf`, `LastIndexOf`. ⚠ **`fixIsSafe: false`**: swapping the enum member changes what the program computes, and where the author really did want stable linguistic semantics the honest replacement is `CurrentCulture`, which no analyzer can choose for them. ⚠ `CA1309` covers this ground and is **off by default** on a plain project — see the measurement in doc 08.",
+      "configuration": [
+        "dotnet_diagnostic.SK2151.severity"
+      ]
+    },
+    {
+      "id": "SK2152",
+      "concept": "platform-dependent-path-comparison",
+      "title": "The path comparison assumes the file system's case rules",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A path-valued string is compared with a hard-coded case-insensitive StringComparison, which is right on Windows and macOS and wrong on Linux.",
+      "rationale": "Two paths differing only in case are one file on Windows and on a default macOS volume, and two files on Linux. Folding them together on Linux is the failure a path comparison may never have — it serves one file's answer for another — and it is invisible on the developer's machine, appearing only in the container. ⚠ **Skala's own answer to this is already in the tree and the rule is written from it**: `SarifWriter.PathComparison` is `OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase`, and `CacheKeyPathTests` asserts the correct answer on all three platforms rather than skipping on two of them. So the guidance is not \"stop ignoring case\" — it is \"compare the path the way this file system compares it\", chosen at run time.",
+      "examples": {
+        "bad": "if (Path.GetFullPath(a).Equals(b, StringComparison.OrdinalIgnoreCase)) { }",
+        "good": "static StringComparison PathComparison { get; } =\n    OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;\n\nif (Path.GetFullPath(a).Equals(b, PathComparison)) { }"
+      },
+      "falsePositives": "⚠ **An operand must be *provably* a path, and a name is not a proof.** The finding requires that one side of the comparison is the result of a `System.IO.Path` member, or a `FullName` / `DirectoryName` / `Name` read from a `System.IO.FileSystemInfo`. A parameter called `filePath` is not enough: name-based path detection is how this kind of rule acquires its false positives, and the recall it costs is recall on code where the rule would be guessing. ⚠ **Only a hard-coded case-*insensitive* constant is reported** — `OrdinalIgnoreCase`, `InvariantCultureIgnoreCase`, `CurrentCultureIgnoreCase`. The `Ordinal` direction is wrong on Windows for the same reason, but reporting it would fire on every correct comparison written by someone targeting Linux only, and there is no signal in the source that separates the two. A comparison passed a non-constant `StringComparison` — a field, a property, a parameter — is already the shape this rule asks for and is silent. ⚠ **`hasFix: false`**: the repair is to introduce a platform-dependent comparison value, which is a new declaration somewhere the analyzer cannot choose, and the framework offers no built-in to point at.",
+      "configuration": [
+        "dotnet_diagnostic.SK2152.severity"
+      ]
+    },
+    {
+      "id": "SK2153",
+      "concept": "queryable-degraded-to-enumerable",
+      "title": "An IQueryable is silently degraded to IEnumerable",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "PossibleUnintendedQueryableAsEnumerable",
+      "resharperNote": "⚠ The export sets `resharper_possible_unintended_queryable_as_enumerable_highlighting = suggestion` and this rule defaults to `warning`. ReSharper reports the whole family of implicit `IQueryable` → `IEnumerable` conversions, including the deliberate ones, so a low severity is how that inspection stays usable; this rule reports only a *composable* operator that bound to `Enumerable`, which is never deliberate, so it can afford the severity the consequence deserves. docs/plan/16 § Q5.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A deferred LINQ operator binds to Enumerable on a receiver whose static type is IQueryable, so the rest of the query stops translating and runs in the client.",
+      "rationale": "Once one operator binds to `System.Linq.Enumerable`, the provider has already been asked to enumerate everything it has: the `Where` that was meant to become a `WHERE` clause becomes a full table read, and every operator after it runs on the wire's output. Nothing fails, nothing warns, and the only symptom is a query that got slower in proportion to the table. It is the most expensive silent mistake in data-access code, and it is normally introduced by passing a `Func<T, bool>` where an `Expression<Func<T, bool>>` was needed — a change of one word at a declaration far from the call.",
+      "examples": {
+        "bad": "Func<Order, bool> open = o => o.Status == 0;\nreturn context.Orders.Where(open).Take(20);",
+        "good": "Expression<Func<Order, bool>> open = o => o.Status == 0;\nreturn context.Orders.Where(open).Take(20);"
+      },
+      "falsePositives": "⚠ **A deliberate `.AsEnumerable()` is excluded by construction, not by a filter.** That call returns `IEnumerable<T>`, so its result's static type does not implement `IQueryable` and the operator chained onto it can never reach this rule. The same is true of `ToList()` and `ToArray()`. ⚠ **Only operators that return a sequence are reported.** `ToList`, `ToArray`, `ToDictionary`, `ToHashSet` have no `Queryable` counterpart and binding them to `Enumerable` is the intended way to materialise — reporting those would report every correct query in the repository. The finding needs the invoked method's return type to be `IEnumerable<T>` or `IOrderedEnumerable<T>`, which is exactly the set of operators whose result *could* still have been a query. ⚠ **Scalar operators are silent even though `Queryable` has them.** `Count()`, `Any()`, `First()` bound to `Enumerable` on an `IQueryable` really do fetch the table, but they also appear at the end of chains this rule has already reported, and reporting both turns one defect into two findings. The composable operator is the one that begins the degradation. ⚠ **`hasFix: false`**: the repair is to change a delegate's declared type to `Expression<...>` at another declaration, or to accept the materialisation by writing `.AsEnumerable()` — a decision about intent that no edit can make. Inserting `.AsEnumerable()` would silence the rule while keeping the defect, which is the fix `skala fix` must never have.",
+      "configuration": [
+        "dotnet_diagnostic.SK2153.severity"
+      ]
+    },
+    {
+      "id": "SK2154",
+      "concept": "sort-without-ordering",
+      "title": "The sort has no ordering to use",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A sort or ordering falls back to Comparer<T>.Default for a type that implements neither IComparable<T> nor IComparable, and no comparer is passed.",
+      "rationale": "`Comparer<T>.Default` throws `InvalidOperationException` on the first comparison it is asked to make when `T` implements neither interface. The call compiles cleanly, and it needs *two* elements to fail — so an empty list and a single-element list both sort successfully, which is what the unit test contains and what production does not.",
+      "examples": {
+        "bad": "sealed class Point { public int X; }\n\nvar sorted = points.OrderBy(p => p).ToList();",
+        "good": "var sorted = points.OrderBy(p => p.X).ToList();"
+      },
+      "falsePositives": "⚠ **The question is only decidable for a sealed type, and that is the finding rather than a limitation to apologise for.** `Comparer<T>.Default` for an unsealed `T` builds an `ObjectComparer` that casts each *element* to `IComparable` at run time, so a `List<Animal>` holding `Dog : Animal, IComparable<Dog>` sorts correctly even though `Animal` implements nothing. A non-sealed class therefore cannot be reported without guessing what is in the list. The rule fires only where the element or key type is a **struct** or a **sealed** reference type, which is where the runtime type is known to be the static one. ⚠ **A type parameter is never reported, for the same reason and more strongly**: `T` in an open generic is substituted at every call site, and `IComparable` may well be among the substitutions — there is no fact here to check. An interface, `object`, `dynamic` and an error type are all silent. ⚠ Enums, `string`, every primitive, `ValueTuple`, `DateTime`, `Guid` and `Nullable<T>` over a comparable `T` all implement one of the two interfaces and are excluded by the check rather than by a list. ⚠ **`Queryable` overloads are excluded**: an `OrderBy` that becomes an `ORDER BY` is ordered by the database and never touches `Comparer<T>.Default`. ⚠ **`hasFix: false`**: the repair is either an `IComparable<T>` implementation or a comparer, and both require knowing what order was wanted — the one thing the source does not say.",
+      "configuration": [
+        "dotnet_diagnostic.SK2154.severity"
+      ]
     }
   ]
 }

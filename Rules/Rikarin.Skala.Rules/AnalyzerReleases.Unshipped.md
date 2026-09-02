@@ -205,3 +205,8 @@ SK2071 | Skala.Correctness | Warning | The structured log template names the sam
 SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
 SK2073 | Skala.Correctness | Warning | The caught exception is not passed to the logger's exception parameter.
 SK7110 | Skala.Maintainability | Info | The logger is declared for a different type than the one that declares it.
+SK2150 | Skala.Correctness | Warning | The string search has an implicit culture policy.
+SK2151 | Skala.Correctness | Warning | The string equality test asks for invariant culture where ordinal was meant.
+SK2152 | Skala.Correctness | Warning | The path comparison assumes the file system's case rules.
+SK2153 | Skala.Correctness | Warning | The IQueryable is silently degraded to IEnumerable.
+SK2154 | Skala.Correctness | Warning | The sort has no ordering to use.

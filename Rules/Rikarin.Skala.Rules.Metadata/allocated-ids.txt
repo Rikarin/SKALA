@@ -246,3 +246,8 @@ SK2100 ineffective-thread-static
 SK2101 pure-attribute-on-void
 SK2102 debugger-display-missing-member
 SK2103 duplicated-attribute
+SK2150 implicit-string-search-culture
+SK2151 invariant-culture-comparison
+SK2152 platform-dependent-path-comparison
+SK2153 queryable-degraded-to-enumerable
+SK2154 sort-without-ordering
