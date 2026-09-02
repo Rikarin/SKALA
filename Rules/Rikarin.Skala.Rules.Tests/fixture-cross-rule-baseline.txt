@@ -21,6 +21,7 @@
 # purpose is to contain a defect.
 #
 # Format: <fixture path relative to fixtures/> <TAB> <rule id> <TAB> <what that rule says>
+
 SK0234/negative/type-arguments-inference-would-not-reproduce.cs	SK2212	every path through this body jumps out of the loop, so it runs at most once
 SK0240/negative/catch_rethrows_variable.cs	SK2015	`throw error;` resets the stack trace; use `throw;`
 SK1004/negative/a-generic-method.cs	SK2212	every path through this body jumps out of the loop, so it runs at most once
@@ -82,6 +83,7 @@ SK3009/negative/thread-static.cs	SK2100	AUDITED (#285): the shape is genuinely b
 SK3062/negative/the-own-types-static-field.cs	SK2134	the instance constructor `.ctor` writes the static field `current`, which every instance and every thread shares
 SK4032/negative/a-computed-search-argument.cs	SK2150	`IndexOf` with no StringComparison searches using the ambient culture, so the offset it returns depends on a process setting nothing here mentions; pass StringComparison.Ordinal
 SK5010/negative/unbalanced-pattern.cs	SK2241	`Regex` will reject this pattern the first time this line runs: Invalid pattern '^(a+$' at offset 5. Not enough )'s.
+SK5040/negative/reader-settings-pair.cs	SK5009	this reader parses the DTD and has a resolver that will fetch what the DTD names, so a document can read any file the process can and reach any host it can; set `XmlResolver = null` to keep DTD parsing without external lookups, or `DtdProcessing = DtdProcessing.Prohibit` if the documents have no DTD
 SK7090/negative/constructed-and-not-thrown.cs	SK2014	empty `catch` silently discards the exception
 SK7101/negative/public-api-is-sk7010s.cs	SK2131	`Count` has no setter, no initializer and no constructor that assigns it, so it holds `default` for the life of every instance
 SK7101/negative/the-repaired-shape.cs	SK2131	`Count` has no setter, no initializer and no constructor that assigns it, so it holds `default` for the life of every instance
