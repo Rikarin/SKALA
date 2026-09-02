@@ -12,6 +12,7 @@
 <main>
 <p class="crumb"><a href="index.html">Rules</a> / Modernization</p>
 <h1>SK1034 <span class="title">Use the <code>Count</code> property, not <code>Count()</code> or <code>Any()</code></span></h1>
+<p class="banner">⚠ <strong>Retired.</strong> The id stays allocated for ever because every baseline in every repository names it (ADR-012), and the analyzer no longer enables it, so nothing new is reported. The page is here so that an old finding can still be looked up.</p>
 <p class="lede"><code>list.Count() &gt; 0</code> and <code>list.Any()</code> on something that already has a <code>Count</code>.</p>
 <table class="facts">
 <tbody>
@@ -28,7 +29,7 @@
 </tbody>
 </table>
 <h2 id="why">Why</h2>
-<p><code>Enumerable.Count()</code> has a fast path for <code>ICollection</code> and <code>Any()</code> allocates an enumerator; both are strictly more work than reading the property, and both hide from the reader that the length is already known. The value is legibility more than speed.</p>
+<p>⚠ <strong>Retired (#281).</strong> <code>CA1860</code> and <code>CA1829</code> are both enabled by default at <code>Info</code> in a stock SDK build and between them report all four of this rule's positive fixtures with nothing configured — <code>CA1860</code> three, <code>CA1829</code> the <code>Count()</code> one — which is the same visibility this rule shipped at (<code>suggestion</code>). ADR-008 is host, never rebuild. The id stays allocated for ever (ADR-012). <code>Enumerable.Count()</code> has a fast path for <code>ICollection</code> and <code>Any()</code> allocates an enumerator; both are strictly more work than reading the property, and both hide from the reader that the length is already known. The value is legibility more than speed.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
 <pre class="bad"><code>if (items.Any()) {

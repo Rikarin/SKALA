@@ -415,7 +415,7 @@ public static partial class SkalaCommandLine {
         }
 
         var catalogue = File.ReadAllText(path);
-        var coverage = RuleCoverage.Compute(catalogue, RuleCatalog.All.Select(static rule => rule.Id));
+        var coverage = RuleCoverage.Compute(catalogue, RuleCatalog.All);
         if (RuleCoverage.Replace(catalogue, RuleCoverage.Render(coverage)) is not { } updated) {
             Console.Error.WriteLine(
                 $"{path} has no {RuleCoverage.BeginMarker} … {RuleCoverage.EndMarker} block; coverage not written."

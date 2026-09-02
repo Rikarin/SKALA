@@ -98,14 +98,10 @@ public sealed class RuleCatalogTests {
             $"{CataloguePath} was read but does not look like the rule catalogue ({catalogue.Length} bytes)."
         );
 
-        // ⚠ Retired rules are excluded from `shipped`. RuleCoverage.Compute checks `live` first, so a
-        // withdrawn rule that kept its rules.json entry would otherwise be counted as Shipped — the
-        // one direction an error here must never go, because it credits the catalogue with a rule
-        // that can no longer fire.
-        var coverage = RuleCoverage.Compute(
-            catalogue,
-            RuleCatalog.All.Where(static rule => !rule.Retired).Select(static rule => rule.Id)
-        );
+        // ⚠ The RuleInfo overload, which drops retired rules itself — the same call the `skala rules
+        // docs` generator makes. Filtering here instead would be the drift this test cannot see: the
+        // generator would count a withdrawn rule as shipped and the block would never match.
+        var coverage = RuleCoverage.Compute(catalogue, RuleCatalog.All);
 
         // The catalogue names a hundred-odd rules and ships a couple of dozen. If either of those
         // stops being roughly true, the parser has broken rather than the project.
