@@ -16,7 +16,7 @@
   "PossibleIntendedRethrow": "SK2015",
   "PossibleInvalidOperationExceptionCollectionWasModified": "SK2007",
   "AsyncVoidMethod": "SK3001",
-  "AsyncVoidLambda": "SK3001",
+  "AsyncVoidLambda": "SK3052",
   "AsyncVoidMethodWithoutAwait": "SK3001",
   "AsyncVoidEventHandlerMethod": "SK3001",
   "ConvertToPrimaryConstructor": "SK1002",
