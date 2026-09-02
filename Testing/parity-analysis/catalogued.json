@@ -251,6 +251,7 @@
   "RedundantDiscardDesignation": "SK0250",
   "PossibleInvalidCastExceptionInForeachLoop": "SK2180",
   "PossibleMistakenCallToGetType": "SK2181",
+  "PossibleMistakenSystemTypeArgument": "SK2233",
   "AccessToStaticMemberViaDerivedType": "SK2183",
   "PossibleInterfaceMemberAmbiguity": "SK2184",
   "TypeParameterCanBeVariant": "SK6060",

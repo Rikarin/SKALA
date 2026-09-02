@@ -215,6 +215,8 @@ public static class AnalyzerHost {
         new UngroupedExtensionMethodsAnalyzer(), new ConstantForwardingOverloadAnalyzer(),
         new ReflectiveTypeTestAnalyzer(), new MergeableTryAnalyzer(),
         new ReorderedAnonymousTypeAnalyzer(), new MergedPropertyPatternAnalyzer(),
+        new SqlFragmentsRunTogetherAnalyzer(), new CommandParameterNotSuppliedAnalyzer(),
+        new AssemblyLoadedOutsideItsContextAnalyzer(), new MistakenTypeArgumentAnalyzer(),
     ];
 
     /// <summary>

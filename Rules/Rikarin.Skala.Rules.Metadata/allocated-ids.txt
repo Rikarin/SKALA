@@ -338,3 +338,7 @@ SK1120 reflective-type-test
 SK1121 mergeable-try
 SK1122 reordered-anonymous-type
 SK1123 merged-property-pattern
+SK2230 sql-fragments-run-together
+SK2231 command-parameter-not-supplied
+SK2232 assembly-loaded-outside-its-context
+SK2233 mistaken-type-argument

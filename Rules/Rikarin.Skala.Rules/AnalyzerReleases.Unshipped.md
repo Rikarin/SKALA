@@ -297,3 +297,7 @@ SK1120 | Skala.Modernization | Info | A reflection call asks what `is` answers.
 SK1121 | Skala.Modernization | Hidden | A `try`/`catch` is the whole body of a `try`/`finally`.
 SK1122 | Skala.Modernization | Hidden | A nearby anonymous type has the same members in another order.
 SK1123 | Skala.Modernization | Hidden | Two `or` alternatives test the same property.
+SK2230 | Skala.Correctness | Warning | The concatenation fuses a word into the SQL keyword beside it.
+SK2231 | Skala.Correctness | Warning | The command's SQL names a parameter nothing supplies.
+SK2232 | Skala.Correctness | Warning | The load context's own resolver loads outside it.
+SK2233 | Skala.Correctness | Warning | The `Type` passed cannot satisfy what the API asks for.

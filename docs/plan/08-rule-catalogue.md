@@ -2101,6 +2101,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **347** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **313** | **90.5 %** |
+| Rules this document names | **329** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **294** | **89.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
@@ -6524,3 +6526,214 @@ batch's to fix**:
   file hashes `sha256:e256d0b9ed35b14f` at this batch's merge-base and the identical
   `sha256:e256d0b9ed35b14f` at its tip, while the corpus records `sha256:1db666f69fec005d`. Nothing
   here touches `.editorconfig`, and re-freezing the corpus is a reviewed commit of its own.
+## `SK2230`–`SK2233` — SQL text, load contexts and the `Type` an API was handed
+
+⚠ **The prose pass for `SK2230`–`SK2233` is owed.** What follows is the allocation register entry —
+enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+**Four rules from five issues, and the fifth is refuted.** What holds the four together is that each
+one reads a *contract stated in the file itself* and finds the code contradicting it: SQL grammar in
+a string the compiler treats as opaque bytes, a parameter list the provider will demand at execution,
+an `AssemblyLoadContext` override whose existence states which context an assembly is meant for, and
+an API whose parameter name says what kind of `Type` it needs.
+
+⚠ **`SK5001` is disjoint from `SK2230` and `SK2231` by construction, not by wording.** `SK5001` fires
+only when a value that crossed a trust boundary reaches the SQL; `SK2230` refuses to read a
+concatenation with a non-literal operand and `SK2231` refuses to read a `CommandText` that is not a
+compile-time constant. No string can satisfy both, and `SqlAndReflectionBatchTests` asserts it on one
+file carrying *both* shapes rather than on a file where the two merely differ.
+
+`SK2230` `sql-fragments-run-together` — `"select id from users" + "where active = 1"` is
+`… usersWHERE active = 1`, which no database parses. ⚠ **The "this is SQL" test is the entire risk and
+it is three conditions**: the chain's first literal opens with a statement keyword, the join fuses two
+word characters, and the word the *right* literal begins with is a SQL keyword matched whole. ⚠ **Only
+the right-hand direction is tested, and the left-hand one was cut after it was written.** "the left
+literal ends with a keyword" reports `"select * from Order" + "Items"` — a table name split over two
+lines, where `Order` is a keyword by coincidence — and nothing in the file separates that from the
+defect. ⚠ **The issue's own example is not a defect and the rule declines it.** `"select *" + "from t"`
+is `select *from t`, which every SQL tokenizer accepts, because `*` and `f` cannot belong to the same
+token; the fusion needs two *word* characters to meet, and a fixture says so. ⚠ **Apostrophe parity
+decides whether the join is inside a `'…'` literal**, where a space would change what the statement
+*says* rather than repair how it *parses*. ⚠ **Syntax scope, not the `Semantic` the issue proposed** —
+every condition is a fact about literal text, so the rule runs under `--load=loose` where a semantic
+one would not (#277). ·
+
+`SK2231` `command-parameter-not-supplied` — the text names `@id` and `@status`, the method binds
+`@id`. ⚠ **The restrictions are the rule.** The command must be a **local** — a field, a property or a
+**parameter** is reachable from code this method cannot see, and the planted probe proved the
+parameter case by being declined. It must not escape; `CommandText` must be assigned exactly once from
+a constant; a `CommandType` assignment declines the method because a stored-procedure name is not SQL;
+every `Parameters` use must be a recognised add with a constant name, and one it cannot read abandons
+the method rather than guessing. ⚠ **At least one parameter must already have been added**, because
+zero is the shape where the binding most plausibly happens out of sight. ⚠ **The reach is narrower
+than it looks and the reason is the framework's own shape**: `IDbCommand.Parameters` is
+`IDataParameterCollection`, which has no `AddWithValue` and no `Add(name, value)` — those live on the
+concrete provider collections — so through the interface alone only `Add(new …Parameter("@id", …))`
+is readable. The very common `CreateParameter()` / `ParameterName = "@id"` / `Add(parameter)` idiom is
+declined outright. ⚠ **`hasFix: false`**, for the reason `SK5001` carries: supplying the missing
+parameter means choosing a value, and there is no value in the file to substitute. ·
+
+`SK2232` `assembly-loaded-outside-its-context` — `Assembly.LoadFrom` or `Assembly.LoadFile` returned
+from an `AssemblyLoadContext.Load` override, which loads into the default context or a new anonymous
+one and leaves the context that was asked holding nothing. ⚠ **`S3885`'s broad reading is deliberately
+not implemented, and refuting it is most of this rule's content.** "`Assembly.Load` should be used"
+reported everywhere would report every plugin host in existence: `LoadFrom` against a path is exactly
+right when the default context is where the assembly belongs, and which context an assembly belongs in
+is *intent*, not a fact in the file. Inside a `Load` override the intent is stated by the override
+existing, and that is the only position where the question has an answer. ⚠ **`Assembly.Load` inside
+the override stays silent**, because returning it is the documented way to share a contract assembly
+with the default context — the exclusion is the point of the rule rather than a concession to it. ·
+
+`SK2233` `mistaken-type-argument` — `Enum.GetValues(typeof(Widget))`,
+`Attribute.GetCustomAttribute(m, typeof(Widget))`, `Activator.CreateInstance(typeof(IWidget))`. ⚠ **A
+closed table of four contracts, matched by parameter *name* and never by index**, the discipline
+`taint.json` uses and for the same reason. ⚠ **The failure is total rather than conditional** — there
+is no input on which any of them succeeds — which is what separates it from a rule that flags a risk.
+`SK2181` reports the wrong *operation* on a `Type`, `SK2182` the wrong *test*; this is the wrong
+*type*, in a position where the API says what the right one would have to be. ⚠ **`SK1035` and this
+rule cannot both fire**: `SK1035` needs the operand to *be* an enum, this one needs it not to be, and
+the batch test asserts it on one file holding both calls.
+
+### The `CA*` probe, and what it refuted
+
+Probed outside this repository on SDK 10.0.400, with empty `Directory.Build.props` and
+`Directory.Build.targets` above the probe so nothing was inherited, in six configurations spanning all
+three states a `CA*` rule can be in — off, enabled-but-hidden, and on. ⚠ **None of the rules examined
+turned out to be in the middle state**, which is the one that reads as "off" on an ordinary build:
+there were zero `info`-level diagnostics at defaults, and the SDK's own `analysislevel_10_default`
+config carries exactly one `severity = none` entry, for an unrelated rule. Both instrument checks
+passed — a planted `CA2200` fired at plain defaults and `CA1822`/`CA1305`/`CA1707` at
+`AnalysisMode=All` — so every zero below is a real zero rather than an analyzer package that never
+loaded.
+
+- ⚠ **`CA2100` does not cover `SK2230` or `SK2231`.** It is a *constant-ness* rule: it fires where the
+  command text is not constant and is silent where it is, so the all-literal query both of these rules
+  are about is the one query it cannot see. It produced nothing on the fused form and nothing on the
+  correct form.
+- ⚠ **`CA2263` is disjoint from `SK2233` on three of its four rows, and the direction is the reverse of
+  the obvious guess.** It fires when the operand *does* satisfy the constraint and goes silent when it
+  does not, because it needs a valid generic overload to suggest. The exception is
+  `Activator.CreateInstance(typeof(IWidget))`, where it fires on the same span — off by default, in the
+  usage category rather than correctness, and offering `Activator.CreateInstance<T>()`, which **does
+  not compile** for an interface. The row is kept for exactly that reason.
+- ⚠ **`CA2326`–`CA2330` have nothing whatsoever to do with assembly loading.** They are Newtonsoft.Json
+  `TypeNameHandling` deserialization rules. Compiled in one project alongside every assembly-loading
+  shape, they fired six times on the JSON and zero times on any load call. They were named in advance
+  as the likely host for `SK2232` and are refuted.
+- ⚠ **`CA1805` covers only the initializer subset of `new Guid()`**, and not the part that matters: it
+  fires on `Field = new Guid()` and `= default(Guid)` as a redundant initializer to delete, and is
+  silent on `var g = new Guid();`, on `Guid k = new();`, and on a default parameter. `IDE0090` actively
+  pushes `new System.Guid()` toward `new()`. Neither questions the value.
+- `IL2026` and `IL3000` report `Assembly.LoadFrom`/`LoadFile`/`Location`, but only once the trim, AOT
+  or single-file analyzer is switched on, and as a *trimming* question. `SYSLIB0018` (obsoletion) is
+  the only thing in this whole area that is on by default, and it covers `ReflectionOnlyLoad` alone.
+
+### `#187` is refuted: `SK1073` already owns `new Guid()`
+
+⚠ **No id was allocated for it.** `SK1073` `cached-empty-instance` reports exactly the span #187 asks
+for — `id == new Guid()` is one of its committed positive fixtures — with a fix, `fixIsSafe: true`,
+on by default, and a written false-positive story covering the optional-parameter trap that makes
+`new Guid()` legal where `Guid.Empty` is not. A second rule would put two findings and two
+*contradictory* fixes on one expression: `Guid.Empty` from one and `Guid.NewGuid()` from the other.
+⚠ **Which of the two the author meant is intent and is not written anywhere in the file**, so the
+second rule could never decide; `SK1073`'s reading is the one that is always safe, because it changes
+the spelling and not the value. The refutation is a test —
+`SqlAndReflectionBatchTests.Sk1073_AlreadyOwnsNewGuid` — rather than a sentence, so the day `SK1073`
+stops covering it this goes red and the decision is re-examined instead of quietly outliving its
+evidence.
+
+### The measurement
+
+**Skala's own tree, `--load=binlog` against a `--no-incremental` build, `--require-fresh-binlog`,
+`--no-cache`:** `SK9021` reports **633 of 635 selected files covered (100 %)**, 2 in no compilation.
+1 500 findings from 24 distinct rules. **All four rules report zero.**
+
+⚠ **The instrument was verified before the zero was believed, by planting and deleting rather than by
+reasoning.** A file carrying all four shapes was added to `Rikarin.Skala.Analysis`, the tree rebuilt
+`--no-incremental`, and `skala check` reported all four — `SK2230` on the fused literal, `SK2231` on
+the unbound `@status`, `SK2232` on `Assembly.LoadFrom` in the `Load` override, `SK2233` on
+`Enum.GetValues` over a class. It was then deleted, the tree rebuilt, and the zero returned. ⚠ **The
+first plant found a real fact about `SK2231` rather than a bug in it**: the probe took the command as
+a *parameter* and the rule correctly declined it, which is the restriction the registry states — the
+plant is what turned that from a claim into an observation.
+
+Classifying each zero on Skala's own tree:
+
+- `SK2230`, `SK2231` — **shape absent.** No compiled Skala source assigns `CommandText` or concatenates
+  SQL. ⚠ The only SQL in the repository is `Rules/Rikarin.Skala.Rules.Tests/corpus/`, which the test
+  project declares `<Compile Remove>` precisely so `skala check` does not report its own security
+  evidence, so it is in no compilation and reaches no rule.
+- `SK2232` — **shape present and correctly declined.** `HostedAnalyzers.PackageLoadContext` derives
+  from `AssemblyLoadContext` and its `Load` override returns `LoadFromAssemblyPath`, which is the good
+  form this rule exists to distinguish. The rule looked at the exact shape it is about and said nothing.
+- `SK2233` — **shape present and correctly declined.** `Activator.CreateInstance(type)` and
+  `(type, true)` in `HostedAnalyzers` and `RoslynCodeStyle` pass a `Type` *variable*, which the rule
+  declines by design because what a caller put there is not a fact in this file.
+
+**The reference corpus** — `Testing/corpus/real/` staged outside the repository, deduplicated,
+compiled one project per library, each with a `--no-incremental` binlog. ⚠ **The "three copies of every
+file" claim is exactly right and the shape of it is not what the wording suggests**: there are no
+variant directories, the copies sit beside each source as `X.cs` / `X.expected.cs` /
+`X.arranged.expected.cs`, and 1 140 = 380 × 3 exactly. ⚠ **Content hashing finds zero duplicates** —
+the variants differ by whitespace and member order — so only the filename suffix separates them, and a
+hash-based deduplication would have kept all three.
+
+| | newtonsoft | serilog | vixen |
+|---|---:|---:|---:|
+| Files compiled | 110 | 70 | 200 |
+| CS errors, no implicit usings | 904 | 847 | 4 767 |
+| CS errors, `ImplicitUsings=enable` | 903 | 486 | 4 109 |
+| CS errors, plus package references | 153 | 51 | 1 810 |
+| Findings | 399 | 234 | 443 |
+| Distinct semantic-scope rules that fired | 26 | 17 | 16 |
+| `SK2230`–`SK2233` | 0 | 0 | 0 |
+
+⚠ **`ImplicitUsings` is not a general property of the corpus and stating it as one would be wrong.**
+Newtonsoft moves 904 → **903**, one error, because its sources carry complete explicit `using` blocks.
+Serilog moves 847 → 486 because upstream declares its usings as `<Using>` items in a csproj the corpus
+did not sample. Vixen gains 14 %.
+
+⚠ **The zeros are not "the analysis never ran".** 26, 17 and 16 distinct *semantic-scope* rules fired
+across the three trees, for 212, 150 and 277 findings — under `--load=loose` that number would be zero
+(#277). `SK9021` reports **0 notifications on vixen**, every selected file in a compilation.
+
+Classifying each corpus zero:
+
+- `SK2230`, `SK2231`, `SK2232` — **shape absent**, in all three trees. Zero SQL-opening concatenations,
+  zero `CommandText` assignments, zero `AssemblyLoadContext` subclasses and zero
+  `Assembly.LoadFrom`/`LoadFile` calls across 380 compiled files. A JSON serializer, a logging library
+  and a game engine do not talk to databases or host plugins.
+- `SK2233` — **shape present and correctly declined, six sites.** Newtonsoft's `EnumUtils` and
+  `JsonSchemaGenerator` carry `GetCustomAttributes(typeof(EnumMemberAttribute), true)` and three
+  `IsDefined(typeof(FlagsAttribute), false)`; Serilog carries `Enum.Parse(typeof(LogEventLevel), …)`
+  and `IsDefined(typeof(ExtensionAttribute), false)`. Every operand satisfies its contract, so silence
+  is the right answer. ⚠ **Serilog's two are the load-bearing ones**: their files carry no CS errors
+  and other semantic rules fired in them, so the silence is the rule declining rather than a broken
+  semantic model. Newtonsoft's `EnumUtils.cs` carries `CS0234`/`CS0122`, and a rule reading an error
+  type answers "no finding" for the wrong reason. ⚠ **The corpus prompted a fixture that did not
+  exist**: a `Type` receiver was not obviously going to reach the table, since `Type` looks like it
+  should need its own row. It does not — `Type` inherits `MemberInfo`'s `IsDefined` rather than
+  re-declaring it — and `is_defined_on_a_type_receiver` now pins that.
+
+⚠ **Neither reference tree is a specification and a zero on them is not evidence a rule is good.** What
+these numbers establish is only the negative one: across 380 corpus files and 635 of Skala's own,
+these four rules produced **no false positive**, because they produced nothing at all where nothing was
+wrong, and produced all four findings the moment the shapes were planted.
+
+### The sabotage pass
+
+Twenty sabotages, one guard each, every one turning exactly the intended fixture red. ⚠ **One turned
+nothing red on the first pass and it was a real gap**, not a redundant guard: removing `SK2231`'s
+apostrophe skipping left every fixture green, because `an_address_inside_a_sql_string` — written to
+prove that guard — proves a different one. The `@` in `'root@localhost'` is preceded by a word
+character and is skipped before the quote counting is ever consulted. `a_marker_inside_a_sql_string`,
+a marker after a space inside a `'…'` literal, is the fixture that reaches it. ⚠ **Two of the
+expectations written into the sabotage table were wrong and the run said so rather than agreeing**:
+`the_word_after_the_join_is_not_a_keyword` survives the parity sabotage because `setting` is not in
+the continuation list, so it is declined a guard earlier.
+
+⚠ **The sabotage driver's own parser had to be verified before its output meant anything, and it
+failed.** It read the fixture name out of the xUnit display name, which truncates the path, so its
+first full run reported "red: (none)" for all twenty — a measurement printing exactly what it prints
+on the day it does not run. It reads the assertion message now.
