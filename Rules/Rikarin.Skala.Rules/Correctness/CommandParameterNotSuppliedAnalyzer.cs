@@ -141,16 +141,19 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
 
     static bool IsACommand(INamedTypeSymbol owner, ImmutableArray<INamedTypeSymbol> commands) {
         foreach (var command in commands) {
-            for (var current = (INamedTypeSymbol?)owner; current is not null; current = current.BaseType) {
-                if (SymbolEqualityComparer.Default.Equals(current, command)) {
-                    return true;
-                }
+            if (DerivesFrom(owner, command)
+                || owner.AllInterfaces.Contains(command, SymbolEqualityComparer.Default)) {
+                return true;
             }
+        }
 
-            foreach (var contract in owner.AllInterfaces) {
-                if (SymbolEqualityComparer.Default.Equals(contract, command)) {
-                    return true;
-                }
+        return false;
+    }
+
+    static bool DerivesFrom(INamedTypeSymbol owner, INamedTypeSymbol command) {
+        for (var current = (INamedTypeSymbol?)owner; current is not null; current = current.BaseType) {
+            if (SymbolEqualityComparer.Default.Equals(current, command)) {
+                return true;
             }
         }
 
@@ -175,7 +178,9 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
                 case GlobalStatementSyntax { Parent: { } unit }:
                     return unit;
 
-                case MemberDeclarationSyntax and not BaseMethodDeclarationSyntax:
+                // ⚠ Not `and not BaseMethodDeclarationSyntax`: the case above already took those, so
+                // the compiler calls the extra clause redundant (CS9335) and it is.
+                case MemberDeclarationSyntax:
                     return null;
             }
         }

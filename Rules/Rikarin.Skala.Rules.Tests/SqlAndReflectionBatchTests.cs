@@ -47,10 +47,8 @@ public sealed class SqlAndReflectionBatchTests {
     public static TheoryData<string> Fixtures {
         get {
             var data = new TheoryData<string>();
-            foreach (var fixture in RuleFixtures.All()) {
-                if (Ids.Contains(fixture.RuleId)) {
-                    data.Add(fixture.Path);
-                }
+            foreach (var fixture in RuleFixtures.All().Where(static f => Ids.Contains(f.RuleId))) {
+                data.Add(fixture.Path);
             }
 
             return data;
