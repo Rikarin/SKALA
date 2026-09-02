@@ -162,7 +162,9 @@ public sealed class RegexTimeoutTests {
     static ImmutableArray<Diagnostic> Analyze(string pattern) {
         var source = "using System.Text.RegularExpressions;\n"
             + "public static class Probe {\n"
-            + "    public static bool Looks(string input) => Regex.IsMatch(input, @\"" + pattern + "\");\n"
+            + "    public static bool Looks(string input) => Regex.IsMatch(input, @\""
+            + pattern
+            + "\");\n"
             + "}\n";
         var compilation = RuleFixtures.Compile(source, "probe.cs");
 

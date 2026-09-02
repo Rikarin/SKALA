@@ -109,7 +109,10 @@ public sealed class RegexTimeoutAnalyzer : DiagnosticAnalyzer {
     static void Invocation(OperationAnalysisContext context, INamedTypeSymbol regex, INamedTypeSymbol? timeSpan) {
         var invocation = (IInvocationOperation)context.Operation;
         if (invocation.TargetMethod.IsStatic
-            && SymbolEqualityComparer.Default.Equals(invocation.TargetMethod.ContainingType.OriginalDefinition, regex)) {
+            && SymbolEqualityComparer.Default.Equals(
+                invocation.TargetMethod.ContainingType.OriginalDefinition,
+                regex
+            )) {
             Check(context, invocation.Arguments, timeSpan, invocation.Syntax.GetLocation());
         }
     }
@@ -238,7 +241,10 @@ public sealed class RegexTimeoutAnalyzer : DiagnosticAnalyzer {
         }
 
         // `(?<name>` is a capture; `(?<=` and `(?<!` are lookbehind.
-        if (open + 3 < pattern.Length && pattern[open + 2] == '<' && pattern[open + 3] != '=' && pattern[open + 3] != '!') {
+        if (open + 3 < pattern.Length
+            && pattern[open + 2] == '<'
+            && pattern[open + 3] != '='
+            && pattern[open + 3] != '!') {
             var end = pattern.IndexOf('>', open + 3);
             return end < 0 ? -1 : end + 1;
         }
