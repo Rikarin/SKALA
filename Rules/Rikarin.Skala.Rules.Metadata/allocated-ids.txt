@@ -342,3 +342,4 @@ SK2230 sql-fragments-run-together
 SK2231 command-parameter-not-supplied
 SK2232 assembly-loaded-outside-its-context
 SK2233 mistaken-type-argument
+SK1130 constant-pattern-over-sequence-equal

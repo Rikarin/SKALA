@@ -179,6 +179,7 @@ public sealed class RuleFixtureTests {
         new ReorderedAnonymousTypeAnalyzer(), new MergedPropertyPatternAnalyzer(),
         new SqlFragmentsRunTogetherAnalyzer(), new CommandParameterNotSuppliedAnalyzer(),
         new AssemblyLoadedOutsideItsContextAnalyzer(), new MistakenTypeArgumentAnalyzer(),
+        new ConstantPatternOverSequenceEqualAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

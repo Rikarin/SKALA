@@ -217,6 +217,7 @@ public static class AnalyzerHost {
         new ReorderedAnonymousTypeAnalyzer(), new MergedPropertyPatternAnalyzer(),
         new SqlFragmentsRunTogetherAnalyzer(), new CommandParameterNotSuppliedAnalyzer(),
         new AssemblyLoadedOutsideItsContextAnalyzer(), new MistakenTypeArgumentAnalyzer(),
+        new ConstantPatternOverSequenceEqualAnalyzer(),
     ];
 
     /// <summary>

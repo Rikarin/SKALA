@@ -286,5 +286,6 @@
   "CanSimplifyIsAssignableFrom": "SK1120",
   "TryStatementsCanBeMerged": "SK1121",
   "SimilarAnonymousTypeNearby": "SK1122",
-  "ExtractCommonPropertyPattern": "SK1123"
+  "ExtractCommonPropertyPattern": "SK1123",
+  "ReplaceSequenceEqualWithConstantPattern": "SK1130"
 }
