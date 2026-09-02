@@ -291,3 +291,5 @@ SK2222 | Skala.Correctness | Warning | `checked` is declared for some of the typ
 SK2240 | Skala.Correctness | Warning | The `with` expression rewrites every member.
 SK2241 | Skala.Correctness | Warning | The regular expression pattern does not parse.
 SK2242 | Skala.Correctness | Warning | The argument check does not run until the result is enumerated.
+SK1004  | Skala.Modernization | Info | Use an `extension` block instead of a static class of extension methods.
+SK1110  | Skala.Modernization | Info | A non-public overload forwards to a longer one with a constant.

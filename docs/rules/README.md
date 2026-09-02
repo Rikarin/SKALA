@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 301 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 300 ids are allocated.
 
 ## Async
 
@@ -257,6 +257,7 @@
 |---|---|---|---|---|
 | [SK1001](SK1001.md) | Use a collection expression | suggestion | safe | no |
 | [SK1003](SK1003.md) | Use a field-backed property | suggestion | safe | no |
+| [SK1004](SK1004.md) | Use an `extension` block | suggestion | review | no |
 | [SK1005](SK1005.md) | Use a file-scoped namespace | suggestion | safe | yes |
 | [SK1006](SK1006.md) | Use a `using` declaration | suggestion | safe | yes |
 | [SK1010](SK1010.md) | Use `is null` / `is not null` instead of `==` / `!=` | suggestion | safe | no |
@@ -305,10 +306,7 @@
 | [SK1092](SK1092.md) | Use a tuple literal instead of constructing a `Tuple` | suggestion | review | no |
 | [SK1093](SK1093.md) | Express the cast in the declaration instead | hint | safe | no |
 | [SK1094](SK1094.md) | Use nullable reference type syntax instead of an annotation attribute | warning | review | no |
-| [SK1100](SK1100.md) | The local is a name for the expression on the next line | suggestion | safe | no |
-| [SK1101](SK1101.md) | The local is declared on one line and assigned on the next | suggestion | safe | yes |
-| [SK1102](SK1102.md) | The local function is declared before the jump that ends the block | hint | safe | yes |
-| [SK1103](SK1103.md) | Both branches end with the same statements | hint | review | yes |
+| [SK1110](SK1110.md) | Collapse the forwarding overload into an optional parameter | suggestion | review | no |
 
 ## Performance
 

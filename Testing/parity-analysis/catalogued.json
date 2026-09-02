@@ -22,6 +22,8 @@
   "ConvertToPrimaryConstructor": "SK1002",
   "ReplaceWithPrimaryConstructorParameter": "SK1002",
   "ConvertToExtensionBlock": "SK1004",
+  "RedundantOverload.Local": "SK1110",
+  "IntroduceOptionalParameters.Local": "SK1110",
   "MoveToExtensionBlock": "SK1004",
   "ReplaceWithFieldKeyword": "SK1003",
   "ConvertToUsingDeclaration": "SK1006",

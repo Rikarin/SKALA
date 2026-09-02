@@ -2103,9 +2103,11 @@ registry disagree. Regenerate with `skala rules docs`.
 | **Shipped** — present in `rules.json` | **304** | **89.9 %** |
 | Rules this document names | **328** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **293** | **89.6 %** |
+| Rules this document names | **326** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **292** | **89.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
@@ -6034,3 +6036,203 @@ parallel while this batch ran. A `baseline update` from inside one worktree bake
 tree into a file every other branch also touches, so it is left for whoever integrates last. What is
 recorded here instead is the attribution: this batch adds one duplication finding, of the kind every
 analyzer in the project already produces, and no new metric finding at all.
+## `SK1004` and `SK1110` — the declaration-shape batch, and the three that Roslyn already owns
+
+⚠ **The prose pass for `SK1004` and `SK1110` is owed.** What follows is the allocation register entry
+— enough that the ids are written down and `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister`
+can see them — not the worked-through account the rest of this section carries.
+
+This batch was dispatched as five rules and ships **two**. The other three were measured to be owned
+by a Roslyn `IDE*` analyzer, and ADR-008 hosts rather than rebuilds. ⚠ **The measurement is the
+deliverable here, because "an `IDE*` exists for this" had been asserted about two of them and tested
+about none.**
+
+⚠ **All three `IDE*` rules sit in the middle state `IDE0059` is already recorded in, and the probe
+sharpened what that state is.** Built outside this repository with empty `Directory.Build.props` and
+`.targets` above it, SDK 10.0.400, and the SARIF error log read rather than the console — because an
+info-severity diagnostic never reaches `-v:m` and reading the console alone cannot tell "off" from
+"on and quiet":
+
+| State | `IDE0290` / `IDE0200` / `IDE0039` |
+|---|---|
+| Plain build | **not loaded at all** — absent from `tool.driver.rules` |
+| `EnforceCodeStyleInBuild=true` | declared `enabled: true`, `level: note` — and **zero results** |
+| …plus the style option set to `true` | still **zero results** |
+| …plus `dotnet_diagnostic.IDE####.severity` naming them | **all three fire**, on every shape |
+| Severity line but no `EnforceCodeStyleInBuild` | **zero results** |
+
+⚠ **The style option is not the gate and the severity line is** — even a severity line that restates
+the rule's own declared default (`suggestion`, which is `note`) is enough to make it report. That
+correction matters, because "set `csharp_style_prefer_primary_constructors`" is the advice the
+documentation gives and on its own it does nothing at build time. So in an ordinary `dotnet build` of
+an ordinary project these three report nothing whatever; they are editor diagnostics. ⚠ **Hosted all
+the same** — ADR-008 is about who owns the concept, and being silent by default is not a reason to
+rebuild it.
+
+- **[#73](https://github.com/Rikarin/SKALA/issues/73) — primary constructor — hosted by `IDE0290`.**
+  It fires on the plain assigning constructor and on a struct doing the same, correctly declines a
+  type with two constructors, and reaches *further* than the issue describes: it also reports a
+  constructor that transforms before assigning (`this.name = name.Trim()`), which it converts using a
+  field initializer.
+- **[#75](https://github.com/Rikarin/SKALA/issues/75) — forwarding lambda — hosted by `IDE0200`.** It
+  fires on `xs.Select(x => Wrap(x))`, and correctly declines `x => Combine(x, x)` (the lambda changes
+  the arguments) and `x => x.Length` (there is no method group).
+- **[#79](https://github.com/Rikarin/SKALA/issues/79) — delegate variable — hosted by `IDE0039`.** ⚠
+  **Not predicted by the dispatch, and it is the cleanest host of the three.** `IDE0039` covers the
+  `Func<>`, the `Action<>` with a statement body and the natural-typed `var f = (int v) => …` alike.
+
+⚠ **`IDE0290`'s fix does not produce an `SK2194` finding, and the premise that it would is refuted.**
+The batch was dispatched on the expectation that converting a constructor manufactures exactly the
+mutable-capture shape `SK2194` reports. It does not: `dotnet format analyzers` was run over four
+shapes — field read-only, field written by a member, and both again with the field named differently
+from the parameter — and in **every** case the shipped fixer keeps a real field and initialises it
+from the parameter (`int attempts = attempts;`) rather than deleting the field and relying on the
+capture. `SK2194` excludes field initializers by construction, so the two never meet. Verified rather
+than reasoned: Skala's own analyzers were run over the fixer's output and reported no `SK2194`, in a
+run where a planted positive in the same compilation *did* report one.
+
+⚠ **The residue `IDE0290` does not cover is `ReplaceWithPrimaryConstructorParameter`** — issue #73's
+second inspection, a field that only holds the parameter — and it is **declined rather than
+allocated**. Shipping it would push code from a declared field toward a bare capture, which is the
+state `SK2194` exists to warn about and whose repair `SK2194` gives as *declaring the field*. A rule
+whose advice is another rule's remedy in reverse is a rule the two cannot both be right about.
+
+`SK1004` `ungrouped-extension-methods` — a non-partial, non-generic `static` class whose **every**
+member is an extension method on one receiver type, named with one identifier, converted to a single
+C# 14 `extension` block. ⚠ **The syntax was confirmed to compile before any of the rule was written.**
+On SDK 10.0.400 at `LangVersion 14.0` an `extension(string s) { … }` block builds clean, and on the
+pinned Roslyn 5.9.0 it parses to `ExtensionBlockDeclarationSyntax` at `CSharp14` and at `Preview` —
+the latter being what the fixture harness compiles at. ⚠ **At `CSharp13` the same text does not report
+the feature: it recovers as a constructor named `extension` and then fails with `CS1513`**, so a
+missing language floor would have surfaced only as "the fixture does not compile". ⚠ **`SkalaRule.Parse`
+handles `"14.0"`**, which #296 makes worth checking explicitly — the table's fallback is `Preview`, and
+a floor it does not name silences its rule on every real project rather than on none. ⚠ **Both call
+forms survive the rewrite, measured**: against a block, `"x".Repeat(2)` and `StringExt.Repeat("x", 2)`
+both compile, so the conversion is source-compatible in both directions and the rule does not have to
+hunt for call sites. It is *not* binary-compatible — block members are emitted through a different
+metadata shape — which is why the fix is unsafe. The restriction to one receiver, one name and no
+method type parameters is what keeps the edits subtractive plus two braces, and that is the property
+that makes the fix reviewable. · `SK1110` `constant-forwarding-overload` — a **non-public** overload
+whose whole body forwards to a longer one, passing its parameters straight through and a compile-time
+constant for the extra, collapsed into an optional parameter. ⚠ **The public half is refused, not
+deferred.** An optional parameter's default is compiled into every call site rather than read from the
+callee, and deleting an overload from a published surface is a binary break; `RedundantOverload.Global`
+is the half of the ReSharper pair that carries the hazard and issue #112 says `.Local` may ship alone.
+Effective accessibility is computed by walking the containing types, so `public` on an `internal` class
+is reported and `protected` on a public class is not. ⚠ **Exactly two methods of that name, or
+nothing** — deleting one overload re-runs overload resolution at every call that used it, and with a
+third candidate the new winner need not be the one the body forwarded to. ⚠ **The constant is asked of
+the semantic model rather than matched on syntax**, because only a constant can *become* a default:
+`Render(text, text.Length)` is a different method, not a defaulted one. Any attribute on the forwarder
+withdraws the finding, and so do `virtual`, `override`, `abstract`, `partial` and any interface
+implementation — each is a signal that the declaration is a contract rather than a convenience.
+
+⚠ **`ConvertToExtensionBlock` is in one ReSharper export and not the other.** It is a settable key in
+the committed `editor_config_template` — which is what
+`RuleCatalogTests.EveryDeclaredReSharperKey_ExistsInTheExport` reads — and it is **absent from
+`types-2026.xml`**, the `jb inspectcode --dumpIssuesTypes` catalogue, because that dump predates the
+feature. The mapping is real; it is the dump that is behind. `SK1004` also carries a `resharperNote`,
+since the export sets the key to `hint` and the rule defaults to `suggestion`: ReSharper shipped the
+inspection quietly because `extension` blocks were days old, and Skala's audience is a model writing
+the superseded dialect on purpose.
+
+### The corpus measurement for `SK1004` and `SK1110`
+
+⚠ **The corpus holds three copies of every file and the copies are what the `CS` count is mostly
+made of.** `Testing/corpus/real` carries `X.cs`, `X.expected.cs` and `X.arranged.cs` side by side —
+70 sources become 211 files for Serilog, 110 become 330 for Newtonsoft, 200 become 600 for Vixen —
+and compiled together every type is declared three times. Swept as-is, Serilog alone reports **7 257**
+`CS` errors; with the two generated copies dropped it reports **1 484**. The errors are `CS0101`, not
+the `CS0111` the dispatch expected, because the duplicates are whole *types* rather than overloads.
+Each library was swept as its own compilation, outside the repository.
+
+⚠ **`ImplicitUsings` is off in the corpus project and turning it on changes the answer**, which is
+the reason it is worth reporting rather than assuming: a rule reading an error type answers "no
+finding" for the wrong reason.
+
+| Tree | files (of 3× copies) | `CS` errors, plain | with implicit usings | all findings, plain | with implicit usings |
+|---|---|---|---|---|---|
+| Serilog | 70 (211) | 1 484 | **938** | 401 | **479** |
+| Newtonsoft.Json | 110 (330) | 2 316 | **2 309** | 977 | **987** |
+| Vixen | 200 (600) | 12 951 | **10 980** | 1 103 | **1 261** |
+
+Adding the implicit global usings recovers **78, 10 and 158** findings across the three trees. That
+is the measurement the instruction exists for: a fifth of Serilog's findings were being suppressed by
+missing usings, and reading the plain column alone would have understated every rule in the
+catalogue, not just these two.
+
+**`SK1004`: 0. `SK1110`: 0. `AD0001`: 0**, on all three trees, in both configurations. ⚠ **Both zeros
+were classified rather than reported**, because a zero from a rule that never ran looks the same:
+
+- **Instrument verified.** A file carrying one positive of each rule was planted into the swept tree
+  and both fired in the same configuration that reports zero on the real code; the file was then
+  removed. ⚠ **The first version of this measurement was worthless and said so only under
+  provocation** — the harness loads its own copy of `Rikarin.Skala.Rules.dll` from its output folder,
+  so it was running an assembly built before either rule existed. It reported 263 analyzers where
+  the tree has 265, and every zero it printed was the absence of the rule rather than the absence of
+  the shape.
+- **`SK1004` — shape absent in two trees, present once and correctly declined in the third.** Serilog
+  and Newtonsoft.Json contain **no** static class holding two or more extension methods. Vixen
+  contains exactly one, and it is declined because a non-extension member is mixed in — the
+  documented restriction, doing what it says.
+- **`SK1110` — shape present twenty-four times and declined twenty-four times.** Counted
+  syntactically without any of the rule's guards: 11 forwarding methods in Serilog, 10 in
+  Newtonsoft.Json, 3 in Vixen. The reasons split as 8 public-or-protected, 8 not-exactly-two
+  overloads, 5 generic, 2 carrying an attribute — every one of them a restriction this rule states.
+- ⚠ **The single Vixen candidate that clears the syntactic bar is the one worth reading, and it
+  proves the semantic constant check.** `TextShaper.ShapeRun(FontFace, string, TextItem)` forwards to
+  the four-argument overload passing `[]`. A collection expression is not a compile-time constant, so
+  `GetConstantValue` declines it — and the decline is *necessary*, not merely cautious: the collapsed
+  signature was compiled and it is **`CS1736`, "default parameter value for 'features' must be a
+  compile-time constant"**. A syntactic check for "looks like a literal" would have emitted a fix
+  that does not build.
+
+⚠ **18 of 20 sabotages turned their fixture red, and both exceptions are findings rather than
+passes.** Removing `IsConvertibleExtensionMethod` from `SK1004`'s member loop does not merely
+un-decline the mixed class — it makes the analyzer **throw**, because the plain static it then admits
+has no parameters and the code indexes `Parameters[0]`. That guard is preventing an
+`IndexOutOfRangeException`, and `RuleFixtureTests`' `AD0001` assertion is what reports it. Removing
+`SK1110`'s choice of the *last* target parameter leaves
+`the-extra-parameter-is-not-last` green, because the positional pass-through check declines that
+fixture first — the fixture pins a real decline, reached through a different guard than its name
+suggests. ⚠ **Three sabotages were mis-aimed before they were right**: external visibility is asked
+of both the source and the target overload, "already optional" is asked of both the symbol and the
+syntax, and a sabotage that removes only one half of a paired guard proves nothing. ⚠ **And
+`a-generic-method` did not reach `SK1004`'s type-parameter guard at all** — its two `IEnumerable<T>`
+receivers are different symbols, so the receiver-type comparison declines it first;
+`a-type-parameter-on-a-plain-receiver` was added to reach the guard the name claimed.
+
+#### The self-gate, and the one true positive on Skala's own tree
+
+Release built with `-bl:artifacts/skala.binlog --no-incremental`, then
+`check --load=binlog --require-fresh-binlog --gate=ci --duplication`. **`SK9021`: zero** — no `.cs`
+file under the repository is missing from a recorded compilation, so the binlog covers the tree and
+the finding counts below are not a partial view.
+
+⚠ **`SK1004` fires exactly once on Skala's own source, and it is right.**
+`Reporting/Rikarin.Skala.Reporting/Renderers.cs:479` declares
+
+```csharp
+static class Lines {
+    internal static StringBuilder Line(this StringBuilder builder) => builder.Append('\n');
+
+    internal static StringBuilder Line(this StringBuilder builder, string text) => builder.Append(text).Append('\n');
+}
+```
+
+— two extension methods, one receiver type, one receiver name, no type parameters, nothing else in
+the class. It is the shape, and it is the only instance of it in the repository. `SK1110` finds
+nothing on Skala's own tree.
+
+⚠ **The finding is left standing rather than fixed, and the rule's own metadata is the reason.**
+`SK1004` is `fixIsSafe: false`, which is the promise that a person reviews the edit before it lands.
+Applying it unreviewed, to a file this batch does not own, during a session with nine other agents in
+flight, would contradict the thing the rule says about itself.
+
+⚠ **The self-gate is red, and not because of this batch.** Counted from `report.sarif` against the
+committed `.skala/baseline.sarif`: this batch contributes **one** result, `SK1004` at `note`, while
+**82 error-severity results from twelve other rules** are outside the baseline already — `SK3002` 17,
+`SK2014` 16, `SK2009` 14, `SK0232` 13, `SK0243` 5, `SK0240` 4, `SK0234` 4, `SK6031` 3, `SK0231` 3, and
+one each of `SK3511`, `IDE1006` and `SK6030`. A `note` cannot fail a gate keyed on errors. The
+baseline was deliberately **not** updated: doc CLAUDE.md's rule is that it settles after the *last*
+merge, and refreshing it here would bake those 82 in as accepted on one agent's authority.

@@ -174,6 +174,7 @@ public sealed class RuleFixtureTests {
         new PartiallyCheckedOperatorAnalyzer(),
         new WithExpressionRewritesAllAnalyzer(), new MalformedRegexPatternAnalyzer(),
         new DeferredArgumentCheckAnalyzer(),
+        new UngroupedExtensionMethodsAnalyzer(), new ConstantForwardingOverloadAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

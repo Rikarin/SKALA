@@ -332,3 +332,5 @@ SK2222 partially-checked-operator-set
 SK2240 with-expression-rewrites-all
 SK2241 malformed-regex-pattern
 SK2242 deferred-argument-check
+SK1004 ungrouped-extension-methods
+SK1110 constant-forwarding-overload
