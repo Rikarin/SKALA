@@ -2326,6 +2326,105 @@ changed, 312 ms of analyzer time in a 7 684 ms run, of which the five are **26.7
 analysis, 0.35 % of wall). `MetricsAnalyzer` was 77 % of analysis before M8 and still is. The warm
 path is unaffected because the per-file cache means the taint rules see only the files that changed.
 
+### ⚠ `SK5010`, and the four security proposals measured against the SDK and refuted
+
+⚠ **Owed prose: this section records one rule shipped and four `rule-proposal` issues refuted, and
+every refutation below is a measurement rather than a judgement about taste.** The batch was five
+SonarQube-derived proposals — issues #152, #146, #148, #140, #153 — chosen because each *looked*
+decidable from a call site without taint analysis. That was a hypothesis, and it survived for one of
+them.
+
+⚠ **The first measurement was not of Skala but of the SDK, and it is the part worth keeping.** This
+repository raises `AnalysisMode` in `Directory.Build.props`, so measuring here answers a different
+question than the one a user's repository asks. The probe was a `dotnet new classlib -f net10.0` and
+a `dotnet new web -f net10.0` on SDK 10.0.400, with an empty `Directory.Build.props` and
+`Directory.Build.targets` above them to stop MSBuild's upward walk, built twice: once untouched, and
+once with `-p:AnalysisMode=All`.
+
+⚠ **The default state of every `CA*` in this area is `none`, and that is not the same as absent.**
+The plain build emitted **0 warnings and 0 errors** across every shape below. The `All` build of the
+same sources emitted 78 `CA1822`, 14 `CA5394`, 4 `CA5351`, 4 `CA5350`, 2 `CA2000`, 2 `CA1874` and
+2 `CA1305` — which is what proves the plain zero is "off by default" and not "the analyzers never
+ran". ⚠ `analysislevel_10_default.globalconfig` in the SDK contains exactly **one** `CA` entry
+(`CA1516 = none`) and `analysislevelsecurity_10_default.globalconfig` is **empty**, so the default
+severity of a security `CA` is whatever its own descriptor says, and for this family that is off.
+
+| `CA*` | What it covers | Default on a plain `net10.0` project | Bearing on this batch |
+|---|---|---|---|
+| `CA5394` | Do not use insecure randomness | **off** (fires under `All`) | ⚠ Fires on **every** `System.Random`, hosts #140's shape |
+| `CA5350` | Weak cryptographic algorithms (`DES`, `TripleDES`) | **off** (fires under `All`) | Already `SK5005`'s territory |
+| `CA5351` | Broken cryptographic algorithms (`MD5`, `SHA1`) | **off** (fires under `All`) | Already read in this doc's `SK5005` note |
+| `CA3012` | Review code for regex **injection** | **off**; declined even under `All` | ⚠ Not a timeout rule — different problem |
+| `CA3006` | Review code for process **command injection** | **off**; declined even under `All` | Targets arguments, not the executable name |
+| `CA3075` | Insecure DTD processing in XML | **off**; declined even under `All` | `SK5009` already ships the two-fact form |
+| `CA1874` | Use `Regex.IsMatch` | **off** (fires under `All`) | A performance refactor, not security |
+| `CA1875` | Use `Regex.Count` | **off** | A performance refactor, not security |
+| `CA5359`/`CA5360`/`CA5361`/`CA5362` | Certificate validation, deserialization callbacks, SChannel, reference cycles | **off** | `SK5007` covers the validation half |
+| `CA1842`/`CA1843` | ⚠ **Not regex rules at all** — `WhenAll`/`WaitAll` with a single task | **off** | Named in the brief for #152 in error |
+
+⚠ **The three zeros that survived `AnalysisMode=All` were classified rather than reported.**
+`CA3012`, `CA3006` and `CA3075` are all set to `warning` by `analysislevel_10_all.globalconfig` and
+still produced nothing, which is the shape of an analysis that never ran. It ran: a `Canary.cs`
+added to the same web project produced `CA5351`, `CA5394` and `CA1515` in the same build, so the
+zeros are **shape present and correctly declined** — the two `CA3xxx` are taint rules and a minimal
+API's query parameter is not among their recognised sources. ⚠ Either way neither is a host, because
+neither detects the concept: `CA3012` is about an attacker-controlled *pattern*, and #152 is about
+attacker-controlled *input* against a backtracking pattern the author wrote.
+
+**`SK5010` ships. The other four do not.**
+
+⚠ **#152 — the regular expression runs without a timeout — is the one the hypothesis survived.**
+There is no `CA` for it: the SDK's complete catalogue is 281 rules, and searching every title for
+regex, timeout, process, random, reflection and debug returns only the ten rows above. The finding
+is decidable at the call site with no taint and no inter-procedural step, because the timeout is an
+argument at the construction or at the static call, and both spellings of "I thought about this" —
+a `TimeSpan` and `RegexOptions.NonBacktracking` — are visible in the same expression.
+
+⚠ **#146 — the process is started by an unqualified name — is refuted, and Skala's own tree is the
+evidence rather than the excuse.** `Process.Start("git")` resolving through `PATH` is only a
+vulnerability if `PATH` is attacker-controlled, and that is a property of the *environment*, not of
+the call site — so the premise that made this batch's shortlist is false for this one. The
+consequence is measurable: this repository starts an unqualified process in six non-test places —
+`Reporting/ChangedLines.cs:249`, `Analysis/SuppressionAuditor.cs:344`, `Analysis/CheckCommand.cs:591`,
+`Formatting.CSharp/FormatCommand.cs:495`, `Testing/CliRunner.cs:49` and
+`build/Rikarin.Skala.Release/SkalaTool.cs:47` — and **every one of them is correct**, because
+hard-coding a path to `git` or `dotnet` is what would actually be wrong across three operating
+systems. A rule at `error` firing on all six is doc 16 § R3's failure mode. ⚠ And the dangerous half
+already ships: `SK5002` reports request data reaching a process start, which is the case where the
+environment is not the attacker's lever.
+
+⚠ **#148 — a debugging feature is enabled unconditionally — is refuted because most of it is not in
+C#.** `<DebugType>`, `<Optimize>` and the launch profile are MSBuild and JSON, which an analyzer
+over a compilation cannot see at all. What *is* reachable is `CompilationOptions.OptimizationLevel`,
+and reporting that would fire on every `Debug` build ever made. That leaves one API,
+`UseDeveloperExceptionPage`, and the probe confirms nothing in the SDK reports it unconditionally
+called — 0 warnings under both `Default` and `All`. It is still refused, because the guard is
+routinely one frame away: `if (app.Environment.IsDevelopment()) ConfigureDevelopment(app);` puts the
+call inside a method that is unconditional *in its own body*, and separating that from a real finding
+is the inter-procedural analysis this document puts out of scope. The asymmetry is `SK5003`'s
+exactly: a rule that cannot see the guard fires.
+
+⚠ **#140 — a predictable generator produces security-sensitive values — is refuted twice over, and
+the second reason is the one that matters.** First, `CA5394` hosts the shape: it exists, it covers
+`System.Random`, and ADR-008 says the answer to a `CA` that is off is to enable it. Second, and the
+reason a targeted Skala rule is not the way out: `CA5394` fired **7 times** on a 7-use probe,
+including on `Random.Shared.Next()` and on a `NextDouble()` returning a statistical sample, with no
+security-context test whatsoever. So it is untargeted — but narrowing it needs to know whether the
+bytes become a token, and this document already settled that question when it cut `SK5008`: "is this
+identifier a token" is an identifier-name judgement. ⚠ The narrow concept named there — `Random`
+output reaching a cipher key or IV — remains the obvious next allocation and is **not** `SK5010`'s
+neighbour by accident; it needs the taint engine, which is why it is not in this batch.
+
+⚠ **#153 — reflection is used to reach a non-public member — is refuted by a false-positive rate of
+100 %.** `BindingFlags.NonPublic` appears in 26 files across the reference trees and in **zero**
+files of Skala's own source. Every one of the 26 is in a population the proposal itself names as
+legitimate: `newtonsoft/Newtonsoft.Json/Utilities` (a serializer reaching private setters, which is
+what a serializer is for), `Newtonsoft.Json.Tests/Serialization` and `vixen/Core/Vixen.Ui.Tests`
+(test code), and `vixen/Core/Vixen.Engine/Diagnostics/Overlays` (a diagnostics overlay whose whole
+purpose is introspection). There is no call-site fact separating those from a real finding — the
+discriminator is what the code *is for* — so the rule would ship at a measured zero true positives
+and 26 false ones. That is the range's stated bar failing closed, and it is the right outcome.
+
 ### ⚠ What M7 added: three rules out of twenty-three, and one of them has no fix
 
 M7 is the `SK4xxx`/`SK6xxx`/`SK8xxx` milestone. Those three ranges list twenty-three ids and **three**
