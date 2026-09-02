@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:e256d0b9ed35b14f profile=SkalaCleanup generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaCleanup generated=2026-09-02
 namespace Skala.Corpus.Arrangement;
 
 // accessor_owner_body = expression_body has two shapes and the key names only one of them: a

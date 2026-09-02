@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:e256d0b9ed35b14f profile=SkalaCleanup generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaCleanup generated=2026-09-02
 namespace Skala.Corpus.Arrangement;
 
 // resharper_static_members_qualify_members = none, resharper_static_members_qualify_with =

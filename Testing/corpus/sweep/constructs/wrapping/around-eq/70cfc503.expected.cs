@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:e256d0b9ed35b14f profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
 public class AroundEq {
     // resharper_csharp_wrap_before_eq: which side of the `=` a break the formatter *adds* lands on.
     // Milestone 2 could not observe it because M2 never added one; the ordering rule M3 built

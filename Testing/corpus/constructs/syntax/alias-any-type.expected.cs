@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:e256d0b9ed35b14f profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
 // C# 12's alias-any-type: `using X = <any type>;` rather than `using X = <some name>;`. The corpus
 // had aliases, but every one of them aliased a name, so the node the census counts
 // (UsingDirective) was common while this construct was absent — another gap only a
