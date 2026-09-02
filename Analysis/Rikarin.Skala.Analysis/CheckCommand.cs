@@ -53,6 +53,19 @@ public sealed record CheckRequest {
     /// <summary>Where to write the SARIF. Null means <c>.skala/report.sarif</c>; empty means nowhere.</summary>
     public string? Output { get; init; }
 
+    /// <summary>
+    ///     A second SARIF, with the suppressed results left out, for a code-scanning upload.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Null means "do not write one". It is an extra file rather than a mode on
+    ///     <see cref="Output" /> because both are wanted from the same run: the full log is what
+    ///     <c>report</c> and <c>trend</c> read, and re-running <c>check</c> to produce the second view
+    ///     would analyse a different tree (docs/plan/09 § "The verdict and the page cannot disagree").
+    ///     ⚠ GitHub code scanning does not read SARIF <c>suppressions</c> — see
+    ///     <see cref="SarifWriter.BuildWithoutSuppressed" /> for what that measured.
+    /// </remarks>
+    public string? UnsuppressedOutput { get; init; }
+
     /// <summary>Rule ids to keep; empty means all of them.</summary>
     public IReadOnlyList<string> Rules { get; init; } = [];
 
@@ -786,16 +799,28 @@ public static class CheckCommand {
     }
 
     static void WriteSarif(RunReport report, CheckRequest request) {
-        if (request.Output is { Length: 0 }) {
-            return;
+        if (request.Output is not { Length: 0 }) {
+            Write(
+                request.Output ?? SkalaDirectory.PathFor(report.RepositoryRoot, "report.sarif"),
+                () => SarifWriter.Serialize(SarifWriter.Build(report))
+            );
         }
 
-        var path = request.Output ?? SkalaDirectory.PathFor(report.RepositoryRoot, "report.sarif");
-        try {
-            SkalaDirectory.EnsureForFile(path);
-            File.WriteAllText(path, SarifWriter.Serialize(SarifWriter.Build(report)));
-        } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
-            // A read-only tree does not fail a check; the rendered output is already on stdout.
+        // ⚠ Written from the same report as the file above, never from a second run. See
+        // `CheckRequest.UnsuppressedOutput`.
+        if (request.UnsuppressedOutput is { Length: > 0 } unsuppressed) {
+            Write(unsuppressed, () => SarifWriter.Serialize(SarifWriter.BuildWithoutSuppressed(report)));
+        }
+
+        return;
+
+        static void Write(string path, Func<string> render) {
+            try {
+                SkalaDirectory.EnsureForFile(path);
+                File.WriteAllText(path, render());
+            } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
+                // A read-only tree does not fail a check; the rendered output is already on stdout.
+            }
         }
     }
 

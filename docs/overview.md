@@ -92,6 +92,7 @@ and this one is the parser's.** Taken from `skala <command> --help` for all sixt
 | `--gate <name>` | | ✅ | | | | Default `local` |
 | `--format` | | ✅ | ✅ | | ✅ | `check`/`report`: seven renderers. `verify`: three |
 | `-o, --output` | | ✅ | | | | Default `.skala/report.sarif` |
+| `--output-unsuppressed` | | ✅ | | | | A second SARIF with the suppressed results left out. ⚠ For a code-scanning upload: GitHub does not read the `suppressions` property |
 | `--include-hints` | | ✅ | | | ✅ | |
 | `--no-color` | | ✅ | | | ✅ | |
 | `--summary` | | ✅ | | | ✅ | |

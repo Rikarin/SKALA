@@ -29,7 +29,38 @@ public static class SarifWriter {
     /// </remarks>
     public const string FingerprintVersion = Fingerprints.Version1;
 
-    public static SarifLog Build(RunReport report) {
+    public static SarifLog Build(RunReport report) => Build(report, false);
+
+    /// <summary>
+    ///     The same log with every suppressed result left out, for a consumer that cannot read
+    ///     <c>suppressions</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>GitHub code scanning does not consume the <c>suppressions</c> property.</b> Its SARIF
+    ///     support documentation does not mention it at all, and on this repository every open
+    ///     <c>SK6034</c> alert was a finding <c>.skala/baseline.sarif</c> accepts — raised as open, with
+    ///     the accepted status ignored. In one run 1 145 of 1 163 results were baselined, so the alert
+    ///     list was 98 % noise and the 18 findings the gate actually failed on were invisible in it.
+    ///     <para>
+    ///         ⚠ <b>This is a second, narrower file, never a change to the main one.</b> The full log is
+    ///         correct SARIF and it is what <c>report</c>, <c>trend</c> and <c>baseline</c> read; a
+    ///         result can also legitimately carry two suppressions from different mechanisms (see
+    ///         <see cref="Suppressions" />). Only the upload needs the narrow view.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The <c>rules</c> table and the <c>invocations</c> entry are <b>not</b> narrowed with the
+    ///         results. <c>rules</c> is every rule that could have fired, which is what makes two runs
+    ///         comparable, and the invocation carries the gate verdict and the load summary — the two
+    ///         facts the console never prints. Dropping either would make the narrowed file a different
+    ///         report rather than the same report with the accepted findings hidden.
+    ///     </para>
+    /// </remarks>
+    public static SarifLog BuildWithoutSuppressed(RunReport report) => Build(report, true);
+
+    /// <summary>Whether the finding would carry a SARIF <c>suppressions</c> entry.</summary>
+    public static bool IsSuppressed(Finding finding) => Suppressions(finding).Count > 0;
+
+    static SarifLog Build(RunReport report, bool excludeSuppressed) {
         var driver = new ToolComponent {
             Name = "Skala",
             Version = report.ToolVersion,
@@ -47,7 +78,11 @@ public static class SarifWriter {
 
         var run = new Run {
             Tool = new() { Driver = driver, Extensions = Extensions(report) },
-            Results = [.. report.Findings.Select(finding => BuildResult(report, finding))],
+            Results = [
+                .. report.Findings
+                    .Where(finding => !excludeSuppressed || !IsSuppressed(finding))
+                    .Select(finding => BuildResult(report, finding))
+            ],
             Invocations = [BuildInvocation(report)]
         };
 
@@ -302,12 +337,22 @@ public static class SarifWriter {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>This is what makes the uploaded report say what the gate decided.</b> Until M9 the
+    ///         ⚠ <b>This is what makes the stored report say what the gate decided.</b> Until M9 the
     ///         baseline governed the verdict and was invisible in the SARIF: every accepted finding went
     ///         up to code scanning with no suppression on it, so a page that is supposed to answer "what
     ///         is wrong with master" listed 428 long-accepted findings as open alerts. SARIF § 3.35 has
-    ///         the vocabulary for exactly this, and code scanning honours it by showing a suppressed
-    ///         result as dismissed rather than open.
+    ///         the vocabulary for exactly this.
+    ///     </para>
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             What used to end that paragraph — "and code scanning honours it by showing a
+    ///             suppressed result as dismissed rather than open" — is false.
+    ///         </b> GitHub's SARIF support
+    ///         documentation does not mention <c>suppressions</c> anywhere; the property is not consumed,
+    ///         and every accepted finding was still raised as an open alert. Writing the suppression was
+    ///         necessary and not sufficient, and the upload takes
+    ///         <see cref="BuildWithoutSuppressed" />'s narrower log instead (#332).
     ///     </para>
     ///     <para>
     ///         ⚠ <b>Suppressed, never dropped.</b> Filtering the accepted findings out of the file is a
