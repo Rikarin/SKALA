@@ -78,9 +78,17 @@ public sealed class MisleadingBodyIndentationAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        // ⚠ An empty statement here is `CS0642`'s, not this rule's — see the type remarks. The
-        // grammar cannot indent-mislead with one either: `;` carries no statement to read as a body.
-        if (body is EmptyStatementSyntax) {
+        // ⚠ An empty body followed by a *block* is `CS0642`'s and only `CS0642`'s — see the type
+        // remarks for what the probe found it covers. An empty body followed by anything else is
+        // this rule's, and the compiler is deliberately silent there.
+        //
+        // ⚠ The first draft declined every empty body, and a sabotage removing that guard turned
+        // nothing red: `while (x) ;` puts the `;` on the header's own line, which the line test
+        // below already declines, so the exemption was unreachable through the fixtures. Widening
+        // the sabotage showed it was also wrong — `while (x)`, then `;`, then a statement aligned
+        // with the `;` is a true finding that `CS0642` does not report, and the guard was
+        // suppressing it. What is left is the narrow overlap, and a fixture reaches it.
+        if (body is EmptyStatementSyntax && next is BlockSyntax) {
             return;
         }
 
