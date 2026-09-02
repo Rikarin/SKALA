@@ -45,17 +45,17 @@ public sealed class CrossRuleBaselineTests {
     [Fact]
     public void APlantedDefect_IsSeenByTheSweep() {
         const string source = """
-            using System;
+                              using System;
 
-            class C {
-                void M() {
-                    try {
-                        Console.WriteLine("x");
-                    } catch (Exception) {
-                    }
-                }
-            }
-            """;
+                              class C {
+                                  void M() {
+                                      try {
+                                          Console.WriteLine("x");
+                                      } catch (Exception) {
+                                      }
+                                  }
+                              }
+                              """;
 
         var compilation = RuleFixtures.Compile(source, "planted.cs");
         var all = RuleFixtures.Analyze(compilation, SkalaAnalyzers.All, TestContext.Current.CancellationToken);

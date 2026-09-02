@@ -43,8 +43,11 @@ public sealed class AnalysisTests {
     ///     list. Without this the two can disagree and a fully tested analyzer can ship in the package
     ///     while the CLI silently never runs it.
     ///     <para>
-    ///         ⚠ <b>This remark used to claim the fixture harness discovered analyzers too, and it did
-    ///         not</b> — <c>RuleFixtureTests</c> held a second hand-written copy of the same 290
+    ///         ⚠
+    ///         <b>
+    ///             This remark used to claim the fixture harness discovered analyzers too, and it did
+    ///             not
+    ///         </b> — <c>RuleFixtureTests</c> held a second hand-written copy of the same 290
     ///         instances, and a rule missing from it would have been measured by a set that is not the
     ///         set that ships. Both lists are now <see cref="SkalaAnalyzers.All" />, so this assertion
     ///         covers the harness as well as the CLI (#297).

@@ -69,8 +69,11 @@ public static class RuleFixtures {
     ///     rule and therefore the least the rule may assume.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>The reference set is the test host's, not a project's, and that is a blind spot rather
-    ///     than a detail.</b> A real project is compiled against its own reference assemblies, and where
+    ///     ⚠
+    ///     <b>
+    ///         The reference set is the test host's, not a project's, and that is a blind spot rather
+    ///         than a detail.
+    ///     </b> A real project is compiled against its own reference assemblies, and where
     ///     the two differ a rule can be correct on every fixture and wrong in production with nothing
     ///     failing — overload resolution, <c>params</c> binding and shim visibility all move with the
     ///     reference set. Two measured examples (#297): <c>SK1063</c> declined every
@@ -78,8 +81,11 @@ public static class RuleFixtures {
     ///     <c>params ReadOnlySpan&lt;object?&gt;</c> overload wins and Roslyn reports the argument as
     ///     <c>ParamCollection</c> rather than <c>ParamArray</c>; and <c>SK1060</c> proposed 16 fixes
     ///     that did not compile on <c>netstandard2.0</c>, where <c>System.Index</c> exists but is
-    ///     inaccessible. Neither was reachable from here. <b>The binlog self-sweep, not this harness, is
-    ///     the only check that sees a real reference set</b>, which is why it is part of shipping a rule.
+    ///     inaccessible. Neither was reachable from here.
+    ///     <b>
+    ///         The binlog self-sweep, not this harness, is
+    ///         the only check that sees a real reference set
+    ///     </b>, which is why it is part of shipping a rule.
     ///     <para>
     ///         What the harness <em>can</em> express per fixture is the rest of the compilation:
     ///         <see cref="FixtureCompilation" /> reads <c>// fixture-option:</c> directives for

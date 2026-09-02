@@ -12,8 +12,11 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     it saw — so a fixture written for one rule can contain the defect a different rule reports, and
 ///     nothing anywhere fails. Sweeping the four new <c>SK21xx</c> attribute analyzers over every
 ///     fixture in the repository found two such files on the first attempt, both true positives
-///     ([#285](https://github.com/Rikarin/SKALA/issues/285)). ⚠ <b>The point was never the two files.
-///     It is that a cross-fixture sweep is a measurement nobody was taking</b>, over the corpus Skala
+///     ([#285](https://github.com/Rikarin/SKALA/issues/285)). ⚠
+///     <b>
+///         The point was never the two files.
+///         It is that a cross-fixture sweep is a measurement nobody was taking
+///     </b>, over the corpus Skala
 ///     uses to prove its rules correct.
 ///     <para>
 ///         The sweep now runs on every fixture, inside the assertion that was already computing every
@@ -33,8 +36,7 @@ public static class CrossRuleBaseline {
     ///     categories, "this file contains the defect another rule reports" is a statement about the
     ///     fixture rather than about its brevity.
     /// </remarks>
-    public static ImmutableHashSet<string> Categories { get; } =
-        ["Correctness", "Security"];
+    public static ImmutableHashSet<string> Categories { get; } = ["Correctness", "Security"];
 
     public static string Path { get; } = System.IO.Path.Combine(
         System.IO.Path.GetDirectoryName(RuleFixtures.Root)!,

@@ -76,19 +76,16 @@ public sealed record FixtureCompilation(
             ? version
             : throw new InvalidOperationException($"'{value}' is not a C# language version.");
 
-    static ImmutableArray<string> ParseSymbols(string value) =>
-        [
-            .. value.Split([';', ','], StringSplitOptions.RemoveEmptyEntries)
-                .Select(static symbol => symbol.Trim())
-                .Where(static symbol => symbol.Length > 0)
-        ];
+    static ImmutableArray<string> ParseSymbols(string value) => [
+        .. value.Split([';', ','], StringSplitOptions.RemoveEmptyEntries)
+            .Select(static symbol => symbol.Trim())
+            .Where(static symbol => symbol.Length > 0)
+    ];
 
     static bool ParseBoolean(string value) =>
         bool.TryParse(value, out var parsed)
             ? parsed
-            : throw new InvalidOperationException(
-                $"'{value}' is not true or false."
-            );
+            : throw new InvalidOperationException($"'{value}' is not true or false.");
 
     /// <summary>
     ///     The <c>key = value</c> pairs a fixture's leading comment block carries under one prefix.

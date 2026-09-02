@@ -29,11 +29,11 @@ public sealed class FixtureCompilationTests {
     [Fact]
     public void ALanguageVersion_ReachesTheParserAndNotOnlyTheRecord() {
         const string source = """
-            // fixture-option: LangVersion = 9
-            namespace Sample;
+                              // fixture-option: LangVersion = 9
+                              namespace Sample;
 
-            class C { }
-            """;
+                              class C { }
+                              """;
 
         Assert.Equal(LanguageVersion.CSharp9, FixtureCompilation.From(source).LanguageVersion);
 
@@ -47,11 +47,11 @@ public sealed class FixtureCompilationTests {
     [Fact]
     public void AnExplicitVersionArgument_StillWinsOverTheDirective() {
         const string source = """
-            // fixture-option: LangVersion = 9
-            namespace Sample;
+                              // fixture-option: LangVersion = 9
+                              namespace Sample;
 
-            class C { }
-            """;
+                              class C { }
+                              """;
 
         Assert.Empty(
             RuleFixtures.Compile(source, "version.cs", LanguageVersion.Preview)
@@ -63,17 +63,17 @@ public sealed class FixtureCompilationTests {
     [Fact]
     public void ADefinedSymbol_TurnsDisabledTextIntoCode() {
         const string source = """
-            // fixture-option: DefineConstants = FEATURE;EXTRA
-            class C {
-                int M() {
-            #if FEATURE
-                    return NotAType.Value;
-            #else
-                    return 0;
-            #endif
-                }
-            }
-            """;
+                              // fixture-option: DefineConstants = FEATURE;EXTRA
+                              class C {
+                                  int M() {
+                              #if FEATURE
+                                      return NotAType.Value;
+                              #else
+                                      return 0;
+                              #endif
+                                  }
+                              }
+                              """;
 
         Assert.Equal(["FEATURE", "EXTRA"], FixtureCompilation.From(source).PreprocessorSymbols);
 
@@ -88,13 +88,13 @@ public sealed class FixtureCompilationTests {
     [Fact]
     public void UnsafeCode_CompilesByDefaultAndStopsCompilingWhenAFixtureAsksItTo() {
         const string body = """
-            class C {
-                unsafe int M() {
-                    int* buffer = stackalloc int[4];
-                    return buffer[0];
-                }
-            }
-            """;
+                            class C {
+                                unsafe int M() {
+                                    int* buffer = stackalloc int[4];
+                                    return buffer[0];
+                                }
+                            }
+                            """;
 
         Assert.DoesNotContain(
             RuleFixtures.Compile(body, "unsafe.cs").GetDiagnostics(TestContext.Current.CancellationToken),
@@ -111,9 +111,9 @@ public sealed class FixtureCompilationTests {
     [Fact]
     public void ADirectiveBelowTheHeader_IsNotADirective() {
         const string source = """
-            class C { }
-            // fixture-option: LangVersion = 9
-            """;
+                              class C { }
+                              // fixture-option: LangVersion = 9
+                              """;
 
         Assert.Equal(LanguageVersion.Preview, FixtureCompilation.From(source).LanguageVersion);
     }

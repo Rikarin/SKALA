@@ -113,7 +113,11 @@ public sealed class RuleFixtureTests {
         Assert.True(
             observed.SetEquals(recorded),
             $"{fixture}: fixture-cross-rule-baseline.txt disagrees with what ran over this negative fixture.\n"
-            + Describe("  not recorded, and a negative fixture is a claim this file is correct code", observed.Except(recorded), all)
+            + Describe(
+                "  not recorded, and a negative fixture is a claim this file is correct code",
+                observed.Except(recorded),
+                all
+            )
             + Describe("  recorded but no longer fires; delete the line", recorded.Except(observed), all)
         );
     }
