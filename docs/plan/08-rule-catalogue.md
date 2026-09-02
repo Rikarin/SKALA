@@ -4980,3 +4980,43 @@ reported, and `BinaryReader.Read`/`TextReader.Read` are not covered at all — `
   Only a closed set of search methods documented to return `-1` is covered; a method called
   `IndexOf` on a type outside it may return anything at all, which is the reasoning that stops
   `SK2053` trusting a hand-written `Count`.
+
+### `SK2210`–`SK2213`: the measurement
+
+Three reference libraries, one project each, `<ImplicitUsings>enable</ImplicitUsings>`, built
+`--no-incremental` with a binlog and analysed with `--load=binlog --require-fresh-binlog
+--no-cache`. 16 201 findings in total; **zero from these four rules**.
+
+⚠ **The corpus needed repairing before it measured anything, and the repair is worth writing down.**
+It holds *three copies of every file* — `X.cs`, `X.expected.cs` and `X.arranged.expected.cs` — and
+compiling all three is **11 260 spurious `CS0111`**, "already defines a member". One project per
+library with `**/*.expected.cs` removed from `Compile` takes the CS-error count from **53 658 to
+13 036**, and enabling implicit usings takes it to **10 996** (serilog alone 1 694 → 972). What is
+left is `CS0246` for dependencies the corpus does not carry, and the analyzers run in it regardless.
+
+⚠ **The zero was verified before it was believed.** A file carrying one positive of each rule was
+planted in all three libraries, each binlog rebuilt, and all four rules reported in all three — then
+the file was deleted. A zero from an analysis that never ran and a zero from clean code are the same
+zero on the report.
+
+**Every zero classified, by widening each rule to the bare shape it registers on and counting what
+the guards then declined:**
+
+| Rule | Findings | Widened shape | What the zero means |
+|---|---:|---:|---|
+| `SK2210` | 0 | **488** | shape present, correctly declined — 488 constant, `^` or range element accesses, none of them invalid |
+| `SK2211` | 0 | **4** | shape present, correctly declined |
+| `SK2212` | 0 | **12** | shape present, correctly declined |
+| `SK2213` | 0 | **0** | ⚠ **shape absent** — not one `IndexOf` compared to a constant with `>` or `<` anywhere in the corpus, even matched by name alone |
+
+`SK2213` is therefore the one rule in this batch whose corpus zero is no evidence at all about its
+false-positive rate, and its fixtures are the whole of what is known. Recorded rather than smoothed
+over.
+
+⚠ **Two findings were produced before the guards above existed, and both were worth having.** The
+first was a real false positive — Newtonsoft's `while (digits-- != 0)`, where the *condition* writes
+the variable — and it reproduces in a probe that compiles, so it was the rule. The second was
+vixen's `GlBindingPlan.Build`, reported because a `switch` expression over an *error type* makes the
+endpoint unreachable; the same shape with the enum resolved is declined, so that one was the
+instrument. Both are fixed, both have a regression fixture, and the second bought `SK2212` a guard
+it needed anyway.
