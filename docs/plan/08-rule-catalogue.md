@@ -3140,17 +3140,18 @@ keyed to measured behaviour rather than to the descriptor:
 | `package` | the test framework's own analyzer, present exactly when the consumer references the framework | — |
 
 ⚠ **45 of the 65 entries name a diagnostic that produces nothing in a default build** (7 `opt-in`
-plus 38 `code-style`). That is the size of what "exists" was hiding, and it is why nine shipped rules
-were being counted as duplicates of a diagnostic that says nothing.
+plus 38 `code-style`). That is the size of what "exists" was hiding. Seven of the nine
+shipped rules #281 found shadowed were being counted as duplicates of a diagnostic that says
+nothing; the other two duplicate one that really is `on`, and retire.
 
 ⚠ **Three of the five states are the same three [#299](https://github.com/Rikarin/SKALA/issues/299)
 proposed, and the partition is not.** That issue proposed on-and-visible / on-but-hidden /
 off-until-opted-in, split on the descriptor. The measurement above collapses the last two into
 `opt-in` and splits `code-style` out of them instead — because `EnforceCodeStyleInBuild` is a real
-consumer-visible difference and the descriptor's `Hidden`/`disabled` distinction is not. ⚠ **Two of
-the `on` states are `Info`**, i.e. `note` in SARIF and invisible on the console; they count as `on`
-because they are in the error log, an IDE shows them, and Skala's own equivalents ship at
-`suggestion` — the same visibility. What they are not is a warning anybody sees scroll past.
+consumer-visible difference and the descriptor's `Hidden`/`disabled` distinction is not. ⚠ **Fourteen of
+the seventeen `on` entries are `Info`**, i.e. `note` in SARIF and invisible on the console; they
+count as `on` because they are in the error log, an IDE shows them, and Skala's own equivalents ship
+at `suggestion` — the same visibility. What they are not is a warning anybody sees scroll past.
 
 | `CA*` | Behavioural coverage — what it actually caught | Measured default state |
 |---|---|---|
