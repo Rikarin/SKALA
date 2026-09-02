@@ -213,8 +213,8 @@ public sealed class UndeclaredDisposeAnalyzer : DiagnosticAnalyzer {
                     ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
                 }
             )
-            ? "IDisposable"
-            : "System.IDisposable";
+                ? "IDisposable"
+                : "System.IDisposable";
 
         int position;
         if (declaration.BaseList is { Types.Count: > 0 } bases) {

@@ -23,10 +23,10 @@ namespace Rikarin.Skala.Rules.Tests;
 ///         type the model could not bind.
 ///     </para>
 ///     <para>
-///         ⚠ The other thing asserted here and nowhere else is <b>disjointness from <c>SK3502</c> and
-///         <c>SK3532</c></b>. <c>SK3540</c> is deliberately not made disjoint from <c>SK3502</c> — the
-///         two read different declarations and can both be right about one type — and that is a
-///         decision rather than an oversight, so it is pinned from both directions.
+///         ⚠ The other thing asserted here and nowhere else is disjointness from the rest of the
+///         family. <c>SK3540</c> is deliberately not made disjoint from <c>SK3502</c> — the two read
+///         different declarations and can both be right about one type — and that is a decision rather
+///         than an oversight, so it is pinned from both directions.
 ///     </para>
 /// </remarks>
 public sealed class ResourceLifetimeBatchTests {
@@ -140,10 +140,10 @@ public sealed class ResourceLifetimeBatchTests {
     /// </summary>
     /// <remarks>
     ///     <c>RuleFixtureTests</c> asks whether the result parses and re-binds, and both questions pass
-    ///     for an edit that lands in the wrong place as long as the wrong place is still legal — the
-    ///     generic case here is the one that matters, because <c>class C&lt;T&gt; where T : new() :
-    ///     IDisposable</c> is not a program and <c>class C&lt;T&gt; : IDisposable where T : new()</c> is.
-    ///     Only comparing the text says which one was written.
+    ///     for an edit that lands in the wrong place as long as the wrong place is still legal. The
+    ///     generic case is the one that matters: a base list must precede the constraint clauses, so
+    ///     putting <c>IDisposable</c> after <c>where T : struct</c> is not a program at all. Only
+    ///     comparing the text says which of the two was written.
     /// </remarks>
     [Fact]
     public void TheFixGoesBeforeTheConstraintsAndAfterTheBaseList() {
@@ -342,17 +342,19 @@ public sealed class ResourceLifetimeBatchTests {
             );
 
             for (var i = 0; i < count; i++) {
-                edits.Add((
-                    int.Parse(
-                        diagnostic.Properties[FixEdits.StartKey(i)]!,
-                        System.Globalization.CultureInfo.InvariantCulture
-                    ),
-                    int.Parse(
-                        diagnostic.Properties[FixEdits.LengthKey(i)]!,
-                        System.Globalization.CultureInfo.InvariantCulture
-                    ),
-                    diagnostic.Properties[FixEdits.TextKey(i)]!
-                ));
+                edits.Add(
+                    (
+                        int.Parse(
+                            diagnostic.Properties[FixEdits.StartKey(i)]!,
+                            System.Globalization.CultureInfo.InvariantCulture
+                        ),
+                        int.Parse(
+                            diagnostic.Properties[FixEdits.LengthKey(i)]!,
+                            System.Globalization.CultureInfo.InvariantCulture
+                        ),
+                        diagnostic.Properties[FixEdits.TextKey(i)]!
+                    )
+                );
             }
         }
 

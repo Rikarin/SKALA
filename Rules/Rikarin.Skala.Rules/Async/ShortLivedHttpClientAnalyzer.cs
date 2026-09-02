@@ -20,8 +20,11 @@ namespace Rikarin.Skala.Rules.Async;
 ///     port range under load. The failure appears only under concurrency, on a machine that is not the
 ///     author's, as <c>SocketException</c> from a call that worked yesterday.
 ///     <para>
-///         ⚠ <b>The whole family this rule lives in says "this is not disposed" and this one says "this
-///         is disposed".</b> <c>SK3501</c>, <c>SK3502</c>, <c>SK3530</c> and <c>SK3532</c> all report a
+///         ⚠
+///         <b>
+///             The whole family this rule lives in says "this is not disposed" and this one says "this
+///             is disposed".
+///         </b> <c>SK3501</c>, <c>SK3502</c>, <c>SK3530</c> and <c>SK3532</c> all report a
 ///         resource whose release is missing; here the release is present, correct by the shape of
 ///         every other disposable, and wrong. That inversion is why it needs its own rule rather than an
 ///         exception inside one of theirs — and it is why a rule that reports <c>HttpClient</c> for
@@ -117,9 +120,7 @@ public sealed class ShortLivedHttpClientAnalyzer : DiagnosticAnalyzer {
             // ⚠ `using var client = …;`. The `using` keyword is a modifier on the declaration here,
             // and a local declaration without it is a different rule's subject entirely — an
             // undisposed client is what this rule wants and `SK3501` is told to leave alone.
-            case LocalDeclarationStatementSyntax {
-                UsingKeyword.RawKind: (int)SyntaxKind.UsingKeyword
-            } declaration:
+            case LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.UsingKeyword } declaration:
                 foreach (var variable in declaration.Declaration.Variables) {
                     if (variable.Initializer?.Value is { } value) {
                         yield return UsingResource.Unwrap(value);
