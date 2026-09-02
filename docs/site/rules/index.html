@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 301 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 305 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -332,6 +332,10 @@
 <tr><td><a href="SK1092.html">SK1092</a></td><td>Use a tuple literal instead of constructing a <code>Tuple</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>review</td><td>no</td></tr>
 <tr><td><a href="SK1093.html">SK1093</a></td><td>Express the cast in the declaration instead</td><td><span class="tag sev-hint">hint</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1094.html">SK1094</a></td><td>Use nullable reference type syntax instead of an annotation attribute</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
+<tr><td><a href="SK1100.html">SK1100</a></td><td>The local is a name for the expression on the next line</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1101.html">SK1101</a></td><td>The local is declared on one line and assigned on the next</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK1102.html">SK1102</a></td><td>The local function is declared before the jump that ends the block</td><td><span class="tag sev-hint">hint</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK1103.html">SK1103</a></td><td>Both branches end with the same statements</td><td><span class="tag sev-hint">hint</span></td><td>review</td><td>yes</td></tr>
 </tbody>
 </table>
 </div>
