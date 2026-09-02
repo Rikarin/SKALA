@@ -139,16 +139,10 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
         );
     }
 
-    static bool IsACommand(INamedTypeSymbol owner, ImmutableArray<INamedTypeSymbol> commands) {
-        foreach (var command in commands) {
-            if (DerivesFrom(owner, command)
-                || owner.AllInterfaces.Contains(command, SymbolEqualityComparer.Default)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    static bool IsACommand(INamedTypeSymbol owner, ImmutableArray<INamedTypeSymbol> commands) =>
+        commands.Any(command =>
+            DerivesFrom(owner, command) || owner.AllInterfaces.Contains(command, SymbolEqualityComparer.Default)
+        );
 
     static bool DerivesFrom(INamedTypeSymbol owner, INamedTypeSymbol command) {
         for (var current = (INamedTypeSymbol?)owner; current is not null; current = current.BaseType) {
