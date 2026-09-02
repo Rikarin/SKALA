@@ -324,8 +324,11 @@ public sealed class RedundantArgumentAnalyzer : DiagnosticAnalyzer {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>A parameterless <c>delegate</c> is convertible to a delegate type only when that
-    ///         type has no <c>out</c> parameter</b>, because the compiler would have nothing to assign
+    ///         ⚠
+    ///         <b>
+    ///             A parameterless <c>delegate</c> is convertible to a delegate type only when that
+    ///             type has no <c>out</c> parameter
+    ///         </b>, because the compiler would have nothing to assign
     ///         through. <c>ref</c> and <c>in</c> are fine; <c>out</c> is refused, and it is the one
     ///         difference between this rewrite compiling and not.
     ///     </para>

@@ -107,8 +107,11 @@ public sealed class RedundantCastAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>Explicit method type arguments inference would reproduce exactly.</summary>
     /// <remarks>
-    ///     ⚠ <b>The rewrite is bound away from its tree, and that was a crash here rather than a
-    ///     theory.</b> <c>values?.Where(…).Cast&lt;string&gt;()</c> hands
+    ///     ⚠
+    ///     <b>
+    ///         The rewrite is bound away from its tree, and that was a crash here rather than a
+    ///         theory.
+    ///     </b> <c>values?.Where(…).Cast&lt;string&gt;()</c> hands
     ///     <c>GetSpeculativeSymbolInfo</c> a detached node whose root is a member binding, and the
     ///     compiler throws a <c>NullReferenceException</c> looking for the conditional access that
     ///     is no longer above it — see <see cref="SpeculativeBinding" />. It reached a report as

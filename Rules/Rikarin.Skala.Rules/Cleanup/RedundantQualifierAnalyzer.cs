@@ -224,5 +224,4 @@ public sealed class RedundantQualifierAnalyzer : DiagnosticAnalyzer {
 
     static bool CanBeOverriddenFurther(ISymbol member) =>
         (member.IsVirtual || member.IsAbstract || member.IsOverride) && !member.IsSealed;
-
 }
