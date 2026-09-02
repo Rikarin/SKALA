@@ -162,11 +162,11 @@ public static class Gate {
             failures.Add(
                 "the run was partial: "
                 + (cancelled.Length > 0
-                    ? cancelled.Length.ToString(CultureInfo.InvariantCulture)
-                    + " compilation unit(s) were cancelled and contributed no findings ("
-                    + string.Join(", ", cancelled.Take(3).Select(Path.GetFileName))
-                    + ")"
-                    : "at least one compilation unit was cancelled and contributed no findings")
+                        ? cancelled.Length.ToString(CultureInfo.InvariantCulture)
+                        + " compilation unit(s) were cancelled and contributed no findings ("
+                        + string.Join(", ", cancelled.Take(3).Select(Path.GetFileName))
+                        + ")"
+                        : "at least one compilation unit was cancelled and contributed no findings")
                 + ", so this verdict is computed from an unknown fraction of the tree"
             );
         }

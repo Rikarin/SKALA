@@ -297,6 +297,7 @@ public static class CheckCommand {
                     )
                 );
             }
+
             files += unit.ReportablePaths.Count;
             foreach (var tree in unit.Compilation.SyntaxTrees) {
                 lines += tree.GetText(cancellation).Lines.Count;

@@ -56,8 +56,14 @@ public sealed class InstrumentSilenceTests {
         using var scratch = new Scratch();
         scratch.Write("Widget.cs", Unformatted);
 
-        var (repeated, repeatedReport) = CheckCommand.Run(LooseRequest(scratch, "SK0001", "SK0002"), TestContext.Current.CancellationToken);
-        var (comma, commaReport) = CheckCommand.Run(LooseRequest(scratch, "SK0001,SK0002"), TestContext.Current.CancellationToken);
+        var (repeated, repeatedReport) = CheckCommand.Run(
+            LooseRequest(scratch, "SK0001", "SK0002"),
+            TestContext.Current.CancellationToken
+        );
+        var (comma, commaReport) = CheckCommand.Run(
+            LooseRequest(scratch, "SK0001,SK0002"),
+            TestContext.Current.CancellationToken
+        );
 
         Assert.Equal(ExitCodes.Ok, comma.ExitCode);
         Assert.NotEmpty(commaReport.Findings);
@@ -80,7 +86,10 @@ public sealed class InstrumentSilenceTests {
         using var scratch = new Scratch();
         scratch.Write("Widget.cs", Unformatted);
 
-        var (result, _) = CheckCommand.Run(LooseRequest(scratch, "SK9999", "SK9998"), TestContext.Current.CancellationToken);
+        var (result, _) = CheckCommand.Run(
+            LooseRequest(scratch, "SK9999", "SK9998"),
+            TestContext.Current.CancellationToken
+        );
 
         Assert.Equal(ExitCodes.ConfigurationError, result.ExitCode);
         Assert.Contains("SK9999", result.Output, StringComparison.Ordinal);
@@ -95,7 +104,10 @@ public sealed class InstrumentSilenceTests {
         using var scratch = new Scratch();
         scratch.Write("Widget.cs", Unformatted);
 
-        var (result, report) = CheckCommand.Run(LooseRequest(scratch, "SK0001,SK9999"), TestContext.Current.CancellationToken);
+        var (result, report) = CheckCommand.Run(
+            LooseRequest(scratch, "SK0001,SK9999"),
+            TestContext.Current.CancellationToken
+        );
 
         Assert.Equal(ExitCodes.Ok, result.ExitCode);
         Assert.Contains(
