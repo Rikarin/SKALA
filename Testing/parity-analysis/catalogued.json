@@ -98,7 +98,7 @@
   "ClosureAllocation": "SK4002",
   "ImplicitlyCapturedClosure": "SK4002",
   "LoopCanBeConvertedToQuery": "SK4010",
-  "ReplaceWithOfType": "SK4010",
+  "ReplaceWithOfType": "SK1080",
   "ReplaceWithSingleCallToCount": "SK4010",
   "ReplaceWithSingleCallToAny": "SK4010",
   "ReplaceWithSingleCallToFirst": "SK4010",
@@ -223,5 +223,10 @@
   "UseDeconstruction": "SK1070",
   "UseWithExpressionToCopyRecord": "SK1071",
   "RedundantSpreadElement": "SK1072",
-  "UseEventArgsEmptyField": "SK1073"
+  "UseEventArgsEmptyField": "SK1073",
+  "RedundantEnumerableCastCall": "SK1081",
+  "RedundantCollectionCopyCall": "SK1081",
+  "UseIndexedProperty": "SK1082",
+  "ForCanBeConvertedToForeach": "SK1083",
+  "LoopCanBePartlyConvertedToQuery": "SK1084"
 }

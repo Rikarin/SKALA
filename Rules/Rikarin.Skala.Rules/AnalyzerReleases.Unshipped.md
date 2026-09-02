@@ -205,3 +205,8 @@ SK2071 | Skala.Correctness | Warning | The structured log template names the sam
 SK2072 | Skala.Correctness | Warning | The literal contains an unescaped invisible character.
 SK2073 | Skala.Correctness | Warning | The caught exception is not passed to the logger's exception parameter.
 SK7110 | Skala.Maintainability | Info | The logger is declared for a different type than the one that declares it.
+SK1080 | Skala.Modernization | Info | Use the LINQ operator that says what the chain means.
+SK1081 | Skala.Modernization | Warning | Remove the LINQ or collection call that does nothing.
+SK1082 | Skala.Modernization | Info | Use the indexer.
+SK1083 | Skala.Modernization | Info | Use `foreach` over an indexed `for`.
+SK1084 | Skala.Modernization | Hidden | Use a LINQ operator for part of the loop.

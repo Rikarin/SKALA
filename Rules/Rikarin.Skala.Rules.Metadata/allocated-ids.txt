@@ -246,3 +246,8 @@ SK2100 ineffective-thread-static
 SK2101 pure-attribute-on-void
 SK2102 debugger-display-missing-member
 SK2103 duplicated-attribute
+SK1080 of-type-over-filter-and-cast
+SK1081 redundant-sequence-call
+SK1082 indexer-over-element-at
+SK1083 foreach-over-indexed-for
+SK1084 loop-filter-as-query

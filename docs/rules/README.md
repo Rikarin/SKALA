@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 229 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 234 ids are allocated.
 
 ## Async
 
@@ -236,6 +236,11 @@
 | [SK1071](SK1071.md) | Copy the record with a `with` expression | suggestion | safe | no |
 | [SK1072](SK1072.md) | The spread of a freshly created array is its elements | suggestion | safe | no |
 | [SK1073](SK1073.md) | Use the framework's cached instance | suggestion | safe | no |
+| [SK1080](SK1080.md) | Use the LINQ operator that says what the chain means | suggestion | safe | no |
+| [SK1081](SK1081.md) | Remove the LINQ or collection call that does nothing | warning | safe | no |
+| [SK1082](SK1082.md) | Use the indexer | suggestion | safe | no |
+| [SK1083](SK1083.md) | Use `foreach` over an indexed `for` | suggestion | review | no |
+| [SK1084](SK1084.md) | Use a LINQ operator for part of the loop | hint | review | no |
 
 ## Performance
 
