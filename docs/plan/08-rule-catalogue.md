@@ -2644,3 +2644,42 @@ so the argument-validation half of the concept is already covered by an analyzer
 ADR-008's answer to a check being off is to turn it on rather than to rebuild it. The residual — a
 local definitely assigned `null` and then dereferenced, in a nullable-oblivious file — drew nothing
 from any analyzer in the probe and is the honest size of the gap.
+
+⚠ **The batch's measurement is four zeros and all four are "shape absent", which is weaker evidence
+than a zero usually is.** The sweep is `dotnet build Skala.slnx -c Release --no-incremental` with a
+binary log, then `skala check --load=binlog --require-fresh-binlog` over the four ids. **The load
+carried 0 `CS` errors and 10 `CS` diagnostics in total** — all `CS9335`, "the pattern is redundant",
+at hint — so the semantic model the rules read was a real one, not the ~4 400-error load that
+`--load=workspace` produces on this tree (#284). The result was zero findings, exit 0.
+
+⚠ **The instrument was verified before the zero was believed.** A probe carrying one occurrence of
+each shape was compiled into `Tools/Rikarin.Skala.Cli`, and the same sweep reported all five: `SK2110`
+on `public override string? ToString() => null;`, `SK2111` twice — once for an `int` operand and once
+inside `#nullable disable warnings` — `SK2112` on a `string?` local, and `SK2113` on
+`GetService<IFormatProvider>()!` **against the real `Microsoft.Extensions.DependencyInjection`
+reference this project already carries**, which is the reference set the fixture harness cannot give
+(#297). The probe was then deleted and the sweep re-run to get the zero.
+
+What each zero means, counted rather than assumed:
+
+- `SK2110` — **shape absent.** `Directory.Build.props` sets `Nullable=enable` for the whole
+  repository and there is not one `#nullable disable` directive in its production code; there are
+  eight `override string ToString()` and no `override string? ToString()`. Both of the rule's two
+  contexts are missing.
+- `SK2111` — **shape absent, in both branches.** The warnings-disabled branch cannot fire in a tree
+  with no nullable-oblivious position; the value-type branch found no `!` on a non-nullable value
+  type. The ~90 lines that do carry a suppression are on reference types, which is the `S8969`
+  ground this rule declines by design rather than by accident.
+- `SK2112` — **shape absent, and this is the one worth stating precisely.** Skala's own tree does
+  contain nullable locals; **every one of them is initialised with `null` or `default`**, so the
+  rule's precondition — an initialiser the flow analysis proves non-null — holds nowhere.
+- `SK2113` — **shape absent.** No `GetService<T>()` or `GetKeyedService<T>()` call exists in the
+  production code at all; the only occurrences in the repository are this batch's own fixtures, which
+  `skala.jsonc` excludes.
+
+⚠ **The vendored reference trees could not be measured and reporting their zero would have been
+worse than reporting nothing.** `Testing/corpus/real/` holds Serilog, Newtonsoft.Json and Vixen as
+loose sources with no project file, so the only load available is `--load=loose` — which skips every
+rule declaring `requiresSemantics`, and all four of these do (#277). A loose run would have printed
+four zeros that mean "the analysis never ran". The false-positive evidence for this batch is
+therefore its negative fixture set (9, 8, 10 and 9 files) and the probe, and not a corpus count.
