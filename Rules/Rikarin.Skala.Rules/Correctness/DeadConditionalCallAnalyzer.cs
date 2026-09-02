@@ -168,8 +168,17 @@ public sealed class DeadConditionalCallAnalyzer : DiagnosticAnalyzer {
     static HashSet<string> UndefinedSymbols(SyntaxNode node) {
         var result = new HashSet<string>(System.StringComparer.Ordinal);
         var position = node.SpanStart;
+        var root = node.SyntaxTree.GetRoot();
 
-        foreach (var directive in node.SyntaxTree.GetRoot()
+        // ⚠ This walks the whole tree, and it is reached once per call to a `[Conditional]` method.
+        // `Debug.Assert` is common enough in some repositories that the product would be quadratic in
+        // a file with many of them, so the flag the parser already computed is asked first: a file
+        // with no directive at all cannot prove any symbol undefined and is the overwhelming majority.
+        if (!root.ContainsDirectives) {
+            return result;
+        }
+
+        foreach (var directive in root
                      .DescendantNodes(descendIntoTrivia: true)
                      .OfType<BranchingDirectiveTriviaSyntax>()) {
             if (!directive.BranchTaken || !Encloses(directive, position)) {
