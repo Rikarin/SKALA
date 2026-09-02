@@ -18,6 +18,12 @@ namespace Rikarin.Skala.Analysis.Tests;
 public sealed class DuplicationTests {
     const int MinTokens = 100;
 
+    /// <summary>Directives in <see cref="Header" />: 15 × 7 tokens, plus 5 for the namespace, is 110.</summary>
+    const int HeaderDirectives = 15;
+
+    /// <summary>⚠ One line each and one for the namespace, with no blank line — so the count is exact.</summary>
+    const int HeaderLines = HeaderDirectives + 1;
+
     /// <summary>
     ///     Statement shapes and the exact number of tokens each lexes to, trivia dropped.
     /// </summary>
@@ -413,6 +419,178 @@ public sealed class DuplicationTests {
         Assert.Equal(forwards, Render(Detect(files)));
     }
 
+    /// <summary>
+    ///     ⚠ The header is not duplication — issue #323.
+    /// </summary>
+    /// <remarks>
+    ///     Identifiers normalise to <c>IdentifierToken</c>, so two files' <c>using</c> blocks match on the
+    ///     number of dotted segments in the same order and on nothing else. <see cref="Header" /> is 110
+    ///     tokens, comfortably over the 100-token window, so before the skip these two unrelated files were
+    ///     a clone of each other before either had done anything.
+    ///     <para>
+    ///         ⚠ If this goes green with the skip reverted, the skip is not what is being measured.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void Detect_WhenTwoFilesShareOnlyTheirHeader_ReportsNothing() {
+        var result = Detect(
+            [
+                Production("/repo/Alpha.cs", Header("Alpha") + Alpha(Block(150, seed: 1))),
+                Production("/repo/Beta.cs", Header("Beta") + Beta(Block(150, seed: 2)))
+            ]
+        );
+
+        Assert.Empty(result.Groups);
+        Assert.Equal(0, result.DuplicatedLines);
+    }
+
+    /// <summary>
+    ///     ⚠ The other half, and the one that says the skip removed noise rather than signal: the same two
+    ///     headers, and a body they genuinely share, is still exactly one group of exactly the body.
+    /// </summary>
+    [Fact]
+    public void Detect_WhenTheBodiesDuplicate_TheDifferentHeadersDoNotHideIt() {
+        var block = Block(150);
+
+        var result = Detect(
+            [
+                Production("/repo/Alpha.cs", Header("Alpha") + Alpha(block)),
+                Production("/repo/Beta.cs", Header("Beta") + Beta(block))
+            ]
+        );
+
+        var group = Assert.Single(result.Groups);
+        Assert.Equal(150, group.TokenLength);
+        Assert.Equal(2, group.Occurrences.Length);
+    }
+
+    /// <summary>
+    ///     ⚠ <b>The boundary is the node type, never the word.</b>
+    /// </summary>
+    /// <remarks>
+    ///     A <c>using</c> directive is a <c>UsingDirectiveSyntax</c>; <c>using var x = …</c> is a
+    ///     <c>LocalDeclarationStatementSyntax</c> and <c>using (…) { }</c> is a <c>UsingStatementSyntax</c>.
+    ///     The last two are resource management — real code, and a place duplication genuinely hides. A skip
+    ///     that matched on the token <c>using</c> would blind the detector to all of it, and nothing else
+    ///     here would notice.
+    /// </remarks>
+    [Fact]
+    public void Lex_SkipsUsingDirectives_AndKeepsUsingStatements() {
+        const string source = """
+            using System;
+
+            namespace Sample;
+
+            class Probe {
+                void Run() {
+                    using var first = Open();
+                    using (var second = Open()) {
+                    }
+                }
+            }
+            """;
+
+        // `using System;` is 3 tokens and `namespace Sample;` is 3; every other token survives, the
+        // two body `using`s included.
+        Assert.Equal(TokenCount(source) - 6, TokenStream.Lex(source).Count);
+    }
+
+    /// <summary>
+    ///     ⚠ The two namespace forms are skipped to different points, deliberately.
+    /// </summary>
+    /// <remarks>
+    ///     A file-scoped declaration goes through its <c>;</c>, because <c>namespace ID . ID ;</c> is the
+    ///     same artefact as a <c>using</c>. A block declaration stops at the end of its <b>name</b>: the
+    ///     <c>{</c>, the members and the closing <c>}</c> are still tokenised, so the brace nesting a
+    ///     block-scoped file has is still what it is compared on.
+    /// </remarks>
+    [Fact]
+    public void Lex_SkipsTheNamespaceHeader_ButNotABlockNamespaceBrace() {
+        const string blockScoped = "namespace Sample.Inner { class Probe { } }";
+        const string fileScoped = "namespace Sample.Inner;\nclass Probe { }";
+
+        // `namespace Sample . Inner` is 4 tokens; `{ class Probe { } }` is not touched.
+        Assert.Equal(TokenCount(blockScoped) - 4, TokenStream.Lex(blockScoped).Count);
+
+        // …and the file-scoped form takes its `;` too.
+        Assert.Equal(TokenCount(fileScoped) - 5, TokenStream.Lex(fileScoped).Count);
+    }
+
+    /// <summary>
+    ///     ⚠ Out of the numerator <i>and</i> the denominator, exactly as a generated file is.
+    /// </summary>
+    /// <remarks>
+    ///     A line that can never be matched must not dilute the ratio either. Removing the header from one
+    ///     half only would move <c>metrics.duplication</c> for a second reason — downwards for every import
+    ///     anyone adds — and make the change unattributable.
+    ///     <para>
+    ///         ⚠ A line holding no tokens at all is neither, so the blank line between the directives and
+    ///         the namespace stays counted. <see cref="Header" /> has none, so the arithmetic here is exact.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void Detect_TakesTheHeaderOutOfTheDenominatorToo() {
+        var text = Header("Alpha") + Alpha(Block(150));
+
+        var result = Detect([Production("/repo/Alpha.cs", text)]);
+
+        Assert.Equal(Lines(text) - HeaderLines, result.TotalLines);
+    }
+
+    /// <summary>
+    ///     ⚠ The tokeniser's identity is in the index's stamp — issue #322.
+    /// </summary>
+    /// <remarks>
+    ///     <c>clones.idx</c> is keyed on <c>(path, content hash)</c> and stamped with the format and tool
+    ///     versions, none of which move when <c>TokenStream.Lex</c> is edited. A change to duplication
+    ///     detection therefore used to measure itself against the <i>previous</i> tokeniser's streams:
+    ///     12.89 % warm against 6.9 % cold, one binary, one tree, identical finding sets, no warning.
+    ///     <para>
+    ///         ⚠ This asserts the canary is broad enough to notice, which is the half that can rot. A
+    ///         fingerprint over a canary that exercises nothing is a fingerprint that never moves, and it
+    ///         would look exactly like this one.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void Fingerprint_IsDerivedFromACanaryThatExercisesTheLexer() {
+        var lexed = TokenStream.Lex(TokenStream.Canary);
+
+        Assert.True(lexed.HeaderLines > 0, "the canary must exercise the header skip");
+        Assert.True(lexed.Count > 0 && lexed.Count < TokenCount(TokenStream.Canary), "the canary must lose tokens");
+        Assert.Equal(32, TokenStream.Fingerprint.Length);
+        Assert.Equal(TokenStream.Fingerprint, TokenStream.Fingerprint);
+    }
+
+    /// <summary>
+    ///     ⚠ And a stamp that does not match this build's is a cold run, not a stale answer.
+    /// </summary>
+    /// <remarks>
+    ///     Patching the stamp in the header is what a tokeniser change does to an index written by the
+    ///     previous build. The header is not covered by the payload checksum, so this is the stamp check
+    ///     being exercised and not the corruption path beside it.
+    /// </remarks>
+    [Fact]
+    public void Index_WhenTheStampIsNotThisBuilds_DegradesToAColdRun() {
+        using var scratch = new Scratch();
+        var files = Corpus();
+        var path = Path.Combine(scratch.Root, "clones.idx");
+        var expected = Render(CloneDetector.Detect(files, MinTokens, null, TestContext.Current.CancellationToken));
+
+        CloneDetector.Detect(files, MinTokens, scratch.Root, TestContext.Current.CancellationToken);
+        var bytes = File.ReadAllBytes(path);
+
+        // The stamp is a length-prefixed string at offset 12; its last byte is inside the fingerprint.
+        var stampLength = BitConverter.ToInt32(bytes, 8);
+        Assert.InRange(stampLength, 33, 128);
+        bytes[11 + stampLength] ^= 0x01;
+        File.WriteAllBytes(path, bytes);
+
+        Assert.Equal(
+            expected,
+            Render(CloneDetector.Detect(files, MinTokens, scratch.Root, TestContext.Current.CancellationToken))
+        );
+    }
+
     [Fact]
     public void Detect_WhenMinTokensIsBelowOne_Throws() =>
         Assert.Throws<ArgumentOutOfRangeException>(() => CloneDetector.Detect(
@@ -469,6 +647,24 @@ public sealed class DuplicationTests {
     }
 
     static int Lines(string text) => Microsoft.CodeAnalysis.Text.SourceText.From(text).Lines.Count;
+
+    /// <summary>
+    ///     A file header of 110 tokens and <see cref="HeaderLines" /> lines, containing no logic at all.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <paramref name="seed" /> changes every name and <b>nothing else</b>, which is the whole point:
+    ///     the normalisation maps identifiers to one class, so two headers built from different seeds lex to
+    ///     byte-identical token streams. That is the artefact — files matching on the number of dotted
+    ///     segments in the same order — and it is why 289 analyzer files were clones of each other.
+    /// </remarks>
+    static string Header(string seed) {
+        var builder = new StringBuilder();
+        for (var i = 0; i < HeaderDirectives; i++) {
+            builder.Append(CultureInfo.InvariantCulture, $"using {seed}{i}.Second{i}.Third{i};\n");
+        }
+
+        return builder.Append(CultureInfo.InvariantCulture, $"namespace {seed}.Root;\n").ToString();
+    }
 
     static int TokenCount(string text) {
         var count = 0;

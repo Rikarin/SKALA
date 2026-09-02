@@ -589,10 +589,29 @@ public static class CloneDetector {
 
         public required TokenStream Tokens { get; init; }
 
-        /// <summary>⚠ <c>SourceText.Lines.Count</c>, the same count <c>CheckCommand</c> reports.</summary>
-        public int LineCount => Text.Lines.Count;
+        /// <summary>
+        ///     <c>SourceText.Lines.Count</c>, less the header the lexer skipped.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ The header leaves the denominator as well as the numerator, which is the call
+        ///     <c>DuplicationPass</c> already makes for generated files: a line that can never be matched
+        ///     must not dilute the ratio, or the percentage falls whenever somebody adds an import. See
+        ///     <see cref="TokenStream.HeaderLines" />.
+        ///     <para>
+        ///         ⚠ This is <i>not</i> the <c>lineCount</c> <c>CheckCommand</c> reports. That one counts
+        ///         every line of every tree and is a description of the repository; this one is the
+        ///         denominator of one ratio and counts only what that ratio can measure.
+        ///     </para>
+        /// </remarks>
+        public int LineCount => Text.Lines.Count - Tokens.HeaderLines;
 
         /// <summary>⚠ A set, not a sum: a line in three groups is one duplicated line.</summary>
+        /// <remarks>
+        ///     ⚠ Clamped to <see cref="LineCount" />. Skipping a header leaves a gap in the token stream,
+        ///     and a clone group may span one exactly as it already spans a comment — so an occurrence can
+        ///     mark a line the denominator no longer holds. Rare enough never to have been seen, and
+        ///     <c>DuplicatedLines &lt;= TotalLines</c> is an invariant the tests assert.
+        /// </remarks>
         public int DuplicatedLineCount {
             get {
                 if (duplicated is null) {
@@ -606,7 +625,7 @@ public static class CloneDetector {
                     }
                 }
 
-                return count;
+                return Math.Min(count, LineCount);
             }
         }
 
