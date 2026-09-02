@@ -25,7 +25,3 @@ artifacts/
 # was ignored, `verify_ledger.py`'s strongest assertion — that every `catalogued.json` key names
 # a real inspection — did not run in any fresh clone or worktree, and the run still printed
 # `0 failures` (#311). Committing the snapshot is what makes that check unskippable.
-Testing/parity-analysis/types.json
-Testing/parity-analysis/universe.json
-Testing/parity-analysis/classified.json
-Testing/parity-analysis/sonar.json

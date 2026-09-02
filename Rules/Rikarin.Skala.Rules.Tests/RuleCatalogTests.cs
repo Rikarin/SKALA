@@ -31,9 +31,6 @@ public sealed class RuleCatalogTests {
     static string CataloguePath { get; } =
         Path.Combine(RepositoryRoot, "docs", "plan", "08-rule-catalogue.md");
 
-    static string ParityMapPath { get; } =
-        Path.Combine(RepositoryRoot, "Testing", "parity-analysis", "catalogued.json");
-
     /// <summary>
     ///     Arrangement findings belong to the formatting band and every declared id is catalogue-backed.
     /// </summary>
@@ -414,121 +411,6 @@ public sealed class RuleCatalogTests {
         }
     }
 
-    /// <summary>
-    ///     ⚠ The parity measurement's inspection → <c>SK</c> map, pinned in the one direction that is
-    ///     still assertable: every id it credits must be an id the register has actually allocated.
-    /// </summary>
-    /// <remarks>
-    ///     <c>Testing/parity-analysis/catalogued.json</c> is hand-written, and its README calls it the
-    ///     soft edge of the whole analysis for a reason: an inspection missing from it falls through to
-    ///     the <c>Uncovered</c> residue, so an omission does not read as a mistake in the map — it reads
-    ///     as a gap in the product.
-    ///     <para>
-    ///         ⚠ <b>This test used to assert rules.json ⊆ catalogued.json as well</b>, matching on the
-    ///         <c>SK</c> id: whatever inspection a shipped rule named as its <c>resharperId</c>, the map
-    ///         had to credit to that rule. That half is gone with the field (and so is
-    ///         <c>verify_ledger.py</c>'s copy of it), which leaves the *keys* of the map — the
-    ///         inspection names — checked by nothing at all. docs/plan/17 records the loss; it is an
-    ///         accepted consequence of removing a field that could name only one inspection per rule
-    ///         when a rule routinely covers several.
-    ///     </para>
-    ///     <para>
-    ///         ⚠ <b>Map ⊆ rules.json is still deliberately not asserted.</b> The <c>Catalogued</c>
-    ///         bucket means "an <c>SK</c> id in doc 08 already names this concept" — allocated is
-    ///         enough and shipped is not required, so entries pointing at ids doc 08 names but nothing
-    ///         implements yet are the map working correctly.
-    ///     </para>
-    /// </remarks>
-    [Fact]
-    public void TheParityMap_CreditsOnlyIdsTheRegisterHasAllocated() {
-        Assert.True(File.Exists(ParityMapPath), $"{ParityMapPath} does not exist; it is what this test reads.");
-
-        var map = new Dictionary<string, string>(StringComparer.Ordinal);
-        using (var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(ParityMapPath))) {
-            foreach (var entry in document.RootElement.EnumerateObject()) {
-                map[entry.Name] = entry.Value.GetString()!;
-            }
-        }
-
-        // ⚠ Anti-vacuity. The loop below passes happily against an empty map, and an empty map is
-        // the exact shape of the failure this test exists to report.
-        Assert.True(map.Count > 100, $"{ParityMapPath} holds {map.Count} entries; that is not the map.");
-
-        var register = File.ReadAllText(CataloguePath);
-        Assert.True(
-            register.Contains("## SK5000 — Security", StringComparison.Ordinal),
-            $"{CataloguePath} was read but does not look like the register; the check below proves nothing."
-        );
-
-        var shipped = RuleCatalog.All.Select(static rule => rule.Id).ToHashSet(StringComparer.Ordinal);
-
-        // ⚠ This used to read `register.Contains(id)` — a substring match against the whole of
-        // doc 08 — and that is not "an id the register knows". Doc 08 names an id in its **cut**
-        // tables too, in order to record that it will never be built, and the substring match
-        // could not tell the two apart. Five entries went through it that way: `SK2006` (cut, an
-        // unassigned `out` parameter is `CS0177`, a compiler error), `SK8003`/`SK8004` (cut,
-        // xUnit1001 and xUnit1049 host them) and `SK8001` (cut, no mechanical fix and a large
-        // false-positive surface). The map was crediting inspections to rules that had been
-        // measured and declined, which reads as coverage in every number downstream.
-        //
-        // `allocated-ids.txt` is the register ADR-012 actually defines, so it is what this
-        // asserts against. `plannedButUnallocated` carries the ids doc 08 specifies and has
-        // deliberately not allocated — CLAUDE.md forbids allocating ahead of a specification, so
-        // the list is expected to be short, non-empty, and to carry a reason per entry.
-        var allocated = File.ReadAllLines(AllocatedIdsPath)
-            .Where(static line => line.Length > 0 && !line.StartsWith('#'))
-            .Select(static line => line.Split(' ', 2)[0])
-            .ToHashSet(StringComparer.Ordinal);
-        Assert.True(
-            allocated.Count > 100,
-            $"{AllocatedIdsPath} lists {allocated.Count} ids; that is not the register."
-        );
-
-        var plannedButUnallocated = new Dictionary<string, string>(StringComparer.Ordinal) {
-            ["SK1002"] = "doc 08 § SK1000 and § M5: primary constructors are a declaration-shape "
-                + "rewrite with no safe fix — deferred, not declined",
-            ["SK6004"] = "doc 08 § SK6000: 'the other two remain outstanding' — interface with one "
-                + "implementation is specified and not yet allocated"
-        };
-
-        var unknown = new List<string>();
-        foreach (var (inspection, id) in map) {
-            if (!System.Text.RegularExpressions.Regex.IsMatch(id, "^SK[0-9]{4}$")) {
-                unknown.Add($"{inspection} -> '{id}' is not a well-formed rule id");
-            } else if (!shipped.Contains(id) && !allocated.Contains(id) && !plannedButUnallocated.ContainsKey(id)) {
-                unknown.Add($"{inspection} -> {id}, which neither ships nor is allocated in allocated-ids.txt");
-            }
-        }
-
-        Assert.True(
-            unknown.Count == 0,
-            "The parity map credits inspections to ids the register does not know:\n  "
-            + string.Join("\n  ", unknown)
-            + "\n\nDirection asserted: every value is allocated, NOT that every value ships. An id doc 08 "
-            + "names and nothing implements yet is a legitimate Catalogued mapping — that is what the "
-            + "bucket means — so this is the strongest claim that stays true as the catalogue is built out. "
-            + "⚠ An id doc 08 names only in a CUT table is NOT such a mapping: the concept was measured and "
-            + "declined, so crediting an inspection to it reports coverage that will never exist."
-        );
-    }
-
-    /// <summary>
-    ///     ⚠ <c>docs/rules/</c> is generated and never hand-edited (docs/plan/08 § "Documentation").
-    /// </summary>
-    /// <remarks>
-    ///     One source, three surfaces: the docs page, <c>skala explain</c> and the SARIF
-    ///     <c>rules[]</c> block are the same <see cref="RuleInfo" /> rendered differently. Without this
-    ///     test the first two drift apart silently, and a documentation page that describes the previous
-    ///     behaviour is worse than none — a reader has no way to tell which one is stale.
-    ///     <para>
-    ///         ⚠ It asserts <em>containment</em> rather than byte equality, because
-    ///         <c>Rikarin.Skala.Rules.Tests</c> may not reference <c>Analysis</c> — that would put the whole
-    ///         analysis stack in the analyzer package's test closure, which is what doc 02's reference test
-    ///         exists to prevent — so the renderer itself is not callable from here. Containment still
-    ///         catches the failure that matters: a <c>rules.json</c> edit with no <c>skala rules docs</c>
-    ///         after it.
-    ///     </para>
-    /// </remarks>
     [Fact]
     public void DocsPages_AreUpToDate() {
         var directory = Path.Combine(RepositoryRoot, "docs", "rules");

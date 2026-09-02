@@ -120,7 +120,8 @@ three:
 - ⚠ **Do not quote a coverage, fidelity or rule-count number from a document or from memory.** Every
   figure written down here has gone stale at least once. Read the artefact: the conformance sweeps under
   `Testing/Rikarin.Skala.Conformance.Sweep/`, `options.json` for the tier split, `rules.json` for what
-  ships, `Testing/parity-analysis/` for the parity numbers.
+  ships. ⚠ The parity analysis is **closed and its directory deleted** — [17](docs/plan/17-inspection-parity.md)
+  is a record, not an instrument, and the last numbers it took are in it.
 - ⚠ **Verify the instrument before trusting what it printed.** Ask what a measurement prints on the day
   it does not run. Real examples from this repository: a parity pipeline whose map lookup was keyed on
   an id that was `null` for 81 of 888 rows, so those rows silently fell through to "uncovered" and
@@ -174,12 +175,13 @@ matters disproportionately: a model writes an older dialect of C# because that i
 training data is. It is also why nothing formats on save here, and why the wall-clock budgets that once
 gated the build were deleted rather than met.
 
-**`Testing/parity-analysis/` measures what ReSharper and SonarQube catch and Skala does not.** It is
-plain Python, deliberately outside the solution. `LEDGER.md` and the two `ledger-*.json` files record
-what was then *done* with that measurement — every rule either proposed as a GitHub issue or excluded
-with a written reason — and `verify_ledger.py` asserts neither can lose one. ⚠ `catalogued.json`,
-`gov.json` and the hosted map inside `classify.py` are hand-written judgement, not measurement; every
-entry missing from them inflates the gap and every wrong entry hides one.
+⚠ **The parity analysis is closed. `Testing/parity-analysis/` no longer exists**, and neither does
+`rules.json`'s `resharperId` or the `resharper_*_highlighting` severity bridge. It ended at **275 rule
+proposals closed, 3 open**; [17](docs/plan/17-inspection-parity.md) is the record, including what
+stopped being checked when it went. ⚠ Do not rebuild a substitute for the map's cross-check — the
+decision was to stop measuring this, not to measure it differently. **Reading Rider's export for
+formatting *options* is untouched and is still Skala's premise**: `options.json`, the root
+`editor_config_template`, `CanonicalEditorConfig` and every `config` subcommand stay.
 
 ## Conventions
 

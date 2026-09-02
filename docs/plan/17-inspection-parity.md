@@ -1,4 +1,60 @@
-# 17 — Inspection Parity
+# 17 — Inspection Parity — CLOSED
+
+⚠ **This work is finished and its machinery is deleted. This document is a record, not an
+instrument.** Nothing here is measured any more; every number below is the last one taken.
+
+`Testing/parity-analysis/` — the pipeline (`universe.py`, `classify.py`, `verify_ledger.py` and the
+rest), the three hand-written maps (`catalogued.json`, `gov.json`, `sonar_hand.json`), both ledgers,
+and the committed `types-2026.xml` issue-type dump — was removed once the proposals it produced had
+all been adjudicated. `RuleCatalogTests`' read of `catalogued.json` went with it.
+
+## Where it got to
+
+**275 rule proposals closed, 3 open** on `Rikarin/SKALA` at the time of closing. The catalogue stood
+at **324 of 360 shipped (90.8 %)**, 12 cut, 21 outstanding.
+
+⚠ **The ledgers were retired recording 163 of 244 concepts as `unexamined`, and that number is not a
+coverage claim.** It is bookkeeping debt: issue #301 established that 196 of 270 concepts had a
+**closed** issue whose outcome had never been migrated into the ledger. Only 8 were migrated by hand,
+deliberately — auto-classifying closing comments by keyword would have manufactured exactly the
+evidence-free decisions the schema existed to forbid. **The adjudication lives on the GitHub issues,
+not in the ledgers.** Anyone reading a copy of `ledger-*.json` from history should read that
+`unexamined` as *"never written down here"*, not as *"never looked at"*.
+
+## ⚠ What stopped being checked, and why that was accepted
+
+`rules.json` carried a `resharperId` per rule, and two independent places asserted that it agreed
+with `catalogued.json`: `verify_ledger.py` and a half of `RuleCatalogTests.TheParityMap_*`. **Two
+hand-written maps that had to agree.** That cross-check caught, in its last session alone: 17 phantom
+keys, ~25 wrong credits, 14 under-credits, 7 entries crediting rules that do not exist, 3 crediting
+retired rules, and `CognitiveComplexity` pointed at the cyclomatic rule instead of `SK7002`.
+
+The field was removed because it could name **one** inspection per rule while a rule routinely covers
+several — 295 inspections mapped onto 162 rules, 49 of them covering more than one, `SK4010` covering
+eleven. A field that cannot express the relationship it is asserting is a poor second source, and the
+severity bridge built on it (`resharper_*_highlighting` → a Skala rule's severity) was lossy for the
+same reason: it either switched off a rule covering ten other concepts or was inert for the other ten.
+
+**Nothing replaces the cross-check, by decision rather than oversight.** Do not invent a substitute
+assertion for a measurement that is no longer being taken.
+
+## What survives, and must not be confused with any of the above
+
+⚠ **Reading Rider's export for formatting *options* is Skala's core premise and is untouched.**
+`Core/Rikarin.Skala.Options/options.json`, the root `editor_config_template`, `CanonicalEditorConfig`,
+`./build.sh Canonical`, and `config check` / `explain` / `distill` / `diff` / `fix` / `sync` all stay
+exactly as they were. Only the *severity* axis and the *parity measurement* are gone.
+
+⚠ **`supersedes` stays.** It carries SonarQube ids and `CA*` / `IDE*` ids and is how hosting is
+recorded under ADR-008 — a different field answering a different question.
+
+⚠ **`resharperNote` stays.** It records why a rule's default severity differs from the export's, which
+is durable reasoning a reader still wants; six notes that named the removed flag were rewritten rather
+than deleted.
+
+---
+
+*The measured record below is preserved as history. It was accurate when taken and is not maintained.*
 
 What ReSharper and SonarQube catch that Skala does not, measured rather than asserted.
 
