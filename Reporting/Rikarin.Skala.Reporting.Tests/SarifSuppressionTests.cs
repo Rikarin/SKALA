@@ -158,8 +158,9 @@ public sealed class SarifSuppressionTests {
             At("SK3002", 30, SkalaSeverity.Error) with { Bucket = BaselineBucket.New }
         );
 
-        static string[] RuleIds(JsonElement results) =>
-            [.. results.EnumerateArray().Select(static r => r.GetProperty("ruleId").GetString() ?? string.Empty)];
+        static string[] RuleIds(JsonElement results) => [
+            .. results.EnumerateArray().Select(static r => r.GetProperty("ruleId").GetString() ?? string.Empty)
+        ];
 
         var full = RuleIds(Results(report));
         var narrowed = RuleIds(
@@ -195,7 +196,7 @@ public sealed class SarifSuppressionTests {
 
         var run = JsonDocument.Parse(SarifWriter.Serialize(SarifWriter.BuildWithoutSuppressed(report)))
             .RootElement
-                .GetProperty("runs")[0];
+            .GetProperty("runs")[0];
 
         Assert.Empty(run.GetProperty("results").EnumerateArray());
         Assert.Equal(

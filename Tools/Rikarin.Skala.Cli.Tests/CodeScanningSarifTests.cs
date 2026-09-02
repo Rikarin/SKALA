@@ -118,13 +118,13 @@ public sealed class CodeScanningSarifTests : IDisposable {
         using var document = JsonDocument.Parse(File.ReadAllText(upload));
         Assert.All(
             document.RootElement.GetProperty("runs")[0].GetProperty("results").EnumerateArray(),
-            result => Assert.False(result.TryGetProperty("suppressions", out _))
+            static result => Assert.False(result.TryGetProperty("suppressions", out _))
         );
 
         using var keptDocument = JsonDocument.Parse(File.ReadAllText(full));
         Assert.Contains(
             keptDocument.RootElement.GetProperty("runs")[0].GetProperty("results").EnumerateArray(),
-            result => result.TryGetProperty("suppressions", out _)
+            static result => result.TryGetProperty("suppressions", out _)
         );
     }
 

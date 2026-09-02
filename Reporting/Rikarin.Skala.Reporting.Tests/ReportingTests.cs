@@ -290,7 +290,9 @@ public sealed class ReportingTests {
         Assert.DoesNotContain("unsafe", safe, StringComparison.Ordinal);
 
         // Nothing to fix at all says nothing about fixing.
-        Assert.DoesNotContain("safe fix", ReportTotals.Render(Sample(Modernization("SK2001", 30, false))),
+        Assert.DoesNotContain(
+            "safe fix",
+            ReportTotals.Render(Sample(Modernization("SK2001", 30, false))),
             StringComparison.Ordinal
         );
     }
@@ -304,9 +306,7 @@ public sealed class ReportingTests {
         var report = Sample(
             Modernization(),
             Modernization("SK1004", 20, false) with { Fix = [new FixEdit("/tmp/repo/Core/Foo.cs", 0, 1, "a")] }
-        ) with {
-            Gate = GateResult.Pass("ci")
-        };
+        ) with { Gate = GateResult.Pass("ci") };
 
         var summary = GithubRenderer.StepSummary(report);
 
