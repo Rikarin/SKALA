@@ -12,7 +12,7 @@
 <main>
 <p class="crumb"><a href="index.html">Rules</a> / Maintainability</p>
 <h1>SK7020 <span class="title">Duplicated block</span></h1>
-<p class="lede">A run of at least <code>minTokens</code> tokens that occurs identically, up to identifier and literal names, somewhere else in the repository. The file's <code>extern alias</code>, <code>using</code> and <code>namespace</code> header is not part of the run.</p>
+<p class="lede">A run of at least <code>minTokens</code> tokens that occurs identically, up to identifier and literal names, somewhere else in the repository.</p>
 <table class="facts">
 <tbody>
 <tr><th>Category</th><td>Maintainability</td></tr>
@@ -34,7 +34,7 @@
 <p>Write:</p>
 <pre class="good"><code>// one method, called four times</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>Not a false-positive-prone rule in the usual sense — a reported group either is or is not a token-for-token match, and the match is verified exactly rather than trusted from the rolling hash, so a hash collision cannot produce a finding. What it can do is report duplication that is deliberate, or duplication nobody wrote. Four exclusions handle the cases that matter and are the whole of the rule's tuning: generated files are excluded from the findings and from both halves of the percentage; the file header — <code>extern alias</code> and <code>using</code> directives, and each namespace declaration's keyword and name — is skipped before hashing, and the lines it occupies leave both halves too; test files are measured but counted and reported separately, because duplication in tests is often the readable choice and gating it drives people to write worse tests; and the 100-token default is Sonar's own for C#, which is roughly 25 lines. ⚠ The header exclusion is decided by syntax node, not by the word <code>using</code>: a <code>using</code> statement or declaration inside a method body is resource management, is real code, and counts in full. ⚠ And that last figure is not above the length of all boilerplate, which this rule used to claim: identifiers normalise to one class, so <code>using A.B.C;</code> and <code>using D.E.F;</code> are the same nine tokens, and measured over 289 analyzer files the header alone was a median 62 of the 100-token window with Roslyn's mandated declaration shape another 45 — two analyzers were a clone of each other before either had done anything. Skipping the header took Skala's own repository from 12.7 % to 6.8 % without one line of logic moving.</p>
+<p>Not a false-positive-prone rule in the usual sense — a reported group either is or is not a token-for-token match, and the match is verified exactly rather than trusted from the rolling hash, so a hash collision cannot produce a finding. What it can do is report duplication that is deliberate. Three exclusions handle the cases that matter and are the whole of the rule's tuning: generated files are excluded from the findings and from both halves of the percentage; test files are measured but counted and reported separately, because duplication in tests is often the readable choice and gating it drives people to write worse tests; and the 100-token default is Sonar's own for C#, which is roughly 25 lines and well above the length of any idiomatic boilerplate.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK7020.severity</code></li>
