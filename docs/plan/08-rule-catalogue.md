@@ -1128,6 +1128,53 @@ would double-report here first. The zeros in that table are instrument-checked: 
 produced five `CA2002` findings once the severity was raised, so "silent" is the analyzer declining
 and not the analyzer absent.
 
+⚠ **Two false positives were found on the reference tree and in a probe, and both fixes are
+subtle enough that somebody will otherwise re-add the finding.**
+
+- **`SK3062` reported Vixen's `VideoPlayer`, and that finding was wrong.** The type is `sealed` and
+  `thread.Start()` is the last statement of the constructor. `Thread.Start`, `Task.Run` and
+  `ThreadPool.QueueUserWorkItem` all publish a **memory barrier**, so everything the constructor
+  wrote before them is visible to the new thread — and a sealed type has no derived constructor
+  left to run. Nothing changes after the publication, so nothing races. Shape D now requires
+  something that still changes afterwards: a statement following the start at any enclosing level,
+  or a type that is not sealed. ⚠ **The asymmetry matters as much as the gate.** Shapes A, B and C
+  deliberately do *not* share it: storing a reference in static state is not a barrier and buys no
+  ordering, and the defect there is that the object is **reachable at all** before the caller has
+  the reference to undo it — not that it is unfinished. A gate copied across to them would delete
+  the rule's best findings.
+- **`SK3060` reported a `partial` type** whose `Acquire()`/`Release()` protocol is split across
+  parts. The walk that looks for the release starts from the *syntactic* type declaration holding
+  the enter, so it sees one part and not the others — and the parts are usually in different files.
+  A partial type is now declined outright where it would otherwise report. Walking every
+  `DeclaringSyntaxReference` instead would make the answer for one file depend on files the cache
+  key does not name, which is what `scope: Compilation` costs and what this rule declines to pay.
+
+⚠ **How that second one was nearly missed is worth more than the fix, and it is a new member of a
+family this document already warns about.** The shape was predicted, written as a negative fixture,
+and the suite was run — and the failures were read through `grep … | sort -u | head`. The `head`
+cut the third line, which was the one naming the fixture, so the run looked like two unrelated
+docs failures and the prediction looked refuted. It was nearly written up as "tested, does not
+reproduce"; an independent probe printing the analyzer's actual output is what caught it. ⚠ The
+standing rule is *never pipe a gate through `head` or `tail`, because the exit code becomes the
+pager's*. **This is the weaker form and it bites the same way: truncated output silently answers a
+different question than the one asked.** The rule is therefore not only about exit codes — do not
+put a pager between yourself and a gate's output either, when reading it or when running it.
+
+⚠ **Instrument check, because a zero from a rule that never ran and a zero from a rule that ran and
+declined are the same zero.** A file carrying one of each shape was planted in the reference tree,
+the tree was rebuilt, and it was re-swept with the shipped binary under `--load=binlog`: all four
+fired, at the right lines, with the right messages. Removed again. ⚠ **And the planted sweep is not
+a whole-tree measurement** — the rebuild behind it was *incremental*, so its binlog carries only the
+projects that recompiled, and a finding elsewhere in the tree correctly did not appear in it. The
+tree numbers come from a cold full build; the planted run proves only that the rules speak.
+
+⚠ **"Zero CS diagnostics" was true of the build and not of the analysis, and the two are different
+claims.** The cold Vixen build reports 0 CS errors and 0 CS warnings; `skala check --load=binlog`
+over the same tree reported **546** `CS0103`/`CS0234`/`CS0246`, all confined to **three** files of
+generated parser code that the binlog replay does not reproduce. Bounded, and no rule in this block
+fires there — but a report that says "0 CS errors" without saying which of the two it measured is
+saying nothing.
+
 ⚠ **Issue #57's remainder is refuted, and no id is spent on it.** `SK3044` already ships the
 provable part of "the field is guarded on some paths and not others"; what #57 was left open for is
 the *unguarded read*, and `SK3044`'s third gate declines it because `public int Count => count;` — a
