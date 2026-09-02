@@ -242,6 +242,20 @@ HOSTED = {
     # `1ul`. SK2171 ships the sibling inspection the compiler does *not* cover, the `\x` escape
     # whose length the next character decides.
     "LongLiteralEndingLowerL": "CS0078",
+    # ⚠ `StreamReadReturnValueIgnored` is `CA2022` at *stock* settings -- the strongest of the three
+    # states, not "enabled but Hidden" and not "on at AnalysisMode=All". Measured behaviourally on a
+    # probe built outside this repository with empty Directory.Build.props/.targets above it, SDK
+    # 10.0.400, no AnalysisMode, no EnforceCodeStyleInBuild and no .editorconfig: it reports as a
+    # plain `warning` and closes issue #21 without a rule.
+    #
+    # The coverage was read off the build rather than off the descriptor, and it is wider than the
+    # inspection: `Read(byte[], int, int)`, `Read(Span<byte>)`, `ReadAsync(byte[], int, int)` and
+    # `ReadAsync(Memory<byte>)` all fire when the count is dropped, on `Stream` and on a derived
+    # `FileStream` alike, and it is correctly silent when the result is used and on `ReadExactly`.
+    # Two measured gaps, neither of which is the concept: `_ = s.Read(...)` is treated as a
+    # deliberate discard and is not reported, and `BinaryReader.Read` / `TextReader.Read` are not
+    # covered at all -- CA2022 is `Stream`-only, which is exactly the inspection's own scope.
+    "StreamReadReturnValueIgnored": "CA2022",
 }
 HOSTED_BYKEY = bykey(HOSTED)
 

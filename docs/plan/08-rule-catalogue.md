@@ -2094,8 +2094,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **325** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **290** | **89.5 %** |
+| Rules this document names | **329** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **294** | **89.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -4895,3 +4895,88 @@ map to be wrong in. `ConfusingCharAsIntegerInConstructor` — #39's third inspec
 argument widening to an `int` parameter — is uncovered for a different reason: it is a question
 about overload resolution rather than about how a literal reads, and it is a different rule from
 `SK2171`.
+
+## `SK2210`–`SK2213` — indices, loops and the shape of the thing that cannot be valid
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than merged into §
+"SK2000 — Correctness" only to keep it out of a section several concurrent branches were editing.**
+What follows is the allocation register doing the one job ADR-012 needs of it: the numbers are taken
+and written down where the next milestone will read them. The block belongs beside `SK2001` and
+`SK2053`, which are the two rules every one of these is measured against.
+
+**Five issues, four rules — and the shape of the result is that the batch's hardest-looking concept
+was the one already shipping in the box.** The batch was opened on issues #10, #14, #156, #184 and
+#21. Two of the five were expected to need a value lattice this codebase does not have, and the
+brief said so; neither did, once the compiler's share had been measured rather than guessed. The
+fifth closed without a rule.
+
+⚠ **Issue #21 is hosted by `CA2022` and no id was allocated for it.** `StreamReadReturnValueIgnored`
+is covered at *stock* settings — the strongest of the three states, not "enabled but Hidden" and not
+"on at `AnalysisMode=All`". Measured behaviourally on a probe built outside this repository with
+empty `Directory.Build.props`/`.targets` above it, SDK 10.0.400, no `AnalysisMode` and no
+`.editorconfig`: it reports as a plain `warning` on `Read(byte[], int, int)`, `Read(Span<byte>)`,
+`ReadAsync(byte[], int, int)` and `ReadAsync(Memory<byte>)` alike, on `Stream` and on a derived
+`FileStream`, and is correctly silent when the result is used and on `ReadExactly`. Two gaps were
+measured and neither is the concept: `_ = s.Read(…)` reads as a deliberate discard and is not
+reported, and `BinaryReader.Read`/`TextReader.Read` are not covered at all — `CA2022` is
+`Stream`-only, which is the inspection's own scope. Recorded in `classify.py`'s `HOSTED` map.
+
+- `SK2210` `invalid-constant-index-or-range` — a constant index or range no length can make valid.
+  ⚠ **The brief expected this to need a value lattice, and it does not, because the three
+  inspections behind issue #10 are not about a constant index into a constant-length collection at
+  all.** `NegativeIndex`, `IndexingByInvalidRange` and `ZeroIndexFromEnd` share the property that
+  *the length never enters the arithmetic*: `^0` is `Length - 0` for every length, a range whose
+  start is fixed above its end is rejected by `Range.GetOffsetAndLength` before any length is
+  consulted, and a negative index throws from every positional indexer. All three are decidable from
+  the constants on the page. ⚠ **What the compiler already owns is one row of the three, and it was
+  measured.** `CS0251` reports `a[-1]` on an **array** and is silent on `"abc"[-1]`, `list[-1]` and
+  `span[-1]`, which all throw at run time — so arrays are declined and the rest are not. Nothing at
+  all is reported for `^0` or for a reversed range, on any receiver, at stock settings. ⚠ **`^0` is
+  reported only where it indexes an element, never where it bounds a range**: `x[..^0]` is the whole
+  collection and `x[^0..]` is an empty slice, both confirmed legal at run time on an empty collection
+  as well as a full one, and both are spellings people choose deliberately. Report-only, for
+  `SK2001`'s reason: the rule can prove the access throws and cannot know whether `^1`, `1..3` or `0`
+  was intended.
+- `SK2211` `unchanging-loop-condition` — a loop whose condition reads only locals and parameters the
+  body never writes. ⚠ **"The loop has no exit" is the wrong question and the brief said so.**
+  `while (true)` is the event loop, the reactor and the retry pump; a rule reporting it would report
+  the shape every server is built out of, and a constant condition is therefore never a finding here.
+  The answerable question is whether the condition can come out differently, and definite-assignment
+  settles it with no value reasoning at all. ⚠ **Only locals and parameters, and that single
+  exclusion is the whole false-positive story.** `while (!stopped)` on a field, `while (queue.Count
+  > 0)`, `while (reader.Read())` — each reads state another statement, another thread or another
+  object changes. A method call, a property, an element access, a field, `this` and an `await`
+  anywhere in the condition each withdraw the finding, as does a `ref` local, a `for` with any
+  incrementor, and any lambda or local function in the member that so much as mentions a condition
+  variable. Any `return`, `throw`, `break`, `goto` or `yield break` anywhere in the body withdraws it
+  too, reachable or not: telling somebody their loop hangs when a `return` two branches down ends it
+  is a wrong finding rather than a noisy one. ⚠ **This is one of seven inspections issue #14 names
+  and the only one shipped**; `FunctionRecursiveOnAllPaths`, `IteratorNeverReturns`,
+  `ConstructorInitializerLoop` and `PossibleInfiniteInheritance` are each a different analysis and
+  none is credited to this id in the parity map.
+- `SK2212` `single-iteration-loop` — a loop body whose every path jumps out. The cleanest rule in the
+  batch, and the one the brief predicted would be. ⚠ **The question is settled by control flow, not
+  by looking at the last statement**, and that is what makes it decidable rather than a heuristic:
+  `AnalyzeControlFlow` over the body region binds every jump to its own enclosing statement, so a
+  `break` inside a nested `switch` — the trap the brief named — and a `return` inside a lambda are
+  both excluded without the rule having to know about either. ⚠ **An unreachable endpoint is not by
+  itself a body that jumps out**, and the confounds are guarded before the flow question is asked:
+  control also fails to reach the end when a statement never completes, which in practice is a nested
+  constant-condition loop, so a body containing one is declined, as is a body containing any `goto`.
+  `continue` ends the iteration and not the loop, so one `continue` among the exits withdraws the
+  finding. Report-only; `S1751` marks its own quick fix infeasible for the same reason.
+- `SK2213` `index-of-compared-to-positive` — `IndexOf(x) > 0`, which rejects a match at position 0
+  along with the `-1` it means to reject. ⚠ **This is the carve-out `SK2053` names and declines, now
+  shipped.** `SK2053` proves a comparison from the contract that a count is never negative;
+  `IndexOf` is the framework member whose negative result is *meaningful*, which is why `SK2053`'s
+  own false-positive note excludes it by name and why the two can never report the same expression.
+  `SK2001` is further away still: it decides a comparison from the operand type's range, and
+  `IndexOf` returns an `int`, whose range settles nothing about zero. ⚠ **`> 0` is a correct test
+  when "found, but not at the start" is meant, and the rule cannot tell the readings apart** — so
+  the issue's proposed `fixIsSafe: true` is **revised to `false`** here. A `skala fix` that rewrote
+  `> 0` to `>= 0` unasked would silently change behaviour in the case the author got right. The
+  escape hatch is the unambiguous spelling: `>= 1` says the same thing with no second reading and is
+  deliberately not reported, so a codebase that means it says so once and never sees the rule again.
+  Only a closed set of search methods documented to return `-1` is covered; a method called
+  `IndexOf` on a type outside it may return anything at all, which is the reasoning that stops
+  `SK2053` trusting a hand-written `Count`.

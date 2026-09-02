@@ -267,5 +267,9 @@
   "EventUnsubscriptionViaAnonymousDelegate": "SK2201",
   "PossiblyUnintendedSideEffectsInsideConditionalInvocation": "SK2202",
   "VariableLengthStringHexEscapeSequence": "SK2171",
-  "SuppressNullableWarningExpressionAsInvertedIsExpression": "SK2172"
+  "SuppressNullableWarningExpressionAsInvertedIsExpression": "SK2172",
+  "NegativeIndex": "SK2210",
+  "IndexingByInvalidRange": "SK2210",
+  "ZeroIndexFromEnd": "SK2210",
+  "LoopVariableIsNeverChangedInsideLoop": "SK2211"
 }
