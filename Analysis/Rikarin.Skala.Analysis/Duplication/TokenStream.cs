@@ -357,7 +357,7 @@ internal sealed class TokenStream {
 
     static string ComputeFingerprint() {
         var stream = Lex(Canary);
-        var bytes = new byte[(stream.Count * 10) + 8];
+        var bytes = new byte[stream.Count * 10 + 8];
         var at = 0;
         for (var i = 0; i < stream.Count; i++) {
             BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(at), stream.Codes[i]);

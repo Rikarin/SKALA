@@ -3,7 +3,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
-using Rikarin.Skala.Rules.Modernization;
 using Rikarin.Skala.Rules.Performance;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -24,7 +23,7 @@ public sealed class CollectionCallShapeBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new CollectionOwnMethodAnalyzer(), new DictionaryKeyRelookupAnalyzer(),
         new SubstringBeforeSearchAnalyzer(), new ConcurrentDictionaryMemberAnalyzer(),
-        new SortBeforeFilterAnalyzer(), new WhereBeforeOperatorAnalyzer(),
+        new SortBeforeFilterAnalyzer(), new WhereBeforeOperatorAnalyzer()
     ];
 
     static readonly string[] Ids = ["SK4030", "SK4031", "SK4032", "SK4033", "SK4034"];

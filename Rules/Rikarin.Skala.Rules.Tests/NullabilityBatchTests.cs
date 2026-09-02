@@ -170,7 +170,7 @@ public sealed class NullabilityBatchTests {
                     Microsoft.CodeAnalysis.Text.SourceText.From(source),
                     new CSharpParseOptions(LanguageVersion.Preview),
                     "Subject.cs",
-                    cancellationToken: TestContext.Current.CancellationToken
+                    TestContext.Current.CancellationToken
                 )
             ],
             RuleFixtures.References,
@@ -242,7 +242,7 @@ public sealed class NullabilityBatchTests {
                     Microsoft.CodeAnalysis.Text.SourceText.From(source),
                     new CSharpParseOptions(LanguageVersion.Preview),
                     "Subject.cs",
-                    cancellationToken: TestContext.Current.CancellationToken
+                    TestContext.Current.CancellationToken
                 )
             ],
             RuleFixtures.References,

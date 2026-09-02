@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Rules.Metadata;
-using System;
 using System.Collections.Immutable;
 using System.Threading;
 
@@ -302,7 +301,7 @@ public sealed class LoopFilterAsQueryAnalyzer : DiagnosticAnalyzer {
                      position,
                      container,
                      "Where",
-                     includeReducedExtensionMethods: true
+                     true
                  )) {
             if (symbol is IMethodSymbol method
                 && SymbolEqualityComparer.Default.Equals(

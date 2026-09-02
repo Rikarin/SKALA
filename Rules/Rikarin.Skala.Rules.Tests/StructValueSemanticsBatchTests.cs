@@ -3,7 +3,6 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
-using System.Linq;
 
 namespace Rikarin.Skala.Rules.Tests;
 

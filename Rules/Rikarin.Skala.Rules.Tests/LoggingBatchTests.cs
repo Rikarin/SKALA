@@ -1,4 +1,3 @@
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Maintainability;

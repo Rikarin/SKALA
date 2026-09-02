@@ -94,7 +94,7 @@ public sealed class MissingTestClassAttributeAnalyzer : DiagnosticAnalyzer {
     }
 
     static bool Derives(INamedTypeSymbol attribute, INamedTypeSymbol root) {
-        for (INamedTypeSymbol? current = attribute; current is not null; current = current.BaseType) {
+        for (var current = attribute; current is not null; current = current.BaseType) {
             if (SymbolEqualityComparer.Default.Equals(current, root)) {
                 return true;
             }

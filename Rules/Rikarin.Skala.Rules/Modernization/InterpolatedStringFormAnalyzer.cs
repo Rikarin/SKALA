@@ -474,7 +474,7 @@ public sealed class InterpolatedStringFormAnalyzer : DiagnosticAnalyzer {
 
             foreach (var parameter in overload.Parameters) {
                 var name = parameter.Type.ToDisplayString();
-                if ((name is "System.FormattableString" or "System.IFormattable")
+                if (name is "System.FormattableString" or "System.IFormattable"
                     && (parameter.Ordinal == position || parameter.IsParams)) {
                     return true;
                 }

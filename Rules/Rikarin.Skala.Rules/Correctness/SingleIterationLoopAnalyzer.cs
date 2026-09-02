@@ -2,9 +2,9 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 using System.Linq;
-using Rikarin.Skala.Rules.Metadata;
 
 namespace Rikarin.Skala.Rules.Correctness;
 

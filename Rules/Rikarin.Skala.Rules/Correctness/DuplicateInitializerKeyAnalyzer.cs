@@ -4,9 +4,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Collections.Immutable;
-using System.Threading;
+using System.Globalization;
 
 namespace Rikarin.Skala.Rules.Correctness;
 

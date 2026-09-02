@@ -21,7 +21,7 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class DisposalContractBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new UndisposedOwnedFieldAnalyzer(), new OwnedDisposableFieldAnalyzer(), new DisposeAsyncBaseCallAnalyzer(),
-        new RefStructOwnedDisposableAnalyzer(),
+        new RefStructOwnedDisposableAnalyzer()
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

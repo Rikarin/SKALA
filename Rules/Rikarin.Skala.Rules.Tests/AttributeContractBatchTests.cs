@@ -19,12 +19,12 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class AttributeContractBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Batch = [
         new IneffectiveThreadStaticAnalyzer(), new PureAttributeOnVoidAnalyzer(),
-        new DebuggerDisplayMissingMemberAnalyzer(), new DuplicatedAttributeAnalyzer(),
+        new DebuggerDisplayMissingMemberAnalyzer(), new DuplicatedAttributeAnalyzer()
     ];
 
     static readonly string[] Ids = [
         RuleIds.IneffectiveThreadStatic, RuleIds.PureAttributeOnVoid,
-        RuleIds.DebuggerDisplayMissingMember, RuleIds.DuplicatedAttribute,
+        RuleIds.DebuggerDisplayMissingMember, RuleIds.DuplicatedAttribute
     ];
 
     /// <summary>

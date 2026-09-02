@@ -162,7 +162,7 @@ public sealed class OverwrittenElementAnalyzer : DiagnosticAnalyzer {
             return null;
         }
 
-        return new Write(access, argument.Expression, assignment.Right);
+        return new(access, argument.Expression, assignment.Right);
     }
 
     static bool IsTracked(

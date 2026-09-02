@@ -86,7 +86,7 @@ public sealed class SharedBranchTailAnalyzer : DiagnosticAnalyzer {
                && SyntaxFactory.AreEquivalent(
                    then.Statements[then.Statements.Count - 1 - shared],
                    otherwise.Statements[otherwise.Statements.Count - 1 - shared],
-                   topLevel: false
+                   false
                )) {
             shared++;
         }

@@ -66,7 +66,7 @@ public sealed class RedundantPositionalPropertyAnalyzer : DiagnosticAnalyzer {
         var name = property.Identifier.ValueText;
         var parameter = Find(parameters, name);
         if (parameter is null
-            || !SyntaxFactory.AreEquivalent(parameter.Type, property.Type, topLevel: false)
+            || !SyntaxFactory.AreEquivalent(parameter.Type, property.Type, false)
             || parameter.Modifiers.Count > 0
             || parameter.AttributeLists.Count > 0
             || parameter.Default is not null) {

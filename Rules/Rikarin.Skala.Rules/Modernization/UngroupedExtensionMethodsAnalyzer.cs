@@ -135,7 +135,7 @@ public sealed class UngroupedExtensionMethodsAnalyzer : DiagnosticAnalyzer {
             }
         }
 
-        var edits = new List<(TextSpan Span, string Text)>((methods.Count * 2) + 2) {
+        var edits = new List<(TextSpan Span, string Text)>(methods.Count * 2 + 2) {
             (
                 TextSpan.FromBounds(declaration.OpenBraceToken.Span.End, declaration.OpenBraceToken.Span.End),
                 "\nextension(" + receiverType + " " + receiverName + ") {"

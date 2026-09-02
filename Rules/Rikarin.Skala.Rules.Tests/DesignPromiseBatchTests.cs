@@ -20,7 +20,7 @@ public sealed class DesignPromiseBatchTests {
         new GlobalNamespaceTypeAnalyzer(), new ReadonlyMutableFieldAnalyzer(),
         new AbstractTypeWithoutAbstractionAnalyzer(),
         new PrivateConstructorOnlyAnalyzer(),
-        new PublicConstantAnalyzer(),
+        new PublicConstantAnalyzer()
     ];
 
     static readonly string[] Ids = ["SK6030", "SK6031", "SK6032", "SK6033", "SK6034"];

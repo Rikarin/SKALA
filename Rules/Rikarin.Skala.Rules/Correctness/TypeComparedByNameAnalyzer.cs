@@ -5,7 +5,6 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Modernization;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Threading;
 
 namespace Rikarin.Skala.Rules.Correctness;

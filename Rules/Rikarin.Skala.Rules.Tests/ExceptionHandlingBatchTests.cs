@@ -2,7 +2,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Correctness;
 using Rikarin.Skala.Rules.Maintainability;
-using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules.Tests;

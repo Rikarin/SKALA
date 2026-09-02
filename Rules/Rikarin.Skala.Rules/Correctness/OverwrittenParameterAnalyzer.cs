@@ -90,7 +90,7 @@ public sealed class OverwrittenParameterAnalyzer : DiagnosticAnalyzer {
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     Descriptor,
-                    (FirstWrite(context, body, parameter) ?? syntax.Identifier.GetLocation()),
+                    FirstWrite(context, body, parameter) ?? syntax.Identifier.GetLocation(),
                     "The value passed for '" + parameter.Name + "' is overwritten before anything reads it"
                 )
             );

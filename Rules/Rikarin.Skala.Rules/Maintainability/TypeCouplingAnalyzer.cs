@@ -244,13 +244,13 @@ public sealed class TypeCouplingAnalyzer : DiagnosticAnalyzer {
     ///     charge every type that organises itself with nested types for having done so.
     /// </remarks>
     static bool IsSelfOrAFamilyMember(INamedTypeSymbol candidate, INamedTypeSymbol self) {
-        for (INamedTypeSymbol? outer = self; outer is not null; outer = outer.ContainingType) {
+        for (var outer = self; outer is not null; outer = outer.ContainingType) {
             if (SymbolEqualityComparer.Default.Equals(candidate.OriginalDefinition, outer.OriginalDefinition)) {
                 return true;
             }
         }
 
-        for (INamedTypeSymbol? outer = candidate; outer is not null; outer = outer.ContainingType) {
+        for (var outer = candidate; outer is not null; outer = outer.ContainingType) {
             if (SymbolEqualityComparer.Default.Equals(outer.OriginalDefinition, self.OriginalDefinition)) {
                 return true;
             }

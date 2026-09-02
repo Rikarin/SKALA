@@ -5,7 +5,6 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
-using System.Linq;
 
 namespace Rikarin.Skala.Rules.Correctness;
 

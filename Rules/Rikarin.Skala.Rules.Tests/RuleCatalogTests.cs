@@ -569,7 +569,7 @@ public sealed class RuleCatalogTests {
             ["SK1002"] = "doc 08 § SK1000 and § M5: primary constructors are a declaration-shape "
                 + "rewrite with no safe fix — deferred, not declined",
             ["SK6004"] = "doc 08 § SK6000: 'the other two remain outstanding' — interface with one "
-                + "implementation is specified and not yet allocated",
+                + "implementation is specified and not yet allocated"
         };
 
         var unknown = new List<string>();

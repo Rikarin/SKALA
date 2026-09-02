@@ -258,7 +258,7 @@ public sealed class RuleCorpusTests {
             .Select(tree => RuleCorpus.Sweep(tree, shapes, true, CancellationToken.None))
             .ToImmutableArray();
 
-        return new Measurement(
+        return new(
             RuleCorpus.Recall(CancellationToken.None),
             trees,
             RuleCorpus.Trees()

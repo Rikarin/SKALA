@@ -134,7 +134,7 @@ public sealed class StaticMemberViaDerivedTypeAnalyzer : DiagnosticAnalyzer {
     ///     action — the check falls back to the assembly, which the method does accept.
     /// </remarks>
     static bool IsNameableAt(Compilation compilation, INamedTypeSymbol declaring, ISymbol? enclosing) {
-        ISymbol within = enclosing as INamedTypeSymbol
+        var within = enclosing as INamedTypeSymbol
             ?? enclosing?.ContainingType
             ?? (ISymbol)compilation.Assembly;
 

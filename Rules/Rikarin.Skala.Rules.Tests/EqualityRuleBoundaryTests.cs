@@ -31,7 +31,7 @@ public sealed class EqualityRuleBoundaryTests {
         new BaseEqualityCallAnalyzer(),
         new UncomparedHashMemberAnalyzer(),
         new MutableHashMemberAnalyzer(),
-        new InconsistentEqualityMembersAnalyzer(),
+        new InconsistentEqualityMembersAnalyzer()
     ];
 
     /// <summary>

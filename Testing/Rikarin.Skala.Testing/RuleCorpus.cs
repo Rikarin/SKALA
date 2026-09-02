@@ -324,7 +324,7 @@ public static class RuleCorpus {
             }
         }
 
-        return new CorpusSweepResult {
+        return new() {
             Tree = tree,
             Files = reportable.Count - shapes.Count,
             ImplicitUsings = implicitUsings,
@@ -394,7 +394,7 @@ public static class RuleCorpus {
             }
         }
 
-        return new CorpusRecall {
+        return new() {
             Fired = fired.Count,
             Total = expected.Count,
             Configured = configured,

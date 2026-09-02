@@ -200,7 +200,7 @@ public sealed class CommandParameterNotSuppliedAnalyzer : DiagnosticAnalyzer {
         System.Threading.CancellationToken cancellation,
         out HashSet<string> supplied
     ) {
-        supplied = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        supplied = new(StringComparer.OrdinalIgnoreCase);
 
         foreach (var name in body.DescendantNodes().OfType<IdentifierNameSyntax>()) {
             if (!string.Equals(name.Identifier.ValueText, command.Name, StringComparison.Ordinal)

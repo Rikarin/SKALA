@@ -548,7 +548,7 @@ public sealed class ConstructorPublishesThisAnalyzer : DiagnosticAnalyzer {
             return false;
         }
 
-        for (INamedTypeSymbol? type = owner; type is not null; type = type.BaseType) {
+        for (var type = owner; type is not null; type = type.BaseType) {
             if (SymbolEqualityComparer.Default.Equals(
                     symbol.ContainingType?.OriginalDefinition,
                     type.OriginalDefinition

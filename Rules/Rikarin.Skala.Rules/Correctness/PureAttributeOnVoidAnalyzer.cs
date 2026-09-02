@@ -50,7 +50,7 @@ public sealed class PureAttributeOnVoidAnalyzer : DiagnosticAnalyzer {
 
     static readonly string[] Accepted = [
         "System.Diagnostics.Contracts.PureAttribute",
-        "JetBrains.Annotations.PureAttribute",
+        "JetBrains.Annotations.PureAttribute"
     ];
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);

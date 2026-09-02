@@ -114,7 +114,7 @@ public sealed class LockOverSynchronizationPrimitiveAnalyzer : DiagnosticAnalyze
     }
 
     static bool IsPrimitive(INamedTypeSymbol type, ImmutableArray<INamedTypeSymbol> primitives) {
-        for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType) {
+        for (var current = type; current is not null; current = current.BaseType) {
             var definition = current.OriginalDefinition;
             foreach (var primitive in primitives) {
                 if (SymbolEqualityComparer.Default.Equals(definition, primitive)) {

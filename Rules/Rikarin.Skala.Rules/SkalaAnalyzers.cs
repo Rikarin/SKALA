@@ -188,6 +188,6 @@ public static class SkalaAnalyzers {
         new ReflectiveTypeTestAnalyzer(), new MergeableTryAnalyzer(),
         new ReorderedAnonymousTypeAnalyzer(), new MergedPropertyPatternAnalyzer(),
         new SqlFragmentsRunTogetherAnalyzer(), new CommandParameterNotSuppliedAnalyzer(),
-        new AssemblyLoadedOutsideItsContextAnalyzer(), new MistakenTypeArgumentAnalyzer(),
+        new AssemblyLoadedOutsideItsContextAnalyzer(), new MistakenTypeArgumentAnalyzer()
     ];
 }

@@ -292,7 +292,7 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
             // expressions mean different things.
             if (arm.WhenClause is not null
                 || BindsAName(arm.Pattern)
-                || !SyntaxFactory.AreEquivalent(arm.Expression, last.Expression, topLevel: false)) {
+                || !SyntaxFactory.AreEquivalent(arm.Expression, last.Expression, false)) {
                 break;
             }
 

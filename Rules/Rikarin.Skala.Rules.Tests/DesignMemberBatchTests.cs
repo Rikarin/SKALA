@@ -28,7 +28,7 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class DesignMemberBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new ConstantReturningMethodAnalyzer(), new DerivedTypeTestOnThisAnalyzer(),
-        new NullSequenceReturnAnalyzer(), new AsyncSuffixAnalyzer(),
+        new NullSequenceReturnAnalyzer(), new AsyncSuffixAnalyzer()
     ];
 
     static readonly string[] Ids = ["SK6050", "SK6051", "SK6052", "SK6053"];

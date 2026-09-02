@@ -21,7 +21,7 @@ public sealed class CleanupBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new RedundantControlFlowAnalyzer(), new IneffectiveModifierAnalyzer(),
         new RedundantNullableDirectiveAnalyzer(), new RedundantQualifierAnalyzer(),
-        new RedundantDeclarationAnalyzer(),
+        new RedundantDeclarationAnalyzer()
     ];
 
     static readonly string[] Ids = ["SK0240", "SK0241", "SK0242", "SK0243", "SK0244"];

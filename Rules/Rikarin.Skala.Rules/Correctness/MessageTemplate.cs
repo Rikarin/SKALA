@@ -77,7 +77,7 @@ static class MessageTemplate {
             holes.Add(new TemplateHole(name, start, name.Length));
         }
 
-        return new TemplateAnalysis(holes, positional);
+        return new(holes, positional);
     }
 
     /// <summary>

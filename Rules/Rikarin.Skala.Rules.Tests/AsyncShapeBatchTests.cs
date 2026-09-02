@@ -21,7 +21,7 @@ namespace Rikarin.Skala.Rules.Tests;
 public sealed class AsyncShapeBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new AsyncIteratorNotEnumeratedAnalyzer(), new AsyncOnlyToAwaitAnalyzer(),
-        new TaskReturnedFromUsingAnalyzer(),
+        new TaskReturnedFromUsingAnalyzer()
     ];
 
     public static TheoryData<RuleFixture> Fixtures {

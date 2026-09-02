@@ -725,7 +725,7 @@ public sealed class ArrangementRuleTests {
             text,
             CSharpFormatter.ParseOptions,
             path,
-            cancellationToken: TestContext.Current.CancellationToken
+            TestContext.Current.CancellationToken
         );
         var compilation = CSharpCompilation.Create(
             "probe",
@@ -734,7 +734,7 @@ public sealed class ArrangementRuleTests {
                     SourceText.From("global using global::System.Text;"),
                     CSharpFormatter.ParseOptions,
                     "GlobalUsings.g.cs",
-                    cancellationToken: TestContext.Current.CancellationToken
+                    TestContext.Current.CancellationToken
                 ),
                 tree
             ],

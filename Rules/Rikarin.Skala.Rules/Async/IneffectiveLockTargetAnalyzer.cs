@@ -411,7 +411,7 @@ public sealed class IneffectiveLockTargetAnalyzer : DiagnosticAnalyzer {
     ///     merging them costs a distinction only this comment has to carry.
     /// </remarks>
     static bool IsHosted(INamedTypeSymbol type, ImmutableArray<INamedTypeSymbol> hosted) {
-        for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType) {
+        for (var current = type; current is not null; current = current.BaseType) {
             var definition = current.OriginalDefinition;
             foreach (var primitive in hosted) {
                 if (SymbolEqualityComparer.Default.Equals(definition, primitive)) {

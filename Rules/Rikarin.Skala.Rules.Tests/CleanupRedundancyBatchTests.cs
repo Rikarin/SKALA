@@ -24,7 +24,7 @@ public sealed class CleanupRedundancyBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new EmptyInitializerAnalyzer(), new RedundantStringCallAnalyzer(),
         new RedundantArgumentAnalyzer(), new RedundantSyntaxAnalyzer(),
-        new RedundantCastAnalyzer(),
+        new RedundantCastAnalyzer()
     ];
 
     [Theory]

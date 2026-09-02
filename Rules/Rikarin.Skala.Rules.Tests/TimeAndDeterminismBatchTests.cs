@@ -25,7 +25,7 @@ public sealed class TimeAndDeterminismBatchTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new StaticClockReadAnalyzer(), new UnspecifiedDateTimeKindAnalyzer(),
         new ImplicitDateParseCultureAnalyzer(), new WallClockElapsedAnalyzer(),
-        new SideEffectInAssertionAnalyzer(),
+        new SideEffectInAssertionAnalyzer()
     ];
 
     static readonly ImmutableArray<string> Rules = ["SK2160", "SK2161", "SK2162", "SK2163", "SK2164"];
