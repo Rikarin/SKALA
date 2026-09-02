@@ -46,7 +46,8 @@ internal sealed class TokenStream {
     ///     a preprocessor region. Adding a construct here is cheap and strictly safer than leaving it out —
     ///     the cost of a missing one is a silently stale index, which is the defect this exists to close.
     /// </remarks>
-    internal const string Canary = """
+    internal const string Canary =
+        """
         extern alias Legacy;
         global using System;
         using System.Text;

@@ -477,18 +477,18 @@ public sealed class DuplicationTests {
     [Fact]
     public void Lex_SkipsUsingDirectives_AndKeepsUsingStatements() {
         const string source = """
-            using System;
+                              using System;
 
-            namespace Sample;
+                              namespace Sample;
 
-            class Probe {
-                void Run() {
-                    using var first = Open();
-                    using (var second = Open()) {
-                    }
-                }
-            }
-            """;
+                              class Probe {
+                                  void Run() {
+                                      using var first = Open();
+                                      using (var second = Open()) {
+                                      }
+                                  }
+                              }
+                              """;
 
         // `using System;` is 3 tokens and `namespace Sample;` is 3; every other token survives, the
         // two body `using`s included.
