@@ -128,6 +128,5 @@ public sealed class StaticQualifierRule : ArrangementRule {
                 .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
         }
-
     }
 }
