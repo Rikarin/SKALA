@@ -3209,9 +3209,7 @@ registry disagree. Regenerate with `skala rules docs`.
 | | | |
 |---|---:|---|
 | Rules this document names | **357** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **323** | **90.7 %** |
-| Rules this document names | **351** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **315** | **90.5 %** |
+| **Shipped** — present in `rules.json` | **321** | **90.7 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, then withdrawn or never built | **3** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |
