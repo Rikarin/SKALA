@@ -162,7 +162,8 @@ public sealed class LinqChainAndLoopShapeBatchTests {
         Assert.True(
             errors.Length == 0,
             "The iteration variable's scope reaches the collection expression after all, so SK1084's "
-            + "fix cannot reuse the name:\n  " + string.Join("\n  ", errors.Select(static d => d.ToString()))
+            + "fix cannot reuse the name:\n  "
+            + string.Join("\n  ", errors.Select(static d => d.ToString()))
         );
     }
 

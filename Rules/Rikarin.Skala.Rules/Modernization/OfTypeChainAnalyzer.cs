@@ -223,7 +223,8 @@ public sealed class OfTypeChainAnalyzer : DiagnosticAnalyzer {
             SimpleLambdaExpressionSyntax { ExpressionBody: { } body } simple =>
                 new LambdaShape(simple.Parameter.Identifier.ValueText, body),
             ParenthesizedLambdaExpressionSyntax {
-                ExpressionBody: { } body, ParameterList.Parameters.Count: 1
+                ExpressionBody: { } body,
+                ParameterList.Parameters.Count: 1
             } parenthesized =>
                 new LambdaShape(parenthesized.ParameterList.Parameters[0].Identifier.ValueText, body),
             ParenthesizedExpressionSyntax inner => Lambda(inner.Expression),
@@ -234,8 +235,7 @@ public sealed class OfTypeChainAnalyzer : DiagnosticAnalyzer {
         type is INamedTypeSymbol { Name: "Func", TypeArguments.Length: 2 } func
         && func.TypeArguments[1].SpecialType == SpecialType.System_Boolean;
 
-    static bool IsProjection(ITypeSymbol type) =>
-        type is INamedTypeSymbol { Name: "Func", TypeArguments.Length: 2 };
+    static bool IsProjection(ITypeSymbol type) => type is INamedTypeSymbol { Name: "Func", TypeArguments.Length: 2 };
 
     /// <summary>
     ///     The method as <c>Enumerable</c> declares it, whether it was called as an extension or not.

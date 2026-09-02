@@ -15,7 +15,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>
+///         ⚠
+///         <b>
 ///             The <c>Cast&lt;T&gt;</c> branch is not "the cast is unnecessary" — it is "the call
 ///             returns its own argument".
 ///         </b> <c>Enumerable.Cast&lt;T&gt;</c> opens with
@@ -33,8 +34,11 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         cannot be asked.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The copy branch's inner call must preserve order and multiplicity, so only
-///         <c>ToList</c> and <c>ToArray</c> may be inner.</b> <c>ToHashSet</c> and <c>Distinct</c> remove
+///         ⚠
+///         <b>
+///             The copy branch's inner call must preserve order and multiplicity, so only
+///             <c>ToList</c> and <c>ToArray</c> may be inner.
+///         </b> <c>ToHashSet</c> and <c>Distinct</c> remove
 ///         duplicates: an inner one of those is a real operation and deleting it changes the result. They
 ///         are allowed as the <em>outer</em> call, where the inner copy is still unobservable.
 ///     </para>
@@ -146,7 +150,9 @@ public sealed class RedundantSequenceCallAnalyzer : DiagnosticAnalyzer {
             context,
             TextSpan.FromBounds(access.OperatorToken.SpanStart, invocation.Span.End),
             string.Empty,
-            "`Cast<" + generic.TypeArgumentList.Arguments[0] + ">` on a sequence that already has that "
+            "`Cast<"
+            + generic.TypeArgumentList.Arguments[0]
+            + ">` on a sequence that already has that "
             + "element type returns the very same object"
         );
     }
@@ -214,7 +220,10 @@ public sealed class RedundantSequenceCallAnalyzer : DiagnosticAnalyzer {
             context,
             TextSpan.FromBounds(innerAccess.OperatorToken.SpanStart, inner.Span.End),
             string.Empty,
-            "`" + innerAccess.Name.Identifier.ValueText + "()` copies a sequence so that `" + outerName
+            "`"
+            + innerAccess.Name.Identifier.ValueText
+            + "()` copies a sequence so that `"
+            + outerName
             + "()` can copy it again; nothing else can see the first copy"
         );
     }

@@ -30,15 +30,21 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         except through those reads.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The receiver must be an array, a <c>string</c>, a <c>List&lt;T&gt;</c> or an
-///         <c>ImmutableList&lt;T&gt;</c></b> — types whose enumerator is documented to yield element
+///         ⚠
+///         <b>
+///             The receiver must be an array, a <c>string</c>, a <c>List&lt;T&gt;</c> or an
+///             <c>ImmutableList&lt;T&gt;</c>
+///         </b> — types whose enumerator is documented to yield element
 ///         <c>0</c> through <c>Count - 1</c> in that order. An <c>IList&lt;T&gt;</c> or a hand-written
 ///         indexable type promises no such thing, so a <c>foreach</c> over one could visit a different
 ///         sequence entirely.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The residual risk, and the reason <c>fixIsSafe</c> is false, is mutation this cannot
-///         see.</b> A <c>for</c> over a <c>List&lt;T&gt;</c> mutated through a method call in the body
+///         ⚠
+///         <b>
+///             The residual risk, and the reason <c>fixIsSafe</c> is false, is mutation this cannot
+///             see.
+///         </b> A <c>for</c> over a <c>List&lt;T&gt;</c> mutated through a method call in the body
 ///         keeps running where a <c>foreach</c> throws <c>InvalidOperationException</c>. Requiring the
 ///         receiver to be a local or a parameter shrinks that surface; proving no call reached the list
 ///         is not decidable and is not attempted. Arrays have no version field and are immune.
@@ -136,7 +142,8 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (loop.Statement is not { } body || !Reads(body, model, indexSymbol, receiverSymbol, cancellation, out var reads)) {
+        if (loop.Statement is not { } body
+            || !Reads(body, model, indexSymbol, receiverSymbol, cancellation, out var reads)) {
             return;
         }
 
@@ -159,9 +166,7 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var edits = new List<(TextSpan, string)> {
-            (header, "foreach (var " + name + " in " + receiverText + ")")
-        };
+        var edits = new List<(TextSpan, string)> { (header, "foreach (var " + name + " in " + receiverText + ")") };
 
         foreach (var read in reads) {
             edits.Add((read.Span, name));
@@ -172,8 +177,15 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
                 Descriptor,
                 Location.Create(loop.SyntaxTree, header),
                 FixEdits.Pack(edits.ToArray()),
-                "`" + index + "` is only ever used to index `" + RewriteGuards.Trim(receiverText)
-                + "`: `foreach (var " + name + " in " + RewriteGuards.Trim(receiverText) + ")`"
+                "`"
+                + index
+                + "` is only ever used to index `"
+                + RewriteGuards.Trim(receiverText)
+                + "`: `foreach (var "
+                + name
+                + " in "
+                + RewriteGuards.Trim(receiverText)
+                + ")`"
             )
         );
     }
@@ -181,12 +193,14 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
     static bool IsUnitStepOn(ExpressionSyntax incrementor, string index) =>
         incrementor switch {
             PostfixUnaryExpressionSyntax {
-                    RawKind: (int)SyntaxKind.PostIncrementExpression, Operand: IdentifierNameSyntax post
-                } =>
+                RawKind: (int)SyntaxKind.PostIncrementExpression,
+                Operand: IdentifierNameSyntax post
+            } =>
                 string.Equals(post.Identifier.ValueText, index, StringComparison.Ordinal),
             PrefixUnaryExpressionSyntax {
-                    RawKind: (int)SyntaxKind.PreIncrementExpression, Operand: IdentifierNameSyntax pre
-                } =>
+                RawKind: (int)SyntaxKind.PreIncrementExpression,
+                Operand: IdentifierNameSyntax pre
+            } =>
                 string.Equals(pre.Identifier.ValueText, index, StringComparison.Ordinal),
             _ => false
         };
@@ -313,8 +327,11 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
     /// </summary>
     /// <remarks>
     ///     ⚠ Both halves of <c>RewriteGuards</c>' scoping guard are asked — a lookup answers what is in
-    ///     scope at the loop and a member scan answers what a neighbouring scope declares — <b>and
-    ///     neither of them is enough here.</b> The new name is declared <em>outside</em> a body that
+    ///     scope at the loop and a member scan answers what a neighbouring scope declares —
+    ///     <b>
+    ///         and
+    ///         neither of them is enough here.
+    ///     </b> The new name is declared <em>outside</em> a body that
     ///     stays where it is, so what collides with it is what the <em>loop itself</em> declares:
     ///     <c>LookupSymbols</c> at the loop's start position cannot see a pattern variable scoped to an
     ///     <c>if</c> inside the body, and <c>DeclaredElsewhereInMember</c> skips every node overlapping
@@ -347,8 +364,8 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
         if (last.EndsWith("ies", StringComparison.Ordinal) && last.Length > 3) {
             candidates.Add(last.Substring(0, last.Length - 3) + "y");
         } else if (last.Length > 1
-            && last.EndsWith("s", StringComparison.Ordinal)
-            && !last.EndsWith("ss", StringComparison.Ordinal)) {
+                   && last.EndsWith("s", StringComparison.Ordinal)
+                   && !last.EndsWith("ss", StringComparison.Ordinal)) {
             candidates.Add(last.Substring(0, last.Length - 1));
         }
 
@@ -357,7 +374,8 @@ public sealed class ForeachOverIndexedForAnalyzer : DiagnosticAnalyzer {
         candidates.Add("current");
 
         foreach (var candidate in candidates) {
-            if (candidate.Length == 0 || !SyntaxFacts.IsValidIdentifier(candidate)
+            if (candidate.Length == 0
+                || !SyntaxFacts.IsValidIdentifier(candidate)
                 || SyntaxFacts.GetKeywordKind(candidate) != SyntaxKind.None) {
                 continue;
             }

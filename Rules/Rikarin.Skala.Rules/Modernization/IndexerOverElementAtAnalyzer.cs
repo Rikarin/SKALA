@@ -19,7 +19,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         already declares, so the call is a generic entry point wrapped around language syntax.
 ///     </para>
 ///     <para>
-///         ⚠ <b>
+///         ⚠
+///         <b>
 ///             The receiver set is <c>List&lt;T&gt;</c> and <c>ImmutableList&lt;T&gt;</c>, and the
 ///             reason is the exception type.
 ///         </b> <c>Enumerable.ElementAt</c> bounds-checks itself and throws
@@ -31,7 +32,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         array is a legal value for both.
 ///     </para>
 ///     <para>
-///         ⚠ <b>
+///         ⚠
+///         <b>
 ///             <c>ImmutableArray&lt;T&gt;</c> is refused a guard earlier than that, and the difference
 ///             was found by a sabotage that turned nothing red.
 ///         </b> <c>System.Linq.ImmutableArrayExtensions</c> declares its own

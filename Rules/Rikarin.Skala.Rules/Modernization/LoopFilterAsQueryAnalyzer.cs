@@ -28,7 +28,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         it saw.
 ///     </para>
 ///     <para>
-///         ⚠ <b>
+///         ⚠
+///         <b>
 ///             A <c>break</c>, a <c>continue</c> or a <c>return</c> in the body does not prevent this
 ///             rewrite, and the belief that it does is what made the shape look unshippable.
 ///         </b> Only
@@ -36,7 +37,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         <c>foreach</c> and <c>break</c> still leaves it.
 ///     </para>
 ///     <para>
-///         ⚠ <b>
+///         ⚠
+///         <b>
 ///             Reusing the loop variable's name as the lambda parameter is legal, and that was
 ///             measured rather than assumed.
 ///         </b> The iteration variable's scope does not reach the
@@ -273,7 +275,8 @@ public sealed class LoopFilterAsQueryAnalyzer : DiagnosticAnalyzer {
 
         return identifier.Parent is not MemberAccessExpressionSyntax {
             RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
-        } access || access.Expression == identifier;
+        } access
+            || access.Expression == identifier;
     }
 
     /// <summary>
@@ -295,7 +298,12 @@ public sealed class LoopFilterAsQueryAnalyzer : DiagnosticAnalyzer {
             return false;
         }
 
-        foreach (var symbol in model.LookupSymbols(position, container, "Where", includeReducedExtensionMethods: true)) {
+        foreach (var symbol in model.LookupSymbols(
+                     position,
+                     container,
+                     "Where",
+                     includeReducedExtensionMethods: true
+                 )) {
             if (symbol is IMethodSymbol method
                 && SymbolEqualityComparer.Default.Equals(
                     (method.ReducedFrom ?? method).OriginalDefinition.ContainingType,
