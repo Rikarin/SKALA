@@ -295,6 +295,20 @@ fixing it, and the pragma is the only one that reads as a suppression in review:
 "Turned down" is a comparison rather than a membership test — `warning` → `suggestion` is a downgrade
 even though neither end is `none` — and a severity turned *up* is not a suppression at all.
 
+⚠ **Mechanism 3 means `dotnet_diagnostic.<id>.severity` and nothing else.** The auditor's pattern
+used to carry a second alternative, `resharper_*_highlighting`, matched beside the Roslyn spelling
+because the `resharper_*_highlighting` severity bridge made such a key genuinely set a Skala rule's
+severity. **That bridge has been removed** ([03](03-configuration-model.md) § "Severities",
+[16](16-risks-and-open-questions.md) § Q5), so those keys now suppress nothing and counting one as a
+suppression is a false positive in a gate: `--no-new-suppressions` would fail a pull request for
+adding a line that cannot affect a single Skala finding.
+
+⚠ **It was not a small number, and the audit's own shape is what hid it.** Skala's root
+`.editorconfig` is a Rider export carrying **1 060** `resharper_*_highlighting` keys, **442** of them
+at `none`/`hint`/`suggestion` and therefore recorded as suppressions. The audit compares two
+revisions, so a constant set cancelled out and nothing was ever reported — but a re-exported
+`.editorconfig` would have produced hundreds of phantom new suppressions in one commit.
+
 ⚠ **`@formatter:off` is deliberately not a fifth.** It is the obvious candidate — a region the tool
 refuses to touch is a region a finding could hide in — and it is not one, because **a finding inside
 an off-region is still reported**. `skala check` names the line, the SARIF carries it, the gate
