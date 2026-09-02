@@ -186,6 +186,9 @@ public static class AnalyzerHost {
         new InstanceWriteToStaticAnalyzer(),
         new UnreleasedLockAnalyzer(), new IneffectiveLockTargetAnalyzer(),
         new ConstructorPublishesThisAnalyzer(),
+        new ForeachElementDowncastAnalyzer(), new GetTypeOnATypeAnalyzer(),
+        new TypeComparedByNameAnalyzer(), new StaticMemberViaDerivedTypeAnalyzer(),
+        new HiddenBaseInterfaceOverloadAnalyzer(),
     ];
 
     /// <summary>

@@ -1929,6 +1929,8 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **298** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **263** | **88.6 %** |
+| Rules this document names | **300** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **265** | **88.6 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **22** | includes the twelve declared cut with no reason recorded |
@@ -3681,3 +3683,149 @@ the declaration or sink the reader, write the implementation or delete the hook,
 per-instance or make the member static — and the finding is precisely the evidence that the author
 knows which and the analyzer does not. `SK2132` is the exception because there the two candidate
 repairs are not symmetric: one of them is a rename of a property that other code already calls.
+
+## `SK2180`–`SK2184` — type identity, conversion and which member the call actually reaches
+
+⚠ **The prose pass is owed for this block, and it is appended here rather than merged into §
+"SK2000 — Correctness" only to keep it out of a section several concurrent branches were editing.**
+What follows is the allocation register doing the one job ADR-012 needs of it: the numbers are taken
+and written down where the next milestone will read them. The block belongs beside `SK2121`, which
+is the rule every one of these is measured against.
+
+**Five issues, five rules — and the shape of the result is that four of the eight upstream
+inspections behind them turned out to be compiler diagnostics.** The batch was opened on issues #2,
+#23, #264, #35 and #49. Two of those issues were expected to dissolve entirely; instead each kept a
+narrow slice the compiler leaves alone, and the refutations are pinned as `[Theory]` cases in
+`TypeIdentityBatchTests.TheCompilerAlreadyOwnsThisShape` rather than as sentences here, so the day a
+claim stops being true the file goes red.
+
+- `SK2180` `foreach-element-downcast` — the loop variable's type is narrower than what the sequence
+  yields, so C# writes an explicit conversion into the loop that the source does not show and the
+  loop throws on the first element that is not of that type. ⚠ **This is what is left of issue #2
+  once the compiler has taken its share, and the share was measured rather than guessed.** At
+  `AnalysisMode=All`, `(Sealed)derived`, `(IUnrelated)sealedValue` and `(Sealed)unrelatedInterface`
+  are all **`CS0030`, errors** — that source never reaches an analyzer at all. What the compiler is
+  silent about is a *possible* downcast, and deciding whether a plain `(Derived)b` or a covariant
+  array store can succeed needs to know which values reach the site, which is the value lattice that
+  refuted issue #169 in the neighbouring batch. The `foreach` form needs none of it. ⚠ **An `object`
+  element type is never reported, and that exclusion carries most of the rule's safety**: a
+  non-generic `IEnumerable`, an `ArrayList` or a `List<object>` offers no other spelling, so the cast
+  there is the API's doing. Only reference conversions and unboxings — a narrowing numeric
+  conversion cannot throw and is a different concept. Report-only: `OfType<T>()` *skips* the
+  mismatched elements and an explicit cast in the body still *throws*, and the source says which
+  behaviour it has rather than which was wanted.
+- `SK2181` `get-type-on-a-type` — `GetType()` on a receiver that is already a `System.Type`, which
+  returns `System.RuntimeType` for every input. ⚠ **The mistake is invisible to every test that
+  checks the obvious things**: the result is non-null, it is a `Type`, and two calls agree — so a
+  registry keyed on it has one key and nothing throws. Probed at `AnalysisMode=All` with
+  `EnforceCodeStyleInBuild`: no compiler diagnostic and no `CA*` diagnostic of any kind. ⚠ **`System.Type`
+  declares its own parameterless `GetType()`**, hiding `object`'s, so a call on a `Type` receiver does
+  not bind to `object.GetType()` — testing the containing type for `System_Object`, which is the
+  obvious spelling, silences the rule on every fixture it exists for, and that is how it was found.
+  The reflection-emit idiom — comparing the result against a `typeof` whose operand itself derives
+  from `System.Type` — is declined, as is the documented escape hatch `((object)t).GetType()`, which
+  the rule does not look through because it reads the receiver's *static* type. Fix offered,
+  `fixIsSafe: false`: one deletion, and it changes what the expression evaluates to, which is the
+  finding.
+- `SK2182` `type-compared-by-name` — `x.GetType().Name == "Order"` where the literal names a type
+  this compilation can already see. ⚠ **That single resolution test is the whole specification, and
+  it is what separates the defect from the idiom**: comparing a name is the only option for a type
+  loaded reflectively, for a plugin whose assembly is deliberately not referenced, and across a
+  boundary this project does not compile against — and in all of those the name does not resolve
+  here, so the rule is silent. `Name` resolves against this compilation's own declarations and
+  `FullName` through metadata as well, because a fully-qualified name that resolves is a type the
+  file could have written. ⚠ **`AssemblyQualifiedName` is never reported**: it carries a version, a
+  culture and a public key token, so a comparison against it is a statement about which *build* of a
+  type this is, which `typeof(T)` cannot make. ⚠ **The fix is `GetType() == typeof(T)` and never
+  `is T`** — a name comparison is exact and `is` matches subclasses, so that rewrite would change
+  behaviour the string comparison never had.
+- `SK2183` `static-member-via-derived-type` — `Leaf.Count` where `Count` is declared on `Root`. ⚠
+  **Nothing hosts it, and both candidates named in the brief were measured rather than assumed.** In
+  a probe built outside this repository with empty `Directory.Build.props`/`.targets` above it, at
+  `AnalysisMode=All` with `EnforceCodeStyleInBuild`, `Leaf.Count`, `Leaf.Read()`, `Leaf.Limit` and
+  `Leaf.Total` produced nothing; `CA1000` and `IDE0002` were each raised to `warning` and stayed
+  silent on all four, with `CA1000`'s own shape planted alongside to prove the instrument was live —
+  it fired four times. ⚠ **`IDE0002` could not be made to fire on any shape at all**, including its
+  own documented one, so its state is reported as *unverifiable* rather than as *off*: a zero from an
+  instrument that never moved is not evidence. `suggestion`, because the two spellings resolve to the
+  same member — what is wrong is what the line says, not what the program does — and that is also
+  why the fix is the only `fixIsSafe: true` in the batch.
+- `SK2184` `hidden-base-interface-overload` — a call that binds to the derived interface's overload
+  while a base interface's better-matching overload sits unreachable behind it. ⚠ **The premise was
+  executed, not reasoned about.** With `IParent.M(string)`, `IChild : IParent` declaring `M(object)`,
+  and one implementation of both, `c.M("literal")` runs `IChild.M(object)` and `p.M("literal")` on
+  the same instance runs `IParent.M(string)` — same argument, same object, two different methods, and
+  no diagnostic from the compiler or from any `CA*` rule. ⚠ **The genuinely ambiguous member is a
+  compiler error and is deliberately not this rule**: `IBoth : ILeft, IRight` with both declaring
+  `Value` and `Run()` gives **`CS0229`** and **`CS0121`**, both errors, so that source does not
+  build. ⚠ **Applicability and betterness must both hold, and together they are what keep
+  `IDictionary` out** — `IDictionary<K,V>.Add(K,V)` hides `ICollection<KeyValuePair<K,V>>.Add(KVP)`
+  by exactly this mechanism, but the hidden overload takes one argument and the call passes two.
+  Betterness is decided by conversion and not by heuristic: every parameter of the hidden overload
+  must convert implicitly to the corresponding parameter of the bound one, with at least one
+  conversion not an identity. Report-only: the two repairs are a cast at this one call site and a
+  change to the interface, and which is right depends on what the interface is for.
+
+⚠ **What none of these does that `SK2121` does.** `SK2121` folds a conversion the type hierarchy has
+already decided *succeeds*, and it is the only rule in either batch that removes an operator. These
+five never touch a conversion that is decided: `SK2180` reports one that is undecided and unshown,
+`SK2181` and `SK2182` report a *value* that is not the one the author meant, `SK2183` reports a
+spelling, and `SK2184` reports which overload a call reached. `SK2121` is also the boundary in the
+other direction — its own remarks record that the always-*false* half of issue #1 is `CS0184`,
+`CS0183`, `CS0039` and `CS8121`, and this batch found the same pattern one concept over: **four more
+of the eight inspections behind these five issues belong to the compiler**, three of them as errors.
+
+⚠ **A claim in this batch was refuted by its own fixture and the prose was corrected rather than the
+fixture deleted.** `SK2183` was written with an accessibility guard against a `public` type deriving
+from a less visible base, whose declaring type the fix could then not name. That shape cannot be
+built: `CS0060` makes a base less accessible than its derived type a compile **error**, and a base in
+an unreferenced assembly is `CS0012`. The guard is kept — it is the one call in the batch that can
+throw, since `Compilation.IsSymbolAccessibleWithin` raises for a `within` argument that is neither a
+type nor an assembly — but it is documented as defensive and has no fixture, and the fixture written
+for it now says the opposite of what it was written to say.
+
+**The measurement.** All five rules were swept over Skala's own source through a fresh Release binlog
+(`dotnet build -c Release --no-incremental -bl:`, then
+`--load=binlog --require-fresh-binlog`; **`SK9021` coverage 594 of 596 files, 100 %**, **11 CS
+diagnostics in the load** — `CS9335` ×10 and `CS8933` ×1 — 1 451 results in total). ⚠ **Both
+flags matter and only together.** `--no-incremental` is what makes the binlog cover the whole
+tree rather than whatever MSBuild happened to rebuild, and `--require-fresh-binlog` is what turns
+an incomplete one into an error instead of a warning above a plausible number. The two files not
+covered are `build/Build.cs` and `build/Configuration.cs`, which are not in `Skala.slnx` at all —
+the same gap that let a compile error live under `build/` through a green CI. All five report **zero**, and ⚠ **none of the five zeros is
+the analysis failing to run**, which was established before any of them was believed.
+
+- **The instrument was verified first.** A probe file planting one shape per rule into
+  `Rikarin.Skala.Core` — a narrowing `foreach`, a `GetType()` on a `Type`, a
+  `GetType().Name == "ProbeOrder"`, a `ProbeLeaf.Count`, and a call through an interface hiding a
+  better overload — made **all five** fire through the same binlog pipeline, at the right lines and
+  with the right messages. That is the only check that sees a real reference set rather than the
+  fixture harness's (#297). The probe was deleted and the binlog rebuilt.
+- `SK2180`'s shape is **present 9 times and declined 9 times.** Relaxing the `object` exclusion and
+  the reference/unboxing restriction and re-sweeping found nine narrowing `foreach` statements in
+  Skala's source, and ⚠ **every one of them is the shape the exclusion was written for**:
+  `foreach (Match m in Regex.Matches(…))`, where the loop binds the non-generic enumerator and the
+  sequence therefore yields `object`. The shipped rule reports none of them.
+- `SK2184`'s shape is **present once and declined once.** Relaxing the betterness test found
+  `IEnumerable.GetEnumerator()` sitting behind `IEnumerable<T>.GetEnumerator()` in `BreakPlan.cs`.
+  It is declined by construction rather than by a filter: the call takes no arguments, so no
+  parameter conversion can be non-identity and no overload can be "better".
+- `SK2181`, `SK2182` and `SK2183` are **shape absent.** Each was relaxed in the direction that would
+  count the raw shape — every `GetType()` on a `Type` receiver, every `GetType().Name` compared to
+  any literal whether it resolves or not, and every static member reached through a type qualifier
+  that is not its declaring type — and each still reported **zero** across the whole tree.
+
+⚠ **There is no corpus evidence for any of the five, and that is a property of the rules rather than
+an omission.** All five declare `requiresSemantics: true`, so `AnalyzerHost.SkippedFor` drops them
+under `--load=loose` (#277), and `Testing/corpus` neither compiles nor is reachable through
+`skala check` (`SK9023`). The self-sweep is the measurement.
+
+⚠ **The sweep also found a crash that is not this batch's.**
+`Rikarin.Skala.Rules.Cleanup.RedundantArgumentAnalyzer` throws `IndexOutOfRangeException` **17
+times** on Skala's own tree and is disabled for the rest of the run each time, so its rule is
+measuring nothing over most of the source. That is issue **#298**, already filed and already
+diagnosed — a loop that bounds its counter by the parameter count and then indexes by the argument
+position — and this sweep is the first count of how often it actually fires: 17. It reaches the
+SARIF only as an `SK9030` `toolExecutionNotification` and does not fail the gate (#295), which is
+how it survived. None of the
+five analyzers in this batch appears in that list.

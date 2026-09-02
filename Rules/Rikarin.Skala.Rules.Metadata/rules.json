@@ -7042,6 +7042,132 @@
       "configuration": [
         "dotnet_diagnostic.SK3062.severity"
       ]
+    },
+    {
+      "id": "SK2180",
+      "concept": "foreach-element-downcast",
+      "title": "The `foreach` casts every element down to a narrower type",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "PossibleInvalidCastExceptionInForeachLoop",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The loop variable's type is narrower than the sequence's element type, so the language inserts a cast the source does not show and the loop throws on the first element that is not of that type.",
+      "rationale": "`foreach (Derived d in items)` over an `IEnumerable<Base>` is not a filter and not a check: C# writes an explicit conversion into the loop for you, and the loop stops with an `InvalidCastException` on the first element that is something else. The cast is the one operation in C# that a `foreach` performs and does not spell — `var` shows nothing, the declared type reads as documentation, and every review of the line reads it as the element type rather than as an assertion about it. ⚠ **This is the part of issue #2 that is neither a compiler diagnostic nor a value-lattice problem.** The impossible conversions in that issue are `CS0030` — probed at `AnalysisMode=All`, `(Sealed)derived`, `(IUnrelated)sealedValue` and `(Sealed)unrelatedInterface` are all **errors**, so that code never reaches a linter. What is left of the issue after the compiler has taken its share is a downcast that is *possible* and unannounced, and only the `foreach` form is decidable without reasoning about which values reach the site.",
+      "examples": {
+        "bad": "void M(List<Shape> shapes) {\n    foreach (Circle c in shapes) {\n        Draw(c);\n    }\n}",
+        "good": "void M(List<Shape> shapes) {\n    foreach (var c in shapes.OfType<Circle>()) {\n        Draw(c);\n    }\n}"
+      },
+      "falsePositives": "⚠ **A sequence whose element type is `object` is never reported, and that exclusion carries most of the rule's safety.** `foreach (string s in arrayList)` over a non-generic `IEnumerable`, an `ArrayList` or a `List<object>` has no other spelling: the cast is what the language offers for a sequence that is untyped by construction, and reporting it would be telling the author to stop using an API they do not control. What is reported is the case where the sequence *is* typed and the loop narrows it anyway, which is where a typed collection or an `OfType` was available and was not used. ⚠ **Only reference conversions and unboxings.** A narrowing *numeric* conversion in a `foreach` — `foreach (int i in longs)` — cannot throw outside a `checked` context and is a different concept; `ClassifyConversion` decides this, and only `IsReference` or `IsUnboxing` reaches a report. Type parameters, `dynamic` and error types are declined outright, for `SK2121`'s reason: inside a generic method the conversion is classified against the constraint set rather than against the instantiated type. An identity or widening loop variable — `foreach (Base b in derivedItems)` — is not a downcast and is silent. ⚠ **Report-only, deliberately.** The two rewrites are `OfType<T>()`, which *skips* the elements that do not match, and an explicit cast in the body, which still *throws* — the source says which behaviour it has and does not say which behaviour was wanted, so an automatic edit would have to guess between silently dropping data and keeping the exception. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2180.severity"
+      ]
+    },
+    {
+      "id": "SK2181",
+      "concept": "get-type-on-a-type",
+      "title": "`GetType()` is called on something that is already a `Type`",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "PossibleMistakenCallToGetType",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The receiver's static type is `System.Type`, so `GetType()` returns the runtime type of the `Type` object — `System.RuntimeType` — rather than the type it describes.",
+      "rationale": "`t.GetType()` where `t` is a `Type` answers a question nobody asked. It returns `System.RuntimeType` for every input, so the value is non-null, is a `Type`, and compares equal to itself — which is why it survives every test that checks for null and every test that checks two calls agree. The failure is silent and constant: a registry keyed on it has one key, a `switch` over it has one arm reachable, and a log line prints `RuntimeType` where a type name was meant. ⚠ **The compiler says nothing at all**, verified at `AnalysisMode=All`: `t.GetType()` and `typeof(Widget).GetType()` produce no diagnostic of any kind, and neither does any `CA*` rule.",
+      "examples": {
+        "bad": "void Register(Type contract) {\n    map[contract.GetType()] = contract;\n}",
+        "good": "void Register(Type contract) {\n    map[contract] = contract;\n}"
+      },
+      "falsePositives": "⚠ **Asking for the runtime type of a `Type` object is legitimate and is declined by recognising the question rather than by a name list.** Reflection-emit code distinguishes a `RuntimeType` from a `TypeBuilder`, a `TypeDelegator` or a mock, and it does so by comparing `t.GetType()` against a `typeof(...)` whose operand itself derives from `System.Type`. Wherever the call sits directly under a `==`, a `!=`, an `is` type pattern or an `is`/`as` operator naming such a type, the rule is silent — that author means exactly what they wrote. ⚠ **The receiver's *static* type decides, never the value.** `((object)t).GetType()` is the documented way to ask this question and is not reported, because the receiver is an `object` there; the rule does not look through the cast, and that is the escape hatch. A receiver typed `object`, `dynamic`, a type parameter, or an error type is declined for the same reason `SK2121` declines them: the conversion is classified against something other than the type that will be there. ⚠ **`fixIsSafe: false` although the edit is one deletion.** Removing `.GetType()` changes what the expression evaluates to — that is the whole finding — so it cannot be applied without a reader, and the fix is withheld entirely where a comment or a preprocessor directive sits inside the span being replaced. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2181.severity"
+      ]
+    },
+    {
+      "id": "SK2182",
+      "concept": "type-compared-by-name",
+      "title": "A type is identified by comparing its name to a string",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`x.GetType().Name == \"Order\"` binds a type by a string the compiler never checks, so a rename makes it silently false and any other assembly's `Order` makes it silently true.",
+      "rationale": "The comparison looks like a type test and is a string test. Rename `Order` and every tool in the toolchain updates every reference except this one, which keeps compiling and starts returning `false` — the worst shape a defect can have, because the symptom is a branch that stops being taken rather than an exception anybody can trace. In the other direction `Type.Name` is not unique: any `Order` in any referenced assembly, in any namespace, matches. ⚠ **Nothing upstream implements this** — the SonarSource idea it comes from is an unspecified proposal — so the specification here is entirely Skala's, and the whole of it is the resolution test below.",
+      "examples": {
+        "bad": "if (entity.GetType().Name == \"Order\") {\n    Process(entity);\n}",
+        "good": "if (entity.GetType() == typeof(Order)) {\n    Process(entity);\n}"
+      },
+      "falsePositives": "⚠ **The literal must name a type this compilation can already see, and that single condition is what separates the defect from the idiom.** Comparing a name is the *only* option for a type loaded reflectively, for a plugin an assembly deliberately does not reference, and for a shape crossing an assembly boundary — and in every one of those cases the name does not resolve here, so the rule is silent. A `Name` comparison resolves through the compilation's own declarations; a `FullName` comparison resolves through metadata as well, because a fully-qualified name that resolves is a type the file could have named outright. ⚠ **`AssemblyQualifiedName` is never reported.** It carries a version, a culture and a public key token, so a comparison against it is a deliberate statement about *which build* of a type this is, and `typeof(T)` does not say that. `Name`, `FullName` and `AssemblyQualifiedName` are three different questions and only two of them have a symbol-based answer. ⚠ **The receiver must be a `GetType()` call.** `t.Name == \"Order\"` on a `Type` variable has no `typeof` rewrite — the subject is a `Type`, not an instance — and is declined with a fixture rather than reported without a fix. ⚠ **The fix is `GetType() == typeof(T)` and never `is T`.** A name comparison is exact and `is` is not: rewriting to `is Order` would start matching every subclass, which is a behaviour change the string comparison never had. The replacement type is written short where that name binds to that type at the call site and fully qualified where it does not, so the edit compiles in a file with no matching `using`. `fixIsSafe: false`: the finding is about what the code does, so the edit changes it. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2182.severity"
+      ]
+    },
+    {
+      "id": "SK2183",
+      "concept": "static-member-via-derived-type",
+      "title": "A static member is reached through a type that inherits it",
+      "category": "Correctness",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "AccessToStaticMemberViaDerivedType",
+      "resharperNote": "⚠ The export sets `resharper_access_to_static_member_via_derived_type_highlighting` to `warning` and this rule defaults to `suggestion`, so reading the ReSharper key changes behaviour. The lower default is deliberate: the two spellings resolve to the same member, so nothing the program does is wrong — what is wrong is what the line says. docs/plan/16 § Q5.",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The qualifier names a derived type and the static member is declared on a base, so the line reads as though the derived type owned state that is shared with every other type in the hierarchy.",
+      "rationale": "`Leaf.Count` and `Root.Count` are the same slot. Written the first way the line says otherwise: it reads as `Leaf`'s counter, and the reader who goes looking for the declaration on `Leaf` does not find it. The mistake costs something the day a second type derives from `Root` and the two are found to share the value nobody thought they shared, and again the day `Count` moves — because a qualifier naming a type that does not declare the member is the one reference the compiler will happily keep resolving to somewhere else. ⚠ **Neither the compiler nor the SDK reports it, and that was probed rather than assumed.** At `AnalysisMode=All` with `EnforceCodeStyleInBuild`, `Leaf.Count`, `Leaf.Read()`, `Leaf.Limit` and `Leaf.Total` produce nothing; `CA1000` and `IDE0002` were each raised to `warning` and stayed silent on all four.",
+      "examples": {
+        "bad": "class Root { public static int Count; }\n\nclass Leaf : Root { }\n\nint Read() => Leaf.Count;",
+        "good": "class Root { public static int Count; }\n\nclass Leaf : Root { }\n\nint Read() => Root.Count;"
+      },
+      "falsePositives": "⚠ **The accessibility guard is defensive and the shape it guards against could not be constructed, which is a refutation rather than a claim.** The intended case was a `public` type deriving from a less visible base, whose declaring type the fix could not then name — but `CS0060` makes a base less accessible than its derived type a compile **error**, and a base in an assembly the caller does not reference is `CS0012`, so neither reaches an analyzer. The check is kept because it costs a comparison and because it is the one call in this batch that can throw: `Compilation.IsSymbolAccessibleWithin` raises for a `within` argument that is neither a type nor an assembly, so the argument is narrowed to an `INamedTypeSymbol` before the call and falls back to the assembly where there is none. There is no fixture for it, deliberately — the fixture written for it turned out to prove the opposite and was replaced. ⚠ **Only fields, properties, methods and events.** A nested type reached through a derived type — `Leaf.Nested` — is not a static member access and the C# rules for it are different; a constant is included, because a `const` is a static member for this purpose and moves with its declaring type. ⚠ **Type parameters are declined outright**, which is what keeps generic math out: `T.Zero` where `T` is constrained to `INumber<T>` has the interface as its declaring type and the qualifier is not a class at all. `dynamic`, error types and an anonymous type qualifier are declined for the same reason. ⚠ **An unqualified reference from inside the derived type is not this rule.** `Count` written on its own inside `Leaf` is not a member access and never reaches the analyzer; only a written qualifier does. The fix replaces the qualifier with the declaring type, spelled short where that name binds to that type at the site and fully qualified where it does not, and is withheld where a comment or a preprocessor directive sits in the span. `fixIsSafe: true`: the two spellings resolve to the same member, so the edit changes nothing the program does. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2183.severity"
+      ]
+    },
+    {
+      "id": "SK2184",
+      "concept": "hidden-base-interface-overload",
+      "title": "The call skips a better overload the derived interface hides",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": "PossibleInterfaceMemberAmbiguity",
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An overload declared on a base interface is applicable to these arguments and is a better match than the one the call binds to, and it is unreachable because the derived interface declares the same name.",
+      "rationale": "A derived interface that declares any overload of a name takes the whole name: the base interface's overloads of it are removed from the lookup before overload resolution ever runs, so the call binds to the derived one even where the base one is the better match. ⚠ **This was run rather than reasoned about.** With `IChild : IParent`, `IParent.M(string)` and `IChild.M(object)`, `c.M(\"literal\")` executes `IChild.M(object)` while `p.M(\"literal\")` on the same object executes `IParent.M(string)` — the same argument, the same instance, two different methods, and **no diagnostic of any kind** from the compiler or from any `CA*` rule. That is the shape issue #49 describes as \"redirect existing calls with no diagnostic anywhere\", and it is the only part of the issue that is not already an error.",
+      "examples": {
+        "bad": "interface IParent { void Log(string message); }\n\ninterface IChild : IParent { void Log(object value); }\n\nvoid M(IChild c) => c.Log(\"started\");   // binds to Log(object)",
+        "good": "interface IParent { void Log(string message); }\n\ninterface IChild : IParent { }\n\nvoid M(IChild c) => c.Log(\"started\");   // binds to Log(string)"
+      },
+      "falsePositives": "⚠ **The genuinely ambiguous member is a compiler error and is not this rule.** Probed rather than assumed: with `IBoth : ILeft, IRight` where both declare `Value` and `Run()`, `b.Value` is **`CS0229`** and `b.Run()` is **`CS0121`**, both errors — that code does not build, so a rule reporting it would report source no analyzer ever sees. What is left is the case where the binding succeeds and is not the one the reader expects, and only that is reported. ⚠ **Both the applicability test and the betterness test must pass, and together they are what keep `IDictionary` out.** `IDictionary<K,V>.Add(K,V)` hides `ICollection<KeyValuePair<K,V>>.Add(KVP)` — the same mechanism exactly — but the hidden overload takes one argument and the call passes two, so it is not applicable and there is nothing to report. Betterness is decided by conversion and not by heuristic: every parameter of the hidden overload must convert implicitly to the corresponding parameter of the bound one, with at least one of those conversions not an identity. `M(int)` in a derived interface against `M(object)` in the base is therefore silent, because `object` does not convert to `int` and the bound overload was simply the better match. ⚠ **A hidden overload with the *same* signature is not reported**, because that is `CS0108` and the compiler already asks for `new`. Type parameters, `dynamic` and error types are declined; only interface types are inspected, since a class hierarchy makes the same shape visible through its declarations. Report-only: the two repairs are casting the receiver to the base interface at this one site and removing the overload from the derived interface, and which is right depends on what the interface is for. Generated code is excluded.",
+      "configuration": [
+        "dotnet_diagnostic.SK2184.severity"
+      ]
     }
   ]
 }

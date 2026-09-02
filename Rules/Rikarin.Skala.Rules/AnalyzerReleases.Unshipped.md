@@ -247,3 +247,8 @@ SK2134 | Skala.Correctness | Warning | Instance code assigns its own type's stat
 SK3060 | Skala.Async | Warning | A lock is entered and not released on every path.
 SK3061 | Skala.Async | Warning | The `lock` target is not the object other threads take.
 SK3062 | Skala.Async | Warning | `this` escapes before the constructor finishes.
+SK2180 | Skala.Correctness | Warning | The `foreach` casts every element down to a narrower type.
+SK2181 | Skala.Correctness | Warning | `GetType()` is called on something that is already a `Type`.
+SK2182 | Skala.Correctness | Warning | A type is identified by comparing its name to a string.
+SK2183 | Skala.Correctness | Info | A static member is reached through a type that inherits it.
+SK2184 | Skala.Correctness | Warning | The call skips a better overload the derived interface hides.

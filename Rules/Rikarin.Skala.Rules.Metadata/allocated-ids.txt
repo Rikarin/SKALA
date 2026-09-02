@@ -288,3 +288,8 @@ SK2134 instance-write-to-static
 SK3060 unreleased-lock
 SK3061 ineffective-lock-target
 SK3062 constructor-publishes-this
+SK2180 foreach-element-downcast
+SK2181 get-type-on-a-type
+SK2182 type-compared-by-name
+SK2183 static-member-via-derived-type
+SK2184 hidden-base-interface-overload

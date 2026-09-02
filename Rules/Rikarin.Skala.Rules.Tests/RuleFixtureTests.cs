@@ -148,6 +148,9 @@ public sealed class RuleFixtureTests {
         new InstanceWriteToStaticAnalyzer(),
         new UnreleasedLockAnalyzer(), new IneffectiveLockTargetAnalyzer(),
         new ConstructorPublishesThisAnalyzer(),
+        new ForeachElementDowncastAnalyzer(), new GetTypeOnATypeAnalyzer(),
+        new TypeComparedByNameAnalyzer(), new StaticMemberViaDerivedTypeAnalyzer(),
+        new HiddenBaseInterfaceOverloadAnalyzer(),
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
