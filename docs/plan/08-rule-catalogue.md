@@ -9265,3 +9265,61 @@ parentheses — and both are genuine findings whose fix is `bare is "worldViewPr
 There is nowhere else in either tree for the rule to be wrong, which is a stronger statement than a
 sweep returning zero. ⚠ **Vixen is not a specification** — that it writes this shape is evidence the
 shape exists, never evidence the rule is calibrated correctly.
+
+### Correctness — `SK2290`, the `out` parameter nobody reads
+
+**One rule, and the half of [#324](https://github.com/Rikarin/SKALA/issues/324) that was decidable.**
+ReSharper reports `OutParameterValueIsAlwaysDiscarded` as two inspections, `.Local` and `.Global`, and
+the split is not cosmetic: deciding it needs every call site. `.Global` is **out of reach and stays
+excluded** — a `public` method's callers live in assemblies that do not exist yet, so "every caller
+discards it" is not a fact the compilation holds. `.Local` is decidable, and this is it.
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK2290` | Every call discards this `out` parameter's value | Compilation | none — stated |
+
+⚠ **This is the callee's finding, and `SK6040` does not cover it.** `SK6040` maps
+`NotAccessedOutParameterVariable`: one call site, whose declared variable is never read. This reports
+the **declaration**, and only when no call site anywhere reads the value — which is what says the
+body's computation is dead rather than that one call is untidy. Neither implies the other. ⚠ **Nor is
+either half hosted**: `IDE0058`, `IDE0059` and `UnusedVariable` all fire at the *call site*.
+
+⚠ **`private` is not taste, it is what makes the question answerable**, and `scope: "Compilation"` is
+what it costs — `RuleInfo.IsCacheable` is false, and the rule does not run at all without a project.
+The analysis is compilation-wide rather than per-type because a `private` member is callable from
+**nested types**, which are different `INamedTypeSymbol`s: a per-type symbol start sees the
+declaration with none of the call sites that decide it.
+
+**Three of the four guards the issue named are load-bearing; the fourth is not, and it says so.**
+
+- **Zero call sites is a decline.** "Every caller discards it" is *vacuously true* of a method nobody
+  calls, and without this the rule fires on every uncalled `private` helper in every tree.
+- **Any non-invocation use of the name withdraws the finding** — a method group conversion, a
+  `nameof`, a delegate creation, a `dynamic` dispatch. Through a delegate the arguments are invisible,
+  so the call-site set stops being complete, and completeness is the rule's only claim. Deliberately
+  over-broad: it matches identifier text across the compilation, which costs findings and never costs
+  correctness.
+- **Generated code is analysed, not skipped** (`GeneratedCodeAnalysisFlags.Analyze`): a call from a
+  generated `partial` part *is* a call, and at `None` the actions never run there, so the reading call
+  site is invisible and the rule fires falsely. Roslyn still drops a diagnostic located in generated
+  code, because `ReportDiagnostics` is not set.
+- ⚠ **`virtual`/`abstract`/`override` need no guard and have none.** At `private` accessibility all
+  three are compile errors — **CS0621**, plus **CS0507** for the override — so no compiling program
+  reaches such a guard. The explicit-interface-implementation decline is kept as a **stated gate
+  rather than a load-bearing guard**: its callers reach it through the interface, so it has zero
+  visible call sites and the zero-call-site guard already refuses it. Sabotaging that line alone turns
+  nothing red, and it says so instead of claiming otherwise.
+
+⚠ **`Deconstruct` is excluded by name** — `var (a, b) = this;`, `foreach` deconstruction and a
+positional pattern all call it and none of them is an invocation, so the call sites would be invisible
+while an explicit `Deconstruct(out _, out _)` made every *visible* one a discard.
+
+**No fix, and the reason is stated rather than owed.** Removing an `out` parameter edits the
+declaration, every argument list and the body at once, and the last of those ends in a judgement about
+which statements only existed to feed the parameter. That is a refactoring, not a text-edit list.
+
+⚠ **Only the discard form counts, and that is a deliberate fraction.** A caller writing `out var x`
+and never reading `x` is `SK6040`'s finding; after `SK6040`'s fix the call reads `out _` and this rule
+becomes reachable. The two compose in that order on purpose — writing "declared but never read" a
+second time here would be one analysis in two rules, disagreeing eventually. **Local functions and
+`file`-scoped types are equally bounded and equally uncovered**, named here rather than implied.

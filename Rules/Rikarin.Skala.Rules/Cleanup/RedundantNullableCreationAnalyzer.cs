@@ -32,8 +32,8 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///         ([#128](https://github.com/Rikarin/SKALA/issues/128)).
 ///     </para>
 ///     <para>
-///         So the target type is not inferred, it is <b>read off the syntax</b>: three positions
-///         write it down, and the rule reports in those three and nowhere else. Under <c>var</c> the
+///         So the target type is not inferred, it is <b>read off the syntax</b>: four positions
+///         write it down, and the rule reports in those four and nowhere else. Under <c>var</c> the
 ///         wrapper is load-bearing — <c>var x = new int?(5);</c> types <c>x</c> as <c>int?</c> and
 ///         <c>var x = 5;</c> types it as <c>int</c> — which is the same trap <c>SK0234</c> is written
 ///         around, one construct over.
@@ -117,7 +117,7 @@ public sealed class RedundantNullableCreationAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    ///     The whitelist: the three positions that <em>write</em> the target type down.
+    ///     The whitelist: the four positions that <em>write</em> the target type down.
     /// </summary>
     /// <remarks>
     ///     ⚠ A whitelist rather than a query, because the query does not exist — see the type remarks.
