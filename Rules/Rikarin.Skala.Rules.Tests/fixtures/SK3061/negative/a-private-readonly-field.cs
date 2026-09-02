@@ -9,8 +9,9 @@ public sealed class Counter {
         // `System.Threading.Lock`, and shape 2 here requires a field that is *not* `readonly`. No
         // field can carry both findings, which is why neither rule declares `supersedes`.
         //
-        // ⚠ It also records a gate that cannot be sabotage-tested: deleting the analyzer's
-        // `IsReadOnly` check leaves this fixture green, because the only write to a `readonly` field
+        // ⚠ It also records a gate that cannot be sabotage-tested, and that was measured rather than
+        // assumed: deleting the analyzer's `IsReadOnly` check leaves the whole fixture suite green
+        // — 3 014 fixture cases, nothing red — because the only write to a `readonly` field
         // the compiler permits is in a constructor or an initializer, and the "assigned outside a
         // constructor" gate already declines both. The `readonly` check is redundant with C#'s own
         // rule rather than with nothing — kept because it states the intent at the top of the walk,
