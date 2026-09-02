@@ -113,6 +113,19 @@ public sealed class ConfigCommandTests {
         Assert.Equal(ConfigCommands.StrictFailure, run.ExitCode);
     }
 
+    /// <summary>
+    ///     The tier matrix is about the registry; the severity namespaces are about keys the registry
+    ///     deliberately does not own, and the two are reported separately.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The severity half runs against its own file on purpose.</b> It used to read
+    ///     <c>editor_config_template</c> and assert the output named <c>InspectionSeverity</c> — which
+    ///     broke the moment the 1 062 <c>resharper_*_highlighting</c> lines were removed from that
+    ///     export, because the block prints only the namespace groups that are present. That says
+    ///     nothing about whether the reporting works, and a real Rider export still carries about three
+    ///     thousand of these. The registry half still reads the template, because the tier matrix is a
+    ///     fact about the registry and holds whatever the file contains.
+    /// </remarks>
     [Fact]
     public void Check_ReportsTheTierMatrixAndTheSeverityNamespacesSeparately() {
         var run = CliRunner.Run("config", "check", "editor_config_template");
@@ -128,8 +141,30 @@ public sealed class ConfigCommandTests {
         );
 
         Assert.True(implemented > 0);
-        Assert.Contains("InspectionSeverity", run.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("Milestone 5", run.StandardOutput, StringComparison.Ordinal);
+
+        var directory = Path.Combine(Path.GetTempPath(), $"skala-namespaces-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try {
+            File.WriteAllText(
+                Path.Combine(directory, ".editorconfig"),
+                """
+                root = true
+
+                [*.cs]
+                resharper_web_config_module_not_resolved_highlighting = warning
+                dotnet_diagnostic.CA1822.severity = suggestion
+
+                """
+            );
+            File.WriteAllText(Path.Combine(directory, "a.cs"), "class C { }\n");
+
+            var namespaces = CliRunner.Run("config", "check", directory);
+
+            Assert.Contains("InspectionSeverity", namespaces.StandardOutput, StringComparison.Ordinal);
+            Assert.Contains("Milestone 5", namespaces.StandardOutput, StringComparison.Ordinal);
+        } finally {
+            Directory.Delete(directory, true);
+        }
     }
 
     /// <summary>
