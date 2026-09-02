@@ -244,3 +244,6 @@ SK2131 | Skala.Correctness | Warning | A get-only auto-property nothing ever ass
 SK2132 | Skala.Correctness | Warning | An accessor reaches for another property's backing field.
 SK2133 | Skala.Correctness | Info | A called `partial void` with no implementing declaration.
 SK2134 | Skala.Correctness | Warning | Instance code assigns its own type's static field.
+SK3060 | Skala.Async | Warning | A lock is entered and not released on every path.
+SK3061 | Skala.Async | Warning | A `lock` is taken over an object other code can also lock.
+SK3062 | Skala.Async | Warning | `this` escapes before the constructor finishes.
