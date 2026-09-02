@@ -363,3 +363,4 @@ SK1130 constant-pattern-over-sequence-equal
 SK0280 redundant-base-list-entry
 SK0281 redundant-required-members-attribute
 SK0282 redundant-positional-property
+SK0290 redundant-nullable-creation

@@ -794,6 +794,44 @@ which is indistinguishable from the ids not existing. Controls: `CA1051` is `Tru
 empty `Directory.Build.props`/`.targets`; `IDE0055`, `IDE0160`, `IDE0290`, `IDE0380` and `CA1051` all
 fired, no `AD0001` was raised, and none of the three shapes was reported.
 
+### Cleanup — `SK0290`, and the written-type-position whitelist that #128 was waiting on
+
+**One rule, and the answer to the question the previous round left open.**
+`RedundantExplicitNullableCreation` was the last inspection of
+[#128](https://github.com/Rikarin/SKALA/issues/128)'s family still open, deferred because the obvious
+guard does not work: `GetSpeculativeTypeInfo` at a **position** binds the operand as a standalone
+expression, so for `new int?(5)` the operand's `ConvertedType` comes back `int` in every context —
+including every context where the rewrite is correct. A rule built on it would withdraw every finding
+and look exactly like a rule with nothing to find, which is `SK0234`'s recorded lesson.
+
+| ID | Rule | Scope | Fix |
+|---|---|---|---|
+| `SK0290` | The explicit `Nullable<T>` construction converts nothing | Semantic | safe |
+
+⚠ **The written-type-position whitelist works, and it is the only thing that does.** The target type
+is not inferred, it is read off the syntax, and the rule reports in four positions and nowhere else: a
+declaration initializer under a written type, a `return` or expression body under a member whose
+return type is written, the right side of a simple assignment, and an argument whose parameter is
+exactly the nullable type. **All four shipped.** The argument branch was the one the brief said to
+drop if it could not be made safe; it could — `SpeculativeBinding.CanBindDetached` followed by a
+speculative re-bind of the call without the wrapper, demanding the **identical** symbol, which is the
+same instrument `SK0234` uses for type arguments. With `void M(int x)` and `void M(int? x)` both in
+scope, `M(new int?(5))` reaches the second and `M(5)` reaches the first, and the re-bind sees it.
+
+⚠ **`var` is the whole reason a whitelist is needed rather than a query**, and it is the same trap
+`SK0234` is written around one construct over: `var x = new int?(5);` types `x` as `int?` and
+`var x = 5;` types it as `int`, and `GetTypeInfo` on the `var` keyword answers `int?` for **both**.
+There is no semantic question that separates them; only the syntax does, so `var` is refused
+syntactically.
+
+⚠ **`async` and iterator members need no guard of their own, and writing one would have been dead
+code.** An `async` member's written return type is `Task<int?>` and never `int?`, so the written-type
+comparison declines it before any modifier is read; an iterator cannot carry `return expr;` at all
+(`CS1622`), so it is unreachable from the return branch. ⚠ **The same is true of a `ref`/`out`/`in`
+argument modifier**: `Nullable<T>`'s constructor takes its value by value, so `new int?(ref x)` is a
+compiler error and no compiling program reaches such a guard. The brief called for both; both were
+left out rather than shipped as guards no fixture could turn red.
+
 ### Cleanup — `SK0250`
 
 **One rule, and it is here rather than folded into `SK0233` because the two answer to different
