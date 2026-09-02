@@ -63,7 +63,11 @@ public sealed class RewriteGuardReachTests {
             "SK1050's as-then-null-check shape deletes the declaration's whole line with LineSpanOf. "
             + "Its four other guards rewrite their own spans and ask the narrow question.",
         ["Rules/Rikarin.Skala.Rules/Modernization/TypePatternAnalyzer.cs"] =
-            "SK1015 deletes the cast declaration's whole line with LineSpanOf."
+            "SK1015 deletes the cast declaration's whole line with LineSpanOf.",
+        ["Rules/Rikarin.Skala.Rules/Cleanup/RedundantPositionalPropertyAnalyzer.cs"] =
+            "SK0282 deletes property.FullSpan outright — the whole member, leading trivia included — "
+            + "so a documentation comment above it is inside the edit and is a reason to leave the "
+            + "declaration alone rather than a thing to delete."
     };
 
     static readonly Regex Call = new(

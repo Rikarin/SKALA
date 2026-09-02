@@ -136,11 +136,11 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
 
             // The braces and the keyword are what the splice deletes; the contents survive verbatim,
             // so a comment inside the block must not withdraw the finding (#302).
-            if (RewriteGuards.ContainsCommentOrDirective(
+            if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                     tree,
                     TextSpan.FromBounds(clause.SpanStart, block.OpenBraceToken.Span.End)
                 )
-                || RewriteGuards.ContainsCommentOrDirective(
+                || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(
                     tree,
                     TextSpan.FromBounds(block.CloseBraceToken.SpanStart, clause.Span.End)
                 )) {
@@ -156,7 +156,7 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
             // `else foo();` and `else if (…)` need no unwrap at all: only the keyword goes, and the
             // embedded statement keeps whatever scope it had.
             var span = TextSpan.FromBounds(clause.SpanStart, clause.Statement.SpanStart);
-            if (RewriteGuards.ContainsCommentOrDirective(tree, span)) {
+            if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, span)) {
                 return;
             }
 
@@ -300,7 +300,7 @@ public sealed class RedundantControlFlowAnalyzer : DiagnosticAnalyzer {
             // in what the fix deletes and does not withdraw the finding — #302's lesson, and there is
             // a positive fixture asserting exactly that.
             var span = TextSpan.FromBounds(arm.SpanStart, arms.GetSeparator(index).Span.End);
-            if (RewriteGuards.ContainsCommentOrDirective(tree, span)) {
+            if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(tree, span)) {
                 break;
             }
 

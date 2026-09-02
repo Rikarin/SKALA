@@ -88,7 +88,7 @@ public sealed class RedundantPositionalPropertyAnalyzer : DiagnosticAnalyzer {
 
         // The whole declaration goes, leading trivia included, so a documentation comment on it is a
         // reason to leave it alone rather than a thing to delete.
-        if (RewriteGuards.ContainsCommentOrDirective(property)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveAroundTheDeclaration(property)) {
             return;
         }
 

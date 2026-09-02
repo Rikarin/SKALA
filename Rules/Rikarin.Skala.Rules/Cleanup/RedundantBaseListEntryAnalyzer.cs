@@ -103,7 +103,8 @@ public sealed class RedundantBaseListEntryAnalyzer : DiagnosticAnalyzer {
             }
 
             var span = DeletedSpan(baseList, node);
-            if (span is null || RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, span.Value)) {
+            if (span is null
+                || RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span.Value)) {
                 continue;
             }
 

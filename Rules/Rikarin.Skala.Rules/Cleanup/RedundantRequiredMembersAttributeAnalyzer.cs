@@ -84,7 +84,7 @@ public sealed class RedundantRequiredMembersAttributeAnalyzer : DiagnosticAnalyz
         }
 
         var span = DeletedSpan(list, attribute);
-        if (RewriteGuards.ContainsCommentOrDirective(context.Node.SyntaxTree, span)) {
+        if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(context.Node.SyntaxTree, span)) {
             return;
         }
 
