@@ -68,14 +68,37 @@ public static class RuleFixtures {
     ///     A compilation over the running framework's reference set, which is what loose mode gives a
     ///     rule and therefore the least the rule may assume.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The reference set is the test host's, not a project's, and that is a blind spot rather
+    ///     than a detail.</b> A real project is compiled against its own reference assemblies, and where
+    ///     the two differ a rule can be correct on every fixture and wrong in production with nothing
+    ///     failing — overload resolution, <c>params</c> binding and shim visibility all move with the
+    ///     reference set. Two measured examples (#297): <c>SK1063</c> declined every
+    ///     <c>string.Format</c> call with four or more arguments, because on .NET 9+ the
+    ///     <c>params ReadOnlySpan&lt;object?&gt;</c> overload wins and Roslyn reports the argument as
+    ///     <c>ParamCollection</c> rather than <c>ParamArray</c>; and <c>SK1060</c> proposed 16 fixes
+    ///     that did not compile on <c>netstandard2.0</c>, where <c>System.Index</c> exists but is
+    ///     inaccessible. Neither was reachable from here. <b>The binlog self-sweep, not this harness, is
+    ///     the only check that sees a real reference set</b>, which is why it is part of shipping a rule.
+    ///     <para>
+    ///         What the harness <em>can</em> express per fixture is the rest of the compilation:
+    ///         <see cref="FixtureCompilation" /> reads <c>// fixture-option:</c> directives for
+    ///         <c>LangVersion</c>, <c>DefineConstants</c> and <c>AllowUnsafe</c>, so a rule whose
+    ///         territory is below the current language version or inside an <c>#if</c> can be fixtured
+    ///         (#317), and <c>unsafe</c> compiles (#310).
+    ///     </para>
+    /// </remarks>
     public static CSharpCompilation Compile(
         string source,
         string path,
-        LanguageVersion version = LanguageVersion.Preview
+        LanguageVersion? version = null
     ) {
+        var options = FixtureCompilation.From(source);
         var tree = CSharpSyntaxTree.ParseText(
             SourceText.From(source),
-            new CSharpParseOptions(version).WithDocumentationMode(DocumentationMode.Parse),
+            new CSharpParseOptions(version ?? options.LanguageVersion)
+                .WithDocumentationMode(DocumentationMode.Parse)
+                .WithPreprocessorSymbols(options.PreprocessorSymbols),
             path
         );
 
@@ -85,6 +108,7 @@ public static class RuleFixtures {
             References,
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
+                allowUnsafe: options.AllowUnsafe,
                 nullableContextOptions: NullableContextOptions.Enable,
                 specificDiagnosticOptions: OptIn
             )
@@ -170,22 +194,8 @@ public static class RuleFixtures {
         readonly Dictionary<string, string> values = new(StringComparer.OrdinalIgnoreCase);
 
         public FixtureOptions(string source) {
-            foreach (var line in SourceText.From(source).Lines) {
-                var trimmed = line.ToString().Trim();
-                if (!trimmed.StartsWith("//", StringComparison.Ordinal)) {
-                    break;
-                }
-
-                const string prefix = "// analyzer-option:";
-                if (!trimmed.StartsWith(prefix, StringComparison.Ordinal)) {
-                    continue;
-                }
-
-                var assignment = trimmed[prefix.Length..];
-                var separator = assignment.IndexOf('=');
-                if (separator > 0) {
-                    values[assignment[..separator].Trim()] = assignment[(separator + 1)..].Trim();
-                }
+            foreach (var (key, value) in FixtureCompilation.Directives(source, "// analyzer-option:")) {
+                values[key] = value;
             }
         }
 
