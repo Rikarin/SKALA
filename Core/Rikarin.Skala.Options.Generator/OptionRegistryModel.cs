@@ -77,7 +77,13 @@ internal static class Naming {
     ///         before <c>skala_</c> or every xmldoc key strips to the wrong stem.
     ///     </para>
     /// </remarks>
-    public static readonly string[] Prefixes = ["skala_xmldoc_", "skala_", "csharp_", "dotnet_"];
+    /// <remarks>
+    ///     ⚠ A property over a collection expression, not a <c>static readonly string[]</c>.
+    ///     <c>readonly</c> on an array field promises an immutability the field does not have —
+    ///     every caller that can see it can still write through it (<c>SK6031</c>) — and this list's
+    ///     order is load-bearing.
+    /// </remarks>
+    public static IReadOnlyList<string> Prefixes { get; } = ["skala_xmldoc_", "skala_", "csharp_", "dotnet_"];
 
     public static string Pascal(string editorConfigName) {
         var builder = new StringBuilder(editorConfigName.Length);

@@ -192,7 +192,7 @@ public sealed partial class VersionSourcesTests {
 
         // ⚠ The quoted literal, not the bare word. Counting `--height` as text counted the sentence
         // in the comment that explains why the argument is there, and read 4 for 3 call sites.
-        var branches = target[..end].Split("\"--height\"", StringSplitOptions.None).Length - 1;
+        var branches = target[..end].Split("\"--height\"").Length - 1;
         Assert.Equal(3, branches);
     }
 

@@ -473,52 +473,55 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("    Unknown,");
         builder.AppendLine("}");
         builder.AppendLine();
+        // ⚠ A table, not a run of `AppendLine` calls. `SK7020` reported the run as a
+        // 105-token clone of itself: the token stream normalises every identifier and string
+        // literal to its kind, so twenty consecutive `AppendLine("    T Name,")` calls are one
+        // repeated shape to the detector however different the names are. Adding `Export`
+        // pushed it over the 100-token threshold. The table also puts each member beside its
+        // own documentation, which the interleaved form did not.
+        (string? Doc, string Member)[] optionInfoMembers = [
+            (null, "    OptionId Id,"),
+            (null, "    string Key,"),
+            (null, "    IReadOnlyList<string> Aliases,"),
+            ("    /// <summary>The spelling(s) the Rider export uses for this option. ⚠ Provenance only: never indexed for lookup, so a <c>resharper_*</c> key in a user's .editorconfig is an unknown key (SK9001). <c>CanonicalEditorConfig.Compose</c> translates the export through it, and <c>OracleRunner</c> speaks it to <c>jb cleanupcode</c>.</summary>",
+                "    IReadOnlyList<string> Export,"),
+            (null, "    string Language,"),
+            (null, "    OptionValueKind Kind,"),
+            (null, "    string? EnumName,"),
+            (null, "    string? Default,"),
+            (null, "    OptionDefaultSource DefaultSource,"),
+            (null, "    OptionTier Tier,"),
+            (null, "    string Construct,"),
+            (null, "    string Summary,"),
+            (null, "    string Since,"),
+            (null, "    string? Oracle,"),
+            (null, "    string? Docs,"),
+            (null, "    int? TemplateLine,"),
+            (null, "    bool SeveritySuffix,"),
+            ("    /// <summary>Why this option can never be observed, or null when it can. ⚠ An inert option is Tier D but is NOT a gap: no input distinguishes its values, because another rule wins by the documented ordering or because the writer cannot produce the shape it governs. docs/plan/05 records each one and the reason. Reporting these as unimplemented makes the coverage number noise; omitting them from the report entirely hides that the configuration set them.</summary>",
+                "    string? Inert,"),
+            (null, "    IReadOnlyList<OptionId> Expands,"),
+            ("    /// <summary>The smallest value an <c>Int</c> option accepts, inclusive, or null where no lower bound is knowable. ⚠ Read with the consumer's clamping: `max_line_length = 0` and `max_*_on_line = 0` are supported values, so those minimums are 0.</summary>",
+                "    int? Min,"),
+            ("    /// <summary>The largest value an <c>Int</c> option accepts, inclusive. Almost always null: an upper bound nobody can justify refuses values for no reason.</summary>",
+                "    int? Max,"),
+            ("    /// <summary>The option whose value the literal <c>tab</c> stands for, per the EditorConfig specification's <c>indent_size</c>. Resolved by <c>OptionResolver</c>, which can see the rest of the configuration; <c>TrySet</c> cannot.</summary>",
+                "    OptionId? TabMeans,"),
+            ("    /// <summary>Why a <c>String</c> option has no closed domain, and null for every other kind. ⚠ A string kind is a claim that every string is legal, and 27 options that are really enums carried it without one. The reason is what a reviewer can disagree with.</summary>",
+                "    string? FreeFormBecause,"),
+            ("""    /// <summary>Why this entry names no <c>Oracle</c> fixture, when <see cref="Inert"/> is not the answer. ⚠ The two are different claims and must not be merged: <c>Inert</c> says no input distinguishes the option's values, which is a fact about the world; this says the SWEEP cannot ask, which is usually a fact about Skala — the oracle separates the values and Skala is flat at every one of them, so a glob would file an <c>INERT</c> row the registry never declared, on a fixture Skala cannot reproduce. It also carries the measurement behind a Tier C refusal, where <c>Inert</c> is forbidden by construction.</summary>""",
+                "    string? UnsweptBecause);")
+        ];
+
         builder.AppendLine("public sealed record OptionInfo(");
-        builder.AppendLine("    OptionId Id,");
-        builder.AppendLine("    string Key,");
-        builder.AppendLine("    IReadOnlyList<string> Aliases,");
-        builder.AppendLine(
-            "    /// <summary>The spelling(s) the Rider export uses for this option. ⚠ Provenance only: never indexed for lookup, so a <c>resharper_*</c> key in a user's .editorconfig is an unknown key (SK9001). <c>CanonicalEditorConfig.Compose</c> translates the export through it, and <c>OracleRunner</c> speaks it to <c>jb cleanupcode</c>.</summary>"
-        );
-        builder.AppendLine("    IReadOnlyList<string> Export,");
-        builder.AppendLine("    string Language,");
-        builder.AppendLine("    OptionValueKind Kind,");
-        builder.AppendLine("    string? EnumName,");
-        builder.AppendLine("    string? Default,");
-        builder.AppendLine("    OptionDefaultSource DefaultSource,");
-        builder.AppendLine("    OptionTier Tier,");
-        builder.AppendLine("    string Construct,");
-        builder.AppendLine("    string Summary,");
-        builder.AppendLine("    string Since,");
-        builder.AppendLine("    string? Oracle,");
-        builder.AppendLine("    string? Docs,");
-        builder.AppendLine("    int? TemplateLine,");
-        builder.AppendLine("    bool SeveritySuffix,");
-        builder.AppendLine(
-            "    /// <summary>Why this option can never be observed, or null when it can. ⚠ An inert option is Tier D but is NOT a gap: no input distinguishes its values, because another rule wins by the documented ordering or because the writer cannot produce the shape it governs. docs/plan/05 records each one and the reason. Reporting these as unimplemented makes the coverage number noise; omitting them from the report entirely hides that the configuration set them.</summary>"
-        );
-        builder.AppendLine("    string? Inert,");
-        builder.AppendLine("    IReadOnlyList<OptionId> Expands,");
-        builder.AppendLine(
-            "    /// <summary>The smallest value an <c>Int</c> option accepts, inclusive, or null where no lower bound is knowable. ⚠ Read with the consumer's clamping: `max_line_length = 0` and `max_*_on_line = 0` are supported values, so those minimums are 0.</summary>"
-        );
-        builder.AppendLine("    int? Min,");
-        builder.AppendLine(
-            "    /// <summary>The largest value an <c>Int</c> option accepts, inclusive. Almost always null: an upper bound nobody can justify refuses values for no reason.</summary>"
-        );
-        builder.AppendLine("    int? Max,");
-        builder.AppendLine(
-            "    /// <summary>The option whose value the literal <c>tab</c> stands for, per the EditorConfig specification's <c>indent_size</c>. Resolved by <c>OptionResolver</c>, which can see the rest of the configuration; <c>TrySet</c> cannot.</summary>"
-        );
-        builder.AppendLine("    OptionId? TabMeans,");
-        builder.AppendLine(
-            "    /// <summary>Why a <c>String</c> option has no closed domain, and null for every other kind. ⚠ A string kind is a claim that every string is legal, and 27 options that are really enums carried it without one. The reason is what a reviewer can disagree with.</summary>"
-        );
-        builder.AppendLine("    string? FreeFormBecause,");
-        builder.AppendLine(
-            """    /// <summary>Why this entry names no <c>Oracle</c> fixture, when <see cref="Inert"/> is not the answer. ⚠ The two are different claims and must not be merged: <c>Inert</c> says no input distinguishes the option's values, which is a fact about the world; this says the SWEEP cannot ask, which is usually a fact about Skala — the oracle separates the values and Skala is flat at every one of them, so a glob would file an <c>INERT</c> row the registry never declared, on a fixture Skala cannot reproduce. It also carries the measurement behind a Tier C refusal, where <c>Inert</c> is forbidden by construction.</summary>"""
-        );
-        builder.AppendLine("    string? UnsweptBecause);");
+        foreach (var (doc, member) in optionInfoMembers) {
+            if (doc is not null) {
+                builder.AppendLine(doc);
+            }
+
+            builder.AppendLine(member);
+        }
+
         builder.AppendLine();
         builder.AppendLine("public static class OptionRegistry {");
         builder.AppendLine(
