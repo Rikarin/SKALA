@@ -368,25 +368,23 @@ jobs:
             -m "Skala ${{ needs.measure.outputs.version }} — ${{ needs.measure.outputs.bump }} against ${{ needs.measure.outputs.baseline }}"
           git push origin "${{ needs.measure.outputs.tag }}"
 
-      # ⚠ **Checked before the exchange, because the failure it prevents is unreadable.** `user` is
-      # the nuget.org *profile name*, not an email address, and `NuGet/login` given an empty one
-      # fails inside the action with a token-exchange error that says nothing about a missing
-      # secret. This is the same shape as the smoke test's "restore on its own line": the assertion
-      # that tells a misconfiguration apart from a malfunction.
+      # `NuGet/login` needs the nuget.org *profile name* — not an email address. It defaults to the
+      # repository owner, which is the right answer whenever the GitHub owner and the nuget.org
+      # profile share a name; set `secrets.NUGET_USER` to override.
       #
       # ⚠ Through `env:`, not `${{ }}` inside the script. A `run:` block with an expression
       # interpolated into it is assembled as text before bash sees it, so the value becomes shell
-      # source; an environment variable is data. It costs nothing to be right about here and it is
-      # the habit that matters, since this job holds `contents: write` and `id-token: write`.
-      - name: The publishing identity is configured
+      # source; an environment variable is data. This job holds `contents: write` and
+      # `id-token: write`, so it is worth being right about.
+      - name: Resolve the publishing identity
+        id: identity
         env:
           NUGET_USER: ${{ secrets.NUGET_USER }}
+          OWNER: ${{ github.repository_owner }}
         run: |
-          if [ -z "$NUGET_USER" ]; then
-            echo "::error::secrets.NUGET_USER is not set. Trusted publishing needs the nuget.org"
-            echo "::error::profile name (not an email address) to exchange the OIDC token for a key."
-            exit 1
-          fi
+          user="${NUGET_USER:-$OWNER}"
+          echo "user=$user" >> "$GITHUB_OUTPUT"
+          echo "Publishing as nuget.org profile '$user'."
 
       # ⚠ **No API key is stored anywhere, and that is the whole point.** This asks GitHub for an
       # OIDC token describing this repository, this workflow file and this environment; nuget.org
@@ -412,7 +410,7 @@ jobs:
         id: nuget-login
         uses: NuGet/login@v1
         with:
-          user: ${{ secrets.NUGET_USER }}
+          user: ${{ steps.identity.outputs.user }}
 
       - name: Push the packages
         env:
