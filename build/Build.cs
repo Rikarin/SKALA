@@ -743,6 +743,17 @@ class Build : NukeBuild {
                             + "report as unmeasured. That is correct for the first release and wrong for any "
                             + "other."
                         );
+
+                        // ⚠ **The height still has to be passed, and this branch was the only one that
+                        // did not pass it.** `ReleasePlan` stamps the pre-release counter under
+                        // `DryRun && Height > 0`; with no `--height` the counter never moves and the
+                        // version becomes a pure function of `Directory.Build.props`. Measured: every
+                        // `master` build produced `2.0.0-alpha.2` — `declared` 2.0.0-alpha.1, `Next`,
+                        // stop — regardless of the commit, so the pipeline published `alpha.2` once and
+                        // then said "already exists" for ever after. The number is supposed to be
+                        // reconstructible from the repository alone; with no baseline tag the count
+                        // from the root is that number.
+                        arguments.AddRange(["--height", Height ?? CommitsSince(string.Empty)]);
                     } else {
                         var baseline = Materialise(reference);
                         arguments.AddRange(
@@ -949,8 +960,14 @@ class Build : NukeBuild {
     ///     tag to count from is the case doc 18 § "The number" resolves by not tagging `master` at all.
     /// </remarks>
     static string CommitsSince(string reference) {
+        // ⚠ An empty reference means "count from the root", not "count from nothing".
+        // `rev-list --count ..HEAD` is not a range git accepts, and the caller that needs this is the
+        // no-baseline branch — a repository with no `v*` tag at all, where the whole history is the
+        // distance travelled.
+        var range = string.IsNullOrEmpty(reference) ? "HEAD" : reference + "..HEAD";
+
         try {
-            return Output(Nuke.Common.Tools.Git.GitTasks.Git($"rev-list --count {reference}..HEAD"));
+            return Output(Nuke.Common.Tools.Git.GitTasks.Git($"rev-list --count {range}"));
         } catch (System.Exception exception) {
             Serilog.Log.Warning(
                 "No commit count from '{Reference}' ({Message}); the pre-release counter is 0.",

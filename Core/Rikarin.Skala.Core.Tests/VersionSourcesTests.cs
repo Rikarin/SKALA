@@ -160,6 +160,43 @@ public sealed partial class VersionSourcesTests {
     }
 
     /// <summary>
+    ///     Every branch of <c>ReleasePlan</c>'s baseline selection passes <c>--height</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The no-baseline branch did not, and the version stopped moving.</b>
+    ///     <c>ReleasePlan</c> stamps the pre-release counter under <c>DryRun &amp;&amp; Height &gt; 0</c>,
+    ///     so with no <c>--height</c> the counter stays 0 and the version is whatever
+    ///     <c>Directory.Build.props</c> declares, advanced once. This repository has no <c>v*</c> tag, so
+    ///     that branch is the live one: every <c>master</c> build measured <b>2.0.0-alpha.2</b>
+    ///     regardless of the commit, the pipeline published it once, and every run after that pushed the
+    ///     same bytes and reported "already exists". The symptom looks like a publishing problem and is
+    ///     a versioning one.
+    ///     <para>
+    ///         Asserted over the source text because <c>build/_build.csproj</c> is not in
+    ///         <c>Skala.slnx</c> and nothing here can reference it —
+    ///         <see cref="TheCanonicalPayloadVersion_IsNotCoupledToTheToolVersion" /> reads it the same
+    ///         way. The count is of <c>--height</c> against the three branches that build the argument
+    ///         list, so deleting it from any one of them fails.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void EveryBaselineBranch_PassesTheHeight() {
+        var build = File.ReadAllText(Path.Combine(Root, "build", "Build.cs"));
+
+        var arguments = build.IndexOf("--baseline-tool", StringComparison.Ordinal);
+        Assert.True(arguments > 0, "build/Build.cs no longer builds the release tool's argument list.");
+
+        var target = build[arguments..];
+        var end = target.IndexOf("// ⚠ Through the project rather than", StringComparison.Ordinal);
+        Assert.True(end > 0, "build/Build.cs no longer ends the baseline selection where this test expects.");
+
+        // ⚠ The quoted literal, not the bare word. Counting `--height` as text counted the sentence
+        // in the comment that explains why the argument is there, and read 4 for 3 call sites.
+        var branches = target[..end].Split("\"--height\"", StringSplitOptions.None).Length - 1;
+        Assert.Equal(3, branches);
+    }
+
+    /// <summary>
     ///     ⚠ The <c>CHANGELOG.md</c> heading a release writes is the one a reader looks the version up
     ///     in, so the top released section may not be ahead of what the tree declares.
     /// </summary>
