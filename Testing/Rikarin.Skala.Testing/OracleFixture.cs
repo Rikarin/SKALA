@@ -128,7 +128,7 @@ public static class OracleFixture {
         Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(editorConfigPath)))[..16];
 
     /// <summary>The digest of the base configuration as it stands on disk right now.</summary>
-    public static string ConfigDigestInForce() => HashConfig(Corpus.BaseEditorConfigPath);
+    public static string ConfigDigestInForce() => HashConfig(Corpus.OracleEditorConfigPath);
 
     /// <summary>
     ///     ⚠ Rewrites the recorded configuration digest of every fixture that carries <paramref name="from" />,
@@ -203,7 +203,7 @@ public static class OracleFixture {
     public static int Restamp(string from, string to) {
         if (!string.Equals(to, ConfigDigestInForce(), StringComparison.Ordinal)) {
             throw new ArgumentException(
-                $"refusing to stamp sha256:{to}, which is not the digest of {Corpus.BaseEditorConfigPath} "
+                $"refusing to stamp sha256:{to}, which is not the digest of {Corpus.OracleEditorConfigPath} "
                 + $"(sha256:{ConfigDigestInForce()}). A header may only ever record a configuration that exists.",
                 nameof(to)
             );

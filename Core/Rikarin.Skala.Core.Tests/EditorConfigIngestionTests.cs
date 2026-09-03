@@ -30,16 +30,62 @@ public sealed class EditorConfigIngestionTests {
         Assert.False(document.IsRoot);
     }
 
+    /// <summary>
+    ///     ADR-015 — Skala formats Skala, and the configuration it formats itself with is the export.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>This used to assert byte equality: <c>own == "root = true\n\n" + template</c>.</b> That
+    ///     spelling was doing two jobs at once, and only one of them was this one. The other — "the
+    ///     bytes <c>jb cleanupcode</c> is handed are the export" — was load-bearing for the whole
+    ///     conformance corpus and was being asserted here only by accident, because the oracle harness
+    ///     happened to copy this same file. It now has its own home and its own test:
+    ///     <c>Rikarin.Skala.Testing.OracleEditorConfig</c> and
+    ///     <c>ProvenanceTests.TheOracleIsConfiguredByTheExport</c>.
+    ///     <para>
+    ///         What is left here is the claim this test was written to make, restated over resolved
+    ///         options rather than over bytes: whatever Skala reads when it formats its own source
+    ///         configures Skala exactly as the export does. That is the defect the byte comparison
+    ///         actually caught — a hand-edit to <c>.editorconfig</c>, or a re-export that was not
+    ///         propagated, leaving Skala formatting itself under a configuration nobody exported — and
+    ///         stating it over <see cref="OptionId" /> and value rather than over text keeps it true
+    ///         when the two files stop agreeing on how a key is <em>spelled</em>.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <c>root = true</c> is asserted separately and is not cosmetic: it is the premise of
+    ///         <see cref="ChainWalk_StopsAtRoot" />, and without it Skala's own chain walk climbs out of
+    ///         the repository into whatever a checkout happens to sit under.
+    ///     </para>
+    /// </remarks>
     [Fact]
-    public void RepositoryEditorConfig_IsTheTemplateWithRootAdded() {
-        // ADR-015 — Skala formats Skala, and the configuration it formats itself with is the export.
-        var template = File.ReadAllText(RepositoryPaths.Template);
-        var own = File.ReadAllText(RepositoryPaths.EditorConfig);
-
-        Assert.StartsWith("root = true", own, StringComparison.Ordinal);
-        Assert.EndsWith(template, own, StringComparison.Ordinal);
+    public void RepositoryEditorConfig_DeclaresRootAndConfiguresSkalaExactlyAsTheExportDoes() {
+        Assert.StartsWith("root = true", File.ReadAllText(RepositoryPaths.EditorConfig), StringComparison.Ordinal);
         Assert.True(EditorConfigDocument.Load(RepositoryPaths.EditorConfig).IsRoot);
+
+        var own = ConfiguredOptions(EditorConfigChain.For(RepositoryPaths.SampleSourceFile));
+        var export = ConfiguredOptions(
+            EditorConfigChain.Of(
+                RepositoryPaths.SampleSourceFile,
+                EditorConfigDocument.Load(RepositoryPaths.Template)
+            )
+        );
+
+        // ⚠ The population canary. Two empty sets are equal, and an export that resolved to nothing —
+        // a moved file, a parse that gave up — would otherwise pass this loudly.
+        Assert.NotEmpty(export);
+        Assert.Equal(export, own);
     }
+
+    /// <summary>Every option a chain configures, as <c>id = value</c>, ordered.</summary>
+    /// <remarks>
+    ///     ⚠ By <see cref="OptionId" /> rather than by the key that set it. The question is what the
+    ///     configuration <em>says</em>, and two files can say the same thing through two spellings.
+    /// </remarks>
+    static string[] ConfiguredOptions(EditorConfigChain chain) => [
+        .. OptionResolver.Resolve(chain)
+            .Configured
+                .Select(static option => option.Id + " = " + option.Value)
+                .OrderBy(static entry => entry, StringComparer.Ordinal)
+    ];
 
     [Theory]
     [InlineData("Foo.cs", true)]

@@ -79,7 +79,7 @@ public static class FrozenFreeze {
                 "the committed sweep was measured against a configuration that is no longer in force, so "
                 + "freezing its outputs would freeze somebody else's configuration.\n"
                 + "  "
-                + Corpus.BaseEditorConfigPath
+                + Corpus.OracleEditorConfigPath
                 + "\n  on disk now:       sha256:"
                 + inForce
                 + "\n  the sweep records: sha256:"
@@ -305,7 +305,7 @@ public static class FrozenFreeze {
         }
 
         var runner = new OracleRunner();
-        var baseConfig = File.ReadAllText(Corpus.BaseEditorConfigPath);
+        var baseConfig = File.ReadAllText(OracleEditorConfig.Reading(Corpus.OracleEditorConfigPath));
         var refused = new List<string>();
 
         for (var i = 0; i < outstanding.Length; i++) {

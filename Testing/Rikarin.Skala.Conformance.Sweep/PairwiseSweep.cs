@@ -70,7 +70,7 @@ public sealed class PairwiseSweep {
         IReadOnlyDictionary<(string Key, string Value), bool>? measuredAlone = null
     ) {
         this.runner = runner;
-        baseConfig = File.ReadAllText(baseConfigPath);
+        baseConfig = File.ReadAllText(OracleEditorConfig.Reading(baseConfigPath));
         this.log = log;
         alone = measuredAlone is null
             ? []

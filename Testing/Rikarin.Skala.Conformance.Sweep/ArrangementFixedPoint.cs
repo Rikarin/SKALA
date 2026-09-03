@@ -38,7 +38,7 @@ public static class ArrangementFixedPoint {
         }
 
         var runner = new OracleRunner();
-        var config = File.ReadAllText(baseConfigPath);
+        var config = File.ReadAllText(OracleEditorConfig.Reading(baseConfigPath));
         var files = Corpus.ArrangementConstructs();
         log.WriteLine(
             $"arrangement fixed point: {Count(files.Count)} files under {Corpus.Constructs}/{Corpus.ArrangementPrefix}"

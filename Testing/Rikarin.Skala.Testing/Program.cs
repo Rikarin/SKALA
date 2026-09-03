@@ -252,7 +252,7 @@ switch (args[0]) {
 
         var sweep = MarginSweep.Run(
             new OracleRunner(),
-            Path.Combine(Corpus.RepositoryRoot, ".editorconfig"),
+            Corpus.OracleEditorConfigPath,
             Console.Error
         );
 
@@ -315,7 +315,7 @@ switch (args[0]) {
 
         var artefact = PreferenceSweep.Run(
             new OracleRunner(),
-            Corpus.BaseEditorConfigPath,
+            Corpus.OracleEditorConfigPath,
             [.. Enumerable.Range(totalRange.From, totalRange.To - totalRange.From + 1)],
             innerRange.From,
             innerRange.To,
@@ -489,7 +489,7 @@ static int Ask(string directory, string[] overrides) {
     }
 
     var pairs = new List<KeyValuePair<string, string>>();
-    var config = Path.Combine(Corpus.RepositoryRoot, ".editorconfig");
+    var config = Corpus.OracleEditorConfigPath;
     var profile = OracleProfile.FormatOnly;
     foreach (var entry in overrides) {
         if (entry.StartsWith("--config=", StringComparison.Ordinal)) {
@@ -862,7 +862,7 @@ static int UnformatCommand(string[] arguments) {
 
             var total = UnformatDifferential.Regenerate(
                 new OracleRunner(),
-                Path.Combine(Corpus.RepositoryRoot, ".editorconfig"),
+                Corpus.OracleEditorConfigPath,
                 Console.Out
             );
 
@@ -911,7 +911,7 @@ static int Regenerate(string[] sets, string? only) {
 
     var runner = new OracleRunner();
     var version = runner.Version;
-    var editorConfig = Path.Combine(Corpus.RepositoryRoot, ".editorconfig");
+    var editorConfig = Corpus.OracleEditorConfigPath;
     var hash = OracleFixture.HashConfig(editorConfig);
     var header = new OracleHeader(version, hash, OracleRunner.Profile, OracleFixture.Today);
     Console.WriteLine($"oracle: resharper={version} config=sha256:{hash} profile={OracleRunner.Profile}");
@@ -987,7 +987,7 @@ static int RegenerateCleanup(
     // files with the same type name in the same directory collide.
     var scratch = Directory.CreateTempSubdirectory("skala-cleanup-");
     try {
-        File.Copy(editorConfig, Path.Combine(scratch.FullName, ".editorconfig"));
+        File.Copy(OracleEditorConfig.Reading(editorConfig), Path.Combine(scratch.FullName, ".editorconfig"));
         File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.csproj"), OracleRunner.ProjectFile);
         File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.sln"), OracleRunner.SolutionFile);
 
@@ -1248,7 +1248,7 @@ static int TreeFidelity(string directory, int count) {
     var runner = new OracleRunner();
     var config = Path.Combine(directory, ".editorconfig");
     if (!File.Exists(config)) {
-        config = Path.Combine(Corpus.RepositoryRoot, ".editorconfig");
+        config = Corpus.OracleEditorConfigPath;
     }
 
     var against = new List<(string File, string Expected, string Actual)>(files.Length);
