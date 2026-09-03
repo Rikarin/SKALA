@@ -25,6 +25,7 @@ namespace Rikarin.Skala.Analysis.Tests;
 ///         findings, and that a project which cannot be loaded produces a non-zero exit.
 ///     </para>
 /// </remarks>
+[Collection(SerialWorkspace.Name)]
 public sealed class WorkspaceLoadingTests {
     const string Unformatted = """
                                using System;

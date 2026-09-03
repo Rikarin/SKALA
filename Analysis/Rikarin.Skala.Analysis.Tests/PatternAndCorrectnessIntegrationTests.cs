@@ -3,6 +3,7 @@ using Rikarin.Skala.Reporting;
 
 namespace Rikarin.Skala.Analysis.Tests;
 
+[Collection(SerialWorkspace.Name)]
 public sealed class PatternAndCorrectnessIntegrationTests {
     [Fact]
     public void Workspace_CheckVerifySafeFixAndCacheHonorAllFiveRules() {

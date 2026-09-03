@@ -4,6 +4,7 @@ using System.Security;
 
 namespace Rikarin.Skala.Analysis.Tests;
 
+[Collection(SerialWorkspace.Name)]
 public sealed class PerformanceAndConcurrencyIntegrationTests {
     [Fact]
     public void Workspace_CheckVerifyCacheAndOptInPolicyHonorTheFiveRules() {
