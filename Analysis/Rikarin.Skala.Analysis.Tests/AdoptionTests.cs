@@ -1,6 +1,6 @@
 using Rikarin.Skala.Analysis.Loading;
-using Rikarin.Skala.Options;
 using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Options;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
 
