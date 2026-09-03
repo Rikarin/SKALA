@@ -1,3 +1,4 @@
+using Rikarin.Skala.Core.Configuration;
 using System.Diagnostics;
 using System.Reflection;
 using SystemAssembly = System.Reflection.Assembly;
@@ -28,6 +29,54 @@ public static class CliRunner {
     public static string Assembly { get; } = Metadata("SkalaCliAssembly").Replace('/', Path.DirectorySeparatorChar);
 
     public static string Template { get; } = Path.Combine(RepositoryRoot, "editor_config_template");
+
+    /// <summary>
+    ///     The export's configuration, spelled the way Skala reads it, materialised on disk.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The CLI cannot be pointed at <see cref="Template" /> any more, and that is the
+    ///     change, not a defect.</b> Skala's keys are <c>skala_*</c>; a Rider export is spelled in
+    ///     ReSharper's namespace and every line of it is an unknown key. <c>config explain</c> on it
+    ///     prints a table of defaults, <c>config check</c> reports ~700 SK9001s, and neither is
+    ///     wrong — pointing Skala at an export no longer configures it.
+    ///     <para>
+    ///         The tests that used it were not asking about the file, though; they were asking about
+    ///         the *configuration* it carries, which is still a real question and is what
+    ///         <c>Rikarin.Skala.Canonical</c> ships. So they read this instead: the same configuration,
+    ///         translated by the same production code path the canonical payload is built with.
+    ///     </para>
+    /// </remarks>
+    public static string TranslatedTemplate { get; } = MaterialiseTranslatedTemplate();
+
+    /// <summary>
+    ///     A source path beside <see cref="TranslatedTemplate" />, for resolving against it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A section glob is matched relative to the directory its <c>.editorconfig</c> sits in, so
+    ///     a probe under the repository root resolves *nothing* against a configuration in the temp
+    ///     directory — every section misses and the answer is a clean, empty, entirely wrong "sets no
+    ///     options".
+    /// </remarks>
+    public static string TranslatedTemplateProbe { get; } =
+        Path.Combine(Path.GetDirectoryName(TranslatedTemplate)!, "Probe.cs");
+
+    static string MaterialiseTranslatedTemplate() {
+        // ⚠ The translation and nothing else — no `root = true`. This file stands in for the export
+        // in every test that asks what the export configures, and several of those are about what is
+        // *missing* from it: `config fix` offers to add the root declaration, `config explain` warns
+        // that the chain walked past the filesystem root. Prepending it here would have made all of
+        // them pass by removing the condition they test.
+        var text = CanonicalEditorConfig.Translate(File.ReadAllText(Template))
+            .Replace("\r\n", "\n", StringComparison.Ordinal);
+        var directory = Path.Combine(Path.GetTempPath(), "skala-translated-export");
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, ".editorconfig");
+        if (!File.Exists(path) || !string.Equals(File.ReadAllText(path), text, StringComparison.Ordinal)) {
+            File.WriteAllText(path, text);
+        }
+
+        return path;
+    }
 
     public static CliRun Run(params string[] arguments) => RunWith(null, arguments);
 

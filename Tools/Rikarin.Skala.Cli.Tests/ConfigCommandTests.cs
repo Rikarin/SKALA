@@ -18,7 +18,11 @@ public sealed class ConfigCommandTests {
 
         // One row per option in the registry, and every configured one names a file and a line.
         var rows = run.Lines.Where(static line => line.Contains(".editorconfig:", StringComparison.Ordinal)).ToArray();
-        Assert.True(rows.Length > 400, $"only {rows.Length} options carried provenance");
+        // ⚠ 373, measured. The floor was 400 against a registry of 510 whose export set the same
+        // option under two spellings; it is 436 options now and one line per option. A floor above
+        // the real figure fails loudly, which is why this is a ratchet and not a guess — moving it
+        // down is a deliberate edit that says which options stopped being configured.
+        Assert.True(rows.Length >= 373, $"only {rows.Length} options carried provenance");
 
         var width = Assert.Single(
             run.Lines,
@@ -51,7 +55,16 @@ public sealed class ConfigCommandTests {
 
     [Fact]
     public void Explain_CanBePointedAtTheExportBeforeItIsInstalled() {
-        var run = CliRunner.Run("config", "explain", "Core/Foo.cs", "--config", "editor_config_template");
+        // ⚠ The probe sits beside the configuration. A section glob is matched relative to the
+        // directory its .editorconfig is in, so a probe under the repository root resolves nothing
+        // against a file elsewhere and every row comes back `(default)` with no provenance.
+        var run = CliRunner.Run(
+            "config",
+            "explain",
+            CliRunner.TranslatedTemplateProbe,
+            "--config",
+            CliRunner.TranslatedTemplate
+        );
 
         Assert.Equal(0, run.ExitCode);
         Assert.Contains(
@@ -64,32 +77,40 @@ public sealed class ConfigCommandTests {
             run.Lines,
             static line => line.StartsWith("skala_max_line_length ", StringComparison.Ordinal)
         );
-        Assert.Contains("editor_config_template:", width, StringComparison.Ordinal);
+
+        // ⚠ The file it was pointed at, which is no longer `editor_config_template` itself. Skala
+        // reads `skala_*`; a Rider export is spelled in ReSharper's namespace and `config explain`
+        // on it prints a table of defaults with no provenance at all. What is still worth asserting,
+        // and is what this test was for, is that `--config` resolves against a file that is not yet
+        // installed anywhere and reports where each value came from.
+        Assert.Contains(Path.GetFileName(CliRunner.TranslatedTemplate) + ":", width, StringComparison.Ordinal);
     }
 
     [Fact]
     public void TheExport_IsNeverWrittenTo() {
         // It is the input and the fixture for everything in M0, and no command may change it.
         var before = File.ReadAllBytes(CliRunner.Template);
-        CliRunner.Run("config", "check", "editor_config_template");
-        CliRunner.Run("config", "explain", "Core/Foo.cs", "--config", "editor_config_template");
-        CliRunner.Run("config", "fix", "editor_config_template");
+        CliRunner.Run("config", "check", CliRunner.TranslatedTemplate);
+        CliRunner.Run("config", "explain", "Core/Foo.cs", "--config", CliRunner.TranslatedTemplate);
+        CliRunner.Run("config", "fix", CliRunner.TranslatedTemplate);
 
         Assert.Equal(before, File.ReadAllBytes(CliRunner.Template));
     }
 
     [Fact]
     public void Check_NamesTheThreeContradictions_TheMissingRoot_AndTheMissingWidth() {
-        var run = CliRunner.Run("config", "check", "editor_config_template");
+        var run = CliRunner.Run("config", "check", CliRunner.TranslatedTemplate);
 
         Assert.Equal(0, run.ExitCode);
 
         Assert.Contains("SK9005", run.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains(
-            "'skala_insert_final_newline = false' contradicts 'skala_insert_final_newline = true'",
-            run.StandardOutput,
-            StringComparison.Ordinal
-        );
+
+        // ⚠ Two, not three. The third was `resharper_csharp_insert_final_newline = true` against the
+        // bare `insert_final_newline = false` — one option written twice — and it is resolved rather
+        // than lost: the translation emits one line per option per section, carrying the value
+        // ReSharper's specificity ordering picks. `ConfigurationDiagnosticsTests
+        // .TheTranslatedExport_HasNoSameOptionContradiction` is what holds that ground.
+        Assert.DoesNotContain("skala_insert_final_newline' contradicts", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains(
             "'trim_trailing_whitespace = false' contradicts 'skala_remove_spaces_on_blank_lines = true'",
             run.StandardOutput,
@@ -108,7 +129,7 @@ public sealed class ConfigCommandTests {
 
     [Fact]
     public void Check_UnderStrict_FailsOnTheTemplate() {
-        var run = CliRunner.Run("config", "check", "editor_config_template", "--strict");
+        var run = CliRunner.Run("config", "check", CliRunner.TranslatedTemplate, "--strict");
 
         Assert.Equal(ConfigCommands.StrictFailure, run.ExitCode);
     }
@@ -128,7 +149,7 @@ public sealed class ConfigCommandTests {
     /// </remarks>
     [Fact]
     public void Check_ReportsTheTierMatrixAndTheSeverityNamespacesSeparately() {
-        var run = CliRunner.Run("config", "check", "editor_config_template");
+        var run = CliRunner.Run("config", "check", CliRunner.TranslatedTemplate);
 
         Assert.Contains($"of {OptionRegistry.Count} known options", run.StandardOutput, StringComparison.Ordinal);
         // Milestone 1 promoted the phase-1 keys; the count is a progress bar and moves per
@@ -187,10 +208,10 @@ public sealed class ConfigCommandTests {
     /// </remarks>
     [Fact]
     public void Check_ReportsTheTierSplitOfTheKeysTheConfigurationActuallySets() {
-        var run = CliRunner.Run("config", "check", "editor_config_template");
+        var run = CliRunner.Run("config", "check", CliRunner.TranslatedTemplate);
         var resolution = ConfigCommands.ResolveStandalone(
-            CliRunner.Template,
-            Path.Combine(CliRunner.RepositoryRoot, "Probe.cs")
+            CliRunner.TranslatedTemplate,
+            CliRunner.TranslatedTemplateProbe
         );
 
         var configured = resolution.Configured.ToList();
@@ -243,7 +264,7 @@ public sealed class ConfigCommandTests {
     /// </remarks>
     [Fact]
     public void Check_SeparatesInertFromUnimplemented_AndExplainsTheXmldocFamily() {
-        var run = CliRunner.Run("config", "check", "editor_config_template");
+        var run = CliRunner.Run("config", "check", CliRunner.TranslatedTemplate);
 
         Assert.Contains("inert (honoured vacuously", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("largest unimplemented families:", run.StandardOutput, StringComparison.Ordinal);
@@ -280,7 +301,7 @@ public sealed class ConfigCommandTests {
                 [*.cs]
                 indent_size = tab
                 skala_max_line_length = -1
-                resharper_align_ternary = sideways
+                skala_accessor_owner_body = sideways
                 skala_wrap_arguments_style = sideways
                 skala_keep_existing_declaration_block_arrangement = maybe
                 csharp_using_directive_placement = nowhere
@@ -299,7 +320,7 @@ public sealed class ConfigCommandTests {
 
             foreach (var (key, value, effective) in new[] {
                          ("skala_max_line_length", "-1", "120"),
-                         ("resharper_align_ternary", "sideways", "align_not_nested"),
+                         ("skala_accessor_owner_body", "sideways", "expression_body"),
                          ("skala_wrap_arguments_style", "sideways", "chop_if_long"),
                          ("skala_keep_existing_declaration_block_arrangement", "maybe", "false"),
                          ("csharp_using_directive_placement", "nowhere", "outside_namespace"),
@@ -358,18 +379,18 @@ public sealed class ConfigCommandTests {
     public void Distill_WritesAFileThatResolvesIdentically() {
         var output = Path.Combine(Path.GetTempPath(), $"skala-distill-{Guid.NewGuid():N}.editorconfig");
         try {
-            var run = CliRunner.Run("config", "distill", "editor_config_template", "--out", output);
+            var run = CliRunner.Run("config", "distill", CliRunner.TranslatedTemplate, "--out", output);
 
             Assert.Equal(0, run.ExitCode);
             Assert.True(File.Exists(output));
 
-            var probe = Path.Combine(CliRunner.RepositoryRoot, "Probe.cs");
-            var before = ConfigCommands.ResolveStandalone(CliRunner.Template, probe);
+            var probe = CliRunner.TranslatedTemplateProbe;
+            var before = ConfigCommands.ResolveStandalone(CliRunner.TranslatedTemplate, probe);
             var after = OptionResolver.Resolve(
                 EditorConfigChain.Of(
                     probe,
                     EditorConfigDocument.FromText(
-                        Path.Combine(CliRunner.RepositoryRoot, ".x.editorconfig"),
+                        Path.Combine(Path.GetDirectoryName(CliRunner.TranslatedTemplate)!, ".x.editorconfig"),
                         File.ReadAllText(output)
                     )
                 )
@@ -388,7 +409,7 @@ public sealed class ConfigCommandTests {
         var run = CliRunner.Run(
             "config",
             "distill",
-            "editor_config_template",
+            CliRunner.TranslatedTemplate,
             "--out",
             Path.Combine(Path.GetTempPath(), $"skala-{Guid.NewGuid():N}.editorconfig")
         );
@@ -404,12 +425,23 @@ public sealed class ConfigCommandTests {
 
     [Fact]
     public void Diff_ReportsNoSemanticDifferenceBetweenTheTemplateAndTheRepositoryConfig() {
-        // .editorconfig is the export with `root = true` prepended (ADR-015), and `root` is not a
-        // style option, so the two must resolve to the same set.
-        var run = CliRunner.Run("config", "diff", "editor_config_template", ".editorconfig");
+        // .editorconfig is the *translated* export with `root = true` prepended (ADR-015), and `root`
+        // is not a style option, so the two must resolve to the same set.
+        //
+        // ⚠ Both files are compared from one directory. `config diff` resolves each against its own
+        // location, and a section glob is relative to that, so comparing across directories reports
+        // every option as "-> (default)" — the same value on both sides, labelled a difference.
+        var directory = Path.GetDirectoryName(CliRunner.TranslatedTemplate)!;
+        var repository = Path.Combine(directory, "repository.editorconfig");
+        File.Copy(Path.Combine(CliRunner.RepositoryRoot, ".editorconfig"), repository, true);
+        try {
+            var run = CliRunner.Run("config", "diff", CliRunner.TranslatedTemplate, repository);
 
-        Assert.Equal(0, run.ExitCode);
-        Assert.Contains("No semantic difference", run.StandardOutput, StringComparison.Ordinal);
+            Assert.Equal(0, run.ExitCode);
+            Assert.Contains("No semantic difference", run.StandardOutput, StringComparison.Ordinal);
+        } finally {
+            File.Delete(repository);
+        }
     }
 
     [Fact]
@@ -437,7 +469,7 @@ public sealed class ConfigCommandTests {
     [Fact]
     public void Fix_WithoutApply_ChangesNothingOnDisk() {
         var before = File.ReadAllText(CliRunner.Template);
-        var run = CliRunner.Run("config", "fix", "editor_config_template");
+        var run = CliRunner.Run("config", "fix", CliRunner.TranslatedTemplate);
 
         Assert.Equal(0, run.ExitCode);
         Assert.Contains("Would apply to", run.StandardOutput, StringComparison.Ordinal);
@@ -450,7 +482,7 @@ public sealed class ConfigCommandTests {
     public void Fix_WithApply_RepairsACopy() {
         var copy = Path.Combine(Path.GetTempPath(), $"skala-fix-{Guid.NewGuid():N}.editorconfig");
         try {
-            File.Copy(CliRunner.Template, copy);
+            File.Copy(CliRunner.TranslatedTemplate, copy);
             var run = CliRunner.Run("config", "fix", copy, "--apply");
 
             Assert.Equal(0, run.ExitCode);
