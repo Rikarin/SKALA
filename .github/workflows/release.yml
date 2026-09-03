@@ -12,9 +12,10 @@
 # ⚠ **This workflow publishes nothing, and the last step is where that is enforced.** It computes
 # the version, creates the tag *in the job's checkout*, packs every artefact, writes the release
 # notes from the measurements, uploads everything, and prints exactly what a publish would push.
-# `publish` is a separate job gated on `vars.SKALA_PUBLISH == 'armed'`, which is a repository
-# variable a person sets. Pushing to NuGet is irreversible and a formatting change downstream is a
+# `publish` is a separate job, gated on a `workflow_dispatch` with `release: true` — an act a person
+# performs on purpose. Pushing to NuGet is irreversible and a formatting change downstream is a
 # repository-wide commit; a workflow that could do it by accident has made "release" an accident.
+# ⚠ What that means concretely: no `push:` trigger may ever reach the `publish` job.
 #
 # ⚠ **When it does publish, it publishes keylessly.** No NuGet API key is stored in this repository
 # and none should be added: the `publish` job exchanges a GitHub OIDC token for a one-hour key
@@ -297,25 +298,31 @@ jobs:
               echo "- \`$(basename "$package")\` — $(wc -c < "$package") bytes"
             done
             echo
-            echo "It is armed by setting the repository variable \`SKALA_PUBLISH\` to \`armed\`."
-            echo "docs/plan/18 § \"Armed, not firing\"."
+            echo "A publish happens on a \`workflow_dispatch\` of this workflow with \`release: true\`."
+            echo "docs/plan/18 § \"What publishes, and what cannot\"."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # ── The switch, and it is off ─────────────────────────────────────────────────────────────────
+  # ── The publish ───────────────────────────────────────────────────────────────────────────────
   #
-  # ⚠ This job exists, is complete, and does not run. `vars.SKALA_PUBLISH` is a repository variable
-  # that nobody has set, so the condition is false on every run — including a `workflow_dispatch`
-  # with `release: true`, including a tag push. Arming it is one deliberate act in the repository's
-  # settings, by a person who has read the notes the `measure` job wrote.
+  # ⚠ **One condition now guards a live publish: `release: true` on a `workflow_dispatch`.** The
+  # second gate — a `vars.SKALA_PUBLISH == 'armed'` repository variable — is gone, deliberately.
+  # A dispatch is already an act a person performs on purpose, from the Actions UI, choosing a
+  # non-default input; the variable asked the same person for the same intent twice and its real
+  # effect was that the publish path had never run at all.
   #
-  # ⚠ It is written out rather than left as a TODO on purpose: a publish step that does not exist
-  # gets written in a hurry on the day somebody wants to publish, which is the worst day to write
-  # it. What it must not become is a step that runs on a push to `master`.
+  # ⚠ **A push to `master` still cannot publish, and that is the property to preserve.**
+  # `github.event.inputs.release` is unset on a push and on a tag push, so the condition is false
+  # for both. Anything that makes this job reachable from a `push:` trigger has made "release" an
+  # accident. That is the line, not the number of switches in front of it.
+  #
+  # ⚠ **The remaining second gate is the `environment:` below**, which can require a human approval
+  # a variable cannot — but only once someone configures a protection rule on it. Until then the
+  # environment is a label, and the dispatch input is the whole of the gate.
   publish:
     name: publish
     runs-on: ubuntu-latest
     needs: [measure, collect]
-    if: vars.SKALA_PUBLISH == 'armed' && github.event.inputs.release == 'true'
+    if: github.event.inputs.release == 'true'
 
     environment:
       # A second gate, and a different kind: a GitHub environment can require a human approval that
@@ -360,9 +367,8 @@ jobs:
       # bite.** `actions/checkout` moved from v4 to v7 for the Node 20 deprecation, and v6's one
       # behaviour change is that it persists the credential to a *separate file* rather than into
       # `.git/config`. Every other use of checkout here only reads. This one pushes, on the
-      # credential checkout left behind, and it cannot be exercised without arming `SKALA_PUBLISH`
-      # — so the first real publish is also the first test of it. If it fails to authenticate,
-      # that is why.
+      # credential checkout left behind, and it runs only on a `release: true` dispatch — so the
+      # first real publish is also the first test of it. If it fails to authenticate, that is why.
       - name: Push the tag
         run: |
           git tag -a "${{ needs.measure.outputs.tag }}" \

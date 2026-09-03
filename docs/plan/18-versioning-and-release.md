@@ -10,9 +10,10 @@ a minor bump at minimum. It does not say who decides that a formatting output ch
 until M10 the answer was "whoever writes the commit message". This document replaces that with a
 measurement, and describes the pipeline that performs it.
 
-⚠ **Nothing here publishes.** The pipeline computes the version, creates the tag, packs, writes the
-notes, uploads, and prints exactly what a publish would push. The publish step exists, is complete,
-and is gated on a repository variable nobody has set. See § "Armed, not firing".
+⚠ **No push to `master` publishes.** On a push the pipeline computes the version, creates the tag
+*in the job's checkout*, packs, writes the notes, uploads, and prints exactly what a publish would
+push. Publishing happens on a `workflow_dispatch` with `release: true`, and on nothing else. See
+§ "What publishes, and what cannot".
 
 ## The decision: what a version number of Skala is a statement about
 
@@ -205,7 +206,7 @@ tomorrow. The release pipeline computes no canonical version and never will.
 ⚠ **A `master` push does not tag and does not publish.** It measures, computes, packs, uploads and
 prints. A tag is a permanent public identity, and doc 11 makes pinning a correctness feature — a pin
 to a version nobody can rebuild is worse than no pin. Tagging every push also means publishing every
-push, which is the thing § "Armed, not firing" exists to prevent.
+push, which is the thing § "What publishes, and what cannot" exists to prevent.
 
 A `master` build is stamped `X.Y.Z-alpha.N`, where `N` is **the baseline's counter plus the commit
 count since the baseline tag**.
@@ -307,28 +308,36 @@ and a list of 12 with no denominator is a sample.
 `### Added/Changed/Fixed` beneath — because that file was written by hand from the merge history and
 a generator that reformatted it would make the whole record unreadable in one commit.
 
-## ⚠ Armed, not firing
-
-The pipeline is complete up to and not including the push.
+## ⚠ What publishes, and what cannot
 
 | Step | Runs |
 |---|---|
 | measure the version | every `master` push and dispatch |
-| pack every artefact, per RID | ditto |
+| pack every artefact | ditto |
 | install smoke test | ditto |
 | write the notes, upload them | ditto |
 | **create the tag** | on a dispatch with `release: true` — **created in the job, not pushed** |
 | print exactly what would be published | ditto |
-| **push the tag, push to NuGet, open a GitHub Release** | **only when `vars.SKALA_PUBLISH == 'armed'`** |
+| **push the tag, push to NuGet, open a GitHub Release** | **only on a dispatch with `release: true`** |
 
 The `publish` job is written out in full rather than left as a TODO, and that is deliberate: a
 publish step that does not exist gets written in a hurry on the day somebody wants to publish, which
-is the worst day to write it. What it must not become is a step that runs on a push to `master`.
+is the worst day to write it.
 
-`SKALA_PUBLISH` is a repository variable nobody has set, so the job's condition is false on every
-run today — including a dispatch with `release: true` and including a tag push. The job also targets
-a GitHub `environment`, which can require a human approval that a variable cannot. Arming it is one
-deliberate act, by a person who has read the notes the measure job wrote.
+⚠ **The property to preserve is that no `push:` trigger reaches the `publish` job**, not the number
+of switches in front of it. `github.event.inputs.release` is unset on a branch push and on a tag
+push, so the condition is false for both. A dispatch is an act a person performs on purpose, from
+the Actions UI, choosing a non-default input.
+
+⚠ **There used to be a second gate and it has been removed.** `vars.SKALA_PUBLISH == 'armed'` asked
+the same person for the same intent twice, and its actual effect was that the publish path had never
+run once — so every step in it, including the tag push on a credential checkout and the OIDC token
+exchange, was untested code guarded by a switch nobody could reach.
+
+⚠ **The `environment: nuget` is the remaining second gate, and it is only as strong as its
+protection rules.** An environment can require a human approval that a variable cannot — but the
+repository has no `nuget` environment configured, so GitHub will create it implicitly on first use
+with no rules at all. Until someone adds a required reviewer, the dispatch input is the whole gate.
 
 ### Publishing is keyless
 
@@ -360,13 +369,13 @@ delete-and-recreate attack. nuget.org's documentation says this "usually happens
 repos" and `Rikarin/SKALA` is public, so it may not apply; the status is shown on nuget.org and the
 window can be restarted, but only by someone who noticed it lapsed.
 
-⚠ **Nothing is configured yet, measured on 2026-09-03**: `gh secret list` and `gh variable list` are
-both empty and the repository has no `nuget` environment. So `NUGET_USER` is unset, `SKALA_PUBLISH`
-is unarmed, and the environment will be created implicitly on first use *without protection rules* —
-the human-approval gate the job's `environment:` was chosen for does not exist until someone adds it.
+⚠ **Measured on 2026-09-03**: `gh secret list` returns nothing and the repository has no `nuget`
+environment. So `NUGET_USER` is unset — the pre-flight step fails the job with a readable message
+rather than letting the token exchange fail obscurely — and the environment carries no protection
+rules until someone adds them.
 
-⚠ **None of this can be exercised without arming `SKALA_PUBLISH`.** The first real publish is the
-first test of the token exchange, exactly as it is the first test of the tag push above it. The one
+⚠ **None of this can be exercised short of a real dispatch.** The first publish is the first test of
+the token exchange, exactly as it is the first test of the tag push above it. The one
 misconfiguration that is checkable in advance — an unset `NUGET_USER` — is checked in its own step,
 because `NuGet/login` given an empty user fails with a token-exchange error that says nothing about
 a missing secret.
