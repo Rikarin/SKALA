@@ -112,12 +112,28 @@ public static class Corpus {
     ///     The base configuration every oracle run is measured against.
     /// </summary>
     /// <remarks>
-    ///     ⚠ One property rather than five spellings of <c>Path.Combine(RepositoryRoot, ".editorconfig")</c>.
-    ///     The fixture generator, the variant generator and the key-flip sweep each open this file and each
-    ///     records its digest in what they commit; a sixth call site that opened a different file would
-    ///     produce fixtures whose recorded provenance is a statement about somebody else's configuration.
+    ///     ⚠ One property rather than five spellings of the path. The fixture generator, the variant
+    ///     generator and the key-flip sweep each open this file and each records its digest in what they
+    ///     commit; a sixth call site that opened a different file would produce fixtures whose recorded
+    ///     provenance is a statement about somebody else's configuration.
+    ///     <para>
+    ///         ⚠ <b>It is no longer <c>&lt;root&gt;/.editorconfig</c>, and the rename from
+    ///         <c>BaseEditorConfigPath</c> was so that every call site had to say which of the two it
+    ///         meant.</b> See <see cref="OracleEditorConfig" /> for why the oracle must read the export
+    ///         rather than the repository's own file. The bytes are unchanged, so the digest is too.
+    ///     </para>
     /// </remarks>
-    public static string BaseEditorConfigPath { get; } = Path.Combine(RepositoryRoot, ".editorconfig");
+    public static string OracleEditorConfigPath => OracleEditorConfig.Path;
+
+    /// <summary>
+    ///     The repository's own configuration: what Skala formats Skala with (ADR-015).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Never hand this to <c>jb cleanupcode</c>. It is Skala's input, resolved through
+    ///     <c>EditorConfigChain</c> by everything that measures Skala's side, and it is free to be
+    ///     spelled in a key namespace ReSharper has never heard of.
+    /// </remarks>
+    public static string RepositoryEditorConfigPath { get; } = Path.Combine(RepositoryRoot, ".editorconfig");
 
     public static string SetRoot(string set) => Path.Combine(Root, set);
 

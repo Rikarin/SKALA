@@ -179,7 +179,7 @@ public sealed class FrozenSweepTests {
             string.Equals(provenance.ConfigDigest, inForce, StringComparison.Ordinal),
             "the frozen sweep corpus was measured against a configuration that is no longer in force.\n\n"
             + "  "
-            + Corpus.BaseEditorConfigPath
+            + Corpus.OracleEditorConfigPath
             + "\n  on disk now:         sha256:"
             + inForce
             + "\n  the corpus records:  sha256:"

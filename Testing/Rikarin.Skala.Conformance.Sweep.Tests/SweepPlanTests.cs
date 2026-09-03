@@ -109,7 +109,7 @@ public sealed class SweepPlanTests {
 
     static HashSet<string> Assignments() {
         var assigned = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var line in File.ReadAllLines(Path.Combine(Corpus.RepositoryRoot, ".editorconfig"))) {
+        foreach (var line in File.ReadAllLines(Corpus.OracleEditorConfigPath)) {
             var equals = line.IndexOf('=', StringComparison.Ordinal);
             if (equals <= 0 || line.AsSpan().TrimStart() is ['#', ..] or ['[', ..]) {
                 continue;

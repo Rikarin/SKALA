@@ -11,8 +11,9 @@ namespace Rikarin.Skala.Testing;
 ///     regenerates when it disagrees is not an oracle (docs/plan/12 § "The oracle").
 ///     <para>
 ///         <c>cleanupcode</c> rewrites files in place and wants a project, so the harness copies the corpus
-///         into a scratch project with a copy of the repository's <c>.editorconfig</c> and a cleanup
-///         profile that enables formatting only, runs the tool, and reads the results back out.
+///         into a scratch project with a copy of <see cref="OracleEditorConfig" /> — the Rider export,
+///         <b>not</b> the repository's own <c>.editorconfig</c> — and a cleanup profile that enables
+///         formatting only, runs the tool, and reads the results back out.
 ///     </para>
 /// </remarks>
 public sealed class OracleRunner {
@@ -90,7 +91,7 @@ public sealed class OracleRunner {
         profile ??= OracleProfile.FormatOnly;
         var scratch = Directory.CreateTempSubdirectory("skala-oracle-");
         try {
-            File.Copy(editorConfigPath, Path.Combine(scratch.FullName, ".editorconfig"));
+            File.Copy(OracleEditorConfig.Reading(editorConfigPath), Path.Combine(scratch.FullName, ".editorconfig"));
             if (overrides is { Count: > 0 }) {
                 var appended = new StringBuilder();
                 appended.AppendLine();

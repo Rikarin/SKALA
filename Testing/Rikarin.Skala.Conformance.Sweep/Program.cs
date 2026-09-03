@@ -70,7 +70,7 @@ switch (args[0]) {
     case "nightly":
         return Nightly();
     case "fixed-point":
-        return ArrangementFixedPoint.Run(Corpus.BaseEditorConfigPath, Console.Out);
+        return ArrangementFixedPoint.Run(Corpus.OracleEditorConfigPath, Console.Out);
     case "freeze":
         return FrozenFreeze.Run(
             Path.Combine(Corpus.RepositoryRoot, "Testing", "Rikarin.Skala.Conformance.Sweep"),
@@ -85,7 +85,7 @@ switch (args[0]) {
         return SweepVerify.Run(
             SweepPlan.Build([]),
             args[1],
-            Path.Combine(Corpus.RepositoryRoot, ".editorconfig"),
+            Corpus.OracleEditorConfigPath,
             Console.Out
         );
     default:
@@ -162,7 +162,7 @@ int Pairwise() {
         return 4;
     }
 
-    var config = Path.Combine(Corpus.RepositoryRoot, ".editorconfig");
+    var config = Corpus.OracleEditorConfigPath;
 
     // ⚠ The single sweep's committed table, read so that a disagreement one of the two keys already
     // owns alone is not reported as an interaction. Without it the first corrected run produced 17
@@ -220,7 +220,7 @@ int Measure(out SweepRun? measured) {
         return 3;
     }
 
-    var config = Path.Combine(Corpus.RepositoryRoot, ".editorconfig");
+    var config = Corpus.OracleEditorConfigPath;
     var run = new KeyFlipSweep(new OracleRunner(), config, Console.Out).Run(plan);
     var text = SweepReport.Render(run, families);
 

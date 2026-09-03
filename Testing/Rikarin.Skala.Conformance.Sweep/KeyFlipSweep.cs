@@ -94,7 +94,7 @@ public sealed class KeyFlipSweep {
 
     public KeyFlipSweep(OracleRunner runner, string baseConfigPath, TextWriter log) {
         this.runner = runner;
-        baseConfig = File.ReadAllText(baseConfigPath);
+        baseConfig = File.ReadAllText(OracleEditorConfig.Reading(baseConfigPath));
         this.log = log;
         // ⚠ Through OracleFixture rather than hashed here. The digest this run stamps into
         // conformance-sweep.md is compared against the one the fixture headers carry, and a second
