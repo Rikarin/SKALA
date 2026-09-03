@@ -211,11 +211,17 @@ jobs:
 
       # ⚠ The measured number is stamped in, and `Directory.Build.props` is not edited. One source
       # of truth stays the source of truth; the release overrides it for the duration of one pack.
+      #
+      # ⚠ **`--package-version`, not `-- -p:Version=`.** The `--` form was silently discarded: NUKE
+      # takes what follows `--` as its own additional arguments and the `Pack` target never forwarded
+      # them to `DotNetPack`, so every package was stamped `2.0.0-alpha.1` from `Directory.Build.props`
+      # while the notes, the summary and the Release title said `2.0.0-alpha.2`. `2.0.0-alpha.1` is on
+      # nuget.org because of it.
       - name: Pack
         shell: bash
         run: |
           ./build.sh Pack --configuration Release \
-            -- -p:Version=${{ needs.measure.outputs.version }}
+            --package-version ${{ needs.measure.outputs.version }}
 
       # The contents, listed. ⚠ Not decoration: three packaging faults in this repository's history
       # were invisible in the pack log and obvious in the file list — 19 files one directory too

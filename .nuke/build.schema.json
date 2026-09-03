@@ -151,6 +151,10 @@
           "type": "string",
           "description": "Regenerate only the fixtures whose relative path starts with this prefix"
         },
+        "PackageVersion": {
+          "type": "string",
+          "description": "The version stamped into the packages. Default: Directory.Build.props"
+        },
         "Release": {
           "type": "boolean",
           "description": "Cut a release rather than measure a master build"

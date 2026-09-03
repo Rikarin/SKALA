@@ -18,6 +18,24 @@ class Build : NukeBuild {
     [Parameter("Configuration — Debug locally, Release in CI")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
+    /// <summary>The version stamped into every package; empty means `Directory.Build.props`.</summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         This parameter exists because the release workflow's measured version was being
+    ///         silently discarded.
+    ///     </b> The workflow ran
+    ///     <c>./build.sh Pack --configuration Release -- -p:Version=2.0.0-alpha.2</c>; NUKE takes what
+    ///     follows <c>--</c> as its own additional arguments and the <c>Pack</c> target never forwarded
+    ///     them, so <c>DotNetPack</c> read <c>VersionPrefix</c>/<c>VersionSuffix</c> out of
+    ///     <c>Directory.Build.props</c> and packed <b>2.0.0-alpha.1</b>. The release notes, the step
+    ///     summary and the GitHub Release title all said <c>alpha.2</c>, because those come from the
+    ///     measurement — so the pipeline computed a number, displayed it four times, and shipped a
+    ///     different one. `2.0.0-alpha.1` is on nuget.org as a result.
+    /// </remarks>
+    [Parameter("The version stamped into the packages. Default: Directory.Build.props")]
+    readonly string PackageVersion = string.Empty;
+
     [Solution(GenerateProjects = false)]
     readonly Solution Solution = null!;
 
@@ -492,7 +510,7 @@ class Build : NukeBuild {
                     //
                     // Both are set here rather than in the .csproj because Rules/ is a rules concern and
                     // this is a packaging one.
-                    DotNetPack(settings => settings
+                    DotNetPack(settings => Stamp(settings)
                             .SetProject(RootDirectory / "Rules" / "Rikarin.Skala.Rules" / "Rikarin.Skala.Rules.csproj")
                             .SetConfiguration(Configuration)
                             .SetOutputDirectory(packages)
@@ -508,7 +526,7 @@ class Build : NukeBuild {
                                  RootDirectory / "Distribution" / "Rikarin.Skala.Sdk" / "Rikarin.Skala.Sdk.csproj",
                                  RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj"
                              }) {
-                        DotNetPack(settings => settings
+                        DotNetPack(settings => Stamp(settings)
                                 .SetProject(project)
                                 .SetConfiguration(Configuration)
                                 .SetOutputDirectory(packages)
@@ -526,6 +544,16 @@ class Build : NukeBuild {
                     }
                 }
             );
+
+    /// <summary>Applies <see cref="PackageVersion" /> to a pack, when one was given.</summary>
+    /// <remarks>
+    ///     ⚠ <c>Version</c>, not <c>VersionSuffix</c>: the measurement produces the whole number and
+    ///     splitting it here would reintroduce the two-sources-of-truth problem the parameter removes.
+    ///     An empty parameter leaves <c>Directory.Build.props</c> alone, so a local
+    ///     <c>./build.sh Pack</c> is unchanged.
+    /// </remarks>
+    DotNetPackSettings Stamp(DotNetPackSettings settings) =>
+        string.IsNullOrEmpty(PackageVersion) ? settings : settings.SetProperty("Version", PackageVersion);
 
     AbsolutePath CanonicalDirectory => RootDirectory / "Distribution" / "Rikarin.Skala.Canonical";
 
