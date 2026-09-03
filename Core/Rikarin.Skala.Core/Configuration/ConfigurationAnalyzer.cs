@@ -36,19 +36,19 @@ public static class ConfigurationAnalyzer {
     public static ImmutableArray<ContradictionRule> KnownContradictions { get; } = [
         new(
             "trim_trailing_whitespace",
-            "resharper_remove_spaces_on_blank_lines",
+            "skala_remove_spaces_on_blank_lines",
             static (generic, specific) => IsFalse(generic) && IsTrue(specific),
-            "trim_trailing_whitespace says leave trailing whitespace alone; resharper_remove_spaces_on_blank_lines says strip it from blank lines."
+            "trim_trailing_whitespace says leave trailing whitespace alone; skala_remove_spaces_on_blank_lines says strip it from blank lines."
         ),
         new(
             "end_of_line",
-            "resharper_enforce_line_ending_style",
+            "skala_enforce_line_ending_style",
             static (generic, specific) => generic.Length > 0 && IsFalse(specific),
-            "end_of_line names a line ending; resharper_enforce_line_ending_style says do not enforce one."
+            "end_of_line names a line ending; skala_enforce_line_ending_style says do not enforce one."
         ),
         new(
             "max_line_length",
-            "resharper_csharp_max_line_length",
+            "skala_max_line_length",
             static (generic, specific) => generic.Length > 0
                 && specific.Length > 0
                 && !string.Equals(
@@ -81,7 +81,7 @@ public static class ConfigurationAnalyzer {
     ///     <c>config explain</c>, not the format path. So a value the tool refused was reported by
     ///     nobody and replaced by a default, which is precisely the silent default docs/plan/00's
     ///     non-negotiable #4 forbids. The worst case is not a width: it is
-    ///     <c>keep_existing_declaration_block_arrangement</c>, where discarding the value in silence
+    ///     <c>skala_keep_existing_declaration_block_arrangement</c>, where discarding the value in silence
     ///     means the arranger goes on to rearrange the user's code on the strength of a setting it
     ///     threw away.
     ///     <para>
@@ -196,7 +196,7 @@ public static class ConfigurationAnalyzer {
     }
 
     static void AddContradictions(ImmutableArray<SkalaDiagnostic>.Builder diagnostics, ResolutionResult resolution) {
-        // Two spellings of one option that disagree. This is the insert_final_newline case: the
+        // Two spellings of one option that disagree. This is the skala_insert_final_newline case: the
         // generic key and the C# key are the same option, and the C# key wins.
         foreach (var option in resolution.Configured) {
             var winner = option.Origin!;
@@ -258,8 +258,7 @@ public static class ConfigurationAnalyzer {
         // docs/plan/16 § Q1: indentation autodetection makes the IDE and the oracle disagree with
         // each other, and Skala — which has no autodetection — cannot match both.
         foreach (var key in new[] {
-                     "resharper_autodetect_indent_settings", "resharper_apply_auto_detected_rules",
-                     "resharper_use_indent_from_vs"
+                     "skala_autodetect_indent_settings", "skala_apply_auto_detected_rules", "skala_use_indent_from_vs"
                  }) {
             if (!TryFind(resolution, key, out var option) || !IsTrue(option.Value)) {
                 continue;
@@ -277,7 +276,7 @@ public static class ConfigurationAnalyzer {
             );
         }
 
-        foreach (var key in new[] { "resharper_old_engine", "resharper_use_old_engine" }) {
+        foreach (var key in new[] { "skala_old_engine", "skala_use_old_engine" }) {
             if (!TryFind(resolution, key, out var option) || !IsTrue(option.Value)) {
                 continue;
             }

@@ -89,7 +89,7 @@ worse than either tool alone.
 **Mitigation:** the divergence register (`SK-DIV-*`) plus a hard rule about where the residue is
 allowed to sit — § "The rule, re-stated" below has it, and § "The rule as originally written" has
 the version it replaces and the reason that version could never be met. Plus
-`resharper_formatter_tags_enabled` as the human escape hatch for the handful of places where the
+`skala_formatter_tags_enabled` as the human escape hatch for the handful of places where the
 tools cannot agree. Plus, honestly: if a divergence is small and Skala's answer is better, change the
 Rider setting to match Skala rather than the reverse — the settings are the author's, and they can
 move.
@@ -497,7 +497,7 @@ precisely the artefact that makes agent-written formatter changes reviewable.
 
 The oracle assumption is that CLI cleanup and the IDE's "Reformat Code" produce identical output for
 the same `.editorconfig`. Mostly true; ReSharper has settings that exist only in the IDE
-(`resharper_use_indent_from_vs`) and cleanup profiles that differ from the format action.
+(`skala_use_indent_from_vs`) and cleanup profiles that differ from the format action.
 
 The sharp edge here was indentation autodetection — Rider detecting a file's actual indentation and
 formatting against *that* rather than the configured value, which would make the IDE and the oracle
@@ -506,8 +506,8 @@ disagree with each other and leave Skala unable to match both.
 **Resolved by decision, not by experiment:** the template now sets
 
 ```ini
-resharper_autodetect_indent_settings = false
-resharper_apply_auto_detected_rules  = false
+skala_autodetect_indent_settings = false
+skala_apply_auto_detected_rules  = false
 ```
 
 so the configured indentation is the only indentation, in the IDE and on the command line. Both keys
@@ -545,7 +545,7 @@ specification and Skala has no differential safety net there.** Both halves are 
 
 - *Not the specification.* The differential scores agreement with the profile. Where the profile
   does less than the editor, agreement is the wrong target and the ratchet quietly rewards matching
-  it — which is exactly how `resharper_space_after_triple_slash` came to be demoted for being
+  it — which is exactly how `skala_space_after_triple_slash` came to be demoted for being
   correct. A number that goes down when the formatter improves is worse than no number.
 - *No safety net.* Every other option in Skala is checked, on every commit, against a machine that
   answers independently. In such an area the only evidence is hand-written fixtures and properties

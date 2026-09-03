@@ -1,3 +1,4 @@
+using Rikarin.Skala.Options;
 using System.Globalization;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -13,10 +14,18 @@ public sealed record CanonicalManifest(string Version, string Sha256, int Assign
 ///     The canonical <c>.editorconfig</c> every repository shares, and the rule for composing it.
 /// </summary>
 /// <remarks>
-///     ⚠ ADR-001: the canonical file <b>is</b> the Rider export. <see cref="Compose" /> is the whole of
-///     the transformation, it is two additions long, and both of them are what <see cref="Fixer" />
-///     already does — so the workflow the ADR protects (change a setting in Rider, re-export, publish)
-///     survives intact. Nothing here reads, interprets or reorders the export's own lines.
+///     ⚠ ADR-001: the canonical file is the Rider export, <b>translated into Skala's key namespace</b>.
+///     <see cref="Compose" /> is the whole of the transformation — <see cref="Translate" />, then the
+///     two additions <see cref="Fixer" /> already makes — so the workflow the ADR protects (change a
+///     setting in Rider, re-export, publish) survives intact.
+///     <para>
+///         ⚠ It used to be a verbatim copy, and the sentence that stood here said so. That stopped
+///         being true when Skala's own keys became <c>skala_*</c>: a verbatim copy is a configuration
+///         the tool that ships it cannot read, and every line of it would report <c>SK9001</c> in the
+///         repository it was installed into. <see cref="Translate" /> rewrites each assignment through
+///         <see cref="ExportSpellings" /> and drops what Skala has no option for; the values, the
+///         sections and their order are still the export's.
+///     </para>
 ///     <para>
 ///         The payload is carried twice: embedded in this assembly, so <c>skala config sync</c> works
 ///         offline with no restore and exactly one version pin (the tool's), and as content in
@@ -47,11 +56,17 @@ public static class CanonicalEditorConfig {
                                    # gate. The edit you want almost certainly belongs below `skala:local begin`,
                                    # where editorconfig's own later-section-wins rule lets it override this block.
                                    #
-                                   # This block is the Rider export (ADR-001) verbatim, with the two additions
-                                   # `skala config fix` makes: `root = true`, so the chain stops at the repository
-                                   # instead of picking up an .editorconfig above it, and `max_line_length` beside
-                                   # `resharper_csharp_max_line_length`, so that tools other than ReSharper can see
-                                   # the column limit.
+                                   # This block is the Rider export (ADR-001) translated into Skala's key
+                                   # namespace — every `resharper_*` property Skala implements, written as the
+                                   # `skala_*` key Skala reads, at the value the export sets — with the two
+                                   # additions `skala config fix` makes: `root = true`, so the chain stops at the
+                                   # repository instead of picking up an .editorconfig above it, and
+                                   # `max_line_length` beside `skala_max_line_length`, so that tools other than
+                                   # Skala can see the column limit.
+                                   #
+                                   # A `resharper_*` key is not read by Skala and is not written here. If you
+                                   # have one in a local block, `skala config check` reports it as an unknown
+                                   # key (SK9001).
                                    #
                                    # To change it: change the setting in Rider, re-export over
                                    # `editor_config_template` in the Skala repository, run `./build.sh Canonical`,
@@ -74,9 +89,128 @@ public static class CanonicalEditorConfig {
     ///     <c>Canonical</c> build target is a call to it.
     /// </summary>
     public static string Compose(string templateText) {
-        var document = EditorConfigDocument.FromText(PayloadFileName, templateText);
+        var document = EditorConfigDocument.FromText(PayloadFileName, Translate(templateText));
         var reconciled = Fixer.Fix(document).Text;
         return Normalize(Preamble + "\n" + reconciled);
+    }
+
+    /// <summary>
+    ///     The export, rewritten from ReSharper's key namespace into Skala's.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         This is the step that used to not exist, and it exists because the export and the
+    ///         payload stopped being the same document.
+    ///     </b> ADR-001's workflow is unchanged — change a
+    ///     setting in Rider, re-export over <c>editor_config_template</c>, run
+    ///     <c>
+    /// ./build.sh
+    ///     Canonical
+    ///     </c> — but the payload is now a <em>translation</em> of the export rather than a
+    ///     copy of it, because Skala no longer reads <c>resharper_*</c> and shipping a configuration
+    ///     the tool cannot read is worse than shipping none: <c>skala config check</c> would report
+    ///     every line of its own canonical as an unknown key.
+    ///     <para>
+    ///         ⚠ A key the registry does not know is <b>dropped</b>, not carried through. The export
+    ///         sets several hundred properties for languages and features Skala has no option for, and
+    ///         carrying them would put a wall of <c>SK9001</c> into every consuming repository's
+    ///         <c>config check</c>. Dropping them makes the canonical exactly "every option Skala
+    ///         knows, at the value the export sets", which is a claim a reader can check.
+    ///     </para>
+    /// </remarks>
+    public static string Translate(string templateText) {
+        var lines = templateText.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        var output = new StringBuilder(templateText.Length);
+
+        // ⚠ Per section, and by specificity rather than by position. The export writes the same option
+        // under two spellings in one section — `resharper_csharp_insert_final_newline` beside the bare
+        // `insert_final_newline`, with different values — and ReSharper resolves that by specificity:
+        // the C# key wins wherever it sits. Emitting both translated lines would hand the winner's
+        // name to both and let editorconfig's own last-assignment-wins rule pick, which is the
+        // *opposite* answer whenever the export happens to put the generic key second. One line per
+        // option per section, carrying the value ReSharper would have used.
+        var winners = new Dictionary<OptionId, (int Rank, string Value)>();
+        var spellings = new Dictionary<OptionId, (int Rank, string Spelling)>();
+        var pending = new List<(int Index, OptionId Id)>();
+        var section = new List<string>();
+
+        void FlushSection() {
+            var emitted = new HashSet<OptionId>();
+            foreach (var (index, id) in pending) {
+                if (!emitted.Add(id)) {
+                    continue;
+                }
+
+                // ⚠ The value is ReSharper's winner; the *name* is the most specific spelling the
+                // export used that Skala still reads. `csharp_new_line_before_else` and its fifteen
+                // siblings, and `insert_final_newline`, are keys Roslyn, `dotnet format` and every
+                // editor read out of this same file; rewriting them to `skala_*` would take the
+                // setting away from every other tool in the consuming repository while changing
+                // nothing for Skala, which resolves both spellings. Same reasoning as the
+                // `max_line_length` that `Fixer` adds beside `skala_max_line_length`.
+                var name = spellings.TryGetValue(id, out var kept) ? kept.Spelling : OptionRegistry.Get(id).Key;
+                section[index] = name + " = " + winners[id].Value;
+            }
+
+            foreach (var line in section) {
+                if (line is not null) {
+                    output.AppendLine(line);
+                }
+            }
+
+            section.Clear();
+            pending.Clear();
+            winners.Clear();
+            spellings.Clear();
+        }
+
+        foreach (var line in lines) {
+            var trimmed = line.Trim();
+            var equals = trimmed.IndexOf('=', StringComparison.Ordinal);
+            if (trimmed.Length == 0 || trimmed[0] is '#' || equals < 0) {
+                if (trimmed.Length > 0 && trimmed[0] == '[') {
+                    FlushSection();
+                }
+
+                section.Add(line);
+                continue;
+            }
+
+            var key = trimmed[..equals].Trim();
+            if (!ExportSpellings.TryResolve(key, out var id)) {
+                continue;
+            }
+
+            // The option's `export` array is ordered most-specific-first, with the spelling the
+            // template itself uses at the front, so the index *is* the specificity rank.
+            var rank = IndexOfSpelling(OptionRegistry.Get(id).Export, key);
+            var value = trimmed[(equals + 1)..].Trim();
+            if (!winners.TryGetValue(id, out var held) || rank < held.Rank) {
+                winners[id] = (rank, value);
+            }
+
+            if (OptionRegistry.TryResolve(key, out _)
+                && (!spellings.TryGetValue(id, out var name) || rank < name.Rank)) {
+                spellings[id] = (rank, key);
+            }
+
+            pending.Add((section.Count, id));
+            section.Add(null!);
+        }
+
+        FlushSection();
+        return output.ToString();
+    }
+
+    static int IndexOfSpelling(IReadOnlyList<string> spellings, string spelling) {
+        for (var i = 0; i < spellings.Count; i++) {
+            if (string.Equals(spellings[i], spelling, StringComparison.Ordinal)) {
+                return i;
+            }
+        }
+
+        return int.MaxValue;
     }
 
     /// <summary>

@@ -48,55 +48,55 @@ in `docs/divergences.md`, not here.
 
 | pair | outcome | corners | agreeing | the corners that disagree |
 |---|---|---:|---:|---|
-| `resharper_csharp_align_tuple_components` × `resharper_csharp_indent_size` | ⚠ INTERACTION | 4 | 3 | `false` × `1` |
-| `resharper_csharp_align_multiline_list_pattern` × `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | `true` × `4`, `true` × `1` |
-| `resharper_csharp_align_multiline_property_pattern` × `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | `true` × `4`, `true` × `1` |
-| `resharper_csharp_align_multiline_statement_conditions` × `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | `false` × `4`, `false` × `1` |
-| `resharper_csharp_wrap_after_dot_in_method_calls` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
-| `resharper_csharp_wrap_after_invocation_lpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `1`, `false` × `120`, `false` × `0`, `false` × `1` |
-| `resharper_csharp_wrap_after_primary_constructor_declaration_lpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
-| `resharper_csharp_wrap_after_property_in_chained_method_calls` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
-| `resharper_csharp_wrap_arguments_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
-| `resharper_csharp_wrap_array_initializer_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 2 | `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0`, `chop_if_long` × `1` |
-| `resharper_csharp_wrap_before_arrow_with_expressions` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `1` |
-| `resharper_csharp_wrap_before_binary_opsign` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
-| `resharper_csharp_wrap_before_comma` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
-| `resharper_csharp_wrap_before_declaration_lpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
-| `resharper_csharp_wrap_before_eq` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
-| `resharper_csharp_wrap_before_first_method_call` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
-| `resharper_csharp_wrap_before_first_type_parameter_constraint` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
-| `resharper_csharp_wrap_before_invocation_lpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
-| `resharper_csharp_wrap_before_invocation_rpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `1`, `false` × `120`, `false` × `0`, `false` × `1` |
-| `resharper_csharp_wrap_before_linq_expression` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
-| `resharper_csharp_wrap_before_primary_constructor_declaration_lpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
-| `resharper_csharp_wrap_before_primary_constructor_declaration_rpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
-| `resharper_csharp_wrap_before_ternary_opsigns` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
-| `resharper_csharp_wrap_before_type_parameter_langle` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
-| `resharper_csharp_wrap_chained_binary_expressions` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0` |
-| `resharper_csharp_wrap_chained_binary_patterns` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0` |
-| `resharper_csharp_wrap_chained_method_calls` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 4 | `wrap_if_long` × `120`, `wrap_if_long` × `1`, `chop_if_long` × `0`, `chop_if_long` × `1` |
-| `resharper_csharp_wrap_enum_declaration` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 2 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `120` |
-| `resharper_csharp_wrap_for_stmt_header_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 3 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0` |
-| `resharper_csharp_wrap_multiple_declaration_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
-| `resharper_csharp_wrap_multiple_type_parameter_constraints_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 4 | `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0`, `chop_if_long` × `1` |
-| `resharper_csharp_wrap_parameters_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
-| `resharper_csharp_wrap_primary_constructor_parameters_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
-| `resharper_csharp_wrap_switch_expression` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 2 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `120` |
-| `resharper_csharp_wrap_ternary_expr_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
-| `resharper_wrap_after_expression_lbrace` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | `true` × `0`, `true` × `1`, `false` × `120`, `false` × `0` |
-| `resharper_wrap_before_expression_rbrace` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | `true` × `0`, `true` × `1`, `false` × `120`, `false` × `0` |
-| `resharper_csharp_keep_existing_list_patterns_arrangement` × `resharper_keep_user_linebreaks` | ⚠ BASELINE | 4 | 0 | `true` × `true`, `true` × `false`, `false` × `true`, `false` × `false` |
-| `resharper_csharp_keep_existing_property_patterns_arrangement` × `resharper_keep_user_linebreaks` | ⚠ BASELINE | 4 | 0 | `true` × `true`, `true` × `false`, `false` × `true`, `false` × `false` |
-| `resharper_csharp_wrap_after_declaration_lpar` × `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 0 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
-| `resharper_csharp_wrap_before_binary_pattern_op` × `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 0 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
-| `resharper_csharp_wrap_before_declaration_rpar` × `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 0 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
-| `resharper_csharp_wrap_before_extends_colon` × `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 0 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
-| `resharper_csharp_wrap_extends_list_style` × `resharper_csharp_max_line_length` | ⚠ BASELINE | 9 | 2 | `wrap_if_long` × `120`, `wrap_if_long` × `1`, `chop_if_long` × `120`, `chop_if_long` × `0` |
-| `resharper_csharp_wrap_lines` × `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 1 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
-| `resharper_csharp_wrap_list_pattern` × `resharper_csharp_max_line_length` | ⚠ BASELINE | 9 | 0 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `120` |
-| `resharper_csharp_wrap_property_pattern` × `resharper_csharp_max_line_length` | ⚠ BASELINE | 9 | 0 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `120` |
-| `resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement` × `resharper_keep_user_linebreaks` | ⚠ BASELINE | 4 | 2 | `true` × `true`, `false` × `true` |
-| `resharper_wrap_before_comma_in_base_clause` × `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 0 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
+| `skala_align_tuple_components` × `skala_indent_size` | ⚠ INTERACTION | 4 | 3 | `false` × `1` |
+| `skala_align_multiline_list_pattern` × `skala_indent_size` | ⚠ INHERITED | 4 | 2 | `true` × `4`, `true` × `1` |
+| `skala_align_multiline_property_pattern` × `skala_indent_size` | ⚠ INHERITED | 4 | 2 | `true` × `4`, `true` × `1` |
+| `skala_align_multiline_statement_conditions` × `skala_indent_size` | ⚠ INHERITED | 4 | 2 | `false` × `4`, `false` × `1` |
+| `skala_wrap_after_dot_in_method_calls` × `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
+| `skala_wrap_after_invocation_lpar` × `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `1`, `false` × `120`, `false` × `0`, `false` × `1` |
+| `skala_wrap_after_primary_constructor_declaration_lpar` × `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
+| `skala_wrap_after_property_in_chained_method_calls` × `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
+| `skala_wrap_arguments_style` × `skala_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
+| `skala_wrap_array_initializer_style` × `skala_max_line_length` | ⚠ INHERITED | 9 | 2 | `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0`, `chop_if_long` × `1` |
+| `skala_wrap_before_arrow_with_expressions` × `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `1` |
+| `skala_wrap_before_binary_opsign` × `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
+| `skala_wrap_before_comma` × `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
+| `skala_wrap_before_declaration_lpar` × `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
+| `skala_wrap_before_eq` × `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
+| `skala_wrap_before_first_method_call` × `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
+| `skala_wrap_before_first_type_parameter_constraint` × `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
+| `skala_wrap_before_invocation_lpar` × `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
+| `skala_wrap_before_invocation_rpar` × `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `1`, `false` × `120`, `false` × `0`, `false` × `1` |
+| `skala_wrap_before_linq_expression` × `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
+| `skala_wrap_before_primary_constructor_declaration_lpar` × `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
+| `skala_wrap_before_primary_constructor_declaration_rpar` × `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
+| `skala_wrap_before_ternary_opsigns` × `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
+| `skala_wrap_before_type_parameter_langle` × `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
+| `skala_wrap_chained_binary_expressions` × `skala_max_line_length` | ⚠ INHERITED | 6 | 1 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0` |
+| `skala_wrap_chained_binary_patterns` × `skala_max_line_length` | ⚠ INHERITED | 6 | 1 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0` |
+| `skala_wrap_chained_method_calls` × `skala_max_line_length` | ⚠ INHERITED | 9 | 4 | `wrap_if_long` × `120`, `wrap_if_long` × `1`, `chop_if_long` × `0`, `chop_if_long` × `1` |
+| `skala_wrap_enum_declaration` × `skala_max_line_length` | ⚠ INHERITED | 9 | 2 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `120` |
+| `skala_wrap_for_stmt_header_style` × `skala_max_line_length` | ⚠ INHERITED | 9 | 3 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0` |
+| `skala_wrap_multiple_declaration_style` × `skala_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
+| `skala_wrap_multiple_type_parameter_constraints_style` × `skala_max_line_length` | ⚠ INHERITED | 9 | 4 | `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0`, `chop_if_long` × `1` |
+| `skala_wrap_parameters_style` × `skala_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
+| `skala_wrap_primary_constructor_parameters_style` × `skala_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
+| `skala_wrap_switch_expression` × `skala_max_line_length` | ⚠ INHERITED | 9 | 2 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `120` |
+| `skala_wrap_ternary_expr_style` × `skala_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
+| `skala_wrap_after_expression_lbrace` × `skala_max_line_length` | ⚠ INHERITED | 6 | 1 | `true` × `0`, `true` × `1`, `false` × `120`, `false` × `0` |
+| `skala_wrap_before_expression_rbrace` × `skala_max_line_length` | ⚠ INHERITED | 6 | 1 | `true` × `0`, `true` × `1`, `false` × `120`, `false` × `0` |
+| `skala_keep_existing_list_patterns_arrangement` × `skala_keep_user_linebreaks` | ⚠ BASELINE | 4 | 0 | `true` × `true`, `true` × `false`, `false` × `true`, `false` × `false` |
+| `skala_keep_existing_property_patterns_arrangement` × `skala_keep_user_linebreaks` | ⚠ BASELINE | 4 | 0 | `true` × `true`, `true` × `false`, `false` × `true`, `false` × `false` |
+| `skala_wrap_after_declaration_lpar` × `skala_max_line_length` | ⚠ BASELINE | 6 | 0 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
+| `skala_wrap_before_binary_pattern_op` × `skala_max_line_length` | ⚠ BASELINE | 6 | 0 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
+| `skala_wrap_before_declaration_rpar` × `skala_max_line_length` | ⚠ BASELINE | 6 | 0 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
+| `skala_wrap_before_extends_colon` × `skala_max_line_length` | ⚠ BASELINE | 6 | 0 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
+| `skala_wrap_extends_list_style` × `skala_max_line_length` | ⚠ BASELINE | 9 | 2 | `wrap_if_long` × `120`, `wrap_if_long` × `1`, `chop_if_long` × `120`, `chop_if_long` × `0` |
+| `skala_wrap_lines` × `skala_max_line_length` | ⚠ BASELINE | 6 | 1 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
+| `skala_wrap_list_pattern` × `skala_max_line_length` | ⚠ BASELINE | 9 | 0 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `120` |
+| `skala_wrap_property_pattern` × `skala_max_line_length` | ⚠ BASELINE | 9 | 0 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `120` |
+| `skala_keep_existing_lambda_and_anonymous_function_parens_arrangement` × `skala_keep_user_linebreaks` | ⚠ BASELINE | 4 | 2 | `true` × `true`, `false` × `true` |
+| `skala_wrap_before_comma_in_base_clause` × `skala_max_line_length` | ⚠ BASELINE | 6 | 0 | `true` × `120`, `true` × `0`, `true` × `1`, `false` × `120` |
 
 ## Per pair
 
@@ -106,73 +106,73 @@ that cross is an interaction and nothing else in the repository can see it.
 
 | primary | secondary | outcome | corners | agree | reach | oracle | skala | base | fixture |
 |---|---|---|---:|---:|---:|---:|---:|---|---|
-| `resharper_align_multiline_type_parameter_list` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/breaks/type-parameter-list.cs` |
-| `resharper_csharp_align_linq_query` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/linq-query-alignment.cs` |
-| `resharper_csharp_align_multiline_array_and_object_initializer` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/wrapping/alignment.cs` |
-| `resharper_csharp_align_multiline_binary_expressions_chain` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/wrapping/alignment.cs` |
-| `resharper_csharp_align_multiline_binary_patterns` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
-| `resharper_csharp_align_multiline_extends_list` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/base-list-alignment.cs` |
-| `resharper_csharp_align_multiline_list_pattern` | `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
-| `resharper_csharp_align_multiline_property_pattern` | `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
-| `resharper_csharp_align_multiline_statement_conditions` | `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | 2 | 4 | 4 | = | `constructs/indentation/resharper_csharp_align_multiline_statement_conditions.cs` |
-| `resharper_csharp_align_multiline_switch_expression` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
-| `resharper_csharp_align_multiple_declaration` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/alignment/align-declaration.cs` |
-| `resharper_csharp_align_tuple_components` | `resharper_csharp_indent_size` | ⚠ INTERACTION | 4 | 3 | 2 | 4 | 4 | = | `constructs/wrapping/tuple-components.cs` |
-| `resharper_csharp_keep_existing_attribute_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/attributes.cs` |
-| `resharper_csharp_keep_existing_declaration_block_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/declaration-blocks.cs` |
-| `resharper_csharp_keep_existing_declaration_parens_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/preservation/declaration-parens.cs` |
-| `resharper_csharp_keep_existing_embedded_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/placement/embedded-statements.cs` |
-| `resharper_csharp_keep_existing_embedded_block_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/embedded-blocks.cs` |
-| `resharper_csharp_keep_existing_enum_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/breaks/enum-members.cs` |
-| `resharper_csharp_keep_existing_expr_member_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/placement/expression-bodies.cs` |
-| `resharper_csharp_keep_existing_invocation_parens_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/preservation/invocation-parens.cs` |
-| `resharper_csharp_keep_existing_list_patterns_arrangement` | `resharper_keep_user_linebreaks` | ⚠ BASELINE | 4 | 0 | 2 | 2 | 2 | ⚠ | `constructs/wrapping/patterns.cs` |
-| `resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/primary-constructor-single.cs` |
-| `resharper_csharp_keep_existing_property_patterns_arrangement` | `resharper_keep_user_linebreaks` | ⚠ BASELINE | 4 | 0 | 2 | 2 | 3 | ⚠ | `constructs/wrapping/patterns.cs` |
-| `resharper_csharp_keep_existing_switch_expression_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/wrapping/switch-expression.cs` |
-| `resharper_csharp_wrap_after_declaration_lpar` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 0 | 2 | 3 | 2 | ⚠ | `constructs/preservation/lambda-parens.cs` |
-| `resharper_csharp_wrap_after_dot_in_method_calls` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 4 | = | `constructs/wrapping/chained-calls.cs` |
-| `resharper_csharp_wrap_after_invocation_lpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 3 | 4 | = | `constructs/breaks/invocation-lpar-rpar.cs` |
-| `resharper_csharp_wrap_after_primary_constructor_declaration_lpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 3 | 4 | = | `constructs/preservation/primary-constructor-parens.cs` |
-| `resharper_csharp_wrap_after_property_in_chained_method_calls` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/chained-calls.cs` |
-| `resharper_csharp_wrap_arguments_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 2 | = | `constructs/blank-lines/a-top-level-program.cs` |
-| `resharper_csharp_wrap_array_initializer_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 2 | 3 | 6 | 4 | = | `constructs/wrapping/initializers.cs` |
-| `resharper_csharp_wrap_before_arrow_with_expressions` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/breaks/switch-expression-arms.cs` |
-| `resharper_csharp_wrap_before_binary_opsign` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/breaks/binary-operators.cs` |
-| `resharper_csharp_wrap_before_binary_pattern_op` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 0 | 2 | 4 | 4 | ⚠ | `constructs/breaks/binary-patterns.cs` |
-| `resharper_csharp_wrap_before_comma` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/breaks/invocation-lpar-rpar.cs` |
-| `resharper_csharp_wrap_before_declaration_lpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 2 | = | `constructs/wrapping/paren-placement.cs` |
-| `resharper_csharp_wrap_before_declaration_rpar` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 0 | 2 | 4 | 2 | ⚠ | `constructs/preservation/lambda-parens.cs` |
-| `resharper_csharp_wrap_before_eq` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 4 | = | `constructs/wrapping/around-eq.cs` |
-| `resharper_csharp_wrap_before_extends_colon` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 0 | 2 | 5 | 3 | ⚠ | `constructs/wrapping/base-list.cs` |
-| `resharper_csharp_wrap_before_first_method_call` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/chained-calls.cs` |
-| `resharper_csharp_wrap_before_first_type_parameter_constraint` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 3 | = | `constructs/breaks/type-parameter-constraints.cs` |
-| `resharper_csharp_wrap_before_invocation_lpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 2 | = | `constructs/wrapping/paren-placement.cs` |
-| `resharper_csharp_wrap_before_invocation_rpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/breaks/invocation-lpar-rpar.cs` |
-| `resharper_csharp_wrap_before_linq_expression` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 3 | = | `constructs/wrapping/linq-query.cs` |
-| `resharper_csharp_wrap_before_primary_constructor_declaration_lpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 2 | = | `constructs/wrapping/paren-placement.cs` |
-| `resharper_csharp_wrap_before_primary_constructor_declaration_rpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/preservation/primary-constructor-parens.cs` |
-| `resharper_csharp_wrap_before_ternary_opsigns` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/breaks/ternary.cs` |
-| `resharper_csharp_wrap_before_type_parameter_langle` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 4 | = | `constructs/breaks/type-parameter-list.cs` |
-| `resharper_csharp_wrap_chained_binary_expressions` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | 2 | 4 | 4 | = | `constructs/wrapping/binary-chains.cs` |
-| `resharper_csharp_wrap_chained_binary_patterns` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | 2 | 4 | 4 | = | `constructs/wrapping/binary-chains.cs` |
-| `resharper_csharp_wrap_chained_method_calls` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 4 | 3 | 5 | 5 | = | `constructs/wrapping/chained-calls.cs` |
-| `resharper_csharp_wrap_enum_declaration` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 2 | 3 | 2 | 4 | = | `constructs/breaks/enum-members.cs` |
-| `resharper_csharp_wrap_extends_list_style` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 9 | 2 | 3 | 5 | 2 | ⚠ | `constructs/wrapping/base-list.cs` |
-| `resharper_csharp_wrap_for_stmt_header_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 3 | 3 | 6 | 4 | = | `constructs/wrapping/for-header.cs` |
-| `resharper_csharp_wrap_lines` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 1 | 2 | 3 | 2 | ⚠ | `constructs/wrapping/base-list.cs` |
-| `resharper_csharp_wrap_list_pattern` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 9 | 0 | 3 | 2 | 3 | ⚠ | `constructs/wrapping/patterns.cs` |
-| `resharper_csharp_wrap_multiple_declaration_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 4 | = | `constructs/wrapping/declarators.cs` |
-| `resharper_csharp_wrap_multiple_type_parameter_constraints_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 4 | 3 | 5 | 4 | = | `constructs/breaks/type-parameter-constraints.cs` |
-| `resharper_csharp_wrap_parameters_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 3 | = | `constructs/blank-lines/after-a-block-statement.cs` |
-| `resharper_csharp_wrap_primary_constructor_parameters_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 3 | = | `constructs/breaks/constructor-initializer.cs` |
-| `resharper_csharp_wrap_property_pattern` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 9 | 0 | 3 | 3 | 3 | ⚠ | `constructs/wrapping/patterns.cs` |
-| `resharper_csharp_wrap_switch_expression` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 2 | 3 | 3 | 4 | = | `constructs/breaks/switch-expression-arms.cs` |
-| `resharper_csharp_wrap_ternary_expr_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 4 | = | `constructs/wrapping/ternary.cs` |
-| `resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement` | `resharper_keep_user_linebreaks` | ⚠ BASELINE | 4 | 2 | 2 | 2 | 3 | ⚠ | `constructs/preservation/lambda-parens.cs` |
-| `resharper_wrap_after_expression_lbrace` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | 2 | 3 | 4 | = | `constructs/wrapping/initializers.cs` |
-| `resharper_wrap_before_comma_in_base_clause` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 0 | 2 | 3 | 2 | ⚠ | `constructs/wrapping/base-list.cs` |
-| `resharper_wrap_before_expression_rbrace` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | 2 | 3 | 4 | = | `constructs/wrapping/initializers.cs` |
+| `skala_align_multiline_type_parameter_list` | `skala_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/breaks/type-parameter-list.cs` |
+| `skala_align_linq_query` | `skala_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/linq-query-alignment.cs` |
+| `skala_align_multiline_array_and_object_initializer` | `skala_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/wrapping/alignment.cs` |
+| `skala_align_multiline_binary_expressions_chain` | `skala_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/wrapping/alignment.cs` |
+| `skala_align_multiline_binary_patterns` | `skala_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
+| `skala_align_multiline_extends_list` | `skala_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/base-list-alignment.cs` |
+| `skala_align_multiline_list_pattern` | `skala_indent_size` | ⚠ INHERITED | 4 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
+| `skala_align_multiline_property_pattern` | `skala_indent_size` | ⚠ INHERITED | 4 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
+| `skala_align_multiline_statement_conditions` | `skala_indent_size` | ⚠ INHERITED | 4 | 2 | 2 | 4 | 4 | = | `constructs/indentation/skala_align_multiline_statement_conditions.cs` |
+| `skala_align_multiline_switch_expression` | `skala_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
+| `skala_align_multiple_declaration` | `skala_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/alignment/align-declaration.cs` |
+| `skala_align_tuple_components` | `skala_indent_size` | ⚠ INTERACTION | 4 | 3 | 2 | 4 | 4 | = | `constructs/wrapping/tuple-components.cs` |
+| `skala_keep_existing_attribute_arrangement` | `skala_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/attributes.cs` |
+| `skala_keep_existing_declaration_block_arrangement` | `skala_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/declaration-blocks.cs` |
+| `skala_keep_existing_declaration_parens_arrangement` | `skala_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/preservation/declaration-parens.cs` |
+| `skala_keep_existing_embedded_arrangement` | `skala_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/placement/embedded-statements.cs` |
+| `skala_keep_existing_embedded_block_arrangement` | `skala_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/embedded-blocks.cs` |
+| `skala_keep_existing_enum_arrangement` | `skala_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/breaks/enum-members.cs` |
+| `skala_keep_existing_expr_member_arrangement` | `skala_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/placement/expression-bodies.cs` |
+| `skala_keep_existing_invocation_parens_arrangement` | `skala_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/preservation/invocation-parens.cs` |
+| `skala_keep_existing_list_patterns_arrangement` | `skala_keep_user_linebreaks` | ⚠ BASELINE | 4 | 0 | 2 | 2 | 2 | ⚠ | `constructs/wrapping/patterns.cs` |
+| `skala_keep_existing_primary_constructor_declaration_parens_arrangement` | `skala_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/primary-constructor-single.cs` |
+| `skala_keep_existing_property_patterns_arrangement` | `skala_keep_user_linebreaks` | ⚠ BASELINE | 4 | 0 | 2 | 2 | 3 | ⚠ | `constructs/wrapping/patterns.cs` |
+| `skala_keep_existing_switch_expression_arrangement` | `skala_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/wrapping/switch-expression.cs` |
+| `skala_wrap_after_declaration_lpar` | `skala_max_line_length` | ⚠ BASELINE | 6 | 0 | 2 | 3 | 2 | ⚠ | `constructs/preservation/lambda-parens.cs` |
+| `skala_wrap_after_dot_in_method_calls` | `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 4 | = | `constructs/wrapping/chained-calls.cs` |
+| `skala_wrap_after_invocation_lpar` | `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 3 | 4 | = | `constructs/breaks/invocation-lpar-rpar.cs` |
+| `skala_wrap_after_primary_constructor_declaration_lpar` | `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 3 | 4 | = | `constructs/preservation/primary-constructor-parens.cs` |
+| `skala_wrap_after_property_in_chained_method_calls` | `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/chained-calls.cs` |
+| `skala_wrap_arguments_style` | `skala_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 2 | = | `constructs/blank-lines/a-top-level-program.cs` |
+| `skala_wrap_array_initializer_style` | `skala_max_line_length` | ⚠ INHERITED | 9 | 2 | 3 | 6 | 4 | = | `constructs/wrapping/initializers.cs` |
+| `skala_wrap_before_arrow_with_expressions` | `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/breaks/switch-expression-arms.cs` |
+| `skala_wrap_before_binary_opsign` | `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/breaks/binary-operators.cs` |
+| `skala_wrap_before_binary_pattern_op` | `skala_max_line_length` | ⚠ BASELINE | 6 | 0 | 2 | 4 | 4 | ⚠ | `constructs/breaks/binary-patterns.cs` |
+| `skala_wrap_before_comma` | `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/breaks/invocation-lpar-rpar.cs` |
+| `skala_wrap_before_declaration_lpar` | `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 2 | = | `constructs/wrapping/paren-placement.cs` |
+| `skala_wrap_before_declaration_rpar` | `skala_max_line_length` | ⚠ BASELINE | 6 | 0 | 2 | 4 | 2 | ⚠ | `constructs/preservation/lambda-parens.cs` |
+| `skala_wrap_before_eq` | `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 4 | = | `constructs/wrapping/around-eq.cs` |
+| `skala_wrap_before_extends_colon` | `skala_max_line_length` | ⚠ BASELINE | 6 | 0 | 2 | 5 | 3 | ⚠ | `constructs/wrapping/base-list.cs` |
+| `skala_wrap_before_first_method_call` | `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/chained-calls.cs` |
+| `skala_wrap_before_first_type_parameter_constraint` | `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 3 | = | `constructs/breaks/type-parameter-constraints.cs` |
+| `skala_wrap_before_invocation_lpar` | `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 2 | = | `constructs/wrapping/paren-placement.cs` |
+| `skala_wrap_before_invocation_rpar` | `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/breaks/invocation-lpar-rpar.cs` |
+| `skala_wrap_before_linq_expression` | `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 3 | = | `constructs/wrapping/linq-query.cs` |
+| `skala_wrap_before_primary_constructor_declaration_lpar` | `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 2 | = | `constructs/wrapping/paren-placement.cs` |
+| `skala_wrap_before_primary_constructor_declaration_rpar` | `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/preservation/primary-constructor-parens.cs` |
+| `skala_wrap_before_ternary_opsigns` | `skala_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/breaks/ternary.cs` |
+| `skala_wrap_before_type_parameter_langle` | `skala_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 4 | = | `constructs/breaks/type-parameter-list.cs` |
+| `skala_wrap_chained_binary_expressions` | `skala_max_line_length` | ⚠ INHERITED | 6 | 1 | 2 | 4 | 4 | = | `constructs/wrapping/binary-chains.cs` |
+| `skala_wrap_chained_binary_patterns` | `skala_max_line_length` | ⚠ INHERITED | 6 | 1 | 2 | 4 | 4 | = | `constructs/wrapping/binary-chains.cs` |
+| `skala_wrap_chained_method_calls` | `skala_max_line_length` | ⚠ INHERITED | 9 | 4 | 3 | 5 | 5 | = | `constructs/wrapping/chained-calls.cs` |
+| `skala_wrap_enum_declaration` | `skala_max_line_length` | ⚠ INHERITED | 9 | 2 | 3 | 2 | 4 | = | `constructs/breaks/enum-members.cs` |
+| `skala_wrap_extends_list_style` | `skala_max_line_length` | ⚠ BASELINE | 9 | 2 | 3 | 5 | 2 | ⚠ | `constructs/wrapping/base-list.cs` |
+| `skala_wrap_for_stmt_header_style` | `skala_max_line_length` | ⚠ INHERITED | 9 | 3 | 3 | 6 | 4 | = | `constructs/wrapping/for-header.cs` |
+| `skala_wrap_lines` | `skala_max_line_length` | ⚠ BASELINE | 6 | 1 | 2 | 3 | 2 | ⚠ | `constructs/wrapping/base-list.cs` |
+| `skala_wrap_list_pattern` | `skala_max_line_length` | ⚠ BASELINE | 9 | 0 | 3 | 2 | 3 | ⚠ | `constructs/wrapping/patterns.cs` |
+| `skala_wrap_multiple_declaration_style` | `skala_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 4 | = | `constructs/wrapping/declarators.cs` |
+| `skala_wrap_multiple_type_parameter_constraints_style` | `skala_max_line_length` | ⚠ INHERITED | 9 | 4 | 3 | 5 | 4 | = | `constructs/breaks/type-parameter-constraints.cs` |
+| `skala_wrap_parameters_style` | `skala_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 3 | = | `constructs/blank-lines/after-a-block-statement.cs` |
+| `skala_wrap_primary_constructor_parameters_style` | `skala_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 3 | = | `constructs/breaks/constructor-initializer.cs` |
+| `skala_wrap_property_pattern` | `skala_max_line_length` | ⚠ BASELINE | 9 | 0 | 3 | 3 | 3 | ⚠ | `constructs/wrapping/patterns.cs` |
+| `skala_wrap_switch_expression` | `skala_max_line_length` | ⚠ INHERITED | 9 | 2 | 3 | 3 | 4 | = | `constructs/breaks/switch-expression-arms.cs` |
+| `skala_wrap_ternary_expr_style` | `skala_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 4 | = | `constructs/wrapping/ternary.cs` |
+| `skala_keep_existing_lambda_and_anonymous_function_parens_arrangement` | `skala_keep_user_linebreaks` | ⚠ BASELINE | 4 | 2 | 2 | 2 | 3 | ⚠ | `constructs/preservation/lambda-parens.cs` |
+| `skala_wrap_after_expression_lbrace` | `skala_max_line_length` | ⚠ INHERITED | 6 | 1 | 2 | 3 | 4 | = | `constructs/wrapping/initializers.cs` |
+| `skala_wrap_before_comma_in_base_clause` | `skala_max_line_length` | ⚠ BASELINE | 6 | 0 | 2 | 3 | 2 | ⚠ | `constructs/wrapping/base-list.cs` |
+| `skala_wrap_before_expression_rbrace` | `skala_max_line_length` | ⚠ INHERITED | 6 | 1 | 2 | 3 | 4 | = | `constructs/wrapping/initializers.cs` |
 
 ## Not swept
 

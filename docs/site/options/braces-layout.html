@@ -13,8 +13,8 @@
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Braces layout</h1>
 <p class="lede">4 keys.</p>
-<section class="option" id="resharper_csharp_allow_comment_after_lbrace">
-<h2><code>resharper_csharp_allow_comment_after_lbrace</code> <a class="self" href="#resharper_csharp_allow_comment_after_lbrace">#</a></h2>
+<section class="option" id="skala_allow_comment_after_lbrace">
+<h2><code>skala_allow_comment_after_lbrace</code> <a class="self" href="#skala_allow_comment_after_lbrace">#</a></h2>
 <p>Braces layout — Allow comment after '{'</p>
 <table class="facts">
 <tbody>
@@ -24,14 +24,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>allow_comment_after_lbrace</code>, <code>csharp_allow_comment_after_lbrace</code>, <code>resharper_allow_comment_after_lbrace</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/braces/resharper_csharp_allow_comment_after_lbrace.cs</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/braces/skala_allow_comment_after_lbrace.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BracesPageSchema.html#resharper_csharp_allow_comment_after_lbrace">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BracesPageSchema.html#resharper_csharp_allow_comment_after_lbrace</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_empty_block_style">
-<h2><code>resharper_csharp_empty_block_style</code> <a class="self" href="#resharper_csharp_empty_block_style">#</a></h2>
+<section class="option" id="skala_empty_block_style">
+<h2><code>skala_empty_block_style</code> <a class="self" href="#skala_empty_block_style">#</a></h2>
 <p>How an empty block's braces are laid out. ⚠ Measured 2026-08-30: the three values are genuinely distinct, and the two <code>together</code>s differ only once the brace would be on its own line — under <code>csharp_new_line_before_open_brace = all</code>, <code>together</code> gives <code>void M()</code> / <code>{ }</code> and <code>together_same_line</code> gives <code>void M() { }</code>, pulling the pair back onto the declaration's line against the placement key. Under the export's <code>none</code> they are the same bytes. Skala read <code>together_same_line</code> as <code>multiline</code> and split the pair. ⚠ <code>together_same_line</code>'s second half — overriding the placement key — is not implemented, because it needs the brace-split direction Skala does not have. SK-DIV-0091.</p>
 <table class="facts">
 <tbody>
@@ -41,14 +40,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_empty_block_style</code>, <code>empty_block_style</code>, <code>resharper_empty_block_style</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/braces/resharper_csharp_empty_block_style.cs</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/braces/skala_empty_block_style.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BracesPageSchema.html#resharper_csharp_empty_block_style">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BracesPageSchema.html#resharper_csharp_empty_block_style</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_indent_inside_namespace">
-<h2><code>resharper_csharp_indent_inside_namespace</code> <a class="self" href="#resharper_csharp_indent_inside_namespace">#</a></h2>
+<section class="option" id="skala_indent_inside_namespace">
+<h2><code>skala_indent_inside_namespace</code> <a class="self" href="#skala_indent_inside_namespace">#</a></h2>
 <p>Braces layout — Indent inside namespace declaration</p>
 <table class="facts">
 <tbody>
@@ -58,15 +56,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_indent_inside_namespace</code>, <code>indent_inside_namespace</code>, <code>resharper_indent_inside_namespace</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/indentation/resharper_csharp_indent_inside_namespace.cs</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/indentation/skala_indent_inside_namespace.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BracesPageSchema.html#resharper_csharp_indent_inside_namespace">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BracesPageSchema.html#resharper_csharp_indent_inside_namespace</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_use_continuous_indent_inside_initializer_braces">
-<h2><code>resharper_csharp_use_continuous_indent_inside_initializer_braces</code> <a class="self" href="#resharper_csharp_use_continuous_indent_inside_initializer_braces">#</a></h2>
-<p>Whether an initializer's contents take a continuation level. ⚠ Measured 2026-08-30 at <code>resharper_continuous_indent_multiplier = 2</code>: a <code>new List&lt;int&gt; {</code> at column 12 puts its elements on 20 at <code>true</code> and on 16 at <code>false</code>, so <code>false</code> is one indent width rather than none. Under the export's multiplier of 1 the two coincide. ⚠ SEPARATE AND NOT FIXED: Skala's <code>true</code> arm is an <code>IndentKind.Block</code> scope, which is one indent width whatever the multiplier says, so at any multiplier above 1 it is a level short of the oracle. That is a <code>continuous_indent_multiplier</code> defect on braced initializers rather than this key's, and repairing it means turning an absolute scope into a relative one under every initializer in <code>corpus/real</code>. SK-DIV-0090.</p>
+<section class="option" id="skala_use_continuous_indent_inside_initializer_braces">
+<h2><code>skala_use_continuous_indent_inside_initializer_braces</code> <a class="self" href="#skala_use_continuous_indent_inside_initializer_braces">#</a></h2>
+<p>Whether an initializer's contents take a continuation level. ⚠ Measured 2026-08-30 at <code>skala_continuous_indent_multiplier = 2</code>: a <code>new List&lt;int&gt; {</code> at column 12 puts its elements on 20 at <code>true</code> and on 16 at <code>false</code>, so <code>false</code> is one indent width rather than none. Under the export's multiplier of 1 the two coincide. ⚠ SEPARATE AND NOT FIXED: Skala's <code>true</code> arm is an <code>IndentKind.Block</code> scope, which is one indent width whatever the multiplier says, so at any multiplier above 1 it is a level short of the oracle. That is a <code>skala_continuous_indent_multiplier</code> defect on braced initializers rather than this key's, and repairing it means turning an absolute scope into a relative one under every initializer in <code>corpus/real</code>. SK-DIV-0090.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -75,8 +72,7 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_use_continuous_indent_inside_initializer_braces</code>, <code>resharper_use_continuous_indent_inside_initializer_braces</code>, <code>use_continuous_indent_inside_initializer_braces</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/indentation/resharper_csharp_use_continuous_indent_inside_initializer_braces.cs</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/indentation/skala_use_continuous_indent_inside_initializer_braces.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BracesPageSchema.html#resharper_csharp_use_continuous_indent_inside_initializer_braces">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BracesPageSchema.html#resharper_csharp_use_continuous_indent_inside_initializer_braces</a></td></tr>
 </tbody>
 </table>

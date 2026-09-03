@@ -13,59 +13,8 @@
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Arrangement of statements</h1>
 <p class="lede">6 keys.</p>
-<section class="option" id="resharper_csharp_new_line_before_while">
-<h2><code>resharper_csharp_new_line_before_while</code> <a class="self" href="#resharper_csharp_new_line_before_while">#</a></h2>
-<p>A new line before a <code>do</code> statement's <code>while</code>. ⚠ Measured 2026-08-30 and fully symmetric: at <code>true</code> the oracle puts <code>while (b);</code> on its own line FLUSH WITH THE <code>do</code>, inserting the break if the author did not write one; at <code>false</code> it joins. Skala kept the break and indented the <code>while</code> four columns, because a <code>do</code>'s trailing <code>while</code> has no clause node of its own — <code>else</code>, <code>catch</code> and <code>finally</code> are each the first token of a clause and are units, and this keyword sits directly in <code>DoStatementSyntax</code>, so the continuation walk read it as a continuation of the <code>do</code>. Fixed in <code>StartsAUnit</code>.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
-<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_new_line_before_while</code>, <code>new_line_before_while</code>, <code>resharper_new_line_before_while</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/braces/resharper_csharp_new_line_before_while.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_new_line_before_while">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_new_line_before_while</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_wrap_for_stmt_header_style">
-<h2><code>resharper_csharp_wrap_for_stmt_header_style</code> <a class="self" href="#resharper_csharp_wrap_for_stmt_header_style">#</a></h2>
-<p>Arrangement of statements — Wrap 'for' statement header</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code>, <code>chop_always</code></td></tr>
-<tr><th>Default</th><td><code>chop_if_long</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_wrap_for_stmt_header_style</code>, <code>resharper_wrap_for_stmt_header_style</code>, <code>wrap_for_stmt_header_style</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/wrapping/for-header.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_for_stmt_header_style">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_for_stmt_header_style</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_wrap_multiple_declaration_style">
-<h2><code>resharper_csharp_wrap_multiple_declaration_style</code> <a class="self" href="#resharper_csharp_wrap_multiple_declaration_style">#</a></h2>
-<p>Arrangement of statements — Wrap multiple declaration</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code>, <code>chop_always</code></td></tr>
-<tr><th>Default</th><td><code>chop_if_long</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_wrap_multiple_declaration_style</code>, <code>resharper_wrap_multiple_declaration_style</code>, <code>wrap_multiple_declaration_style</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/wrapping/declarators.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_multiple_declaration_style">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_multiple_declaration_style</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_new_line_before_catch">
-<h2><code>resharper_new_line_before_catch</code> <a class="self" href="#resharper_new_line_before_catch">#</a></h2>
+<section class="option" id="skala_new_line_before_catch">
+<h2><code>skala_new_line_before_catch</code> <a class="self" href="#skala_new_line_before_catch">#</a></h2>
 <p>Arrangement of statements — Place 'catch' on a new line</p>
 <table class="facts">
 <tbody>
@@ -75,14 +24,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_new_line_before_catch</code>, <code>new_line_before_catch</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/braces/resharper_new_line_before_catch.cs</code></td></tr>
+<tr><th>Also spelled</th><td><code>csharp_new_line_before_catch</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/braces/skala_new_line_before_catch.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_new_line_before_catch">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_new_line_before_catch</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_new_line_before_else">
-<h2><code>resharper_new_line_before_else</code> <a class="self" href="#resharper_new_line_before_else">#</a></h2>
+<section class="option" id="skala_new_line_before_else">
+<h2><code>skala_new_line_before_else</code> <a class="self" href="#skala_new_line_before_else">#</a></h2>
 <p>Arrangement of statements — Place 'else' on a new line</p>
 <table class="facts">
 <tbody>
@@ -92,14 +41,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_new_line_before_else</code>, <code>new_line_before_else</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/braces/resharper_new_line_before_else.cs</code></td></tr>
+<tr><th>Also spelled</th><td><code>csharp_new_line_before_else</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/braces/skala_new_line_before_else.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_new_line_before_else">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_new_line_before_else</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_new_line_before_finally">
-<h2><code>resharper_new_line_before_finally</code> <a class="self" href="#resharper_new_line_before_finally">#</a></h2>
+<section class="option" id="skala_new_line_before_finally">
+<h2><code>skala_new_line_before_finally</code> <a class="self" href="#skala_new_line_before_finally">#</a></h2>
 <p>Arrangement of statements — Place 'finally' on a new line</p>
 <table class="facts">
 <tbody>
@@ -109,9 +58,57 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_new_line_before_finally</code>, <code>new_line_before_finally</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/braces/resharper_new_line_before_finally.cs</code></td></tr>
+<tr><th>Also spelled</th><td><code>csharp_new_line_before_finally</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/braces/skala_new_line_before_finally.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_new_line_before_finally">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_new_line_before_finally</a></td></tr>
+</tbody>
+</table>
+</section>
+<section class="option" id="skala_new_line_before_while">
+<h2><code>skala_new_line_before_while</code> <a class="self" href="#skala_new_line_before_while">#</a></h2>
+<p>A new line before a <code>do</code> statement's <code>while</code>. ⚠ Measured 2026-08-30 and fully symmetric: at <code>true</code> the oracle puts <code>while (b);</code> on its own line FLUSH WITH THE <code>do</code>, inserting the break if the author did not write one; at <code>false</code> it joins. Skala kept the break and indented the <code>while</code> four columns, because a <code>do</code>'s trailing <code>while</code> has no clause node of its own — <code>else</code>, <code>catch</code> and <code>finally</code> are each the first token of a clause and are units, and this keyword sits directly in <code>DoStatementSyntax</code>, so the continuation walk read it as a continuation of the <code>do</code>. Fixed in <code>StartsAUnit</code>.</p>
+<table class="facts">
+<tbody>
+<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
+<tr><th>Default</th><td><code>false</code></td></tr>
+<tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
+<tr><th>Language</th><td>csharp</td></tr>
+<tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/braces/skala_new_line_before_while.cs</code></td></tr>
+<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_new_line_before_while">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_new_line_before_while</a></td></tr>
+</tbody>
+</table>
+</section>
+<section class="option" id="skala_wrap_for_stmt_header_style">
+<h2><code>skala_wrap_for_stmt_header_style</code> <a class="self" href="#skala_wrap_for_stmt_header_style">#</a></h2>
+<p>Arrangement of statements — Wrap 'for' statement header</p>
+<table class="facts">
+<tbody>
+<tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code>, <code>chop_always</code></td></tr>
+<tr><th>Default</th><td><code>chop_if_long</code></td></tr>
+<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
+<tr><th>Language</th><td>csharp</td></tr>
+<tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/wrapping/for-header.cs</code></td></tr>
+<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_for_stmt_header_style">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_for_stmt_header_style</a></td></tr>
+</tbody>
+</table>
+</section>
+<section class="option" id="skala_wrap_multiple_declaration_style">
+<h2><code>skala_wrap_multiple_declaration_style</code> <a class="self" href="#skala_wrap_multiple_declaration_style">#</a></h2>
+<p>Arrangement of statements — Wrap multiple declaration</p>
+<table class="facts">
+<tbody>
+<tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code>, <code>chop_always</code></td></tr>
+<tr><th>Default</th><td><code>chop_if_long</code></td></tr>
+<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
+<tr><th>Language</th><td>csharp</td></tr>
+<tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/wrapping/declarators.cs</code></td></tr>
+<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_multiple_declaration_style">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_multiple_declaration_style</a></td></tr>
 </tbody>
 </table>
 </section>

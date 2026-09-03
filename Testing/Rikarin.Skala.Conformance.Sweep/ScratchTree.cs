@@ -163,7 +163,7 @@ public static class ScratchTree {
             }
 
             // ⚠ Raw, not normalised. The caller decides — and it must, because
-            // `resharper_enforce_line_ending_style` and `resharper_csharp_insert_final_newline`
+            // `skala_enforce_line_ending_style` and `skala_insert_final_newline`
             // change nothing that survives normalisation.
             // ⚠ One profile per invocation, chosen from the batch rather than hard-coded. Every
             // member of a batch is asserted to want the same one, because a batch mixing profiles
@@ -299,7 +299,7 @@ public static class ScratchTree {
     ///     <c>constructs/arrangement/usings/sort-and-remove.cs</c> opens with <c>using Alpha.Things;</c>,
     ///     and <c>Alpha.Things</c> exists because <c>constructs/arrangement/usings/namespaces.cs</c>
     ///     declares it. Copy the first file into a project without the second and the import does not
-    ///     resolve, so <c>CSOptimizeUsings</c> deletes it whatever <c>resharper_sort_usings</c> says —
+    ///     resolve, so <c>CSOptimizeUsings</c> deletes it whatever <c>skala_sort_usings</c> says —
     ///     an oracle that never varies, which
     ///     <see cref="KeyFlipSweep.IsUnvaryingRound" /> would report and
     ///     <see cref="OptionSweep.Classify" /> would call <c>SPURIOUS</c>. Both readings would be about

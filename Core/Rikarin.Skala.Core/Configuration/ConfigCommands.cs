@@ -199,12 +199,12 @@ public static class ConfigCommands {
 
         var hasStandardWidth =
             OptionRegistry.TryResolve("max_line_length", out var widthId) && !resolution[widthId].IsDefault;
-        var reSharperWidth = OptionRegistry.TryResolve("resharper_csharp_max_line_length", out var rsWidthId)
+        var reSharperWidth = OptionRegistry.TryResolve("skala_max_line_length", out var rsWidthId)
             ? resolution[rsWidthId]
             : null;
         if (!hasStandardWidth && reSharperWidth is { IsDefault: false }) {
             output.AppendLine(
-                $"⚠ no `max_line_length`; the column limit lives only in `resharper_csharp_max_line_length = {reSharperWidth.Value}`."
+                $"⚠ no `max_line_length`; the column limit lives only in `skala_max_line_length = {reSharperWidth.Value}`."
             );
             output.AppendLine(
                 "  Every other tool in the ecosystem therefore does not know the width. `skala config fix` adds it."
@@ -588,6 +588,23 @@ public static class ConfigCommands {
     /// </summary>
     /// <remarks>
     ///     <para>
+    ///         ⚠ <b>Tier D is labelled "not pinned by a fixture", not "not implemented".</b> The old
+    ///         label was wrong in the way that costs the most: Tier A is the narrow claim
+    ///         <em>
+    ///             the
+    ///             formatter reads the option <b>and</b> a committed oracle fixture pins it
+    ///         </em>, so Tier D
+    ///         has only ever meant "not Tier A" (docs/tier-d-split.md). Measured on this registry, 70
+    ///         of the 161 Tier C and D options are read by production code by name — including
+    ///         <c>skala_max_line_length</c>, which is the column limit the entire wrapping engine runs
+    ///         on. Reading the old label as a coverage number, and deleting what it counted, would have
+    ///         taken the formatter's line width out of the registry.
+    ///     </para>
+    ///     <para>
+    ///         The honest count of "declared and not performed" is the <c>inert</c>-excluding list
+    ///         below, which this block has always computed and which is a much smaller number.
+    ///     </para>
+    ///     <para>
     ///         This block reported only the registry-wide tier split until M9 — "A: 221, B: 0, C: 6, D:
     ///         293" — which is true, and is not the number a user needs. The question a person opening
     ///         <c>skala config check</c> is asking is
@@ -682,7 +699,7 @@ public static class ConfigCommands {
         output.AppendLine(
             string.Create(
                 CultureInfo.InvariantCulture,
-                $"Registry-wide — A (implemented): {Tier(OptionTier.A)}, B (approximated): {Tier(OptionTier.B)}, C (accepted, ignored): {Tier(OptionTier.C)}, D (not implemented): {Tier(OptionTier.D)}."
+                $"Registry-wide — A (implemented, pinned by an oracle fixture): {Tier(OptionTier.A)}, B (approximated): {Tier(OptionTier.B)}, C (accepted, ignored): {Tier(OptionTier.C)}, D (not pinned by a fixture): {Tier(OptionTier.D)}."
             )
         );
 
@@ -707,14 +724,9 @@ public static class ConfigCommands {
             return "xmldoc";
         }
 
-        var span = info.Key.AsSpan();
-        foreach (var prefix in (ReadOnlySpan<string>)["resharper_csharp_", "resharper_", "csharp_"]) {
-            if (span.StartsWith(prefix, StringComparison.Ordinal)) {
-                span = span[prefix.Length..];
-                break;
-            }
-        }
-
+        // ⚠ The generated list, not a third copy of it. The copy that stood here was missing
+        // `dotnet_`, so every `dotnet_style_*` option was filed under a family called "dotnet".
+        var span = OptionKeyPrefixes.Strip(info.Key).AsSpan();
         var underscore = span.IndexOf('_');
         return underscore < 0 ? span.ToString() : span[..underscore].ToString();
     }

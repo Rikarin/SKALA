@@ -165,7 +165,7 @@ it is a spacing rule fired at text nobody parsed. A formatter that edits code it
 eventually edit it wrongly, and the evidence that it already does is in the output.
 
 ⚠ **And Skala is now consistent about it, which it was not.** The one hole was
-`blank_lines_around_region` firing on the gaps around a `#region` that stands *inside* the inactive
+`skala_blank_lines_around_region` firing on the gaps around a `#region` that stands *inside* the inactive
 branch: Roslyn keeps such a directive structured, so the piece stream could not tell it from one
 governing real code, and the blank line Skala wrote there re-parsed as a `DisabledTextTrivia` that
 had not been in the input — SK-FUZZ-0016, and the file aborted with SK9099. `Piece.Inactive`
@@ -176,7 +176,7 @@ the branch is opaque whether or not Roslyn kept it structured. Re-measured on a 
 returns the inactive branch byte for byte. The only remaining difference from the oracle is the
 oracle's own edit inside the disabled text.
 
-- options: `resharper_csharp_keep_blank_lines_in_code`, `resharper_csharp_keep_blank_lines_in_declarations`
+- options: `skala_keep_blank_lines_in_code`, `skala_keep_blank_lines_in_declarations`
 - ⚠ status: **open**, measured
 - ⚠ **triage 2026-08-30: `deliberate`.** The argument does not need the oracle to state it: *the
   inactive branch of a `#if` is text the compiler never sees, so an edit to it can only be checked
@@ -208,7 +208,7 @@ thing. The measurements are kept because the trajectory is the argument for the 
 
 ## SK-DIV-0003 — an interpolated raw string literal is still emitted verbatim
 
-`resharper_csharp_indent_raw_literal_string = align` asks the formatter to move the closing
+`skala_indent_raw_literal_string = align` asks the formatter to move the closing
 delimiter and the content of a `"""` literal, and milestones 1 and 2 declined on the grounds that
 the transformation changes the string's value if it is done wrong.
 
@@ -222,7 +222,7 @@ if that were untrue.
 `$"""…{x}…"""` is not one token but a run of them with expressions between, and it stays on the
 verbatim path [04](plan/04-formatting-engine.md) puts it on — "where a moved space changes the
 value". The option is Tier A on the strength of
-`constructs/trivia/resharper_csharp_indent_raw_literal_string.cs`, and this entry is what its Tier B
+`constructs/trivia/skala_indent_raw_literal_string.cs`, and this entry is what its Tier B
 caveat in doc 04 was pointing at.
 
 Measured on `corpus/real/`: files containing a raw literal went 94.41 % (M1) → 97.81 % (M3) →
@@ -268,7 +268,7 @@ equivalence guard about all three.
 A verbatim string has no stripping rule, so its content is literal and neither engine can move it;
 both return it untouched. Only the raw-literal half is open.
 
-- options: `resharper_csharp_indent_raw_literal_string` (Tier A, `default = align`, from the template)
+- options: `skala_indent_raw_literal_string` (Tier A, `default = align`, from the template)
 - ⚠ status: **open**, measured
 - ⚠ **triage 2026-08-30: `debt`, size M.** Not defensible to a user: "Skala aligns your raw string
   literals, except the interpolated ones" is a bug report, not a policy, and the entry's own
@@ -337,7 +337,7 @@ to spare.
 `var <name> = <rhs>;` with the right-hand side padded to a known length and the *name* padded so
 that the flat line comes to a chosen total — which sweeps the continuation width independently of
 how far over the margin the line was, something the milestone-3 experiment could not do. Eleven
-right-hand-side shapes, five block depths, both values of `wrap_before_eq`, one character at a time.
+right-hand-side shapes, five block depths, both values of `skala_wrap_before_eq`, one character at a time.
 The result is in [sk-div-0005-margin-sweep.md](sk-div-0005-margin-sweep.md), and it contradicts the
 milestone-3 note in three ways:
 
@@ -350,7 +350,7 @@ milestone-3 note in three ways:
 3. **It depends on the shape.** At a flat width of 137 and depth 2 the threshold is 116 for
    `Convert.FromBase64String("…")`, 117 for a call on an identifier, 118 for a binary chain, 120 for
    a cast; an object initializer and an array initializer go the other way, 107 and 101. And under
-   `wrap_before_eq = true` the whole table moves down by two to four columns.
+   `skala_wrap_before_eq = true` the whole table moves down by two to four columns.
 
 **So the constant stays, and it is now honestly a fitted constant rather than a derived one.**
 Fitted against `corpus/real/` with everything else in the ordering rule held fixed:
@@ -472,7 +472,7 @@ and that is a fact the fitter has, not one it has to guess. This does not close 
 work is still the preference fact's size L; what it changes is that the target is now statable
 without ReSharper installed, which is what the entry said was missing.
 
-- options: `resharper_prefer_wrap_around_eq` (Tier D), `resharper_csharp_wrap_before_eq` (Tier D)
+- options: `skala_prefer_wrap_around_eq` (Tier D), `skala_wrap_before_eq` (Tier D)
 - ⚠ status: **open**, measured. The margin's own sweep is
   [sk-div-0005-margin-sweep.md](sk-div-0005-margin-sweep.md) and it says no value of the constant
   closes this; the width surface is [sk-div-preference-sweep.md](sk-div-preference-sweep.md) and it
@@ -486,7 +486,7 @@ real and is reproduced below; the conclusion drawn from it was not. Read this en
 a wrong inference being corrected, because the way it was wrong is more useful than the fact.
 
 [05](plan/05-csharp-formatting-rules.md) § "Phase 4" describes an xmldoc sub-formatter: parse the
-comment as XML, re-wrap text to `xmldoc_max_line_length = 120`, break before
+comment as XML, re-wrap text to `skala_xmldoc_max_line_length = 120`, break before
 `summary,remarks,example,returns,param,typeparam,value,para`. It is implemented, and it runs by
 default.
 
@@ -509,7 +509,7 @@ byte-identical.
 The conclusion drawn was "the oracle declines to format documentation comments", and from it, "a
 Skala that formatted them would diverge from Rider on every doc comment in every repository". The
 twelve `resharper_xmldoc_*` keys were left Tier D on that basis and
-`resharper_space_after_triple_slash` was **demoted** from Tier A — milestone 1 inserted the space,
+`skala_space_after_triple_slash` was **demoted** from Tier A — milestone 1 inserted the space,
 the oracle did not, and it was worth 79 lines across 15 files of `corpus/real/`.
 
 ### ⚠ What the measurement actually showed
@@ -523,7 +523,7 @@ comments, use code cleanup".
 
 So M3 measured a profile and reported it as a property of the tool. Add one element to the profile
 and the oracle reformats the comment, honouring `space_after_triple_slash`, `max_line_length`,
-`linebreak_before_elements` and `max_blank_lines_between_tags` from this repository's own
+`skala_xmldoc_linebreak_before_elements` and `skala_xmldoc_max_blank_lines_between_tags` from this repository's own
 `.editorconfig`. The negative control — the same element under a name the tool does not know —
 changes nothing, which is what makes the positive result mean something. The full probe, its
 commands and two incidental ways to get a false "no change" out of `jb cleanupcode` are in
@@ -531,14 +531,14 @@ commands and two incidental ways to get a false "no change" out of `jb cleanupco
 
 **Skala formats documentation comments by default.** Not formatting them was the divergence.
 `skala format --no-xmldoc` is the escape hatch, and it is a flag rather than
-`resharper_xmldoc_wrap_lines = false` for two reasons: that key means "do not wrap long lines" and
+`skala_xmldoc_wrap_lines = false` for two reasons: that key means "do not wrap long lines" and
 would still leave the comment re-indented and its marker respaced, and it is not a documented
 ReSharper key at all — `wrap_lines` appears nowhere in JetBrains' `.editorconfig` index, for any
 language, though the export writes it.
 
-⚠ **`resharper_space_after_triple_slash` is Tier A again.** This paragraph used to end "the key
+⚠ **`skala_space_after_triple_slash` is Tier A again.** This paragraph used to end "the key
 cannot return to Tier A … That is a fact about the fixtures, and it expires when they are
-regenerated." It has expired. `constructs/xmldoc/resharper_space_after_triple_slash.cs` carries the
+regenerated." It has expired. `constructs/xmldoc/skala_space_after_triple_slash.cs` carries the
 fixture, generated under `OracleProfile.DocComments`, and Skala reproduces it byte for byte.
 
 ⚠ The fixture is narrower than it looks, and the narrowing is a measured shape rather than a
@@ -557,7 +557,7 @@ marker." They no longer differ. `XmlDocFormatter.Replacement` compares its rende
 source's line for line, modulo one space after the `///`, and puts the source back when that is the
 only difference — which is exactly what the oracle does, measured on one file holding two comments
 with the same two blank `///` lines between the same two tags, under
-`resharper_xmldoc_max_blank_lines_between_tags = 3` so neither line had to go:
+`skala_xmldoc_max_blank_lines_between_tags = 3` so neither line had to go:
 
 ```csharp
 /// <summary>A summary written at enough length that it cannot possibly fit …</summary>   →  rebuilt, and its blank lines come back as `/// `
@@ -571,7 +571,7 @@ with the same two blank `///` lines between the same two tags, under
 /// <returns>A value.</returns>
 ```
 
-⚠ **The row this was found from was `resharper_xmldoc_max_blank_lines_between_tags`, and the key had
+⚠ **The row this was found from was `skala_xmldoc_max_blank_lines_between_tags`, and the key had
 nothing to do with it.** The sweep reported it `Divergent` at `3`, where Skala wrote `/// ` and the
 oracle wrote `///`; the count was right on both sides and the *marker* was the disagreement, on a
 comment the oracle was not otherwise touching. A verdict on one key was a fact about a rule three
@@ -600,13 +600,13 @@ space anyway**. Skala follows the oracle rather than the key, so the key is iner
 directions and stays Tier D — implementing it would create a divergence in exchange for nothing
 anyone asked for.
 
-⚠ **Registry state.** `resharper_space_after_triple_slash` is **Tier A** (see above),
-`resharper_xmldoc_wrap_lines` is **Tier D** — SK-DIV-0019 is closed and its fixture agrees, but the
+⚠ **Registry state.** `skala_space_after_triple_slash` is **Tier A** (see above),
+`skala_xmldoc_wrap_lines` is **Tier D** — SK-DIV-0019 is closed and its fixture agrees, but the
 key has never been swept, so nothing has yet made a claim about it away from the export's value;
 `XmlDocOracleTests.Unswept` holds it and its six siblings there until the sweep does.
 `trim_trailing_whitespace` is **Tier D** with
 `defaultSource: oracle-probe` — the probe that established it is recorded in the registry entry
-itself — and `resharper_remove_spaces_on_blank_lines` is **Tier D**, inert as this entry says.
+itself — and `skala_remove_spaces_on_blank_lines` is **Tier D**, inert as this entry says.
 
 ### The sub-formatter is the default
 
@@ -629,10 +629,10 @@ structural fix beside it; the other two were SK-DIV-0022 and SK-DIV-0023's survi
 
 ⚠ **Only four of the nine are keys the export sets**, and this has to be said before "enforced at the
 export's own value" is said of any of them. `.editorconfig` carries twelve `resharper_xmldoc_*` lines,
-and of the nine only `max_line_length = 120`, `wrap_lines = true`, `wrap_tags_and_pi = true` and
-`wrap_text = true` are among them. `spaces_inside_tags`, `blank_line_after_pi`,
-`linebreak_before_multiline_elements`, `linebreak_before_singleline_elements` and
-`linebreaks_inside_tags_for_elements_longer_than` are **not in the export at all**; the value in play
+and of the nine only `max_line_length = 120`, `wrap_lines = true`, `skala_xmldoc_wrap_tags_and_pi = true` and
+`skala_xmldoc_wrap_text = true` are among them. `skala_xmldoc_spaces_inside_tags`, `skala_xmldoc_blank_line_after_pi`,
+`skala_xmldoc_linebreak_before_multiline_elements`, `skala_xmldoc_linebreak_before_singleline_elements` and
+`skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than` are **not in the export at all**; the value in play
 is the registry `default`. So for those five the fixtures do not say "Skala enforces the standard" —
 they say **Skala's recorded default matches ReSharper's built-in default on this construct**, which is
 a different claim and, on these constructs, a stronger one. ⚠ Their `defaultSource` reads `template`
@@ -725,8 +725,8 @@ of italic text was putting the sentence's full stop on a line of its own.
 trimmed each line and the one space after a marker, which no re-wrap survives, because a re-wrap
 moves the line breaks. It exists now, only under the flag, only for `///` comments, and it is the
 sub-formatter's own signature rather than "comments are exempt" or "the words in order" — the
-latter would have to be widened again for `space_before_self_closing` and again for
-`spaces_inside_tags`. The signature is *tighter* than a word sequence where it counts: a `<code>`
+latter would have to be widened again for `skala_xmldoc_space_before_self_closing` and again for
+`skala_xmldoc_spaces_inside_tags`. The signature is *tighter* than a word sequence where it counts: a `<code>`
 body is compared byte-for-byte, which it was not before.
 
 **Twenty-one of the thirty-two `resharper_xmldoc_*` keys are honoured** and eleven are refused. Each
@@ -738,7 +738,7 @@ fixtures carry short, already-tidy doc comments written when nothing read them.
 reading.** Four keys were promoted out of the refusal list after being measured; and the family
 itself grew by five, because the five processing-instruction keys had been *excluded from the
 count* on the grounds that "a processing instruction in a C# documentation comment is not a thing
-that occurs". It is — Roslyn parses one, and `blank_line_after_pi` acts on one at its default
+that occurs". It is — Roslyn parses one, and `skala_xmldoc_blank_line_after_pi` acts on one at its default
 `true`. The exclusion meant five keys carried no decision at all, because the partition test that
 would have demanded one did not look at them. One of the five turned out to be implementable, and
 had been silently missing from Skala's default output the whole time.
@@ -759,30 +759,30 @@ the following are measured, not read off a settings page:
 | `<customElement a="1" … e="5">` past the margin | wrapped, last attribute on a continuation line at one indent |
 | `<?xml-stylesheet …?>` | followed by a blank `///` line |
 
-So `space_after_last_attribute` and `spaces_around_eq_in_attribute` were refused for a reason that
+So `skala_xmldoc_space_after_last_attribute` and `skala_xmldoc_spaces_around_eq_in_attribute` were refused for a reason that
 described Skala's implementation — "Skala emits a tag header byte-for-byte" — dressed as a property
 of the key. Both are implemented now: the renderer re-emits the header from a name/value split taken
 at Roslyn's `EqualsToken`, so an attribute's **value, quote character included, is still the source
 bytes** and only the whitespace around the `=` is chosen.
 
-`linebreaks_inside_tags_for_elements_longer_than` was refused because "JetBrains' own reference page
+`skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than` was refused because "JetBrains' own reference page
 does not say what is measured against it". True, and it did not need to: **the tool says.** The
 element's *flat inner content* — its text and its child markup, neither tag — is compared **strictly
 greater** than the threshold. At 12, twelve characters stay inline and thirteen do not. ⚠ `0`
 therefore means "always", not "never"; `options.json` asserted the opposite in its `boundsBecause`,
 and that is corrected.
 
-`blank_line_after_pi` was never refused, considered, or counted.
+`skala_xmldoc_blank_line_after_pi` was never refused, considered, or counted.
 
 ### The refusals that stand
 
-- `attribute_indent`, `attribute_style`, `alignment_tab_fill_style`, `allow_far_alignment` —
+- `skala_xmldoc_attribute_indent`, `skala_xmldoc_attribute_style`, `alignment_tab_fill_style`, `allow_far_alignment` —
   **pending, not refused.** All four describe a wrapped tag header's continuation line, and Skala
   never breaks inside a header. The oracle does, so the subject exists; the prerequisite is a
   renderer that can wrap a header, and until then the reason is Skala's shape and says nothing about
   the keys.
-- `pi_attribute_style`, `pi_attributes_indent`, `space_after_last_pi_attribute`,
-  `spaces_around_eq_in_pi_attribute` — ~~pending on the same prerequisite one construct over: a
+- `skala_xmldoc_pi_attribute_style`, `skala_xmldoc_pi_attributes_indent`, `skala_xmldoc_space_after_last_pi_attribute`,
+  `skala_xmldoc_spaces_around_eq_in_pi_attribute` — ~~pending on the same prerequisite one construct over: a
   processing instruction is emitted verbatim, so its header has no attributes to space out.~~
   ⚠ **Corrected 2026-08-31: not pending on anything, because the oracle does not parse a processing
   instruction's header either.** The sentence above described *Skala* and was read as a property of
@@ -790,22 +790,22 @@ and that is corrected.
   `<?skala-probe first = "1" second="2"   third='3'?>`, a 160-column instruction, one the author had
   already broken across two lines, and one written tight — **one output across every value of all
   four keys**, singly and all four at once: the spaces around `=` survive, the double space survives,
-  the quote characters survive, and nothing is wrapped. `blank_line_after_pi = false` removes the
+  the quote characters survive, and nothing is wrapped. `skala_xmldoc_blank_line_after_pi = false` removes the
   blank `///` line after the same instruction in the same run, so the doc-comment task does see it.
   All four are inert in the oracle, and Skala's verbatim path is not a gap against it.
-- `wrap_around_elements` — ⚠ **refused, and now for a measured reason.** With the doc-comment task
+- `skala_xmldoc_wrap_around_elements` — ⚠ **refused, and now for a measured reason.** With the doc-comment task
   enabled, at both values, over prose containing inline `<see/>`, `<c>` and `<b>` elements both long
   enough to wrap and short enough not to, the oracle's output is **byte-identical**. Either it is
-  subsumed by `wrap_tags_and_pi` in this build or its subject is a construct no C# doc comment
+  subsumed by `skala_xmldoc_wrap_tags_and_pi` in this build or its subject is a construct no C# doc comment
   produces. The previous two reasons for this key were both guesses about documentation; this one is
   a diff.
 - `tab_width` — it only changes how wide a tab is when measuring, and the only tab a re-wrap can
   meet is inside a `<code>` block, which is verbatim and never measured.
-- `insert_final_newline` — a `///` comment has no file end to put a newline at, and JetBrains' key
+- `skala_insert_final_newline` — a `///` comment has no file end to put a newline at, and JetBrains' key
   index does not list XMLDOC among the languages that accept the key at all. ⚠ Measured 2026-08-31
   rather than argued: one oracle output at both values on a file carrying a type-level `<summary>`, a
   member `<remarks>`/`<returns>` pair and a trailing comment that ends the type, with
-  `wrap_text = false` moving the same file in the same run.
+  `skala_xmldoc_wrap_text = false` moving the same file in the same run.
 
 ⚠ **One deliberate narrowing against the oracle, recorded rather than hidden.** The threshold key
 applies to `<c>` in the oracle's output; Skala exempts verbatim elements from it, because breaking
@@ -820,9 +820,9 @@ XML comment. Fixing it means giving the verbatim path an indent and a marker of 
 change to how three constructs are emitted rather than to how one key is read.
 
 ⚠ Two readings the sub-formatter had to choose and no oracle settles, recorded because they are
-choices: `linebreak_before_elements` is read as "this element owns its own line", a break before it
+choices: `skala_xmldoc_linebreak_before_elements` is read as "this element owns its own line", a break before it
 *and* before what follows it, because the strict reading leaves `</param><param …>` sharing a line
-with the text after them; and `indent_child_elements = do_not_touch` is mapped to "no indent"
+with the text after them; and `skala_xmldoc_indent_child_elements = do_not_touch` is mapped to "no indent"
 rather than "keep the author's", because under a re-wrap the author's indentation no longer exists
 to keep.
 
@@ -831,7 +831,7 @@ existing and makes lifting it out the exercise that proves the `ISkalaLanguage` 
 — in `Formatting.CSharp`, as four files that share no state with the document builder — but
 `ISkalaLanguage` still does not, and doc 14 still has no correction note.
 
-- options: `resharper_space_after_triple_slash`, `resharper_xmldoc_wrap_lines`, `resharper_xmldoc_max_line_length`, `resharper_xmldoc_linebreak_before_elements`, `trim_trailing_whitespace`
+- options: `skala_space_after_triple_slash`, `skala_xmldoc_wrap_lines`, `skala_xmldoc_max_line_length`, `skala_xmldoc_linebreak_before_elements`, `trim_trailing_whitespace`
 - ⚠ status: **open, and no longer deliberate.** The sub-formatter is the default and Skala follows
   Rider. Seventeen keys honoured and asserted observable, ten refused with a reason, none Tier A —
   and, unlike before, all of them *able* to become Tier A. What is left is one element in
@@ -897,19 +897,19 @@ settled after the oracle is gone.** "A construct that spans lines makes its cont
 a principle a person can hold and a test can pin; it needs the oracle for confirmation, not for
 derivation. The preference fact is the opposite, and that is what makes it the urgent one.
 
-- options: `resharper_csharp_wrap_arguments_style` (Tier A, `chop_if_long`), `resharper_keep_user_linebreaks` (Tier A, `true`)
+- options: `skala_wrap_arguments_style` (Tier A, `chop_if_long`), `skala_keep_user_linebreaks` (Tier A, `true`)
 - ⚠ status: **half closed** (the chain, at M3.1), half **open**, measured
 
 ## SK-DIV-0008 — ⚠ half closed: statement conditions are aligned, four other keys are not
 
 `int_align` and all eight `int_align_*` sub-keys are `false`, and so are `align_multiline_argument`,
-`…_parameter`, `…_calls_chain`, `…_expression` and `align_multiline_binary_expressions_chain`.
+`…_parameter`, `…_calls_chain`, `…_expression` and `skala_align_multiline_binary_expressions_chain`.
 
 ⚠ **Milestone 3 said four keys survive and there are nine**, which is the first correction:
-`align_multiline_statement_conditions`, `align_multiline_type_argument`,
+`skala_align_multiline_statement_conditions`, `align_multiline_type_argument`,
 `align_multiline_type_parameter`, `align_multiline_ctor_init`, `align_multiline_array_initializer`,
-`align_multiline_implements_list`, `align_multiline_comments`, `align_first_arg_by_paren`'s
-companion `align_ternary = align_not_nested`, and `int_align_fix_in_adjacent`.
+`align_multiline_implements_list`, `skala_align_multiline_comments`, `align_first_arg_by_paren`'s
+companion `align_ternary = align_not_nested`, and `skala_int_align_fix_in_adjacent`.
 
 **Measured before building, which is what decided it.** Of 313 divergent line slots at the time,
 **40 across 11 files** were a line the oracle had put at a column that is not a multiple of the
@@ -940,7 +940,7 @@ line fidelity and 1.3 of file fidelity.
 | `align_multiline_type_argument`, `…_type_parameter` | a type argument list broken across lines | 0 lines |
 | `align_multiline_ctor_init` | `: base(\n      a)` | 0 lines |
 
-⚠ **Current, at `8cbd66d`:** `resharper_csharp_align_multiline_statement_conditions` is **Tier A**,
+⚠ **Current, at `8cbd66d`:** `skala_align_multiline_statement_conditions` is **Tier A**,
 so the half that was built stays built. `align_multiline_for_stmt`, `align_multiline_array_initializer`,
 `align_multiline_type_argument` and `align_multiline_ctor_init` are all still **Tier D**. The `for`
 header's residue is **5 hunks over 13 lines across 3 files** — signature: a hunk mentioning a
@@ -951,10 +951,10 @@ three of the three files are the same generated `DataSet` and its neighbours. Th
 are still worth 0 lines: the corpus contains no instance of their shapes.
 
 ⚠ **The `for` row's attribution was wrong, and milestone 3.2 measured it.** The residue was never
-`align_multiline_for_stmt`'s: that key is **masked** by `align_multiline_statement_conditions = true`,
+`align_multiline_for_stmt`'s: that key is **masked** by `skala_align_multiline_statement_conditions = true`,
 which the export sets, and both of its values return the same file byte for byte. What was missing
 was a **break point at the header's `;`** — Skala broke inside the incrementor expression instead,
-producing `i +=\n 1` where the oracle chops the clauses. `wrap_for_stmt_header_style` is the key that
+producing `i +=\n 1` where the oracle chops the clauses. `skala_wrap_for_stmt_header_style` is the key that
 governs it, it is now implemented and **Tier A**
 (`constructs/wrapping/for-header.cs`), and the residue by the same signature is **2 hunks in 1 file**.
 What is left there is not a `for` rule: the initializer's own `=` continuation lands on the align
@@ -977,7 +977,7 @@ flipped to `false`:
 |---|---|
 | Skala vs oracle, export values | **byte-identical on every shape**, the `for` header included |
 | oracle at `true` vs `false`, all four keys | **byte-identical** — the keys move nothing |
-| same, with `align_multiline_array_and_object_initializer = true` unmasking the family | still byte-identical |
+| same, with `skala_align_multiline_array_and_object_initializer = true` unmasking the family | still byte-identical |
 
 The last row is the one that matters, because it is the mask the `for` row was caught by. Turning
 the family's general key on *does* move the oracle — an overflowing `{ … }` goes from block indent to
@@ -991,11 +991,11 @@ nothing had asked them directly.
 and flipping one silently does nothing. That is the shape `resharper_remove_this_qualifier` had
 before it was deleted, and it is a question for the registry rather than for this file.
 
-- options: `resharper_csharp_align_multiline_statement_conditions` (now Tier A), `resharper_csharp_align_multiline_for_stmt`, `resharper_align_multiline_array_initializer`, `resharper_align_multiline_type_argument`, `resharper_align_multiline_ctor_init`
+- options: `skala_align_multiline_statement_conditions` (now Tier A), `resharper_csharp_align_multiline_for_stmt`, `resharper_align_multiline_array_initializer`, `resharper_align_multiline_type_argument`, `resharper_align_multiline_ctor_init`
 - ⚠ status: **half closed** (statement conditions, at M3.1), four keys still **open**, measured
 - ⚠ **triage 2026-08-30: `moot`.** Every half of this entry is now accounted for: the statement
   conditions were built and are Tier A; the `for` residue was reattributed to
-  `wrap_for_stmt_header_style`, which is implemented and Tier A, and the header reproduces byte for
+  `skala_wrap_for_stmt_header_style`, which is implemented and Tier A, and the header reproduces byte for
   byte; the other four keys are worth 0 lines over 380 real and 324 construct files *and* move the
   oracle at neither value on any shape probed, masked or unmasked. ⚠ Stated as a limit rather than a
   proof: four probes are not the shape space. What is claimed is that nothing this repository can
@@ -1004,7 +1004,7 @@ before it was deleted, and it is a question for the registry rather than for thi
 
 ## SK-DIV-0009 — `space_within_spread_pattern` is inert, and the gap it names is not governed at all
 
-The export sets `resharper_space_within_spread_pattern = true` and Skala honoured it, putting a
+The export sets `skala_space_within_spread_pattern = true` and Skala honoured it, putting a
 space after the `..` of every collection expression's spread element. The oracle does not, and
 neither value of the key changes anything it writes. Asked directly at both:
 
@@ -1021,25 +1021,25 @@ nothing produced it; these two gaps are the first, and the C# front end resolves
 source rather than carrying the third state into the writer.
 
 ⚠ A slice pattern is **not** in this set and looks as though it should be: `a is [1, ..var r]` comes
-back `.. var r`, a space the oracle inserts, because `space_within_slice_pattern = true` really does
+back `.. var r`, a space the oracle inserts, because `skala_space_within_slice_pattern = true` really does
 govern its own construct and stays Tier A. Reading `space_within_spread_pattern` as the
 collection-expression twin of it — which is what its name says — put a space Skala had no evidence
 for into 58 lines of `corpus/real/`.
 
-`resharper_space_within_spread_pattern` is demoted from Tier A to Tier D and its fixture withdrawn,
+`skala_space_within_spread_pattern` is demoted from Tier A to Tier D and its fixture withdrawn,
 for the same reason `trim_trailing_whitespace` is Tier D under SK-DIV-0006: an option Skala honours
 and Rider ignores is a divergence wearing a tier badge.
 
 ⚠ **Current, at `8cbd66d`: the demotion holds and the entry is resolved.**
-`resharper_space_within_spread_pattern` is **Tier D**, `defaultSource: unknown`, with no fixture —
+`skala_space_within_spread_pattern` is **Tier D**, `defaultSource: unknown`, with no fixture —
 which is the withdrawal this entry describes, verified in the registry rather than remembered. Its
-twin `resharper_csharp_space_within_slice_pattern` is **Tier A**, which is the other half of the
-argument. `resharper_remove_spaces_on_blank_lines` remains Tier D and inert. The 58 lines this cost
+twin `skala_space_within_slice_pattern` is **Tier A**, which is the other half of the
+argument. `skala_remove_spaces_on_blank_lines` remains Tier D and inert. The 58 lines this cost
 `corpus/real/` are gone: sweeping all 380 files' divergent hunks for a `..` inside brackets returns
 two lines in one file, and both are a *range* expression (`line[TerminatorPrefix.Length..]`) whose
 divergence is SK-DIV-0008's indentation, not a spread element's spacing.
 
-- options: `resharper_space_within_spread_pattern` (Tier D), `resharper_csharp_space_within_slice_pattern` (Tier A)
+- options: `skala_space_within_spread_pattern` (Tier D), `skala_space_within_slice_pattern` (Tier A)
 - ⚠ status: **resolved at M3.1**, re-verified
 
 ## SK-DIV-0010 — the oracle has break points of last resort that Skala does not
@@ -1062,7 +1062,7 @@ JsonConvert                                    // at the *only* dot of a one-dot
 Skala has no break point at any of these gaps, and adding one is not a matter of a missing option:
 the first two are gaps between a keyword and an identifier, which the break-position model
 ([04](plan/04-formatting-engine.md)) has no vocabulary for, and the third contradicts
-`wrap_before_first_method_call = false`, which is the key that says the first dot stays with its
+`skala_wrap_before_first_method_call = false`, which is the key that says the first dot stays with its
 receiver — the oracle honours it right up to the point where the line cannot be made to fit and then
 breaks there anyway.
 
@@ -1081,7 +1081,7 @@ wrapping, and no shipped instrument isolates them. ⚠ Under R1 as re-stated
 **0.07 %** attributed share and passes; this entry is no longer an R1 objection, which is a change in
 the *rule* rather than in the code and is worth saying rather than quietly dropping the sentence.
 
-- options: `resharper_csharp_wrap_before_first_method_call` (Tier A), `resharper_csharp_wrap_multiple_declaration_style`
+- options: `skala_wrap_before_first_method_call` (Tier A), `skala_wrap_multiple_declaration_style`
 - ⚠ status: **open and deliberate** — a decision not to implement, measured
 
 ## SK-DIV-0011 — ⚠ MOOT, folded into SK-DIV-0050: the same fact measured on a sole-argument lambda
@@ -1139,7 +1139,7 @@ signature: a line the oracle wrote ends in `=>` and Skala's does not — is the 
 SK-DIV-0050's missing break point, and is recorded there. This entry keeps the two hand-found shapes
 because they are the shapes that first showed the arrow moving, and they still reproduce.
 
-- options: `resharper_place_single_method_argument_lambda_on_same_line` (Tier A, `true`, `oracle-probe`)
+- options: `skala_place_single_method_argument_lambda_on_same_line` (Tier A, `true`, `oracle-probe`)
 - ⚠ status: **moot** — superseded by SK-DIV-0050, which carries the fact, the size and the count
 
 ## SK-DIV-0012 — three small shapes, each measured, each left
@@ -1155,7 +1155,7 @@ smaller than the risk.
    files.
 2. **A single-statement anonymous function's block is joined onto one line.**
    `Action a = () => {\n    Write("a");\n};` comes back `Action a = () => { Write("a"); };`, and two
-   statements do not. `keep_existing_embedded_block_arrangement` governs it — flipped to `true`, the
+   statements do not. `skala_keep_existing_embedded_block_arrangement` governs it — flipped to `true`, the
    oracle keeps the break — and there is no `place_simple_anonymousmethod_on_single_line` key in the
    export to hang it on. Worth **0 lines** of `corpus/real/`: nobody in the corpus writes one.
 3. **A `for` header's clauses chop.** `for (init;\n     cond;\n     step)` rather than filling.
@@ -1174,33 +1174,33 @@ rule is untested rather than unneeded — the same distinction
 [16](plan/16-risks-and-open-questions.md) § R3 keeps making about a rule that fires nowhere. It is
 not evidence that the divergence does not exist.
 
-`resharper_csharp_keep_existing_embedded_block_arrangement` is **Tier A** (`false`, `oracle-probe`),
+`skala_keep_existing_embedded_block_arrangement` is **Tier A** (`false`, `oracle-probe`),
 so item 2's governing key is implemented; what is missing is the placement decision it interacts
 with. `resharper_csharp_align_multiline_for_stmt` is **Tier D**.
 
 ⚠ **Item 3 is closed at milestone 3.2, and it was filed against the wrong key.** It is not
-`align_multiline_for_stmt` — that key is masked by `align_multiline_statement_conditions = true` and
+`align_multiline_for_stmt` — that key is masked by `skala_align_multiline_statement_conditions = true` and
 returns the same file at either value. Skala had **no break point at the header's `;`** and broke
-inside the incrementor expression instead. `resharper_csharp_wrap_for_stmt_header_style` is the key
+inside the incrementor expression instead. `skala_wrap_for_stmt_header_style` is the key
 that governs it, it is now implemented and **Tier A**, and the signature is down from 5 hunks over 13
 lines across 3 files to **2 hunks in 1 file** — neither of which is a `for` rule any more: the
 initializer's own `=` continuation lands on the align column where the oracle puts it one level
 further in, unchanged by that branch and owned by `PlanAroundEquals`.
 
-- options: `resharper_csharp_keep_existing_embedded_block_arrangement` (Tier A), `resharper_csharp_wrap_for_stmt_header_style` (Tier A, item 3, at M3.2), `resharper_csharp_align_multiline_for_stmt` (Tier D, and never the cause of item 3)
+- options: `skala_keep_existing_embedded_block_arrangement` (Tier A), `skala_wrap_for_stmt_header_style` (Tier A, item 3, at M3.2), `resharper_csharp_align_multiline_for_stmt` (Tier D, and never the cause of item 3)
 - ⚠ status: **items 1 and 2 open**, item 3 **closed** at M3.2, all three measured
 
 ## SK-DIV-0013 — three configured rewrites the oracle would not perform
 
-At the time of this measurement, `resharper_null_checking_pattern_style = not_null_pattern`,
-`resharper_empty_string = empty_literal` and `resharper_braces_redundant = true` were all set in the export, all listed in
+At the time of this measurement, `skala_null_checking_pattern_style = not_null_pattern`,
+`skala_empty_string = empty_literal` and `skala_braces_redundant = true` were all set in the export, all listed in
 [06](plan/06-arrangement-and-syntax-styles.md), and `jb cleanupcode` 2025.2.6 performs **none** of
 them. Swept as elements and as `CSCodeStyleAttributes` attributes, with the corresponding
 `resharper_arrange_*_highlighting` keys left at their exported severities and raised to `warning`:
 `if (p != null)` stays, `string.Empty` becomes `string.Empty` and stops, and `{ { x; } }` keeps both
 pairs. The sweep is `docs/oracle-cleanup-profile.md`.
 
-The reading that fits is that `null_checking_pattern_style` and `empty_string` govern the pattern
+The reading that fits is that `skala_null_checking_pattern_style` and `empty_string` govern the pattern
 ReSharper **generates** — in a quick-fix, a generated `Equals`, a "check parameter for null" action —
 rather than a cleanup of code that already exists. They are code-*generation* settings that happen to
 live in the same file as the cleanup settings.
@@ -1217,7 +1217,7 @@ operator and the pattern form is a reference comparison the language performs it
 changes which code runs while leaving code that still compiles. Layer 2 cannot see it (no diagnostic)
 and layer 3 cannot either (no identifier changed meaning); only the precondition stops it.
 
-- options: `resharper_csharp_null_checking_pattern_style`, `resharper_empty_string`, `resharper_csharp_braces_redundant`
+- options: `skala_null_checking_pattern_style`, `skala_empty_string`, `skala_braces_redundant`
 
 ## SK-DIV-0014 — ⚠ RETIRED. Parenthesis removal was gated behind `--aggressive`; the gate is lifted
 
@@ -1255,7 +1255,7 @@ checked rather than asserted. The gate was protecting against a mechanism that i
 comparable with the pair above: the cleanup profile has since gained `ArrangeNamespaces` and
 `ArrangeArgumentsStyle`, so the oracle changes more and there are more spans to agree about.
 
-- options: `dotnet_style_parentheses_in_arithmetic_binary_operators`, `dotnet_style_parentheses_in_other_binary_operators`, `resharper_parentheses_redundancy_style`
+- options: `dotnet_style_parentheses_in_arithmetic_binary_operators`, `dotnet_style_parentheses_in_other_binary_operators`, `skala_parentheses_redundancy_style`
 
 ## SK-DIV-0015 — the oracle inserts a blank line before the first type; Skala preserves the source
 
@@ -1272,9 +1272,9 @@ are not about the thing you are working on. `constructs/trivia/a-malformed-doc-c
 was written to pin hazard 2 of the xmldoc work and happens to open this way; nothing in 324 other
 construct fixtures or 380 real files had the shape. It is one line and one file.
 
-The rule behind it is not established. `resharper_blank_lines_around_type = 1` would explain the
+The rule behind it is not established. `skala_blank_lines_around_type = 1` would explain the
 oracle's answer if the leading comment counts as the preceding *member*, but
-`resharper_stick_comment = true` says a comment binds to what follows it, which would make the blank
+`skala_stick_comment = true` says a comment binds to what follows it, which would make the blank
 line belong *above* the comment instead — and there is nothing above it. Whether the oracle special-cases
 a file-scope comment block, or treats the compilation unit's start as a member boundary, wants a sweep
 of its own before anything is implemented.
@@ -1289,8 +1289,8 @@ the oracle both insert the blank line and the two outputs are identical. `Requir
 `BlankLinesAroundType` at the compilation unit's first member, and the leading comment block no
 longer suppresses it.
 
-- options: `resharper_blank_lines_around_type`, `resharper_stick_comment`,
-  `resharper_blank_lines_before_single_line_comment`
+- options: `skala_blank_lines_around_type`, `skala_stick_comment`,
+  `skala_blank_lines_before_single_line_comment`
 - ⚠ status: **open**, pre-existing, exposed at the M9 merge
 - ⚠ **triage 2026-08-30: `moot`.** It no longer reproduces, on the fixture that recorded it or on a
   minimal probe. ⚠ The entry's open question — whether the oracle special-cases a file-scope comment
@@ -1300,8 +1300,8 @@ longer suppresses it.
 
 ## SK-DIV-0016 — the oracle's cleanup profile ignores `@formatter:off`; Skala honours it everywhere
 
-`resharper_formatter_tags_enabled = true`, `resharper_formatter_off_tag = @formatter:off`,
-`resharper_formatter_on_tag = @formatter:on` and `resharper_formatter_tags_accept_regexp = false` are
+`skala_formatter_tags_enabled = true`, `skala_formatter_off_tag = @formatter:off`,
+`skala_formatter_on_tag = @formatter:on` and `skala_formatter_tags_accept_regexp = false` are
 all in the export, and the two `jb cleanupcode` profiles disagree about them:
 
 ```
@@ -1339,13 +1339,13 @@ profile agrees: all three fixtures in `constructs/arrangement/formatter-tags/` c
 from `CSReformatCode` and Skala reproduces all three exactly. What it costs is agreement on the
 *arrangement* differential over those three files, which is the point of the entry.
 
-- options: `resharper_formatter_tags_enabled`, `resharper_formatter_off_tag`,
-  `resharper_formatter_on_tag`, `resharper_formatter_tags_accept_regexp`
+- options: `skala_formatter_tags_enabled`, `skala_formatter_off_tag`,
+  `skala_formatter_on_tag`, `skala_formatter_tags_accept_regexp`
 - ⚠ status: **permanent**. There is no configuration under which Skala should arrange inside the tags.
 
 ## SK-DIV-0017 — a comment that *mentions* the tag is prose; the oracle says it is a directive
 
-`resharper_formatter_tags_accept_regexp = false` makes the match literal. The oracle reads "literal"
+`skala_formatter_tags_accept_regexp = false` makes the match literal. The oracle reads "literal"
 as a plain substring test over the comment's whole text — measured, not inferred, over nine shapes:
 
 | comment | oracle | Skala |
@@ -1395,15 +1395,15 @@ worst of the three possible answers; it now protects both. Protecting more than 
 safe direction for an escape hatch, and a person reading the two tag lines as the boundary of their
 own block expects neither to move.
 
-- options: `resharper_formatter_tags_enabled`, `resharper_formatter_off_tag`,
-  `resharper_formatter_on_tag`, `resharper_formatter_tags_accept_regexp`
+- options: `skala_formatter_tags_enabled`, `skala_formatter_off_tag`,
+  `skala_formatter_on_tag`, `skala_formatter_tags_accept_regexp`
 - ⚠ status: **permanent**, pinned by `Formatting.CSharp.Tests/FormatterTagTests` rather than by a
   corpus fixture — a fixture recording the oracle's answer here would lower the format-fidelity
   ratchet to pin a divergence that costs nothing on any real file.
 
 ## SK-DIV-0018 — on a file with mixed line endings the oracle normalises; Skala keeps each gap's own
 
-`resharper_enforce_line_ending_style = false` means an existing line ending is kept rather than
+`skala_enforce_line_ending_style = false` means an existing line ending is kept rather than
 rewritten. Skala reads that per **gap**: every break in the output ends the way that break ended in
 the input, and only a break the formatter *inserts* has to choose. The oracle reads it per **file**:
 asked directly, `class C { // fuzz<CRLF>} <CR>` comes back with all three of its breaks as lone
@@ -1431,7 +1431,7 @@ reproduction, which the tool could not process idempotently until it was fixed a
 therefore never held. The three lines it loses are this divergence and nothing else. See
 `Testing/corpus/fidelity.json`.
 
-- options: `resharper_enforce_line_ending_style`, `end_of_line`, `insert_final_newline`
+- options: `skala_enforce_line_ending_style`, `end_of_line`, `skala_insert_final_newline`
 - ⚠ status: **permanent**, pinned by the fixture above.
 
 ## SK-DIV-0019 — the wrap column is measured from after the `///`, not from column 0 — **CLOSED**
@@ -1444,7 +1444,7 @@ from, because the way it was wrong is the useful part.
 ### What it said
 
 > Skala fills a documentation line while the *whole line* — code indent, `///`, marker space, content
-> indent and text — stays within `resharper_xmldoc_max_line_length`. The oracle fills while the line
+> indent and text — stays within `skala_xmldoc_max_line_length`. The oracle fills while the line
 > is **strictly under** the limit and then keeps the word that crosses it, breaking after it.
 
 and, immediately after it, the part that should have been read as a refutation rather than a caveat:
@@ -1504,16 +1504,16 @@ verbatim region, which no wrap column touches — but the surrounding prose move
 should revert those comments to their pre-`1aad86f8` form and re-format rather than diffing against
 what is there now.
 
-- options: `resharper_xmldoc_max_line_length`, `resharper_xmldoc_wrap_lines`,
-  `resharper_xmldoc_wrap_text`, `resharper_xmldoc_wrap_tags_and_pi`,
-  `resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than`
+- options: `skala_xmldoc_max_line_length`, `skala_xmldoc_wrap_lines`,
+  `skala_xmldoc_wrap_text`, `skala_xmldoc_wrap_tags_and_pi`,
+  `skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than`
 - ⚠ status: **closed**, pinned by the five fixtures above, by
   `Conformance.Tests/XmlDocOracleTests` and by `XmlDocColumnTests`, which carries the probe
   arithmetic so the model cannot drift back without a diff.
 
 ## SK-DIV-0020 — the oracle opens an element that holds text *and* children; Skala opens one that holds only children
 
-`resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements = true` puts an element's
+`skala_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements = true` puts an element's
 children on lines of their own. Skala applies it to an element whose content is *only* elements, and
 leaves mixed content — prose with an element inside it — on one line while it fits. The oracle
 applies it to mixed content too, and hoists the prose onto its own line as it goes:
@@ -1557,9 +1557,9 @@ fixed: Skala breaks after `<remarks>` and the oracle does not. It has no key of 
 fixture reaches it — it is the same "content never left the start tag's line" mechanism as
 SK-DIV-0019's rule 2, applied to a break the width did not force.
 
-- options: `resharper_xmldoc_linebreak_before_singleline_elements`
+- options: `skala_xmldoc_linebreak_before_singleline_elements`
 - ⚠ status: **closed on the fixture**, pinned by
-  `constructs/xmldoc/resharper_xmldoc_linebreak_before_singleline_elements.xmldoc.expected.cs` and by
+  `constructs/xmldoc/skala_xmldoc_linebreak_before_singleline_elements.xmldoc.expected.cs` and by
   `XmlDocColumnTests.AnElementHoldingAMultilineChild_HoistsItsProseToo`; the `<para>` shape above is
   open and unpinned.
 
@@ -1568,35 +1568,35 @@ SK-DIV-0019's rule 2, applied to a break the width did not force.
 ⚠ **The reading this entry recorded is measured false, and the entry itself said which measurement
 would settle it.** It ran:
 
-> `resharper_xmldoc_linebreak_before_elements` names eight elements … and `item` is not one of them.
+> `skala_xmldoc_linebreak_before_elements` names eight elements … and `item` is not one of them.
 > Asked to format a `<list>` whose single `<item>` runs to 131 columns, the oracle **leaves it at 131
 > columns**. ⚠ The reading this suggests — that the oracle wraps *inside* an element only when
-> `linebreak_before_elements` names it — is consistent with every fixture in the subtree, `<summary>`
+> `skala_xmldoc_linebreak_before_elements` names it — is consistent with every fixture in the subtree, `<summary>`
 > included, but it is a reading of five files rather than a probe of the rule, and it is written down
 > as such.
 
 Probed: the **same `<item>`** with longer content is opened up and wrapped, and so are `<exception>`
-and `<description>`, none of which the key names. Adding `item` to `linebreak_before_elements` is not
+and `<description>`, none of which the key names. Adding `item` to `skala_xmldoc_linebreak_before_elements` is not
 what decides it. What decides it is SK-DIV-0019's third rule — an element is opened when its
 *content* overflows from the start tag's closing column, end tag excluded. The fixture's `<item>`
 closes at column 14 and carries 102 columns of content, which is 116 against a budget of 119, so it
 stays flat and the `</item>` rides past the margin. At 107 columns of content it opens. Nothing about
-`linebreak_before_elements` is involved.
+`skala_xmldoc_linebreak_before_elements` is involved.
 
 ⚠ The entry's own last sentence — "note that it also overshoots the margin, which is SK-DIV-0019
 again; the two are separable because this line is 11 columns over and no single word explains that" —
 is where the join was available and was declined. No single word explained it because the "crossing
 word" model was wrong; the overshoot is the end tag, exactly as SK-DIV-0019 now says.
 
-- options: `resharper_xmldoc_linebreak_before_multiline_elements`
+- options: `skala_xmldoc_linebreak_before_multiline_elements`
 - ⚠ status: **retired into SK-DIV-0019**, pinned by
-  `constructs/xmldoc/resharper_xmldoc_linebreak_before_multiline_elements.xmldoc.expected.cs`, which
+  `constructs/xmldoc/skala_xmldoc_linebreak_before_multiline_elements.xmldoc.expected.cs`, which
   now agrees, and by `XmlDocColumnTests.AnElementIsOpened_WhenItsContentOverflows_NotItsEndTag`,
   which carries both sides of the threshold.
 
-## SK-DIV-0022 — `spaces_inside_tags = false` means "do not add one", not "remove the author's"
+## SK-DIV-0022 — `skala_xmldoc_spaces_inside_tags = false` means "do not add one", not "remove the author's"
 
-Skala reads `resharper_xmldoc_spaces_inside_tags` as a statement about the output: false means the
+Skala reads `skala_xmldoc_spaces_inside_tags` as a statement about the output: false means the
 gap between a tag and its content is empty, whatever the author wrote. The oracle reads it as a
 statement about what it may *insert*: false means it will not add a space, and a space already there
 survives — even while the same run is rebuilding the comment's line structure around it.
@@ -1639,9 +1639,9 @@ carries each continuation line's `///` with it, so the whitespace run at the end
 content is the **marker's** space and not a gap anybody wrote inside a tag. Taking it as one reflowed
 `<summary>One. Two.</summary>` with a space before its end tag.
 
-- options: `resharper_xmldoc_spaces_inside_tags`
+- options: `skala_xmldoc_spaces_inside_tags`
 - ⚠ status: **closed**, pinned by
-  `constructs/xmldoc/resharper_xmldoc_spaces_inside_tags.xmldoc.expected.cs` and by
+  `constructs/xmldoc/skala_xmldoc_spaces_inside_tags.xmldoc.expected.cs` and by
   `SpacesInsideTagsFalse_DoesNotAddOne_AndDoesNotRemoveTheAuthors`, which carries the table above.
 
 ## SK-DIV-0023 — the blank line after a processing instruction carries no trailing space
@@ -1660,7 +1660,7 @@ skala    /// <?skala-probe mode="short"?>         ← (1) fixed: the marker spac
 ```
 
 1. ~~**The marker space is not applied to a processing-instruction line.**~~ **Fixed.** Skala emitted
-   a processing instruction verbatim — that is the refusal reason `resharper_xmldoc_pi_attribute_style`
+   a processing instruction verbatim — that is the refusal reason `skala_xmldoc_pi_attribute_style`
    and its three siblings carry — and "verbatim" had swallowed the `///` marker along with the
    instruction, on a key that is Tier A on every other line of the same comment.
 
@@ -1690,19 +1690,19 @@ skala    /// <?skala-probe mode="short"?>         ← (1) fixed: the marker spac
    one thing every other pass in Skala strips. Unlike (1) this half is a decision."
 
    ⚠ That is a fact about Skala offered where a measurement was needed, and the measurement was one
-   probe away. Asked at `max_blank_lines_between_tags = 1`, the oracle writes `/// ` for **every**
+   probe away. Asked at `skala_xmldoc_max_blank_lines_between_tags = 1`, the oracle writes `/// ` for **every**
    blank line it keeps — the ones between two tags as well as the one after a `<?…?>`, and whether or
    not the author's blank line had the space. So the space belongs to the marker, which is exactly
    what half (1) concluded and then was not carried across the empty case. The condition is now
    `Verbatim` rather than emptiness, so a blank line inside a `<code>` block still has none: those
    columns are the sample's and this space is the option's.
 
-- options: `resharper_xmldoc_blank_line_after_pi`, `resharper_space_after_triple_slash`
+- options: `skala_xmldoc_blank_line_after_pi`, `skala_space_after_triple_slash`
 - ⚠ status: **closed on both halves**, pinned by
-  `constructs/xmldoc/resharper_xmldoc_blank_line_after_pi.xmldoc.expected.cs`, which now agrees, by
+  `constructs/xmldoc/skala_xmldoc_blank_line_after_pi.xmldoc.expected.cs`, which now agrees, by
   `MaxBlankLinesBetweenTags_IsHonoured`, which carries the generalisation, and by
   `ABlankLineInsideAVerbatimBlock_IsNeitherACrashNorATrailingSpace`, which carries the exception.
-  ⚠ The entry names `resharper_space_after_triple_slash`, which is **Tier A**: the key is reproduced
+  ⚠ The entry names `skala_space_after_triple_slash`, which is **Tier A**: the key is reproduced
   everywhere its fixture exercises it, and this is a construct that fixture does not reach.
 - ⚠ **What was missing was an assertion, not a fixture.** The fix for (1) was reported as still
   failing on a multi-line verbatim body, on the grounds that no `constructs/xmldoc/` fixture reaches
@@ -1718,7 +1718,7 @@ skala    /// <?skala-probe mode="short"?>         ← (1) fixed: the marker spac
   with until it was stopped. ⚠ Historical — the daemon is deleted and this hazard with it.
 ## SK-DIV-0024 — a type parameter list wraps when the list overflows, not when the declaration does
 
-T5a gave a type parameter list its first break points: at `wrap_before_type_parameter_langle = false`
+T5a gave a type parameter list its first break points: at `skala_wrap_before_type_parameter_langle = false`
 — the export's value — the oracle wraps the list itself, as a fill, and Skala now does the same. What
 it does not reproduce is *which* of a generic declaration's two lists ReSharper chooses to wrap when
 only the declaration as a whole is over the margin.
@@ -1824,7 +1824,7 @@ unrelated to it; where Skala and the oracle part is that the oracle asks whether
 *enough* and Skala asks whether the construct is *over*. That is a difference two sentences can
 hold, which is what a `deliberate` verdict needs.
 
-- options: `resharper_csharp_wrap_before_type_parameter_langle`, `resharper_align_multiline_type_parameter_list`, `resharper_csharp_wrap_parameters_style`
+- options: `skala_wrap_before_type_parameter_langle`, `skala_align_multiline_type_parameter_list`, `skala_wrap_parameters_style`
 - ⚠ status: first half **deliberate**, argued above and re-measured in
   [sk-div-preference-sweep.md](sk-div-preference-sweep.md); second half **open**, measured, `debt`
   size S.
@@ -1864,12 +1864,12 @@ the oracle breaks after the `=>`" — and it is confirmed here as one instance o
 rather than a fault of `PlanAroundEquals`.
 
 Two facts about the gap are settled and are what a fix starts from.
-`wrap_before_arrow_with_expressions` governs which side of the arrow the break lands on for a lambda
+`skala_wrap_before_arrow_with_expressions` governs which side of the arrow the break lands on for a lambda
 exactly as it does for a member — at `true` the oracle writes `B((first, second)\n    => first.…` —
-and **preservation is `keep_user_linebreaks`'s, not `keep_existing_expr_member_arrangement`'s**,
+and **preservation is `keep_user_linebreaks`'s, not `skala_keep_existing_expr_member_arrangement`'s**,
 which is the guess `PlanExpressionBody` invites. Four lambdas the author had already broken after the
 arrow come back broken at the export's values, come back broken with the expression-member key
-flipped, and re-join under `keep_user_linebreaks = false` and `keep_existing_linebreaks = false`
+flipped, and re-join under `keep_user_linebreaks = false` and `skala_keep_existing_linebreaks = false`
 alike. Skala already preserves those, through the ordinary source-break gap, so no preservation is
 lost by the missing group — only the width-driven break is.
 
@@ -2079,7 +2079,7 @@ three profiles that share one; the fourth is in the same table and says somethin
 is the reason the sweep carries four content profiles and grades on the worst, and it is why this
 entry, alone among the family, still needs its grid rather than its constant.
 
-- options: `resharper_csharp_wrap_before_arrow_with_expressions`, `resharper_keep_user_linebreaks`, `resharper_csharp_keep_existing_linebreaks`, `resharper_place_single_method_argument_lambda_on_same_line`, `resharper_csharp_wrap_parameters_style`
+- options: `skala_wrap_before_arrow_with_expressions`, `skala_keep_user_linebreaks`, `skala_keep_existing_linebreaks`, `skala_place_single_method_argument_lambda_on_same_line`, `skala_wrap_parameters_style`
 - ⚠ status: **open**, measured; the break point is missing. The rule that would arm it is now known
   to one constant and a three-column wander, both in
   [sk-div-preference-sweep.md](sk-div-preference-sweep.md).
@@ -2124,8 +2124,8 @@ Call(one,                         //   a wrap the rules would rewrite
 
 **The two implemented ones are not divergences and are recorded here for the method.** Both are
 `Conformant` on `sweep verify` — two distinct outputs from each engine, agreeing at both values — on
-`constructs/file/resharper_disable_formatter.cs` and
-`constructs/blank-lines/resharper_disable_blank_line_changes.cs`. ⚠ They are left at Tier D
+`constructs/file/skala_disable_formatter.cs` and
+`constructs/blank-lines/skala_disable_blank_line_changes.cs`. ⚠ They are left at Tier D
 deliberately: a fixture pins one configuration and Tier A is a claim about the option, so the
 promotion belongs to the key-flip sweep on master and not to the commit that added the fixture.
 
@@ -2137,7 +2137,7 @@ and the reason the rest were probed with a second key rather than alone.
 
 **Two are unreachable, which is a different finding from "not done yet".**
 `disable_space_changes_before_trailing_comment` has exactly one rule it could gate:
-`space_before_trailing_comment` normalises the gap to one space at `true` and to none at `false`, and
+`skala_space_before_trailing_comment` normalises the gap to one space at `true` and to none at `false`, and
 it does both **identically with this key on**. Its broad sibling `disable_space_changes` preserves
 that same gap, so the gap is governed and it is the narrow key the C# formatter does not consult.
 `ignore_space_preservation` moved nothing on four subjects and three pairings, including the three
@@ -2147,10 +2147,10 @@ places the formatter demonstrably *does* preserve spaces — a disabled `#if` br
 ⚠ **The interaction hole is the finding, not an aside.** Six of these nine cannot be reached by any
 one-key flip from the export's corner, and the committed sweep's "inert" verdict on three of them was
 therefore true and useless in the same breath. This is the case `./build.sh Pairwise` was built for;
-`disable_*` × `int_align`, `disable_*` × `space_before_trailing_comment` and
+`disable_*` × `int_align`, `disable_*` × `skala_space_before_trailing_comment` and
 `disable_*` × `keep_blank_lines_*` are the pairs that pay.
 
-- options: `resharper_disable_formatter`, `resharper_disable_blank_line_changes`, `resharper_disable_int_align`, `resharper_disable_space_changes_before_trailing_comment`, `resharper_ignore_space_preservation`
+- options: `skala_disable_formatter`, `skala_disable_blank_line_changes`, `skala_disable_int_align`, `resharper_disable_space_changes_before_trailing_comment`, `resharper_ignore_space_preservation`
 - ⚠ status: **not a divergence** on any of the five — two implemented and conformant, one masked, two
   unreachable. The entry is the measurement and the method; the four keys that *are* divergences have
   entries of their own below.
@@ -2201,9 +2201,9 @@ so groups are still fitted against it. Which of the two columns `jb cleanupcode`
 against under this key is unmeasured, and the alternative would be a second rule invented from the
 same probe.
 
-- options: `resharper_disable_indenter`
-- ⚠ status: **resolved**. `verify resharper_disable_indenter` on
-  `constructs/suppression/resharper_disable_indenter.cs` — Conformant, 2 of 2 values. It stays Tier D
+- options: `skala_disable_indenter`
+- ⚠ status: **resolved**. `verify skala_disable_indenter` on
+  `constructs/suppression/skala_disable_indenter.cs` — Conformant, 2 of 2 values. It stays Tier D
   until the committed sweep reaches it; a `verify` run is not the sweep.
 
 ## SK-DIV-0062 — `disable_space_changes`: the oracle preserves every inter-token run; Skala collapses
@@ -2229,12 +2229,12 @@ emit. At a break point the run is emitted *before* the point with `flatSpace` of
 the point stays flat and vanishes when it breaks.
 
 ⚠ The gap before a trailing comment is covered too, which its narrow sibling
-`disable_space_changes_before_trailing_comment` cannot move at either of `space_before_trailing_comment`'s
+`disable_space_changes_before_trailing_comment` cannot move at either of `skala_space_before_trailing_comment`'s
 values.
 
-- options: `resharper_disable_space_changes`
+- options: `skala_disable_space_changes`
 - ⚠ status: **resolved**; supersedes the recorded inert claim, which was measured on a fixture with no
-  wrong spacing in it. `verify resharper_disable_space_changes` — Conformant, 2 of 2 values, with the
+  wrong spacing in it. `verify skala_disable_space_changes` — Conformant, 2 of 2 values, with the
   two-space runs around `+` and the four-space run before the trailing comment reproduced byte for
   byte. Tier D until the sweep reaches it.
 
@@ -2252,15 +2252,15 @@ blank count. The break plan is never consulted, which is what stops a wrapping r
 lives and why the key is the union of `disable_blank_line_changes` and `disable_line_break_removal`
 rather than a third rule.
 
-- options: `resharper_disable_line_break_changes`
-- ⚠ status: **resolved**. `verify resharper_disable_line_break_changes` — Conformant, 2 of 2 values.
+- options: `skala_disable_line_break_changes`
+- ⚠ status: **resolved**. `verify skala_disable_line_break_changes` — Conformant, 2 of 2 values.
   Tier D until the sweep reaches it.
 
 ## SK-DIV-0064 — `disable_line_break_removal`: one direction only
 
 Measured apart from SK-DIV-0063 on the same file, and the two came out different, which is the whole
 reason both entries exist: with `disable_line_break_removal = true` the three-blank run survived
-**and** `blank_lines_around_invocable` still inserted its blank after the closing brace, while
+**and** `skala_blank_lines_around_invocable` still inserted its blank after the closing brace, while
 `disable_blank_line_changes` on the same file suppressed the insertion too. So this key is removals
 only — the author's breaks are never joined and the cap never truncates a run — and additions are
 untouched.
@@ -2277,8 +2277,8 @@ a run (the cap, the near-brace removal) and one only ever raises it, so `Math.Ma
 reductions are off and the requirement is not" — which is what the oracle does, and what separates
 this key from `disable_blank_line_changes` on the same file.
 
-- options: `resharper_disable_line_break_removal`
-- ⚠ status: **resolved**. `verify resharper_disable_line_break_removal` — Conformant, 2 of 2 values.
+- options: `skala_disable_line_break_removal`
+- ⚠ status: **resolved**. `verify skala_disable_line_break_removal` — Conformant, 2 of 2 values.
   Tier D until the sweep reaches it. ⚠ The nearest *other* implemented shape is `keep_user_linebreaks`,
   which is still not the same key: it governs the gaps between items of a list, and this governs every
   gap.
@@ -2333,8 +2333,8 @@ from 98.34 % to 98.29 % and turns `Fidelity_DoesNotDecrease(set: "constructs")` 
 
 ⚠ **`outdent.cs` still does not get the shape, and the entry's description of it was wrong in a way
 that mattered.** The chain it named — `a?.B().C()` — outdents 12 → 11 on every wrapped line, measured
-at both values of `resharper_outdent_dots`, which is the same answer to the column as the plain chain
-that fixture already carried: under `wrap_before_first_method_call = false` the leading `?.` is the
+at both values of `skala_outdent_dots`, which is the same answer to the column as the plain chain
+that fixture already carried: under `skala_wrap_before_first_method_call = false` the leading `?.` is the
 first invoked dot, so it is never a break point and never starts a wrapped line. There is no mixed
 width in it. The shape that carries one is a *nested* conditional access, `a?.B()?.C().D()`, whose
 second `?` is the only two-column operator that reaches the start of a line at this export's values,
@@ -2348,7 +2348,7 @@ Tier A key on the strength of an unrelated defect. The fixture now records the m
 `align_multiline_calls_chain` anchors on a column that moves with the margin. Only the
 cross-reference in its comment was stale.
 
-- options: none — `resharper_wrap_chained_method_calls` and `resharper_wrap_before_first_method_call`
+- options: none — `skala_wrap_chained_method_calls` and `skala_wrap_before_first_method_call`
   are read correctly and have no chain to apply to
 - ⚠ status: **resolved**, in two parts. `Collect` walks `WhenNotNull`, and `ChainDot` puts the break
   point on the `?` rather than on the binding's `.` (SK-DIV-0065 below, which the first part
@@ -2383,7 +2383,7 @@ return model.GetDeclaredSymbol(current, cancellation)?
 change it wanted was wrong. The measured corpus could not have caught it — `corpus/real/` has no
 multi-link `?.` chain at all — and neither could the first round of probes, because the token choice
 is unobservable until the chain's *receiver* contributes a dot of its own. With a bare identifier
-receiver the binding's dot is the last entry in `dots`, `wrap_before_first_method_call = false` holds
+receiver the binding's dot is the last entry in `dots`, `skala_wrap_before_first_method_call = false` holds
 the last entry back, and the `?` therefore never begins a wrapped line.
 
 ⚠ It is also what made the mixed-width chain *measurable* — the nested `?.` is the only shape at this
@@ -2391,10 +2391,10 @@ export's values where a two-column operator starts a wrapped line — and measur
 up SK-DIV-0069. `constructs/alignment/outdent.cs` still does not carry the shape, because that
 divergence would demote a Tier A key from a file that is not about it; it records the measurement.
 
-- options: none — `resharper_outdent_dots` is read correctly and was conformant on the `.` lines of
+- options: none — `skala_outdent_dots` is read correctly and was conformant on the `.` lines of
   the same chain throughout
 - ⚠ status: **resolved**. `BreakPlan.ChainDot`. ⚠ Measured at
-  `wrap_before_first_method_call = false`, the export's value. What the *other* value does with the
+  `skala_wrap_before_first_method_call = false`, the export's value. What the *other* value does with the
   chain's leading `?.` is still unmeasured — at `true` the first dot becomes a point and this change
   decides whether the break lands before `a?` or before `?.`.
 
@@ -2422,7 +2422,7 @@ var result = someCollectionOfThingsHere.Where(c => c.IsEnabled).Select(c => c.Na
 ```
 
 ⚠ The oracle breaks *before* the trailing `.Count`, which is not what
-`wrap_after_property_in_chained_method_calls = false` predicts on the reading in `PlanChainedCalls`'s
+`skala_wrap_after_property_in_chained_method_calls = false` predicts on the reading in `PlanChainedCalls`'s
 remarks ("the property travels with the call it feeds") — there is no call after it to travel with.
 Whatever rule the oracle is applying to a chain-final property has not been identified.
 
@@ -2448,7 +2448,7 @@ a break point of the oracle's and not of Skala's for exactly the reason this ent
 outermost node is not one `IsChainRoot` matches. Same predicate, same absence, one fix.
 
 ⚠ **So is item 1's `!`, and its untested reading is now tested.** `a.SelfLink()!.SelfLink()…`
-reproduces with no `?.` anywhere in it. And at `wrap_before_first_method_call = true` — the value
+reproduces with no `?.` anywhere in it. And at `skala_wrap_before_first_method_call = true` — the value
 SK-DIV-0068 records as never having been asked — the oracle writes `receiver?.SelfLink()!\n
 .SelfLink()` where Skala writes `receiver\n    ?.SelfLink()!`. Both values now agree with the
 reading SK-DIV-0068 could only guess at: **the oracle treats everything up to and including the `!`
@@ -2465,10 +2465,10 @@ oracle's layout here is also the only sane one, so this can be finished after th
 it has to be. It should not have to be.
 
 ⚠ One thing genuinely stays unknown and is smaller than the entry implies: the oracle breaks
-*before* a chain-final `.Count`, which `wrap_after_property_in_chained_method_calls = false` does
+*before* a chain-final `.Count`, which `skala_wrap_after_property_in_chained_method_calls = false` does
 not predict. That is one break's placement inside a fix whose shape is otherwise settled.
 
-- options: none identified — `resharper_wrap_after_property_in_chained_method_calls` is implicated
+- options: none identified — `skala_wrap_after_property_in_chained_method_calls` is implicated
   but the shape is broken at both of its values
 - ⚠ status: **open**, measured, unfixed. Deliberately not fixed alongside SK-DIV-0030: widening
   `IsChainRoot` puts a group on every `a.B().C().Prop` in the tree, which is a far larger wrapping
@@ -2476,7 +2476,7 @@ not predict. That is one break's placement inside a fix whose shape is otherwise
 
 ## SK-DIV-0067 — a property run that *straddles* the `?` is still cut in half
 
-`wrap_after_property_in_chained_method_calls = false` is a loop in `Collect` that walks back over a
+`skala_wrap_after_property_in_chained_method_calls = false` is a loop in `Collect` that walks back over a
 run of `MemberAccessExpressionSyntax` receivers so the break lands before the run rather than after
 it. It used to stop at the `MemberBindingExpressionSyntax`, which was wrong for every run touching a
 `?`; it now ends on the `?` itself, which is right for a run that *begins* there and still one link
@@ -2542,7 +2542,7 @@ shape is unambiguous once stated, so this is repayable afterwards if it has to b
 ⚠ The half that was fixed rather than deferred stays fixed, and the reason it had to be is worth
 keeping: `format --check` on Skala's own repository fails otherwise.
 
-- options: `resharper_wrap_after_property_in_chained_method_calls` — read correctly, and conformant on
+- options: `skala_wrap_after_property_in_chained_method_calls` — read correctly, and conformant on
   every property run that does not straddle a `?`
 - ⚠ status: **open** for shape C only, measured. The remaining fix has to let the run continue past
   the `?` into the receiver's own property chain, and the walk that would do it is the one the
@@ -2558,7 +2558,7 @@ All three surfaced from the same eight-shape probe and none is large enough to c
    On `a?.Self()!.Self().Self()…` the oracle keeps `a?.Self()!.Self()` on the opening line and Skala
    keeps only `a?.Self()!`, one link fewer. The reading that fits is that the oracle treats
    `a?.Self()!` as the receiver and the call after the `!` as the chain's first, which
-   `wrap_before_first_method_call = false` then holds back — but that reading has not been tested at
+   `skala_wrap_before_first_method_call = false` then holds back — but that reading has not been tested at
    the key's other value.
 2. **An element access in the chain is a break point for the oracle and not for Skala.** On
    `source?[0].Children.Where(…)…` the oracle breaks after `[0]`; Skala keeps `.Children` attached.
@@ -2574,7 +2574,7 @@ reproduce; two of them turn out to belong to SK-DIV-0066 and the third's recorde
 
 **Item 1 — the `!`. Re-measured, re-attributed, and its untested reading is now tested.** It
 reproduces with no `?.` in the expression at all (`a.SelfLink()!.SelfLink()…` diverges the same
-way), so it is SK-DIV-0066's family and not SK-DIV-0030's. And at `wrap_before_first_method_call =
+way), so it is SK-DIV-0066's family and not SK-DIV-0030's. And at `skala_wrap_before_first_method_call =
 true` — the value this entry records as never having been asked — the oracle writes
 `receiver?.SelfLink()!\n    .SelfLink()` against Skala's `receiver\n    ?.SelfLink()!`. **Both
 values now confirm the reading the entry could only propose:** the oracle treats everything through
@@ -2622,7 +2622,7 @@ two went. It stays open because item 3 has no home elsewhere.
   unfixed, in both places; item 3 **open**, re-measured, and its recorded control was wrong — the
   fact is every left binary operand, not `??`
 
-## SK-DIV-0069 — `outdent_dots` spends one amount for the whole chain; the oracle spends one per line
+## SK-DIV-0069 — `skala_outdent_dots` spends one amount for the whole chain; the oracle spends one per line
 
 `constructs/alignment/outdent.cs`'s header asks whether one chain-wide outdent amount is enough, and
 until now nothing could answer it: every wrapped line of every chain in the corpus begins with a
@@ -2632,32 +2632,32 @@ that reaches the start of a wrapped line at this export's values — and it was 
 engines' agreement until SK-DIV-0030 and SK-DIV-0065 were fixed. Asked at both values:
 
 ```csharp
-// outdent_dots = false, both engines
+// skala_outdent_dots = false, both engines
 var result = someCollectionOfThingsHere?.WhereEnabled()
     ?.SelectName(item => item.Name)
     .OrderByName(name => name);
 
-// outdent_dots = true, the oracle: per line, by that line's own leading operator
+// skala_outdent_dots = true, the oracle: per line, by that line's own leading operator
 var result = someCollectionOfThingsHere?.WhereEnabled()
   ?.SelectName(item => item.Name)     // 12 → 10, two columns
    .OrderByName(name => name);        // 12 → 11, one column
 
-// outdent_dots = true, Skala: one amount for the chain, and it is the `.`'s
+// skala_outdent_dots = true, Skala: one amount for the chain, and it is the `.`'s
 var result = someCollectionOfThingsHere?.WhereEnabled()
    ?.SelectName(item => item.Name)    // 12 → 11
    .OrderByName(name => name);        // 12 → 11
 ```
 
-⚠ **Inert at the export**, which sets `resharper_outdent_dots = false`, and that is why this is a
+⚠ **Inert at the export**, which sets `skala_outdent_dots = false`, and that is why this is a
 divergence rather than a fidelity defect: at `false` nothing outdents and the two engines agree to
 the column.
 
-⚠ **The shape is deliberately out of `outdent.cs`.** `resharper_csharp_outdent_dots` is Tier A and
+⚠ **The shape is deliberately out of `outdent.cs`.** `skala_outdent_dots` is Tier A and
 the committed sweep records it Conformant on that fixture; adding the shape takes it to Divergent 1
 of 2 — a demotion earned by the outdent arithmetic, not by anything the alignment fixture exists to
-pin. The same trap caught `resharper_csharp_wrap_before_first_method_call`, also Tier A, when the
+pin. The same trap caught `skala_wrap_before_first_method_call`, also Tier A, when the
 first draft of `constructs/wrapping/chained-calls.cs` used a property receiver and so carried
-SK-DIV-0067 shape C — and a third, `resharper_csharp_wrap_after_dot_in_method_calls`, was not a
+SK-DIV-0067 shape C — and a third, `skala_wrap_after_dot_in_method_calls`, was not a
 fixture problem at all but a real bug in SK-DIV-0065's fix: `ChainDot` registers the `?`, and the
 token after a `?` is the `.` rather than the name, so "break after the dot" broke after the `?` and
 wrote `…(more)?\n.Where(…)` where the oracle writes `…(more)?.\n Where(…)`. ⚠ **All three were found
@@ -2668,11 +2668,11 @@ back unchanged and one had to improve.
 
 ⚠ **Triage at `425b01d0`: `debt`, size S, and it is a distinct fact from the other three chain
 entries.** Re-measured at both values on the nested conditional access. At the export's
-`outdent_dots = false` the two engines are still byte-identical. At `true` the divergence is still
+`skala_outdent_dots = false` the two engines are still byte-identical. At `true` the divergence is still
 exactly one column on exactly the `?.` line — the oracle writes it at column 10, Skala at 11 — and
 the `.` line agrees at 11 in both.
 
-**`deliberate` is not available here, however small the difference is.** `outdent_dots` means "pull
+**`deliberate` is not available here, however small the difference is.** `skala_outdent_dots` means "pull
 the wrapped line back by the width of the operator that starts it", and there is only one reading of
 that sentence: an operator two characters wide pulls back two. Skala computes one amount for the
 whole chain and spends the `.`'s, so a `?.` line is outdented by one — which is neither the option's
@@ -2687,13 +2687,13 @@ the target — but it is cheap, and being cheap is the argument for doing it rat
 it.
 
 ⚠ **The reason this stays a divergence rather than a fidelity defect is unchanged and is the
-strongest part of the original entry**: the export sets `resharper_outdent_dots = false`, nothing
+strongest part of the original entry**: the export sets `skala_outdent_dots = false`, nothing
 outdents, and the two engines agree to the column on every chain in the corpus. The fixture
 exclusion stands for the reason it was made — one non-exact file cannot be diluted — and so does the
 finding beside it, that all three faults were found by running `verify` on every key pinned to a
 changed fixture. ⚠ That practice is the reusable part of this entry and it should outlive the entry.
 
-- options: `resharper_outdent_dots` — read correctly, and conformant on every chain whose wrapped
+- options: `skala_outdent_dots` — read correctly, and conformant on every chain whose wrapped
   lines all begin with the same operator, which is every chain the corpus contains
 - ⚠ status: **open**, measured, unfixed. It is an arithmetic in the outdent scope rather than in the
   chain planner: the amount is computed once for the group and has to be computed per break point.
@@ -2719,7 +2719,7 @@ System.Collections.Generic.List<int>? alphaFieldNameHere = null,
 a declarator rule: `System.Int32 a = 1, b = 2, …` comes back identical from both engines, and it is
 the fixture `constructs/alignment/align-declaration.cs` pins. The asymmetry is also why
 `CSharpDocumentBuilder.AlignsFromOwnColumn` excludes a `FieldDeclarationSyntax`'s declaration from
-`align_multiple_declaration` — the oracle does not move a field's declarators at either value of that
+`skala_align_multiple_declaration` — the oracle does not move a field's declarators at either value of that
 key, so the exclusion is measured and not a consequence of this divergence.
 
 Found while building that fixture, and kept out of it for the same reason as SK-DIV-0030.
@@ -2745,13 +2745,13 @@ a field and a local wrap the same way. Both halves of that are defensible on the
 
 ⚠ **The honest caveat, so this is not an acceptance wearing an argument.** This is a divergence
 Skala is choosing to keep, not one that costs nothing: `CSharpDocumentBuilder.AlignsFromOwnColumn`'s
-exclusion of `FieldDeclarationSyntax` from `align_multiple_declaration` is downstream of it, and the
+exclusion of `FieldDeclarationSyntax` from `skala_align_multiple_declaration` is downstream of it, and the
 exclusion is measured — the oracle does not move a field's declarators at either value of that key —
 so the exclusion stands on its own and does not have to be revisited if this position is ever
 reversed. The shape does not appear in the harness's ranked classes, so nothing in the work queue is
 waiting on it.
 
-- options: `resharper_csharp_align_multiple_declaration`, `resharper_csharp_wrap_multiple_declaration_style`
+- options: `skala_align_multiple_declaration`, `skala_wrap_multiple_declaration_style`
 - ⚠ status: **deliberate** — argued above; the difference is kept and the fixture keeps pinning the
   half where the two engines agree
 
@@ -2830,13 +2830,13 @@ before it. Two clauses of the model this entry carried are **refuted by that run
   to 12 and column 19 goes *up* to 20. The "rounded down" claim rested on the single column-21 datum in
   the first table above, which rounds to 20 under either rule and so could not tell them apart.
 
-- options: `resharper_csharp_alignment_tab_fill_style`, `indent_style`
+- options: `skala_alignment_tab_fill_style`, `indent_style`
 - ⚠ status: **narrowed**. The three layouts are implemented and pinned by
   `Formatting/Rikarin.Skala.Formatting.CSharp.Tests/TabFillStyleTests.cs`, which carries the oracle's
   own bytes at each value plus an idempotence round-trip and a space-indented control. What remains is
   **the fixture, and only the fixture**: the corpus has no per-directory `.editorconfig`, so no
   committed fixture can be tab-indented, so the key can carry no `oracle` glob, so the key-flip sweep
-  cannot reach it — `verify resharper_csharp_alignment_tab_fill_style` answers "not swept: no `oracle`
+  cannot reach it — `verify skala_alignment_tab_fill_style` answers "not swept: no `oracle`
   fixture in the registry" after this change exactly as it did before. The key is therefore registered
   `OfInert` in `PhaseOneOptions`, beside `tab_width`, which is inert for the identical reason: read,
   honoured, and unobservable because every fixture there is is indented with spaces. It becomes `Of`
@@ -2855,7 +2855,7 @@ before it. Two clauses of the model this entry carried are **refuted by that run
 entry** — one corrects the shape of comment the key governs, the other records what is left. The text
 down to them is kept as written, because the corrections are only legible beside the claims.
 
-`align_multiline_comments` is **`true`** in the export — one of very few keys in the
+`skala_align_multiline_comments` is **`true`** in the export — one of very few keys in the
 `AlignMultilineConstructs` family that is — and it moves each continuation line of a `/* … */`
 comment whose lines begin with `*` onto the opening delimiter's column plus one.
 
@@ -2919,7 +2919,7 @@ at 26, not at the member's 5. Measured.
    does at every value" is wrong in its second half: Skala was never doing that, because it moves the
    opener. **Not implemented**, because it is a separable behaviour — about where the comment token
    starts rather than about its asterisks — and honouring it means emitting the comment self-indented
-   from its written column, which touches anchoring and `stick_comment`. It is why the key is
+   from its written column, which touches anchoring and `skala_stick_comment`. It is why the key is
    registered `OfUnoracled` rather than promoted, and `AlignMultilineCommentTests` asserts the gap
    explicitly so that closing it has to come back and delete that test.
 2. ⚠ **An *unstarred* multi-line comment's body is uniformly shifted with its opener, at both values,
@@ -2928,11 +2928,11 @@ at 26, not at the member's 5. Measured.
    leaves the body at its written columns. Recorded as **SK-DIV-0094**, because it is reachable at the
    export's values on a comment this key declines to touch.
 
-- options: `resharper_csharp_align_multiline_comments`
+- options: `skala_align_multiline_comments`
 - ⚠ status: **narrowed**. Conformant at the export's `true`, pinned by
   `Formatting/Rikarin.Skala.Formatting.CSharp.Tests/AlignMultilineCommentTests.cs` against the
   oracle's own bytes plus a fixed-point round trip and four disqualified shapes. Open at `false`, for
-  fact 1 above. ⚠ `verify resharper_csharp_align_multiline_comments` still answers "not swept" — the
+  fact 1 above. ⚠ `verify skala_align_multiline_comments` still answers "not swept" — the
   key has no `oracle` glob, and it may not have one while it is non-conformant at a value, because a
   glob on a Tier D entry the sweep has not demoted is a promotion nobody made
   (`OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt`). The glob and the fixture
@@ -3004,7 +3004,7 @@ Tier A in the committed sweep against
 
 ## SK-DIV-0071 — `resharper_remove_unused_only_aliases` is a Visual Basic option, not a second spelling of the C# one
 
-The export carries both `resharper_remove_only_unused_aliases = true` and
+The export carries both `skala_remove_only_unused_aliases = true` and
 `resharper_remove_unused_only_aliases = false`, four characters apart, and the registry classified
 both `csharp` "by vocabulary". The obvious reading is one option under two spellings — the shape
 `SK9004` exists for — and it is wrong.
@@ -3024,10 +3024,10 @@ keeps two directives.
 
 It is therefore **inert for C#** with a recorded reason, and the C# key is Tier A.
 
-- options: `resharper_remove_unused_only_aliases`, `resharper_remove_only_unused_aliases`
+- options: `resharper_remove_unused_only_aliases`, `skala_remove_only_unused_aliases`
 - ⚠ status: **closed**; recorded as `inert` in the registry.
 
-## SK-DIV-0072 — ⚠ RETRACTED. `resharper_csharp_keep_nontrivial_alias` was recorded inert on a probe that could not distinguish it
+## SK-DIV-0072 — ⚠ RETRACTED. `skala_keep_nontrivial_alias` was recorded inert on a probe that could not distinguish it
 
 The registry carried:
 
@@ -3040,7 +3040,7 @@ in use is not removable at any value of any key — the observation could not ha
 It is the same failure as SK-DIV-0006's: a fixture that agrees for a reason unrelated to the option.
 
 With the aliases unused the key separates cleanly, measured over all four combinations with
-`resharper_remove_only_unused_aliases`:
+`skala_remove_only_unused_aliases`:
 
 | `keep_nontrivial_alias` | `remove_only_unused_aliases` | unused **trivial** alias | unused **non-trivial** alias |
 |---|---|---|---|
@@ -3054,7 +3054,7 @@ System.Text.RegularExpressions.Regex;` is trivial and `using Trivial = System.St
 is measured, not read off the word. The two keys AND, so each moves the output on its own from the
 export's pair, and both are now implemented and Tier A.
 
-- options: `resharper_csharp_keep_nontrivial_alias`, `resharper_remove_only_unused_aliases`
+- options: `skala_keep_nontrivial_alias`, `skala_remove_only_unused_aliases`
 - ⚠ status: **closed**; the `inert` mark is removed and `constructs/arrangement/usings/aliases.cs` pins both.
 
 ## SK-DIV-0073 — the oracle shortens a qualified reference; Skala has no rule that does
@@ -3219,8 +3219,8 @@ construct fixture and re-open a class the corpus has already paid for once.
 
 `constructs/arrangement/type-inference/var-and-maybe-null.cs` is the fixture, with the value-type row
 beside it as the control, and **no option is globbed to it**. The construct was moved there out of
-`default-literal.cs`, where it had been making both `resharper_csharp_default_value_when_type_evident`
-and `resharper_csharp_default_value_when_type_not_evident` unattributable in the key-flip sweep — two
+`default-literal.cs`, where it had been making both `skala_default_value_when_type_evident`
+and `skala_default_value_when_type_not_evident` unattributable in the key-flip sweep — two
 keys with nothing wrong with them, paying for a third rule's divergence.
 
 ⚠ **Re-measured 2026-08-30 under `OracleProfile.Cleanup`, and the shape is wider than the title
@@ -3281,7 +3281,7 @@ the same file — a declarator's initializer, a property initializer, a simple a
 else. `TypeInferenceRules`'s `TargetTypeOf` still falls through `default: return null` for an
 `ArgumentSyntax` parent, which is the whole of it.
 
-- options: `resharper_csharp_object_creation_when_type_evident`, `resharper_csharp_object_creation_when_type_not_evident`
+- options: `skala_object_creation_when_type_evident`, `skala_object_creation_when_type_not_evident`
 - ⚠ status: **open**; a missing capability rather than a decision, and it needs its own task.
 - ⚠ **triage 2026-08-30: `debt`, size M.** ⚠ **The difficulty is not the argument.** Nobody would
   defend "Skala target-types every position C# does, except an argument" to a user; it is a hole in
@@ -3336,8 +3336,8 @@ withdrawn.
 `constructs/wrapping/anonymous-method-parens.cs` is the fixture, with the lambda beside it as the
 control, and **no option is globbed to it**. The construct was moved there out of
 `preservation/lambda-parens.cs`, where it was making
-`resharper_csharp_wrap_after_declaration_lpar`, `resharper_csharp_wrap_before_declaration_rpar` and
-`resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement` unattributable in the
+`skala_wrap_after_declaration_lpar`, `skala_wrap_before_declaration_rpar` and
+`skala_keep_existing_lambda_and_anonymous_function_parens_arrangement` unattributable in the
 key-flip sweep. All three keys were re-checked on the reduced fixture and the first two still move the
 oracle at both values; the third moved neither engine's oracle side before the change either.
 
@@ -3368,7 +3368,7 @@ anonymous method (row 1) is measured and conformant, and the entry's care over t
 the construct out of `preservation/lambda-parens.cs` so three keys stop being unattributable — is
 work that stands. The debt is one mechanism, not four keys.
 
-- options: `resharper_place_single_method_argument_lambda_on_same_line`, `resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement`, `resharper_csharp_wrap_after_declaration_lpar`, `resharper_csharp_wrap_before_declaration_rpar`
+- options: `skala_place_single_method_argument_lambda_on_same_line`, `skala_keep_existing_lambda_and_anonymous_function_parens_arrangement`, `skala_wrap_after_declaration_lpar`, `skala_wrap_before_declaration_rpar`
 - ⚠ status: **open**; SK-DIV-0050's family, and it needs the same missing fact.
 
 ## SK-DIV-0078 — an expression body's `=>` breaks when its body breaks, and Skala's fitter decides the arrow first
@@ -3381,7 +3381,7 @@ bool M(object o) => o is int      →     bool M(object o) =>
 ```
 
 The first line is 33 columns wide, so no width test on the arrow can produce this break.
-`place_expr_method_on_single_line = if_owner_is_single_line` is what does: the *owner* is the
+`skala_place_expr_method_on_single_line = if_owner_is_single_line` is what does: the *owner* is the
 declaration, and a declaration whose body spans lines is not on a single line — which is exactly the
 reading `PlanExpressionBody`'s remarks already record ("a body that spans lines makes it not
 single-line however short its first line is"). What Skala cannot do is *apply* it here. The body's
@@ -3396,7 +3396,7 @@ It is SK-DIV-0024's and SK-DIV-0077's shape instead — two constructs, one brea
 `constructs/wrapping/binary-pattern-arrow.cs` is the fixture, with a one-line member beside it as the
 control, and **no option is globbed to it**. The construct was moved there out of
 `breaks/binary-patterns.cs`, which was rewritten to put its chains in `return` statements — where
-there is no arrow to break — so that `resharper_csharp_wrap_before_binary_pattern_op` is measured on
+there is no arrow to break — so that `skala_wrap_before_binary_pattern_op` is measured on
 its own. Re-checked after the rewrite: the oracle keeps the before-the-operator breaks and re-joins
 the after-the-operator ones at `true`, and does the reverse at `false`, so both values still move it.
 
@@ -3407,20 +3407,20 @@ does not spell out: because Skala keeps `o is int` on the arrow's line, its cont
 four columns to the left of the oracle's, so the divergence is three lines wide, not one.
 
 ⚠ **This entry is the family's cleanest argument for `debt` over `deliberate`, because the rule is
-already written down and already agreed.** `place_expr_method_on_single_line =
+already written down and already agreed.** `skala_place_expr_method_on_single_line =
 if_owner_is_single_line` is the export's value, `PlanExpressionBody`'s own remarks state the reading
 correctly — "a body that spans lines makes it not single-line however short its first line is" — and
 Skala's output contradicts its own documented rule. That is not a considered difference from
 ReSharper; it is a rule the formatter holds and cannot apply. It stays debt even if ReSharper never
 existed.
 
-- options: `resharper_csharp_wrap_before_binary_pattern_op`, `resharper_place_expr_method_on_single_line`, `resharper_csharp_wrap_chained_binary_patterns`
+- options: `skala_wrap_before_binary_pattern_op`, `skala_place_expr_method_on_single_line`, `skala_wrap_chained_binary_patterns`
 - ⚠ status: **open**; the ordering fact is missing, and it is shared with SK-DIV-0077.
 
-## SK-DIV-0079 — `xmldoc_wrap_tags_and_pi` wraps a tag's *attributes*, and Skala cannot re-read a header it broke
+## SK-DIV-0079 — `skala_xmldoc_wrap_tags_and_pi` wraps a tag's *attributes*, and Skala cannot re-read a header it broke
 
 ⚠ **The sweep called this one `SPURIOUS` and the verdict was about the fixture, not the key.**
-`constructs/xmldoc/resharper_xmldoc_wrap_tags_and_pi.cs` is prose carrying a `<see cref="…" />` that
+`constructs/xmldoc/skala_xmldoc_wrap_tags_and_pi.cs` is prose carrying a `<see cref="…" />` that
 cannot stay on its line, and the oracle returns **the same bytes at `true` and at `false`** — it moves
 the `<see/>` to the next line either way. Skala read the key as "whether a tag may be moved to a new
 line to fit", so only Skala's output varied, which is exactly what `SPURIOUS` means.
@@ -3433,7 +3433,7 @@ Under `OracleProfile.DocComments`, on a tag whose own header is 170 columns wide
 /// <see cref="System.Collections.Generic.Dictionary{TKeyOfSomeVeryLongName,TValueOfSomeVeryLongName}" href="https://example.invalid/a/very/long/documentation/link/that/will/not/fit" />
 ```
 
-| `resharper_xmldoc_wrap_tags_and_pi` | the oracle |
+| `skala_xmldoc_wrap_tags_and_pi` | the oracle |
 |---|---|
 | `true` (the export's own value) | `href="…"` moves to a continuation line at one indent, inside the tag |
 | `false` | the header is returned whole, past the margin |
@@ -3442,10 +3442,10 @@ A `<?pi-name a="1" … p="16" ?>` beside it is untouched at both values, so on t
 about element headers.
 
 ⚠ **And the other half of the old reading is measured false in its own right.** Asked at
-`resharper_xmldoc_wrap_text = false` — with `wrap_tags_and_pi` left alone — the oracle *still* moves a
+`skala_xmldoc_wrap_text = false` — with `skala_xmldoc_wrap_tags_and_pi` left alone — the oracle *still* moves a
 `<see/>` off the end of a line of prose while leaving the words around it exactly where they were, and
 returns a `<summary>` of 170 columns of plain prose whole on one line. So permission for a tag to move
-is not this key's to give: `wrap_text` is permission for a **word** to move, and an element may always
+is not this key's to give: `skala_xmldoc_wrap_text` is permission for a **word** to move, and an element may always
 move. `XmlDocRenderer.Flush` now says that, and the change is what turns the committed fixture from
 "only Skala varies" into "neither varies".
 
@@ -3457,8 +3457,8 @@ re-read on the next run, and `format(format(x))` would leave the header wrapped 
 unapplied. That is an idempotence violation traded for one non-export value of one key, and
 idempotence is the property this product exists to provide.
 
-It joins the four tag-header keys already in `XmlDocIds.Refused` — `xmldoc_attribute_indent`,
-`xmldoc_attribute_style`, `xmldoc_alignment_tab_fill_style`, `xmldoc_allow_far_alignment` — all
+It joins the four tag-header keys already in `XmlDocIds.Refused` — `skala_xmldoc_attribute_indent`,
+`skala_xmldoc_attribute_style`, `skala_xmldoc_alignment_tab_fill_style`, `skala_xmldoc_allow_far_alignment` — all
 pending on the same prerequisite, which is a model that can read a header back. Whoever lifts that
 lifts all five at once; four of them have nothing to say until this one works.
 
@@ -3472,8 +3472,8 @@ own value.** The probe: a `<see cref="…" href="…" />` header 170 columns wid
 
 | | oracle | Skala |
 |---|---|---|
-| `wrap_tags_and_pi = true` — **the export's value** | `href="…"` moves to a continuation line at one indent, inside the tag | header returned whole, past the margin |
-| `wrap_tags_and_pi = false` | header returned whole | the same |
+| `skala_xmldoc_wrap_tags_and_pi = true` — **the export's value** | `href="…"` moves to a continuation line at one indent, inside the tag | header returned whole, past the margin |
+| `skala_xmldoc_wrap_tags_and_pi = false` | header returned whole | the same |
 
 ⚠ **This corrects the entry's own last sentence.** It says the idempotence violation would be
 "traded for one non-export value of one key"; it is the reverse — Skala matches the oracle only at
@@ -3528,7 +3528,7 @@ been measured because nothing could ask". Nothing could ask *Skala*; the oracle 
 on a header it wraps of its own accord. Measured under `OracleProfile.DocComments` on a three-attribute
 `<see …/>` past the margin, and a second one that fits, one key at a time over the export:
 
-**`resharper_xmldoc_attribute_indent` — all three values separate.** The tag opens at column 12:
+**`skala_xmldoc_attribute_indent` — all three values separate.** The tag opens at column 12:
 
 | value | the continuation lines |
 |---|---|
@@ -3536,7 +3536,7 @@ on a header it wraps of its own accord. Measured under `OracleProfile.DocComment
 | `double_indent` | column 20 |
 | `align_by_first_attribute` | column 17 — under the first attribute, which starts after `<see ` |
 
-**`resharper_xmldoc_attribute_style` — and its recorded reason is refuted.** The reason on file is "it
+**`skala_xmldoc_attribute_style` — and its recorded reason is refuted.** The reason on file is "it
 arranges the attributes of a header Skala does not yet wrap". It does not wait for a wrap: two of its
 four values restructure a header that fits perfectly well.
 
@@ -3552,13 +3552,13 @@ distinguish them is the already-wrapped short header above: `do_not_touch` demon
 wrapped, so `on_single_line` joining it is the obvious hypothesis and is **not measured**. Recorded as
 an open question rather than an answer.
 
-**`resharper_xmldoc_allow_far_alignment = true` returns the probe byte-identical**, and that is not a
+**`skala_xmldoc_allow_far_alignment = true` returns the probe byte-identical**, and that is not a
 finding about the key: it governs when an `align_by_first_attribute` alignment is "too far", so it
 needs that key flipped with it and a tag name long enough to push the alignment out. A one-key probe
-cannot reach it, exactly as `resharper_csharp_alignment_tab_fill_style` cannot be reached without
+cannot reach it, exactly as `skala_alignment_tab_fill_style` cannot be reached without
 `indent_style = tab` (SK-DIV-0032). **Still unmeasured**, and now for a precise reason.
 
-**`resharper_xmldoc_alignment_tab_fill_style` is untouched here**, for the same pairwise reason: it
+**`skala_xmldoc_alignment_tab_fill_style` is untouched here**, for the same pairwise reason: it
 fills a continuation line's alignment and needs `indent_style = tab` beside it.
 
 ### ⚠ 2026-08-31 — both of those open shapes are closed, and one of them the other way
@@ -3576,21 +3576,21 @@ the entry predicted would distinguish it does: an already-wrapped *short* header
 ///         href="https://short.invalid/" />
 ```
 
-| `resharper_xmldoc_attribute_style` | that header |
+| `skala_xmldoc_attribute_style` | that header |
 |---|---|
 | `do_not_touch` (the export) | kept wrapped |
 | `on_single_line` | ⚠ **joined onto one line** |
 
 So all **four** values separate, not three, and the missing distinction was never the key's.
 
-**`resharper_xmldoc_allow_far_alignment` is measured, and "still unmeasured" was the probe's fault
-rather than the key's.** The paragraph above names two prerequisites — `attribute_indent` flipped
+**`skala_xmldoc_allow_far_alignment` is measured, and "still unmeasured" was the probe's fault
+rather than the key's.** The paragraph above names two prerequisites — `skala_xmldoc_attribute_indent` flipped
 beside it *and* a tag name long enough to push the alignment out. The earlier run supplied only the
 first, which is why it reported one output; the option that decides whether a far alignment is
 allowed had no far alignment to decide about. Supplied both — a 90-character element whose first
 attribute begins at column 105, tag opening at column 12:
 
-| `resharper_xmldoc_allow_far_alignment` | the oracle |
+| `skala_xmldoc_allow_far_alignment` | the oracle |
 |---|---|
 | `false` — **the export's own value** | falls back to a **double indent**, column 16 |
 | `true` | aligns at column 100; the continuation line runs to 129, past the 120 margin |
@@ -3600,21 +3600,21 @@ is a threshold between 39 and 105 rather than a switch, and the export's `false`
 on wide tag names. ⚠ It stays out of the sweep: two flips, so no one-key row can reach it, and it is
 marked `inert` in the registry with that as the reason.
 
-**`resharper_xmldoc_alignment_tab_fill_style` is measured too, and it is genuinely flat.** Given the
-full prerequisite — `indent_style = tab`, `resharper_xmldoc_indent_style = tab`, `tab_width = 4`,
-`attribute_indent = align_by_first_attribute` and `allow_far_alignment = true`, so a continuation line
+**`skala_xmldoc_alignment_tab_fill_style` is measured too, and it is genuinely flat.** Given the
+full prerequisite — `indent_style = tab`, `skala_xmldoc_indent_style = tab`, `tab_width = 4`,
+`skala_xmldoc_attribute_indent = align_by_first_attribute` and `allow_far_alignment = true`, so a continuation line
 carries 96 columns of alignment fill — `use_spaces`, `use_tabs_only` and `optimal_fill` are
 byte-identical and the fill is **spaces** at all three. The control is in the same output: the file's
 own *code* lines did take tabs. The inside of a `///` comment is always spaces, which is the finding
-`resharper_xmldoc_indent_style` already carries, and this key inherits it.
+`skala_xmldoc_indent_style` already carries, and this key inherits it.
 
 ⚠ **So the count in this entry's triage note is now three, not five.** Of the five keys named there as
 doing nothing, `alignment_tab_fill_style` is inert in the oracle and `allow_far_alignment` is
-masked by the export's own `attribute_indent = single_indent`; neither is waiting on the header
-renderer. What the renderer would actually unlock is `attribute_indent`, `attribute_style` and
-`wrap_tags_and_pi` — and `allow_far_alignment` only for someone who also changes `attribute_indent`.
+masked by the export's own `skala_xmldoc_attribute_indent = single_indent`; neither is waiting on the header
+renderer. What the renderer would actually unlock is `skala_xmldoc_attribute_indent`, `skala_xmldoc_attribute_style` and
+`skala_xmldoc_wrap_tags_and_pi` — and `allow_far_alignment` only for someone who also changes `skala_xmldoc_attribute_indent`.
 
-- options: `resharper_xmldoc_wrap_tags_and_pi`
+- options: `skala_xmldoc_wrap_tags_and_pi`
 - ⚠ status: **open, and better specified**. Not a wrapping bug and not merely a missing half of the
   model: the model must learn to *record* a header's own line breaks, and the renderer must learn to
   emit a tag across lines. The reader-only change is a one-liner and is refuted above — it would trade
@@ -3623,8 +3623,8 @@ renderer. What the renderer would actually unlock is `attribute_indent`, `attrib
   wrap *yet*; it is not a reason the current behaviour is right, and the two are easy to confuse.
   What Skala does is not a choice anyone made — it is what falls out of a model that cannot
   represent a multi-line tag header, and the cost is five declared keys that do nothing:
-  `xmldoc_wrap_tags_and_pi` at the export's own value, plus `xmldoc_attribute_indent`,
-  `xmldoc_attribute_style`, `xmldoc_alignment_tab_fill_style` and `xmldoc_allow_far_alignment` in
+  `skala_xmldoc_wrap_tags_and_pi` at the export's own value, plus `skala_xmldoc_attribute_indent`,
+  `skala_xmldoc_attribute_style`, `skala_xmldoc_alignment_tab_fill_style` and `skala_xmldoc_allow_far_alignment` in
   `XmlDocIds.Refused`, four of which have nothing to say until this one works. Paying it: teach
   `XmlDocModel` to *parse* a header spread over several `///` lines back into one element node —
   after which the emitter side is the easy half and all five keys become answerable at once. ⚠ Needs
@@ -3633,11 +3633,11 @@ renderer. What the renderer would actually unlock is `attribute_indent`, `attrib
 
 ## SK-DIV-0080 — an aligned list pattern's continuation lines are not filled greedily, and no one rule fills both it and a collection expression
 
-⚠ **The columns were the visible half and they are fixed.** `align_multiline_list_pattern = true`
+⚠ **The columns were the visible half and they are fixed.** `skala_align_multiline_list_pattern = true`
 anchors a list pattern and a collection expression on their own `[`, and the oracle puts the elements
 one level *past* that anchor while bringing the `]` back to it — the same relationship a braced
-initializer already had, and the reason `align_multiline_array_and_object_initializer` and
-`align_multiline_switch_expression` were conformant while this key was not. `PlanDelimited` read
+initializer already had, and the reason `skala_align_multiline_array_and_object_initializer` and
+`skala_align_multiline_switch_expression` were conformant while this key was not. `PlanDelimited` read
 "aligned" as "no level at all" and put the elements on the bracket's own column. That is repaired.
 
 What is left is the *packing* of every continuation line after the first, and it is not reproducible
@@ -3664,14 +3664,14 @@ readings are refuted by the same run:
 | fifth element 10, 16 or 20 columns wide | 3 / 1 / 1 at every width — so it is not a threshold on the item |
 | collection expression, the same five elements, contents at 46 | 2 / **2** / 1 |
 | list pattern, the same five elements, contents at 45 | **3** / 1 / 1 |
-| either construct, `align_multiline_list_pattern = false` | 4 / 1 — greedy, and both engines agree |
+| either construct, `skala_align_multiline_list_pattern = false` | 4 / 1 — greedy, and both engines agree |
 
 The last three rows are what closes the door. Both constructs' FIRST lines are greedy and the one
 column between their anchors is exactly what explains 3 against 2: at 45 the third element ends at
 120 and at 46 it would end at 121. Neither construct's second line is greedy, and their budgets
 contradict each other — the list pattern moves a fifth element down that would have ended at 82,
 while the collection expression writes a second line of 96 and only then moves one down that would
-have ended at 108. One key, `resharper_wrap_list_pattern`, governs both. And the whole effect
+have ended at 108. One key, `skala_wrap_list_pattern`, governs both. And the whole effect
 disappears when the construct is not aligned, where both engines are greedy and agree.
 
 ⚠ Skala's behaviour is therefore deliberate: `wrap_if_long` is a greedy fill everywhere in this
@@ -3682,14 +3682,14 @@ contradict each other across two constructs of one key. This is SK-DIV-0005's cl
 threshold that no affine function of the numbers this fitter has will reproduce, recorded rather than
 fitted.
 
-- options: `resharper_csharp_align_multiline_list_pattern`
+- options: `skala_align_multiline_list_pattern`
 - ⚠ status: **accepted**. The column relationship is fixed; the packing is measured, modelled twice,
   refuted twice, and left greedy. `constructs/wrapping/alignment.cs` pins the columns at both values.
 
 ## SK-DIV-0081 — an aligned property pattern's subpattern has no break point between its `:` and its value
 
 The other half of `constructs/wrapping/alignment.cs`'s pattern pair, and a different defect from
-SK-DIV-0080's. At `align_multiline_property_pattern = true` the clause is anchored on its `{`, its
+SK-DIV-0080's. At `skala_align_multiline_property_pattern = true` the clause is anchored on its `{`, its
 contents land four columns past that (39) and its `}` on it (35) — which Skala now writes. The
 divergence is one line inside:
 
@@ -3734,10 +3734,10 @@ margin and it breaks, un-aligned, onto the same column — which is how the thir
 measurement was obtained, and it is why the rule is not an artefact of the alignment column.
 
 `BreakPlan.PlanSubpattern` adds the point and `StartsAUnit` gives it its column;
-`resharper_csharp_align_multiline_property_pattern` now reads `Conformant` at both values.
+`skala_align_multiline_property_pattern` now reads `Conformant` at both values.
 `corpus/real` did not move — 99.55 / 86.05 bare and 99.64 / 86.58 with symbols, before and after.
 
-- options: `resharper_csharp_align_multiline_property_pattern`
+- options: `skala_align_multiline_property_pattern`
 - ⚠ status: **closed — fixed**. `constructs/wrapping/alignment.cs` pins the columns at both values and
   the sweep row is `Conformant`.
 
@@ -3771,7 +3771,7 @@ declared minimum, and for a width that is 1. The key is measured Conformant at i
 and the shape it exercises is "what does ReSharper do when nothing can fit", not "where does ReSharper
 wrap".
 
-- options: `resharper_csharp_max_line_length`
+- options: `skala_max_line_length`
 - ⚠ status: **accepted**. Conformant at `120` and at `0`; the residue is the probe's floor, and closing
   it would cost break points that no usable configuration reaches.
 
@@ -3784,7 +3784,7 @@ reachable by a one-key flip, so neither can be resolved to `Conformant` from thi
 pairwise phase's, and this entry exists so the model it should check against is written down rather
 than living only in a code comment.
 
-### `place_simple_embedded_statement_on_same_line`, masked by `keep_existing_embedded_arrangement = true`
+### `skala_place_simple_embedded_statement_on_same_line`, masked by `skala_keep_existing_embedded_arrangement = true`
 
 Asked in both directions, one key flipped from the export at a time, the oracle returns every probe
 byte-identical at all three values. What survives under the mask is the width rule alone:
@@ -3800,7 +3800,7 @@ if (depth < 0)                     ← broken, and only because the `if` overflo
 keep key" and it is not: the break is the margin's. Under keep, the placement key is inert in **both**
 directions.
 
-With the mask lifted (`keep_existing_embedded_arrangement = false`) the key is real, and "simple" has
+With the mask lifted (`skala_keep_existing_embedded_arrangement = false`) the key is real, and "simple" has
 two halves, both measured:
 
 ```
@@ -3817,7 +3817,7 @@ So a statement carrying an embedded statement is not simple, **and** an owner th
 else's embedded statement does not get to join. Skala reproduces both probes byte for byte; the sweep
 simply cannot ask.
 
-### `place_simple_switch_expression_on_single_line`, masked by `wrap_switch_expression = chop_always`
+### `skala_place_simple_switch_expression_on_single_line`, masked by `skala_wrap_switch_expression = chop_always`
 
 The precedence was recorded backwards — `PlanSwitchExpression` said this key outranks `chop_always`.
 Measured, one key flipped at a time:
@@ -3832,13 +3832,13 @@ Under the export's own `chop_always` Skala flattened a chopped switch expression
 `true` and the oracle left it chopped; that was the whole of the row. The wrap style outranks the
 placement key, and only with the mask lifted does the key decide anything.
 
-- options: `resharper_csharp_place_simple_embedded_statement_on_same_line`,
-  `resharper_csharp_place_simple_switch_expression_on_single_line`
+- options: `skala_place_simple_embedded_statement_on_same_line`,
+  `skala_place_simple_switch_expression_on_single_line`
 - ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Both keys agree
   with the oracle at every value both under the mask and with it lifted. They are two of the pairs
-  `pairwise` exists for: `(place_simple_embedded_statement_on_same_line,
-  keep_existing_embedded_arrangement)` and `(place_simple_switch_expression_on_single_line,
-  wrap_switch_expression)`.
+  `pairwise` exists for: `(skala_place_simple_embedded_statement_on_same_line,
+  skala_keep_existing_embedded_arrangement)` and `(skala_place_simple_switch_expression_on_single_line,
+  skala_wrap_switch_expression)`.
 - Both are registered the way `align_multiline_argument` already is for exactly this situation —
   `OfInert` plus an `inert` note naming the masking key and the measurement behind it. Here "inert"
   means "no input distinguishes its values *under this configuration*", which is the sense that entry
@@ -3975,7 +3975,7 @@ And what it leaves alone, each for its own reason:
 
 ## SK-DIV-0085 — `sort_usings = false` still reorders, and the oracle's unsorted order is not the written one
 
-Skala reads `resharper_sort_usings = false` as "leave the block in the order it was written" and
+Skala reads `skala_sort_usings = false` as "leave the block in the order it was written" and
 sorts nothing. The oracle reorders it anyway. Measured on two probes under the cleanup profile, with
 the removals the same on both sides:
 
@@ -4010,7 +4010,7 @@ rather than the same one. The disagreement is confined to the value the export d
 Nine directives, all resolvable and all used, interleaving alias, `static` and plain, and with three
 non-`System` plain namespaces (`Zulu.Alpha`, `Alpha.Zulu`, `Mango.Beta`) placed among three `System`
 ones so that `System`-ness and ordinal order disagree in both directions. Under the cleanup profile
-at `resharper_sort_usings = false`:
+at `skala_sort_usings = false`:
 
 ```
 written                              oracle
@@ -4039,7 +4039,7 @@ the plain group. It could not be reproduced — the re-run's `Alpha.Things` was 
 removed instead — and the nine-directive probe above contradicts the only rule that would explain
 it. Treat the first table's fifth row as unreliable, not the model.
 
-- options: `resharper_sort_usings`
+- options: `skala_sort_usings`
 - ⚠ status: **open**, and no longer a guess: the oracle's rule at `false` is stated above.
 - ⚠ **triage 2026-08-30: `deliberate`**, and now for a reason rather than for want of a measurement.
   The argument does not mention ReSharper: **`sort_usings = false` says do not sort, and Skala does
@@ -4053,7 +4053,7 @@ it. Treat the first table's fifth row as unreliable, not the model.
 
 ## SK-DIV-0086 — with the body-style heuristic off, a body carrying a comment still stays a block
 
-At `resharper_csharp_use_heuristics_for_body_style = false` the oracle converts *every*
+At `skala_use_heuristics_for_body_style = false` the oracle converts *every*
 single-statement body, and a body carrying a comment is converted with the comment on its own line
 between the `=>` and the expression:
 
@@ -4086,7 +4086,7 @@ something to bolt onto an arrangement rule. At the export's `true` the heuristic
 
 ### ⚠ Re-measured 2026-08-30, and the entry names one shape where there are two
 
-At `use_heuristics_for_body_style = false`, under the cleanup profile, with the export's values
+At `skala_use_heuristics_for_body_style = false`, under the cleanup profile, with the export's values
 otherwise:
 
 | body | oracle | Skala |
@@ -4104,7 +4104,7 @@ stays on the same line as the expression, where the formatter already handles it
 `BodyStyleRule.Semicolon` even carries a closing brace's trailing trivia through for exactly this
 reason; it is the statement's own trailing trivia that is being dropped on the floor.
 
-- options: `resharper_csharp_use_heuristics_for_body_style`
+- options: `skala_use_heuristics_for_body_style`
 - ⚠ status: **open**; the blocker is the formatter's comment placement and not the body-style rule.
 - ⚠ **triage 2026-08-30: `debt`, size S** — for the second row. The two halves are different things
   and only one of them was decided:
@@ -4119,7 +4119,7 @@ reason; it is the statement's own trailing trivia that is being dropped on the f
     *not* trailing trivia on the body's last statement, and carry that trivia onto the new
     semicolon the way `Semicolon(closeBrace)` already does. A fixture row beside
     `constructs/arrangement/body-style/heuristics.cs`. ⚠ Needs the oracle for the fixture only;
-    reachable only at `use_heuristics_for_body_style = false`, which the export does not set.
+    reachable only at `skala_use_heuristics_for_body_style = false`, which the export does not set.
 
 ## SK-DIV-0089 — the four formatter-tag keys, and why no one-key flip can ask about any of them
 
@@ -4131,7 +4131,7 @@ provable rather than suspected.
 
 The first question was whether the CLI oracle honours `@formatter:off` at all, because if it did not
 then Skala honouring it would be a deliberate divergence and the row would be evidence rather than a
-defect. It does. Measured on `constructs/trivia/resharper_formatter_tags_enabled.cs`, one appended
+defect. It does. Measured on `constructs/trivia/skala_formatter_tags_enabled.cs`, one appended
 `[*.cs]` section, `SkalaFormatOnly`:
 
 ```
@@ -4149,8 +4149,8 @@ class C {
     void M() { }             ← formatted; the tag is not recognised, so the mechanism is live
 ```
 
-And it reads the keys: with `resharper_formatter_off_tag = @fmt:off` and
-`resharper_formatter_on_tag = @fmt:on`, that same `@fmt` file comes back preserved.
+And it reads the keys: with `skala_formatter_off_tag = @fmt:off` and
+`skala_formatter_on_tag = @fmt:on`, that same `@fmt` file comes back preserved.
 
 ### What the four keys actually mean — three findings, all fixed
 
@@ -4170,11 +4170,11 @@ configured pair is **additional to** them rather than a replacement. `tags_enabl
 So Skala was wrong in three ways, and every one of them was **less protective than the oracle** on the
 one feature whose entire contract is "nothing touches this":
 
-1. a configured `off_tag` *replaced* the built-in, so `resharper_formatter_off_tag = @fmt:off` silently
+1. a configured `off_tag` *replaced* the built-in, so `skala_formatter_off_tag = @fmt:off` silently
    stopped honouring every `// @formatter:off` already written in the tree;
-2. `resharper_formatter_tags_enabled = false` opened the guard outright, so one line of configuration
+2. `skala_formatter_tags_enabled = false` opened the guard outright, so one line of configuration
    disabled the escape hatch for every file — where the oracle keeps honouring the built-in pair;
-3. `resharper_formatter_tags_accept_regexp = true` also opened the guard, under a comment saying the
+3. `skala_formatter_tags_accept_regexp = true` also opened the guard, under a comment saying the
    regexp reading was "not implemented, in any pass". The one key a person sets to make their tags
    *more* expressive turned the hatch off.
 
@@ -4206,8 +4206,8 @@ shape: both govern the configured pair only, and the export leaves the configure
 built-in values, where neither key can change anything. They are reachable, but only in pairs —
 `(tags_enabled, off_tag)` and `(accept_regexp, off_tag)` — which is what `pairwise` exists for.
 
-- options: `resharper_formatter_off_tag`, `resharper_formatter_on_tag`,
-  `resharper_formatter_tags_enabled`, `resharper_formatter_tags_accept_regexp`
+- options: `skala_formatter_off_tag`, `skala_formatter_on_tag`,
+  `skala_formatter_tags_enabled`, `skala_formatter_tags_accept_regexp`
 - ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Skala agrees
   with the oracle at every value the sweep can offer *and* at every configuration measured by hand
   above.
@@ -4225,7 +4225,7 @@ built-in values, where neither key can change anything. They are reachable, but 
   unrecognised-tag negative control beside it — because the sweep cannot pin it and a measurement that
   only lives in a document is one nobody will notice going stale.
 
-## SK-DIV-0090 — `use_continuous_indent_inside_parens` / `_initializer_braces`, masked by `continuous_indent_multiplier = 1`
+## SK-DIV-0090 — `skala_use_continuous_indent_inside_parens` / `_initializer_braces`, masked by `skala_continuous_indent_multiplier = 1`
 
 Both were `SPURIOUS` in the key-flip sweep and both now read `UNEXERCISED`. **A real defect was found
 and is fixed**: `false` does not mean "no indent", it means "one indent width", and the two readings
@@ -4235,15 +4235,15 @@ Skala could.
 ⚠ **This settles the note the registry and `docs/tier-d-split.md` disagreed about.** The registry said
 these keys are "implemented and observable"; a pass measured `SPURIOUS` and could not reconcile the
 two. Both were right. The key *is* implemented and observable in `jb cleanupcode` — the mask is
-`resharper_continuous_indent_multiplier`, which the export sets to `1`.
+`skala_continuous_indent_multiplier`, which the export sets to `1`.
 
 ### The measurement
 
-`resharper_continuous_indent_multiplier = 2` is the only configuration that can ask, and at it the
+`skala_continuous_indent_multiplier = 2` is the only configuration that can ask, and at it the
 oracle is decisive at both values and in both spellings, prefixed and unprefixed:
 
 ```
-// use_continuous_indent_inside_parens            // …_inside_initializer_braces
+// skala_use_continuous_indent_inside_parens            // …_inside_initializer_braces
 M(                    M(                          new List<int> {      new List<int> {
         a,                a,                              1,               1,
         b                 b                               2                2
@@ -4264,18 +4264,18 @@ contents of a parenthesis do not reset the continuation context.
 ⚠ **One half of the `true` arm is still short, and it is a different key's row.** A braced
 initializer's contents come from an `IndentKind.Block` scope, which is one indent width whatever the
 multiplier says, so at any multiplier above 1 Skala's `true` is a level short of the oracle. That is
-`continuous_indent_multiplier`'s defect on braced initializers, not this key's; it is recorded at the
+`skala_continuous_indent_multiplier`'s defect on braced initializers, not this key's; it is recorded at the
 key in `options.json` and is not fixed here, because turning an absolute scope into a relative one
 under every initializer in `corpus/real` is not a change to make on the strength of a row that does
 not ask about it.
 
-- options: `resharper_csharp_use_continuous_indent_inside_parens`,
-  `resharper_csharp_use_continuous_indent_inside_initializer_braces`
+- options: `skala_use_continuous_indent_inside_parens`,
+  `skala_use_continuous_indent_inside_initializer_braces`
 - ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Skala now
   agrees with the oracle at both values under the export's multiplier *and* at the multiplier that
-  unmasks them. Two more pairs for `pairwise`: `(use_continuous_indent_inside_parens,
-  continuous_indent_multiplier)` and `(use_continuous_indent_inside_initializer_braces,
-  continuous_indent_multiplier)`.
+  unmasks them. Two more pairs for `pairwise`: `(skala_use_continuous_indent_inside_parens,
+  skala_continuous_indent_multiplier)` and `(skala_use_continuous_indent_inside_initializer_braces,
+  skala_continuous_indent_multiplier)`.
 - ⚠ Both `oracle` globs are kept, the way SK-DIV-0083's are, so the next sweep re-measures the claim
   and `UNEXERCISED` points here.
 
@@ -4310,8 +4310,8 @@ the neighbour that would have explained it away: `local_functions` moves nothing
 the local function; `events` and `indexers` move nothing while `properties` moves all three accessor
 lists; `anonymous_methods` moves nothing while `lambdas` moves the `delegate`.
 
-`empty_block_style`'s `together_same_line` (read as `multiline`, so the pair was split),
-`new_line_before_while`'s indentation and `special_else_if_treatment`'s split direction were fixed in
+`skala_empty_block_style`'s `together_same_line` (read as `multiline`, so the pair was split),
+`skala_new_line_before_while`'s indentation and `skala_special_else_if_treatment`'s split direction were fixed in
 the same pass and all three now read `Conformant`.
 
 ### The first thing that is not fixed: the split direction
@@ -4319,7 +4319,7 @@ the same pass and all three now read `Conformant`.
 Brace placement in this formatter is a **join** decision. `ShouldJoin` is "the one place phase 1
 removes a line break the author wrote", and nothing inserts one before a brace. So a K&R input under
 `csharp_new_line_before_open_brace = all` comes back K&R, where the oracle splits every brace onto its
-own line; and `empty_block_style = together_same_line`'s second half — pulling `{ }` back onto the
+own line; and `skala_empty_block_style = together_same_line`'s second half — pulling `{ }` back onto the
 declaration's line *against* the placement key — cannot be honoured either.
 
 ⚠ **This is invisible to all four rows, and not by luck.** Every one of their fixtures is written with
@@ -4328,7 +4328,7 @@ the break already there, so all fifteen values of the placement key only ever as
 than a discovery. Closing it means a break point before a brace in every construct in the language,
 which is not a change to make from a row that is already `Conformant`.
 
-`special_else_if_treatment` is the one member of the family that *did* get its split direction, in
+`skala_special_else_if_treatment` is the one member of the family that *did* get its split direction, in
 `MustBreak`, because its row needed it and its shape is a keyword rather than a brace.
 
 ### The second: `csharp_indent_braces`, and the probe that moved the question
@@ -4377,7 +4377,7 @@ a rule whose only justification is that ReSharper does it, on a configuration no
 non-negotiable 9 is exactly this case: the reference tool is a test subject, not a specification.
 
 - options: `csharp_indent_braces`, and the split-direction gap in `csharp_new_line_before_open_brace`
-  and `resharper_csharp_empty_block_style`
+  and `skala_empty_block_style`
 - ⚠ status: **accepted**. `csharp_indent_braces` agrees with the oracle at both values whenever the
   question is put to both engines the same way; the row's disagreement exists only under a
   single-key section that changes what the oracle was asked. Registered `OfInert` with the mask named,
@@ -4386,7 +4386,7 @@ non-negotiable 9 is exactly this case: the reference tool is a test subject, not
   and for this row that reading is wrong in both halves. Whoever runs the next sweep should read this
   entry before acting on the count.
 
-## SK-DIV-0092 — `blank_lines_around_single_line_property` governs a shape this export never produces, and the fixture said otherwise
+## SK-DIV-0092 — `skala_blank_lines_around_single_line_property` governs a shape this export never produces, and the fixture said otherwise
 
 `SPURIOUS` in the key-flip sweep, and the defect was real: Skala applied the key to a shape ReSharper
 does not, so Skala moved where the oracle could not. **That is fixed.** What is left is a mask.
@@ -4399,8 +4399,8 @@ blank runs already in it so that both directions were asked:
 | shape | the key that governs it |
 |---|---|
 | `public int X { get => 1; }` — an **accessor-list** property on one line | **this key**, decisive at 2 |
-| `public int X { get; set; }` | `blank_lines_around_single_line_auto_property`, confirmed on the same run |
-| `public int X => 1;` — expression-bodied | **neither**: not this key in either spelling, and not `blank_lines_around_property` |
+| `public int X { get; set; }` | `skala_blank_lines_around_single_line_auto_property`, confirmed on the same run |
+| `public int X => 1;` — expression-bodied | **neither**: not this key in either spelling, and not `skala_blank_lines_around_property` |
 
 ⚠ **The key's own corpus fixture asserted the opposite**, in a comment that reads as a measurement:
 "`public int X => 1;` is the single-line property this key governs — at 2 the oracle puts two blank
@@ -4411,27 +4411,27 @@ for this key — away from the accessor-list form, which was the right shape —
 
 `RequirementFor` now reads the key for an accessor-list property alone; an expression-bodied one
 states no blank-line requirement, which is what the oracle does. ⚠ Only the *single-line* arm is
-narrowed. A multi-line expression-bodied property still takes `blank_lines_around_property`, because
+narrowed. A multi-line expression-bodied property still takes `skala_blank_lines_around_property`, because
 that is not a shape this pass measured and the register does not extend a measurement past what was
 asked.
 
 ### Why the row cannot reach `Conformant`
 
-`resharper_keep_existing_declaration_block_arrangement = false` in the export expands
+`skala_keep_existing_declaration_block_arrangement = false` in the export expands
 `public int X { get => 1; }` onto three lines, and a property that is not on one line is not this
 key's. So the one shape the key governs cannot exist under this configuration, and no fixture makes it
 observable from a single flip — SK-DIV-0083's shape exactly. With the mask lifted
-(`keep_existing_declaration_block_arrangement = true`) the key is decisive at 2 in both engines.
+(`skala_keep_existing_declaration_block_arrangement = true`) the key is decisive at 2 in both engines.
 
 The fixture keeps the expression-bodied shape rather than moving back to the accessor-list one,
 because the accessor-list form would be expanded and the row would be `UNEXERCISED` either way — and
 this way the file carries the measurement that was wrong twice.
 
-- options: `resharper_csharp_blank_lines_around_single_line_property`
+- options: `skala_blank_lines_around_single_line_property`
 - ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Registered
   `OfInert` with the mask named; the `oracle` glob is kept so the next sweep re-measures it. One more
-  pair for `pairwise`: `(blank_lines_around_single_line_property,
-  keep_existing_declaration_block_arrangement)`.
+  pair for `pairwise`: `(skala_blank_lines_around_single_line_property,
+  skala_keep_existing_declaration_block_arrangement)`.
 
 ## SK-DIV-0093 — `keep_existing_lambda_and_anonymous_function_parens_arrangement` is a key the C# formatter does not read
 
@@ -4447,7 +4447,7 @@ parentheses, one configuration per `cleanupcode` run:
 | the export | `Use((\n int first\n ) => first\n);` — the break is kept |
 | `keep_existing_lambda_… = false` | **unchanged** |
 | `keep_existing_lambda_… = true` | unchanged |
-| `keep_existing_declaration_parens_arrangement = false` | **`Use((int first) => first);` — rejoined** |
+| `skala_keep_existing_declaration_parens_arrangement = false` | **`Use((int first) => first);` — rejoined** |
 | both `false` | rejoined, and no further |
 | `declaration = false`, `lambda = true` | rejoined |
 
@@ -4455,7 +4455,7 @@ The last row is the control that settles it: with the declaration key doing the 
 lambda key *back* to `true` does not restore the break. It is inert in both directions, under both
 values of its neighbour, and in both spellings.
 
-`resharper_keep_existing_declaration_parens_arrangement` governs a lambda's and an anonymous method's
+`skala_keep_existing_declaration_parens_arrangement` governs a lambda's and an anonymous method's
 parameter list along with every other one. `BreakPlan.DeclarationKeeps` had a special case routing the
 first two to the lambda key; it is gone, and one key now governs every parameter list.
 
@@ -4464,7 +4464,7 @@ only at `keep_user_linebreaks = false`. That is a different key doing a differen
 keeps is between *items*, not at the parenthesis — and it is named here because it is the obvious
 wrong conclusion to draw from the table.
 
-- options: `resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement`
+- options: `skala_keep_existing_lambda_and_anonymous_function_parens_arrangement`
 - ⚠ status: **accepted**. The row goes `SPURIOUS` → `UNEXERCISED`, which is the honest verdict for a
   key nothing reads: both engines are flat at both values because there is nothing to be flat about.
   Registered `OfInert` with "unread" rather than "masked" spelled out, since the two are recorded the
@@ -4485,26 +4485,26 @@ comment written at opener 8 / body 6 / `*/` 5 inside a type whose member indent 
 | | opener | body | `*/` |
 |---|---|---|---|
 | written | 8 | 6 | 5 |
-| oracle — at **both** values of `align_multiline_comments` | 4 | 2 | 1 |
+| oracle — at **both** values of `skala_align_multiline_comments` | 4 | 2 | 1 |
 | Skala | 4 | 6 | 5 |
 
 Skala moves the opener and leaves the interior at its written columns, so the comment's shape is
 destroyed rather than preserved: the body ends up further right than its own delimiter by a margin that
 depends on how far the opener moved.
 
-⚠ **Not `align_multiline_comments`.** The uniform shift happens identically at `true` and at `false`,
+⚠ **Not `skala_align_multiline_comments`.** The uniform shift happens identically at `true` and at `false`,
 and it applies precisely to the comments that key does not govern — a comment whose every continuation
 line begins with `*` is realigned instead (SK-DIV-0033), and one that qualifies for neither, because it
 is a single line, has no interior to move.
 
 ⚠ **The mechanism is already in the formatter and pointed at something else.**
 `VerbatimFlags.Realign` is exactly a uniform shift of a multi-line token's interior, written for
-`indent_raw_literal_string` and carrying the safety argument that a uniform shift leaves a raw string's
+`skala_indent_raw_literal_string` and carrying the safety argument that a uniform shift leaves a raw string's
 stripped value character for character identical. A comment has no value to preserve, so the argument
 is only easier here. What is missing is the caller: `CSharpDocumentBuilder` emits a `BlockComment`
 piece with `CommentFlags(piece)` and never with `Realign`.
 
-- options: none. It is reachable at every configuration, and no key turns it off — `align_multiline_comments`
+- options: none. It is reachable at every configuration, and no key turns it off — `skala_align_multiline_comments`
   governs the starred case only.
 - ⚠ status: **open**, measured, unfixed. Nothing in `corpus/real` reaches it — a scan of all 380 files
   finds no multi-line block comment at all whose opener the formatter moves — which is why nine
@@ -4533,15 +4533,15 @@ Measured against `jb cleanupcode` 2025.2.6 under `OracleProfile.FormatOnly`, at 
 
 ⚠ **The mechanism, and why `__arglist` is the one that agrees.** `SpaceRules.BeforeOpenParen`
 switches on `next.Parent`. `ArgListExpression` carries a real `ArgumentListSyntax`, so it reaches the
-`ArgumentListSyntax` arm and takes `space_before_method_call_parentheses`. The other three carry no
+`ArgumentListSyntax` arm and takes `skala_space_before_method_call_parentheses`. The other three carry no
 argument list at all — the `(` belongs to `MakeRefExpressionSyntax` / `RefTypeExpressionSyntax` /
 `RefValueExpressionSyntax` directly — so they fall through to the `default` arm, where
 `SyntaxFacts.IsKeywordKind(prev.Kind())` is true of `__makeref` and the rule returns
-`space_between_keyword_and_expression`, which the export sets to `true`. That fallback is written for
+`skala_space_between_keyword_and_expression`, which the export sets to `true`. That fallback is written for
 `return (value)` and `await (task)`; three keywords whose parenthesis is a call site in everything but
 the parse tree reach it by accident.
 
-- options: `resharper_csharp_space_between_keyword_and_expression` (wrongly), `resharper_csharp_space_before_method_call_parentheses` (correctly)
+- options: `skala_space_between_keyword_and_expression` (wrongly), `skala_space_before_method_call_parentheses` (correctly)
 - ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/varargs-and-typed-references.cs`,
   whose fixture is the oracle's answer.
 - ⚠ **Low severity, deliberately recorded anyway.** Nobody writes `__makeref` on purpose. But this is
@@ -4555,7 +4555,7 @@ the parse tree reach it by accident.
 `RemoveAccessorDeclaration` occurred nowhere in the corpus, and no corpus file anywhere carried a
 non-auto accessor list written on a single line — so the shape had never been measured.
 
-`keep_existing_declaration_block_arrangement = false`, which the export sets, expands an accessor
+`skala_keep_existing_declaration_block_arrangement = false`, which the export sets, expands an accessor
 list one accessor per line. Measured on eight shapes in one file, 2026-08-31:
 
 | written | oracle | Skala |
@@ -4579,12 +4579,12 @@ reformats none of them — `skala format` reports `0 files reformatted, 1 left a
 `AccessorListSyntax` is a declaration block by the same key's own definition and has no arm.
 
 ⚠ **This narrows SK-DIV-0092's reasoning.** That entry argues the key
-`blank_lines_around_single_line_property` governs a shape "this export never produces", because the
+`skala_blank_lines_around_single_line_property` governs a shape "this export never produces", because the
 oracle expands `public int X { get => 1; }` onto three lines. True of the oracle; **not true of
 Skala**, which leaves the shape on one line and therefore does apply the key to it. The two engines
 diverge on the blank-line question there as a consequence of this entry, not independently of it.
 
-- options: `resharper_csharp_keep_existing_declaration_block_arrangement`
+- options: `skala_keep_existing_declaration_block_arrangement`
 - ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/field-keyword.cs`, whose last
   property is the one-line accessor-list form. ⚠ `constructs/syntax/event-accessors.cs` does **not**
   pin it — its accessor lists were written expanded and both engines agree on them, which is worth
@@ -4604,12 +4604,12 @@ Measured 2026-08-31. The oracle puts the labelled statement on its own line what
 | `plain: Consume(2);` | `plain:` / `Consume(2);` | agrees |
 
 ⚠ **No key turns it off, and three candidates were eliminated rather than assumed.** Re-measured with
-`outdent_statement_labels = false`, `keep_existing_embedded_arrangement = true` and
-`keep_existing_embedded_block_arrangement = true` all set at once: the oracle still breaks. It is
+`skala_outdent_statement_labels = false`, `skala_keep_existing_embedded_arrangement = true` and
+`skala_keep_existing_embedded_block_arrangement = true` all set at once: the oracle still breaks. It is
 unconditional. The divergence is only ever visible when the label's statement is a **block** — Skala
 agrees on `plain:`, because a non-block statement's own break comes from elsewhere.
 
-- options: none. Not `resharper_csharp_outdent_statement_labels`, not either `keep_existing_embedded_*`.
+- options: none. Not `skala_outdent_statement_labels`, not either `keep_existing_embedded_*`.
 - ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/goto-and-labels.cs`.
 
 ## SK-DIV-0098 — an expression body after a wrapped constraint clause goes to its own line
@@ -4636,7 +4636,7 @@ clause forces the break", which the one-line rows above refute: a constraint tha
 declaration's line keeps the body with it. What forces the break is the *head already being wrapped*,
 not the constraint's presence.
 
-- options: none identified. `keep_existing_expr_member_arrangement = false` is set in the export and
+- options: none identified. `skala_keep_existing_expr_member_arrangement = false` is set in the export and
   is a plausible owner, but it was not flipped in this measurement and the entry does not claim it.
 - ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/generic-constraints.cs`.
 

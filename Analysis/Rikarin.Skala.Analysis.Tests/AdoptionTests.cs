@@ -1,5 +1,6 @@
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Options;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
 
@@ -161,14 +162,19 @@ public sealed class AdoptionTests {
     ///     <b>
     ///         `skala explain` is documented as taking `&lt;ruleId | optionKey&gt;` and rejected every
     ///         option key tried
-    ///     </b> — <c>insert_final_newline</c>,
-    ///     <c>dotnet_sort_system_directives_first</c> — with "is not a Skala rule". The two halves of
+    ///     </b> — <c>skala_insert_final_newline</c>,
+    ///     <c>skala_sort_usings_with_system_first</c> — with "is not a Skala rule". The two halves of
     ///     what Skala reads are rules and options, and only one of them could be asked about.
     /// </summary>
     [Theory]
-    [InlineData("insert_final_newline")]
+    [InlineData("skala_insert_final_newline")]
+    [InlineData("skala_sort_usings_with_system_first")]
+    [InlineData("skala_max_line_length")]
+    // ⚠ Microsoft's own spelling, which Skala still accepts as an alias. It is in this theory because
+    // it is the one spelling here that is not Skala's: `dotnet_sort_system_directives_first` is a key
+    // Roslyn reads, and dropping it with the rest of ReSharper's aliases would have made a line every
+    // other .NET tool honours report SK9001.
     [InlineData("dotnet_sort_system_directives_first")]
-    [InlineData("resharper_csharp_max_line_length")]
     public void Explain_AnswersAnOptionKey(string key) {
         var result = ExplainCommand.Run(key);
 
@@ -197,12 +203,24 @@ public sealed class AdoptionTests {
         Assert.Contains("is not a Skala rule", result.Output, StringComparison.Ordinal);
     }
 
+    /// <remarks>
+    ///     ⚠ The suggestion is <c>insert_final_newline</c> and not <c>skala_insert_final_newline</c>,
+    ///     which is right: the nearest spelling to the typo is the one the EditorConfig specification
+    ///     defines, and that spelling resolves. Asserted on the *option* rather than on one of its
+    ///     names, so this does not go red the next time a key is renamed.
+    /// </remarks>
     [Fact]
     public void Explain_OnAMisspeltOptionKey_Suggests() {
         var result = ExplainCommand.Run("insert_final_newlines");
 
         Assert.Equal(ExitCodes.ConfigurationError, result.ExitCode);
-        Assert.Contains("insert_final_newline", result.Output, StringComparison.Ordinal);
+        Assert.True(OptionRegistry.TryResolve("insert_final_newline", out var id));
+
+        var info = OptionRegistry.Get(id);
+        Assert.Contains(
+            new[] { info.Key }.Concat(info.Aliases),
+            spelling => result.Output.Contains(spelling, StringComparison.Ordinal)
+        );
     }
 
     /// <summary>

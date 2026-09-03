@@ -12,9 +12,23 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Wrapping</h1>
-<p class="lede">4 keys.</p>
-<section class="option" id="resharper_csharp_wrap_lines">
-<h2><code>resharper_csharp_wrap_lines</code> <a class="self" href="#resharper_csharp_wrap_lines">#</a></h2>
+<p class="lede">2 keys.</p>
+<section class="option" id="skala_keep_user_wrapping">
+<h2><code>skala_keep_user_wrapping</code> <a class="self" href="#skala_keep_user_wrapping">#</a></h2>
+<p>Inert. Measured over all four corners of the <code>keep_user_linebreaks</code> table and at three margins: <code>keep_user_linebreaks</code> decides whether the author's breaks survive and this key never appears in the answer. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Confirmed. Flat at both values, and at both values of <code>skala_keep_user_linebreaks</code>, on a fixture where <code>skala_wrap_arguments_style</code> is CONFORMANT with three distinct outputs. The key never appears in the answer.</p>
+<table class="facts">
+<tbody>
+<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
+<tr><th>Default</th><td><code>true</code></td></tr>
+<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
+<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Language</th><td>csharp</td></tr>
+<tr><th>Since</th><td>0.1</td></tr>
+</tbody>
+</table>
+</section>
+<section class="option" id="skala_wrap_lines">
+<h2><code>skala_wrap_lines</code> <a class="self" href="#skala_wrap_lines">#</a></h2>
 <p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
 <table class="facts">
 <tbody>
@@ -25,50 +39,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/wrapping/base-list.cs</code></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_indent_wrapped_function_names">
-<h2><code>resharper_indent_wrapped_function_names</code> <a class="self" href="#resharper_indent_wrapped_function_names">#</a></h2>
-<p>Indent a wrapped function name. Inert: the oracle returns the file unchanged at both values — on a wrapped call chain, a wrapped qualified name and a split declaration, alone and paired with <code>wrap_after_dot_in_method_calls</code>, <code>align_multiline_calls_chain</code>, <code>outdent_dots</code> and <code>continuous_line_indent</code>. The C#-prefixed spelling is equally inert.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.4</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Index.html">https://www.jetbrains.com/help/resharper/EditorConfig_Index.html</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_keep_user_wrapping">
-<h2><code>resharper_keep_user_wrapping</code> <a class="self" href="#resharper_keep_user_wrapping">#</a></h2>
-<p>Inert. Measured over all four corners of the <code>keep_user_linebreaks</code> table and at three margins: <code>keep_user_linebreaks</code> decides whether the author's breaks survive and this key never appears in the answer. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Confirmed. Flat at both values, and at both values of <code>resharper_keep_user_linebreaks</code>, on a fixture where <code>resharper_csharp_wrap_arguments_style</code> is CONFORMANT with three distinct outputs. The key never appears in the answer.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_wrap_before_colon">
-<h2><code>resharper_wrap_before_colon</code> <a class="self" href="#resharper_wrap_before_colon">#</a></h2>
-<p>A break around a <code>:</code> lands before it. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at both values in every spelling, at 120 and at 60 columns, on an overflowing base list and an overflowing <code>: this(…)</code> constructor initializer, and with <code>csharp_wrap_extends_list_style = wrap_if_long</code> in the same run so the list's own wrap style could not be masking it — while <code>csharp_wrap_before_extends_colon = true</code> in the same run moves a base list's <code>:</code> onto its own line.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.4</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Index.html">https://www.jetbrains.com/help/resharper/EditorConfig_Index.html</a></td></tr>
 </tbody>
 </table>
 </section>

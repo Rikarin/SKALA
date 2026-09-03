@@ -209,7 +209,7 @@ public static class Corpus {
     ///     a list of files. <c>usings/sort-and-remove.cs</c> imports <c>Alpha.Things</c>, which exists
     ///     only because <c>usings/namespaces.cs</c> declares it; drop either file and the import stops
     ///     resolving, whereupon both engines answer a different question about
-    ///     <c>resharper_sort_usings</c> than the one that was asked. The key-flip sweep gives its oracle
+    ///     <c>skala_sort_usings</c> than the one that was asked. The key-flip sweep gives its oracle
     ///     this whole subtree and compiles Skala's side over the same one, so that the two are asked the
     ///     same question — the argument <c>ArrangementDifferential.ImplicitUsings</c> makes about the
     ///     SDK's global usings, applied to the corpus's own cross-references.

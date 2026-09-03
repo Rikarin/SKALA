@@ -6,7 +6,7 @@ namespace Rikarin.Skala.Conformance.Sweep.Tests;
 /// <remarks>
 ///     ⚠ This exists because the harness got it wrong once, in the way that is hardest to notice: Skala's
 ///     side normalised its output while the oracle's side did not, so
-///     <c>resharper_csharp_insert_final_newline</c> came back <c>INERT</c> — "ReSharper honours the key
+///     <c>skala_insert_final_newline</c> came back <c>INERT</c> — "ReSharper honours the key
 ///     and Skala ignores it" — while <c>skala format --option</c> on the same fixture writes 12 bytes at
 ///     <c>true</c> and 11 at <c>false</c>. A verdict that damning has to be impossible to reach by
 ///     accident, and the check costs no oracle run at all: Skala's whole side of a 201-option sweep takes
@@ -61,14 +61,14 @@ public sealed class SkalaSideTests {
 
     /// <summary>⚠ The units are raw bytes, and this is the assertion that says so.</summary>
     /// <remarks>
-    ///     <c>resharper_csharp_insert_final_newline</c> changes exactly one byte and nothing that
+    ///     <c>skala_insert_final_newline</c> changes exactly one byte and nothing that
     ///     survives line-ending normalisation, so it is the canary for the whole class.
     /// </remarks>
     [Fact]
     public void SkalasSide_IsRawBytes_NotNormalisedText() {
         var candidate = SweepPlan.Build([])
             .Candidates
-                .Single(static c => c.Key == "resharper_csharp_insert_final_newline");
+                .Single(static c => c.Key == "skala_insert_final_newline");
 
         var on = KeyFlipSweep.FormatWithSkala(candidate, "true");
         var off = KeyFlipSweep.FormatWithSkala(candidate, "false");

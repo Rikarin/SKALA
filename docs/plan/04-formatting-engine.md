@@ -70,7 +70,7 @@ the source span it came from, so a run of output that matches the original bytes
 edit.
 
 ⚠ **`Fill` is not a node, and M3 established that it cannot be one.** A fill's delimiters and its
-item separators do not behave alike: `wrap_array_initializer_style = wrap_if_long` puts the `{` at
+item separators do not behave alike: `skala_wrap_array_initializer_style = wrap_if_long` puts the `{` at
 the end of the opening line and the `}` on a line of its own *whenever the initializer wraps at
 all*, and fills only the gaps between elements. A `Fill` node would have to either swallow the
 braces — producing `new[] { "aaa",` — or exclude the elements from the group that decides whether it
@@ -111,7 +111,7 @@ directions and the export wants a different direction per construct family:
 | Fact | Means | Example |
 |---|---|---|
 | `BreaksIfTooLong` | the group may **add** a break the author did not write | `chop_if_long` chops a call that does not fit even though it was written on one line |
-| `JoinsIfFits` | the group may **remove** one the author did write | `keep_existing_expr_member_arrangement = false` re-joins `int P =>\n 1;` |
+| `JoinsIfFits` | the group may **remove** one the author did write | `skala_keep_existing_expr_member_arrangement = false` re-joins `int P =>\n 1;` |
 
 Neither is the other's default. Giving an expression body the argument list's rule — break after
 `=>` whenever the declaration is over 120 — costs 0.24 points of line fidelity on `corpus/real/`,
@@ -133,14 +133,14 @@ first unavoidable break, because the line was going to end there anyway. `P => n
 is not improved by a break after the `=>`, and `M() =>\n from x in y\n select x;` is not joinable
 even though its first line fits.
 
-`Preserve` is selected when `resharper_keep_user_linebreaks = true` (it is) and the construct has no
+`Preserve` is selected when `skala_keep_user_linebreaks = true` (it is) and the construct has no
 option forcing otherwise, or when a `resharper_keep_existing_*_arrangement` key is `true`.
 Resolution of a `Preserve` group:
 
 1. Look at the *original* source span of the group. Did it contain a line break at any of this
    group's break points? ⚠ At **its own** break points — not "somewhere inside it".
    `var n = aaa +\n bbb;` and `var n = aaa\n + bbb;` are both breaks inside the same binary chain,
-   and the oracle removes the first and keeps the second, because `wrap_before_binary_opsign = true`
+   and the oracle removes the first and keeps the second, because `skala_wrap_before_binary_opsign = true`
    makes only the gap before the operator a break point of that group. A containment test cannot
    tell them apart, and M1's `ContainsSourceBreak` was a containment test.
 2. If **no**: try `Flat`. If it does not fit in `max_line_length`, fall through to the group's
@@ -164,7 +164,7 @@ success. It is now a configuration error that names the token.
 The gap it names is real: `keep_user_linebreaks = true` means a badly wrapped file stays badly
 wrapped, and there is no way to ask Skala to re-wrap it. `--reflow` would be `format` with
 `keep_user_linebreaks` and `keep_user_wrapping` forced off for one run — `skala format --option
-resharper_csharp_keep_user_linebreaks=false` is the spelling that works today. Whether that deserves
+skala_keep_existing_linebreaks=false` is the spelling that works today. Whether that deserves
 a flag of its own is undecided; what is decided is that this document stops claiming it has one.
 
 ### Mapping the ReSharper enums
@@ -192,8 +192,8 @@ end produces, and a test asserts it.
 
 ## Indentation
 
-`resharper_continuous_line_indent = single`, `resharper_use_continuous_indent_inside_parens = true`,
-`resharper_use_continuous_indent_inside_initializer_braces = true`,
+`resharper_continuous_line_indent = single`, `skala_use_continuous_indent_inside_parens = true`,
+`skala_use_continuous_indent_inside_initializer_braces = true`,
 `resharper_indent_wrapped_function_names = false`, and every `resharper_indent_nested_*_stmt = false`.
 
 Two kinds of indent, and conflating them is the classic formatter bug:
@@ -278,12 +278,12 @@ by exactly the scope that opened on the current line. A closing delimiter and a 
 both ask the first question; every line start asks the second.
 
 ⚠ **A binary pattern chain's own level is not spent as a statement's condition**, where
-`align_multiline_statement_conditions = true` puts the alignment and the continuation level at the
+`skala_align_multiline_statement_conditions = true` puts the alignment and the continuation level at the
 same column: `if (o is IDisposable
     or IAsyncDisposable)` is one step where the same chain as an
 argument takes two.
 
-ReSharper's `double` and `resharper_continuous_indent_multiplier` change the level size and are Tier
+ReSharper's `double` and `skala_continuous_indent_multiplier` change the level size and are Tier
 A too, but the export uses `single`, so that is the path with fixture coverage.
 
 ⚠ **A continuation scope belongs to the construct, not to the break.** M1 opened it lazily, at the
@@ -294,7 +294,7 @@ M2 opens the scope inside the group that owns the break points and closes it the
 `_continuousDepth == 0` and no enclosing frame has already spent its level, which is what keeps
 `M(\n a\n + b)` at the parenthesis's one level rather than two.
 
-Nested-statement outdenting (`indent_nested_for_stmt = false`) means
+Nested-statement outdenting (`skala_indent_nested_for_stmt = false`) means
 
 ```csharp
 for (var i = 0; i < n; i++)
@@ -314,9 +314,9 @@ must be a decision Skala makes, not one it inherits.
 
 | Trivia | Handling |
 |---|---|
-| End-of-line comment | Attached to the *preceding* token. `resharper_space_before_trailing_comment = true` inserts exactly one space; `space_before_trailing_comment_text = false` leaves `//x` alone. ⚠ A trailing comment makes its line unbreakable after the comment — the fit algorithm must treat it as infinite-width tail, or it will "fix" a long line by moving code onto the comment's line. |
-| Own-line comment | `resharper_stick_comment = true`: a comment immediately above a declaration binds to it and moves with it; blank-line rules see the comment as part of the member. `place_comments_at_first_column = false`: indent with the code. |
-| XML doc comment | ✅ **Formatted, by default, and the default is a correction.** `jb cleanupcode` under `OracleProfile.FormatOnly` does not touch documentation comments — not the missing space after `///`, not a 128-column summary, not two `<param>` tags on one line — because that profile is `Built-in: Reformat Code`, which switches `CSharpFormatDocComments` off. Rider's Full Cleanup switches it on, so Skala formats them (SK-DIV-0006). A comment that is not well-formed XML is reported at `hint` (`SK0003`) and left exactly as written, under every setting; `constructs/trivia/a-malformed-doc-comment-is-left-alone.cs` pins that against the oracle. ⚠ **`skala format --no-xmldoc` turns the sub-formatter off**, which is the only thing that still reproduces `FormatOnly`'s answer. **21 of the 32 `resharper_xmldoc_*` keys honoured**, each asserted observable; 11 refused with a reason each. Since `OracleProfile.DocComments` exists, all 21 are pinned by a committed `constructs/xmldoc/*.xmldoc.expected.cs`; **6 of them are Tier A** (plus `resharper_space_after_triple_slash`, which is not one of the 21). ⚠ The other 15 are measured and disagreeing — nine under SK-DIV-0019 through SK-DIV-0023, and six more demoted when the key-flip sweep, asking under the doc-comment profile, would not substantiate what the promoting pass had measured with its own harness. Reconciling those two instruments is open work. `<code>` and `<c>` are emitted verbatim, and no comment is written unless its content survives a round trip through `XmlDocSignature`. |
+| End-of-line comment | Attached to the *preceding* token. `skala_space_before_trailing_comment = true` inserts exactly one space; `space_before_trailing_comment_text = false` leaves `//x` alone. ⚠ A trailing comment makes its line unbreakable after the comment — the fit algorithm must treat it as infinite-width tail, or it will "fix" a long line by moving code onto the comment's line. |
+| Own-line comment | `skala_stick_comment = true`: a comment immediately above a declaration binds to it and moves with it; blank-line rules see the comment as part of the member. `skala_place_comments_at_first_column = false`: indent with the code. |
+| XML doc comment | ✅ **Formatted, by default, and the default is a correction.** `jb cleanupcode` under `OracleProfile.FormatOnly` does not touch documentation comments — not the missing space after `///`, not a 128-column summary, not two `<param>` tags on one line — because that profile is `Built-in: Reformat Code`, which switches `CSharpFormatDocComments` off. Rider's Full Cleanup switches it on, so Skala formats them (SK-DIV-0006). A comment that is not well-formed XML is reported at `hint` (`SK0003`) and left exactly as written, under every setting; `constructs/trivia/a-malformed-doc-comment-is-left-alone.cs` pins that against the oracle. ⚠ **`skala format --no-xmldoc` turns the sub-formatter off**, which is the only thing that still reproduces `FormatOnly`'s answer. **21 of the 32 `resharper_xmldoc_*` keys honoured**, each asserted observable; 11 refused with a reason each. Since `OracleProfile.DocComments` exists, all 21 are pinned by a committed `constructs/xmldoc/*.xmldoc.expected.cs`; **6 of them are Tier A** (plus `skala_space_after_triple_slash`, which is not one of the 21). ⚠ The other 15 are measured and disagreeing — nine under SK-DIV-0019 through SK-DIV-0023, and six more demoted when the key-flip sweep, asking under the doc-comment profile, would not substantiate what the promoting pass had measured with its own harness. Reconciling those two instruments is open work. `<code>` and `<c>` are emitted verbatim, and no comment is written unless its content survives a round trip through `XmlDocSignature`. |
 
 ⚠ **The two numbers in that cell were wrong, and they were wrong in different ways.** It read "17 of
 the 27" from `62335f7a` until they were reconciled against the registry. The family has always been
@@ -325,11 +325,11 @@ a sum of two sub-lists mistaken for the whole. And 17 went stale the moment four
 withdrawn, which is what `XmlDocFormatterTests.HonouredAndRefused_PartitionTheFamilyExactly` asserts
 today: 32 = 21 honoured + 11 refused, exactly, with no key in both and none in neither. The prose is
 now derived from the same partition the test checks.
-| `#region` / `#endregion` | `resharper_indent_preprocessor_region = usual_indent` — indented like code. `blank_lines_inside_region`, `blank_lines_around_region` apply. Regions do not affect grouping. |
-| `#if` / `#else` and **disabled text** | ⚠ The dangerous one. Roslyn parses the inactive branch as `DisabledTextTrivia` — an unstructured string. Skala emits it `Verbatim`, byte-for-byte, and *never* reindents it. `resharper_indent_preprocessor_if = no_indent` puts the directives at column 0. A construct whose braces are split across a `#if` (`#if X` … `{` … `#else` … `{` …) is detected and the whole member is emitted `Verbatim` with `SK9011` (info): "not formatted, unbalanced preprocessor structure". Silently doing something clever here is how formatters destroy code. |
+| `#region` / `#endregion` | `skala_indent_preprocessor_region = usual_indent` — indented like code. `skala_blank_lines_inside_region`, `skala_blank_lines_around_region` apply. Regions do not affect grouping. |
+| `#if` / `#else` and **disabled text** | ⚠ The dangerous one. Roslyn parses the inactive branch as `DisabledTextTrivia` — an unstructured string. Skala emits it `Verbatim`, byte-for-byte, and *never* reindents it. `skala_indent_preprocessor_if = no_indent` puts the directives at column 0. A construct whose braces are split across a `#if` (`#if X` … `{` … `#else` … `{` …) is detected and the whole member is emitted `Verbatim` with `SK9011` (info): "not formatted, unbalanced preprocessor structure". Silently doing something clever here is how formatters destroy code. |
 | `#pragma`, `#nullable`, `#line` | Own line, no indent change, no grouping effect. Between attributes and a member they suppress attribute-placement rules for that member. |
-| Formatter tags | `resharper_formatter_tags_enabled = true`, `off_tag = @formatter:off`, `on_tag = @formatter:on`, `formatter_tags_accept_regexp = false`. A comment that **starts with** the off tag opens a `Verbatim` span running to the on tag or to end of file. This is the escape hatch, and it must work on the first attempt or people stop trusting the tool — see § "Formatter tags" below for what it binds and where the boundary falls. |
-| Raw string literals (`"""`) | ⚠ **Shifted, not re-indented.** `resharper_indent_raw_literal_string = align` moves the content to the opening quotes' column, and the transformation that cannot be got wrong is a *uniform shift*: C# strips the closing delimiter's own whitespace prefix from every line, so moving every interior line and the closing delimiter by the same number of columns leaves the stripped result identical, character for character. Re-indenting the lines independently, or moving the content without the delimiter, changes what the program prints. Tier A for the uninterpolated token; an interpolated raw string is a run of tokens with expressions between them and stays `Verbatim` (SK-DIV-0003). |
+| Formatter tags | `skala_formatter_tags_enabled = true`, `off_tag = @formatter:off`, `on_tag = @formatter:on`, `formatter_tags_accept_regexp = false`. A comment that **starts with** the off tag opens a `Verbatim` span running to the on tag or to end of file. This is the escape hatch, and it must work on the first attempt or people stop trusting the tool — see § "Formatter tags" below for what it binds and where the boundary falls. |
+| Raw string literals (`"""`) | ⚠ **Shifted, not re-indented.** `skala_indent_raw_literal_string = align` moves the content to the opening quotes' column, and the transformation that cannot be got wrong is a *uniform shift*: C# strips the closing delimiter's own whitespace prefix from every line, so moving every interior line and the closing delimiter by the same number of columns leaves the stripped result identical, character for character. Re-indenting the lines independently, or moving the content without the delimiter, changes what the program prints. Tier A for the uninterpolated token; an interpolated raw string is a run of tokens with expressions between them and stays `Verbatim` (SK-DIV-0003). |
 | Blank lines | Not trivia in the IR: `Line(Blank(n))`, computed from the blank-line option set (below). |
 
 ### Formatter tags
@@ -380,17 +380,17 @@ is *report, never rewrite*.
 53 `resharper_blank_lines_*` keys, of which ~30 apply to C#. They form two independent systems that
 must be resolved in a fixed order:
 
-1. **Caps.** `keep_blank_lines_in_code = 2`, `keep_blank_lines_in_declarations = 2` — the author's
+1. **Caps.** `skala_keep_blank_lines_in_code = 2`, `skala_keep_blank_lines_in_declarations = 2` — the author's
    blank runs are truncated to n, never extended.
-2. **Requirements.** `blank_lines_around_type = 1`, `around_invocable = 1`, `around_field = 1`,
+2. **Requirements.** `skala_blank_lines_around_type = 1`, `around_invocable = 1`, `around_field = 1`,
    `around_property = 1`, `around_single_line_invocable = 0`, `after_using_list = 1`,
    `after_file_scoped_namespace_directive = 1` — a minimum inserted where absent.
-3. **Removals.** `remove_blank_lines_near_braces_in_code = true`,
+3. **Removals.** `skala_remove_blank_lines_near_braces_in_code = true`,
    `…_in_declarations = true` — blank lines immediately after `{` or before `}` are deleted, and
    this wins over (2).
 
 Order: removals ∘ requirements ∘ caps, evaluated on the *gap between two members*, with the gap
-attributed to the member below (so `stick_comment` moves the right blank lines with the comment).
+attributed to the member below (so `skala_stick_comment` moves the right blank lines with the comment).
 
 ⚠ **"Single-line" is a property of the output, and the requirements branch on it.** Half the
 `blank_lines_around_*` family has an `_around_single_line_*` twin, and a 140-column field is single
@@ -534,9 +534,9 @@ Consequences worth stating: `--check` is "did we produce any edits", **exit code
 way range formatting can be consistent with whole-file formatting.
 
 File-level concerns are applied last, as edits like any other: final newline
-(`resharper_csharp_insert_final_newline = true` wins over `[*] insert_final_newline = false`, see
+(`skala_insert_final_newline = true` wins over `[*] skala_insert_final_newline = false`, see
 [03](03-configuration-model.md)), trailing whitespace (`remove_spaces_on_blank_lines = true`),
-line endings (`end_of_line = lf`, and `resharper_enforce_line_ending_style = false` means mixed
+line endings (`end_of_line = lf`, and `skala_enforce_line_ending_style = false` means mixed
 endings are *preserved* rather than normalised — ⚠ note the contradiction with `[*] end_of_line`,
 resolved the same way as the others and reported once), BOM (preserved exactly; never added, never
 removed).
@@ -559,7 +559,7 @@ one space after a marker, which no re-wrap survives, because a re-wrap moves the
 allowance exists only when the sub-formatter actually re-wrapped something in this file, applies only to
 `///` trivia, and is `XmlDocSignature` — the same boundary the sub-formatter itself refuses to
 cross — rather than "comments are exempt" or "the words in order". Both of the weaker readings would
-have to be widened again for `space_before_self_closing` and again for `spaces_inside_tags`, and
+have to be widened again for `skala_xmldoc_space_before_self_closing` and again for `skala_xmldoc_spaces_inside_tags`, and
 each widening is a class of damage the net stops seeing. The signature is *tighter* than the old
 comparison where it counts: a `<code>` body is compared byte-for-byte, which it never was before.
 

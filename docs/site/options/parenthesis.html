@@ -13,8 +13,8 @@
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Parenthesis</h1>
 <p class="lede">8 keys.</p>
-<section class="option" id="resharper_csharp_indent_invocation_pars">
-<h2><code>resharper_csharp_indent_invocation_pars</code> <a class="self" href="#resharper_csharp_indent_invocation_pars">#</a></h2>
+<section class="option" id="skala_indent_invocation_pars">
+<h2><code>skala_indent_invocation_pars</code> <a class="self" href="#skala_indent_invocation_pars">#</a></h2>
 <p>Parenthesis — Indent method calls' parenthesis. <strong>Implemented.</strong> The four values set two numbers, contents and closing delimiter, in levels from the line the opener is on: <code>none</code> 0/0, <code>inside</code> 1/0, <code>outside</code> 1/1, <code>outside_and_inside</code> 2/1. Measured on a chopped call whose <code>)</code> this export's wrap keys put on a line of its own; Skala and the oracle agree at all four values on <code>constructs/indentation/delimiter-indent.cs</code>.</p>
 <table class="facts">
 <tbody>
@@ -24,15 +24,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_indent_invocation_pars</code>, <code>indent_invocation_pars</code>, <code>resharper_indent_invocation_pars</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/delimiter-indent.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_invocation_pars">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_invocation_pars</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_indent_method_decl_pars">
-<h2><code>resharper_csharp_indent_method_decl_pars</code> <a class="self" href="#resharper_csharp_indent_method_decl_pars">#</a></h2>
-<p>Parenthesis — Indent method declarations' parenthesis. <strong>Implemented</strong>, on the same contents/closer table as <code>indent_invocation_pars</code>: <code>none</code> 0/0, <code>inside</code> 1/0, <code>outside</code> 1/1, <code>outside_and_inside</code> 2/1. Skala and the oracle agree at all four values on a chopped parameter list.</p>
+<section class="option" id="skala_indent_method_decl_pars">
+<h2><code>skala_indent_method_decl_pars</code> <a class="self" href="#skala_indent_method_decl_pars">#</a></h2>
+<p>Parenthesis — Indent method declarations' parenthesis. <strong>Implemented</strong>, on the same contents/closer table as <code>skala_indent_invocation_pars</code>: <code>none</code> 0/0, <code>inside</code> 1/0, <code>outside</code> 1/1, <code>outside_and_inside</code> 2/1. Skala and the oracle agree at all four values on a chopped parameter list.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -41,14 +40,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_indent_method_decl_pars</code>, <code>indent_method_decl_pars</code>, <code>resharper_indent_method_decl_pars</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/delimiter-indent.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_method_decl_pars">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_method_decl_pars</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_indent_pars">
-<h2><code>resharper_csharp_indent_pars</code> <a class="self" href="#resharper_csharp_indent_pars">#</a></h2>
+<section class="option" id="skala_indent_pars">
+<h2><code>skala_indent_pars</code> <a class="self" href="#skala_indent_pars">#</a></h2>
 <p>Parenthesis — Indent other parenthesis and brackets. <strong>Implemented, and not inert.</strong> ⚠ The previous entry recorded it measured-inert: &quot;the oracle returns the file unchanged at <code>inside</code>, <code>none</code> and <code>outside_and_inside</code>&quot;. That was a fact about the probe. The M11 probe had no input where a delimiter this key governs lands on a line of its own, because nothing in this export's wrapping puts one there — but <code>keep_user_linebreaks = true</code> keeps one the <em>author</em> wrote, and <code>arr[a + b\n]</code> moves its <code>]</code> in by one level at <code>outside</code> and <code>outside_and_inside</code>. ⚠ Skala now agrees at all four. SK-DIV-0041's shape — at <code>none</code> the stray <code>]</code> took the ambient continuation instead of its opener's line level — was recorded as needing a zero-level scope kind the IR does not have; <code>IndentKind.None</code> was already declared in <code>Doc.cs</code> and had no call site. Zero levels meant no scope at all, and with no scope there was nothing for the closing delimiter to be aligned against. ⚠ An inertness claim was recorded here and withdrawn on 2026-08-30 when the key was implemented: previously read &quot;the oracle returns the file unchanged at <code>inside</code>, <code>none</code> and <code>outside_and_inside</code>&quot;. Re-measured on an input where the delimiter reaches a line of its own — an author-written break before a <code>]</code>, which <code>keep_user_linebreaks = true</code> preserves — and all four values differ.</p>
 <table class="facts">
 <tbody>
@@ -58,15 +56,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_indent_pars</code>, <code>indent_pars</code>, <code>resharper_indent_pars</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/delimiter-indent.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_pars">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_pars</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_indent_primary_constructor_decl_pars">
-<h2><code>resharper_csharp_indent_primary_constructor_decl_pars</code> <a class="self" href="#resharper_csharp_indent_primary_constructor_decl_pars">#</a></h2>
-<p>Parenthesis — Indent primary constructor declarations' parenthesis. <strong>Implemented.</strong> ⚠ Its <em>closer</em> half is masked — <code>wrap_before_primary_constructor_declaration_rpar = false</code> keeps the <code>)</code> on the last parameter's line — but its <em>contents</em> half is not: at <code>none</code> the oracle puts a record's parameters at the declaration's own column. ⚠ Skala now agrees at all four. SK-DIV-0043 is resolved and the second half of its own note was the answer: the outer of <code>outside_and_inside</code>'s two levels belongs to the CLOSING delimiter, and <code>wrap_before_primary_constructor_declaration_rpar = false</code> means this <code>)</code> is never a break point, so that level is never realised. ⚠ Not <code>the closer takes a line</code> — <code>arr[a + b
+<section class="option" id="skala_indent_primary_constructor_decl_pars">
+<h2><code>skala_indent_primary_constructor_decl_pars</code> <a class="self" href="#skala_indent_primary_constructor_decl_pars">#</a></h2>
+<p>Parenthesis — Indent primary constructor declarations' parenthesis. <strong>Implemented.</strong> ⚠ Its <em>closer</em> half is masked — <code>skala_wrap_before_primary_constructor_declaration_rpar = false</code> keeps the <code>)</code> on the last parameter's line — but its <em>contents</em> half is not: at <code>none</code> the oracle puts a record's parameters at the declaration's own column. ⚠ Skala now agrees at all four. SK-DIV-0043 is resolved and the second half of its own note was the answer: the outer of <code>outside_and_inside</code>'s two levels belongs to the CLOSING delimiter, and <code>skala_wrap_before_primary_constructor_declaration_rpar = false</code> means this <code>)</code> is never a break point, so that level is never realised. ⚠ Not <code>the closer takes a line</code> — <code>arr[a + b
 ]</code> keeps its <code>]</code> on a line of its own under <code>keep_user_linebreaks</code> and still gets one level. It is a configuration fact, not one only the fitter knows.</p>
 <table class="facts">
 <tbody>
@@ -76,15 +73,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_indent_primary_constructor_decl_pars</code>, <code>indent_primary_constructor_decl_pars</code>, <code>resharper_indent_primary_constructor_decl_pars</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/delimiter-indent.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_primary_constructor_decl_pars">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_primary_constructor_decl_pars</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_indent_statement_pars">
-<h2><code>resharper_csharp_indent_statement_pars</code> <a class="self" href="#resharper_csharp_indent_statement_pars">#</a></h2>
-<p>Parenthesis — Indent statement (if, while, for, etc) parenthesis. Read — <code>ConditionLevels</code> consults it — and inert under this export, which is a <strong>mask and not a gap</strong>: <code>align_multiline_statement_conditions = true</code> lays a condition and its <code>)</code> out from an absolute column, and a level count has nothing to say about a column. All four values return the same file while that key is on; turn it off and the family's contents/closer table applies here like anywhere else.</p>
+<section class="option" id="skala_indent_statement_pars">
+<h2><code>skala_indent_statement_pars</code> <a class="self" href="#skala_indent_statement_pars">#</a></h2>
+<p>Parenthesis — Indent statement (if, while, for, etc) parenthesis. Read — <code>ConditionLevels</code> consults it — and inert under this export, which is a <strong>mask and not a gap</strong>: <code>skala_align_multiline_statement_conditions = true</code> lays a condition and its <code>)</code> out from an absolute column, and a level count has nothing to say about a column. All four values return the same file while that key is on; turn it off and the family's contents/closer table applies here like anywhere else.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -93,14 +89,13 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_indent_statement_pars</code>, <code>indent_statement_pars</code>, <code>resharper_indent_statement_pars</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_statement_pars">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_statement_pars</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_indent_typearg_angles">
-<h2><code>resharper_csharp_indent_typearg_angles</code> <a class="self" href="#resharper_csharp_indent_typearg_angles">#</a></h2>
-<p>Parenthesis — Indent type argument's angles. <strong>Implemented, and not inert.</strong> ⚠ Same correction as <code>indent_pars</code>: the earlier &quot;unchanged at <code>inside</code> and <code>outside_and_inside</code>&quot; was measured on a file whose generic type wrapped but whose <code>&gt;</code> never reached a line of its own. On <code>new Dictionary&lt;A, B\n&gt;()</code> — a break the author wrote and <code>keep_user_linebreaks = true</code> keeps — the <code>&gt;</code> moves in one level at <code>outside</code> and <code>outside_and_inside</code>. ⚠ Skala now agrees at all four; <code>none</code> was SK-DIV-0041's shape and is resolved with <code>indent_pars</code>. ⚠ An inertness claim was recorded here and withdrawn on 2026-08-30 when the key was implemented: previously read &quot;the oracle returns the file unchanged at <code>inside</code> and <code>outside_and_inside</code>, on a file whose generic type is long enough to wrap&quot;. Wrapping the type is not the shape — the <code>&gt;</code> reaching a line of its own is, and this export never puts it there. An author's break does.</p>
+<section class="option" id="skala_indent_typearg_angles">
+<h2><code>skala_indent_typearg_angles</code> <a class="self" href="#skala_indent_typearg_angles">#</a></h2>
+<p>Parenthesis — Indent type argument's angles. <strong>Implemented, and not inert.</strong> ⚠ Same correction as <code>skala_indent_pars</code>: the earlier &quot;unchanged at <code>inside</code> and <code>outside_and_inside</code>&quot; was measured on a file whose generic type wrapped but whose <code>&gt;</code> never reached a line of its own. On <code>new Dictionary&lt;A, B\n&gt;()</code> — a break the author wrote and <code>keep_user_linebreaks = true</code> keeps — the <code>&gt;</code> moves in one level at <code>outside</code> and <code>outside_and_inside</code>. ⚠ Skala now agrees at all four; <code>none</code> was SK-DIV-0041's shape and is resolved with <code>skala_indent_pars</code>. ⚠ An inertness claim was recorded here and withdrawn on 2026-08-30 when the key was implemented: previously read &quot;the oracle returns the file unchanged at <code>inside</code> and <code>outside_and_inside</code>, on a file whose generic type is long enough to wrap&quot;. Wrapping the type is not the shape — the <code>&gt;</code> reaching a line of its own is, and this export never puts it there. An author's break does.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -109,15 +104,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_indent_typearg_angles</code>, <code>indent_typearg_angles</code>, <code>resharper_indent_typearg_angles</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/delimiter-indent.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_typearg_angles">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_typearg_angles</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_indent_typeparam_angles">
-<h2><code>resharper_csharp_indent_typeparam_angles</code> <a class="self" href="#resharper_csharp_indent_typeparam_angles">#</a></h2>
-<p>Parenthesis — Indent type parameter's angles. <strong>Implemented, and not inert.</strong> ⚠ The earlier entry recorded it measured-inert on &quot;a declaration with two type parameters and two constraints&quot;; that file's <code>&gt;</code> never reached a line of its own and neither did its contents wrap. On <code>constructs/breaks/type-parameter-list.cs</code>, whose list the oracle fills at its own commas, the continuation moves at every value: <code>none</code> 0, <code>inside</code>/<code>outside</code> 1, <code>outside_and_inside</code> 2. ⚠ Skala now agrees at all four. The <code>outside_and_inside</code> value was SK-DIV-0043's and is resolved with <code>indent_primary_constructor_decl_pars</code>: a <code>&gt;</code> is never a break point, so <code>outside_and_inside</code>'s outer level — which belongs to the closing delimiter — is never realised. ⚠ The key's <em>closer</em> half is separately out of reach: the shape is a <code>&gt;</code> on a line of its own, and SK-DIV-0042 is that Skala rejoins the author's break before one where the oracle keeps it.</p>
+<section class="option" id="skala_indent_typeparam_angles">
+<h2><code>skala_indent_typeparam_angles</code> <a class="self" href="#skala_indent_typeparam_angles">#</a></h2>
+<p>Parenthesis — Indent type parameter's angles. <strong>Implemented, and not inert.</strong> ⚠ The earlier entry recorded it measured-inert on &quot;a declaration with two type parameters and two constraints&quot;; that file's <code>&gt;</code> never reached a line of its own and neither did its contents wrap. On <code>constructs/breaks/type-parameter-list.cs</code>, whose list the oracle fills at its own commas, the continuation moves at every value: <code>none</code> 0, <code>inside</code>/<code>outside</code> 1, <code>outside_and_inside</code> 2. ⚠ Skala now agrees at all four. The <code>outside_and_inside</code> value was SK-DIV-0043's and is resolved with <code>skala_indent_primary_constructor_decl_pars</code>: a <code>&gt;</code> is never a break point, so <code>outside_and_inside</code>'s outer level — which belongs to the closing delimiter — is never realised. ⚠ The key's <em>closer</em> half is separately out of reach: the shape is a <code>&gt;</code> on a line of its own, and SK-DIV-0042 is that Skala rejoins the author's break before one where the oracle keeps it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -126,15 +120,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_indent_typeparam_angles</code>, <code>indent_typeparam_angles</code>, <code>resharper_indent_typeparam_angles</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/breaks/type-parameter-list.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_typeparam_angles">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_typeparam_angles</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_use_continuous_indent_inside_parens">
-<h2><code>resharper_csharp_use_continuous_indent_inside_parens</code> <a class="self" href="#resharper_csharp_use_continuous_indent_inside_parens">#</a></h2>
-<p>Whether the contents of a parenthesis take a continuation level. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6 with <code>resharper_continuous_indent_multiplier = 2</code>, which is the only configuration that can ask: <code>M(</code> at column 8 puts its arguments on 16 at <code>true</code> and on 12 at <code>false</code>. So <code>false</code> is one indent width rather than none. Under the export's own multiplier of 1 the two answers coincide and the key is unobservable. SK-DIV-0090.</p>
+<section class="option" id="skala_use_continuous_indent_inside_parens">
+<h2><code>skala_use_continuous_indent_inside_parens</code> <a class="self" href="#skala_use_continuous_indent_inside_parens">#</a></h2>
+<p>Whether the contents of a parenthesis take a continuation level. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6 with <code>skala_continuous_indent_multiplier = 2</code>, which is the only configuration that can ask: <code>M(</code> at column 8 puts its arguments on 16 at <code>true</code> and on 12 at <code>false</code>. So <code>false</code> is one indent width rather than none. Under the export's own multiplier of 1 the two answers coincide and the key is unobservable. SK-DIV-0090.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -143,8 +136,7 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_use_continuous_indent_inside_parens</code>, <code>resharper_use_continuous_indent_inside_parens</code>, <code>use_continuous_indent_inside_parens</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/indentation/resharper_csharp_use_continuous_indent_inside_parens.cs</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/indentation/skala_use_continuous_indent_inside_parens.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_use_continuous_indent_inside_parens">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_use_continuous_indent_inside_parens</a></td></tr>
 </tbody>
 </table>

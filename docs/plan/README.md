@@ -90,9 +90,9 @@ configuration — and the decision about which of the 4 226 keys Skala *implemen
 
 1. **Roslyn's formatter cannot wrap.** It adjusts whitespace between tokens and preserves the line
    breaks it is given; wrapping to a column has been requested since 2016 and repeatedly declined.
-   `resharper_csharp_max_line_length = 120` with `chop_if_long` therefore cannot be implemented on
+   `skala_max_line_length = 120` with `chop_if_long` therefore cannot be implemented on
    top of `Formatter.Format` — Skala needs its own line-fitting engine. ([04](04-formatting-engine.md))
-2. **`resharper_keep_user_linebreaks = true` and `resharper_keep_user_wrapping = true`.** The
+2. **`skala_keep_user_linebreaks = true` and `skala_keep_user_wrapping = true`.** The
    configuration explicitly asks the formatter to *keep* the author's line breaks and only intervene
    where a rule or the column limit demands it. That is the opposite of Prettier's model — and of
    CSharpier's, which is a Prettier port — where the original line breaks are discarded and the

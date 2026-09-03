@@ -114,8 +114,8 @@ public static class SweepPlan {
     ///     with.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The same option is written <c>resharper_space_after_cast</c>, <c>csharp_space_after_cast</c>
-    ///     and <c>space_after_cast</c> depending on which of the three the export chose, so a family is
+    ///     ⚠ The same option is written <c>skala_space_after_cast</c>, <c>skala_space_after_cast</c>
+    ///     and <c>skala_space_after_cast</c> depending on which of the three the export chose, so a family is
     ///     matched after the vendor prefix is taken off rather than by <c>StartsWith</c> on the raw key.
     /// </remarks>
     public static bool InFamily(string key, IReadOnlyList<string> families) {
@@ -130,15 +130,10 @@ public static class SweepPlan {
         return false;
     }
 
-    public static string Strip(string key) {
-        foreach (var prefix in new[] { "resharper_csharp_", "resharper_xmldoc_", "resharper_", "csharp_", "dotnet_" }) {
-            if (key.StartsWith(prefix, StringComparison.Ordinal)) {
-                return key[prefix.Length..];
-            }
-        }
-
-        return key;
-    }
+    /// <remarks>
+    ///     ⚠ The generated list, not a fourth copy of it.
+    /// </remarks>
+    public static string Strip(string key) => OptionKeyPrefixes.Strip(key);
 
     /// <summary>
     ///     The values one option is swept at.

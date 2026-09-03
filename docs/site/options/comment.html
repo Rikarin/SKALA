@@ -12,39 +12,10 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Comment</h1>
-<p class="lede">3 keys.</p>
-<section class="option" id="resharper_indent_comment">
-<h2><code>resharper_indent_comment</code> <a class="self" href="#resharper_indent_comment">#</a></h2>
-<p>Indent a comment with the code around it. Inert: the oracle returns a comment inside a method body unchanged at both values.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.4</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Index.html">https://www.jetbrains.com/help/resharper/EditorConfig_Index.html</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_space_before_trailing_comment_text">
-<h2><code>resharper_space_before_trailing_comment_text</code> <a class="self" href="#resharper_space_before_trailing_comment_text">#</a></h2>
+<p class="lede">1 key.</p>
+<section class="option" id="skala_space_before_trailing_comment_text">
+<h2><code>skala_space_before_trailing_comment_text</code> <a class="self" href="#skala_space_before_trailing_comment_text">#</a></h2>
 <p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. Inert: the oracle never respaces a <code>//</code> comment's own text, at either value.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_wrap_comments">
-<h2><code>resharper_wrap_comments</code> <a class="self" href="#resharper_wrap_comments">#</a></h2>
-<p>Whether long comment text is rewrapped at the margin. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at both values over a long <code>//</code> comment, a long <code>/* … */</code> comment and a long trailing comment, at 120 and at 60 columns with <code>csharp_wrap_lines = true</code>; the same file moves under <code>space_before_trailing_comment = false</code>, so the probe was live. <code>CSReformatCode</code> does not rewrap comment text at all — the sub-formatter that does is the separate <code>CSharpFormatDocComments</code> cleanup task and <code>xmldoc_wrap_lines</code> is its key. Undocumented by JetBrains; classified as C#-relevant by vocabulary.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

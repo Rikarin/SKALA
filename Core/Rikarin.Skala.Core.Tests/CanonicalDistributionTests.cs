@@ -14,28 +14,159 @@ public sealed class CanonicalDistributionTests {
 
     // ── The payload, and the ADR-001 workflow that produces it ────────────────────────────────
 
+    /// <summary>
+    ///     ADR-001 — the canonical is the export, every option of it, at the export's own values.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         This asserted byte-level containment: every one of the export's assignments present in
+    ///         the canonical verbatim, and a count exactly two higher.
+    ///     </b> That spelling died with the
+    ///     <c>skala_</c> rename, and it had to: the payload is now a <em>translation</em> of the export
+    ///     rather than a copy, because a verbatim copy is a configuration Skala cannot read and would
+    ///     put a wall of <c>SK9001</c> into every repository it was installed into.
+    ///     <para>
+    ///         What replaces it is the same claim over resolved options rather than over text, which is
+    ///         the move <c>EditorConfigIngestionTests</c> made at step 1: every property the export sets
+    ///         <em>and Skala implements</em> reaches the canonical, under Skala's spelling, at the
+    ///         export's value — and the canonical carries nothing else except the two fixes. It is not
+    ///         a weaker claim. The byte version could not have caught a translation that mapped a key to
+    ///         the wrong option, because it never resolved anything; this one does. What it deliberately
+    ///         no longer asserts is that the ~298 properties Skala has no option for survive into the
+    ///         payload — they are dropped, and <see cref="TheCanonical_CarriesNothingSkalaCannotRead" />
+    ///         is what says so.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ If this fails, somebody re-exported from Rider and did not run
+    ///         <c>./build.sh Canonical</c>, and eighteen repositories are about to be given a
+    ///         configuration that is not the one in the IDE.
+    ///     </para>
+    /// </remarks>
     [Fact]
     public void TheCanonical_IsTheRiderExport_PlusExactlyTheTwoFixes() {
-        // ⚠ ADR-001: the canonical *is* the export. If this fails, somebody re-exported from Rider
-        // and did not run `./build.sh Canonical`, and eighteen repositories are about to be given
-        // a configuration that is not the one in the IDE.
         var composed = CanonicalEditorConfig.Compose(File.ReadAllText(RepositoryPaths.Template));
         Assert.Equal(
             composed,
             File.ReadAllText(RepositoryPaths.CanonicalPayload).Replace("\r\n", "\n", StringComparison.Ordinal)
         );
 
-        var export = EditorConfigDocument.Load(RepositoryPaths.Template);
-        var canonical = EditorConfigDocument.FromText("canonical.editorconfig", composed);
+        var export = EditorConfigDocument.FromText(
+            RepositoryPaths.Template,
+            CanonicalEditorConfig.Translate(File.ReadAllText(RepositoryPaths.Template))
+        );
+        // ⚠ Both documents are given the same path. A section glob is matched relative to the
+        // directory the file sits in, so resolving the payload from its own directory under
+        // Distribution/ answers a different question than resolving the export from the root.
+        var canonical = EditorConfigDocument.FromText(RepositoryPaths.Template, composed);
 
-        // Two keys added; every one of the export's own 4 226 assignments still present, verbatim.
-        Assert.Equal(export.Assignments.Count() + 2, canonical.Assignments.Count());
-        foreach (var assignment in export.Assignments) {
-            Assert.Contains(canonical.Assignments, a => a.Key == assignment.Key && a.Value == assignment.Value);
+        // ⚠ Compared as *resolved options*, not as text. The canonical keeps Microsoft's spelling
+        // where the export used one, so a key-by-key comparison would report every one of those as
+        // missing while the configuration was in fact identical.
+        var probe = Path.Combine(RepositoryPaths.Root, "Probe.cs");
+        var exported = Configured(export, probe);
+        var shipped = Configured(canonical, probe);
+
+        // ⚠ The population canary, and it is one this test could not have had before: both sides are
+        // built by resolving, so a registry whose `export` provenance went missing would make the
+        // left side empty and the comparison would hold vacuously over nothing.
+        Assert.True(
+            exported.Count > 300,
+            $"only {exported.Count} of the export's assignments resolve to an option. That is a broken "
+            + "provenance index, not a small export."
+        );
+
+        // Every option the export configures, at the same value — and nothing configured that the
+        // export did not, except `max_line_length`, which is one of the two fixes.
+        foreach (var (id, value) in exported) {
+            Assert.True(shipped.TryGetValue(id, out var actual), OptionRegistry.Get(id).Key);
+            Assert.Equal(value, actual);
         }
 
+        Assert.True(OptionRegistry.TryResolve("max_line_length", out var columnLimit));
+        Assert.Equal([columnLimit], shipped.Keys.Except(exported.Keys).ToArray());
+
         Assert.True(canonical.IsRoot);
-        Assert.Equal("120", Assert.Single(canonical.Assignments, static a => a.Key == "max_line_length").Value);
+        Assert.Equal("120", shipped[columnLimit]);
+    }
+
+    /// <summary>
+    ///     The payload shipped to consuming repositories is one Skala can read, all of it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The half of the old byte comparison that had to be replaced rather than restated. Skala no
+    ///     longer reads <c>resharper_*</c>, so carrying the export's own spellings into the canonical
+    ///     would ship eighteen repositories a managed block whose every line their own
+    ///     <c>skala config check</c> reports as an unknown key — and nothing would have failed here to
+    ///     say so, because the old assertion was that those lines were present.
+    /// </remarks>
+    /// <summary>Every option a document configures for one file, by id.</summary>
+    static Dictionary<OptionId, string> Configured(EditorConfigDocument document, string probe) =>
+        OptionResolver.Resolve(EditorConfigChain.Of(probe, document))
+            .Configured
+                .ToDictionary(static option => option.Info.Id, static option => option.Value);
+
+    /// <summary>
+    ///     No key is assigned twice in one section of the payload.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Found by sabotage, and nothing else covered it.</b> The export writes one option under
+    ///     two spellings in a section, so the translation has to collapse them; disabling that collapse
+    ///     turned <em>no</em> test red, because every other assertion here is over resolved options and
+    ///     a key assigned twice to the same value resolves exactly like a key assigned once. The
+    ///     payload is a file eighteen repositories read, though, and a managed block that says
+    ///     `skala_x = true` twice is a file whose author looks careless and whose diff is noisy.
+    /// </remarks>
+    [Fact]
+    public void TheCanonical_AssignsEachKeyOncePerSection() {
+        var composed = CanonicalEditorConfig.Compose(File.ReadAllText(RepositoryPaths.Template));
+        var section = "<file>";
+        var seen = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal) { [section] = [] };
+        var duplicates = new List<string>();
+
+        foreach (var raw in composed.Split('\n')) {
+            var line = raw.Trim();
+            if (line.Length == 0 || line[0] == '#') {
+                continue;
+            }
+
+            if (line[0] == '[') {
+                section = line;
+                seen[section] = [];
+                continue;
+            }
+
+            var equals = line.IndexOf('=', StringComparison.Ordinal);
+            if (equals > 0 && !seen[section].Add(line[..equals].Trim())) {
+                duplicates.Add(section + " " + line[..equals].Trim());
+            }
+        }
+
+        Assert.True(seen.Values.Sum(static keys => keys.Count) > 300, "the payload parsed to almost nothing");
+        Assert.True(duplicates.Count == 0, "assigned twice in one section: " + string.Join(", ", duplicates));
+    }
+
+    [Fact]
+    public void TheCanonical_CarriesNothingSkalaCannotRead() {
+        var canonical = EditorConfigDocument.FromText(
+            "canonical.editorconfig",
+            CanonicalEditorConfig.Compose(File.ReadAllText(RepositoryPaths.Template))
+        );
+
+        Assert.NotEmpty(canonical.Assignments);
+        var unknown = canonical.Assignments
+            // `root` is an EditorConfig directive, not an option, and is one of the two fixes.
+                .Where(static a => a.Key != "root" && !OptionRegistry.TryResolve(a.Key, out _))
+                .Select(static a => a.Key)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+
+        Assert.True(
+            unknown.Length == 0,
+            "the canonical payload sets keys Skala does not know, which every consuming repository "
+            + "would report as SK9001: "
+            + string.Join(", ", unknown)
+        );
     }
 
     [Fact]
@@ -340,7 +471,7 @@ public sealed class CanonicalDistributionTests {
     // ...and one where the canonical and Vixen disagree outright.
     [InlineData("Core/Vixen.Core/Thing.cs", "trim_trailing_whitespace", "true")]
     // Where Vixen says nothing, the canonical is in force.
-    [InlineData("Core/Vixen.Core/Thing.cs", "resharper_csharp_max_line_length", "120")]
+    [InlineData("Core/Vixen.Core/Thing.cs", "skala_max_line_length", "120")]
     public void Sync_OnVixen_LeavesTheLocalOverridesWinning(string relativePath, string key, string expected) {
         // ⚠ The whole layering argument in one assertion. The canonical block is first, the local
         // block is second, and editorconfig resolves later sections over earlier ones — so a local

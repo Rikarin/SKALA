@@ -50,11 +50,11 @@ public readonly record struct FormatterTags(bool Enabled, string Off, string On,
     ///     configured pair:
     ///     <list type="bullet">
     ///         <item>
-    ///             <c>resharper_formatter_off_tag = @zzz:off</c> with a source that says
+    ///             <c>skala_formatter_off_tag = @zzz:off</c> with a source that says
     ///             <c>// @formatter:off</c> — the region is still preserved.
     ///         </item>
     ///         <item>
-    ///             <c>resharper_formatter_tags_enabled = false</c> with <c>// @formatter:off</c> — still
+    ///             <c>skala_formatter_tags_enabled = false</c> with <c>// @formatter:off</c> — still
     ///             preserved; with a *custom* tag, not preserved.
     ///         </item>
     ///         <item>
@@ -253,7 +253,7 @@ public sealed class FormatterTagGuard {
     }
 
     /// <summary>
-    ///     <c>resharper_formatter_tags_accept_regexp = true</c>: the configured tag is a pattern.
+    ///     <c>skala_formatter_tags_accept_regexp = true</c>: the configured tag is a pattern.
     /// </summary>
     /// <remarks>
     ///     ⚠ Anchored at the start of the comment's body rather than searched for anywhere in it, so

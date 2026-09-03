@@ -96,7 +96,7 @@ public sealed record OracleProfile(string Name, string Suffix, string Tasks) {
     ///     out to be a property of the *profile* and not of the tool. SK-DIV-0006 read "every committed
     ///     fixture returns its documentation comments exactly as written" as "the oracle declines to
     ///     format documentation comments", and 22 keys — 21 <c>resharper_xmldoc_*</c> plus
-    ///     <c>resharper_space_after_triple_slash</c> — were registered <c>OfUnoracled</c> on the strength
+    ///     <c>skala_space_after_triple_slash</c> — were registered <c>OfUnoracled</c> on the strength
     ///     of it. <c>CSharpFormatDocComments</c> is a real <c>CodeCleanupTask_</c>, and
     ///     <see cref="FormatOnly" /> is byte-for-byte <c>Built-in: Reformat Code</c>, which is the one
     ///     built-in profile that switches it off.

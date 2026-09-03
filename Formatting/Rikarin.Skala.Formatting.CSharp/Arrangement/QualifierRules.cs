@@ -7,7 +7,7 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
 ///     <c>StaticHost.Value</c> ⇒ <c>Value</c> inside <c>StaticHost</c>, under
-///     <c>resharper_static_members_qualify_members</c>.
+///     <c>skala_static_members_qualify_members</c>.
 /// </summary>
 /// <remarks>
 ///     ⚠ The key is a *member-kind set*, not a boolean, and it runs in both directions: a kind in the
@@ -18,7 +18,7 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///     the oracle deletes an existing <c>StaticHost.</c>, and at <c>field, property, method</c> it adds
 ///     one.
 ///     <para>
-///         ⚠ <c>resharper_static_members_qualify_with = declared_type</c> chooses the name written when a
+///         ⚠ <c>skala_static_members_qualify_with = declared_type</c> chooses the name written when a
 ///         qualifier is added — the type that declares the member rather than the type the code is in. It
 ///         only has an effect in the adding direction, which is why it is claimed by this rule and not a
 ///         separate one.

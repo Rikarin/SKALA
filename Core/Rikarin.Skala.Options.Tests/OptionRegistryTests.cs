@@ -33,9 +33,9 @@ public sealed class OptionRegistryTests {
     [Fact]
     public void PlanExample_ResolvesThroughItsLanguageGenericSpelling() {
         // docs/plan/03 § "The option registry" writes this entry out by hand.
-        Assert.True(OptionRegistry.TryResolve("resharper_wrap_arguments_style", out var id));
+        Assert.True(OptionRegistry.TryResolve("skala_wrap_arguments_style", out var id));
         var info = OptionRegistry.Get(id);
-        Assert.Equal("resharper_csharp_wrap_arguments_style", info.Key);
+        Assert.Equal("skala_wrap_arguments_style", info.Key);
         Assert.Equal("enum:WrapStyle", "enum:" + info.EnumName);
         Assert.Equal("csharp", info.Language);
     }
@@ -91,12 +91,12 @@ public sealed class OptionRegistryTests {
     public void NamedAccessors_ReadTheSameValueAsTheIndex() {
         var options = FormattingOptions.Defaults;
         Assert.Equal(
-            options.GetRaw(OptionId.ResharperCsharpWrapArgumentsStyle),
-            (int)options.ReSharper.CSharp.WrapArgumentsStyle
+            options.GetRaw(OptionId.SkalaWrapArgumentsStyle),
+            (int)options.Skala.WrapArgumentsStyle
         );
         Assert.Equal(
-            options.GetInt(OptionId.ResharperCsharpMaxLineLength),
-            options.ReSharper.CSharp.MaxLineLength
+            options.GetInt(OptionId.SkalaMaxLineLength),
+            options.Skala.MaxLineLength
         );
     }
 
@@ -105,10 +105,10 @@ public sealed class OptionRegistryTests {
         // docs/plan/03 § "The style this config actually describes", spot-checked against the
         // defaults the registry was seeded with.
         var options = FormattingOptions.Defaults;
-        Assert.Equal(120, options.ReSharper.CSharp.MaxLineLength);
-        Assert.Equal(WrapStyle.ChopIfLong, options.ReSharper.CSharp.WrapArgumentsStyle);
-        Assert.Equal(WrapStyle.ChopIfLong, options.ReSharper.CSharp.WrapParametersStyle);
-        Assert.Equal(4, options.ReSharper.CSharp.IndentSize);
+        Assert.Equal(120, options.Skala.MaxLineLength);
+        Assert.Equal(WrapStyle.ChopIfLong, options.Skala.WrapArgumentsStyle);
+        Assert.Equal(WrapStyle.ChopIfLong, options.Skala.WrapParametersStyle);
+        Assert.Equal(4, options.Skala.IndentSize);
     }
 
     [Fact]
@@ -167,15 +167,84 @@ public sealed class OptionRegistryTests {
         // this project cannot reach, so it is asserted in the conformance suite instead —
         // OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt.
 
+        // ⚠ Five, not six. `resharper_show_autodetect_configure_formatting_tip` was the sixth and is
+        // deleted: it governs whether an IDE shows a notification, nothing in Skala read it, and it
+        // is the one Tier C entry that no production literal or oracle fixture referred to.
         string[] permanentlyIgnored = [
-            "resharper_old_engine", "resharper_use_old_engine", "resharper_autodetect_indent_settings",
-            "resharper_apply_auto_detected_rules",
-            "resharper_use_indent_from_vs", "resharper_show_autodetect_configure_formatting_tip"
+            "skala_old_engine", "skala_use_old_engine", "skala_autodetect_indent_settings",
+            "skala_apply_auto_detected_rules", "skala_use_indent_from_vs"
         ];
 
         foreach (var key in permanentlyIgnored) {
             Assert.True(OptionRegistry.TryResolve(key, out var id), key);
             Assert.Equal(OptionTier.C, OptionRegistry.Get(id).Tier);
+        }
+
+        // The set is closed: a sixth Tier C entry is a decision, not a drift.
+        Assert.Equal(
+            permanentlyIgnored.Length,
+            OptionRegistry.All.Count(static info => info.Tier == OptionTier.C)
+        );
+    }
+
+    /// <summary>
+    ///     An option a standalone analyzer reads by literal has exactly one spelling.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>Rikarin.Skala.Rules</c> deliberately does not reference this assembly — an analyzer
+    ///     ships on its own — so <c>ConfigureAwaitAnalyzer</c> cannot ask the registry and hard-codes
+    ///     the key. It used to hard-code a *precedence ladder* over two spellings as well, which was a
+    ///     second implementation of <see cref="OptionResolver" />'s rule that nothing kept in step. The
+    ///     ladder is gone; this is what makes its absence safe, because the analyzer cannot notice an
+    ///     alias being added and would simply stop honouring configurations written that way.
+    /// </remarks>
+    [Fact]
+    public void TheAnalyzerReadOptions_HaveExactlyOneSpelling() {
+        foreach (var key in new[] { "skala_configure_await_analysis_mode" }) {
+            Assert.True(OptionRegistry.TryResolve(key, out var id), key);
+
+            var info = OptionRegistry.Get(id);
+            Assert.Equal(key, info.Key);
+            Assert.True(
+                info.Aliases.Count == 0,
+                $"{key} has picked up the alias(es) {string.Join(", ", info.Aliases)}. ConfigureAwaitAnalyzer "
+                + "reads this key by literal and cannot see them, so a configuration written that way "
+                + "would be silently ignored. Teach the analyzer the spelling, then relax this."
+            );
+        }
+    }
+
+    /// <summary>
+    ///     Every property the EditorConfig specification defines resolves under its own name.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>These are not Skala's to rename, and one of them was lost renaming the rest.</b>
+    ///     <c>insert_final_newline</c> existed only as an alias of ReSharper's
+    ///     <c>resharper_csharp_insert_final_newline</c>, so dropping ReSharper's alias spellings took
+    ///     it with them — and nothing failed, because no test named the bare spelling. A consuming
+    ///     repository setting the single most common line in any <c>.editorconfig</c> would have got
+    ///     <c>SK9001</c> and silently lost the setting.
+    ///     <para>
+    ///         The same reasoning covers Microsoft's own keys, which is why
+    ///         <c>dotnet_sort_system_directives_first</c> and <c>csharp_space_after_cast</c> survive as
+    ///         aliases: the <c>resharper_</c> namespace is Skala's to retire; the EditorConfig and
+    ///         <c>dotnet_</c>/<c>csharp_</c> namespaces are not.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void EveryEditorConfigCoreProperty_ResolvesUnderItsOwnName() {
+        string[] core = [
+            "indent_style", "indent_size", "tab_width", "end_of_line", "charset",
+            "trim_trailing_whitespace", "insert_final_newline", "max_line_length"
+        ];
+
+        foreach (var key in core) {
+            Assert.True(
+                OptionRegistry.TryResolve(key, out _),
+                key
+                + " is defined by the EditorConfig specification and must resolve under that "
+                + "spelling. Skala's namespace is `skala_`; this one is not Skala's to rename."
+            );
         }
     }
 
@@ -199,11 +268,14 @@ public sealed class OptionRegistryTests {
     public void Inert_OptionsCarryAReasonAndAreNotClaimedAsImplemented() {
         var inert = OptionRegistry.All.Where(static i => i.Inert is not null).ToList();
 
-        // Anti-vacuity: docs/plan/05 records these, and a registry that lost them would otherwise
-        // pass this test by having nothing to check.
+        // ⚠ Anti-vacuity, and the floor used to be 10 against a population of 97 — nine tenths of
+        // the inert set could have vanished without this firing, which is not a canary, it is a
+        // decoration. It is a ratchet now: the count at the commit that set it. Moving it down is a
+        // deliberate edit that says which options stopped being inert and why.
+        const int Measured = 52;
         Assert.True(
-            inert.Count >= 10,
-            $"Only {inert.Count} inert options. docs/plan/05 § \"Phase 1\" and § \"Spaces\" record at least ten."
+            inert.Count >= Measured,
+            $"Only {inert.Count} inert options, against {Measured} measured. An option stops being inert when something reads it, which is a promotion and needs a fixture — not a quiet drop."
         );
 
         foreach (var info in inert) {
@@ -235,9 +307,9 @@ public sealed class OptionRegistryTests {
     ///         ⚠ It is also where a Tier C refusal's measurement goes. <c>Inert</c> is Tier D by
     ///         construction — the assertion above — so a Tier C key that was <em>also</em> measured
     ///         unobservable had nowhere to record it, and
-    ///         <c>resharper_use_old_engine</c> sat with an empty entry for that reason. Recording it here
+    ///         <c>skala_use_old_engine</c> sat with an empty entry for that reason. Recording it here
     ///         keeps the refusal and the measurement distinct: Tier C still means Skala declines, and
-    ///         <c>resharper_csharp_old_engine</c> — the sibling the oracle demonstrably honours — is why
+    ///         <c>skala_old_engine</c> — the sibling the oracle demonstrably honours — is why
     ///         that is not the same claim.
     ///     </para>
     /// </remarks>

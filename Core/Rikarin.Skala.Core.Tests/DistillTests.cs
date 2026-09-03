@@ -38,8 +38,8 @@ public sealed class DistillTests {
         }
 
         Assert.Equal(
-            before.Options.GetText(OptionId.ResharperCsharpMaxLineLength),
-            after.Options.GetText(OptionId.ResharperCsharpMaxLineLength)
+            before.Options.GetText(OptionId.SkalaMaxLineLength),
+            after.Options.GetText(OptionId.SkalaMaxLineLength)
         );
     }
 
@@ -90,7 +90,7 @@ public sealed class DistillTests {
     ) {
         // The rule that makes distill safe. A distill that drops a key on a guessed default
         // silently changes formatting, which is unacceptable.
-        var info = OptionRegistry.Get(OptionId.ResharperCsharpWrapArgumentsStyle) with {
+        var info = OptionRegistry.Get(OptionId.SkalaWrapArgumentsStyle) with {
             Default = "chop_if_long", DefaultSource = source
         };
 
@@ -137,7 +137,7 @@ public sealed class DistillTests {
     ///         produce.
     ///     </para>
     ///     <para>
-    ///         The semantics are <c>resharper_stick_comment</c>'s, already settled in this project for
+    ///         The semantics are <c>skala_stick_comment</c>'s, already settled in this project for
     ///         code: a contiguous comment run belongs to the line directly beneath it, so a run followed by
     ///         a blank line, a section header or nothing is attached to no key and survives.
     ///     </para>
@@ -148,9 +148,9 @@ public sealed class DistillTests {
         var result = Distiller.Distill(original);
 
         // The fixture only means anything if the key it is built around is actually dropped.
-        Assert.Contains("resharper_csharp_blank_lines_around_field", result.DroppedKeys);
+        Assert.Contains("skala_blank_lines_around_field", result.DroppedKeys);
         Assert.DoesNotContain(
-            "resharper_csharp_blank_lines_around_field",
+            "skala_blank_lines_around_field",
             result.Text,
             StringComparison.Ordinal
         );
@@ -166,7 +166,7 @@ public sealed class DistillTests {
         Assert.Contains("attached to nothing — a blank line follows it", result.Text, StringComparison.Ordinal);
 
         // The keys that were not at a verified default are all still there.
-        Assert.Contains("resharper_csharp_blank_lines_around_invocable = 3", result.Text, StringComparison.Ordinal);
+        Assert.Contains("skala_blank_lines_around_invocable = 3", result.Text, StringComparison.Ordinal);
         Assert.Contains("indent_size = 2", result.Text, StringComparison.Ordinal);
     }
 

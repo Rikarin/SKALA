@@ -12,10 +12,10 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Member access</h1>
-<p class="lede">7 keys.</p>
+<p class="lede">6 keys.</p>
 <section class="option" id="csharp_space_after_dot">
 <h2><code>csharp_space_after_dot</code> <a class="self" href="#csharp_space_after_dot">#</a></h2>
-<p>Space after '.'. Inert: the oracle returns the file unchanged at both values. <code>space_around_dot</code> is the key that governs the gap, and it is Tier A. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified duplicate spelling. Confirmed with a named control on the same fixture. Flat in both engines at both values on a chain written <code>s . Trim() . ToUpper()</code>, while <code>resharper_csharp_space_around_dot</code> on that same fixture is CONFORMANT with two distinct outputs. The C# formatter answers to <code>space_around_dot</code> and not to this MS spelling.</p>
+<p>Space after '.'. Inert: the oracle returns the file unchanged at both values. <code>skala_space_around_dot</code> is the key that governs the gap, and it is Tier A. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified duplicate spelling. Confirmed with a named control on the same fixture. Flat in both engines at both values on a chain written <code>s . Trim() . ToUpper()</code>, while <code>skala_space_around_dot</code> on that same fixture is CONFORMANT with two distinct outputs. The C# formatter answers to <code>skala_space_around_dot</code> and not to this MS spelling.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="csharp_space_before_dot">
 <h2><code>csharp_space_before_dot</code> <a class="self" href="#csharp_space_before_dot">#</a></h2>
-<p>Space before '.'. Inert: the oracle returns the file unchanged at both values. <code>space_around_dot</code> is the key that governs the gap, and it is Tier A. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified duplicate spelling. Confirmed with the same named control on the same fixture as <code>csharp_space_after_dot</code>: flat at both values where <code>resharper_csharp_space_around_dot</code> gives two distinct outputs.</p>
+<p>Space before '.'. Inert: the oracle returns the file unchanged at both values. <code>skala_space_around_dot</code> is the key that governs the gap, and it is Tier A. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified duplicate spelling. Confirmed with the same named control on the same fixture as <code>csharp_space_after_dot</code>: flat at both values where <code>skala_space_around_dot</code> gives two distinct outputs.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -112,20 +112,6 @@
 <tr><th>Oracle fixture</th><td><code>constructs/arrangement/redundancy/instance-qualifier.cs</code></td></tr>
 <tr><th>Read by</th><td><a href="../rules/SK0207.html">SK0207</a></td></tr>
 <tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_wrap_after_dot">
-<h2><code>resharper_wrap_after_dot</code> <a class="self" href="#resharper_wrap_after_dot">#</a></h2>
-<p>Whether a break in a member-access chain lands after the <code>.</code> rather than before it. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at both values, at 120 and at 60 columns, and with <code>csharp_wrap_after_dot_in_method_calls = true</code> in the same run so the C# spelling could not be masking it — that key moves the <code>.</code> across the break on its own and is Tier A. Undocumented by JetBrains; classified as C#-relevant by vocabulary.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
 </tbody>
 </table>
 </section>

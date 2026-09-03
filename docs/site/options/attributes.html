@@ -12,25 +12,9 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Attributes</h1>
-<p class="lede">4 keys.</p>
-<section class="option" id="resharper_csharp_force_attribute_style">
-<h2><code>resharper_csharp_force_attribute_style</code> <a class="self" href="#resharper_csharp_force_attribute_style">#</a></h2>
-<p>Attributes — Join or separate attributes in section. Observed and not implemented, and the profile is the point: it moves nothing under <code>CSReformatCode</code>, and under the cleanup profile <code>separate</code> against <code>join</code> turns <code>[Obsolete]</code> <code>[CLSCompliant(true)]</code> into <code>[Obsolete, CLSCompliant(true)]</code>. So it belongs to the arranger and not to the formatter, which means an <code>.arranged.expected.cs</code> fixture and <code>ArrangementOptions.Implemented</code> rather than <code>PhaseOneOptions</code>. ⚠ The oracle's join leaves a trailing space after the section on the first member it rewrites and not on the others; whatever that is, a fixture would pin it. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — the arranger's. Confirmed: flat under <code>CSReformatCode</code>, two distinct outputs under the cleanup profile. The recorded reading holds — it wants an <code>.arranged.expected.cs</code> fixture and <code>ArrangementOptions.Implemented</code>, not a formatter one.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>join</code>, <code>separate</code></td></tr>
-<tr><th>Default</th><td><code>separate</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_force_attribute_style</code>, <code>force_attribute_style</code>, <code>resharper_force_attribute_style</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_force_attribute_style">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_force_attribute_style</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_space_after_attributes">
-<h2><code>resharper_csharp_space_after_attributes</code> <a class="self" href="#resharper_csharp_space_after_attributes">#</a></h2>
+<p class="lede">3 keys.</p>
+<section class="option" id="skala_space_after_attributes">
+<h2><code>skala_space_after_attributes</code> <a class="self" href="#skala_space_after_attributes">#</a></h2>
 <p>Attributes — After attributes</p>
 <table class="facts">
 <tbody>
@@ -40,14 +24,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_space_after_attributes</code>, <code>resharper_space_after_attributes</code>, <code>space_after_attributes</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_csharp_space_after_attributes.cs</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/spaces/skala_space_after_attributes.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_SpacesPageSchema.html#resharper_csharp_space_after_attributes">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_SpacesPageSchema.html#resharper_csharp_space_after_attributes</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_space_between_attribute_sections">
-<h2><code>resharper_csharp_space_between_attribute_sections</code> <a class="self" href="#resharper_csharp_space_between_attribute_sections">#</a></h2>
+<section class="option" id="skala_space_between_attribute_sections">
+<h2><code>skala_space_between_attribute_sections</code> <a class="self" href="#skala_space_between_attribute_sections">#</a></h2>
 <p>Attributes — Between attribute sections</p>
 <table class="facts">
 <tbody>
@@ -57,14 +40,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_space_between_attribute_sections</code>, <code>resharper_space_between_attribute_sections</code>, <code>space_between_attribute_sections</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_csharp_space_between_attribute_sections.cs</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/spaces/skala_space_between_attribute_sections.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_SpacesPageSchema.html#resharper_csharp_space_between_attribute_sections">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_SpacesPageSchema.html#resharper_csharp_space_between_attribute_sections</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_space_within_attribute_brackets">
-<h2><code>resharper_csharp_space_within_attribute_brackets</code> <a class="self" href="#resharper_csharp_space_within_attribute_brackets">#</a></h2>
+<section class="option" id="skala_space_within_attribute_brackets">
+<h2><code>skala_space_within_attribute_brackets</code> <a class="self" href="#skala_space_within_attribute_brackets">#</a></h2>
 <p>Attributes — Within attribute brackets</p>
 <table class="facts">
 <tbody>
@@ -74,8 +56,7 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_space_within_attribute_brackets</code>, <code>resharper_space_within_attribute_brackets</code>, <code>space_within_attribute_brackets</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_csharp_space_within_attribute_brackets.cs</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/spaces/skala_space_within_attribute_brackets.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_SpacesPageSchema.html#resharper_csharp_space_within_attribute_brackets">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_SpacesPageSchema.html#resharper_csharp_space_within_attribute_brackets</a></td></tr>
 </tbody>
 </table>

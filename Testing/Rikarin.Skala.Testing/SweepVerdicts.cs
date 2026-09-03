@@ -17,7 +17,7 @@ namespace Rikarin.Skala.Testing;
 ///         measurements were right and they answered different questions: every one of the six
 ///         <em>agrees at the export's value</em> and diverges only away from it — <c>indent_size</c> at
 ///         <c>1</c>, <c>indent_style</c> at <c>tab</c>, two <c>linebreaks_inside_tags_*</c> at
-///         <c>false</c>, <c>max_blank_lines_between_tags</c> at <c>1</c>. A fixture pins one
+///         <c>false</c>, <c>skala_xmldoc_max_blank_lines_between_tags</c> at <c>1</c>. A fixture pins one
 ///         configuration; Tier A is a claim about the option.
 ///     </para>
 ///     <para>

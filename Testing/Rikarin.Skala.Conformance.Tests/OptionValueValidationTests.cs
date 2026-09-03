@@ -36,15 +36,20 @@ public sealed class OptionValueValidationTests {
         "file_header_template",
 
         // The literal text of the formatter's off/on marker comments.
-        "resharper_formatter_off_tag", "resharper_formatter_on_tag",
+        "skala_formatter_off_tag", "skala_formatter_on_tag",
 
-        // ⚠ Two genuine gaps rather than two free-form values: JetBrains documents neither key
-        // anywhere, so the domain is unknown rather than open. Recorded as such on the entry, and
-        // the reason names what would have to be published to close them.
-        "resharper_labeled_statement_style", "resharper_prefer_wrap_around_eq",
+        // ⚠ A genuine gap rather than a free-form value: JetBrains documents the key nowhere, so the
+        // domain is unknown rather than open. Recorded as such on the entry, and the reason names
+        // what would have to be published to close it.
+        //
+        // ⚠ `resharper_labeled_statement_style` was the second of these and is deleted — nothing in
+        // production code read it under any spelling and no oracle fixture pinned it. Leaving it here
+        // did not fail this list; it inflated `FreeForm.Length` by one and quietly broke the
+        // *count* assertion at the bottom, which is the half of this test that is not vacuous.
+        "skala_prefer_wrap_around_eq",
 
         // A comma-separated list of XML documentation tag names.
-        "resharper_xmldoc_linebreak_before_elements"
+        "skala_xmldoc_linebreak_before_elements"
     ];
 
     [Fact]
@@ -186,7 +191,7 @@ public sealed class OptionValueValidationTests {
         // What the file says is what provenance reports; what it resolved to is the width.
         Assert.Equal("tab", resolution[OptionId.IndentSize].Value);
         Assert.Equal(3, resolution.Options.GetInt(OptionId.IndentSize));
-        Assert.Equal(3, resolution.Options.GetInt(OptionId.ResharperCsharpIndentSize));
+        Assert.Equal(3, resolution.Options.GetInt(OptionId.SkalaIndentSize));
 
         // ⚠ Ordering must not matter, and it is the one thing that would: options are applied in
         // ordinal key order and `indent_size` sorts before `tab_width`.
@@ -206,9 +211,9 @@ public sealed class OptionValueValidationTests {
         Assert.Empty(alone.ValueErrors);
         Assert.Equal(4, alone.Options.GetInt(OptionId.IndentSize));
 
-        // ⚠ And only on the specification's own key. JetBrains documents `resharper_csharp_indent_size`
+        // ⚠ And only on the specification's own key. JetBrains documents `skala_indent_size`
         // as "an integer" and says nothing about `tab`, so accepting it there would be an invention.
-        var reSharper = Resolve("resharper_csharp_indent_size", "tab");
+        var reSharper = Resolve("skala_indent_size", "tab");
         var error = Assert.Single(reSharper.ValueErrors);
         Assert.Contains("expected an integer >= 1", error.Reason, StringComparison.Ordinal);
     }

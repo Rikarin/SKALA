@@ -12,40 +12,10 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Base list</h1>
-<p class="lede">3 keys.</p>
-<section class="option" id="resharper_align_multiline_implements_list">
-<h2><code>resharper_align_multiline_implements_list</code> <a class="self" href="#resharper_align_multiline_implements_list">#</a></h2>
-<p>Align a wrapped base list with the first base type. Not read by the C# formatter: measured one key away from the export on constructs/wrapping/base-list-alignment.cs, whose base list wraps under the 120-column margin, and <code>false</code> returns it byte-identical. Negative control in the same run: <code>resharper_csharp_align_multiline_extends_list = true</code> — the C# key for the same construct — moves that base list onto the first base type's column.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.4</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Index.html">https://www.jetbrains.com/help/resharper/EditorConfig_Index.html</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_wrap_base_clause_style">
-<h2><code>resharper_wrap_base_clause_style</code> <a class="self" href="#resharper_wrap_base_clause_style">#</a></h2>
-<p>The base clause's wrap style, in the language-generic spelling the export writes. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at all three values on a base list of five entries that overflows, at 120 and at 60 columns, and with <code>csharp_wrap_extends_list_style = wrap_if_long</code> in the same run — byte-identical to that run without this key. <code>csharp_wrap_extends_list_style</code> is what chops a base list.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code>, <code>chop_always</code></td></tr>
-<tr><th>Default</th><td><code>wrap_if_long</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.4</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Index.html">https://www.jetbrains.com/help/resharper/EditorConfig_Index.html</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_wrap_before_comma_in_base_clause">
-<h2><code>resharper_wrap_before_comma_in_base_clause</code> <a class="self" href="#resharper_wrap_before_comma_in_base_clause">#</a></h2>
-<p>A break in a base list lands before the comma. <strong>Not read by the C# formatter — but the behaviour is configurable, by `resharper_csharp_wrap_before_comma`.</strong> ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6 on <code>constructs/wrapping/base-list.cs</code>, one key at a time appended to the export: at <code>true</code> this key returns the file byte-identical, and so does the <code>resharper_csharp_</code>-prefixed spelling, while <code>resharper_csharp_wrap_before_comma = true</code> returns <code>class C : Base</code> / <code>    , IFirst</code> / <code>    , ISecond { }</code>. The base clause’s comma side is governed by the general comma key like every other comma, and this spelling is the C++ and VB formatters’. BreakPlan.PlanBaseList reads the general key now; reading this one is what made this row SPURIOUS.</p>
+<p class="lede">1 key.</p>
+<section class="option" id="skala_wrap_before_comma_in_base_clause">
+<h2><code>skala_wrap_before_comma_in_base_clause</code> <a class="self" href="#skala_wrap_before_comma_in_base_clause">#</a></h2>
+<p>A break in a base list lands before the comma. <strong>Not read by the C# formatter — but the behaviour is configurable, by `skala_wrap_before_comma`.</strong> ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6 on <code>constructs/wrapping/base-list.cs</code>, one key at a time appended to the export: at <code>true</code> this key returns the file byte-identical, and so does the <code>resharper_csharp_</code>-prefixed spelling, while <code>skala_wrap_before_comma = true</code> returns <code>class C : Base</code> / <code>    , IFirst</code> / <code>    , ISecond { }</code>. The base clause’s comma side is governed by the general comma key like every other comma, and this spelling is the C++ and VB formatters’. BreakPlan.PlanBaseList reads the general key now; reading this one is what made this row SPURIOUS.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

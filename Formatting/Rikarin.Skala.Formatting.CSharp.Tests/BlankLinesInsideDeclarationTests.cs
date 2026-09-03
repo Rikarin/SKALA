@@ -4,7 +4,7 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     <c>blank_lines_inside_type</c> and <c>blank_lines_inside_namespace</c>, at a value the export
+///     <c>skala_blank_lines_inside_type</c> and <c>skala_blank_lines_inside_namespace</c>, at a value the export
 ///     does not set.
 /// </summary>
 /// <remarks>
@@ -17,8 +17,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     <para>
 ///         ⚠ Everything asserted here was measured against <c>jb cleanupcode</c> 2025.2.6 under this
 ///         repository's own <c>.editorconfig</c>, which sets
-///         <c>remove_blank_lines_near_braces_in_declarations = true</c> and
-///         <c>keep_blank_lines_in_declarations = 2</c>. The oracle pads the braces anyway, and pads five
+///         <c>skala_remove_blank_lines_near_braces_in_declarations = true</c> and
+///         <c>skala_keep_blank_lines_in_declarations = 2</c>. The oracle pads the braces anyway, and pads five
 ///         at <c>5</c>, so the requirement outranks both the removal and the cap. The shape of *which*
 ///         bodies have an inside was probed body kind by body kind rather than read off the option's
 ///         name.
@@ -41,7 +41,7 @@ public class BlankLinesInsideDeclarationTests {
     [InlineData("record R {\n    int a;\n}\n")]
     [InlineData("enum E {\n    A\n}\n")]
     public void EveryTypeBodyIsPadded(string source) {
-        var formatted = Format(source, ("resharper_csharp_blank_lines_inside_type", "2"));
+        var formatted = Format(source, ("skala_blank_lines_inside_type", "2"));
         Assert.Contains("{\n\n\n", formatted, StringComparison.Ordinal);
         Assert.Contains("\n\n\n}", formatted, StringComparison.Ordinal);
     }
@@ -58,7 +58,7 @@ public class BlankLinesInsideDeclarationTests {
             + "    void M() {\n        if (a > 0) {\n            a = 1;\n        }\n    }\n\n"
             + "    int P {\n        get { return a; }\n    }\n"
             + "}\n",
-            ("resharper_csharp_blank_lines_inside_type", "2")
+            ("skala_blank_lines_inside_type", "2")
         );
 
         Assert.StartsWith("class C {\n\n\n    int a;", formatted, StringComparison.Ordinal);
@@ -73,37 +73,37 @@ public class BlankLinesInsideDeclarationTests {
     public void OnlyABlockBodiedNamespaceIsPadded() {
         var block = Format(
             "namespace N {\n    class C {\n        int a;\n    }\n}\n",
-            ("resharper_csharp_blank_lines_inside_namespace", "2")
+            ("skala_blank_lines_inside_namespace", "2")
         );
         Assert.StartsWith("namespace N {\n\n\n", block, StringComparison.Ordinal);
         Assert.EndsWith("\n\n\n}\n", block, StringComparison.Ordinal);
 
         var scoped = Format(
             "namespace N;\n\nclass C {\n    int a;\n}\n",
-            ("resharper_csharp_blank_lines_inside_namespace", "2")
+            ("skala_blank_lines_inside_namespace", "2")
         );
         Assert.Equal(Format("namespace N;\n\nclass C {\n    int a;\n}\n"), scoped);
     }
 
     /// <summary>
-    ///     ⚠ The requirement outranks <c>remove_blank_lines_near_braces_in_declarations</c>, which the
+    ///     ⚠ The requirement outranks <c>skala_remove_blank_lines_near_braces_in_declarations</c>, which the
     ///     export sets to <c>true</c>. Ordered like every other requirement it could never be observed.
     /// </summary>
     [Fact]
     public void ItOutranksTheRemovalAndTheCap() {
         var removal = Format(
             "class C {\n    int a;\n}\n",
-            ("resharper_csharp_blank_lines_inside_type", "2"),
-            ("resharper_csharp_remove_blank_lines_near_braces_in_declarations", "true")
+            ("skala_blank_lines_inside_type", "2"),
+            ("skala_remove_blank_lines_near_braces_in_declarations", "true")
         );
         Assert.StartsWith("class C {\n\n\n    int a;\n\n\n}", removal, StringComparison.Ordinal);
 
-        // `keep_blank_lines_in_declarations` caps what the author wrote; it does not cap what the
+        // `skala_keep_blank_lines_in_declarations` caps what the author wrote; it does not cap what the
         // requirement asks for. Measured at 5 against the oracle with the cap at 2.
         var cap = Format(
             "class C {\n    int a;\n}\n",
-            ("resharper_csharp_blank_lines_inside_type", "5"),
-            ("resharper_csharp_keep_blank_lines_in_declarations", "2")
+            ("skala_blank_lines_inside_type", "5"),
+            ("skala_keep_blank_lines_in_declarations", "2")
         );
         Assert.StartsWith("class C {\n\n\n\n\n\n    int a;", cap, StringComparison.Ordinal);
     }

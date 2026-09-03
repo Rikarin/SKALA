@@ -110,12 +110,15 @@ public sealed record ResolutionResult(
 /// <remarks>
 ///     docs/plan/03-configuration-model.md § "Precedence": the chain nearest-last, later sections
 ///     within a file winning over earlier ones, and — the part no other tool implements —
-///     <c>resharper_csharp_x</c> beating <c>resharper_x</c> beating <c>csharp_x</c> beating the generic
-///     key within one level.
+///     <c>skala_x</c> beating <c>csharp_x</c> beating the generic key within one level.
 /// </remarks>
 public static class OptionResolver {
-    static readonly string[] SpecificityPrefixes =
-        ["resharper_csharp_", "resharper_xmldoc_", "resharper_", "csharp_", "xmldoc_", "dotnet_"];
+    /// <remarks>
+    ///     ⚠ Read from the generated <see cref="OptionKeyPrefixes" /> rather than restated. This list
+    ///     was one of four hand-written copies that no test compared, and it was the only one of the
+    ///     four carrying <c>xmldoc_</c>.
+    /// </remarks>
+    static readonly string[] SpecificityPrefixes = OptionKeyPrefixes.Ordered;
 
     public static ResolutionResult Resolve(
         string sourcePath,
@@ -279,7 +282,7 @@ public static class OptionResolver {
     ///         </em> — has nothing to say about the pair, and the oracle answers by position: the
     ///         same assignment appended after the group's members overrides them and written before them
     ///         does not. Specificity still breaks a tie, which is what makes
-    ///         <c>resharper_space_after_keywords_in_control_flow_statements</c> beat its <c>csharp_</c>
+    ///         <c>skala_space_after_keywords_in_control_flow_statements</c> beat its <c>csharp_</c>
     ///         twin — the one case where the two spellings really are the same ReSharper property.
     ///     </para>
     ///     <para>

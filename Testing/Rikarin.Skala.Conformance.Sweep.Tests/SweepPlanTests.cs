@@ -41,19 +41,50 @@ public sealed class SweepPlanTests {
     // that survives is pinned by
     // `ArrangementRoutingTests.EverySweptArrangementOption_HasAFixtureTheCleanupProfileOwns`.
 
-    /// <summary>A family is matched after the vendor prefix, because the export spells keys three ways.</summary>
+    /// <summary>
+    ///     A family is matched after the prefix, because a key carries one of several.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two of these cases used to be <c>resharper_csharp_space_after_cast</c> and
+    ///     <c>skala_space_after_cast</c>, and the <c>skala_</c> rename collapsed them onto one
+    ///     spelling — leaving a duplicate <c>InlineData</c> that asserted the same thing twice and a
+    ///     theory that no longer covered a second prefix at all. The point of the case is that
+    ///     <see cref="SweepPlan.Strip" /> handles <em>every</em> prefix
+    ///     <see cref="OptionKeyPrefixes.Ordered" /> lists, so the cases are one per prefix, and
+    ///     <see cref="EveryKeyPrefix_IsMatchedAfterItsPrefix" /> fails if a prefix is added without
+    ///     one.
+    /// </remarks>
     [Theory]
-    [InlineData("resharper_csharp_space_after_cast", "space", true)]
-    [InlineData("csharp_space_after_cast", "space", true)]
-    [InlineData("space_after_cast", "space", true)]
-    [InlineData("resharper_wrap_before_comma", "wrap", true)]
-    [InlineData("resharper_csharp_space_after_cast", "wrap", false)]
+    [InlineData("skala_space_after_cast", "space", true)]
+    [InlineData("skala_xmldoc_wrap_lines", "wrap", true)]
+    [InlineData("csharp_space_after_dot", "space", true)]
+    [InlineData("dotnet_style_qualification_for_field", "style", true)]
+    [InlineData("skala_wrap_before_comma", "wrap", true)]
+    [InlineData("skala_space_after_cast", "wrap", false)]
     // ⚠ A prefix match on the bare name is not enough: `spaces_around` would claim `space` and
     // `blank_lines` would claim `blank_line`. The family has to end on an underscore boundary.
-    [InlineData("resharper_spaces_within", "space", false)]
-    [InlineData("resharper_wrapping_style", "wrap", false)]
+    [InlineData("skala_spaces_within", "space", false)]
+    [InlineData("skala_wrapping_style", "wrap", false)]
     public void InFamily_MatchesOnAnUnderscoreBoundary(string key, string family, bool expected) =>
         Assert.Equal(expected, SweepPlan.InFamily(key, [family]));
+
+    /// <summary>
+    ///     Every prefix the generator emits is stripped before a family is matched.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The instrument check for the theory above. A prefix added to
+    ///     <see cref="OptionKeyPrefixes.Ordered" /> and not to <see cref="SweepPlan.Strip" /> makes
+    ///     <c>--family=</c> silently skip every option carrying it — the run succeeds and reports
+    ///     fewer rows, which reads as "nothing to measure" rather than as a fault.
+    /// </remarks>
+    [Fact]
+    public void EveryKeyPrefix_IsMatchedAfterItsPrefix() {
+        Assert.NotEmpty(OptionKeyPrefixes.Ordered);
+        foreach (var prefix in OptionKeyPrefixes.Ordered) {
+            Assert.Equal(string.Empty, SweepPlan.Strip(prefix));
+            Assert.True(SweepPlan.InFamily(prefix + "space_after_cast", ["space"]), prefix);
+        }
+    }
 
     /// <summary>
     ///     The sweep's value set is the same one the option unit floor uses.

@@ -535,10 +535,10 @@ public static class FuzzMutations {
         /// <remarks>
         ///     ⚠ A correction to the property rather than to the formatter, and the same correction
         ///     <see cref="AbsorbableGaps" /> carries for the gap beside a <c>..</c>:
-        ///     <c>resharper_csharp_stick_comment</c> — "Don't indent comments started at first column" —
+        ///     <c>skala_stick_comment</c> — "Don't indent comments started at first column" —
         ///     makes the comment's <em>source column</em> an input the oracle reads, and "at the first
         ///     column" is literal. Measured on
-        ///     <c>constructs/trivia/resharper_csharp_stick_comment.expected.cs</c>: a comment at column 0
+        ///     <c>constructs/trivia/skala_stick_comment.expected.cs</c>: a comment at column 0
         ///     is returned at column 0, and the same comment at column 2 is returned at the code's
         ///     indent. So the one space an <see cref="Indent" /> mutation inserts in front of a column-0
         ///     comment is <b>not</b> whitespace in the sense absorption means — it is the key's entire
@@ -652,7 +652,7 @@ public static class FuzzMutations {
                     continue;
                 }
 
-                // ⚠ The comment's own column is data under `resharper_csharp_stick_comment`; see
+                // ⚠ The comment's own column is data under `skala_stick_comment`; see
                 // `commentStartedLines`. Shifting the start of a line a comment opens at column 0
                 // is the one absorbed edit that changes what the oracle is being asked.
                 if (absorbing && atStart && commentStartedLines.Contains(i)) {

@@ -6,7 +6,7 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
 ///     The trailing comma of a list, added or removed, under
-///     <c>resharper_trailing_comma_in_multiline_lists</c> and
+///     <c>skala_trailing_comma_in_multiline_lists</c> and
 ///     <c>…_in_singleline_lists</c>.
 /// </summary>
 /// <remarks>
@@ -52,7 +52,7 @@ public sealed class TrailingCommaRule : ArrangementRule {
         ///     ⚠ A collection expression is a list the grammar admits a trailing comma in, and it is not
         ///     an <c>InitializerExpressionSyntax</c> — <c>[1, 2, 3,]</c> is a
         ///     <c>CollectionExpressionSyntax</c>. Leaving it out made
-        ///     <c>trailing_comma_in_singleline_lists</c> unobservable, which the option's own coverage
+        ///     <c>skala_trailing_comma_in_singleline_lists</c> unobservable, which the option's own coverage
         ///     test reported as a failure rather than letting the Tier A claim through.
         /// </remarks>
         public override SyntaxNode? VisitCollectionExpression(CollectionExpressionSyntax node) {

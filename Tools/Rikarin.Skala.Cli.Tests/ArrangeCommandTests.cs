@@ -13,8 +13,8 @@ public sealed class ArrangeCommandTests {
             root = true
 
             [*.cs]
-            resharper_arguments_literal = named
-            resharper_arguments_skip_single = false
+            skala_arguments_literal = named
+            skala_arguments_skip_single = false
             """
         );
         scratch.Write(

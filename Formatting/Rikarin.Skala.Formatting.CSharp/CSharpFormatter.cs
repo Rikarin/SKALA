@@ -127,7 +127,7 @@ public static class CSharpFormatter {
     ///     every comment of every run rather than a fixture.
     ///     <para>
     ///         ⚠ The escape hatch is <c>skala format --no-xmldoc</c> and not
-    ///         <c>resharper_xmldoc_wrap_lines = false</c>. That key means "do not wrap long lines" — with it
+    ///         <c>skala_xmldoc_wrap_lines = false</c>. That key means "do not wrap long lines" — with it
     ///         false the sub-formatter still re-indents, still collapses blank lines between tags, still
     ///         inserts the marker space — so making it the kill switch would attach a meaning to a
     ///         ReSharper key that ReSharper does not give it, which is the mistake this change is undoing.
@@ -188,7 +188,7 @@ public static class CSharpFormatter {
         // not before them, so that a file that does not parse is still reported under ADR-003 and a
         // generated file still reports as generated: switching the formatter off is a statement about
         // whitespace, not a reason to stop looking at the file. Everything below this line — the
-        // document build, the layout, the xmldoc sub-formatter, int-align, `insert_final_newline` —
+        // document build, the layout, the xmldoc sub-formatter, int-align, `skala_insert_final_newline` —
         // is skipped, because the oracle's answer to this key is the input byte for byte and not a
         // gentler formatting (SK-DIV-0060).
         if (options.DisableFormatter) {
@@ -369,9 +369,9 @@ public static class CSharpFormatter {
     ///     Final newline and the trailing-whitespace sweep, applied last and as ordinary edits.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <c>resharper_csharp_insert_final_newline = true</c> wins over
+    ///     ⚠ <c>skala_insert_final_newline = true</c> wins over
     ///     <c>
-    /// [*] insert_final_newline
+    /// [*] skala_insert_final_newline
     ///  = false
     ///     </c> by language specificity (docs/plan/03, hazard 3). The BOM is preserved exactly:
     ///     it lives in <see cref="SourceText.Encoding" /> and never in the text, so nothing here can add
@@ -387,7 +387,7 @@ public static class CSharpFormatter {
     }
 
     /// <summary>
-    ///     The ending for the newline <c>insert_final_newline</c> adds: the one the line above it ends
+    ///     The ending for the newline <c>skala_insert_final_newline</c> adds: the one the line above it ends
     ///     with, read from the <b>output</b>.
     /// </summary>
     /// <remarks>

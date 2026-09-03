@@ -11,7 +11,7 @@ namespace Rikarin.Skala.Testing;
 /// <summary>How a corpus file's formatting is destroyed before both tools are asked to repair it.</summary>
 /// <remarks>
 ///     ⚠ Two modes rather than one, and the reason is a property of this configuration rather than
-///     thoroughness. The export sets <c>resharper_keep_user_linebreaks = true</c> and
+///     thoroughness. The export sets <c>skala_keep_user_linebreaks = true</c> and
 ///     <c>keep_user_wrapping = true</c> — ADR-002's preserve-and-repair model — so
 ///     <b>destroying the author's line breaks destroys the input those options act on</b>. A
 ///     collapse-everything test measures the <em>reflow</em> path and says nothing about the

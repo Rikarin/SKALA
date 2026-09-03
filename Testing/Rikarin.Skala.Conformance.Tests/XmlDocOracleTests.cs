@@ -118,7 +118,7 @@ public sealed class XmlDocOracleTests {
         // ⚠ The fourth cause, added 2026-08-29: the key is marked **inert** in the registry — Skala
         // reads it and it changes nothing. Agreement is then trivial rather than evidence, because a
         // key that moves no bytes cannot disagree with anything, so neither the fixture nor the sweep
-        // can speak for it and Tier D is the honest mark. `xmldoc_indent_size` and `indent_style` are
+        // can speak for it and Tier D is the honest mark. `skala_xmldoc_indent_size` and `indent_style` are
         // the case: measured under `OracleProfile.DocComments`, the ReSharper key moves nothing while
         // the C# indent governs the comment's inner indent. Promoting them on their agreement was
         // tried and reverted — `OptionRegistryTests.Tiers_AreHonest` and
@@ -144,7 +144,7 @@ public sealed class XmlDocOracleTests {
     /// <remarks>
     ///     ⚠ <b>This list may only shrink, and nothing may be added to it without a sweep row.</b> Seven
     ///     of the nine are one fix — the wrap column was measured wrong, every one of their fixtures
-    ///     wraps, and five were SK-DIV-0019 alone. The other two are SK-DIV-0022 (<c>spaces_inside_tags
+    ///     wraps, and five were SK-DIV-0019 alone. The other two are SK-DIV-0022 (<c>skala_xmldoc_spaces_inside_tags
     ///     = false</c> means "do not add", not "remove the author's") and SK-DIV-0023's surviving half
     ///     (every blank <c>///</c> line the oracle writes carries the marker's space).
     ///     <para>
@@ -175,32 +175,32 @@ public sealed class XmlDocOracleTests {
     ///     </para>
     ///     <para>
     ///         ⚠ Measured with the glob in place, so the next person does not have to guess what the sweep
-    ///         will say: <c>wrap_lines</c>, <c>linebreak_before_multiline_elements</c> and
-    ///         <c>blank_line_after_pi</c> come back <b>Conformant</b> — those three are the promotions the
-    ///         sweep can earn. <c>max_line_length</c> and <c>wrap_text</c> are <b>Divergent</b> and
-    ///         <c>wrap_tags_and_pi</c> <b>Spurious</b>.
+    ///         will say: <c>wrap_lines</c>, <c>skala_xmldoc_linebreak_before_multiline_elements</c> and
+    ///         <c>skala_xmldoc_blank_line_after_pi</c> come back <b>Conformant</b> — those three are the promotions the
+    ///         sweep can earn. <c>max_line_length</c> and <c>skala_xmldoc_wrap_text</c> are <b>Divergent</b> and
+    ///         <c>skala_xmldoc_wrap_tags_and_pi</c> <b>Spurious</b>.
     ///     </para>
     ///     <para>
     ///         ⚠ <b>The last three of those verdicts were about the fixtures and have been withdrawn.</b>
-    ///         <c>linebreaks_inside_tags_for_elements_longer_than</c> read <b>Inert</b>, and
-    ///         <c>spaces_inside_tags</c> and <c>linebreak_before_singleline_elements</c>
+    ///         <c>skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than</c> read <b>Inert</b>, and
+    ///         <c>skala_xmldoc_spaces_inside_tags</c> and <c>skala_xmldoc_linebreak_before_singleline_elements</c>
     ///         <b>Unexercised</b> — every one of them because its corpus file could not tell the key's
     ///         values apart, not because the key could not be observed:
     ///         <list type="bullet">
     ///             <item>
-    ///                 <c>spaces_inside_tags</c>'s file was written with a space inside each tag, and
+    ///                 <c>skala_xmldoc_spaces_inside_tags</c>'s file was written with a space inside each tag, and
     ///                 <c>false</c> means "do not add" rather than "remove" (SK-DIV-0022), so both values
     ///                 kept the author's spaces. Written tight, the key moves both engines and the sweep
     ///                 says <b>Conformant</b>.
     ///             </item>
     ///             <item>
-    ///                 <c>linebreaks_inside_tags_for_elements_longer_than</c>'s summary was long enough
+    ///                 <c>skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than</c>'s summary was long enough
     ///                 that width opened it at all three probe values — including the degenerate
     ///                 <c>0</c> and <c>1</c> an int probe offers. Shortened below the margin, the export's
     ///                 <c>2147483647</c> keeps it closed and <c>0</c>/<c>1</c> open it: <b>Conformant</b>.
     ///             </item>
     ///             <item>
-    ///                 <c>linebreak_before_singleline_elements</c>'s element sat inside a container that
+    ///                 <c>skala_xmldoc_linebreak_before_singleline_elements</c>'s element sat inside a container that
     ///                 stayed flat, so the renderer never reached the break rule. With the element
     ///                 mid-line inside an opened container the sweep says <b>Divergent</b>, and the
     ///                 disagreement is one-sided and worth having: at <c>true</c> the oracle breaks both
@@ -221,15 +221,15 @@ public sealed class XmlDocOracleTests {
     ///     </para>
     /// </remarks>
     static readonly HashSet<string> Unswept = new(StringComparer.Ordinal) {
-        "resharper_xmldoc_max_line_length",
-        "resharper_xmldoc_wrap_lines",
-        "resharper_xmldoc_wrap_text",
-        "resharper_xmldoc_wrap_tags_and_pi",
-        "resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
-        "resharper_xmldoc_linebreak_before_multiline_elements",
-        "resharper_xmldoc_linebreak_before_singleline_elements",
-        "resharper_xmldoc_spaces_inside_tags",
-        "resharper_xmldoc_blank_line_after_pi"
+        "skala_xmldoc_max_line_length",
+        "skala_xmldoc_wrap_lines",
+        "skala_xmldoc_wrap_text",
+        "skala_xmldoc_wrap_tags_and_pi",
+        "skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
+        "skala_xmldoc_linebreak_before_multiline_elements",
+        "skala_xmldoc_linebreak_before_singleline_elements",
+        "skala_xmldoc_spaces_inside_tags",
+        "skala_xmldoc_blank_line_after_pi"
     };
 
     /// <summary>

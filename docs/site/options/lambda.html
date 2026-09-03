@@ -12,10 +12,10 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Lambda</h1>
-<p class="lede">7 keys.</p>
-<section class="option" id="resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement">
-<h2><code>resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement</code> <a class="self" href="#resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement">#</a></h2>
-<p>Keep the existing arrangement of a lambda's or an anonymous method's parentheses. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6 on <code>constructs/preservation/lambda-parens.cs</code>, with the author's break inside the lambda's parentheses: THE C# FORMATTER DOES NOT ANSWER TO THIS KEY. It is flat at <code>true</code> and at <code>false</code>, in both spellings; what rejoins the parentheses is <code>resharper_keep_existing_declaration_parens_arrangement = false</code>, and with that key at <code>false</code> this one still changes nothing in either direction. The same shape as <code>remove_this_qualifier</code>: a documented editorconfig property the C# formatter is not wired to. Skala answered to it — <code>BreakPlan.DeclarationKeeps</code> routed a lambda's parameter list here — which is why the sweep read SPURIOUS. One key now governs every parameter list. SK-DIV-0093.</p>
+<p class="lede">2 keys.</p>
+<section class="option" id="skala_keep_existing_lambda_and_anonymous_function_parens_arrangement">
+<h2><code>skala_keep_existing_lambda_and_anonymous_function_parens_arrangement</code> <a class="self" href="#skala_keep_existing_lambda_and_anonymous_function_parens_arrangement">#</a></h2>
+<p>Keep the existing arrangement of a lambda's or an anonymous method's parentheses. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6 on <code>constructs/preservation/lambda-parens.cs</code>, with the author's break inside the lambda's parentheses: THE C# FORMATTER DOES NOT ANSWER TO THIS KEY. It is flat at <code>true</code> and at <code>false</code>, in both spellings; what rejoins the parentheses is <code>skala_keep_existing_declaration_parens_arrangement = false</code>, and with that key at <code>false</code> this one still changes nothing in either direction. The same shape as <code>remove_this_qualifier</code>: a documented editorconfig property the C# formatter is not wired to. Skala answered to it — <code>BreakPlan.DeclarationKeeps</code> routed a lambda's parameter list here — which is why the sweep read SPURIOUS. One key now governs every parameter list. SK-DIV-0093.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -28,22 +28,8 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_max_lambda_and_anonymous_function_parameters_on_line">
-<h2><code>resharper_max_lambda_and_anonymous_function_parameters_on_line</code> <a class="self" href="#resharper_max_lambda_and_anonymous_function_parameters_on_line">#</a></h2>
-<p>The cap on a lambda's parameters per line. Inert: measured at 120 and at 60 columns on a parenthesized lambda and a <code>delegate(…)</code>, both values return identical output, while <code>csharp_max_formal_parameters_on_line</code> in the same batch chops the lambda's list. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Confirmed at 10000, 2 and 1 on two fixtures — a five-parameter parenthesized lambda beside a four-parameter <code>delegate(…)</code>, and a shorter pair whose baseline agrees. ⚠ The int probe's degeneracy is not the cause here: 2 and 1 are meaningful caps for a five-parameter list, and the oracle chops neither.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>integer</td></tr>
-<tr><th>Default</th><td><code>10000</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_place_single_method_argument_lambda_on_same_line">
-<h2><code>resharper_place_single_method_argument_lambda_on_same_line</code> <a class="self" href="#resharper_place_single_method_argument_lambda_on_same_line">#</a></h2>
+<section class="option" id="skala_place_single_method_argument_lambda_on_same_line">
+<h2><code>skala_place_single_method_argument_lambda_on_same_line</code> <a class="self" href="#skala_place_single_method_argument_lambda_on_same_line">#</a></h2>
 <p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
 <table class="facts">
 <tbody>
@@ -54,62 +40,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/placement/single-lambda-argument.cs</code></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_wrap_after_lambda_and_anonymous_function_declaration_lpar">
-<h2><code>resharper_wrap_after_lambda_and_anonymous_function_declaration_lpar</code> <a class="self" href="#resharper_wrap_after_lambda_and_anonymous_function_declaration_lpar">#</a></h2>
-<p>Whether a lambda's first parameter gets a line of its own. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at both values, at 120 and at 60 columns, and with <code>keep_existing_lambda_and_anonymous_function_parens_arrangement = false</code> and <code>max_lambda_and_anonymous_function_parameters_on_line = 1</code> in the same run so neither could be winning first. <code>csharp_wrap_parameters_style</code> is the key that lays a lambda's parameter list out.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_wrap_before_lambda_and_anonymous_function_declaration_lpar">
-<h2><code>resharper_wrap_before_lambda_and_anonymous_function_declaration_lpar</code> <a class="self" href="#resharper_wrap_before_lambda_and_anonymous_function_declaration_lpar">#</a></h2>
-<p>Whether a lambda's <code>(</code> gets a line of its own. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at both values, at 120 and at 60 columns, and with <code>keep_existing_lambda_and_anonymous_function_parens_arrangement = false</code> and <code>max_lambda_and_anonymous_function_parameters_on_line = 1</code> in the same run so neither could be masking it. <code>csharp_wrap_before_declaration_lpar</code> is the key that moves a <code>delegate(…)</code>'s parenthesis.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_wrap_before_lambda_and_anonymous_function_declaration_rpar">
-<h2><code>resharper_wrap_before_lambda_and_anonymous_function_declaration_rpar</code> <a class="self" href="#resharper_wrap_before_lambda_and_anonymous_function_declaration_rpar">#</a></h2>
-<p>Whether a lambda's <code>)</code> gets a line of its own. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at both values, at 120 and at 60 columns, and with <code>keep_existing_lambda_and_anonymous_function_parens_arrangement = false</code> and <code>max_lambda_and_anonymous_function_parameters_on_line = 1</code> in the same run so neither could be masking it. <code>csharp_wrap_before_declaration_rpar</code> is the key that moves a declaration's closing parenthesis.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_wrap_lambda_and_anonymous_function_parameters_style">
-<h2><code>resharper_wrap_lambda_and_anonymous_function_parameters_style</code> <a class="self" href="#resharper_wrap_lambda_and_anonymous_function_parameters_style">#</a></h2>
-<p>The wrap style of a lambda's parameter list. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at both values, at 120 and at 60 columns, and with <code>keep_existing_lambda_and_anonymous_function_parens_arrangement = false</code> and <code>max_lambda_and_anonymous_function_parameters_on_line = 1</code> in the same run so neither could be masking it, while <code>csharp_wrap_parameters_style = chop_always</code> in the same batch chops that very list.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code></td></tr>
-<tr><th>Default</th><td><code>wrap_if_long</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
 </tbody>
 </table>
 </section>

@@ -470,7 +470,7 @@ public sealed class KeyFlipSweep {
         var outcome = OptionSweep.Classify(oracleOutputs.Count, skalaOutputs.Count, agreements, values.Count);
 
         // ⚠ Fall back to the raw bytes when — and only when — normalisation is what hid the option.
-        // `resharper_enforce_line_ending_style` and `resharper_csharp_insert_final_newline` change
+        // `skala_enforce_line_ending_style` and `skala_insert_final_newline` change
         // nothing but the line terminators and the final newline, so the normalised comparison every
         // other measurement in this repository uses reports them Unexercised for a reason that is
         // about the instrument. Both outputs here come from one run on one machine, so raw bytes are
@@ -532,7 +532,8 @@ public sealed class KeyFlipSweep {
     ///     The appended section is <c>[*.cs]</c>, which is more specific than the export's own
     ///     <c>[*]</c> and than its multi-extension section, and comes last.
     /// </remarks>
-    public string ConfigFor(string key, string value) => baseConfig + "\n[*.cs]\n" + key + " = " + value + "\n";
+    public string ConfigFor(string key, string value) =>
+        baseConfig + "\n[*.cs]\n" + OracleRunner.OracleKey(key) + " = " + value + "\n";
 
     static string Digest(string text) => SkalaSide.Digest(text);
 

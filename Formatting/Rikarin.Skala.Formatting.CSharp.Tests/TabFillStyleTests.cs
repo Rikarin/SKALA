@@ -21,7 +21,7 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///             preference.
 ///         </b> The corpus has no per-directory <c>.editorconfig</c>, so no committed fixture can
 ///         be tab-indented, so the key cannot carry an <c>oracle</c> glob and the key-flip sweep cannot
-///         reach it — <c>verify resharper_csharp_alignment_tab_fill_style</c> answers "no `oracle` fixture
+///         reach it — <c>verify skala_alignment_tab_fill_style</c> answers "no `oracle` fixture
 ///         in the registry" before and after this fix. Until that mechanism exists, this file is the whole
 ///         of the key's evidence, which is why it carries the oracle's output verbatim rather than an
 ///         assertion about it.
@@ -183,7 +183,7 @@ public sealed class TabFillStyleTests {
             Probe,
             ("indent_style", "tab"),
             ("tab_width", "4"),
-            ("resharper_csharp_alignment_tab_fill_style", value)
+            ("skala_alignment_tab_fill_style", value)
         );
 
     [Theory]
@@ -219,9 +219,7 @@ public sealed class TabFillStyleTests {
         var spaced = Probe.Replace("\t", "    ", StringComparison.Ordinal);
         var outputs = new HashSet<string>(StringComparer.Ordinal);
         foreach (var value in new[] { "use_spaces", "use_tabs_only", "optimal_fill" }) {
-            outputs.Add(
-                Format(spaced, ("indent_style", "space"), ("resharper_csharp_alignment_tab_fill_style", value))
-            );
+            outputs.Add(Format(spaced, ("indent_style", "space"), ("skala_alignment_tab_fill_style", value)));
         }
 
         Assert.Single(outputs);
@@ -248,7 +246,7 @@ public sealed class TabFillStyleTests {
                 expected,
                 ("indent_style", "tab"),
                 ("tab_width", "4"),
-                ("resharper_csharp_alignment_tab_fill_style", value)
+                ("skala_alignment_tab_fill_style", value)
             )
         );
 }

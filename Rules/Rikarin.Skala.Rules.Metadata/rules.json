@@ -69,7 +69,7 @@
       },
       "falsePositives": "None. The check is a width measurement of the formatter's own output.",
       "configuration": [
-        "resharper_csharp_max_line_length"
+        "skala_max_line_length"
       ]
     },
     {
@@ -115,11 +115,11 @@
       },
       "falsePositives": "None relative to the effective configuration. Formatter-off regions are excluded and every proposed tree rewrite passes the arrangement safety checks before it is reported.",
       "configuration": [
-        "resharper_csharp_method_or_operator_body",
-        "resharper_csharp_local_function_body",
-        "resharper_csharp_constructor_or_destructor_body",
-        "resharper_csharp_accessor_owner_body",
-        "resharper_csharp_use_heuristics_for_body_style"
+        "skala_method_or_operator_body",
+        "skala_local_function_body",
+        "skala_constructor_or_destructor_body",
+        "skala_accessor_owner_body",
+        "skala_use_heuristics_for_body_style"
       ]
     },
     {
@@ -169,8 +169,8 @@
       },
       "falsePositives": "None relative to the effective configuration and language version. Unresolved or differently typed constructions are left alone.",
       "configuration": [
-        "resharper_csharp_object_creation_when_type_evident",
-        "resharper_csharp_object_creation_when_type_not_evident"
+        "skala_object_creation_when_type_evident",
+        "skala_object_creation_when_type_not_evident"
       ]
     },
     {
@@ -194,8 +194,8 @@
       },
       "falsePositives": "None relative to the effective configuration. Expressions without a stable target type are not rewritten.",
       "configuration": [
-        "resharper_csharp_default_value_when_type_evident",
-        "resharper_csharp_default_value_when_type_not_evident"
+        "skala_default_value_when_type_evident",
+        "skala_default_value_when_type_not_evident"
       ]
     },
     {
@@ -219,7 +219,7 @@
       },
       "falsePositives": "Types whose equality operator could change the meaning are left alone.",
       "configuration": [
-        "resharper_csharp_null_checking_pattern_style"
+        "skala_null_checking_pattern_style"
       ]
     },
     {
@@ -243,7 +243,7 @@
       },
       "falsePositives": "None relative to the effective configuration. Only the framework string type is recognised.",
       "configuration": [
-        "resharper_empty_string"
+        "skala_empty_string"
       ]
     },
     {
@@ -294,7 +294,7 @@
       },
       "falsePositives": "Branches whose braces carry declarations, directives, comments or control-flow meaning are retained.",
       "configuration": [
-        "resharper_csharp_braces_redundant"
+        "skala_braces_redundant"
       ]
     },
     {
@@ -318,7 +318,7 @@
       },
       "falsePositives": "The rule is off unless `--aggressive` is selected. Parentheses required for precedence or configured readability remain.",
       "configuration": [
-        "resharper_csharp_parentheses_redundancy_style",
+        "skala_parentheses_redundancy_style",
         "dotnet_style_parentheses_in_arithmetic_binary_operators",
         "dotnet_style_parentheses_in_relational_binary_operators",
         "dotnet_style_parentheses_in_other_binary_operators"
@@ -345,11 +345,11 @@
       },
       "falsePositives": "No using is removed without semantic agreement from every owning compilation. In syntactic mode the directives are only sorted and placed.",
       "configuration": [
-        "resharper_sort_usings",
-        "dotnet_sort_system_directives_first",
+        "skala_sort_usings",
+        "skala_sort_usings_with_system_first",
         "csharp_using_directive_placement",
-        "resharper_csharp_keep_nontrivial_alias",
-        "resharper_remove_only_unused_aliases"
+        "skala_keep_nontrivial_alias",
+        "skala_remove_only_unused_aliases"
       ]
     },
     {
@@ -446,8 +446,8 @@
       },
       "falsePositives": "Only list forms for which the active language version permits a trailing comma are changed.",
       "configuration": [
-        "resharper_csharp_trailing_comma_in_multiline_lists",
-        "resharper_csharp_trailing_comma_in_singleline_lists"
+        "skala_trailing_comma_in_multiline_lists",
+        "skala_trailing_comma_in_singleline_lists"
       ]
     },
     {
@@ -471,8 +471,8 @@
       },
       "falsePositives": "Ambiguous references and any rewrite that resolves to a different symbol are reverted.",
       "configuration": [
-        "resharper_csharp_static_members_qualify_members",
-        "resharper_csharp_static_members_qualify_with"
+        "skala_static_members_qualify_members",
+        "skala_static_members_qualify_with"
       ]
     },
     {
@@ -496,12 +496,12 @@
       },
       "falsePositives": "Unresolved calls, out-of-position arguments and expanded `params` arguments that cannot legally be named are left alone.",
       "configuration": [
-        "resharper_csharp_arguments_literal",
-        "resharper_csharp_arguments_string_literal",
-        "resharper_csharp_arguments_anonymous_function",
-        "resharper_csharp_arguments_named",
-        "resharper_csharp_arguments_other",
-        "resharper_csharp_arguments_skip_single"
+        "skala_arguments_literal",
+        "skala_arguments_string_literal",
+        "skala_arguments_anonymous_function",
+        "skala_arguments_named",
+        "skala_arguments_other",
+        "skala_arguments_skip_single"
       ]
     },
     {
@@ -525,7 +525,7 @@
       },
       "falsePositives": "Only discard designations are changed; named locals and typed non-discard declarations are preserved.",
       "configuration": [
-        "resharper_csharp_prefer_explicit_discard_declaration"
+        "skala_prefer_explicit_discard_declaration"
       ]
     },
     {
@@ -2045,15 +2045,15 @@
       "since": "1.3",
       "languageVersion": null,
       "summary": "A bare framework Task or ValueTask is awaited where EditorConfig explicitly selects library ConfigureAwait analysis.",
-      "rationale": "Library code can choose not to capture its caller's synchronization context. The existing resharper_configure_await_analysis_mode policy determines whether this inspection applies; disabled, missing, invalid and UI mode do not require missing configuration. Explicit ConfigureAwait choices are respected. Scheduling policy is an author decision, so this rule reports without an automatic fix.",
+      "rationale": "Library code can choose not to capture its caller's synchronization context. The existing skala_configure_await_analysis_mode policy determines whether this inspection applies; disabled, missing, invalid and UI mode do not require missing configuration. Explicit ConfigureAwait choices are respected. Scheduling policy is an author decision, so this rule reports without an automatic fix.",
       "examples": {
-        "bad": "// resharper_configure_await_analysis_mode = library\nawait ReadAsync();",
+        "bad": "// skala_configure_await_analysis_mode = library\nawait ReadAsync();",
         "good": "await ReadAsync().ConfigureAwait(false);"
       },
       "falsePositives": "Only exact framework Task, Task<T>, ValueTask and ValueTask<T> awaits are included. Derived task types and custom awaitables are excluded. Already configured awaitables, including explicit true or variable arguments, are left alone. UI mode's redundant ConfigureAwait(true) inspection is not SK3003 and is not implemented here. await foreach and await using are outside the initial scope. The prefixed configuration key wins when both spellings exist.",
       "configuration": [
-        "resharper_configure_await_analysis_mode",
-        "configure_await_analysis_mode",
+        "skala_configure_await_analysis_mode",
+        "skala_configure_await_analysis_mode",
         "dotnet_diagnostic.SK3003.severity"
       ]
     },
@@ -3930,7 +3930,7 @@
         "bad": "[Obsolete()]\npublic static int Count(IEnumerable<int> values) =>\n    values.Where((v) => v is (> 0)).ToArray()[0..^0];",
         "good": "[Obsolete]\npublic static int Count(IEnumerable<int> values) =>\n    values.Where(v => v is > 0).ToArray()[..];"
       },
-      "falsePositives": "⚠ **`SK0209` is not being duplicated, and the check was made rather than assumed.** That rule removes redundant *expression* parentheses through `resharper_parentheses_redundancy_style`, and it matches `ParenthesizedExpressionSyntax` and nothing else. The three parenthesis shapes here are an attribute argument list, a lambda parameter list and a parenthesized *pattern* — three different nodes, none of which that option reaches. ⚠ **Purely syntactic on purpose**: no branch reads the semantic model, so this is the one rule in the `SK023x` family that still runs, and is therefore still measurable, under `--load=loose` where a dependency-less source slice makes every semantic guard withdraw. ⚠ Pattern parentheses are removed only where the pattern is the *whole* of its position — under an `is`, a switch arm, a `case` label or a subpattern. Inside an `and`/`or` the parentheses can be the precedence, and proving otherwise is a re-parse this rule deliberately does not do. ⚠ A trailing declaration semicolon is reported only where braces are present: `record R(int X);` has no body, and there the semicolon is the terminator. ⚠ A lambda parameter with a type, a modifier, an attribute or a default value keeps its parentheses — the typed case belongs to `SK0232`, which *produces* this shape's output, so the two are disjoint by construction. ⚠ A range bound is matched on the literal `0` read from the source, never on a constant value: a named constant that happens to be zero is a name somebody chose. ⚠ An anonymous-type property name is dropped only for the two spellings C# infers a name from, so `x.Foo<int>` is left alone even where the written name matches. ⚠ **Four of the family's thirteen inspections are not covered.** `RedundantDiscardDesignation` is left out on purpose: `out var _` becomes `out _` only where nothing named `_` is in scope, and answering that needs a symbol lookup that would make the whole rule semantic. `RedundantFixedPointerDeclaration` is unsafe-code-only. `RedundantPropertyParentheses` and `RedundantArrayLowerBoundSpecification` could not be identified from the export with enough confidence to write a guard for them.",
+      "falsePositives": "⚠ **`SK0209` is not being duplicated, and the check was made rather than assumed.** That rule removes redundant *expression* parentheses through `skala_parentheses_redundancy_style`, and it matches `ParenthesizedExpressionSyntax` and nothing else. The three parenthesis shapes here are an attribute argument list, a lambda parameter list and a parenthesized *pattern* — three different nodes, none of which that option reaches. ⚠ **Purely syntactic on purpose**: no branch reads the semantic model, so this is the one rule in the `SK023x` family that still runs, and is therefore still measurable, under `--load=loose` where a dependency-less source slice makes every semantic guard withdraw. ⚠ Pattern parentheses are removed only where the pattern is the *whole* of its position — under an `is`, a switch arm, a `case` label or a subpattern. Inside an `and`/`or` the parentheses can be the precedence, and proving otherwise is a re-parse this rule deliberately does not do. ⚠ A trailing declaration semicolon is reported only where braces are present: `record R(int X);` has no body, and there the semicolon is the terminator. ⚠ A lambda parameter with a type, a modifier, an attribute or a default value keeps its parentheses — the typed case belongs to `SK0232`, which *produces* this shape's output, so the two are disjoint by construction. ⚠ A range bound is matched on the literal `0` read from the source, never on a constant value: a named constant that happens to be zero is a name somebody chose. ⚠ An anonymous-type property name is dropped only for the two spellings C# infers a name from, so `x.Foo<int>` is left alone even where the written name matches. ⚠ **Four of the family's thirteen inspections are not covered.** `RedundantDiscardDesignation` is left out on purpose: `out var _` becomes `out _` only where nothing named `_` is in scope, and answering that needs a symbol lookup that would make the whole rule semantic. `RedundantFixedPointerDeclaration` is unsafe-code-only. `RedundantPropertyParentheses` and `RedundantArrayLowerBoundSpecification` could not be identified from the export with enough confidence to write a guard for them.",
       "configuration": [
         "dotnet_diagnostic.SK0233.severity"
       ]
@@ -6692,12 +6692,12 @@
       "since": "2.0",
       "languageVersion": "9.0",
       "summary": "A pattern whose match is designated `_` — `o is string _`, `o is Point { X: 1 } _` — where the designation declares nothing and the pattern means the same without it.",
-      "rationale": "A designation is the reader's answer to \"what is this match called\", and `_` is the answer \"it is not called anything\" written down. Deleting it removes a question rather than an answer: `o is string _` makes a reader look for the `_` further along the expression, and `o is string` does not. It is also the shape a model reaches for by habit, because `case string _:` was the only spelling C# had before type patterns arrived in C# 9 and most of the training data predates them.\n\n⚠ ReSharper rates this a *suggestion* and Skala matches it. The neighbouring inspection `resharper_csharp_prefer_explicit_discard_declaration` is **not** this key: that one is the `out var _` ⇔ `out _` style choice, it is a tier-A option, and Skala already performs it through `SK0217`. Reading the two as one concept is how this id would have become a double-count.",
+      "rationale": "A designation is the reader's answer to \"what is this match called\", and `_` is the answer \"it is not called anything\" written down. Deleting it removes a question rather than an answer: `o is string _` makes a reader look for the `_` further along the expression, and `o is string` does not. It is also the shape a model reaches for by habit, because `case string _:` was the only spelling C# had before type patterns arrived in C# 9 and most of the training data predates them.\n\n⚠ ReSharper rates this a *suggestion* and Skala matches it. The neighbouring inspection `skala_prefer_explicit_discard_declaration` is **not** this key: that one is the `out var _` ⇔ `out _` style choice, it is a tier-A option, and Skala already performs it through `SK0217`. Reading the two as one concept is how this id would have become a double-count.",
       "examples": {
         "bad": "if (value is string _) {\n    return 1;\n}\n\nreturn value switch {\n    int _ => 2,\n    Point { X: 0 } _ => 3,\n    _ => 0\n};",
         "good": "if (value is string) {\n    return 1;\n}\n\nreturn value switch {\n    int => 2,\n    Point { X: 0 } => 3,\n    _ => 0\n};"
       },
-      "falsePositives": "⚠ **A `var _` pattern is never matched, and the reason is a rule that already ships rather than a difficulty.** `M(out var _)` becomes `M(out _)` under `resharper_csharp_prefer_explicit_discard_declaration`, which is a **tier-A** option performed by `SK0217`'s `DiscardDeclarationRule` in both directions and checked against the oracle. Reporting the same edit here would be the double-count doc 17 § \"Inspection ids are not concepts\" exists to prevent — and it is the same trap `SK0233` records for `SK0209`, found the same way, by reading the option registry before allocating. ⚠ It also could not be done: `o is var _` does not become `o is var`, and a bare `_` directly under an `is` is **CS0246**, because the parser reads it as a type name. `case _:` is **CS0103** for the same reason. Only a *designation* on a declaration or recursive pattern is reported, which is the position where `_` is unambiguously the discard. ⚠ **That is also what keeps the rule syntactic.** A designation declares; it never refers to something already in scope, so there is no lookup to do — which is exactly the lookup that made the `out var _` reading a semantic rule, and the stated reason it was refused for `SK0233`. Being syntactic, this rule still runs under `--load=loose`. ⚠ **The 9.0 floor is measured, not assumed.** `o is string` is C# 1 — it is the `is` operator — but `case string:`, `string => …` and `Point(int, int)` are bare *type patterns*, and below C# 9 the compiler answers `CS8400: Feature 'type pattern' is not available`. A single rule cannot be right about the floor in one pattern position and wrong in another, so it is silent below 9.0 everywhere. ⚠ A designation that is a real name is not this rule at any severity: `o is string text` names something, and whether that name is used is `SK6040`'s question and not a redundancy in the pattern. A comment or a directive inside the span the fix deletes withdraws the finding, and the span is asked, never the node — the defect #302 describes and `SK0243` carried.",
+      "falsePositives": "⚠ **A `var _` pattern is never matched, and the reason is a rule that already ships rather than a difficulty.** `M(out var _)` becomes `M(out _)` under `skala_prefer_explicit_discard_declaration`, which is a **tier-A** option performed by `SK0217`'s `DiscardDeclarationRule` in both directions and checked against the oracle. Reporting the same edit here would be the double-count doc 17 § \"Inspection ids are not concepts\" exists to prevent — and it is the same trap `SK0233` records for `SK0209`, found the same way, by reading the option registry before allocating. ⚠ It also could not be done: `o is var _` does not become `o is var`, and a bare `_` directly under an `is` is **CS0246**, because the parser reads it as a type name. `case _:` is **CS0103** for the same reason. Only a *designation* on a declaration or recursive pattern is reported, which is the position where `_` is unambiguously the discard. ⚠ **That is also what keeps the rule syntactic.** A designation declares; it never refers to something already in scope, so there is no lookup to do — which is exactly the lookup that made the `out var _` reading a semantic rule, and the stated reason it was refused for `SK0233`. Being syntactic, this rule still runs under `--load=loose`. ⚠ **The 9.0 floor is measured, not assumed.** `o is string` is C# 1 — it is the `is` operator — but `case string:`, `string => …` and `Point(int, int)` are bare *type patterns*, and below C# 9 the compiler answers `CS8400: Feature 'type pattern' is not available`. A single rule cannot be right about the floor in one pattern position and wrong in another, so it is silent below 9.0 everywhere. ⚠ A designation that is a real name is not this rule at any severity: `o is string text` names something, and whether that name is used is `SK6040`'s question and not a redundancy in the pattern. A comment or a directive inside the span the fix deletes withdraws the finding, and the span is asked, never the node — the defect #302 describes and `SK0243` carried.",
       "configuration": [
         "dotnet_diagnostic.SK0250.severity"
       ]

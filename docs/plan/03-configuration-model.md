@@ -36,16 +36,16 @@ that § "Severities" below now turns on what those values actually are.
    (info) when the effective config for a file draws from a file above the repository root, naming
    which keys came from where.
 2. ⚠ **The standard `max_line_length` key is absent**; the width lives only in
-   `resharper_csharp_max_line_length = 120`. Every other tool in the ecosystem (CSharpier, most
+   `skala_max_line_length = 120`. Every other tool in the ecosystem (CSharpier, most
    editors, `git diff --stat` heuristics) therefore does not know the width. `skala config fix`
    offers to add `max_line_length = 120` alongside it, and Skala reads the ReSharper key as
    authoritative when both exist and disagree — with `SK9005` telling you they disagree.
-3. ⚠ **`[*]` sets `insert_final_newline = false` and `trim_trailing_whitespace = false`, while
-   `resharper_csharp_insert_final_newline = true` and `resharper_remove_spaces_on_blank_lines = true`.**
+3. ⚠ **`[*]` sets `skala_insert_final_newline = false` and `trim_trailing_whitespace = false`, while
+   `skala_insert_final_newline = true` and `skala_remove_spaces_on_blank_lines = true`.**
    These are direct contradictions between the generic keys and the C# ones. ReSharper resolves them
    by language specificity — the C# key wins for `.cs`. Skala must do the same, and must say so
    (`SK9005`, one report per run, not per file), because a reader of that file will otherwise
-   reasonably conclude Skala is ignoring `insert_final_newline`.
+   reasonably conclude Skala is ignoring `skala_insert_final_newline`.
 4. **The 47-extension glob at the bottom is Rider's "these are code files" list**, and it sets only
    indentation. It includes `.cs`, and it is *last*, so under editorconfig precedence it overrides
    `[*]` for indentation. Skala uses Roslyn's `AnalyzerConfigSet` so this is handled by the same code
@@ -86,8 +86,8 @@ truth:
 
 ```jsonc
 {
-  "key": "resharper_csharp_wrap_arguments_style",
-  "aliases": ["resharper_wrap_arguments_style"],   // ReSharper's language-generic spelling
+  "key": "skala_wrap_arguments_style",
+  "aliases": ["skala_wrap_arguments_style"],   // ReSharper's language-generic spelling
   "language": "csharp",
   "type": "enum:WrapStyle",                        // wrap_if_long | chop_if_long | chop_always
   "default": "wrap_if_long",                       // ReSharper's default, not ours — and since M3
@@ -104,8 +104,8 @@ truth:
 ⚠ **`type` is the validation, and for 83 of the 520 entries it was not validating anything.** Until
 M9, 27 entries were `"type": "string"` — which means *every* string is a legal value — and 56 were
 `"type": "int"` with nothing behind them but `int.TryParse`. `resharper_align_ternary = sideways`,
-`csharp_using_directive_placement = nowhere`, `resharper_csharp_max_line_length = -1` and
-`resharper_csharp_indent_size = 0` were all accepted, discarded, and replaced by a default in
+`csharp_using_directive_placement = nowhere`, `skala_max_line_length = -1` and
+`skala_indent_size = 0` were all accepted, discarded, and replaced by a default in
 silence. Four fields close that, and each is enforced at build time by the generator (`SKG004`,
 `SKG005`) rather than by review:
 
@@ -193,8 +193,8 @@ in practice and the row stays so that the reasoning is not lost.
 ⚠ **Tier C is six keys, and none of the families this document used to name is among them.** It
 listed "C++ keys, VB keys, XAML keys" — there is not one `resharper_cpp_*`, `*_vb_*` or `xaml` entry
 in the registry, so those are not "parsed, validated and deliberately not implemented"; they are
-`SK9001` unknown keys, which is Tier-none. The six are `resharper_csharp_old_engine` and
-`resharper_use_old_engine`, the two autodetect toggles, plus `resharper_use_indent_from_vs` and
+`SK9001` unknown keys, which is Tier-none. The six are `skala_old_engine` and
+`skala_use_old_engine`, the two autodetect toggles, plus `skala_use_indent_from_vs` and
 `resharper_show_autodetect_configure_formatting_tip` — the last two never named here, and a third of
 the tier.
 
@@ -204,7 +204,7 @@ The distinction is the point and the registry enforces it: `inert` is Tier D by 
 Tier C key that was *also* measured unobservable had nowhere to put that fact and sat with an empty
 entry instead. Recording it in a second field keeps the refusal and the measurement apart, which
 matters because they disagree about one of the six: five of them are flat in `jb cleanupcode` 2025.2.6
-at every value, and **`resharper_csharp_old_engine` is not** — at `true` the oracle rewrites the whole
+at every value, and **`skala_old_engine` is not** — at `true` the oracle rewrites the whole
 probe, outdenting a file-scoped namespace's members and moving the wrap points. Tier C was still the
 right answer for it. **C means Skala declines; it has never meant nothing would happen.** Collapsing
 the two would have turned a deliberate refusal into a claim that the option does not exist, which is
@@ -452,16 +452,16 @@ and this section conflated them; 123 is what `options.json` says, and it is the 
 in § "Precedence" has to agree with. 110 of the 131
 agree with the export, which is itself a result: those keys are Rider's defaults and the export is
 redundant in them. Fourteen genuinely differ, and they are recognisably ReSharper out of the box —
-Allman braces, `new_line_before_else = true`, `empty_block_style = multiline`,
-`wrap_chained_method_calls = wrap_if_long`, `keep_existing_invocation_parens_arrangement = true`.
+Allman braces, `skala_new_line_before_else = true`, `skala_empty_block_style = multiline`,
+`skala_wrap_chained_method_calls = wrap_if_long`, `skala_keep_existing_invocation_parens_arrangement = true`.
 
 ⚠ **Options interact, so this is a strong signal and not proof, and four of the fourteen are recorded
 `unknown` rather than adopted.** Formatting 60 Vixen files with Vixen's own `.editorconfig` and
 comparing against the oracle under the same configuration is an independent check, and the four chain
-keys — `wrap_after_dot_in_method_calls`, `wrap_after_property_in_chained_method_calls`,
-`wrap_before_first_method_call`, `wrap_primary_constructor_parameters_style` — make it worse rather
+keys — `skala_wrap_after_dot_in_method_calls`, `skala_wrap_after_property_in_chained_method_calls`,
+`skala_wrap_before_first_method_call`, `skala_wrap_primary_constructor_parameters_style` — make it worse rather
 than better. They come back `Derived` because they are unobservable under ReSharper's own defaults:
-nothing chops while `wrap_chained_method_calls` is `wrap_if_long`, so the probe saw no change and
+nothing chops while `skala_wrap_chained_method_calls` is `wrap_if_long`, so the probe saw no change and
 read it as agreement.
 
 Measured, on those 60 files against the oracle under Vixen's configuration:
@@ -616,7 +616,7 @@ sections**, `[{Core,Gameplay,Platform}/**/*.cs]` escalating trimming diagnostics
 reasoning that justifies it. ✅ After `sync`, all 56 sections and all of their comments are present
 verbatim, and the effective resolution still gives `indent_size = 2` for `.props`,
 `csharp_prefer_braces = when_multiline:suggestion` and `trim_trailing_whitespace = true` for `.cs` —
-Vixen's values, not the canonical's — while `resharper_csharp_max_line_length = 120`, which Vixen
+Vixen's values, not the canonical's — while `skala_max_line_length = 120`, which Vixen
 never set, comes from the canonical.
 
 Overrides are **reported, never fought**: `SK9013`, info, one per option the local block takes back,
@@ -626,19 +626,19 @@ from the canonical" is exactly the conversation a canonical is for. On Vixen, `s
 hand-written config and the Rider export:
 
 ```
-[*] insert_final_newline: canonical false -> local true
+[*] skala_insert_final_newline: canonical false -> local true
 [*] trim_trailing_whitespace: canonical false -> local true
 [*.{json,yaml,yml,csproj,props,targets,slnx,xml,g4}] indent_size: canonical 4 -> local 2
 [*.cs] csharp_using_directive_placement: canonical outside_namespace:silent -> local …:warning
 [*.cs] csharp_style_namespace_declarations: canonical file_scoped:suggestion -> local …:warning
-[*.cs] dotnet_sort_system_directives_first: canonical false -> local true
+[*.cs] skala_sort_usings_with_system_first: canonical false -> local true
 [*.cs] csharp_prefer_braces: canonical true:none -> local when_multiline:suggestion
 ```
 
 ⚠ Comparison is by **exact spelling within a section**, falling back to the canonical's `[*]`. The
 tempting shortcut — "the canonical's last value for this `OptionId`" — is wrong twice over: it
-conflates a key with its aliases, so `insert_final_newline = false` reads as an override of
-`resharper_csharp_insert_final_newline = true`, which is the export's own contradiction and already
+conflates a key with its aliases, so `skala_insert_final_newline = false` reads as an override of
+`skala_insert_final_newline = true`, which is the export's own contradiction and already
 `SK9005`; and it conflates sections, so `[*.csv]` reads as overriding `[*]`. Both fired against
 Skala's own configuration, which is the export, and which must report **zero** overrides. It does.
 

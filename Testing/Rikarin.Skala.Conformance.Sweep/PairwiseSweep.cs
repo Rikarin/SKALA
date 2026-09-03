@@ -275,7 +275,7 @@ public sealed class PairwiseSweep {
     public string ConfigFor(IReadOnlyList<KeyValuePair<string, string>> overrides) =>
         baseConfig
         + "\n[*.cs]\n"
-        + string.Concat(overrides.Select(static o => o.Key + " = " + o.Value + "\n"));
+        + string.Concat(overrides.Select(static o => OracleRunner.OracleKey(o.Key) + " = " + o.Value + "\n"));
 
     /// <summary>
     ///     The corner at <paramref name="round" />, as the two assignments that define it.

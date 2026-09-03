@@ -4,7 +4,7 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-///     <c>align_multiline_comments</c>: a starred block comment's asterisks. SK-DIV-0033.
+///     <c>skala_align_multiline_comments</c>: a starred block comment's asterisks. SK-DIV-0033.
 /// </summary>
 /// <remarks>
 ///     ⚠ <b>The expectations are <c>jb cleanupcode</c> 2025.2.6's own bytes</b>, taken under
@@ -131,7 +131,7 @@ public sealed class AlignMultilineCommentTests {
     static string Format(string source, string value) {
         var options = OptionResolver.Resolve(
             Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-            [new KeyValuePair<string, string>("resharper_csharp_align_multiline_comments", value)]
+            [new KeyValuePair<string, string>("skala_align_multiline_comments", value)]
         ).Options;
         return CSharpFormatter.Format("Test.cs", SourceText.From(source), options)
             .Formatted.Replace("\r\n", "\n", StringComparison.Ordinal);

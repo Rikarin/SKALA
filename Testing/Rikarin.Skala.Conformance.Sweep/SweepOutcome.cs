@@ -10,7 +10,7 @@ namespace Rikarin.Skala.Conformance.Sweep;
 ///     ran at one configuration, which measures the output and not the option: Skala reached 99.70 %
 ///     fidelity while respecting 205 of the 458 keys the export sets, because an unimplemented key whose
 ///     configured value happens to coincide with Skala's behaviour costs nothing. Flipping
-///     <c>resharper_int_align</c> between <c>false</c> and <c>true</c> produced byte-identical output
+///     <c>skala_int_align</c> between <c>false</c> and <c>true</c> produced byte-identical output
 ///     and no test noticed.
 ///     <para>
 ///         ⚠ <see cref="Unexercised" /> is the verdict that makes the harness worth building, and reading it
@@ -21,7 +21,7 @@ namespace Rikarin.Skala.Conformance.Sweep;
 ///     <para>
 ///         ⚠ <see cref="Inert" /> and <see cref="Spurious" /> are the one-sided cases the three-way table does
 ///         not name. They are divergences, and they are separated from <see cref="Divergent" /> because the
-///         diagnosis differs: <see cref="Inert" /> is <c>resharper_int_align</c> — ReSharper honours the key
+///         diagnosis differs: <see cref="Inert" /> is <c>skala_int_align</c> — ReSharper honours the key
 ///         and Skala ignores it — which is precisely the defect a one-configuration measurement cannot see.
 ///     </para>
 /// </remarks>
@@ -71,7 +71,7 @@ public sealed record SweepValue(string Value, string OracleHash, string SkalaHas
 ///     ⚠ Whether this verdict had to be read off the raw bytes because line-ending normalisation erased
 ///     the option's entire effect. Every other measurement in this repository compares normalised text,
 ///     because a committed fixture may have been generated on another OS — but
-///     <c>resharper_enforce_line_ending_style</c> and <c>resharper_csharp_insert_final_newline</c>
+///     <c>skala_enforce_line_ending_style</c> and <c>skala_insert_final_newline</c>
 ///     change nothing else, so a normalised comparison reports them <see cref="SweepOutcome.Unexercised" />
 ///     for a reason that is about the instrument and not about the option. Both sides of this comparison
 ///     are produced in one run on one machine, so falling back to raw bytes is safe here in a way it is

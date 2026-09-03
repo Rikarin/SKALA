@@ -43,15 +43,15 @@ public sealed class ArrangementTagTests {
 
         var overrides = new List<KeyValuePair<string, string>>();
         if (!tagsEnabled) {
-            overrides.Add(new KeyValuePair<string, string>("resharper_formatter_tags_enabled", "false"));
+            overrides.Add(new KeyValuePair<string, string>("skala_formatter_tags_enabled", "false"));
         }
 
         if (offTag is not null) {
-            overrides.Add(new KeyValuePair<string, string>("resharper_formatter_off_tag", offTag));
+            overrides.Add(new KeyValuePair<string, string>("skala_formatter_off_tag", offTag));
         }
 
         if (onTag is not null) {
-            overrides.Add(new KeyValuePair<string, string>("resharper_formatter_on_tag", onTag));
+            overrides.Add(new KeyValuePair<string, string>("skala_formatter_on_tag", onTag));
         }
 
         var options = OptionResolver.Resolve(
@@ -220,7 +220,7 @@ public sealed class ArrangementTagTests {
     /// <remarks>
     ///     ⚠ This control used to be written on <c>@formatter:off</c> itself, and it was measured wrong:
     ///     <c>jb cleanupcode</c> keeps honouring the built-in tags under
-    ///     <c>resharper_formatter_tags_enabled = false</c>, and Skala now does too — see
+    ///     <c>skala_formatter_tags_enabled = false</c>, and Skala now does too — see
     ///     <see cref="FormatterTags.BuiltinOff" />. So the control moved to a *custom* tag, where the key
     ///     really does decide, and the built-in's immunity to it is asserted beside it.
     /// </remarks>

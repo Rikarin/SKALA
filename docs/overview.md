@@ -194,7 +194,7 @@ body. A single-symbol-set run cannot see that class at all.
 |---|---:|---|
 | **A** — implemented, pinned by an oracle fixture | **284** | |
 | **B** — approximated | **0** | ⚠ see below |
-| **C** — accepted and deliberately ignored | **6** | `apply_auto_detected_rules`, `autodetect_indent_settings`, `csharp_old_engine`, `show_autodetect_configure_formatting_tip`, `use_indent_from_vs`, `use_old_engine` |
+| **C** — accepted and deliberately ignored | **6** | `apply_auto_detected_rules`, `autodetect_indent_settings`, `skala_old_engine`, `show_autodetect_configure_formatting_tip`, `use_indent_from_vs`, `use_old_engine` |
 | **D** — known to the registry, not implemented | **230** | ⚠ **"not implemented" is not what this tier means** — see below |
 | **Total** | **520** | |
 

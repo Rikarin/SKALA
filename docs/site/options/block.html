@@ -12,7 +12,7 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Block</h1>
-<p class="lede">3 keys.</p>
+<p class="lede">2 keys.</p>
 <section class="option" id="csharp_indent_braces">
 <h2><code>csharp_indent_braces</code> <a class="self" href="#csharp_indent_braces">#</a></h2>
 <p>Indent the braces of a block themselves. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6: it governs a brace that is on a LINE OF ITS OWN, and the oracle is flat at both values under the export's <code>csharp_new_line_before_open_brace = none</code>. With the braces split (<code>= all</code>) the answer is Whitesmiths — the brace takes one level and the body takes the SAME level: <code>class C</code> / <code>    {</code> / <code>    void M()</code> / <code>        {</code> / <code>        if (true)</code>. Skala applied it whatever the brace placement, so under <code>none</code> the joined opening brace could not move and the closing one did, producing a shape no configuration of either key writes. SK-DIV-0091.</p>
@@ -41,21 +41,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_simple_block_style">
-<h2><code>resharper_simple_block_style</code> <a class="self" href="#resharper_simple_block_style">#</a></h2>
-<p>Whether a simple block is put on one line. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at all three values, at 120 and at 60 columns, and with <code>keep_existing_embedded_arrangement = false</code> in the same run — byte-identical to that run without this key, which moves the file on its own. <code>csharp_place_simple_embedded_statement_on_same_line</code> is what governs the shape under this export.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>do_not_change</code>, <code>on_single_line</code>, <code>line_break</code></td></tr>
-<tr><th>Default</th><td><code>do_not_change</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.4</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Index.html">https://www.jetbrains.com/help/resharper/EditorConfig_Index.html</a></td></tr>
 </tbody>
 </table>
 </section>

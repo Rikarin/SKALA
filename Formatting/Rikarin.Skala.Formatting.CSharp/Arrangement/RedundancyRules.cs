@@ -203,12 +203,12 @@ public sealed class ThisQualifierRule : ArrangementRule {
 }
 
 /// <summary>
-///     <c>{ { x; } }</c> ⇒ <c>{ x; }</c>, under <c>resharper_braces_redundant</c>.
+///     <c>{ { x; } }</c> ⇒ <c>{ x; }</c>, under <c>skala_braces_redundant</c>.
 /// </summary>
 /// <remarks>
 ///     ⚠ docs/plan/06 § "Qualification and redundancy" resolves what looks like a contradiction in the
 ///     export — <c>csharp_prefer_braces = true</c> (Microsoft: always use braces) beside
-///     <c>resharper_braces_redundant = true</c> (ReSharper: remove braces that add nothing). They govern
+///     <c>skala_braces_redundant = true</c> (ReSharper: remove braces that add nothing). They govern
 ///     different things: this rule removes a *nested block that is a statement of another block*, and
 ///     never the braces of an <c>if</c>, a <c>while</c> or a <c>using</c>. Reading it the other way
 ///     turns "always brace your ifs" into "unbrace them all".
@@ -276,7 +276,7 @@ public sealed class RedundantBracesRule : ArrangementRule {
 }
 
 /// <summary>
-///     <c>a + (b * c)</c> ⇒ <c>a + b * c</c>, under <c>resharper_parentheses_redundancy_style</c>.
+///     <c>a + (b * c)</c> ⇒ <c>a + b * c</c>, under <c>skala_parentheses_redundancy_style</c>.
 /// </summary>
 /// <remarks>
 ///     ⚠ The single largest item in docs/plan/17's measurement: <c>ArrangeRedundantParentheses</c> fires
@@ -312,7 +312,7 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
     public override bool IsAggressive => !ParenthesesRedundancy.RemovalIsDefault;
 
     /// <summary>
-    ///     ⚠ Both values of <c>resharper_csharp_parentheses_redundancy_style</c> remove; they differ in
+    ///     ⚠ Both values of <c>skala_parentheses_redundancy_style</c> remove; they differ in
     ///     how much.
     /// </summary>
     /// <remarks>
@@ -519,7 +519,7 @@ public static class ParenthesesRedundancy {
 
     /// <summary>
     ///     A <c>??</c> that is the operand of another <c>??</c>, which keeps its parentheses at both
-    ///     values of <c>parentheses_redundancy_style</c>.
+    ///     values of <c>skala_parentheses_redundancy_style</c>.
     /// </summary>
     static bool IsCoalesceNesting(SyntaxKind kind, SyntaxNode? parent) =>
         kind == SyntaxKind.CoalesceExpression

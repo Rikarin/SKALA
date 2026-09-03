@@ -55,6 +55,16 @@ public sealed class EditorConfigIngestionTests {
     ///         <see cref="ChainWalk_StopsAtRoot" />, and without it Skala's own chain walk climbs out of
     ///         the repository into whatever a checkout happens to sit under.
     ///     </para>
+    ///     <para>
+    ///         ⚠ <b>The export side now goes through <see cref="CanonicalEditorConfig.Translate" />.</b>
+    ///         It has to: the export is spelled in ReSharper's key namespace and Skala no longer reads
+    ///         a single key of it, so resolving the raw file would resolve the two dozen standard
+    ///         EditorConfig keys and nothing else — and the comparison would be between 25 options and
+    ///         436. Stating it over the translation is the same claim, not a weaker one: what is
+    ///         asserted is still that every option Skala configures itself with holds the value the
+    ///         export sets for it, and it now also fails if <c>Translate</c> drops or mis-maps a key,
+    ///         which is the step the canonical payload for eighteen repositories is built from.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void RepositoryEditorConfig_DeclaresRootAndConfiguresSkalaExactlyAsTheExportDoes() {
@@ -65,12 +75,21 @@ public sealed class EditorConfigIngestionTests {
         var export = ConfiguredOptions(
             EditorConfigChain.Of(
                 RepositoryPaths.SampleSourceFile,
-                EditorConfigDocument.Load(RepositoryPaths.Template)
+                // ⚠ The template's own path, not a made-up name: a section glob is matched relative
+                // to the directory the .editorconfig sits in, so a synthetic path matches nothing and
+                // the export side comes back empty.
+                EditorConfigDocument.FromText(
+                    RepositoryPaths.Template,
+                    CanonicalEditorConfig.Translate(File.ReadAllText(RepositoryPaths.Template))
+                )
             )
         );
 
         // ⚠ The population canary. Two empty sets are equal, and an export that resolved to nothing —
-        // a moved file, a parse that gave up — would otherwise pass this loudly.
+        // a moved file, a parse that gave up, a translation that dropped everything — would otherwise
+        // pass this loudly. It is worth more than it was: before the rename the export resolved
+        // directly, and the only way to reach zero was a broken read. Now it goes through
+        // `Translate`, and a `Translate` that matched nothing would produce exactly this shape.
         Assert.NotEmpty(export);
         Assert.Equal(export, own);
     }

@@ -9,7 +9,7 @@ namespace Rikarin.Skala.Testing;
 /// <remarks>
 ///     ⚠ Milestone 3 measured one shape at three depths and read a formula off three numbers. This runs
 ///     the same experiment over eleven right-hand-side shapes, five block depths and both values of
-///     <c>wrap_before_eq</c>, one character at a time, and prints the threshold it finds for each cell
+///     <c>skala_wrap_before_eq</c>, one character at a time, and prints the threshold it finds for each cell
 ///     beside what <c>120 − (8 + column / indent)</c> predicts. A constant that survives a hundred cells
 ///     is a different kind of claim from one that fits three.
 ///     <para>
@@ -106,7 +106,7 @@ public static class MarginSweep {
 
         foreach (var wrapBeforeEq in new[] { false, true }) {
             var cells = Measure(runner, editorConfig, wrapBeforeEq, log);
-            builder.Append("## `wrap_before_eq = ")
+            builder.Append("## `skala_wrap_before_eq = ")
                 .Append(wrapBeforeEq ? "true`" : "false`")
                 .AppendLine(wrapBeforeEq ? "" : " — the export's value");
             builder.AppendLine();
@@ -185,7 +185,7 @@ public static class MarginSweep {
             }
 
             log.WriteLine(
-                "  wrap_before_eq="
+                "  skala_wrap_before_eq="
                 + (wrapBeforeEq ? "true" : "false")
                 + ": "
                 + files.Count.ToString(CultureInfo.InvariantCulture)
@@ -195,7 +195,7 @@ public static class MarginSweep {
             var results = runner.Format(
                 files,
                 editorConfig,
-                [new KeyValuePair<string, string>("resharper_csharp_wrap_before_eq", wrapBeforeEq ? "true" : "false")]
+                [new KeyValuePair<string, string>("skala_wrap_before_eq", wrapBeforeEq ? "true" : "false")]
             );
 
             var cells = new List<Cell>();
@@ -314,7 +314,7 @@ public static class MarginSweep {
         for (var i = 0; i < lengths.Count && i < groups.Count; i++) {
             var group = groups[i];
 
-            // ⚠ With wrap_before_eq the `=` starts the continuation line rather than ending the
+            // ⚠ With skala_wrap_before_eq the `=` starts the continuation line rather than ending the
             // first one, so the shape of a two-line "outer break" answer is different text. It is
             // still the same decision, which is the point of sweeping both.
             var head = new string(' ', continuation) + (wrapBeforeEq ? "= " : string.Empty);

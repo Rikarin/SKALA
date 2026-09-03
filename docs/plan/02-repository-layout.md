@@ -281,7 +281,7 @@ a repository has one `.editorconfig` including the old ones.
 - Rule IDs: `SK` + four digits, ranges in [08](08-rule-catalogue.md). Never `SKALA0001`.
 - Option keys: the `.editorconfig` spelling, verbatim, as the dictionary key; the generated C#
   property is `PascalCase` of the key with the `resharper_`/`csharp_`/`dotnet_` prefix retained as a
-  group, e.g. `resharper_csharp_wrap_arguments_style` → `Options.ReSharper.CSharp.WrapArgumentsStyle`.
+  group, e.g. `skala_wrap_arguments_style` → `Options.ReSharper.CSharp.WrapArgumentsStyle`.
   ⚠ The mapping is generated and reversible; a hand-written alias is a `SK9004` build error in the
   generator, because a second name for an option is a second thing to keep in sync.
 - Test names: `Method_Condition_Expectation`, xUnit v3, one `[Theory]` per option value where the

@@ -108,19 +108,19 @@ level up.
 
 This is the finding, and it is the M4 analogue of SK-DIV-0005: swept, not found, recorded.
 
-1. **`!= null` → `is not null`.** `resharper_null_checking_pattern_style = not_null_pattern` is set in
+1. **`!= null` → `is not null`.** `skala_null_checking_pattern_style = not_null_pattern` is set in
    the export. `ArrangeNullCheckingPattern` is a real `CodeCleanupTask_` name. Neither as an element
    nor as a `CSCodeStyleAttributes` attribute does it rewrite `if (p != null)`, on nullable or
    non-nullable operands, with `resharper_arrange_null_checking_pattern_highlighting` left at its
    exported `hint` **or raised to `warning`**.
 2. **`string.Empty` → `""`.** At the time of this sweep,
-   `resharper_empty_string = empty_literal` was set. Cleanup produces
+   `skala_empty_string = empty_literal` was set. Cleanup produces
    `string.Empty` (via `CSFixBuiltinTypeReferences` normalising `String.Empty`) and stops there. The
    then-exported `resharper_arrange_empty_string_highlighting = none` is consistent with this.
-3. **Redundant nested braces `{ { x; } }`.** `resharper_braces_redundant = true` is set; no task
+3. **Redundant nested braces `{ { x; } }`.** `skala_braces_redundant = true` is set; no task
    removes them.
 
-The reading these three support: `null_checking_pattern_style` and `empty_string` govern the pattern
+The reading these three support: `skala_null_checking_pattern_style` and `empty_string` govern the pattern
 ReSharper **generates** — in a quick-fix, a generated `Equals`, a "check parameter for null" action —
 rather than a cleanup rewrite of code that already exists. They are code-*generation* settings that
 happen to live in the same file as the cleanup settings.
@@ -182,8 +182,8 @@ Probed, on a scratch solution carrying this repository's `resharper_xmldoc_*` ke
 
 The last row is the negative control this document's method demands, and it is what makes the third
 row mean something. The reformatted output honours `space_after_triple_slash` (`///<` → `/// <`),
-`max_line_length`, `linebreak_before_elements` (two crammed `<param>`s split onto their own lines)
-and `max_blank_lines_between_tags = 0`; setting `resharper_space_after_triple_slash = false` reverts
+`max_line_length`, `skala_xmldoc_linebreak_before_elements` (two crammed `<param>`s split onto their own lines)
+and `skala_xmldoc_max_blank_lines_between_tags = 0`; setting `skala_space_after_triple_slash = false` reverts
 the marker, so it is the `.editorconfig` driving it rather than a built-in style.
 
 ⚠ **Two incidental hazards found while probing, both of which produce a false "no change".**

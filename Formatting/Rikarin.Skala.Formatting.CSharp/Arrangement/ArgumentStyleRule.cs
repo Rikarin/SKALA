@@ -11,7 +11,7 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 /// <remarks>
 ///     ⚠ Four keys and one rewrite, and they are genuinely four: the argument's *kind* selects which key
 ///     governs it. Measured against the oracle with one key flipped and the other three left alone —
-///     with <c>resharper_arguments_literal = named</c> the literal <c>1</c> gains a name while the
+///     with <c>skala_arguments_literal = named</c> the literal <c>1</c> gains a name while the
 ///     string, the lambda and the <c>new()</c> beside it stay positional. Implementing them as one
 ///     boolean would have made three of the four unobservable.
 ///     <para>
@@ -44,10 +44,10 @@ public sealed class ArgumentStyleRule : ArrangementRule {
 
     /// <summary>Which of the five keys governs an argument, by the shape of its expression.</summary>
     /// <remarks>
-    ///     ⚠ <c>arguments_named</c> is the fifth and it is a <em>partition</em> of what used to fall to
-    ///     <c>arguments_other</c>, not a refinement of it. Measured both ways round: with
-    ///     <c>arguments_named = named</c> the oracle names an identifier and a member access and nothing
-    ///     else, and with <c>arguments_other = named</c> instead it names the complement — an
+    ///     ⚠ <c>skala_arguments_named</c> is the fifth and it is a <em>partition</em> of what used to fall to
+    ///     <c>skala_arguments_other</c>, not a refinement of it. Measured both ways round: with
+    ///     <c>skala_arguments_named = named</c> the oracle names an identifier and a member access and nothing
+    ///     else, and with <c>skala_arguments_other = named</c> instead it names the complement — an
     ///     invocation, a binary expression, a cast, an element access, <c>typeof</c>, <c>nameof</c>,
     ///     <c>default</c>, <c>new</c>, a conditional. Folding the two together would make one of them
     ///     unobservable, which is the same mistake the four-key note above records.
@@ -73,7 +73,7 @@ public sealed class ArgumentStyleRule : ArrangementRule {
         public override SyntaxNode? VisitArgumentList(ArgumentListSyntax node) {
             var visited = (ArgumentListSyntax)base.VisitArgumentList(node)!;
 
-            // resharper_arguments_skip_single: a one-argument call is left exactly as written.
+            // skala_arguments_skip_single: a one-argument call is left exactly as written.
             // ⚠ Checked here and not per argument. The key gates the *call*, which is what makes it
             // observable at all: a per-argument reading would exempt the last argument of every call
             // and change every list of two or more, which is not what the oracle does.
@@ -225,7 +225,7 @@ public sealed class ArgumentStyleRule : ArrangementRule {
 }
 
 /// <summary>
-///     <c>out _</c> ⇔ <c>out var _</c>, under <c>resharper_prefer_explicit_discard_declaration</c>.
+///     <c>out _</c> ⇔ <c>out var _</c>, under <c>skala_prefer_explicit_discard_declaration</c>.
 /// </summary>
 /// <remarks>
 ///     ⚠ <b>Both directions, and the export's <c>false</c> is not the inert one.</b> Asked directly,

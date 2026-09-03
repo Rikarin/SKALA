@@ -12,9 +12,9 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Var usage in declarations</h1>
-<p class="lede">3 keys.</p>
-<section class="option" id="resharper_csharp_prefer_explicit_discard_declaration">
-<h2><code>resharper_csharp_prefer_explicit_discard_declaration</code> <a class="self" href="#resharper_csharp_prefer_explicit_discard_declaration">#</a></h2>
+<p class="lede">1 key.</p>
+<section class="option" id="skala_prefer_explicit_discard_declaration">
+<h2><code>skala_prefer_explicit_discard_declaration</code> <a class="self" href="#skala_prefer_explicit_discard_declaration">#</a></h2>
 <p>'var' usage in declarations — Use 'var' keyword for discards</p>
 <table class="facts">
 <tbody>
@@ -24,42 +24,9 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_prefer_explicit_discard_declaration</code>, <code>prefer_explicit_discard_declaration</code>, <code>resharper_prefer_explicit_discard_declaration</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/arrangement/lists/discard-declaration.cs</code></td></tr>
 <tr><th>Read by</th><td><a href="../rules/SK0217.html">SK0217</a></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_prefer_explicit_discard_declaration">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_prefer_explicit_discard_declaration</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_prefer_separate_deconstructed_variables_declaration">
-<h2><code>resharper_csharp_prefer_separate_deconstructed_variables_declaration</code> <a class="self" href="#resharper_csharp_prefer_separate_deconstructed_variables_declaration">#</a></h2>
-<p>'var' usage in declarations — Prefer separate declarations for deconstructed variables ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — the arranger's. Flat under <code>CSReformatCode</code>; two distinct outputs under the cleanup profile, where <code>ArrangeVarStyle</code> joins <code>(var third, var fourth)</code> into <code>var (third, fourth)</code> or leaves it. An arrangement key.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_prefer_separate_deconstructed_variables_declaration</code>, <code>prefer_separate_deconstructed_variables_declaration</code>, <code>resharper_prefer_separate_deconstructed_variables_declaration</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_prefer_separate_deconstructed_variables_declaration">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_prefer_separate_deconstructed_variables_declaration</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_use_roslyn_logic_for_evident_types">
-<h2><code>resharper_csharp_use_roslyn_logic_for_evident_types</code> <a class="self" href="#resharper_csharp_use_roslyn_logic_for_evident_types">#</a></h2>
-<p>'var' usage in declarations — Prefer Roslyn (Visual Studio) logic for type evidence ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — an inspection's. Flat at both values under the cleanup profile on a fixture where <code>ArrangeVarStyle</code> demonstrably rewrites four declarations. It selects which type-evidence rule the <code>var</code> <em>inspection</em> uses, and the cleanup task does not consult it.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_use_roslyn_logic_for_evident_types</code>, <code>resharper_use_roslyn_logic_for_evident_types</code>, <code>use_roslyn_logic_for_evident_types</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_use_roslyn_logic_for_evident_types">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_use_roslyn_logic_for_evident_types</a></td></tr>
 </tbody>
 </table>
 </section>

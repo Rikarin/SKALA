@@ -1,3 +1,5 @@
+using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Options;
 using System.Diagnostics;
 using System.Text;
 
@@ -57,7 +59,7 @@ public sealed class OracleRunner {
     static string FindExecutable() =>
         FindExecutableOrNull()
         ?? throw new InvalidOperationException(
-            "jb (JetBrains.ReSharper.GlobalTools) is not installed. `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`. "
+            "jb (JetBrains.Skala.GlobalTools) is not installed. `dotnet tool install -g JetBrains.Skala.GlobalTools --version 2025.2.6`. "
             + "It is a developer-machine and nightly dependency only; the day-to-day test run reads the committed fixtures (ADR-011)."
         );
 
@@ -67,6 +69,31 @@ public sealed class OracleRunner {
         yield return Path.Combine(home, ".dotnet", "tools", "jb.exe");
         yield return "/usr/local/bin/jb";
     }
+
+    /// <summary>
+    ///     The spelling <c>jb cleanupcode</c> understands for a key the caller wrote in Skala's.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         The one place a key crosses into ReSharper's namespace, and it must stay the only
+    ///         one.
+    ///     </b> Every caller — the key-flip sweep, the pairwise grid, <c>MarginSweep</c>,
+    ///     <c>CorpusVariants</c> — names options by Skala's <c>skala_*</c> key, because that is what
+    ///     <c>SkalaSide.Format</c> resolves and both halves of a comparison have to be asked the same
+    ///     question. <c>cleanupcode</c> has never heard of <c>skala_*</c> and, given one,
+    ///     <em>ignores it without a word</em> and formats at the export's value. That failure is
+    ///     invisible: the run succeeds, the output is plausible, and the option comes back
+    ///     <c>INERT</c> — the oracle "did not move" — for every key in the sweep.
+    ///     <para>
+    ///         A key the registry does not know is passed through unchanged, so a caller can still
+    ///         force a raw ReSharper property the registry has no option for.
+    ///     </para>
+    /// </remarks>
+    public static string OracleKey(string key) =>
+        ExportSpellings.TryResolve(key, out _) || !OptionRegistry.TryResolve(key, out var id)
+            ? key
+            : ExportSpellings.ForOracle(id);
 
     /// <summary>
     ///     Formats a directory of <c>.cs</c> files in place and returns what changed.
@@ -97,7 +124,7 @@ public sealed class OracleRunner {
                 appended.AppendLine();
                 appended.AppendLine("[*.cs]");
                 foreach (var (key, value) in overrides) {
-                    appended.Append(key).Append(" = ").AppendLine(value);
+                    appended.Append(OracleKey(key)).Append(" = ").AppendLine(value);
                 }
 
                 File.AppendAllText(Path.Combine(scratch.FullName, ".editorconfig"), appended.ToString());
