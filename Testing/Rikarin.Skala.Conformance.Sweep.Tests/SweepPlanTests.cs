@@ -82,7 +82,7 @@ public sealed class SweepPlanTests {
         Assert.NotEmpty(OptionKeyPrefixes.Ordered);
         foreach (var prefix in OptionKeyPrefixes.Ordered) {
             Assert.Equal(string.Empty, SweepPlan.Strip(prefix));
-            Assert.True(SweepPlan.InFamily(prefix + "skala_space_after_cast", ["space"]), prefix);
+            Assert.True(SweepPlan.InFamily(prefix + "space_after_cast", ["space"]), prefix);
         }
     }
 
