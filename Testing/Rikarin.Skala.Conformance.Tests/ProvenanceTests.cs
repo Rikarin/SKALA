@@ -98,11 +98,44 @@ public sealed class ProvenanceTests {
             Path.GetFullPath(Corpus.OracleEditorConfigPath)
         );
 
-        var refused = Assert.Throws<InvalidOperationException>(
-            static () => OracleEditorConfig.Reading(Corpus.RepositoryEditorConfigPath)
+        var refused = Assert.Throws<InvalidOperationException>(static () => OracleEditorConfig.Reading(
+                Corpus.RepositoryEditorConfigPath
+            )
         );
 
         Assert.Contains("cleanupcode", refused.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     The harness refuses the repository's own configuration before it starts the tool.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The guard in <see cref="OracleEditorConfig.Reading" /> is the only thing standing between
+    ///     a mis-wired call site and a silently unconfigured corpus, and a guard nothing exercises is a
+    ///     guard that gets deleted in a refactor. This asserts it at the chokepoint every committed
+    ///     fixture flows through, rather than only on the helper.
+    ///     <para>
+    ///         ⚠ A deliberately absent executable and an empty file list, so this runs on a machine
+    ///         without JetBrains installed — which is every CI machine (ADR-011). The refusal happens
+    ///         while the scratch project is being laid out, before anything is started, so nothing here
+    ///         depends on the tool existing.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void TheOracleHarness_RefusesTheRepositorysOwnConfiguration() {
+        var runner = new OracleRunner(Path.Combine(Path.GetTempPath(), "skala-no-such-jb"));
+
+        var refused = Assert.Throws<InvalidOperationException>(() => runner.Format(
+                [],
+                Corpus.RepositoryEditorConfigPath
+            )
+        );
+
+        Assert.Contains(Corpus.RepositoryEditorConfigPath, refused.Message, StringComparison.Ordinal);
+
+        // And the file it is supposed to read passes, so the guard is a discrimination rather than a
+        // blanket refusal.
+        Assert.Equal(Corpus.OracleEditorConfigPath, OracleEditorConfig.Reading(Corpus.OracleEditorConfigPath));
     }
 
     /// <summary>

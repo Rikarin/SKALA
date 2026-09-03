@@ -117,9 +117,12 @@ public static class Corpus {
     ///     commit; a sixth call site that opened a different file would produce fixtures whose recorded
     ///     provenance is a statement about somebody else's configuration.
     ///     <para>
-    ///         ⚠ <b>It is no longer <c>&lt;root&gt;/.editorconfig</c>, and the rename from
-    ///         <c>BaseEditorConfigPath</c> was so that every call site had to say which of the two it
-    ///         meant.</b> See <see cref="OracleEditorConfig" /> for why the oracle must read the export
+    ///         ⚠
+    ///         <b>
+    ///             It is no longer <c>&lt;root&gt;/.editorconfig</c>, and the rename from
+    ///             <c>BaseEditorConfigPath</c> was so that every call site had to say which of the two it
+    ///             meant.
+    ///         </b> See <see cref="OracleEditorConfig" /> for why the oracle must read the export
     ///         rather than the repository's own file. The bytes are unchanged, so the digest is too.
     ///     </para>
     /// </remarks>

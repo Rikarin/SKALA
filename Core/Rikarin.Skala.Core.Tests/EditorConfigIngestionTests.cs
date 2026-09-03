@@ -80,12 +80,12 @@ public sealed class EditorConfigIngestionTests {
     ///     ⚠ By <see cref="OptionId" /> rather than by the key that set it. The question is what the
     ///     configuration <em>says</em>, and two files can say the same thing through two spellings.
     /// </remarks>
-    static string[] ConfiguredOptions(EditorConfigChain chain) =>
-        [
-            .. OptionResolver.Resolve(chain).Configured
+    static string[] ConfiguredOptions(EditorConfigChain chain) => [
+        .. OptionResolver.Resolve(chain)
+            .Configured
                 .Select(static option => option.Id + " = " + option.Value)
                 .OrderBy(static entry => entry, StringComparer.Ordinal)
-        ];
+    ];
 
     [Theory]
     [InlineData("Foo.cs", true)]
