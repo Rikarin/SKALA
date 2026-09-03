@@ -38,10 +38,15 @@ public sealed class OptionValueValidationTests {
         // The literal text of the formatter's off/on marker comments.
         "skala_formatter_off_tag", "skala_formatter_on_tag",
 
-        // ⚠ Two genuine gaps rather than two free-form values: JetBrains documents neither key
-        // anywhere, so the domain is unknown rather than open. Recorded as such on the entry, and
-        // the reason names what would have to be published to close them.
-        "resharper_labeled_statement_style", "skala_prefer_wrap_around_eq",
+        // ⚠ A genuine gap rather than a free-form value: JetBrains documents the key nowhere, so the
+        // domain is unknown rather than open. Recorded as such on the entry, and the reason names
+        // what would have to be published to close it.
+        //
+        // ⚠ `resharper_labeled_statement_style` was the second of these and is deleted — nothing in
+        // production code read it under any spelling and no oracle fixture pinned it. Leaving it here
+        // did not fail this list; it inflated `FreeForm.Length` by one and quietly broke the
+        // *count* assertion at the bottom, which is the half of this test that is not vacuous.
+        "skala_prefer_wrap_around_eq",
 
         // A comma-separated list of XML documentation tag names.
         "skala_xmldoc_linebreak_before_elements"
