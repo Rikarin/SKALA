@@ -33,5 +33,7 @@ namespace Rikarin.Skala.Analysis.Tests;
 /// </remarks>
 [CollectionDefinition(Name, DisableParallelization = true)]
 public sealed class SerialWorkspace {
-    public const string Name = "MSBuild workspace";
+    // ⚠ `internal`, because `SK6034` is right about it: a `public const` is copied into every caller
+    // at compile time. Nothing outside this assembly names a collection defined in it.
+    internal const string Name = "MSBuild workspace";
 }
