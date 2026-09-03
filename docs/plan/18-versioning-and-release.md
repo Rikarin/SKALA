@@ -10,10 +10,9 @@ a minor bump at minimum. It does not say who decides that a formatting output ch
 until M10 the answer was "whoever writes the commit message". This document replaces that with a
 measurement, and describes the pipeline that performs it.
 
-⚠ **No push to `master` publishes.** On a push the pipeline computes the version, creates the tag
-*in the job's checkout*, packs, writes the notes, uploads, and prints exactly what a publish would
-push. Publishing happens on a `workflow_dispatch` with `release: true`, and on nothing else. See
-§ "What publishes, and what cannot".
+**Every run publishes.** The pipeline computes the version, packs, writes the notes, uploads, and
+pushes the packages to nuget.org — a `master` push publishes the measured `X.Y.Z-alpha.N`. Tagging
+and the GitHub Release happen on a `workflow_dispatch` with `release: true`. See § "What publishes".
 
 ## The decision: what a version number of Skala is a statement about
 
@@ -203,10 +202,10 @@ tomorrow. The release pipeline computes no canonical version and never will.
 
 ### Pre-release identifiers, and which pushes tag
 
-⚠ **A `master` push does not tag and does not publish.** It measures, computes, packs, uploads and
-prints. A tag is a permanent public identity, and doc 11 makes pinning a correctness feature — a pin
-to a version nobody can rebuild is worse than no pin. Tagging every push also means publishing every
-push, which is the thing § "What publishes, and what cannot" exists to prevent.
+⚠ **A `master` push publishes but does not tag.** A tag is a permanent public identity, and doc 11
+makes pinning a correctness feature — a pin to a version nobody can rebuild is worse than no pin.
+The mechanical reason is in § "What publishes": the tag list is the baseline the version is measured
+against, so tagging every push destroys the measurement.
 
 A `master` build is stamped `X.Y.Z-alpha.N`, where `N` is **the baseline's counter plus the commit
 count since the baseline tag**.
@@ -308,7 +307,7 @@ and a list of 12 with no denominator is a sample.
 `### Added/Changed/Fixed` beneath — because that file was written by hand from the merge history and
 a generator that reformatted it would make the whole record unreadable in one commit.
 
-## ⚠ What publishes, and what cannot
+## What publishes
 
 | Step | Runs |
 |---|---|
@@ -316,23 +315,18 @@ a generator that reformatted it would make the whole record unreadable in one co
 | pack every artefact | ditto |
 | install smoke test | ditto |
 | write the notes, upload them | ditto |
-| **create the tag** | on a dispatch with `release: true` — **created in the job, not pushed** |
-| print exactly what would be published | ditto |
-| **push the tag, push to NuGet, open a GitHub Release** | **only on a dispatch with `release: true`** |
+| **push the packages to nuget.org** | ditto |
+| **push the tag, open a GitHub Release** | on a dispatch with `release: true` |
 
-The `publish` job is written out in full rather than left as a TODO, and that is deliberate: a
-publish step that does not exist gets written in a hurry on the day somebody wants to publish, which
-is the worst day to write it.
+A `master` push publishes the measured `X.Y.Z-alpha.N`. `--skip-duplicate` makes a re-run a no-op.
 
-⚠ **The property to preserve is that no `push:` trigger reaches the `publish` job**, not the number
-of switches in front of it. `github.event.inputs.release` is unset on a branch push and on a tag
-push, so the condition is false for both. A dispatch is an act a person performs on purpose, from
-the Actions UI, choosing a non-default input.
+⚠ **Tagging is the one part held back to the release dispatch, and the reason is mechanical.** The
+`measure` job takes its baseline from `git tag --list 'v*' --sort=-v:refname | head -1` and its alpha
+counter from `git rev-list --count "$baseline"..HEAD`. A tag on every push makes that count 0 every
+time and the baseline the previous commit, so every build measures itself against its own parent.
 
-⚠ **There used to be a second gate and it has been removed.** `vars.SKALA_PUBLISH == 'armed'` asked
-the same person for the same intent twice, and its actual effect was that the publish path had never
-run once — so every step in it, including the tag push on a credential checkout and the OIDC token
-exchange, was untested code guarded by a switch nobody could reach.
+⚠ **`vars.SKALA_PUBLISH == 'armed'` is gone.** It was a repository variable that had to be set before
+the job would run, and its actual effect was that the publish path had never executed once.
 
 ⚠ **The `environment: nuget` is the remaining second gate, and it is only as strong as its
 protection rules.** An environment can require a human approval that a variable cannot — but the

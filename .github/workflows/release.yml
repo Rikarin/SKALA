@@ -9,13 +9,11 @@
 # form is that four times in this project's history a summary and a measurement disagreed and the
 # measurement was right.
 #
-# ⚠ **This workflow publishes nothing, and the last step is where that is enforced.** It computes
-# the version, creates the tag *in the job's checkout*, packs every artefact, writes the release
-# notes from the measurements, uploads everything, and prints exactly what a publish would push.
-# `publish` is a separate job, gated on a `workflow_dispatch` with `release: true` — an act a person
-# performs on purpose. Pushing to NuGet is irreversible and a formatting change downstream is a
-# repository-wide commit; a workflow that could do it by accident has made "release" an accident.
-# ⚠ What that means concretely: no `push:` trigger may ever reach the `publish` job.
+# It computes the version, packs every artefact, writes the release notes from the measurements,
+# uploads everything, and **publishes the packages to nuget.org on every run**. A `master` push
+# publishes the measured `X.Y.Z-alpha.N`; `--skip-duplicate` makes a re-run a no-op. Tagging and the
+# GitHub Release happen only on a `workflow_dispatch` with `release: true` — see the `publish` job
+# for why that one part cannot run on every push.
 #
 # ⚠ **When it does publish, it publishes keylessly.** No NuGet API key is stored in this repository
 # and none should be added: the `publish` job exchanges a GitHub OIDC token for a one-hour key
@@ -298,35 +296,29 @@ jobs:
               echo "- \`$(basename "$package")\` — $(wc -c < "$package") bytes"
             done
             echo
-            echo "A publish happens on a \`workflow_dispatch\` of this workflow with \`release: true\`."
-            echo "docs/plan/18 § \"What publishes, and what cannot\"."
+            echo "The \`publish\` job pushes these to nuget.org. A dispatch with \`release: true\`"
+            echo "also pushes the tag and opens a GitHub Release."
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ── The publish ───────────────────────────────────────────────────────────────────────────────
   #
-  # ⚠ **One condition now guards a live publish: `release: true` on a `workflow_dispatch`.** The
-  # second gate — a `vars.SKALA_PUBLISH == 'armed'` repository variable — is gone, deliberately.
-  # A dispatch is already an act a person performs on purpose, from the Actions UI, choosing a
-  # non-default input; the variable asked the same person for the same intent twice and its real
-  # effect was that the publish path had never run at all.
+  # Every run publishes. No condition on the job.
   #
-  # ⚠ **A push to `master` still cannot publish, and that is the property to preserve.**
-  # `github.event.inputs.release` is unset on a push and on a tag push, so the condition is false
-  # for both. Anything that makes this job reachable from a `push:` trigger has made "release" an
-  # accident. That is the line, not the number of switches in front of it.
-  #
-  # ⚠ **The remaining second gate is the `environment:` below**, which can require a human approval
-  # a variable cannot — but only once someone configures a protection rule on it. Until then the
-  # environment is a label, and the dispatch input is the whole of the gate.
+  # ⚠ **Tagging is the one part that stays on the release dispatch, and the reason is mechanical
+  # rather than a policy.** The `measure` job takes its baseline from
+  # `git tag --list 'v*' --sort=-v:refname | head -1` and its alpha counter from
+  # `git rev-list --count "$baseline"..HEAD`. A tag on every push makes that count 0 every time and
+  # the baseline the previous commit, so every build would measure itself against its own parent and
+  # the version numbers stop distinguishing anything.
   publish:
     name: publish
     runs-on: ubuntu-latest
     needs: [measure, collect]
-    if: github.event.inputs.release == 'true'
 
     environment:
-      # A second gate, and a different kind: a GitHub environment can require a human approval that
-      # a repository variable cannot.
+      # ⚠ Load-bearing for trusted publishing, not decoration: the name goes into the OIDC token's
+      # `environment` claim, and the policy on nuget.org is registered against it. Renaming this
+      # breaks the token exchange. It is also where a required reviewer would go, if one is wanted.
       name: nuget
 
     permissions:
@@ -370,6 +362,7 @@ jobs:
       # credential checkout left behind, and it runs only on a `release: true` dispatch — so the
       # first real publish is also the first test of it. If it fails to authenticate, that is why.
       - name: Push the tag
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.release == 'true'
         run: |
           git tag -a "${{ needs.measure.outputs.tag }}" \
             -m "Skala ${{ needs.measure.outputs.version }} — ${{ needs.measure.outputs.bump }} against ${{ needs.measure.outputs.baseline }}"
@@ -436,6 +429,7 @@ jobs:
       # ⚠ Pre-release on NuGet is opt-in — `dotnet tool install` without `--prerelease` will not see
       # `2.0.0-alpha.N` — and this marks the GitHub Release the same way, so the two channels agree.
       - name: Open the GitHub Release
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
