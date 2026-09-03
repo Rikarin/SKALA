@@ -74,8 +74,11 @@ public sealed class OracleRunner {
     ///     The spelling <c>jb cleanupcode</c> understands for a key the caller wrote in Skala's.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>The one place a key crosses into ReSharper's namespace, and it must stay the only
-    ///     one.</b> Every caller — the key-flip sweep, the pairwise grid, <c>MarginSweep</c>,
+    ///     ⚠
+    ///     <b>
+    ///         The one place a key crosses into ReSharper's namespace, and it must stay the only
+    ///         one.
+    ///     </b> Every caller — the key-flip sweep, the pairwise grid, <c>MarginSweep</c>,
     ///     <c>CorpusVariants</c> — names options by Skala's <c>skala_*</c> key, because that is what
     ///     <c>SkalaSide.Format</c> resolves and both halves of a comparison have to be asked the same
     ///     question. <c>cleanupcode</c> has never heard of <c>skala_*</c> and, given one,

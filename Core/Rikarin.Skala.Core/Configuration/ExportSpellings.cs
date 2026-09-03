@@ -28,8 +28,7 @@ public static class ExportSpellings {
     static readonly FrozenDictionary<string, OptionId> ByExportSpelling = Build();
 
     /// <summary>The option the export spells <paramref name="spelling" />, if Skala knows it.</summary>
-    public static bool TryResolve(string spelling, out OptionId id) =>
-        ByExportSpelling.TryGetValue(spelling, out id);
+    public static bool TryResolve(string spelling, out OptionId id) => ByExportSpelling.TryGetValue(spelling, out id);
 
     /// <summary>
     ///     The spelling <c>jb cleanupcode</c> understands for <paramref name="id" />.

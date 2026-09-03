@@ -88,7 +88,10 @@ public sealed class FixTests {
         var result = Fixer.Fix(document, true);
         var fixed_ = EditorConfigDocument.FromText("/repo/.editorconfig", result.Text);
 
-        Assert.Equal("true", Assert.Single(fixed_.Assignments, static a => a.Key == "skala_insert_final_newline").Value);
+        Assert.Equal(
+            "true",
+            Assert.Single(fixed_.Assignments, static a => a.Key == "skala_insert_final_newline").Value
+        );
         Assert.Equal("true", Assert.Single(fixed_.Assignments, static a => a.Key == "trim_trailing_whitespace").Value);
     }
 

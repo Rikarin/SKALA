@@ -165,7 +165,8 @@ public sealed class OptionObservabilityTests {
     ///     ⚠ Deliberately ugly, and every piece of the ugliness is load-bearing: a summary past the
     ///     column limit (wrapping), two <c>&lt;param&gt;</c>s sharing a line (skala_xmldoc_linebreak_before_elements),
     ///     an element with children and no text (skala_xmldoc_indent_child_elements), an element with text
-    ///     (skala_xmldoc_indent_text), a self-closing tag (skala_xmldoc_space_before_self_closing), blank <c>///</c> lines between
+    ///     (skala_xmldoc_indent_text), a self-closing tag (skala_xmldoc_space_before_self_closing), blank <c>///</c> lines
+    ///     between
     ///     tags (skala_xmldoc_max_blank_lines_between_tags), a single-line element after text
     ///     (skala_xmldoc_linebreak_before_singleline_elements) and a multi-line one
     ///     (skala_xmldoc_linebreak_before_multiline_elements). It must stay well-formed XML — a malformed comment is

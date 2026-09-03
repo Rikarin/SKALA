@@ -258,8 +258,7 @@ public static class ConfigurationAnalyzer {
         // docs/plan/16 § Q1: indentation autodetection makes the IDE and the oracle disagree with
         // each other, and Skala — which has no autodetection — cannot match both.
         foreach (var key in new[] {
-                     "skala_autodetect_indent_settings", "skala_apply_auto_detected_rules",
-                     "skala_use_indent_from_vs"
+                     "skala_autodetect_indent_settings", "skala_apply_auto_detected_rules", "skala_use_indent_from_vs"
                  }) {
             if (!TryFind(resolution, key, out var option) || !IsTrue(option.Value)) {
                 continue;

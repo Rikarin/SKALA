@@ -109,7 +109,11 @@ public static class DefaultsProbe {
                 assigned[option.Key] = option.Values[round];
                 work.Add(
                     (option.Fixture,
-                        EmptyConfig + "\n[*.cs]\n" + OracleRunner.OracleKey(option.Key) + " = " + option.Values[round]
+                        EmptyConfig
+                        + "\n[*.cs]\n"
+                        + OracleRunner.OracleKey(option.Key)
+                        + " = "
+                        + option.Values[round]
                         + "\n")
                 );
             }

@@ -18,8 +18,11 @@ public sealed class CanonicalDistributionTests {
     ///     ADR-001 — the canonical is the export, every option of it, at the export's own values.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>This asserted byte-level containment: every one of the export's assignments present in
-    ///     the canonical verbatim, and a count exactly two higher.</b> That spelling died with the
+    ///     ⚠
+    ///     <b>
+    ///         This asserted byte-level containment: every one of the export's assignments present in
+    ///         the canonical verbatim, and a count exactly two higher.
+    ///     </b> That spelling died with the
     ///     <c>skala_</c> rename, and it had to: the payload is now a <em>translation</em> of the export
     ///     rather than a copy, because a verbatim copy is a configuration Skala cannot read and would
     ///     put a wall of <c>SK9001</c> into every repository it was installed into.
@@ -101,7 +104,7 @@ public sealed class CanonicalDistributionTests {
     static Dictionary<OptionId, string> Configured(EditorConfigDocument document, string probe) =>
         OptionResolver.Resolve(EditorConfigChain.Of(probe, document))
             .Configured
-            .ToDictionary(static option => option.Info.Id, static option => option.Value);
+                .ToDictionary(static option => option.Info.Id, static option => option.Value);
 
     /// <summary>
     ///     No key is assigned twice in one section of the payload.
@@ -153,15 +156,16 @@ public sealed class CanonicalDistributionTests {
         Assert.NotEmpty(canonical.Assignments);
         var unknown = canonical.Assignments
             // `root` is an EditorConfig directive, not an option, and is one of the two fixes.
-            .Where(static a => a.Key != "root" && !OptionRegistry.TryResolve(a.Key, out _))
-            .Select(static a => a.Key)
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
+                .Where(static a => a.Key != "root" && !OptionRegistry.TryResolve(a.Key, out _))
+                .Select(static a => a.Key)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
 
         Assert.True(
             unknown.Length == 0,
             "the canonical payload sets keys Skala does not know, which every consuming repository "
-            + "would report as SK9001: " + string.Join(", ", unknown)
+            + "would report as SK9001: "
+            + string.Join(", ", unknown)
         );
     }
 

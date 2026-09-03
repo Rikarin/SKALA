@@ -589,8 +589,11 @@ public static class ConfigCommands {
     /// <remarks>
     ///     <para>
     ///         ⚠ <b>Tier D is labelled "not pinned by a fixture", not "not implemented".</b> The old
-    ///         label was wrong in the way that costs the most: Tier A is the narrow claim <em>the
-    ///         formatter reads the option <b>and</b> a committed oracle fixture pins it</em>, so Tier D
+    ///         label was wrong in the way that costs the most: Tier A is the narrow claim
+    ///         <em>
+    ///             the
+    ///             formatter reads the option <b>and</b> a committed oracle fixture pins it
+    ///         </em>, so Tier D
     ///         has only ever meant "not Tier A" (docs/tier-d-split.md). Measured on this registry, 70
     ///         of the 161 Tier C and D options are read by production code by name — including
     ///         <c>skala_max_line_length</c>, which is the column limit the entire wrapping engine runs

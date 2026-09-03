@@ -219,9 +219,7 @@ public sealed class TabFillStyleTests {
         var spaced = Probe.Replace("\t", "    ", StringComparison.Ordinal);
         var outputs = new HashSet<string>(StringComparer.Ordinal);
         foreach (var value in new[] { "use_spaces", "use_tabs_only", "optimal_fill" }) {
-            outputs.Add(
-                Format(spaced, ("indent_style", "space"), ("skala_alignment_tab_fill_style", value))
-            );
+            outputs.Add(Format(spaced, ("indent_style", "space"), ("skala_alignment_tab_fill_style", value)));
         }
 
         Assert.Single(outputs);

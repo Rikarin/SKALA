@@ -241,7 +241,8 @@ public sealed class OptionRegistryTests {
         foreach (var key in core) {
             Assert.True(
                 OptionRegistry.TryResolve(key, out _),
-                key + " is defined by the EditorConfig specification and must resolve under that "
+                key
+                + " is defined by the EditorConfig specification and must resolve under that "
                 + "spelling. Skala's namespace is `skala_`; this one is not Skala's to rename."
             );
         }
