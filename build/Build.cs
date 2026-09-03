@@ -176,25 +176,45 @@ class Build : NukeBuild {
                     // and 2. The cheaper-looking spelling answers a third of the question.
                     //
                     // ⚠ **A binlog, not `--load=workspace`, and the difference is 353 false
-                    // positives on a clean checkout.** `MSBuildWorkspace` drops the
-                    // `Rikarin.Skala.Rules.Metadata` project reference — it says so, as `SK9024`
-                    // "Found project reference without a matching metadata reference" — so
-                    // `RuleCatalog`, which that project's source generator emits, does not bind, and
-                    // `SK0210` calls every `using Rikarin.Skala.Rules.Metadata;` redundant. Measured
-                    // in one fresh clone at one commit: `--load=workspace` → 353 files to arrange,
-                    // all `SK0210`; `--load=binlog` → 0. ADR-007 is why: the binlog is what the
-                    // build actually compiled, generated sources included.
+                    // positives on a clean checkout.** Measured in one fresh clone:
+                    // `--load=workspace` → 353 files to arrange, every finding `SK0210 usings`;
+                    // `--load=binlog` → 0. ADR-007 is why: the binlog is what the build actually
+                    // compiled, generated sources included.
                     //
-                    // ⚠ **A working tree hides this**, which is how it reached master. A tree that
-                    // has ever been built in Debug carries `bin/Debug` output that satisfies the
-                    // dropped reference, so `--load=workspace` is green here and red on CI's clean
-                    // checkout. The local gate agreed with CI only after a `git clone` reproduced it.
+                    // ⚠ **The cause written here before was wrong, and #336 records the refutation.**
+                    // It said `MSBuildWorkspace` drops the `Rikarin.Skala.Rules.Metadata` project
+                    // reference — the `SK9024` "Found project reference without a matching metadata
+                    // reference" line — so `RuleCatalog` would not bind. Building the same clone in
+                    // **Debug** takes `arrange` to **0 files** while *all three* of those `SK9024`
+                    // lines are still printed, `Rules.Metadata` among them: the dropped reference is
+                    // benign and permanent, and it is not the mechanism. The mechanism is that
+                    // `MSBuildWorkspace` evaluates **Debug**, so on a checkout built only in Release
+                    // every path it reports points into a `bin/Debug` that was never built — and the
+                    // two that matter are `Rikarin.Skala.Rules.Generator.dll` and
+                    // `Rikarin.Skala.Options.Generator.dll`. Neither generator ran, so `RuleCatalog`
+                    // and every `Rikarin.Skala.Options` type were absent. **44 of the 353 files carry
+                    // no reference to `Rules.Metadata` at all** — they were the `Options` half, and
+                    // the original diagnosis could not account for them.
                     //
-                    // ⚠ The build below is `--no-incremental` on purpose. An up-to-date incremental
-                    // build writes a binlog with no `CoreCompile` in it, `arrange` has no
-                    // `--require-fresh-binlog` to catch that, and the run would pass having analysed
-                    // nothing semantically — the zero from a disabled check and the zero from clean
-                    // code are the same zero.
+                    // ⚠ **A working tree hides this**, which is how it reached master: a tree ever
+                    // built in Debug has those generators on disk, so the command is green here and
+                    // red on CI's clean checkout. Only a `git clone` reproduces it.
+                    //
+                    // ⚠ **It stays on the binlog even though `--load=workspace` is now trustworthy**,
+                    // and "trustworthy" is the reason rather than an argument against. Since #336 a
+                    // workspace load whose generators are missing is *refused* (`SK9029`) instead of
+                    // answering wrongly — so on CI, which builds one configuration, the workspace
+                    // spelling would now be honestly red rather than dishonestly red. Making it green
+                    // means building Debug as well, which costs a second full build to obtain a worse
+                    // input than the binlog already is.
+                    //
+                    // ⚠ `--no-incremental` and `--require-fresh-binlog` are belt and braces, and the
+                    // second is new (#336). An up-to-date incremental build writes a binlog with no
+                    // `CoreCompile` in it and the run passes having analysed nothing semantically —
+                    // the zero from a disabled check and the zero from clean code are the same zero.
+                    // The build flag prevents it; the CLI flag is what would *notice* if the flag
+                    // ever stopped working. `arrange` had no such flag until #336, so this was the
+                    // one gate whose instrument could not check itself.
                     var binlog = RootDirectory / "artifacts" / "skala.binlog";
                     DotNetBuild(settings => settings
                             .SetProjectFile(Solution)
@@ -209,7 +229,16 @@ class Build : NukeBuild {
                             .SetConfiguration(Configuration)
                             .EnableNoBuild()
                             .EnableNoRestore()
-                            .SetApplicationArguments("arrange", "--check", "--quiet", "--load=binlog", RootDirectory)
+                            .SetApplicationArguments(
+                                "arrange",
+                                "--check",
+                                "--quiet",
+                                "--load=binlog",
+                                "--binlog",
+                                binlog,
+                                "--require-fresh-binlog",
+                                RootDirectory
+                            )
                     );
                 }
             );

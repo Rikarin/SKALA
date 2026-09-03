@@ -143,6 +143,49 @@ public static class ConfigDiagnosticIds {
     public const string GateInputUnavailable = "SK9028";
 
     /// <summary>
+    ///     The load names an analyzer or source generator assembly that is not on disk, so the
+    ///     compilation is missing whatever that assembly would have contributed to the program.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         #336, and it is the worst shape a silence can take: not a missing finding but a wrong
+    ///         one, carrying a fix that breaks the build.
+    ///     </b> Measured on a fresh clone of this repository
+    ///     built only in <c>Release</c>, <c>arrange --check --load=workspace</c> reported
+    ///     <b>
+    ///         353 files
+    ///         to rewrite, every finding <c>SK0210 usings</c>
+    ///     </b>, and the same clone read through a binlog
+    ///     reported <b>0</b>. <c>MSBuildWorkspace</c> loads the <c>Debug</c> configuration, so every
+    ///     path it hands back points into a <c>bin/Debug</c> that was never built —
+    ///     <c>Rikarin.Skala.Rules.Generator.dll</c> and <c>Rikarin.Skala.Options.Generator.dll</c>
+    ///     among them. Neither generator ran, so <c>RuleCatalog</c>, <c>RuleIds</c> and every
+    ///     <c>Rikarin.Skala.Options</c> type did not exist, and <c>SK0210</c> was correct on the
+    ///     compilation it was handed: those usings really did resolve nothing. Taking its advice
+    ///     deletes <c>using Rikarin.Skala.Rules.Metadata;</c> from a file that calls
+    ///     <c>RuleCatalog.All</c>.
+    ///     <para>
+    ///         ⚠ <b>The absent file is the signal, not the failure to load one.</b> <c>SK9031</c>
+    ///         already covers an assembly that is present and throws, and it is deliberately never
+    ///         fatal — the assembly is there, the build referenced something real, and the cost is that
+    ///         analyzer's own output. A path that does not exist says something different and stronger:
+    ///         the reference set describes a build that never happened here, so nothing in the
+    ///         compilation is evidence of anything. That is a fact about the tool's inputs rather than
+    ///         about the repository, which is the documented condition for
+    ///         <see cref="Rikarin.Skala.Analysis.Loading.LoadedProject.Failed" />.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Withdrawing only the rules that cannot answer was considered and is not decidable. The
+    ///         missing types are in one project's compilation and propagate along every project
+    ///         reference into every consumer's symbol resolution, and no rule declares which symbols it
+    ///         depends on. "Every semantic rule" is the honest answer to which rules are affected, and
+    ///         withdrawing all of them is refusing the load with extra steps.
+    ///     </para>
+    /// </remarks>
+    public const string AnalyzerAssemblyMissing = "SK9029";
+
+    /// <summary>
     ///     The managed canonical block does not hash to what its own marker says. Somebody edited it.
     ///     This is the gate condition: drift is a finding, not a surprise (docs/plan/03 § "Canonical
     ///     distribution").
