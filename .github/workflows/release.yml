@@ -16,6 +16,11 @@
 # variable a person sets. Pushing to NuGet is irreversible and a formatting change downstream is a
 # repository-wide commit; a workflow that could do it by accident has made "release" an accident.
 #
+# ⚠ **When it does publish, it publishes keylessly.** No NuGet API key is stored in this repository
+# and none should be added: the `publish` job exchanges a GitHub OIDC token for a one-hour key
+# (docs/plan/18 § "Publishing is keyless"). The policy on nuget.org matches this file's *name* and
+# the `nuget` environment, so renaming either breaks publishing silently until the next release.
+#
 # Two facts drive the pack shape below.
 #
 #   1. **Every package is portable.** ⚠ The tool package used to be RID-specific, with one pack job
@@ -318,7 +323,13 @@ jobs:
       name: nuget
 
     permissions:
+      # `contents: write` pushes the tag. ⚠ `id-token: write` is what trusted publishing runs on —
+      # it lets this job ask GitHub for a short-lived OIDC token, which nuget.org exchanges for a
+      # temporary API key. Without it `NuGet/login` fails with no token to send, and a job-level
+      # `permissions:` block REPLACES the workflow default rather than adding to it, so both have to
+      # be named here.
       contents: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v7
@@ -358,9 +369,55 @@ jobs:
             -m "Skala ${{ needs.measure.outputs.version }} — ${{ needs.measure.outputs.bump }} against ${{ needs.measure.outputs.baseline }}"
           git push origin "${{ needs.measure.outputs.tag }}"
 
+      # ⚠ **Checked before the exchange, because the failure it prevents is unreadable.** `user` is
+      # the nuget.org *profile name*, not an email address, and `NuGet/login` given an empty one
+      # fails inside the action with a token-exchange error that says nothing about a missing
+      # secret. This is the same shape as the smoke test's "restore on its own line": the assertion
+      # that tells a misconfiguration apart from a malfunction.
+      #
+      # ⚠ Through `env:`, not `${{ }}` inside the script. A `run:` block with an expression
+      # interpolated into it is assembled as text before bash sees it, so the value becomes shell
+      # source; an environment variable is data. It costs nothing to be right about here and it is
+      # the habit that matters, since this job holds `contents: write` and `id-token: write`.
+      - name: The publishing identity is configured
+        env:
+          NUGET_USER: ${{ secrets.NUGET_USER }}
+        run: |
+          if [ -z "$NUGET_USER" ]; then
+            echo "::error::secrets.NUGET_USER is not set. Trusted publishing needs the nuget.org"
+            echo "::error::profile name (not an email address) to exchange the OIDC token for a key."
+            exit 1
+          fi
+
+      # ⚠ **No API key is stored anywhere, and that is the whole point.** This asks GitHub for an
+      # OIDC token describing this repository, this workflow file and this environment; nuget.org
+      # validates the signature, matches it against a trusted publishing policy configured there,
+      # and returns a temporary key. `secrets.NUGET_API_KEY` is gone and must not come back.
+      #
+      # ⚠ **The policy on nuget.org has to name this workflow file and this environment, exactly.**
+      # Repository owner `Rikarin`, repository `SKALA`, workflow file `release.yml` — the file name
+      # only, never the `.github/workflows/` path — and environment `nuget`, matching the
+      # `environment:` above. Renaming this file or that environment breaks publishing, silently
+      # until the next release.
+      #
+      # ⚠ **Immediately before the push, not earlier.** The temporary key lives one hour and each
+      # OIDC token buys exactly one key. Hoisting this to the top of the job would spend the token
+      # before the artefacts are even downloaded.
+      #
+      # ⚠ A policy can start *pending*: active for 7 days, then inactive unless a publish has
+      # happened, because nuget.org needs the repository and owner IDs out of a real token to pin the
+      # policy against a delete-and-recreate. nuget.org's docs say this "usually happens with private
+      # GitHub repos" and `Rikarin/SKALA` is public, so it may not apply here — check the status on
+      # nuget.org rather than assuming, since the window can be restarted but only before it lapses.
+      - name: NuGet login (OIDC → temporary API key)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Push the packages
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: |
           set -euo pipefail
           find packages -name '*.nupkg' -print0 | while IFS= read -r -d '' package; do

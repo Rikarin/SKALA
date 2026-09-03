@@ -330,6 +330,49 @@ run today — including a dispatch with `release: true` and including a tag push
 a GitHub `environment`, which can require a human approval that a variable cannot. Arming it is one
 deliberate act, by a person who has read the notes the measure job wrote.
 
+### Publishing is keyless
+
+⚠ **There is no NuGet API key in this repository and there must never be one again.** The `publish`
+job uses [trusted publishing][tp]: `id-token: write` lets it ask GitHub for a short-lived OIDC token
+describing the repository, the workflow file and the environment; `NuGet/login@v1` hands that token
+to nuget.org, which validates the signature, matches it against a policy configured *there*, and
+returns a temporary API key. Nothing long-lived is stored, so nothing can leak or need rotating.
+
+Four things have to agree, and three of them live outside this repository:
+
+| | value | where it is set |
+|---|---|---|
+| repository owner | `Rikarin` | the policy on nuget.org |
+| repository | `SKALA` | the policy on nuget.org |
+| workflow file | `release.yml` — **the file name only**, never the `.github/workflows/` path | the policy on nuget.org |
+| environment | `nuget` | the policy, and `environment:` in the `publish` job |
+| profile name | the nuget.org username, **not an email address** | `secrets.NUGET_USER` here |
+
+⚠ **Renaming `release.yml` or the `nuget` environment breaks publishing**, and it breaks it silently
+until the next release attempt. The policy matches on those strings.
+
+⚠ **The temporary key lives one hour and each OIDC token buys exactly one key**, so the login step
+sits immediately before the push rather than at the top of the job.
+
+⚠ **A policy can start pending** — active for 7 days, then inactive unless a publish has happened,
+because nuget.org needs the repository and owner IDs out of a real token to pin the policy against a
+delete-and-recreate attack. nuget.org's documentation says this "usually happens with private GitHub
+repos" and `Rikarin/SKALA` is public, so it may not apply; the status is shown on nuget.org and the
+window can be restarted, but only by someone who noticed it lapsed.
+
+⚠ **Nothing is configured yet, measured on 2026-09-03**: `gh secret list` and `gh variable list` are
+both empty and the repository has no `nuget` environment. So `NUGET_USER` is unset, `SKALA_PUBLISH`
+is unarmed, and the environment will be created implicitly on first use *without protection rules* —
+the human-approval gate the job's `environment:` was chosen for does not exist until someone adds it.
+
+⚠ **None of this can be exercised without arming `SKALA_PUBLISH`.** The first real publish is the
+first test of the token exchange, exactly as it is the first test of the tag push above it. The one
+misconfiguration that is checkable in advance — an unset `NUGET_USER` — is checked in its own step,
+because `NuGet/login` given an empty user fails with a token-exchange error that says nothing about
+a missing secret.
+
+[tp]: https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing
+
 ## What the first run found
 
 `./build.sh ReleasePlan --baseline-ref d8e9d34 --baseline-version 1.0.0` — `d8e9d34` being the commit
