@@ -371,23 +371,37 @@ public static partial class SkalaCommandLine {
             Description = "The .slnx/.sln/.csproj for auto or --load=workspace."
         };
 
+        // ⚠ #336: `check` has had both of these since binlog loading existed and `arrange` had
+        // neither, so `arrange --load=binlog` could only auto-discover `artifacts/skala.binlog` and
+        // could not be told the binlog had to be current. That is the worse half. `arrange` is the
+        // command that *rewrites the tree*, and against a stale binlog it silently measures the
+        // build's old sources: files that have changed since fall out of coverage, the run reports
+        // nothing to do, and `--check` passes green having examined a program that no longer exists.
+        // `check` could always be made to fail there; the tree-rewriting verb could not.
+        var binlog = new Option<string?>("--binlog") {
+            Description = "The binary log to read, instead of the conventional locations."
+        };
+
+        var requireFresh = new Option<bool>("--require-fresh-binlog") {
+            Description = "Fail rather than analyse against a binlog older than the sources. CI sets it."
+        };
+
         var command = new Command(
             "arrange",
             "Rewrite the tree: body styles, var, target-typed new, qualifiers, usings. Needs a project for the semantic half."
         );
 
         command.Arguments.Add(paths);
-        command.Options.Add(check);
-        command.Options.Add(diff);
-        command.Options.Add(quiet);
-        command.Options.Add(range);
-        command.Options.Add(aggressive);
-        command.Options.Add(include);
-        command.Options.Add(exclude);
-        command.Options.Add(option);
-        command.Options.Add(define);
-        command.Options.Add(load);
-        command.Options.Add(project);
+
+        // The `foreach` spelling `CreateFixCommand` already uses. One option per line reads better
+        // until there are fourteen of them, at which point SK7020 calls the run a clone of
+        // `format`'s — correctly, since the two differ only in the identifiers.
+        foreach (var declared in new Option[] {
+                     check, diff, quiet, range, aggressive, include, exclude, option, define, load, project, binlog,
+                     requireFresh
+                 }) {
+            command.Options.Add(declared);
+        }
 
         command.SetAction(parse => {
                 var mode = parse.GetValue(load) ?? "auto";
@@ -420,7 +434,14 @@ public static partial class SkalaCommandLine {
                     Define = ParseDefines(parse.GetValue(define)),
                     Compilations = string.Equals(mode, "none", StringComparison.OrdinalIgnoreCase)
                         ? null
-                        : files => CompilationsFor(files, mode, loadDiagnostics, parse.GetValue(project))
+                        : files => CompilationsFor(
+                            files,
+                            mode,
+                            loadDiagnostics,
+                            parse.GetValue(project),
+                            parse.GetValue(binlog),
+                            parse.GetValue(requireFresh)
+                        )
                 };
 
                 return Run(() => {
@@ -462,7 +483,9 @@ public static partial class SkalaCommandLine {
         IReadOnlyList<string> files,
         string mode,
         List<SkalaDiagnostic> diagnostics,
-        string? projectPath = null
+        string? projectPath = null,
+        string? binlogPath = null,
+        bool requireFreshBinlog = false
     ) {
         try {
             var root = FindRepositoryRoot(files.Count > 0 ? files[0] : ".") ?? Directory.GetCurrentDirectory();
@@ -480,6 +503,8 @@ public static partial class SkalaCommandLine {
                     RepositoryRoot = root,
                     Mode = loadMode,
                     ProjectPath = projectPath,
+                    BinlogPath = binlogPath,
+                    RequireFreshBinlog = requireFreshBinlog,
                     AllowFallback = loadMode != LoadMode.Workspace,
 
                     // ⚠ The files `arrange` actually collected, so the coverage check compares the

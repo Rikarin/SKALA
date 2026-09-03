@@ -222,14 +222,96 @@ public static class WorkspaceLoader {
             );
         }
 
+        var degraded = !failedOutright && ReportMissingAnalyzerAssemblies(units, target, diagnostics);
+
         return new() {
             Mode = LoadMode.Workspace,
-            Units = units.ToImmutable(),
+
+            // ⚠ Emptied rather than merely flagged. `arrange` and `check` both keep running over
+            // whatever compilations they are handed and only consult the diagnostics for the exit
+            // code, so returning the units alongside an error still prints 353 confident rewrites —
+            // with a non-zero exit stapled to them, which is not what "refusing" means. Handing back
+            // nothing is the refusal; the two commands then have only the syntactic subset, which is
+            // sound because it never asks a question the missing assemblies would have answered.
+            Units = degraded ? [] : units.ToImmutable(),
             Diagnostics = diagnostics.ToImmutable(),
-            Failed = failedOutright,
+            Failed = failedOutright || degraded,
             Summary =
                 $"workspace {Path.GetFileName(target)} ({units.Count.ToString(CultureInfo.InvariantCulture)} project(s), {workspace.Diagnostics.Count.ToString(CultureInfo.InvariantCulture)} workspace diagnostic(s))"
         };
+    }
+
+    /// <summary>
+    ///     ⚠
+    ///     <b>
+    ///         A workspace load whose generators are not on disk is refused, because its findings are
+    ///         wrong rather than missing (#336).
+    ///     </b>
+    /// </summary>
+    /// <remarks>
+    ///     <c>MSBuildWorkspace</c> evaluates the <c>Debug</c> configuration unless told otherwise, so
+    ///     on a checkout built only in <c>Release</c> every analyzer path it reports points into a
+    ///     <c>bin/Debug</c> that does not exist. Roslyn loads no generator from a file that is not
+    ///     there and says nothing, and the compilation then lacks every generated member — which is
+    ///     not a smaller answer but a different program.
+    ///     <para>
+    ///         ⚠ <b>Measured, and the number is why this is <c>Failed</c> rather than a warning.</b> A
+    ///         fresh clone of this repository built only in <c>Release</c>:
+    ///         <c>arrange --check --load=workspace</c> reported
+    ///         <b>
+    ///             353 files to rewrite, all of them
+    ///             <c>SK0210 usings</c>
+    ///         </b>; the same clone through a binlog reported <b>0</b>. The
+    ///         proposed rewrite deletes <c>using Rikarin.Skala.Rules.Metadata;</c> from files calling
+    ///         <c>RuleCatalog.All</c>, so taking the tool's advice does not compile. A confident wrong
+    ///         finding carrying a build-breaking fix is worse than a silent zero, and both are worse
+    ///         than a refusal that names the missing file.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>This is not the mechanism #336 was filed with, and that diagnosis is refuted.</b>
+    ///         The issue attributed the 353 findings to <c>MSBuildWorkspace</c> dropping the
+    ///         <c>Rikarin.Skala.Rules.Metadata</c> project reference — the <c>SK9024</c> line reading
+    ///         "Found project reference without a matching metadata reference". Building the same
+    ///         clone in <c>Debug</c> takes <c>arrange</c> to <b>0 files</b> while <em>all three</em> of
+    ///         those <c>SK9024</c> lines are still reported, <c>Rules.Metadata</c> among them. The
+    ///         dropped reference is benign and permanent; the unbuilt configuration is the defect. It
+    ///         also is not confined to <c>Rules.Metadata</c>: <b>44 of the 353</b> files carry no
+    ///         reference to that project at all and were flagged because
+    ///         <c>Rikarin.Skala.Options.Generator</c> — a second generator, whose project reference
+    ///         resolves perfectly — had likewise never been built into <c>Debug</c>.
+    ///     </para>
+    ///     <para>
+    ///         The escapes are named in the message: build the configuration, or use
+    ///         <c>--load=binlog</c>, which reads what a build actually compiled (ADR-007).
+    ///     </para>
+    /// </remarks>
+    static bool ReportMissingAnalyzerAssemblies(
+        ImmutableArray<CompilationUnit>.Builder units,
+        string target,
+        ImmutableArray<SkalaDiagnostic>.Builder diagnostics
+    ) {
+        if (!GeneratorDriver.ReportMissingAssemblies(
+                units.SelectMany(static unit => unit.AnalyzerReferences),
+                target,
+                diagnostics,
+                SkalaSeverity.Error
+            )) {
+            return false;
+        }
+
+        diagnostics.Add(
+            new SkalaDiagnostic(
+                ConfigDiagnosticIds.AnalyzerAssemblyMissing,
+                SkalaSeverity.Error,
+                $"refusing to analyse '{Path.GetFileName(target)}': the assemblies above are missing, so the "
+                + "generated half of the program is absent and every semantic answer over this load is "
+                + "unsound. MSBuildWorkspace evaluates Debug unless told otherwise — build that "
+                + "configuration, or use --load=binlog, which reads what a build actually compiled.",
+                target
+            )
+        );
+
+        return true;
     }
 
     /// <summary>

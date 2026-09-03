@@ -36,6 +36,61 @@ namespace Rikarin.Skala.Analysis.Loading;
 public static class GeneratorDriver {
     static readonly AnalyzerAssemblyLoader Loader = new();
 
+    /// <summary>
+    ///     Every declared analyzer or generator assembly that is not on disk, reported once each.
+    ///     <c>true</c> when there was at least one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         The two callers pass different severities, and the asymmetry is the point rather than
+    ///         an inconsistency.
+    ///     </b> A binlog's analyzer paths come off a command line <c>csc</c> actually
+    ///     ran, so the assembly was there and did its work; a file missing now means the tree was
+    ///     cleaned afterwards, which is the same class of fact as <c>SK9020</c> and <c>SK9021</c> and
+    ///     carries their settled stance — say so, report the coverage, do not refuse. A workspace's
+    ///     paths are a *prediction* of where <c>MSBuildWorkspace</c>'s configuration would put output
+    ///     if it were built. A file missing there means the build being described never happened, so
+    ///     nothing assembled from those references is evidence of anything, and
+    ///     <see cref="WorkspaceLoader" /> refuses.
+    ///     <para>
+    ///         ⚠ Absence is the signal, not failure to load. <c>SK9031</c> already covers an assembly
+    ///         that is present and throws and is deliberately never fatal; that one at least proves a
+    ///         real reference to a real file.
+    ///     </para>
+    /// </remarks>
+    public static bool ReportMissingAssemblies(
+        IEnumerable<string> analyzerReferences,
+        string origin,
+        ImmutableArray<SkalaDiagnostic>.Builder diagnostics,
+        SkalaSeverity severity
+    ) {
+        var missing = analyzerReferences
+            .Where(static path => path.Length > 0 && !File.Exists(path))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        if (missing.Length == 0) {
+            return false;
+        }
+
+        foreach (var path in missing) {
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.AnalyzerAssemblyMissing,
+                    severity,
+                    $"the load names '{Path.GetFileName(path)}' as an analyzer or source generator and "
+                    + $"there is no file at '{path}', so whatever it contributes to the program is absent "
+                    + "from the compilation",
+                    origin
+                )
+            );
+        }
+
+        return true;
+    }
+
     public static CSharpCompilation Run(
         CSharpCompilation compilation,
         ImmutableArray<string> analyzerReferences,
@@ -48,6 +103,17 @@ public static class GeneratorDriver {
         if (analyzerReferences.IsEmpty) {
             return compilation;
         }
+
+        // ⚠ #336. This used to be a bare `continue`: a generator assembly that is not on disk cost
+        // its entire output and said nothing at all, which is the one silence in this type that its
+        // own remarks do not cover. Warning rather than fatal here, and the distinction is real
+        // rather than a hedge — see ReportMissingAssemblies.
+        ReportMissingAssemblies(
+            analyzerReferences,
+            compilation.AssemblyName ?? string.Empty,
+            diagnostics,
+            SkalaSeverity.Warning
+        );
 
         var generators = ImmutableArray.CreateBuilder<ISourceGenerator>();
         foreach (var path in analyzerReferences) {

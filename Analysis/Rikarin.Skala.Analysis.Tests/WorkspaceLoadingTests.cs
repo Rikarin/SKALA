@@ -27,6 +27,9 @@ namespace Rikarin.Skala.Analysis.Tests;
 /// </remarks>
 [Collection(SerialWorkspace.Name)]
 public sealed class WorkspaceLoadingTests {
+    /// <summary>⚠ Named because SK7083 counts the literal, and #336's two new tests took it to six.</summary>
+    const string WidgetFile = "Widget.cs";
+
     const string Unformatted = """
                                using System;
 
@@ -112,7 +115,7 @@ public sealed class WorkspaceLoadingTests {
     [Fact]
     public void Workspace_LoadsARealProjectAndProducesFindings() {
         using var scratch = new Scratch();
-        scratch.Write("Widget.cs", Unformatted);
+        scratch.Write(WidgetFile, Unformatted);
         var project = scratch.Write("Scratch.csproj", Project);
 
         var (result, report) = CheckCommand.Run(
@@ -131,6 +134,116 @@ public sealed class WorkspaceLoadingTests {
         Assert.NotEqual(ExitCodes.LoadFailure, result.ExitCode);
         Assert.NotEmpty(report.Findings);
         Assert.Contains(report.Findings, static finding => finding.RuleId == "CS0219");
+
+        // ⚠ The must-not-fire twin of the two #336 tests below. A guard that refuses every workspace
+        // load would satisfy both of those and be useless; this project's analyzer references all
+        // exist, so SK9029 may not appear.
+        Assert.DoesNotContain(
+            report.Diagnostics,
+            static diagnostic => diagnostic.Id == ConfigDiagnosticIds.AnalyzerAssemblyMissing
+        );
+    }
+
+    /// <summary>
+    ///     A .csproj naming an analyzer assembly that is not on disk — the shape of #336 reduced to
+    ///     one line, and the only part of it a fixture can carry.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The real defect was <c>MSBuildWorkspace</c> evaluating <c>Debug</c> on a checkout built
+    ///     only in <c>Release</c>, so <c>Rikarin.Skala.Rules.Generator.dll</c> and
+    ///     <c>Rikarin.Skala.Options.Generator.dll</c> were named at <c>bin/Debug</c> paths that did not
+    ///     exist. That is not reproducible inside a fixture — it needs two configurations of a real
+    ///     repository — but it is the same condition arriving by a shorter route, and it is the
+    ///     condition the guard reads.
+    /// </remarks>
+    const string ProjectNamingAMissingAnalyzer = """
+                                                 <Project Sdk="Microsoft.NET.Sdk">
+                                                   <PropertyGroup>
+                                                     <TargetFramework>net10.0</TargetFramework>
+                                                   </PropertyGroup>
+                                                   <ItemGroup>
+                                                     <Analyzer Include="Absent.Generator.dll" />
+                                                   </ItemGroup>
+                                                 </Project>
+                                                 """;
+
+    /// <summary>
+    ///     ⚠ #336: a load that cannot reproduce the build's generated sources is refused, not reported.
+    /// </summary>
+    /// <remarks>
+    ///     Sabotage: delete the <c>degraded</c> term from <c>WorkspaceLoader.LoadCore</c>'s
+    ///     <c>Failed</c> expression and this goes red on the exit code.
+    /// </remarks>
+    [Fact]
+    public void Workspace_RefusesALoadWhoseAnalyzerAssemblyIsNotOnDisk() {
+        using var scratch = new Scratch();
+        scratch.Write(WidgetFile, Unformatted);
+        var project = scratch.Write("Scratch.csproj", ProjectNamingAMissingAnalyzer);
+
+        var (result, report) = CheckCommand.Run(
+            new CheckRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                Output = string.Empty,
+                NoCache = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.LoadFailure, result.ExitCode);
+
+        var missing = report.Diagnostics
+            .Where(static diagnostic => diagnostic.Id == ConfigDiagnosticIds.AnalyzerAssemblyMissing
+                && diagnostic.Severity == SkalaSeverity.Error
+            )
+            .ToArray();
+
+        Assert.NotEmpty(missing);
+        Assert.Contains(missing, static d => d.Message.Contains("Absent.Generator.dll", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     ⚠ And the refusal hands back nothing, rather than an error stapled to the wrong findings.
+    /// </summary>
+    /// <remarks>
+    ///     The half that matters, and the half a check on the exit code alone does not reach. #336's
+    ///     measured symptom was <b>353 confident rewrites</b>; a guard that set an error severity and
+    ///     still returned the units would have printed all 353 and exited non-zero, which reads as a
+    ///     tool that found 353 problems and had trouble loading. Sabotage: restore
+    ///     <c>Units = units.ToImmutable()</c> unconditionally and <c>CS0219</c> comes back.
+    /// </remarks>
+    [Fact]
+    public void Workspace_RefusedLoadProducesNoSemanticFindings() {
+        using var scratch = new Scratch();
+        scratch.Write(WidgetFile, Unformatted);
+        var project = scratch.Write("Scratch.csproj", ProjectNamingAMissingAnalyzer);
+
+        var loaded = WorkspaceLoader.Load(
+            new LoadRequest {
+                RepositoryRoot = scratch.Root, Mode = LoadMode.Workspace, ProjectPath = project, Paths = [scratch.Root]
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.True(loaded.Failed);
+        Assert.True(loaded.IsEmpty);
+
+        var (_, report) = CheckCommand.Run(
+            new CheckRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                AllowLoadFallback = false,
+                Output = string.Empty,
+                NoCache = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.DoesNotContain(report.Findings, static finding => finding.RuleId == "CS0219");
     }
 
     /// <summary>
@@ -412,7 +525,7 @@ public sealed class WorkspaceLoadingTests {
     [Fact]
     public void Workspace_ThatCannotBeLoadedIsALoadFailureRatherThanAPass() {
         using var scratch = new Scratch();
-        scratch.Write("Widget.cs", Unformatted);
+        scratch.Write(WidgetFile, Unformatted);
         var project = scratch.Write("Scratch.csproj", UnloadableProject);
 
         var (result, _) = CheckCommand.Run(
@@ -437,7 +550,7 @@ public sealed class WorkspaceLoadingTests {
     [Fact]
     public void Workspace_ThatCannotBeLoadedDoesNotFallThroughToLoose() {
         using var scratch = new Scratch();
-        scratch.Write("Widget.cs", Unformatted);
+        scratch.Write(WidgetFile, Unformatted);
         var project = scratch.Write("Scratch.csproj", UnloadableProject);
 
         var loaded = ProjectLoader.Load(
@@ -462,7 +575,7 @@ public sealed class WorkspaceLoadingTests {
     [Fact]
     public void Binlog_StillFallsThroughAFailedWorkspaceToLoose() {
         using var scratch = new Scratch();
-        scratch.Write("Widget.cs", Unformatted);
+        scratch.Write(WidgetFile, Unformatted);
         scratch.Write("Scratch.csproj", UnloadableProject);
 
         var loaded = ProjectLoader.Load(

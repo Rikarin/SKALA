@@ -1,8 +1,10 @@
+using Microsoft.CodeAnalysis.CSharp;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Analysis.Tests;
 
@@ -245,5 +247,89 @@ public sealed class InstrumentSilenceTests {
         );
 
         Assert.DoesNotContain(report.Diagnostics, static diagnostic => diagnostic.Id == RuleIds.AnalyzerThrew);
+    }
+
+    /// <summary>
+    ///     ⚠ #336, the fifth of the shape: a source generator assembly that is not on disk cost its
+    ///     entire output and <c>GeneratorDriver</c> said nothing at all.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Worse than the four above, because the compilation that comes back is not smaller but
+    ///     <em>different</em>: every generated member is absent, and a semantic rule then answers
+    ///     confidently about a program the repository does not contain. On this repository the
+    ///     measured cost was 353 rewrites that do not compile.
+    ///     <para>
+    ///         Sabotage: put back the bare <c>if (!File.Exists(path)) continue;</c> in
+    ///         <c>GeneratorDriver.Run</c> — that is, drop the <c>ReportMissingAssemblies</c> call above
+    ///         it — and this goes red.
+    ///     </para>
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             It goes through <c>Run</c> rather than calling the helper, and the first draft did
+    ///             not.
+    ///         </b> Calling <c>ReportMissingAssemblies</c> directly asserts that the helper works,
+    ///         which was never in doubt; the defect was the *call site*, and that draft survived its own
+    ///         sabotage untouched. Found by running the sabotage rather than by reading the test, which
+    ///         is the whole argument for running it.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void MissingGeneratorAssembly_IsReported() {
+        var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
+
+        var compilation = CSharpCompilation.Create(
+            "Scratch",
+            [
+                CSharpSyntaxTree.ParseText(
+                    "internal sealed class Widget;",
+                    cancellationToken: TestContext.Current.CancellationToken
+                )
+            ]
+        );
+
+        var result = GeneratorDriver.Run(
+            compilation,
+            [Path.Combine(Path.GetTempPath(), "skala-absent", "Absent.Generator.dll")],
+            [],
+            null,
+            new(),
+            diagnostics,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Same(compilation, result);
+        var reported = Assert.Single(diagnostics);
+        Assert.Equal(ConfigDiagnosticIds.AnalyzerAssemblyMissing, reported.Id);
+        Assert.Equal(SkalaSeverity.Warning, reported.Severity);
+        Assert.Contains("Absent.Generator.dll", reported.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ And a present assembly is not reported, which is the half that keeps the guard honest.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>SK9031</c> covers an assembly that <em>is</em> there and throws, and is deliberately
+    ///     never fatal.
+    ///     <b>
+    ///         Absence is a different fact and this test is what stops the two from being
+    ///         collapsed
+    ///     </b>: it passes an existing file that is certainly not a generator, and requires
+    ///     silence. A guard that reported "this is not a generator" here would refuse every load in
+    ///     which any analyzer contributes no source, which is most of them.
+    /// </remarks>
+    [Fact]
+    public void PresentAssembly_IsNotReportedAsMissing() {
+        var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
+
+        var missing = GeneratorDriver.ReportMissingAssemblies(
+            [typeof(InstrumentSilenceTests).Assembly.Location],
+            "Scratch",
+            diagnostics,
+            SkalaSeverity.Error
+        );
+
+        Assert.False(missing);
+        Assert.Empty(diagnostics);
     }
 }
