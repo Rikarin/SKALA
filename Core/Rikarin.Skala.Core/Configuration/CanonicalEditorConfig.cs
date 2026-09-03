@@ -116,11 +116,58 @@ public static class CanonicalEditorConfig {
     public static string Translate(string templateText) {
         var lines = templateText.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
         var output = new StringBuilder(templateText.Length);
+
+        // ⚠ Per section, and by specificity rather than by position. The export writes the same option
+        // under two spellings in one section — `resharper_csharp_insert_final_newline` beside the bare
+        // `insert_final_newline`, with different values — and ReSharper resolves that by specificity:
+        // the C# key wins wherever it sits. Emitting both translated lines would hand the winner's
+        // name to both and let editorconfig's own last-assignment-wins rule pick, which is the
+        // *opposite* answer whenever the export happens to put the generic key second. One line per
+        // option per section, carrying the value ReSharper would have used.
+        var winners = new Dictionary<OptionId, (int Rank, string Value)>();
+        var spellings = new Dictionary<OptionId, (int Rank, string Spelling)>();
+        var pending = new List<(int Index, OptionId Id)>();
+        var section = new List<string>();
+
+        void FlushSection() {
+            var emitted = new HashSet<OptionId>();
+            foreach (var (index, id) in pending) {
+                if (!emitted.Add(id)) {
+                    continue;
+                }
+
+                // ⚠ The value is ReSharper's winner; the *name* is the most specific spelling the
+                // export used that Skala still reads. `csharp_new_line_before_else` and its fifteen
+                // siblings, and `insert_final_newline`, are keys Roslyn, `dotnet format` and every
+                // editor read out of this same file; rewriting them to `skala_*` would take the
+                // setting away from every other tool in the consuming repository while changing
+                // nothing for Skala, which resolves both spellings. Same reasoning as the
+                // `max_line_length` that `Fixer` adds beside `skala_max_line_length`.
+                var name = spellings.TryGetValue(id, out var kept) ? kept.Spelling : OptionRegistry.Get(id).Key;
+                section[index] = name + " = " + winners[id].Value;
+            }
+
+            foreach (var line in section) {
+                if (line is not null) {
+                    output.AppendLine(line);
+                }
+            }
+
+            section.Clear();
+            pending.Clear();
+            winners.Clear();
+            spellings.Clear();
+        }
+
         foreach (var line in lines) {
             var trimmed = line.Trim();
             var equals = trimmed.IndexOf('=', StringComparison.Ordinal);
-            if (trimmed.Length == 0 || trimmed[0] is '#' or '[' || equals < 0) {
-                output.AppendLine(line);
+            if (trimmed.Length == 0 || trimmed[0] is '#' || equals < 0) {
+                if (trimmed.Length > 0 && trimmed[0] == '[') {
+                    FlushSection();
+                }
+
+                section.Add(line);
                 continue;
             }
 
@@ -129,10 +176,35 @@ public static class CanonicalEditorConfig {
                 continue;
             }
 
-            output.Append(OptionRegistry.Get(id).Key).Append(" =").AppendLine(trimmed[(equals + 1)..].TrimEnd());
+            // The option's `export` array is ordered most-specific-first, with the spelling the
+            // template itself uses at the front, so the index *is* the specificity rank.
+            var rank = IndexOfSpelling(OptionRegistry.Get(id).Export, key);
+            var value = trimmed[(equals + 1)..].Trim();
+            if (!winners.TryGetValue(id, out var held) || rank < held.Rank) {
+                winners[id] = (rank, value);
+            }
+
+            if (OptionRegistry.TryResolve(key, out _)
+                && (!spellings.TryGetValue(id, out var name) || rank < name.Rank)) {
+                spellings[id] = (rank, key);
+            }
+
+            pending.Add((section.Count, id));
+            section.Add(null!);
         }
 
+        FlushSection();
         return output.ToString();
+    }
+
+    static int IndexOfSpelling(IReadOnlyList<string> spellings, string spelling) {
+        for (var i = 0; i < spellings.Count; i++) {
+            if (string.Equals(spellings[i], spelling, StringComparison.Ordinal)) {
+                return i;
+            }
+        }
+
+        return int.MaxValue;
     }
 
     /// <summary>

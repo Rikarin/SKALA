@@ -38,21 +38,30 @@ public sealed class PrecedenceTests {
         Assert.Equal("skala_insert_final_newline", resolution[id].Origin!.Spelling);
     }
 
+    /// <remarks>
+    ///     ⚠ The two spellings here were <c>resharper_csharp_insert_final_newline</c> and
+    ///     <c>insert_final_newline</c>, and the rename collapsed them onto one key — leaving the same
+    ///     assignment twice and a test asserting that the <em>first</em> of two identical lines wins,
+    ///     which is the opposite of editorconfig's rule and passed only by accident. Specificity is
+    ///     still a real ladder, but it is now Skala's key over Microsoft's alias rather than
+    ///     ReSharper's C# key over its generic one.
+    /// </remarks>
     [Fact]
     public void OrderWithinASection_DoesNotOverrideSpecificity() {
-        // The generic key comes last and still loses: ReSharper resolves by language specificity,
-        // not by position.
+        // The less specific key comes last and still loses: resolution is by specificity, not by
+        // position.
         var resolution = Resolve(
             """
             root = true
             [*]
-            skala_insert_final_newline = true
-            skala_insert_final_newline = false
+            skala_space_after_cast = true
+            csharp_space_after_cast = false
             """
         );
 
-        Assert.True(OptionRegistry.TryResolve("skala_insert_final_newline", out var id));
+        Assert.True(OptionRegistry.TryResolve("skala_space_after_cast", out var id));
         Assert.Equal("true", resolution[id].Value);
+        Assert.Equal("skala_space_after_cast", resolution[id].Origin!.Spelling);
     }
 
     [Fact]

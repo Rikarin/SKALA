@@ -188,6 +188,39 @@ public sealed class OptionRegistryTests {
     }
 
     /// <summary>
+    ///     Every property the EditorConfig specification defines resolves under its own name.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>These are not Skala's to rename, and one of them was lost renaming the rest.</b>
+    ///     <c>insert_final_newline</c> existed only as an alias of ReSharper's
+    ///     <c>resharper_csharp_insert_final_newline</c>, so dropping ReSharper's alias spellings took
+    ///     it with them — and nothing failed, because no test named the bare spelling. A consuming
+    ///     repository setting the single most common line in any <c>.editorconfig</c> would have got
+    ///     <c>SK9001</c> and silently lost the setting.
+    ///     <para>
+    ///         The same reasoning covers Microsoft's own keys, which is why
+    ///         <c>dotnet_sort_system_directives_first</c> and <c>csharp_space_after_cast</c> survive as
+    ///         aliases: the <c>resharper_</c> namespace is Skala's to retire; the EditorConfig and
+    ///         <c>dotnet_</c>/<c>csharp_</c> namespaces are not.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void EveryEditorConfigCoreProperty_ResolvesUnderItsOwnName() {
+        string[] core = [
+            "indent_style", "indent_size", "tab_width", "end_of_line", "charset",
+            "trim_trailing_whitespace", "insert_final_newline", "max_line_length"
+        ];
+
+        foreach (var key in core) {
+            Assert.True(
+                OptionRegistry.TryResolve(key, out _),
+                key + " is defined by the EditorConfig specification and must resolve under that "
+                + "spelling. Skala's namespace is `skala_`; this one is not Skala's to rename."
+            );
+        }
+    }
+
+    /// <summary>
     ///     ⚠ Inert is a claim about what cannot be observed, so it needs a reason and it needs a tier.
     /// </summary>
     /// <remarks>

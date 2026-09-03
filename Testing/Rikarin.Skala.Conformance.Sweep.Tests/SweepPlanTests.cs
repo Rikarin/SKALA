@@ -46,7 +46,7 @@ public sealed class SweepPlanTests {
     /// </summary>
     /// <remarks>
     ///     ⚠ Two of these cases used to be <c>resharper_csharp_space_after_cast</c> and
-    ///     <c>csharp_space_after_cast</c>, and the <c>skala_</c> rename collapsed them onto one
+    ///     <c>skala_space_after_cast</c>, and the <c>skala_</c> rename collapsed them onto one
     ///     spelling — leaving a duplicate <c>InlineData</c> that asserted the same thing twice and a
     ///     theory that no longer covered a second prefix at all. The point of the case is that
     ///     <see cref="SweepPlan.Strip" /> handles <em>every</em> prefix
@@ -82,7 +82,7 @@ public sealed class SweepPlanTests {
         Assert.NotEmpty(OptionKeyPrefixes.Ordered);
         foreach (var prefix in OptionKeyPrefixes.Ordered) {
             Assert.Equal(string.Empty, SweepPlan.Strip(prefix));
-            Assert.True(SweepPlan.InFamily(prefix + "space_after_cast", ["space"]), prefix);
+            Assert.True(SweepPlan.InFamily(prefix + "skala_space_after_cast", ["space"]), prefix);
         }
     }
 

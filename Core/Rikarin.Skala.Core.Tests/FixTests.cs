@@ -3,11 +3,25 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Core.Tests;
 
 public sealed class FixTests {
+    /// <summary>
+    ///     The export as Skala reads it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>Fixer</c> adds <c>max_line_length</c> beside the option that carries the column limit,
+    ///     and it finds that option by resolving. Handed the raw export it resolves nothing, adds
+    ///     nothing, and <c>Changed</c> comes back false — which reads as "the export needs no fixing".
+    /// </remarks>
+    static EditorConfigDocument TranslatedTemplate() =>
+        EditorConfigDocument.FromText(
+            RepositoryPaths.Template,
+            CanonicalEditorConfig.Translate(File.ReadAllText(RepositoryPaths.Template))
+        );
+
     [Fact]
     public void Fix_AddsRootAndMaxLineLength_ToTheRealTemplate() {
         // docs/plan/15 § M0: `config check` reports the missing root and the missing
         // max_line_length; `config fix` offers to add both.
-        var result = Fixer.Fix(EditorConfigDocument.Load(RepositoryPaths.Template));
+        var result = Fixer.Fix(TranslatedTemplate());
 
         Assert.True(result.Changed);
         Assert.Contains(result.Applied, static change => change.Contains("root = true", StringComparison.Ordinal));
@@ -23,7 +37,7 @@ public sealed class FixTests {
 
     [Fact]
     public void Fix_ChangesNothingElse() {
-        var original = EditorConfigDocument.Load(RepositoryPaths.Template);
+        var original = TranslatedTemplate();
         var fixed_ = EditorConfigDocument.FromText("/repo/.editorconfig", Fixer.Fix(original).Text);
 
         // Two keys added; nothing removed, nothing rewritten.
@@ -35,7 +49,7 @@ public sealed class FixTests {
 
     [Fact]
     public void Fix_IsIdempotent() {
-        var once = Fixer.Fix(EditorConfigDocument.Load(RepositoryPaths.Template)).Text;
+        var once = Fixer.Fix(TranslatedTemplate()).Text;
         var twice = Fixer.Fix(EditorConfigDocument.FromText("/repo/.editorconfig", once));
 
         Assert.False(twice.Changed);
@@ -64,7 +78,7 @@ public sealed class FixTests {
             """
             root = true
             [*]
-            skala_insert_final_newline = false
+            insert_final_newline = false
             trim_trailing_whitespace = false
             skala_insert_final_newline = true
             skala_remove_spaces_on_blank_lines = true

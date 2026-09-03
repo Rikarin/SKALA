@@ -51,7 +51,7 @@ public sealed class LineEndingTests : IDisposable {
     void Configure(string endOfLine, bool enforce) =>
         scratch.WriteText(
             ".editorconfig",
-            $"root = true\n\n[*.cs]\nend_of_line = {endOfLine}\nresharper_enforce_line_ending_style = {(enforce ? "true" : "false")}\n"
+            $"root = true\n\n[*.cs]\nend_of_line = {endOfLine}\nskala_enforce_line_ending_style = {(enforce ? "true" : "false")}\n"
         );
 
     /// <summary>The hazard as doc 12 words it: CRLF in, <c>end_of_line = lf</c>, LF out.</summary>

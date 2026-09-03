@@ -333,7 +333,7 @@ public sealed class ConfigCommandTests {
         try {
             File.WriteAllText(
                 Path.Combine(directory, ".editorconfig"),
-                "root = true\n[*.cs]\nresharper_csharp_wrap_arguments_style = sideways\n"
+                "root = true\n[*.cs]\nskala_wrap_arguments_style = sideways\n"
             );
             var source = Path.Combine(directory, "a.cs");
             File.WriteAllText(source, "class C { }\n");
@@ -416,9 +416,9 @@ public sealed class ConfigCommandTests {
     public void Diff_ReportsAChangedOption() {
         var changed = Path.Combine(CliRunner.RepositoryRoot, $"skala-diff-{Guid.NewGuid():N}.editorconfig");
         try {
-            File.WriteAllText(changed, "root = true\n[*]\nresharper_csharp_max_line_length = 100\n");
+            File.WriteAllText(changed, "root = true\n[*]\nskala_max_line_length = 100\n");
             var baseline = Path.Combine(CliRunner.RepositoryRoot, $"skala-diff-{Guid.NewGuid():N}.editorconfig");
-            File.WriteAllText(baseline, "root = true\n[*]\nresharper_csharp_max_line_length = 120\n");
+            File.WriteAllText(baseline, "root = true\n[*]\nskala_max_line_length = 120\n");
 
             var run = CliRunner.Run("config", "diff", baseline, changed);
 

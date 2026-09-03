@@ -3708,7 +3708,9 @@
     },
     {
       "key": "skala_insert_final_newline",
-      "aliases": [],
+      "aliases": [
+        "insert_final_newline"
+      ],
       "export": [
         "resharper_csharp_insert_final_newline",
         "insert_final_newline",
@@ -6807,7 +6809,9 @@
     },
     {
       "key": "skala_space_within_array_rank_empty_brackets",
-      "aliases": [],
+      "aliases": [
+        "csharp_space_between_empty_square_brackets"
+      ],
       "export": [
         "csharp_space_between_empty_square_brackets",
         "resharper_csharp_space_within_array_rank_empty_brackets",
@@ -8691,7 +8695,9 @@
     },
     {
       "key": "skala_indent_switch_labels",
-      "aliases": [],
+      "aliases": [
+        "csharp_indent_switch_labels"
+      ],
       "export": [
         "csharp_indent_switch_labels",
         "resharper_indent_switch_labels",
@@ -8867,7 +8873,9 @@
     },
     {
       "key": "skala_new_line_before_catch",
-      "aliases": [],
+      "aliases": [
+        "csharp_new_line_before_catch"
+      ],
       "export": [
         "csharp_new_line_before_catch",
         "resharper_new_line_before_catch",
@@ -8888,7 +8896,9 @@
     },
     {
       "key": "skala_new_line_before_else",
-      "aliases": [],
+      "aliases": [
+        "csharp_new_line_before_else"
+      ],
       "export": [
         "csharp_new_line_before_else",
         "resharper_new_line_before_else",
@@ -8909,7 +8919,9 @@
     },
     {
       "key": "skala_new_line_before_finally",
-      "aliases": [],
+      "aliases": [
+        "csharp_new_line_before_finally"
+      ],
       "export": [
         "csharp_new_line_before_finally",
         "resharper_new_line_before_finally",
@@ -9095,7 +9107,9 @@
     },
     {
       "key": "skala_space_after_colon_in_inheritance_clause",
-      "aliases": [],
+      "aliases": [
+        "csharp_space_after_colon_in_inheritance_clause"
+      ],
       "export": [
         "resharper_space_after_colon_in_inheritance_clause",
         "csharp_space_after_colon_in_inheritance_clause",
@@ -9116,7 +9130,9 @@
     },
     {
       "key": "skala_space_after_comma",
-      "aliases": [],
+      "aliases": [
+        "csharp_space_after_comma"
+      ],
       "export": [
         "resharper_space_after_comma",
         "csharp_space_after_comma",
@@ -9166,7 +9182,9 @@
     },
     {
       "key": "skala_space_after_semicolon_in_for_statement",
-      "aliases": [],
+      "aliases": [
+        "csharp_space_after_semicolon_in_for_statement"
+      ],
       "export": [
         "resharper_space_after_semicolon_in_for_statement",
         "csharp_space_after_semicolon_in_for_statement",
@@ -9272,7 +9290,9 @@
     },
     {
       "key": "skala_space_before_colon_in_inheritance_clause",
-      "aliases": [],
+      "aliases": [
+        "csharp_space_before_colon_in_inheritance_clause"
+      ],
       "export": [
         "resharper_space_before_colon_in_inheritance_clause",
         "csharp_space_before_colon_in_inheritance_clause",
@@ -9293,7 +9313,9 @@
     },
     {
       "key": "skala_space_before_comma",
-      "aliases": [],
+      "aliases": [
+        "csharp_space_before_comma"
+      ],
       "export": [
         "resharper_space_before_comma",
         "csharp_space_before_comma",
@@ -9336,7 +9358,9 @@
     },
     {
       "key": "skala_space_before_semicolon_in_for_statement",
-      "aliases": [],
+      "aliases": [
+        "csharp_space_before_semicolon_in_for_statement"
+      ],
       "export": [
         "resharper_space_before_semicolon_in_for_statement",
         "csharp_space_before_semicolon_in_for_statement",
@@ -9377,7 +9401,9 @@
     },
     {
       "key": "skala_space_between_method_call_empty_parameter_list_parentheses",
-      "aliases": [],
+      "aliases": [
+        "csharp_space_between_method_call_empty_parameter_list_parentheses"
+      ],
       "export": [
         "resharper_space_between_method_call_empty_parameter_list_parentheses",
         "csharp_space_between_method_call_empty_parameter_list_parentheses",
@@ -9420,7 +9446,9 @@
     },
     {
       "key": "skala_space_between_method_call_parameter_list_parentheses",
-      "aliases": [],
+      "aliases": [
+        "csharp_space_between_method_call_parameter_list_parentheses"
+      ],
       "export": [
         "resharper_space_between_method_call_parameter_list_parentheses",
         "csharp_space_between_method_call_parameter_list_parentheses",
@@ -9441,7 +9469,9 @@
     },
     {
       "key": "skala_space_between_method_declaration_empty_parameter_list_parentheses",
-      "aliases": [],
+      "aliases": [
+        "csharp_space_between_method_declaration_empty_parameter_list_parentheses"
+      ],
       "export": [
         "resharper_space_between_method_declaration_empty_parameter_list_parentheses",
         "csharp_space_between_method_declaration_empty_parameter_list_parentheses",
@@ -9484,7 +9514,9 @@
     },
     {
       "key": "skala_space_between_method_declaration_parameter_list_parentheses",
-      "aliases": [],
+      "aliases": [
+        "csharp_space_between_method_declaration_parameter_list_parentheses"
+      ],
       "export": [
         "resharper_space_between_method_declaration_parameter_list_parentheses",
         "csharp_space_between_method_declaration_parameter_list_parentheses",
