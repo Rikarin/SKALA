@@ -158,9 +158,18 @@ baselines carry the id in their fingerprint, so one number with two meanings sil
 finding and wrongly suppresses another in every repository holding a baseline. **Do not allocate an id
 for a concept nobody has specified yet.**
 
-⚠ **Tier D means "known to the registry and not implemented".** An option parsed, reported by
-`skala config check`, and then ignored. Crediting Skala with arrangement it declares and does not
-perform is the double-count that is easiest to miss, because the key looks handled.
+⚠ **Tier D does NOT mean "not implemented", and this file said it did.** Tier D means *not Tier A*,
+and Tier A is a narrow claim: the formatter reads the option **and** a committed oracle fixture pins
+it. `docs/tier-d-split.md` exists to stop the Tier D count being quoted as remaining work, and it was
+being quoted that way here. Measured on 2026-09-03: **71 of the 161 Tier C+D options are referenced by
+exact quoted literal in production code**, and `PhaseOneOptions.Of` *throws* on a key the registry does
+not know — so treating the tier as a deletion list is a static-initializer crash, not a tidy-up. The
+clearest case: `resharper_csharp_max_line_length` is Tier D and is `PhaseOneOptions.MaxLineLength`, the
+column limit the whole wrapping engine runs on.
+
+⚠ The real double-count is narrower and still worth watching: `skala config check` prints a registry-wide
+`D (not implemented)` count that is not what Tier D means. `ConfigCommands.cs` already excludes `inert`
+options from its declared-but-not-honoured list; the label is what is wrong, not the mechanism.
 
 **The two promises are unconditional.** Skala never writes a file whose token stream differs from the
 input's (`SK9099`, writes nothing, drops a reproduction under `.skala/crash/`), and never formats a
