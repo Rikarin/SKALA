@@ -24,9 +24,17 @@ public sealed class ConfigureAwaitAnalyzer : DiagnosticAnalyzer {
 
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        if (!options.TryGetValue("skala_configure_await_analysis_mode", out var mode)) {
-            options.TryGetValue("skala_configure_await_analysis_mode", out mode);
-        }
+
+        // ⚠ One lookup, because the option has one spelling. This was two — a hand-rolled precedence
+        // ladder trying the prefixed key and then the bare one, a second implementation of
+        // `OptionResolver`'s rule that nothing kept in step with it. The `skala_` rename collapsed
+        // both branches onto the same string, which is what made it obvious.
+        //
+        // ⚠ `Rikarin.Skala.Rules` deliberately does not reference `Rikarin.Skala.Options` — an
+        // analyzer ships on its own — so this cannot ask the registry and the spelling is a literal.
+        // `OptionRegistryTests.TheAnalyzerReadOptions_HaveExactlyOneSpelling` is what fails if an
+        // alias is ever added, because this file could not notice.
+        options.TryGetValue("skala_configure_await_analysis_mode", out var mode);
 
         // UI mode's redundant ConfigureAwait(true) inspection is a different concept from SK3003.
         if (!string.Equals(mode?.Trim(), "library", StringComparison.OrdinalIgnoreCase)) {

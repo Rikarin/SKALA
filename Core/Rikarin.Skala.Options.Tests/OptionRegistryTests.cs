@@ -188,6 +188,33 @@ public sealed class OptionRegistryTests {
     }
 
     /// <summary>
+    ///     An option a standalone analyzer reads by literal has exactly one spelling.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>Rikarin.Skala.Rules</c> deliberately does not reference this assembly — an analyzer
+    ///     ships on its own — so <c>ConfigureAwaitAnalyzer</c> cannot ask the registry and hard-codes
+    ///     the key. It used to hard-code a *precedence ladder* over two spellings as well, which was a
+    ///     second implementation of <see cref="OptionResolver" />'s rule that nothing kept in step. The
+    ///     ladder is gone; this is what makes its absence safe, because the analyzer cannot notice an
+    ///     alias being added and would simply stop honouring configurations written that way.
+    /// </remarks>
+    [Fact]
+    public void TheAnalyzerReadOptions_HaveExactlyOneSpelling() {
+        foreach (var key in new[] { "skala_configure_await_analysis_mode" }) {
+            Assert.True(OptionRegistry.TryResolve(key, out var id), key);
+
+            var info = OptionRegistry.Get(id);
+            Assert.Equal(key, info.Key);
+            Assert.True(
+                info.Aliases.Count == 0,
+                $"{key} has picked up the alias(es) {string.Join(", ", info.Aliases)}. ConfigureAwaitAnalyzer "
+                + "reads this key by literal and cannot see them, so a configuration written that way "
+                + "would be silently ignored. Teach the analyzer the spelling, then relax this."
+            );
+        }
+    }
+
+    /// <summary>
     ///     Every property the EditorConfig specification defines resolves under its own name.
     /// </summary>
     /// <remarks>

@@ -588,6 +588,20 @@ public static class ConfigCommands {
     /// </summary>
     /// <remarks>
     ///     <para>
+    ///         ⚠ <b>Tier D is labelled "not pinned by a fixture", not "not implemented".</b> The old
+    ///         label was wrong in the way that costs the most: Tier A is the narrow claim <em>the
+    ///         formatter reads the option <b>and</b> a committed oracle fixture pins it</em>, so Tier D
+    ///         has only ever meant "not Tier A" (docs/tier-d-split.md). Measured on this registry, 70
+    ///         of the 161 Tier C and D options are read by production code by name — including
+    ///         <c>skala_max_line_length</c>, which is the column limit the entire wrapping engine runs
+    ///         on. Reading the old label as a coverage number, and deleting what it counted, would have
+    ///         taken the formatter's line width out of the registry.
+    ///     </para>
+    ///     <para>
+    ///         The honest count of "declared and not performed" is the <c>inert</c>-excluding list
+    ///         below, which this block has always computed and which is a much smaller number.
+    ///     </para>
+    ///     <para>
     ///         This block reported only the registry-wide tier split until M9 — "A: 221, B: 0, C: 6, D:
     ///         293" — which is true, and is not the number a user needs. The question a person opening
     ///         <c>skala config check</c> is asking is
@@ -682,7 +696,7 @@ public static class ConfigCommands {
         output.AppendLine(
             string.Create(
                 CultureInfo.InvariantCulture,
-                $"Registry-wide — A (implemented): {Tier(OptionTier.A)}, B (approximated): {Tier(OptionTier.B)}, C (accepted, ignored): {Tier(OptionTier.C)}, D (not implemented): {Tier(OptionTier.D)}."
+                $"Registry-wide — A (implemented, pinned by an oracle fixture): {Tier(OptionTier.A)}, B (approximated): {Tier(OptionTier.B)}, C (accepted, ignored): {Tier(OptionTier.C)}, D (not pinned by a fixture): {Tier(OptionTier.D)}."
             )
         );
 
