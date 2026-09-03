@@ -181,8 +181,28 @@ jobs:
 
       # ⚠ The full suite before anything is packed. A green pack over a red tree is an artefact
       # nobody should be able to reach for.
+      #
+      # ⚠ **`dotnet build` + `dotnet test`, not `./build.sh Test`, and the difference is only visible
+      # on Windows.** Under NUKE, two different `Workspace_…` tests in `Analysis.Tests` failed on the
+      # Windows runner on consecutive commits with `System.Exception : The build host was started but
+      # we were unable to connect to it's pipe` → `TimeoutException` — Roslyn's `MSBuildWorkspace`
+      # starting its out-of-process build host. The same tests, same commit, same OS, pass in
+      # cross-platform.yml, which runs exactly the two commands below. NUKE evaluates MSBuild in its
+      # own process before spawning `dotnet test` (its log carries a suppressed
+      # `Could not load file or assembly 'NuGet.Frameworks'` from that evaluation), and the child
+      # inherits whatever that leaves behind.
+      #
+      # ⚠ **The mechanism is not isolated** — this is the invocation that works, not a diagnosis. If
+      # the pipe timeout returns here, the environment the build host inherits is the place to look.
+      #
+      # ⚠ `--no-build`, so this cannot silently rebuild in Debug and test something other than what
+      # the line above compiled under TreatWarningsAsErrors.
+      - name: Build
+        run: dotnet build Skala.slnx -c Release
+        shell: bash
+
       - name: Test
-        run: ./build.sh Test --configuration Release
+        run: dotnet test Skala.slnx -c Release --no-build
         shell: bash
 
       # ⚠ The measured number is stamped in, and `Directory.Build.props` is not edited. One source
