@@ -103,6 +103,46 @@ public sealed class CanonicalDistributionTests {
             .Configured
             .ToDictionary(static option => option.Info.Id, static option => option.Value);
 
+    /// <summary>
+    ///     No key is assigned twice in one section of the payload.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Found by sabotage, and nothing else covered it.</b> The export writes one option under
+    ///     two spellings in a section, so the translation has to collapse them; disabling that collapse
+    ///     turned <em>no</em> test red, because every other assertion here is over resolved options and
+    ///     a key assigned twice to the same value resolves exactly like a key assigned once. The
+    ///     payload is a file eighteen repositories read, though, and a managed block that says
+    ///     `skala_x = true` twice is a file whose author looks careless and whose diff is noisy.
+    /// </remarks>
+    [Fact]
+    public void TheCanonical_AssignsEachKeyOncePerSection() {
+        var composed = CanonicalEditorConfig.Compose(File.ReadAllText(RepositoryPaths.Template));
+        var section = "<file>";
+        var seen = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal) { [section] = [] };
+        var duplicates = new List<string>();
+
+        foreach (var raw in composed.Split('\n')) {
+            var line = raw.Trim();
+            if (line.Length == 0 || line[0] == '#') {
+                continue;
+            }
+
+            if (line[0] == '[') {
+                section = line;
+                seen[section] = [];
+                continue;
+            }
+
+            var equals = line.IndexOf('=', StringComparison.Ordinal);
+            if (equals > 0 && !seen[section].Add(line[..equals].Trim())) {
+                duplicates.Add(section + " " + line[..equals].Trim());
+            }
+        }
+
+        Assert.True(seen.Values.Sum(static keys => keys.Count) > 300, "the payload parsed to almost nothing");
+        Assert.True(duplicates.Count == 0, "assigned twice in one section: " + string.Join(", ", duplicates));
+    }
+
     [Fact]
     public void TheCanonical_CarriesNothingSkalaCannotRead() {
         var canonical = EditorConfigDocument.FromText(
