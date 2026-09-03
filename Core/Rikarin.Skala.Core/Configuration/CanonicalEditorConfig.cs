@@ -50,7 +50,7 @@ public static class CanonicalEditorConfig {
                                    # This block is the Rider export (ADR-001) verbatim, with the two additions
                                    # `skala config fix` makes: `root = true`, so the chain stops at the repository
                                    # instead of picking up an .editorconfig above it, and `max_line_length` beside
-                                   # `resharper_csharp_max_line_length`, so that tools other than ReSharper can see
+                                   # `skala_max_line_length`, so that tools other than ReSharper can see
                                    # the column limit.
                                    #
                                    # To change it: change the setting in Rider, re-export over

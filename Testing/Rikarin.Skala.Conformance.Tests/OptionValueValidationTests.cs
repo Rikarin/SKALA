@@ -36,15 +36,15 @@ public sealed class OptionValueValidationTests {
         "file_header_template",
 
         // The literal text of the formatter's off/on marker comments.
-        "resharper_formatter_off_tag", "resharper_formatter_on_tag",
+        "skala_formatter_off_tag", "skala_formatter_on_tag",
 
         // ⚠ Two genuine gaps rather than two free-form values: JetBrains documents neither key
         // anywhere, so the domain is unknown rather than open. Recorded as such on the entry, and
         // the reason names what would have to be published to close them.
-        "resharper_labeled_statement_style", "resharper_prefer_wrap_around_eq",
+        "resharper_labeled_statement_style", "skala_prefer_wrap_around_eq",
 
         // A comma-separated list of XML documentation tag names.
-        "resharper_xmldoc_linebreak_before_elements"
+        "skala_xmldoc_linebreak_before_elements"
     ];
 
     [Fact]
@@ -206,9 +206,9 @@ public sealed class OptionValueValidationTests {
         Assert.Empty(alone.ValueErrors);
         Assert.Equal(4, alone.Options.GetInt(OptionId.IndentSize));
 
-        // ⚠ And only on the specification's own key. JetBrains documents `resharper_csharp_indent_size`
+        // ⚠ And only on the specification's own key. JetBrains documents `skala_indent_size`
         // as "an integer" and says nothing about `tab`, so accepting it there would be an invention.
-        var reSharper = Resolve("resharper_csharp_indent_size", "tab");
+        var reSharper = Resolve("skala_indent_size", "tab");
         var error = Assert.Single(reSharper.ValueErrors);
         Assert.Contains("expected an integer >= 1", error.Reason, StringComparison.Ordinal);
     }

@@ -90,7 +90,7 @@ attributes.
   all four combinations against committed oracle fixtures, and the table is not the one
   [05](05-csharp-formatting-rules.md) stated.
 - A break-*position* model: a pre-pass that labels every gap `Point`, `Flat` or `Mandatory`, which is
-  what `wrap_before_binary_opsign` and friends need and what M1's gap model had nowhere to put.
+  what `skala_wrap_before_binary_opsign` and friends need and what M1's gap model had nowhere to put.
 - The measure pass fused into the build pass ([13](13-performance.md)).
 
 **Done when:** line fidelity ≥ 93 %, and formatting Vixen produces a diff small enough to read in one
@@ -208,7 +208,7 @@ and the Vixen `.editorconfig` re-measured.
 | Both symbol sets | ✅ the default shape of `./build.sh Fidelity`, with a one-sided section |
 | Vixen corpus sample | ✅ re-based on a mainline snapshot at `c688f62a`, drawn by a committed sampler |
 | Vixen `.editorconfig` | **2 527 files, 73 014 diff lines, 53.6 % of the tree; a second pass is clean** — still not committed |
-| `align_multiline_statement_conditions` | ✅ Tier A: the `Align` node exists and the indent stack holds columns |
+| `skala_align_multiline_statement_conditions` | ✅ Tier A: the `Align` node exists and the indent stack holds columns |
 
 ⚠ **The ≥ 99.9 % bar is not met, and this is the second milestone in a row to say so with a
 measurement rather than round up.** 99.70 % over 76 375 lines is about 230 divergent line slots
@@ -228,20 +228,20 @@ the oracle what it does with the shape, and implement the answer:
    scope inside itself — so the `=` family's points are grandchildren and both `AfterPoint` and
    `SegmentOf` were zero. The ordering rule's second question answered "yes" unconditionally and a
    `wrap_if_long` fill never broke.
-2. `keep_existing_embedded_arrangement` does not forbid a break the author never wrote.
-3. `keep_existing_expr_member_arrangement` outranks the placement key in **both** directions.
+2. `skala_keep_existing_embedded_arrangement` does not forbid a break the author never wrote.
+3. `skala_keep_existing_expr_member_arrangement` outranks the placement key in **both** directions.
 4. `if_owner_is_single_line` means the owner, and a chopped parameter list makes a declaration
    multi-line.
 5. The `=` break before a collection expression is not preserved, and it is the only right-hand side
    that behaves that way. The arrow's is not either.
-6. `keep_existing_list_patterns_arrangement` preserves the author's break at each *individual* item
+6. `skala_keep_existing_list_patterns_arrangement` preserves the author's break at each *individual* item
    gap, which a fill cannot express.
 7. A chained call takes a continuation level even inside another continuation.
 8. A lambda body is its own continuation context, and the deferred reset that says so was undone by
    the lambda's own parameter frame.
 9. A chain of ternaries is a list rather than a staircase.
-10. `align_multiline_statement_conditions` — SK-DIV-0008, half closed.
-11. `blank_lines_after_block_statements` applies to a statement that *ends* with a brace.
+10. `skala_align_multiline_statement_conditions` — SK-DIV-0008, half closed.
+11. `skala_blank_lines_after_block_statements` applies to a statement that *ends* with a brace.
 12. Four spacing rules: an unbound generic's `<,>`, a pointer and function-pointer declarator, an
     implicit element access after a comma, and a case label's colon after a property pattern.
 13. Two gaps no rule governs, where `SpaceKind.Preserve` had existed since milestone 1 and nothing
@@ -614,7 +614,7 @@ guess that the assertions do not run by default, and now does not have to.
    them was `ToolDiagnosticIdTests`, which is the guard ADR-012 rests on: it was passing without
    reading the files under test. Verified fixed by mutation rather than by going green.
 5. ⚠ **`end_of_line = lf` is inert on its own.** The option that converts line endings is
-   `resharper_enforce_line_ending_style`, which is false by default. A test written from doc 12's
+   `skala_enforce_line_ending_style`, which is false by default. A test written from doc 12's
    headline alone asserts the wrong thing.
 
 ⚠ **What is *not* done, against the stated bar.** "Adopted by three of the author's repositories
@@ -700,8 +700,8 @@ message on the reformat says a later symbol-aware run will move something; on th
 
 ### The seven overrides
 
-Kept: `[*] insert_final_newline = true`, because the canonical contradicts itself there —
-`insert_final_newline = false` beside `resharper_csharp_insert_final_newline = true`, which is
+Kept: `[*] skala_insert_final_newline = true`, because the canonical contradicts itself there —
+`skala_insert_final_newline = false` beside `skala_insert_final_newline = true`, which is
 `SK9005` and which Skala resolves to `true` for C# anyway, so the line only extends the canonical's
 own answer to `.json`, `.md` and `.csproj`. And
 `[*.{json,yaml,…}] indent_size = 2`, because the canonical has three sections — `[*]`, `[*.csv]` and
@@ -713,7 +713,7 @@ relies on to leave documentation comments alone (SK-DIV-0006), and every other l
 tokens anyway. `csharp_using_directive_placement` and `csharp_style_namespace_declarations` at
 `warning`, because Vixen sets `EnforceCodeStyleInBuild=false`, so IDE0065 and IDE0161 reach neither
 build nor CI at any severity, and no arrangement rule reads either key.
-`dotnet_sort_system_directives_first = true`, because it is the only one of the seven that changes
+`skala_sort_usings_with_system_first = true`, because it is the only one of the seven that changes
 bytes and doc 06 § "Usings" specifies `false` — the cost of dropping it is visible and bounded, 239
 files. `csharp_prefer_braces = when_multiline`, because Skala never braces an `if` and the
 canonical's `true` is the safer of the two.
@@ -816,7 +816,7 @@ defect 4's detection without this would have been a better-worded green run.
 
 ⚠ **Two smaller ones, both about the interface rather than the analysis.** `skala explain` is
 documented as taking `<ruleId | optionKey>` and rejects every option key tried —
-`insert_final_newline`, `csharp_indent_case_contents`, `dotnet_sort_system_directives_first` — with
+`skala_insert_final_newline`, `csharp_indent_case_contents`, `skala_sort_usings_with_system_first` — with
 "is not a Skala rule". And `skala format --check` walks into `.skala/` and formats Skala's own crash
 reproductions, because the ignore that covers them is a nested `.gitignore` rather than a rule in the
 repository's root one: the file count moves from 4 717 to 4 725 after `arrange` writes two of them.

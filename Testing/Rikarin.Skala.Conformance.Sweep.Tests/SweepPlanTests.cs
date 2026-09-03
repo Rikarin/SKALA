@@ -44,9 +44,9 @@ public sealed class SweepPlanTests {
     /// <summary>A family is matched after the vendor prefix, because the export spells keys three ways.</summary>
     [Theory]
     [InlineData("resharper_csharp_space_after_cast", "space", true)]
-    [InlineData("csharp_space_after_cast", "space", true)]
-    [InlineData("space_after_cast", "space", true)]
-    [InlineData("resharper_wrap_before_comma", "wrap", true)]
+    [InlineData("skala_space_after_cast", "space", true)]
+    [InlineData("skala_space_after_cast", "space", true)]
+    [InlineData("skala_wrap_before_comma", "wrap", true)]
     [InlineData("resharper_csharp_space_after_cast", "wrap", false)]
     // ⚠ A prefix match on the bare name is not enough: `spaces_around` would claim `space` and
     // `blank_lines` would claim `blank_line`. The family has to end on an underscore boundary.

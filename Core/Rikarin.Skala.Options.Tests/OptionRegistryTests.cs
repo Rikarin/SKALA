@@ -33,9 +33,9 @@ public sealed class OptionRegistryTests {
     [Fact]
     public void PlanExample_ResolvesThroughItsLanguageGenericSpelling() {
         // docs/plan/03 § "The option registry" writes this entry out by hand.
-        Assert.True(OptionRegistry.TryResolve("resharper_wrap_arguments_style", out var id));
+        Assert.True(OptionRegistry.TryResolve("skala_wrap_arguments_style", out var id));
         var info = OptionRegistry.Get(id);
-        Assert.Equal("resharper_csharp_wrap_arguments_style", info.Key);
+        Assert.Equal("skala_wrap_arguments_style", info.Key);
         Assert.Equal("enum:WrapStyle", "enum:" + info.EnumName);
         Assert.Equal("csharp", info.Language);
     }
@@ -168,9 +168,9 @@ public sealed class OptionRegistryTests {
         // OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt.
 
         string[] permanentlyIgnored = [
-            "resharper_old_engine", "resharper_use_old_engine", "resharper_autodetect_indent_settings",
-            "resharper_apply_auto_detected_rules",
-            "resharper_use_indent_from_vs", "resharper_show_autodetect_configure_formatting_tip"
+            "skala_old_engine", "skala_use_old_engine", "skala_autodetect_indent_settings",
+            "skala_apply_auto_detected_rules",
+            "skala_use_indent_from_vs", "resharper_show_autodetect_configure_formatting_tip"
         ];
 
         foreach (var key in permanentlyIgnored) {
@@ -235,9 +235,9 @@ public sealed class OptionRegistryTests {
     ///         ⚠ It is also where a Tier C refusal's measurement goes. <c>Inert</c> is Tier D by
     ///         construction — the assertion above — so a Tier C key that was <em>also</em> measured
     ///         unobservable had nowhere to record it, and
-    ///         <c>resharper_use_old_engine</c> sat with an empty entry for that reason. Recording it here
+    ///         <c>skala_use_old_engine</c> sat with an empty entry for that reason. Recording it here
     ///         keeps the refusal and the measurement distinct: Tier C still means Skala declines, and
-    ///         <c>resharper_csharp_old_engine</c> — the sibling the oracle demonstrably honours — is why
+    ///         <c>skala_old_engine</c> — the sibling the oracle demonstrably honours — is why
     ///         that is not the same claim.
     ///     </para>
     /// </remarks>

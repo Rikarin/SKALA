@@ -19,11 +19,11 @@ public sealed class ModernizationIntegrationTests {
         const string configuration = """
                                      root = true
                                      [*.cs]
-                                     resharper_configure_await_analysis_mode = library
+                                     skala_configure_await_analysis_mode = library
                                      dotnet_code_quality.SK7030.threshold = 8
                                      dotnet_diagnostic.SK7030.severity = warning
                                      [Ui.cs]
-                                     resharper_configure_await_analysis_mode = ui
+                                     skala_configure_await_analysis_mode = ui
                                      [Suppressed.cs]
                                      dotnet_diagnostic.SK3003.severity = none
                                      """;

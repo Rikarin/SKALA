@@ -145,9 +145,9 @@ A modern formatter (Prettier, CSharpier, `gofmt`, `rustfmt`) discards the input'
 prints the tree. The configuration this tool exists to serve says:
 
 ```ini
-resharper_keep_user_linebreaks = true
-resharper_keep_user_wrapping   = true
-resharper_csharp_keep_existing_declaration_block_arrangement = false   # …and 14 more keep_existing_* keys
+skala_keep_user_linebreaks = true
+skala_keep_user_wrapping   = true
+skala_keep_existing_declaration_block_arrangement = false   # …and 14 more keep_existing_* keys
 ```
 
 Those keys have no meaning in a print-from-scratch formatter — there is no "user wrapping" left to
@@ -185,7 +185,7 @@ Roslyn's `Formatter` cannot enforce a column limit — [dotnet/roslyn#15406][r15
 [#18282][r18282], [#47158][r47158] and [dotnet/format#246][f246] are the standing requests, open
 since 2016, and the team's stated reason for declining is the "seemingly infinite tail of bugs and
 giant set of additional preferences" that the feature drags in. That tail is precisely what
-`resharper_csharp_max_line_length = 120` plus 47 `resharper_wrap_*` keys *is*.
+`skala_max_line_length = 120` plus 47 `resharper_wrap_*` keys *is*.
 
 So the output path is Skala's own: syntax tree → **document IR** (`Text`, `Space`, `Break`,
 `Group`, `Indent`, `Align`, `Verbatim`) → fitting pass → text edits. Roslyn's `Formatter` stays in

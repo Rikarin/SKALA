@@ -24,8 +24,8 @@ public sealed class ConfigureAwaitAnalyzer : DiagnosticAnalyzer {
 
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        if (!options.TryGetValue("resharper_configure_await_analysis_mode", out var mode)) {
-            options.TryGetValue("configure_await_analysis_mode", out mode);
+        if (!options.TryGetValue("skala_configure_await_analysis_mode", out var mode)) {
+            options.TryGetValue("skala_configure_await_analysis_mode", out mode);
         }
 
         // UI mode's redundant ConfigureAwait(true) inspection is a different concept from SK3003.

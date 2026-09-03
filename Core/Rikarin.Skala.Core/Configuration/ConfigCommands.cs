@@ -199,12 +199,12 @@ public static class ConfigCommands {
 
         var hasStandardWidth =
             OptionRegistry.TryResolve("max_line_length", out var widthId) && !resolution[widthId].IsDefault;
-        var reSharperWidth = OptionRegistry.TryResolve("resharper_csharp_max_line_length", out var rsWidthId)
+        var reSharperWidth = OptionRegistry.TryResolve("skala_max_line_length", out var rsWidthId)
             ? resolution[rsWidthId]
             : null;
         if (!hasStandardWidth && reSharperWidth is { IsDefault: false }) {
             output.AppendLine(
-                $"⚠ no `max_line_length`; the column limit lives only in `resharper_csharp_max_line_length = {reSharperWidth.Value}`."
+                $"⚠ no `max_line_length`; the column limit lives only in `skala_max_line_length = {reSharperWidth.Value}`."
             );
             output.AppendLine(
                 "  Every other tool in the ecosystem therefore does not know the width. `skala config fix` adds it."
@@ -707,14 +707,9 @@ public static class ConfigCommands {
             return "xmldoc";
         }
 
-        var span = info.Key.AsSpan();
-        foreach (var prefix in (ReadOnlySpan<string>)["resharper_csharp_", "resharper_", "csharp_"]) {
-            if (span.StartsWith(prefix, StringComparison.Ordinal)) {
-                span = span[prefix.Length..];
-                break;
-            }
-        }
-
+        // ⚠ The generated list, not a third copy of it. The copy that stood here was missing
+        // `dotnet_`, so every `dotnet_style_*` option was filed under a family called "dotnet".
+        var span = OptionKeyPrefixes.Strip(info.Key).AsSpan();
         var underscore = span.IndexOf('_');
         return underscore < 0 ? span.ToString() : span[..underscore].ToString();
     }

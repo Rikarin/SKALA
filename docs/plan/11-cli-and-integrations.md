@@ -84,7 +84,7 @@ configures — which turned out to be a fact about the profile pinned in `Oracle
 rather than about the tool. Rider formats doc comments; the profile does not; **not** formatting
 them was the divergence, so the default flipped and the flag inverted (SK-DIV-0006).
 
-It is a flag rather than `resharper_xmldoc_wrap_lines = false` deliberately. That key means "do not
+It is a flag rather than `skala_xmldoc_wrap_lines = false` deliberately. That key means "do not
 wrap long lines" — with it false the sub-formatter still re-indents, still collapses blank lines
 between tags and still inserts the marker space, which is what Rider does with it false too — and
 JetBrains' `.editorconfig` index does not document it at all. Overloading a ReSharper key with a

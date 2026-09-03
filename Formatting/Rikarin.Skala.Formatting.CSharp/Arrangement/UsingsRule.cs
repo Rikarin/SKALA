@@ -11,7 +11,7 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 /// </summary>
 /// <remarks>
 ///     ⚠ docs/plan/06 § "Usings": sort alphabetically with <c>System</c> <em>not</em> hoisted
-///     (<c>dotnet_sort_system_directives_first = false</c>), no group separation, outside the namespace,
+///     (<c>skala_sort_usings_with_system_first = false</c>), no group separation, outside the namespace,
 ///     one blank line after.
 ///     <para>
 ///         ⚠ Removal is the one rewrite that must consider more than one compilation. "Unused in this file"
@@ -383,7 +383,7 @@ public sealed class UsingsRule : ArrangementRule {
     /// <summary>
     ///     ⚠ Ordinal, and <c>System</c> is not hoisted.
     ///     <c>
-    /// dotnet_sort_system_directives_first =
+    /// skala_sort_usings_with_system_first =
     ///  false
     ///     </c> is an unusual choice and it is the author's; sorting <c>System</c> first "because
     ///     everyone does" would move every using block in the repository on the first run.
@@ -419,8 +419,8 @@ public sealed class UsingsRule : ArrangementRule {
     ///     is what is left, and it fits both.
     ///     <para>
     ///         ⚠ Sorting an alias by <c>Name</c> — its <em>target</em> — is what this did before, and it is
-    ///         what made both <c>resharper_csharp_keep_nontrivial_alias</c> and
-    ///         <c>resharper_remove_only_unused_aliases</c> read <c>DIVERGENT</c> in the key-flip sweep: at
+    ///         what made both <c>skala_keep_nontrivial_alias</c> and
+    ///         <c>skala_remove_only_unused_aliases</c> read <c>DIVERGENT</c> in the key-flip sweep: at
     ///         the value of either key where the second alias survives, the two engines emitted the same
     ///         two directives in opposite orders. At the export's pair only one alias survives, so the
     ///         committed fixture could not see it.
@@ -541,7 +541,7 @@ public sealed class UsingsRule : ArrangementRule {
 }
 
 /// <summary>
-///     <c>string.Empty</c> ⇒ <c>""</c>, under <c>resharper_empty_string = empty_literal</c>.
+///     <c>string.Empty</c> ⇒ <c>""</c>, under <c>skala_empty_string = empty_literal</c>.
 /// </summary>
 /// <remarks>
 ///     ⚠ SK-DIV-0013 again: the oracle does not perform this one either — it normalises

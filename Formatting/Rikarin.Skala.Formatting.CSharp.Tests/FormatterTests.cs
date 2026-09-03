@@ -92,7 +92,7 @@ public sealed class SpacingTests {
 public sealed class IndentationTests {
     [Fact]
     public void NestedLoops_StayFlush() {
-        // indent_nested_for_stmt = false — a real transformation, and one of the few places the
+        // skala_indent_nested_for_stmt = false — a real transformation, and one of the few places the
         // formatter removes indentation the author wrote.
         var formatted = Format.Text(
             """
@@ -275,7 +275,7 @@ public sealed class BlankLineTests {
 
     [Fact]
     public void Removals_BeatRequirements() {
-        // remove_blank_lines_near_braces_in_declarations wins over around_field.
+        // skala_remove_blank_lines_near_braces_in_declarations wins over around_field.
         var formatted = Format.Text("class C {\n\n    int _a;\n\n}\n");
         Assert.Contains("class C {\n    int _a;\n}", formatted, StringComparison.Ordinal);
     }
@@ -322,10 +322,10 @@ public sealed class BlankLineTests {
     ///     the width the fitter will see. <c>OutputWidth</c> measured the gaps *between* a member's
     ///     tokens and there is no gap after the last one, so the trailing comment was missing from the
     ///     comparison: the second member below is 108 columns on its own and 123 with its comment. It
-    ///     was therefore called single-line, <c>blank_lines_around_single_line_invocable = 0</c>
+    ///     was therefore called single-line, <c>skala_blank_lines_around_single_line_invocable = 0</c>
     ///     declined the blank line above it — and then the fitter, which does count the comment,
     ///     chopped the member across three lines. The second pass read a multi-line member, asked
-    ///     <c>blank_lines_around_invocable = 1</c> instead, and inserted the blank line the first pass
+    ///     <c>skala_blank_lines_around_invocable = 1</c> instead, and inserted the blank line the first pass
     ///     had refused.
     ///     <para>
     ///         ⚠ The widths above are the whole test, so the assertion below pins them: a member that
@@ -400,7 +400,7 @@ public sealed class TriviaTests {
 
     [Fact]
     public void ARawStringLiteral_MovesAsOnePiece() {
-        // ⚠ `indent_raw_literal_string = align` since milestone 3, and this test asserted the
+        // ⚠ `skala_indent_raw_literal_string = align` since milestone 3, and this test asserted the
         // opposite until then: SK-DIV-0003 recorded raw literals as emitted verbatim because
         // re-indenting one wrongly changes what the program prints. The transformation that is safe
         // is a *uniform shift* — every interior line and the closing delimiter by the same number of
@@ -422,7 +422,7 @@ public sealed class TriviaTests {
         // documents, which is what this test has always measured; and the sub-formatter keeps the
         // author's line break — `keep_user_linebreaks` is true in the export, so a break the author
         // wrote is a break — while indenting the text inside the element, which is
-        // `indent_text = one_indent`.
+        // `skala_xmldoc_indent_text = one_indent`.
         const string source = """
                               class C {
                                       /// <summary>
@@ -512,7 +512,7 @@ public sealed class SafetyTests {
     ///     Roslyn does <em>not</em> fold directives into <c>DisabledTextTrivia</c>: a <c>#region</c>, a
     ///     <c>#pragma</c>, a nested <c>#if</c> in a branch that is not compiled all arrive as ordinary
     ///     directive trivia, so the piece stream could not tell them from directives that govern real
-    ///     code. <c>blank_lines_around_region</c> then wrote a blank line between <c>#if HAVE_ASYNC</c>
+    ///     code. <c>skala_blank_lines_around_region</c> then wrote a blank line between <c>#if HAVE_ASYNC</c>
     ///     and the <c>#region</c> below it — and re-parsed, that line is a <c>DisabledTextTrivia</c>
     ///     that was not there before, so the safety net aborted the file with <c>SK9099</c> and it could
     ///     not be formatted at all under the empty symbol set. <see cref="Piece.Inactive" /> is the flag
@@ -539,7 +539,7 @@ public sealed class SafetyTests {
     /// </summary>
     /// <remarks>
     ///     ⚠ And the control, in the same test: a <c>#region</c> that governs compiled code still gets
-    ///     <c>blank_lines_around_region</c>. The fix is "the inactive branch is opaque", not "regions
+    ///     <c>skala_blank_lines_around_region</c>. The fix is "the inactive branch is opaque", not "regions
     ///     stopped taking blank lines".
     ///     <para>
     ///         ⚠ The outcome is asserted before the text, and it has to be: a file the safety net refuses
@@ -672,7 +672,7 @@ public sealed class EditTests {
 
     [Fact]
     public void FinalNewline_IsAddedEvenThoughTheGenericKeySaysOtherwise() {
-        // ⚠ resharper_csharp_insert_final_newline = true beats [*] insert_final_newline = false by
+        // ⚠ skala_insert_final_newline = true beats [*] skala_insert_final_newline = false by
         // language specificity (docs/plan/03, hazard 3).
         Assert.EndsWith("}\n", Format.Text("class C {\n}"), StringComparison.Ordinal);
     }
@@ -701,7 +701,7 @@ public sealed class EditTests {
 public sealed class BreakPositionTests {
     [Fact]
     public void ABreakOnTheWrongSideOfABinaryOperator_IsRemoved() {
-        // wrap_before_binary_opsign = true: the gap before the operator is the break point and the
+        // skala_wrap_before_binary_opsign = true: the gap before the operator is the break point and the
         // gap after it is not, so one of these two survives and the other does not.
         var formatted = Format.Text(
             """
@@ -761,7 +761,7 @@ public sealed class BreakPositionTests {
 
     [Fact]
     public void AnInvocationBrokenOnlyAtItsParenthesis_IsRejoined() {
-        // keep_existing_invocation_parens_arrangement = false, and there is no break between items
+        // skala_keep_existing_invocation_parens_arrangement = false, and there is no break between items
         // for keep_user_linebreaks to protect. The asymmetry between this and the test above is the
         // whole content of docs/plan/05's four-way table.
         var formatted = Format.Text(
@@ -781,7 +781,7 @@ public sealed class BreakPositionTests {
     [Fact]
     public void ADeclarationBrokenOnlyAtItsParenthesis_IsKept() {
         // …and the same shape on a declaration is kept, because
-        // keep_existing_declaration_parens_arrangement is true where the invocation one is false.
+        // skala_keep_existing_declaration_parens_arrangement is true where the invocation one is false.
         var formatted = Format.Text(
             """
             class C {
@@ -832,7 +832,7 @@ public sealed class BreakPositionTests {
 
     [Fact]
     public void AShortExpressionBodiedMember_IsRejoined_AndALongOneIsNot() {
-        // place_expr_property_on_single_line = if_owner_is_single_line, both halves of it.
+        // skala_place_expr_property_on_single_line = if_owner_is_single_line, both halves of it.
         var formatted = Format.Text(
             """
             class C {
@@ -1113,7 +1113,7 @@ public sealed class BracePlacementTests {
     ///     </para>
     /// </remarks>
     /// <summary>
-    ///     <c>resharper_csharp_new_line_before_while</c>: the <c>while</c> sits flush with its <c>do</c>.
+    ///     <c>skala_new_line_before_while</c>: the <c>while</c> sits flush with its <c>do</c>.
     /// </summary>
     /// <remarks>
     ///     ⚠ Skala kept the break and indented the <c>while</c> four columns. A <c>do</c>'s trailing
@@ -1129,13 +1129,13 @@ public sealed class BracePlacementTests {
             expected,
             FormatWith(
                 "class C {\n    void M(bool b) {\n        do {\n            M(b);\n        }\n        while (b);\n    }\n}\n",
-                ("resharper_csharp_new_line_before_while", value)
+                ("skala_new_line_before_while", value)
             ),
             StringComparison.Ordinal
         );
 
     /// <summary>
-    ///     <c>resharper_csharp_special_else_if_treatment = false</c> splits a joined <c>else if</c>.
+    ///     <c>skala_special_else_if_treatment = false</c> splits a joined <c>else if</c>.
     /// </summary>
     /// <remarks>
     ///     ⚠ Two-directional, and Skala had the join arm only. At <c>false</c> the <c>if</c> becomes what
@@ -1158,19 +1158,19 @@ public sealed class BracePlacementTests {
 
         Assert.Contains(
             "} else\n            if (a == 2) {\n                M(a);\n            }",
-            FormatWith(joined, ("resharper_csharp_special_else_if_treatment", "false")),
+            FormatWith(joined, ("skala_special_else_if_treatment", "false")),
             StringComparison.Ordinal
         );
 
         Assert.Contains(
             "} else if (a == 2) {",
-            FormatWith(joined, ("resharper_csharp_special_else_if_treatment", "true")),
+            FormatWith(joined, ("skala_special_else_if_treatment", "true")),
             StringComparison.Ordinal
         );
     }
 
     /// <summary>
-    ///     <c>resharper_csharp_empty_block_style</c>: <c>together_same_line</c> joins the pair too.
+    ///     <c>skala_empty_block_style</c>: <c>together_same_line</c> joins the pair too.
     /// </summary>
     /// <remarks>
     ///     ⚠ Skala read it as <c>multiline</c> and split the braces. The two <c>together</c>s differ only
@@ -1186,7 +1186,7 @@ public sealed class BracePlacementTests {
             expected,
             FormatWith(
                 "class C {\n    void M() {\n    }\n}\n",
-                ("resharper_csharp_empty_block_style", value)
+                ("skala_empty_block_style", value)
             ),
             StringComparison.Ordinal
         );
@@ -1251,8 +1251,8 @@ public sealed class SubpatternBreakTests {
     public void TheValueLandsOnTheSubpatternsOwnColumn(string aligned, string margin) {
         var lines = FormatWith(
             Source,
-            ("resharper_csharp_align_multiline_property_pattern", aligned),
-            ("resharper_csharp_max_line_length", margin)
+            ("skala_align_multiline_property_pattern", aligned),
+            ("skala_max_line_length", margin)
         )
                 .Split('\n');
 
@@ -1275,7 +1275,7 @@ public sealed class SubpatternBreakTests {
     public void APositionalSubpattern_IsNotGivenABreakPoint() {
         var formatted = FormatWith(
             "public class P {\n    void M(object c) {\n        var matched = c is P(1, 2);\n    }\n}\n",
-            ("resharper_csharp_max_line_length", "40")
+            ("skala_max_line_length", "40")
         );
 
         var statement = Array.Find(formatted.Split('\n'), static l => l.Contains(" is ", StringComparison.Ordinal));
@@ -1289,7 +1289,7 @@ public sealed class SubpatternBreakTests {
 /// </summary>
 /// <remarks>
 ///     ⚠ SK-DIV-0090. The key-flip sweep cannot ask about either key, because the export sets
-///     <c>resharper_continuous_indent_multiplier = 1</c> and at that multiplier a continuation level and
+///     <c>skala_continuous_indent_multiplier = 1</c> and at that multiplier a continuation level and
 ///     an indent width are the same number — so the oracle is flat at both values and any Skala answer
 ///     that is not also flat reads <c>SPURIOUS</c>. The oracle's real answer, measured at multiplier 2,
 ///     is pinned here instead, one assertion per column the oracle produced.
@@ -1329,7 +1329,7 @@ public sealed class ContinuousIndentInsideTests {
     [InlineData("true")]
     [InlineData("false")]
     public void AtTheExportsMultiplierOfOne_TheParenKeyDecidesNothing(string value) {
-        var formatted = FormatWith(Call, ("resharper_csharp_use_continuous_indent_inside_parens", value));
+        var formatted = FormatWith(Call, ("skala_use_continuous_indent_inside_parens", value));
         Assert.Contains("\n            a,\n", formatted, StringComparison.Ordinal);
     }
 
@@ -1344,8 +1344,8 @@ public sealed class ContinuousIndentInsideTests {
     public void AtMultiplierTwo_InsideParens_IsOneLevelOrOneWidth(string value, string expected) {
         var formatted = FormatWith(
             Call,
-            ("resharper_continuous_indent_multiplier", "2"),
-            ("resharper_csharp_use_continuous_indent_inside_parens", value)
+            ("skala_continuous_indent_multiplier", "2"),
+            ("skala_use_continuous_indent_inside_parens", value)
         );
         Assert.Contains(expected, formatted, StringComparison.Ordinal);
     }
@@ -1353,12 +1353,12 @@ public sealed class ContinuousIndentInsideTests {
     /// <summary>
     ///     ⚠ The initializer half, and only its <c>false</c> arm is asserted. The <c>true</c> arm comes
     ///     from an <c>IndentKind.Block</c> scope, which is one indent width whatever the multiplier says
-    ///     — a <c>continuous_indent_multiplier</c> defect on braced initializers that SK-DIV-0090 records
+    ///     — a <c>skala_continuous_indent_multiplier</c> defect on braced initializers that SK-DIV-0090 records
     ///     and deliberately does not fix. Asserting it here would pin the defect.
     /// </summary>
     [Fact]
     public void AtMultiplierTwo_InsideInitializerBraces_False_IsOneWidthRatherThanNone() {
-        // ⚠ Five elements is over `max_initializer_elements_on_line = 4`, so this one is chopped
+        // ⚠ Five elements is over `skala_max_initializer_elements_on_line = 4`, so this one is chopped
         // whatever its width — which is what makes the indent inside the braces observable at all.
         // The same construct `constructs/indentation/…_initializer_braces.cs` uses, for the same reason.
         const string source = """
@@ -1370,8 +1370,8 @@ public sealed class ContinuousIndentInsideTests {
 
         var formatted = FormatWith(
             source,
-            ("resharper_continuous_indent_multiplier", "2"),
-            ("resharper_csharp_use_continuous_indent_inside_initializer_braces", "false")
+            ("skala_continuous_indent_multiplier", "2"),
+            ("skala_use_continuous_indent_inside_initializer_braces", "false")
         );
 
         // The `new` lands on one continuation level of 2×4 from the member at 4; the elements take one

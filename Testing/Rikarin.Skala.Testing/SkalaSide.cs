@@ -36,7 +36,7 @@ public static class SkalaSide {
     ///     thousand parses of the same document.
     ///     <para>
     ///         ⚠ Raw, and deliberately not normalised. Normalising here and not on the oracle side made
-    ///         <c>resharper_csharp_insert_final_newline</c> look <c>INERT</c> — the oracle moving and Skala
+    ///         <c>skala_insert_final_newline</c> look <c>INERT</c> — the oracle moving and Skala
     ///         not — when <c>skala format --option</c> on the same fixture writes 12 bytes at <c>true</c>
     ///         and 11 at <c>false</c>. Both engines are asked the same question in the same units, and the
     ///         comparison normalises them together.

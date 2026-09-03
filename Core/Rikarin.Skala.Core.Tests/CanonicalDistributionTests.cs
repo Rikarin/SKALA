@@ -340,7 +340,7 @@ public sealed class CanonicalDistributionTests {
     // ...and one where the canonical and Vixen disagree outright.
     [InlineData("Core/Vixen.Core/Thing.cs", "trim_trailing_whitespace", "true")]
     // Where Vixen says nothing, the canonical is in force.
-    [InlineData("Core/Vixen.Core/Thing.cs", "resharper_csharp_max_line_length", "120")]
+    [InlineData("Core/Vixen.Core/Thing.cs", "skala_max_line_length", "120")]
     public void Sync_OnVixen_LeavesTheLocalOverridesWinning(string relativePath, string key, string expected) {
         // ⚠ The whole layering argument in one assertion. The canonical block is first, the local
         // block is second, and editorconfig resolves later sections over earlier ones — so a local

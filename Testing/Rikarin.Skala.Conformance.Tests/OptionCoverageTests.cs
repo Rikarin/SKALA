@@ -74,7 +74,7 @@ public sealed class OptionCoverageTests {
         // of the tier system and must be demoted" since it was written, and until this assertion the
         // demoting was a person reading a markdown table and remembering to act on it. The run at
         // 603fbd3 produced the first two options ever to sit in that state —
-        // `resharper_csharp_wrap_lines` and `resharper_place_attribute_on_same_line`, both Tier A on
+        // `skala_wrap_lines` and `skala_place_attribute_on_same_line`, both Tier A on
         // a fixture alone and both DIVERGENT the first time anything flipped them — and both
         // assertions around this one passed on them.
         var diluted = claimed.Intersect(SweepUnsubstantiated())
@@ -305,7 +305,7 @@ public sealed class OptionCoverageTests {
                 // with a derived one. An option is observable in the configuration its fixture was
                 // generated under; asking the question from ReSharper's own defaults asks a
                 // different one, and answers it wrongly whenever a defaulted key masks it —
-                // `wrap_after_dot_in_method_calls` cannot be seen while `wrap_chained_method_calls`
+                // `skala_wrap_after_dot_in_method_calls` cannot be seen while `skala_wrap_chained_method_calls`
                 // is at its default of `wrap_if_long`, because nothing chops. That is a true fact
                 // about ReSharper's defaults and not a gap in the option's implementation.
                 var options = Rikarin.Skala.Core.Configuration.OptionResolver

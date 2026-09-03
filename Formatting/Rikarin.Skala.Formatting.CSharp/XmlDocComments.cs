@@ -12,7 +12,7 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// </summary>
 /// <remarks>
 ///     ⚠ docs/plan/05 § "Phase 4" describes a sub-formatter: parse the doc comment as XML, re-wrap text
-///     to <c>xmldoc_max_line_length = 120</c>, break before
+///     to <c>skala_xmldoc_max_line_length = 120</c>, break before
 ///     <c>summary,remarks,example,returns,param,…</c>. That formatter is <em>not</em> implemented, and
 ///     the reason is evidence rather than schedule: <c>jb cleanupcode</c> does not touch documentation
 ///     comments at all. Asked directly, with the export's whole <c>resharper_xmldoc_*</c> family in

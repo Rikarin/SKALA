@@ -50,7 +50,7 @@ public sealed class FixTests {
             root = true
             [*]
             max_line_length = 120
-            resharper_csharp_max_line_length = 120
+            skala_max_line_length = 120
             """
         );
 
@@ -64,23 +64,23 @@ public sealed class FixTests {
             """
             root = true
             [*]
-            insert_final_newline = false
+            skala_insert_final_newline = false
             trim_trailing_whitespace = false
-            resharper_csharp_insert_final_newline = true
-            resharper_remove_spaces_on_blank_lines = true
+            skala_insert_final_newline = true
+            skala_remove_spaces_on_blank_lines = true
             """
         );
 
         var result = Fixer.Fix(document, true);
         var fixed_ = EditorConfigDocument.FromText("/repo/.editorconfig", result.Text);
 
-        Assert.Equal("true", Assert.Single(fixed_.Assignments, static a => a.Key == "insert_final_newline").Value);
+        Assert.Equal("true", Assert.Single(fixed_.Assignments, static a => a.Key == "skala_insert_final_newline").Value);
         Assert.Equal("true", Assert.Single(fixed_.Assignments, static a => a.Key == "trim_trailing_whitespace").Value);
     }
 
     [Fact]
     public void ResolveContradictions_LeavesTheLineEndingPairAlone() {
-        // There is no value of end_of_line that agrees with `resharper_enforce_line_ending_style =
+        // There is no value of end_of_line that agrees with `skala_enforce_line_ending_style =
         // false`. Turning enforcement on is a style decision, and `fix` does not make those.
         var document = EditorConfigDocument.FromText(
             "/repo/.editorconfig",
@@ -88,7 +88,7 @@ public sealed class FixTests {
             root = true
             [*]
             end_of_line = lf
-            resharper_enforce_line_ending_style = false
+            skala_enforce_line_ending_style = false
             """
         );
 
@@ -99,7 +99,7 @@ public sealed class FixTests {
         Assert.Equal("lf", Assert.Single(fixed_.Assignments, static a => a.Key == "end_of_line").Value);
         Assert.Equal(
             "false",
-            Assert.Single(fixed_.Assignments, static a => a.Key == "resharper_enforce_line_ending_style").Value
+            Assert.Single(fixed_.Assignments, static a => a.Key == "skala_enforce_line_ending_style").Value
         );
     }
 }

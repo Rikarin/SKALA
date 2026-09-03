@@ -227,7 +227,7 @@ public sealed class ArrangementRuleTests {
     ///     ⚠ The key is pinned here rather than inherited from the repository's own
     ///     <c>.editorconfig</c>. This test read that file and asserted the rewrite unconditionally, so
     ///     when <c>9193c537</c> deliberately flipped Skala's house style to
-    ///     <c>resharper_empty_string = string_empty</c> — across the export, the canonical distribution
+    ///     <c>skala_empty_string = string_empty</c> — across the export, the canonical distribution
     ///     and doc 06 together, which is what makes it a decision rather than drift — the test went red
     ///     reporting a rule regression that had not happened. The rule was correctly disabled.
     /// </summary>
@@ -236,7 +236,7 @@ public sealed class ArrangementRuleTests {
         var output = Arrange(
             EmptyStringProbe,
             only: ArrangeIds.EmptyString,
-            overrides: [new KeyValuePair<string, string>("resharper_empty_string", "empty_literal")]
+            overrides: [new KeyValuePair<string, string>("skala_empty_string", "empty_literal")]
         );
 
         Assert.DoesNotContain(".Empty", output, StringComparison.Ordinal);
@@ -257,7 +257,7 @@ public sealed class ArrangementRuleTests {
         var output = Arrange(
             EmptyStringProbe,
             only: ArrangeIds.EmptyString,
-            overrides: [new KeyValuePair<string, string>("resharper_empty_string", "string_empty")]
+            overrides: [new KeyValuePair<string, string>("skala_empty_string", "string_empty")]
         );
 
         Assert.Contains("string.Empty", output, StringComparison.Ordinal);

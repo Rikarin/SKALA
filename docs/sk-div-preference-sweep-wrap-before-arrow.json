@@ -33658,6 +33658,6 @@
     }
   ],
   "Keys": [
-    "resharper_wrap_before_arrow_with_expressions = true"
+    "skala_wrap_before_arrow_with_expressions = true"
   ]
 }

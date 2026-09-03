@@ -292,12 +292,12 @@ public sealed class FormatterTagTests {
     }
 
     /// <summary>
-    ///     <c>resharper_formatter_off_tag</c> / <c>_on_tag</c>: a configured tag is recognised, and it is
+    ///     <c>skala_formatter_off_tag</c> / <c>_on_tag</c>: a configured tag is recognised, and it is
     ///     recognised <em>in addition to</em> the built-in pair rather than instead of it.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Measured. With <c>resharper_formatter_off_tag = @zzz:off</c> and
-    ///     <c>resharper_formatter_on_tag = @zzz:on</c>, <c>jb cleanupcode</c> returns a region written
+    ///     ⚠ Measured. With <c>skala_formatter_off_tag = @zzz:off</c> and
+    ///     <c>skala_formatter_on_tag = @zzz:on</c>, <c>jb cleanupcode</c> returns a region written
     ///     with the <em>built-in</em> <c>@formatter:off</c> untouched — so the configured pair is
     ///     additive. Skala used to replace, which is strictly less protective than the oracle on a
     ///     feature whose whole job is "nothing touches this".
@@ -306,8 +306,8 @@ public sealed class FormatterTagTests {
     public void AConfiguredTag_IsRecognisedBesideTheBuiltInRatherThanInsteadOfIt() {
         var custom = FormatWith(
             Custom,
-            ("resharper_formatter_off_tag", "@fmt:off"),
-            ("resharper_formatter_on_tag", "@fmt:on")
+            ("skala_formatter_off_tag", "@fmt:off"),
+            ("skala_formatter_on_tag", "@fmt:on")
         );
         Assert.Contains("void   M( )   {", custom, StringComparison.Ordinal);
         Assert.Contains("void N() { }", custom, StringComparison.Ordinal);
@@ -315,15 +315,15 @@ public sealed class FormatterTagTests {
         // The built-in pair, with the configured pair pointed somewhere else entirely.
         var builtin = FormatWith(
             Builtin,
-            ("resharper_formatter_off_tag", "@zzz:off"),
-            ("resharper_formatter_on_tag", "@zzz:on")
+            ("skala_formatter_off_tag", "@zzz:off"),
+            ("skala_formatter_on_tag", "@zzz:on")
         );
         Assert.Contains("void   M( )   {", builtin, StringComparison.Ordinal);
         Assert.Contains("void N() { }", builtin, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     <c>resharper_formatter_tags_enabled = false</c> switches off the <em>configured</em> pair and
+    ///     <c>skala_formatter_tags_enabled = false</c> switches off the <em>configured</em> pair and
     ///     leaves the built-in one alone.
     /// </summary>
     /// <remarks>
@@ -335,19 +335,19 @@ public sealed class FormatterTagTests {
     public void TagsDisabled_StopsTheConfiguredPairAndNotTheBuiltInOne() {
         var custom = FormatWith(
             Custom,
-            ("resharper_formatter_tags_enabled", "false"),
-            ("resharper_formatter_off_tag", "@fmt:off"),
-            ("resharper_formatter_on_tag", "@fmt:on")
+            ("skala_formatter_tags_enabled", "false"),
+            ("skala_formatter_off_tag", "@fmt:off"),
+            ("skala_formatter_on_tag", "@fmt:on")
         );
         Assert.Contains("void M() { }", custom, StringComparison.Ordinal);
 
-        var builtin = FormatWith(Builtin, ("resharper_formatter_tags_enabled", "false"));
+        var builtin = FormatWith(Builtin, ("skala_formatter_tags_enabled", "false"));
         Assert.Contains("void   M( )   {", builtin, StringComparison.Ordinal);
         Assert.Contains("void N() { }", builtin, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     <c>resharper_formatter_tags_accept_regexp = true</c> makes the configured pair patterns.
+    ///     <c>skala_formatter_tags_accept_regexp = true</c> makes the configured pair patterns.
     /// </summary>
     /// <remarks>
     ///     ⚠ Measured: <c>@f.*:off</c> under <c>accept_regexp = true</c> protects a <c>// @fmt:off</c>
@@ -359,18 +359,18 @@ public sealed class FormatterTagTests {
     public void AcceptRegexp_MakesTheConfiguredTagAPattern() {
         var on = FormatWith(
             Custom,
-            ("resharper_formatter_tags_accept_regexp", "true"),
-            ("resharper_formatter_off_tag", "@f.*:off"),
-            ("resharper_formatter_on_tag", "@f.*:on")
+            ("skala_formatter_tags_accept_regexp", "true"),
+            ("skala_formatter_off_tag", "@f.*:off"),
+            ("skala_formatter_on_tag", "@f.*:on")
         );
         Assert.Contains("void   M( )   {", on, StringComparison.Ordinal);
         Assert.Contains("void N() { }", on, StringComparison.Ordinal);
 
         var off = FormatWith(
             Custom,
-            ("resharper_formatter_tags_accept_regexp", "false"),
-            ("resharper_formatter_off_tag", "@f.*:off"),
-            ("resharper_formatter_on_tag", "@f.*:on")
+            ("skala_formatter_tags_accept_regexp", "false"),
+            ("skala_formatter_off_tag", "@f.*:off"),
+            ("skala_formatter_on_tag", "@f.*:on")
         );
         Assert.Contains("void M() { }", off, StringComparison.Ordinal);
     }
@@ -387,17 +387,17 @@ public sealed class FormatterTagTests {
     public void AnUnparsablePattern_MatchesNothing_AndTheBuiltInPairSurvivesIt() {
         var custom = FormatWith(
             Custom,
-            ("resharper_formatter_tags_accept_regexp", "true"),
-            ("resharper_formatter_off_tag", "@fmt:off("),
-            ("resharper_formatter_on_tag", "@fmt:on(")
+            ("skala_formatter_tags_accept_regexp", "true"),
+            ("skala_formatter_off_tag", "@fmt:off("),
+            ("skala_formatter_on_tag", "@fmt:on(")
         );
         Assert.Contains("void M() { }", custom, StringComparison.Ordinal);
 
         var builtin = FormatWith(
             Builtin,
-            ("resharper_formatter_tags_accept_regexp", "true"),
-            ("resharper_formatter_off_tag", "@fmt:off("),
-            ("resharper_formatter_on_tag", "@fmt:on(")
+            ("skala_formatter_tags_accept_regexp", "true"),
+            ("skala_formatter_off_tag", "@fmt:off("),
+            ("skala_formatter_on_tag", "@fmt:on(")
         );
         Assert.Contains("void   M( )   {", builtin, StringComparison.Ordinal);
     }
@@ -410,8 +410,8 @@ public sealed class FormatterTagTests {
     public void UnderAcceptRegexp_ACommentThatMentionsAMatchingTag_IsStillProse() {
         var formatted = FormatWith(
             "class C {\n    // we support @fmt:off here\n    void  M( )   { }\n}\n",
-            ("resharper_formatter_tags_accept_regexp", "true"),
-            ("resharper_formatter_off_tag", "@f.*:off")
+            ("skala_formatter_tags_accept_regexp", "true"),
+            ("skala_formatter_off_tag", "@f.*:off")
         );
         Assert.Contains("void M() { }", formatted, StringComparison.Ordinal);
     }

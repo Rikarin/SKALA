@@ -32,7 +32,7 @@ public readonly struct PhaseOneOptions {
         // hard break is a hard break — all of which Fits already expresses, because a subtree
         // holding a break has an Unbounded flat width and never fits at any margin.
         // ⚠ A width of 0 is "no limit" and not "120", and that is measured rather than read off the
-        // name. Asked with `resharper_csharp_max_line_length = 0` and nothing else changed, the
+        // name. Asked with `skala_max_line_length = 0` and nothing else changed, the
         // oracle returns `constructs/wrapping/initializers.cs` with a 141-column line untouched —
         // no finite margin produces that — while the element counter still chops the initializer it
         // governs, which is the same "a construct that breaks for a reason other than width still
@@ -435,7 +435,7 @@ public readonly struct PhaseOneOptions {
     public TabFillStyle TabFill { get; }
 
     /// <summary>
-    ///     <c>align_multiline_comments</c>: a starred block comment's continuation lines go to the
+    ///     <c>skala_align_multiline_comments</c>: a starred block comment's continuation lines go to the
     ///     opening <c>/*</c>'s column plus one.
     /// </summary>
     /// <remarks>
@@ -469,7 +469,7 @@ public readonly struct PhaseOneOptions {
     public int MaxLineLength { get; }
 
     /// <summary>
-    ///     <c>resharper_csharp_wrap_lines</c>: whether the formatter may break a line for width at all.
+    ///     <c>skala_wrap_lines</c>: whether the formatter may break a line for width at all.
     /// </summary>
     public bool WrapLines { get; }
 
@@ -486,19 +486,19 @@ public readonly struct PhaseOneOptions {
     public bool SpaceAfterCast { get; }
 
     /// <summary>
-    ///     <c>space_around_dot</c>: the gap beside a <c>.</c> or a <c>?.</c>.
+    ///     <c>skala_space_around_dot</c>: the gap beside a <c>.</c> or a <c>?.</c>.
     /// </summary>
     /// <remarks>
     ///     ⚠ Read out of the specific key rather than out of the generalized
     ///     <c>space_around_member_access_operator</c> that used to supply it. The two agree in this
     ///     export, and the generalized one is still honoured — through
     ///     <see cref="Rikarin.Skala.Options.OptionInfo.Expands" />, applied by the resolver — but a
-    ///     configuration that sets only <c>space_around_dot</c> is one the oracle answers and Skala
+    ///     configuration that sets only <c>skala_space_around_dot</c> is one the oracle answers and Skala
     ///     used to ignore.
     /// </remarks>
     public bool SpaceAroundDot { get; }
 
-    /// <summary><c>space_around_arrow_op</c>: the gap beside a pointer member access <c>-&gt;</c>.</summary>
+    /// <summary><c>skala_space_around_arrow_op</c>: the gap beside a pointer member access <c>-&gt;</c>.</summary>
     public bool SpaceAroundArrowOp { get; }
 
     public bool SpaceAfterUnaryOperator { get; }
@@ -534,7 +534,7 @@ public readonly struct PhaseOneOptions {
     /// <remarks>
     ///     ⚠ One key per keyword rather than the single generalized
     ///     <c>space_after_keywords_in_control_flow_statements</c> the export writes. The oracle answers
-    ///     each of the nine separately — <c>space_before_if_parentheses = false</c> alone produces
+    ///     each of the nine separately — <c>skala_space_before_if_parentheses = false</c> alone produces
     ///     <c>if(n &gt; 0)</c> and leaves every other keyword's space — so a rule written against the
     ///     generalized key silently ignores eight of the nine. The generalized key still reaches these
     ///     fields, through the resolver's expansion of
@@ -558,7 +558,7 @@ public readonly struct PhaseOneOptions {
     /// <remarks>
     ///     ⚠ <see cref="SpaceWithinParentheses" /> used to answer all of them, which made every one of
     ///     these fifteen keys inert. Each is observable on its own against the oracle:
-    ///     <c>space_within_if_parentheses = true</c> produces <c>if ( n &gt; 0 )</c> and touches
+    ///     <c>skala_space_within_if_parentheses = true</c> produces <c>if ( n &gt; 0 )</c> and touches
     ///     nothing else.
     /// </remarks>
     public bool SpaceWithinIfParentheses { get; }
@@ -576,10 +576,10 @@ public readonly struct PhaseOneOptions {
     public bool SpaceWithinNameofParentheses { get; }
 
     /// <summary>
-    ///     ⚠ Read and never consulted. <c>space_within_new_parentheses</c> names the gap inside
+    ///     ⚠ Read and never consulted. <c>skala_space_within_new_parentheses</c> names the gap inside
     ///     <c>new T(…)</c>'s parentheses, and the oracle does not answer it at either value: asked with
     ///     <c>new List&lt;int&gt;(4)</c> and with <c>new object()</c>, the argument list comes back
-    ///     governed by <c>space_between_method_call_parameter_list_parentheses</c> instead. It stays
+    ///     governed by <c>skala_space_between_method_call_parameter_list_parentheses</c> instead. It stays
     ///     Tier D with that measurement rather than being wired to a gap it does not own.
     /// </summary>
     public bool SpaceWithinNewParentheses { get; }
@@ -611,7 +611,7 @@ public readonly struct PhaseOneOptions {
     public bool SpaceWithinArrayAccessBrackets { get; }
 
     /// <summary>
-    ///     <c>space_within_array_rank_brackets</c>: <c>new int[ 2, 3 ]</c> and <c>int[ , ]</c>.
+    ///     <c>skala_space_within_array_rank_brackets</c>: <c>new int[ 2, 3 ]</c> and <c>int[ , ]</c>.
     /// </summary>
     /// <remarks>
     ///     ⚠ A rank specifier that is nothing but <c>[]</c> is <see cref="SpaceWithinArrayRankEmptyBrackets" />'s
@@ -687,7 +687,7 @@ public readonly struct PhaseOneOptions {
     public bool IndentBraces { get; }
 
     /// <summary>
-    ///     <c>align_multiline_statement_conditions</c>: a condition broken across lines is laid out from
+    ///     <c>skala_align_multiline_statement_conditions</c>: a condition broken across lines is laid out from
     ///     the column just after the statement's <c>(</c> rather than from an indent level.
     /// </summary>
     public bool AlignMultilineStatementConditions { get; }
@@ -767,7 +767,7 @@ public readonly struct PhaseOneOptions {
     public PreprocessorIndentStyle IndentPreprocessorRegion { get; }
     public bool IndentAnonymousMethodBlock { get; }
 
-    /// <summary><c>outdent_statement_labels</c>: <c>Finish:</c> one level out from what it labels.</summary>
+    /// <summary><c>skala_outdent_statement_labels</c>: <c>Finish:</c> one level out from what it labels.</summary>
     public bool OutdentStatementLabels { get; }
 
     /// <summary>
@@ -808,7 +808,7 @@ public readonly struct PhaseOneOptions {
     /// <remarks>
     ///     ⚠ Masked at the export's own values in the one direction the names suggest: the closing
     ///     <c>)</c> of a primary constructor's parameter list never reaches a line of its own, because
-    ///     <c>wrap_before_primary_constructor_declaration_rpar = false</c> keeps it on the last
+    ///     <c>skala_wrap_before_primary_constructor_declaration_rpar = false</c> keeps it on the last
     ///     parameter's. The <em>contents</em> half is observable regardless, and <c>none</c> puts a
     ///     record's parameters at the declaration's own column.
     /// </remarks>
@@ -817,7 +817,7 @@ public readonly struct PhaseOneOptions {
     /// <inheritdoc cref="IndentInvocationPars" />
     /// <remarks>
     ///     ⚠ Read and inert under this export, and the reason is another key rather than the wiring:
-    ///     <c>align_multiline_statement_conditions = true</c> anchors a statement's condition — and the
+    ///     <c>skala_align_multiline_statement_conditions = true</c> anchors a statement's condition — and the
     ///     <c>)</c> after it — to the column after the <c>(</c>, which is an absolute column and not a
     ///     level. All four values return the same file while that key is on. Recorded because a masked
     ///     key and an unread key look identical from the outside and are not the same finding.
@@ -858,7 +858,7 @@ public readonly struct PhaseOneOptions {
     /// <remarks>
     ///     ⚠ Both directions, which is what separates it from <c>disable_line_break_removal</c>. On one
     ///     probe the export's cap truncated a three-blank run to two and
-    ///     <c>blank_lines_around_invocable</c> inserted a blank after a <c>}</c>; with this key on,
+    ///     <c>skala_blank_lines_around_invocable</c> inserted a blank after a <c>}</c>; with this key on,
     ///     neither happened — the three survived and the blank was not inserted. <c>line_break_removal</c>
     ///     on the same file kept the three and still inserted the blank, so the two keys are a superset
     ///     and a subset in the *removal* direction only. Line breaks that are not blank lines are still
@@ -936,7 +936,7 @@ public readonly struct PhaseOneOptions {
     public bool OutdentDots { get; }
 
     /// <summary>
-    ///     <c>align_multiple_declaration</c>: the second and later declarators of one declaration take
+    ///     <c>skala_align_multiple_declaration</c>: the second and later declarators of one declaration take
     ///     the first declarator's column rather than a continuation level.
     /// </summary>
     public bool AlignMultipleDeclaration { get; }
@@ -1110,7 +1110,7 @@ public readonly struct PhaseOneOptions {
     public WrapStyle WrapChainedBinaryPatterns { get; }
 
     /// <summary>
-    ///     <c>force_chop_compound_if_expression</c>: chop a compound <c>if</c> condition at every
+    ///     <c>skala_force_chop_compound_if_expression</c>: chop a compound <c>if</c> condition at every
     ///     operator of its root <c>&amp;&amp;</c>/<c>||</c> chain, however well it fits.
     /// </summary>
     /// <remarks>
@@ -1129,7 +1129,7 @@ public readonly struct PhaseOneOptions {
     public WrapStyle WrapExtendsListStyle { get; }
 
     /// <summary>
-    ///     <c>wrap_for_stmt_header_style</c>: what happens to a <c>for</c> header that does not fit.
+    ///     <c>skala_wrap_for_stmt_header_style</c>: what happens to a <c>for</c> header that does not fit.
     /// </summary>
     /// <remarks>
     ///     ⚠ The break is <em>after</em> each <c>;</c>, and the two styles differ on which of them break.
@@ -1211,9 +1211,9 @@ public static class Ids {
     /// <summary>Ids <see cref="OfUnoracled" /> marked; observable, and excluded from <see cref="All" />.</summary>
     static readonly List<OptionId> Unoracled = [];
 
-    public static readonly OptionId IndentSize = Of("resharper_csharp_indent_size");
-    public static readonly OptionId TabWidth = OfInert("resharper_csharp_tab_width");
-    public static readonly OptionId IndentStyle = Of("resharper_csharp_indent_style");
+    public static readonly OptionId IndentSize = Of("skala_indent_size");
+    public static readonly OptionId TabWidth = OfInert("skala_tab_width");
+    public static readonly OptionId IndentStyle = Of("skala_indent_style");
     // ⚠ Inert for the same reason `TabWidth` above is, and the reason is the *corpus* rather than the
     // key: every committed fixture is indented with spaces, and with spaces all three values spell the
     // identical column. `LayoutWriter.WriteIndentTo` now writes three distinct layouts under tabs, each
@@ -1224,7 +1224,7 @@ public static class Ids {
     // and not before: the key-flip sweep only reaches an option that has an `oracle` glob, a glob may
     // only point at a committed fixture, and no committed fixture can be tab-indented. That is the
     // whole of what is left of SK-DIV-0032 — the layouts themselves are fixed.
-    public static readonly OptionId AlignmentTabFillStyle = OfInert("resharper_csharp_alignment_tab_fill_style");
+    public static readonly OptionId AlignmentTabFillStyle = OfInert("skala_alignment_tab_fill_style");
 
     // ⚠ `OfUnoracled` in its documented sense — "asked, and answered differently" — and the mark is
     // load-bearing rather than a place to park the key. Skala reproduces the oracle at the export's
@@ -1232,12 +1232,12 @@ public static class Ids {
     // column, and Skala re-indents that. So the key is honoured, observable, and not conformant at one
     // of its two values, which is exactly what bars it from Tier A. SK-DIV-0033 carries the probe.
     public static readonly OptionId AlignMultilineComments =
-        OfUnoracled("resharper_csharp_align_multiline_comments");
+        OfUnoracled("skala_align_multiline_comments");
 
     // ⚠ No longer inert. Milestone 1 read it and could not act on it — nothing wrapped — and it was
     // Tier D for that reason (docs/plan/05 § "Phase 1"). Milestone 3 is the phase where the column
     // limit is the whole point, and constructs/wrapping/initializers.cs pins it.
-    public static readonly OptionId MaxLineLength = Of("resharper_csharp_max_line_length");
+    public static readonly OptionId MaxLineLength = Of("skala_max_line_length");
 
     // ⚠ Beside MaxLineLength because it *is* MaxLineLength: at `false` the margin is unbounded, and
     // `jb cleanupcode` produces byte-identical output for `wrap_lines = false` and
@@ -1245,222 +1245,222 @@ public static class Ids {
     // nothing behind it" — "csharp_wrap_lines = false leaves an over-long line wrapped exactly as
     // before" — which was measured on input that was already wrapped, where most of what stays put
     // stays put under `keep_user_linebreaks` rather than under this key.
-    public static readonly OptionId WrapLines = Of("resharper_csharp_wrap_lines");
-    public static readonly OptionId InsertFinalNewline = Of("resharper_csharp_insert_final_newline");
-    public static readonly OptionId RemoveSpacesOnBlankLines = OfInert("resharper_remove_spaces_on_blank_lines");
-    public static readonly OptionId EnforceLineEndingStyle = Of("resharper_enforce_line_ending_style");
+    public static readonly OptionId WrapLines = Of("skala_wrap_lines");
+    public static readonly OptionId InsertFinalNewline = Of("skala_insert_final_newline");
+    public static readonly OptionId RemoveSpacesOnBlankLines = OfInert("skala_remove_spaces_on_blank_lines");
+    public static readonly OptionId EnforceLineEndingStyle = Of("skala_enforce_line_ending_style");
     public static readonly OptionId EndOfLine = OfInert("end_of_line");
 
-    public static readonly OptionId SpaceAfterComma = Of("resharper_space_after_comma");
-    public static readonly OptionId SpaceBeforeComma = Of("resharper_space_before_comma");
-    public static readonly OptionId SpaceBeforeSemicolon = Of("resharper_csharp_space_before_semicolon");
+    public static readonly OptionId SpaceAfterComma = Of("skala_space_after_comma");
+    public static readonly OptionId SpaceBeforeComma = Of("skala_space_before_comma");
+    public static readonly OptionId SpaceBeforeSemicolon = Of("skala_space_before_semicolon");
 
     public static readonly OptionId SpaceAfterSemicolonInForStatement =
-        Of("resharper_space_after_semicolon_in_for_statement");
+        Of("skala_space_after_semicolon_in_for_statement");
 
     public static readonly OptionId SpaceBeforeSemicolonInForStatement =
-        Of("resharper_space_before_semicolon_in_for_statement");
+        Of("skala_space_before_semicolon_in_for_statement");
 
-    public static readonly OptionId SpaceAfterCast = Of("resharper_space_after_cast");
+    public static readonly OptionId SpaceAfterCast = Of("skala_space_after_cast");
 
-    public static readonly OptionId SpaceAroundDot = Of("resharper_csharp_space_around_dot");
-    public static readonly OptionId SpaceAroundArrowOp = Of("resharper_csharp_space_around_arrow_op");
+    public static readonly OptionId SpaceAroundDot = Of("skala_space_around_dot");
+    public static readonly OptionId SpaceAroundArrowOp = Of("skala_space_around_arrow_op");
 
-    public static readonly OptionId SpaceAfterUnaryOperator = Of("resharper_csharp_space_after_unary_operator");
+    public static readonly OptionId SpaceAfterUnaryOperator = Of("skala_space_after_unary_operator");
 
     // ⚠ The five keys `space_after_unary_operator` names, read on their own because the oracle
-    // answers them on their own: `space_after_logical_not_op = true` alone writes `! b` and leaves
+    // answers them on their own: `skala_space_after_logical_not_op = true` alone writes `! b` and leaves
     // `-a`, `+a`, `&a` and `*p` where they were. Declared after the generalized key they belong to
     // so that `OfGeneralized`'s "at least one target is implemented" check can see them.
-    public static readonly OptionId SpaceAfterLogicalNotOp = Of("resharper_csharp_space_after_logical_not_op");
-    public static readonly OptionId SpaceAfterUnaryMinusOp = Of("resharper_csharp_space_after_unary_minus_op");
-    public static readonly OptionId SpaceAfterUnaryPlusOp = Of("resharper_csharp_space_after_unary_plus_op");
-    public static readonly OptionId SpaceAfterAmpersandOp = Of("resharper_csharp_space_after_ampersand_op");
-    public static readonly OptionId SpaceAfterAsterikOp = Of("resharper_csharp_space_after_asterik_op");
+    public static readonly OptionId SpaceAfterLogicalNotOp = Of("skala_space_after_logical_not_op");
+    public static readonly OptionId SpaceAfterUnaryMinusOp = Of("skala_space_after_unary_minus_op");
+    public static readonly OptionId SpaceAfterUnaryPlusOp = Of("skala_space_after_unary_plus_op");
+    public static readonly OptionId SpaceAfterAmpersandOp = Of("skala_space_after_ampersand_op");
+    public static readonly OptionId SpaceAfterAsterikOp = Of("skala_space_after_asterik_op");
 
     public static readonly OptionId SpaceNearPostfixAndPrefixOp =
-        Of("resharper_csharp_space_near_postfix_and_prefix_op");
+        Of("skala_space_near_postfix_and_prefix_op");
 
-    public static readonly OptionId SpaceAroundAssignmentOp = Of("resharper_csharp_space_around_assignment_op");
-    public static readonly OptionId SpaceAroundLambdaArrow = Of("resharper_csharp_space_around_lambda_arrow");
-    public static readonly OptionId SpaceAroundAdditiveOp = Of("resharper_csharp_space_around_additive_op");
-    public static readonly OptionId SpaceAroundRelationalOp = Of("resharper_csharp_space_around_relational_op");
-    public static readonly OptionId SpaceAroundShiftOp = Of("resharper_csharp_space_around_shift_op");
-    public static readonly OptionId SpaceAroundAliasEq = Of("resharper_csharp_space_around_alias_eq");
-    public static readonly OptionId SpaceAfterOperatorKeyword = Of("resharper_csharp_space_after_operator_keyword");
+    public static readonly OptionId SpaceAroundAssignmentOp = Of("skala_space_around_assignment_op");
+    public static readonly OptionId SpaceAroundLambdaArrow = Of("skala_space_around_lambda_arrow");
+    public static readonly OptionId SpaceAroundAdditiveOp = Of("skala_space_around_additive_op");
+    public static readonly OptionId SpaceAroundRelationalOp = Of("skala_space_around_relational_op");
+    public static readonly OptionId SpaceAroundShiftOp = Of("skala_space_around_shift_op");
+    public static readonly OptionId SpaceAroundAliasEq = Of("skala_space_around_alias_eq");
+    public static readonly OptionId SpaceAfterOperatorKeyword = Of("skala_space_after_operator_keyword");
 
     public static readonly OptionId SpaceBetweenKeywordAndExpression =
-        Of("resharper_csharp_space_between_keyword_and_expression");
+        Of("skala_space_between_keyword_and_expression");
 
     public static readonly OptionId SpaceBetweenKeywordAndType =
-        OfInert("resharper_csharp_space_between_keyword_and_type");
+        OfInert("skala_space_between_keyword_and_type");
 
-    public static readonly OptionId SpaceBeforeIfParentheses = Of("resharper_csharp_space_before_if_parentheses");
+    public static readonly OptionId SpaceBeforeIfParentheses = Of("skala_space_before_if_parentheses");
 
     public static readonly OptionId SpaceBeforeWhileParentheses =
-        Of("resharper_csharp_space_before_while_parentheses");
+        Of("skala_space_before_while_parentheses");
 
-    public static readonly OptionId SpaceBeforeForParentheses = Of("resharper_csharp_space_before_for_parentheses");
+    public static readonly OptionId SpaceBeforeForParentheses = Of("skala_space_before_for_parentheses");
 
     public static readonly OptionId SpaceBeforeForeachParentheses =
-        Of("resharper_csharp_space_before_foreach_parentheses");
+        Of("skala_space_before_foreach_parentheses");
 
     public static readonly OptionId SpaceBeforeSwitchParentheses =
-        Of("resharper_csharp_space_before_switch_parentheses");
+        Of("skala_space_before_switch_parentheses");
 
     public static readonly OptionId SpaceBeforeCatchParentheses =
-        Of("resharper_csharp_space_before_catch_parentheses");
+        Of("skala_space_before_catch_parentheses");
 
-    public static readonly OptionId SpaceBeforeLockParentheses = Of("resharper_csharp_space_before_lock_parentheses");
+    public static readonly OptionId SpaceBeforeLockParentheses = Of("skala_space_before_lock_parentheses");
 
     public static readonly OptionId SpaceBeforeUsingParentheses =
-        Of("resharper_csharp_space_before_using_parentheses");
+        Of("skala_space_before_using_parentheses");
 
     public static readonly OptionId SpaceBeforeFixedParentheses =
-        Of("resharper_csharp_space_before_fixed_parentheses");
+        Of("skala_space_before_fixed_parentheses");
 
-    public static readonly OptionId SpaceWithinIfParentheses = Of("resharper_csharp_space_within_if_parentheses");
+    public static readonly OptionId SpaceWithinIfParentheses = Of("skala_space_within_if_parentheses");
 
     public static readonly OptionId SpaceWithinWhileParentheses =
-        Of("resharper_csharp_space_within_while_parentheses");
+        Of("skala_space_within_while_parentheses");
 
-    public static readonly OptionId SpaceWithinForParentheses = Of("resharper_csharp_space_within_for_parentheses");
+    public static readonly OptionId SpaceWithinForParentheses = Of("skala_space_within_for_parentheses");
 
     public static readonly OptionId SpaceWithinForeachParentheses =
-        Of("resharper_csharp_space_within_foreach_parentheses");
+        Of("skala_space_within_foreach_parentheses");
 
     public static readonly OptionId SpaceWithinSwitchParentheses =
-        Of("resharper_csharp_space_within_switch_parentheses");
+        Of("skala_space_within_switch_parentheses");
 
     public static readonly OptionId SpaceWithinCatchParentheses =
-        Of("resharper_csharp_space_within_catch_parentheses");
+        Of("skala_space_within_catch_parentheses");
 
-    public static readonly OptionId SpaceWithinLockParentheses = Of("resharper_csharp_space_within_lock_parentheses");
+    public static readonly OptionId SpaceWithinLockParentheses = Of("skala_space_within_lock_parentheses");
 
     public static readonly OptionId SpaceWithinUsingParentheses =
-        Of("resharper_csharp_space_within_using_parentheses");
+        Of("skala_space_within_using_parentheses");
 
     public static readonly OptionId SpaceWithinFixedParentheses =
-        Of("resharper_csharp_space_within_fixed_parentheses");
+        Of("skala_space_within_fixed_parentheses");
 
     public static readonly OptionId SpaceWithinCheckedParentheses =
-        Of("resharper_csharp_space_within_checked_parentheses");
+        Of("skala_space_within_checked_parentheses");
 
     public static readonly OptionId SpaceWithinDefaultParentheses =
-        Of("resharper_csharp_space_within_default_parentheses");
+        Of("skala_space_within_default_parentheses");
 
     public static readonly OptionId SpaceWithinNameofParentheses =
-        Of("resharper_csharp_space_within_nameof_parentheses");
+        Of("skala_space_within_nameof_parentheses");
 
     // ⚠ Inert, and measured rather than assumed. Asked at both values with `new List<int>(4)` and
     // with `new object()`, the oracle returns the argument list exactly as
-    // `space_between_method_call_parameter_list_parentheses` and its empty twin decide; nothing
-    // distinguishes the two values of this key. `space_before_new_parentheses` — the gap in *front*
+    // `skala_space_between_method_call_parameter_list_parentheses` and its empty twin decide; nothing
+    // distinguishes the two values of this key. `skala_space_before_new_parentheses` — the gap in *front*
     // of the parenthesis — is the one `new` really does own, and it stays Tier A.
     public static readonly OptionId SpaceWithinNewParentheses =
-        OfInert("resharper_csharp_space_within_new_parentheses");
+        OfInert("skala_space_within_new_parentheses");
 
     public static readonly OptionId SpaceWithinSizeofParentheses =
-        Of("resharper_csharp_space_within_sizeof_parentheses");
+        Of("skala_space_within_sizeof_parentheses");
 
     public static readonly OptionId SpaceWithinTypeofParentheses =
-        Of("resharper_csharp_space_within_typeof_parentheses");
+        Of("skala_space_within_typeof_parentheses");
 
     public static readonly OptionId SpaceWithinMethodCallParentheses =
-        Of("resharper_space_between_method_call_parameter_list_parentheses");
+        Of("skala_space_between_method_call_parameter_list_parentheses");
 
     public static readonly OptionId SpaceWithinEmptyMethodCallParentheses =
-        Of("resharper_space_between_method_call_empty_parameter_list_parentheses");
+        Of("skala_space_between_method_call_empty_parameter_list_parentheses");
 
     public static readonly OptionId SpaceWithinMethodDeclarationParentheses =
-        Of("resharper_space_between_method_declaration_parameter_list_parentheses");
+        Of("skala_space_between_method_declaration_parameter_list_parentheses");
 
     public static readonly OptionId SpaceWithinEmptyMethodDeclarationParentheses =
-        Of("resharper_space_between_method_declaration_empty_parameter_list_parentheses");
+        Of("skala_space_between_method_declaration_empty_parameter_list_parentheses");
 
     public static readonly OptionId SpaceBeforeMethodParentheses =
-        Of("resharper_csharp_space_before_method_parentheses");
+        Of("skala_space_before_method_parentheses");
 
     public static readonly OptionId SpaceBeforeMethodCallParentheses =
-        Of("resharper_csharp_space_before_method_call_parentheses");
+        Of("skala_space_before_method_call_parentheses");
 
     public static readonly OptionId SpaceBeforeEmptyMethodParentheses =
-        Of("resharper_csharp_space_before_empty_method_parentheses");
+        Of("skala_space_before_empty_method_parentheses");
 
     public static readonly OptionId SpaceBeforeEmptyMethodCallParentheses =
-        Of("resharper_csharp_space_before_empty_method_call_parentheses");
+        Of("skala_space_before_empty_method_call_parentheses");
 
-    public static readonly OptionId SpaceBeforeNewParentheses = Of("resharper_csharp_space_before_new_parentheses");
+    public static readonly OptionId SpaceBeforeNewParentheses = Of("skala_space_before_new_parentheses");
 
     public static readonly OptionId SpaceBeforeTypeofParentheses =
-        Of("resharper_csharp_space_before_typeof_parentheses");
+        Of("skala_space_before_typeof_parentheses");
 
     public static readonly OptionId SpaceBeforeSizeofParentheses =
-        Of("resharper_csharp_space_before_sizeof_parentheses");
+        Of("skala_space_before_sizeof_parentheses");
 
     public static readonly OptionId SpaceBeforeDefaultParentheses =
-        Of("resharper_csharp_space_before_default_parentheses");
+        Of("skala_space_before_default_parentheses");
 
     public static readonly OptionId SpaceBeforeCheckedParentheses =
-        Of("resharper_csharp_space_before_checked_parentheses");
+        Of("skala_space_before_checked_parentheses");
 
     public static readonly OptionId SpaceBeforeNameofParentheses =
-        Of("resharper_csharp_space_before_nameof_parentheses");
+        Of("skala_space_before_nameof_parentheses");
 
-    public static readonly OptionId SpaceWithinParentheses = Of("resharper_csharp_space_within_parentheses");
+    public static readonly OptionId SpaceWithinParentheses = Of("skala_space_within_parentheses");
 
     public static readonly OptionId SpaceBetweenTypecastParentheses =
-        Of("resharper_csharp_space_between_typecast_parentheses");
+        Of("skala_space_between_typecast_parentheses");
 
     public static readonly OptionId SpaceBeforeArrayAccessBrackets =
-        Of("resharper_csharp_space_before_array_access_brackets");
+        Of("skala_space_before_array_access_brackets");
 
     public static readonly OptionId SpaceBeforeArrayRankBrackets =
-        Of("resharper_csharp_space_before_array_rank_brackets");
+        Of("skala_space_before_array_rank_brackets");
 
     public static readonly OptionId SpaceWithinArrayAccessBrackets =
-        Of("resharper_csharp_space_within_array_access_brackets");
+        Of("skala_space_within_array_access_brackets");
 
     public static readonly OptionId SpaceWithinArrayRankBrackets =
-        Of("resharper_csharp_space_within_array_rank_brackets");
+        Of("skala_space_within_array_rank_brackets");
 
     public static readonly OptionId SpaceWithinArrayRankEmptyBrackets =
-        Of("resharper_csharp_space_within_array_rank_empty_brackets");
+        Of("skala_space_within_array_rank_empty_brackets");
 
     public static readonly OptionId SpaceWithinAttributeBrackets =
-        Of("resharper_csharp_space_within_attribute_brackets");
+        Of("skala_space_within_attribute_brackets");
 
     public static readonly OptionId SpaceWithinListPatternBrackets =
-        Of("resharper_csharp_space_within_list_pattern_brackets");
+        Of("skala_space_within_list_pattern_brackets");
 
     public static readonly OptionId SpaceBeforeTypeArgumentAngle =
-        Of("resharper_csharp_space_before_type_argument_angle");
+        Of("skala_space_before_type_argument_angle");
 
     public static readonly OptionId SpaceBeforeTypeParameterAngle =
-        Of("resharper_csharp_space_before_type_parameter_angle");
+        Of("skala_space_before_type_parameter_angle");
 
     public static readonly OptionId SpaceWithinTypeArgumentAngles =
-        Of("resharper_csharp_space_within_type_argument_angles");
+        Of("skala_space_within_type_argument_angles");
 
     public static readonly OptionId SpaceWithinTypeParameterAngles =
-        Of("resharper_csharp_space_within_type_parameter_angles");
+        Of("skala_space_within_type_parameter_angles");
 
-    public static readonly OptionId SpaceAfterAttributes = Of("resharper_csharp_space_after_attributes");
+    public static readonly OptionId SpaceAfterAttributes = Of("skala_space_after_attributes");
 
     public static readonly OptionId SpaceBetweenAttributeSections =
-        Of("resharper_csharp_space_between_attribute_sections");
+        Of("skala_space_between_attribute_sections");
 
-    public static readonly OptionId SpaceBeforeAttributeColon = Of("resharper_csharp_space_before_attribute_colon");
-    public static readonly OptionId SpaceAfterAttributeColon = Of("resharper_csharp_space_after_attribute_colon");
+    public static readonly OptionId SpaceBeforeAttributeColon = Of("skala_space_before_attribute_colon");
+    public static readonly OptionId SpaceAfterAttributeColon = Of("skala_space_after_attribute_colon");
 
     public static readonly OptionId SpaceBeforeColonInInheritanceClause =
-        Of("resharper_space_before_colon_in_inheritance_clause");
+        Of("skala_space_before_colon_in_inheritance_clause");
 
     public static readonly OptionId SpaceAfterColonInInheritanceClause =
-        Of("resharper_space_after_colon_in_inheritance_clause");
+        Of("skala_space_after_colon_in_inheritance_clause");
 
-    public static readonly OptionId SpaceBeforeColonInCase = Of("resharper_csharp_space_before_colon_in_case");
-    public static readonly OptionId SpaceAfterColonInCase = Of("resharper_csharp_space_after_colon_in_case");
+    public static readonly OptionId SpaceBeforeColonInCase = Of("skala_space_before_colon_in_case");
+    public static readonly OptionId SpaceAfterColonInCase = Of("skala_space_after_colon_in_case");
 
     // ⚠ Inert, and measured in both directions. Asked at both values on `public C() : base(1)`
     // beside `public C(int a): this()` — one written with the space, one without — the oracle
@@ -1468,22 +1468,22 @@ public static class Ids {
     // (`space_before_colon_in_bitfield_declarator` and the rest); the C# formatter spends one space
     // in front of a constructor initializer's colon and offers no way to ask for none.
     public static readonly OptionId SpaceBeforeColonInCtorInitializer =
-        OfInert("resharper_space_before_colon_in_ctor_initializer");
+        OfInert("skala_space_before_colon_in_ctor_initializer");
 
     public static readonly OptionId SpaceBeforeTypeParameterConstraintColon =
-        Of("resharper_csharp_space_before_type_parameter_constraint_colon");
+        Of("skala_space_before_type_parameter_constraint_colon");
 
     public static readonly OptionId SpaceAfterTypeParameterConstraintColon =
-        Of("resharper_csharp_space_after_type_parameter_constraint_colon");
+        Of("skala_space_after_type_parameter_constraint_colon");
 
-    public static readonly OptionId SpaceBeforeTernaryQuest = Of("resharper_csharp_space_before_ternary_quest");
-    public static readonly OptionId SpaceAfterTernaryQuest = Of("resharper_csharp_space_after_ternary_quest");
-    public static readonly OptionId SpaceBeforeTernaryColon = Of("resharper_csharp_space_before_ternary_colon");
-    public static readonly OptionId SpaceAfterTernaryColon = Of("resharper_csharp_space_after_ternary_colon");
-    public static readonly OptionId SpaceBeforeNullableMark = Of("resharper_csharp_space_before_nullable_mark");
+    public static readonly OptionId SpaceBeforeTernaryQuest = Of("skala_space_before_ternary_quest");
+    public static readonly OptionId SpaceAfterTernaryQuest = Of("skala_space_after_ternary_quest");
+    public static readonly OptionId SpaceBeforeTernaryColon = Of("skala_space_before_ternary_colon");
+    public static readonly OptionId SpaceAfterTernaryColon = Of("skala_space_after_ternary_colon");
+    public static readonly OptionId SpaceBeforeNullableMark = Of("skala_space_before_nullable_mark");
 
     public static readonly OptionId SpaceBeforePointerAsterikDeclaration =
-        Of("resharper_csharp_space_before_pointer_asterik_declaration");
+        Of("skala_space_before_pointer_asterik_declaration");
 
     // ⚠ Inert, and measured rather than argued. The gap in front of an accessor holder's `{` is
     // brace placement's and ReSharper spends exactly one space on it whatever this key says: asked
@@ -1492,67 +1492,67 @@ public static class Ids {
     // the oracle returns `X {` and `Y {` at `true` and at `false` alike. Read and resolved, because
     // the key is in ReSharper's own export and in JetBrains' C# spaces schema.
     public static readonly OptionId SpaceBeforeSinglelineAccessorholder =
-        OfInert("resharper_csharp_space_before_singleline_accessorholder");
+        OfInert("skala_space_before_singleline_accessorholder");
 
     public static readonly OptionId SpaceInSinglelineAccessorholder =
-        Of("resharper_csharp_space_in_singleline_accessorholder");
+        Of("skala_space_in_singleline_accessorholder");
 
     public static readonly OptionId SpaceBetweenAccessorsInSinglelineProperty =
-        Of("resharper_csharp_space_between_accessors_in_singleline_property");
+        Of("skala_space_between_accessors_in_singleline_property");
 
-    // ⚠ Inert since milestone 3, because the shape it governs no longer exists. `space_in_singleline_method`
+    // ⚠ Inert since milestone 3, because the shape it governs no longer exists. `skala_space_in_singleline_method`
     // is the spacing of `{ M(); }` on a method's own line, and BreakPlan.PlanOnePerLine gives every
     // statement a line of its own — the oracle does the same, so no input produces a single-line
-    // method body with anything in it. An empty one is `empty_block_style`'s.
+    // method body with anything in it. An empty one is `skala_empty_block_style`'s.
     // ⚠ The one shape that *is* single-line, an accessor body, is not this key's. Measured, because
-    // the reason above was true and the wiring was not: with `space_in_singleline_method = false`
+    // the reason above was true and the wiring was not: with `skala_space_in_singleline_method = false`
     // the oracle returns `get { return _n; }` unchanged, and with
-    // `space_in_singleline_accessorholder = false` it returns `get {return _n;}`. Skala read the
+    // `skala_space_in_singleline_accessorholder = false` it returns `get {return _n;}`. Skala read the
     // body out of this key until the inertness of every inert key started being checked.
-    public static readonly OptionId SpaceInSinglelineMethod = OfInert("resharper_csharp_space_in_singleline_method");
+    public static readonly OptionId SpaceInSinglelineMethod = OfInert("skala_space_in_singleline_method");
 
     public static readonly OptionId SpaceInSinglelineAnonymousMethod =
-        Of("resharper_csharp_space_in_singleline_anonymous_method");
+        Of("skala_space_in_singleline_anonymous_method");
 
-    public static readonly OptionId SpaceWithinEmptyBraces = Of("resharper_csharp_space_within_empty_braces");
+    public static readonly OptionId SpaceWithinEmptyBraces = Of("skala_space_within_empty_braces");
 
     public static readonly OptionId SpaceWithinSingleLineArrayInitializerBraces =
-        Of("resharper_csharp_space_within_single_line_array_initializer_braces");
+        Of("skala_space_within_single_line_array_initializer_braces");
 
-    public static readonly OptionId SpaceWithinSlicePattern = Of("resharper_csharp_space_within_slice_pattern");
+    public static readonly OptionId SpaceWithinSlicePattern = Of("skala_space_within_slice_pattern");
 
     // ⚠ Inert since milestone 3.1, and it was Tier A before it — on a fixture that cannot tell the
     // two values apart. Asked directly at both values, the oracle returns `[1, .. xs, 2]` and
     // `[1, ..xs, 2]` exactly as written: the gap after a collection expression's `..` is not
     // governed by anything, and this key's name is the only reason anyone thought it was.
-    // `space_within_slice_pattern` is the one that really does govern its own construct, and it
+    // `skala_space_within_slice_pattern` is the one that really does govern its own construct, and it
     // stays Tier A. SK-DIV-0009.
-    public static readonly OptionId SpaceWithinSpreadPattern = OfInert("resharper_space_within_spread_pattern");
+    public static readonly OptionId SpaceWithinSpreadPattern = OfInert("skala_space_within_spread_pattern");
 
-    public static readonly OptionId SpaceBeforeTrailingComment = Of("resharper_csharp_space_before_trailing_comment");
+    public static readonly OptionId SpaceBeforeTrailingComment = Of("skala_space_before_trailing_comment");
 
     // ⚠ Inert. Asked at both values on `M(); //x`, `M(); // y`, an own-line `//z`, an own-line
     // `// w` and a trailing `/*t*/` in one file, the oracle returns every one of them
     // byte-identical: `//x` never grows its space and `// y` never loses it. A comment's text is the
-    // author's, and `space_before_trailing_comment` — the gap between the code and the marker — is
+    // author's, and `skala_space_before_trailing_comment` — the gap between the code and the marker — is
     // the C# key that really exists, with its own fixture and its own Tier.
     public static readonly OptionId SpaceBeforeTrailingCommentText =
-        OfInert("resharper_space_before_trailing_comment_text");
+        OfInert("skala_space_before_trailing_comment_text");
 
     // ⚠ Tier A again, and it has now been all three. Milestone 1 had it Tier A; milestone 3 demoted
     // it to inert because the oracle did not insert the space and doing it anyway cost 79 lines
     // across 15 files of `corpus/real/`; the sub-formatter's default flip made it unoracled, on the
     // reading that no fixture could ever pin it. All of that rested on a profile rather than on the
     // tool: `OracleProfile.DocComments` inserts the space, and
-    // `constructs/xmldoc/resharper_space_after_triple_slash.cs` is the fixture that shows it.
+    // `constructs/xmldoc/skala_space_after_triple_slash.cs` is the fixture that shows it.
     //
     // ⚠ The 79 lines are not thereby re-explained, and the fixture is narrower than it looks. The
     // oracle does not rewrite a `///` marker on a comment it is otherwise leaving alone — the first
     // cut of that fixture was a single short `///<summary>…</summary>` and it came back
     // byte-identical. The marker space appears only where the comment is being rebuilt anyway, and
     // `corpus/real/`'s fixtures are still generated under a profile that rebuilds nothing.
-    public static readonly OptionId SpaceAfterTripleSlash = Of("resharper_space_after_triple_slash");
-    public static readonly OptionId StickComment = Of("resharper_csharp_stick_comment");
+    public static readonly OptionId SpaceAfterTripleSlash = Of("skala_space_after_triple_slash");
+    public static readonly OptionId StickComment = Of("skala_stick_comment");
 
     /// <summary>
     ///     ⚠ Read and not honoured, and it is the one key in this file whose implementation was pure
@@ -1561,16 +1561,16 @@ public static class Ids {
     ///     three probes and for the key that does govern a comment's column.
     /// </summary>
     public static readonly OptionId PlaceCommentsAtFirstColumn =
-        OfInert("resharper_csharp_place_comments_at_first_column");
+        OfInert("skala_place_comments_at_first_column");
 
     public static readonly OptionId NewLineBeforeOpenBrace = Of("csharp_new_line_before_open_brace");
-    public static readonly OptionId NewLineBeforeElse = Of("resharper_new_line_before_else");
-    public static readonly OptionId NewLineBeforeCatch = Of("resharper_new_line_before_catch");
-    public static readonly OptionId NewLineBeforeFinally = Of("resharper_new_line_before_finally");
-    public static readonly OptionId NewLineBeforeWhile = Of("resharper_csharp_new_line_before_while");
-    public static readonly OptionId SpecialElseIfTreatment = Of("resharper_csharp_special_else_if_treatment");
-    public static readonly OptionId EmptyBlockStyle = Of("resharper_csharp_empty_block_style");
-    public static readonly OptionId AllowCommentAfterLbrace = Of("resharper_csharp_allow_comment_after_lbrace");
+    public static readonly OptionId NewLineBeforeElse = Of("skala_new_line_before_else");
+    public static readonly OptionId NewLineBeforeCatch = Of("skala_new_line_before_catch");
+    public static readonly OptionId NewLineBeforeFinally = Of("skala_new_line_before_finally");
+    public static readonly OptionId NewLineBeforeWhile = Of("skala_new_line_before_while");
+    public static readonly OptionId SpecialElseIfTreatment = Of("skala_special_else_if_treatment");
+    public static readonly OptionId EmptyBlockStyle = Of("skala_empty_block_style");
+    public static readonly OptionId AllowCommentAfterLbrace = Of("skala_allow_comment_after_lbrace");
 
     // ⚠ SK-DIV-0091, and `OfInert` in the established sense: masked at the export's own values, not
     // ignored. It indents a brace that is on a line of its own, and the export's
@@ -1580,7 +1580,7 @@ public static class Ids {
     public static readonly OptionId IndentBraces = OfInert("csharp_indent_braces");
 
     public static readonly OptionId AlignMultilineStatementConditions =
-        Of("resharper_csharp_align_multiline_statement_conditions");
+        Of("skala_align_multiline_statement_conditions");
 
     // ⚠ The seven `align_multiline_*` keys whose column the writer's scope stack can express, all
     // of them `false` in the export. The column is the construct's own first token, and the level
@@ -1588,22 +1588,22 @@ public static class Ids {
     // a braced or bracketed body, none at all for a chain. See
     // CSharpDocumentBuilder.AlignsFromOwnColumn.
     public static readonly OptionId AlignMultilineArrayAndObjectInitializer =
-        Of("resharper_csharp_align_multiline_array_and_object_initializer");
+        Of("skala_align_multiline_array_and_object_initializer");
 
     public static readonly OptionId AlignMultilineListPattern =
-        Of("resharper_csharp_align_multiline_list_pattern");
+        Of("skala_align_multiline_list_pattern");
 
     public static readonly OptionId AlignMultilinePropertyPattern =
-        Of("resharper_csharp_align_multiline_property_pattern");
+        Of("skala_align_multiline_property_pattern");
 
     public static readonly OptionId AlignMultilineSwitchExpression =
-        Of("resharper_csharp_align_multiline_switch_expression");
+        Of("skala_align_multiline_switch_expression");
 
     public static readonly OptionId AlignMultilineBinaryExpressionsChain =
-        Of("resharper_csharp_align_multiline_binary_expressions_chain");
+        Of("skala_align_multiline_binary_expressions_chain");
 
     public static readonly OptionId AlignMultilineBinaryPatterns =
-        Of("resharper_csharp_align_multiline_binary_patterns");
+        Of("skala_align_multiline_binary_patterns");
 
     // ⚠ Was Tier D on the evidence rather than on the wiring, and the evidence has arrived. The
     // scope this key opens was always here — AlignsFromOwnColumn has read it since M3 — and what it
@@ -1614,7 +1614,7 @@ public static class Ids {
     //     var query = from number in numbers
     //                 where number > 0        ← the `from`'s own column
     //
-    public static readonly OptionId AlignLinqQuery = Of("resharper_csharp_align_linq_query");
+    public static readonly OptionId AlignLinqQuery = Of("skala_align_linq_query");
 
     // ⚠ The column of the *first base type*, two past the base list's own node, which is where
     // every other member of this family reads its column. That was recorded here as the reason the
@@ -1626,7 +1626,7 @@ public static class Ids {
     //     public class Alpha : System.Collections.Generic.IReadOnlyCollection<int>,
     //                          System.IDisposable,        ← the first base type's column
     public static readonly OptionId AlignMultilineExtendsList =
-        Of("resharper_csharp_align_multiline_extends_list");
+        Of("skala_align_multiline_extends_list");
 
     // ⚠ The same anchor rule for the same reason, and the same correction: the column of the *first
     // type parameter*, one past the list's own node, which is the `<`. Recorded until T5a as one of
@@ -1637,7 +1637,7 @@ public static class Ids {
     //     public void ManyParams<TFirstParameterName, TSecondParameterName, TThirdParameterName,
     //                            TFourthParameterName>(int a) { }   ← the first parameter's column
     public static readonly OptionId AlignMultilineTypeParameterList =
-        Of("resharper_align_multiline_type_parameter_list");
+        Of("skala_align_multiline_type_parameter_list");
 
     // ⚠ The anchor is the column *after* the `(`, re-measured rather than assumed, and it is a
     // different anchor from every key AlignsFromOwnColumn answers — so VisitDelimited opens the
@@ -1657,7 +1657,7 @@ public static class Ids {
     // ⚠ TupleExpression only, measured. A tuple *type* too wide for its line is not broken at its
     // commas by the oracle at either value of this key — it breaks between an element's type and its
     // name, `bool AThird, double\n    FourthName` — so TupleTypeSyntax is deliberately not planned.
-    public static readonly OptionId AlignTupleComponents = Of("resharper_csharp_align_tuple_components");
+    public static readonly OptionId AlignTupleComponents = Of("skala_align_tuple_components");
 
     // ⚠ Filed under "no probe found a shape where they change the oracle's output", with the warning
     // beside it that this is "a statement about the probes". It was: the probes used
@@ -1673,7 +1673,7 @@ public static class Ids {
     // registered for a variable declaration inside a statement and not for one inside a
     // FieldDeclarationSyntax.
     public static readonly OptionId AlignMultipleDeclaration =
-        Of("resharper_csharp_align_multiple_declaration");
+        Of("skala_align_multiple_declaration");
 
     // ⚠ The rest of the `align_*` family, read so the crash snapshot records them, and Tier D each
     // for a reason the oracle gave rather than for a gap in the wiring. All measured one key at a
@@ -1687,7 +1687,7 @@ public static class Ids {
     //   align_multiline_implements_list, align_multiline_type_argument, align_multiline_type_parameter,
     //   align_ternary.
     //   ⚠ `align_multiline_array_initializer` re-measured on an initializer that wraps at 60 columns:
-    //     `false` returns it byte-identical while `align_multiline_array_and_object_initializer = true`
+    //     `false` returns it byte-identical while `skala_align_multiline_array_and_object_initializer = true`
     //     beside it moves the elements to the brace's column. The claim holds for this one.
     //   ⚠ `alignment_tab_fill_style` **left this list** — see below. It is read; it was on the list
     //     because every probe that asked it was indented with spaces.
@@ -1702,9 +1702,9 @@ public static class Ids {
     //     "the oracle returned it byte-identical" from a fact about the probe into a fact about the
     //     key, and they are recorded per key in options.json rather than here. Two of the seven had
     //     no probe at all before: `align_multiline_ctor_init` now has a `: base(…)` whose argument
-    //     list chops (control: `align_first_arg_by_paren`, `indent_invocation_pars = outside`), and
+    //     list chops (control: `align_first_arg_by_paren`, `skala_indent_invocation_pars = outside`), and
     //     `align_multiline_type_argument` a nested `Dictionary<…>` type that wraps (control:
-    //     `indent_typearg_angles = none`). Both hold. ⚠ Note what the export's own values make these
+    //     `skala_indent_typearg_angles = none`). Both hold. ⚠ Note what the export's own values make these
     //     two: `align_multiline_array_initializer`, `_ctor_init`, `_implements_list`,
     //     `_type_argument` and `_type_parameter` are all `true` in the export, so the layout they
     //     ask for is one the oracle does not produce either — the keys are dead on both sides, not
@@ -1719,7 +1719,7 @@ public static class Ids {
     //     wrapped `<T1, T2, …>` lands on the *first* type parameter's column rather than one
     //     continuation level in. See AlignsFromOwnColumn.
     //   align_multiline_type_parameter_constraints — read, and Tier D for the reason below rather
-    //     than for the one above: with `wrap_before_first_type_parameter_constraint = false` as well,
+    //     than for the one above: with `skala_wrap_before_first_type_parameter_constraint = false` as well,
     //     a second `where` lands on the first `where`'s column. It is masked at the export's values,
     //     which set that key to true and so give the first `where` a line of its own.
     //   align_multiline_type_parameter stays on the list, and it is now measured on its own rather
@@ -1733,15 +1733,15 @@ public static class Ids {
     //     own, and there is then no first item on the delimiter's line to align the rest to. With
     //     the lpar key off as well, both change the output.
     //   align_multiline_type_parameter_constraints — see above. The export's
-    //     wrap_before_first_type_parameter_constraint = true breaks before the first `where`, and
+    //     skala_wrap_before_first_type_parameter_constraint = true breaks before the first `where`, and
     //     there is then no first clause on the declaration's line to align the rest to.
-    //   align_multiline_for_stmt — align_multiline_statement_conditions = true already aligns a
+    //   align_multiline_for_stmt — skala_align_multiline_statement_conditions = true already aligns a
     //     `for` header by its `(`. Either key alone is enough and the export has the other one on.
     //     ⚠ Re-measured in milestone 3.2, once the header had a break point for a column to govern,
     //     because "masked" and "unreachable because nothing wraps" are easy to confuse and only one
     //     of them is still true. It is masked: at the export's values both `false` and `true` give
     //     `for (var i = 0;\n     i < xs.Count;` — the `(`'s column — and with
-    //     align_multiline_statement_conditions = false as well, the two values separate, `false`
+    //     skala_align_multiline_statement_conditions = false as well, the two values separate, `false`
     //     taking one continuation indent and `true` the `(`'s column. Two flips, so the per-option
     //     unit still cannot reach it and it stays Tier D. ⚠ Re-measured a third time in T5b, because
     //     SK-DIV-0008 and SK-DIV-0012 had blamed this key for a residue that was the missing `for`-
@@ -1782,7 +1782,7 @@ public static class Ids {
     //     and the earlier note that said so was right. It is recorded again here because it was
     //     nearly overturned by a measurement taken at one margin, and the second margin is what makes
     //     the key unimplementable rather than merely unimplemented:
-    //         120 columns  `wrap_before_first_method_call = false` keeps `.Where(…)` on the head line
+    //         120 columns  `skala_wrap_before_first_method_call = false` keeps `.Where(…)` on the head line
     //                      and the rest align under that dot, 26 columns past the receiver's start.
     //         70 columns   the first call no longer fits, the layout breaks before that dot as well,
     //                      and the anchor becomes the receiver's own column.
@@ -1796,14 +1796,14 @@ public static class Ids {
     //     seen to matter at all.
     //   align_multiline_expression — the union of four specific keys, except for binary patterns:
     //     it aligns a pattern chain one level from the *enclosing* expression where
-    //     align_multiline_binary_patterns aligns it on the pattern's own column, one further right.
+    //     skala_align_multiline_binary_patterns aligns it on the pattern's own column, one further right.
     //     An Align scope reads the column where it opens and cannot see the enclosing expression.
     //     ⚠ Measured, and the union is narrower than the name: on a binary expression chain it is
-    //     byte-identical to align_multiline_binary_expressions_chain (both put the operands on the
+    //     byte-identical to skala_align_multiline_binary_expressions_chain (both put the operands on the
     //     expression's own column); on a *pattern* chain it lands at the `is` operand's column plus
-    //     one indent, four columns left of align_multiline_binary_patterns; and on a chained call or
+    //     one indent, four columns left of skala_align_multiline_binary_patterns; and on a chained call or
     //     on an argument list it returns the file byte-identical, so it covers neither.
-    //   align_multiline_comments — `true` in the export, and it is not "unmeasured" any more. With
+    //   skala_align_multiline_comments — `true` in the export, and it is not "unmeasured" any more. With
     //     it `false` the oracle leaves a block comment's continuation asterisks exactly where the
     //     author put them; with it `true` — the export's value — it pulls each ` * ` line onto the
     //     opening `/*`'s column plus one. A comment with no asterisks is untouched at either value.
@@ -1814,45 +1814,45 @@ public static class Ids {
 
     // ── Column alignment of adjacent constructs (int_align_*) ────────────────────────────────
     // ⚠ Every one of these is `false` in the export and every one of them is read here, so the
-    // generalized `resharper_int_align` — which the registry expands into all thirteen — is
+    // generalized `skala_int_align` — which the registry expands into all thirteen — is
     // observable through them. See IntAlign, and Ids.DisableIntAlign below for the three keys of
     // the family that stay Tier D.
-    public static readonly OptionId IntAlignFields = Of("resharper_csharp_int_align_fields");
-    public static readonly OptionId IntAlignVariables = Of("resharper_csharp_int_align_variables");
-    public static readonly OptionId IntAlignAssignments = Of("resharper_csharp_int_align_assignments");
-    public static readonly OptionId IntAlignProperties = Of("resharper_csharp_int_align_properties");
-    public static readonly OptionId IntAlignMethods = Of("resharper_csharp_int_align_methods");
-    public static readonly OptionId IntAlignComments = Of("resharper_csharp_int_align_comments");
+    public static readonly OptionId IntAlignFields = Of("skala_int_align_fields");
+    public static readonly OptionId IntAlignVariables = Of("skala_int_align_variables");
+    public static readonly OptionId IntAlignAssignments = Of("skala_int_align_assignments");
+    public static readonly OptionId IntAlignProperties = Of("skala_int_align_properties");
+    public static readonly OptionId IntAlignMethods = Of("skala_int_align_methods");
+    public static readonly OptionId IntAlignComments = Of("skala_int_align_comments");
 
     public static readonly OptionId IntAlignSwitchExpressions =
-        Of("resharper_csharp_int_align_switch_expressions");
+        Of("skala_int_align_switch_expressions");
 
-    public static readonly OptionId IntAlignSwitchSections = Of("resharper_csharp_int_align_switch_sections");
+    public static readonly OptionId IntAlignSwitchSections = Of("skala_int_align_switch_sections");
 
     // ⚠ The five list-shaped members of the family, each measured one key at a time against
     // `jb cleanupcode` 2025.2.6 at config sha256:bd9791d3a6e6a087. The slot each pads is the
     // oracle's, not a guess from the option's name:
-    //   int_align_parameters      — the parameter *name* of a chopped signature, so the types pad
+    //   skala_int_align_parameters      — the parameter *name* of a chopped signature, so the types pad
     //                               out to a column: `int    first,` / `string secondName,`.
-    //   int_align_invocations     — every argument of adjacent single-line calls *of the same
+    //   skala_int_align_invocations     — every argument of adjacent single-line calls *of the same
     //                               method*. `Take(1, 2, 3)` beside `Take(1000, 2000, 3000)` pads
     //                               both argument columns; an `Other2(…)` between two `Take(…)`
     //                               ends the run rather than joining it.
-    //   int_align_nested_ternary  — the `?` of each member of a nested conditional chain.
-    //   int_align_binary_expressions — the *operator* of each of those same conditions.
-    //   int_align_property_patterns — the `:` of a chopped property pattern's subpatterns.
+    //   skala_int_align_nested_ternary  — the `?` of each member of a nested conditional chain.
+    //   skala_int_align_binary_expressions — the *operator* of each of those same conditions.
+    //   skala_int_align_property_patterns — the `:` of a chopped property pattern's subpatterns.
     //
-    // ⚠ `int_align_binary_expressions` is narrower than its name, and the narrowness is measured
+    // ⚠ `skala_int_align_binary_expressions` is narrower than its name, and the narrowness is measured
     // rather than assumed. Asked with the key on, the oracle moves nothing in: adjacent assignment
     // statements whose right-hand sides are binary; a binary chain chopped one operand per line;
     // adjacent `if` conditions; binary expressions as arguments, as initializer elements, or as
     // switch-expression arm results. The one shape that moves is the conditional chain, which is
     // why it is collected from the chain here and not from every binary expression in the file.
-    public static readonly OptionId IntAlignParameters = Of("resharper_csharp_int_align_parameters");
-    public static readonly OptionId IntAlignInvocations = Of("resharper_csharp_int_align_invocations");
+    public static readonly OptionId IntAlignParameters = Of("skala_int_align_parameters");
+    public static readonly OptionId IntAlignInvocations = Of("skala_int_align_invocations");
 
     public static readonly OptionId IntAlignPropertyPatterns =
-        Of("resharper_csharp_int_align_property_patterns");
+        Of("skala_int_align_property_patterns");
 
     // ⚠ No longer inert, and the reason they were is worth keeping. Both keys pad a conditional
     // chain the oracle lays out with one member per line and the `?` on its condition's own line:
@@ -1872,9 +1872,9 @@ public static class Ids {
     // whose break points are the gaps after the `:`, which is a different construct from a single
     // conditional wrapping at its own signs. constructs/alignment/int-align-ternary.cs is the
     // fixture and it fails against the code that preceded the chain plan.
-    public static readonly OptionId IntAlignNestedTernary = Of("resharper_csharp_int_align_nested_ternary");
+    public static readonly OptionId IntAlignNestedTernary = Of("skala_int_align_nested_ternary");
 
-    // ⚠ `int_align_binary_expressions` stays Tier D, and NOT for the reason above any more. With the
+    // ⚠ `skala_int_align_binary_expressions` stays Tier D, and NOT for the reason above any more. With the
     // chain layout written, the per-option unit reaches it — and it disagrees, because the key is
     // broader than the chain. Measured on int-align-ternary.cs one key at a time: the oracle also
     // pads adjacent local variable *declarations* whose initializers are binary, at every operator
@@ -1891,12 +1891,12 @@ public static class Ids {
     // both; the fixture already holds the shape, under NotACandidate, which is now misnamed and
     // says so.
     public static readonly OptionId IntAlignBinaryExpressions =
-        OfInert("resharper_csharp_int_align_binary_expressions");
+        OfInert("skala_int_align_binary_expressions");
 
     // ⚠ Read and Tier D, all three for the same reason and none of them for a missing
     // implementation: they refine an alignment that the export never asks for. `disable_int_align`
     // is a master switch over a family whose every member is already false, and
-    // `int_align_fix_in_adjacent` and `allow_far_alignment` say which neighbours join a run and how
+    // `skala_int_align_fix_in_adjacent` and `allow_far_alignment` say which neighbours join a run and how
     // far a column may be dragged — questions with no answer while no run exists. Measured: with
     // `int_align = true` supplied alongside, `disable_int_align` turns the whole family off again
     // and the other two change nothing on any shape tried. The per-option unit flips one key from
@@ -1910,14 +1910,14 @@ public static class Ids {
     //
     // ⚠ "No answer while no run exists" was the reason and it is no longer available for
     // `allow_far_alignment`, so the key was re-asked in T5b with a run that unambiguously exists and
-    // is unambiguously far. `int_align_variables = true` and `int_align_fields = true` beside a local
+    // is unambiguously far. `skala_int_align_variables = true` and `skala_int_align_fields = true` beside a local
     // whose name is 68 columns wide drag both runs' `=` out to column 74; flipping
     // `allow_far_alignment` on top of that returns the file byte-identical, on locals and on fields
     // alike. It stays Tier D on a stronger measurement than the one it had: the run is there, it is
     // as far as anything in a 120-column file can be, and the key still moves nothing.
     //
     // ⚠ WITHDRAWN, and only this sentence of the paragraph. It read: "Note also that
-    // `resharper_int_align = true` alone produces *no* alignment from the oracle — the run above
+    // `skala_int_align = true` alone produces *no* alignment from the oracle — the run above
     // needed the two specific keys — which is a fact about the generalized spelling and not about
     // this one." It does produce alignment: at `true` the oracle pads fields, properties, methods,
     // locals, assignments, trailing comments, switch sections, switch-expression arms, enum
@@ -1925,7 +1925,7 @@ public static class Ids {
     // IntAlign below, which is fixtured on the strength of it. The `allow_far_alignment` measurement
     // above used the two specific keys and is unaffected.
     //
-    // ⚠ `int_align_fix_in_adjacent` also got the stronger probe the reason above was asking for, and
+    // ⚠ `skala_int_align_fix_in_adjacent` also got the stronger probe the reason above was asking for, and
     // it survived: byte-identical alone, byte-identical with the two specific keys on so that a run
     // exists, and byte-identical again with `allow_far_alignment = true` added. It is not masked, it
     // moves nothing.
@@ -1940,17 +1940,17 @@ public static class Ids {
     //
     // ⚠ That lead was followed, 2026-08-29, and it pays out: `allow_far_alignment` is **masked, not
     // inert**. Not on a chain but on an invocation whose callee name is 84 characters, with
-    // `align_multiline_argument = true`, `wrap_after_invocation_lpar = false` and
-    // `wrap_arguments_style = chop_always`, the oracle gives two distinct layouts — at `true` the
+    // `align_multiline_argument = true`, `skala_wrap_after_invocation_lpar = false` and
+    // `skala_wrap_arguments_style = chop_always`, the oracle gives two distinct layouts — at `true` the
     // arguments align to the lpar column near 98, at `false` they fall back to one continuation
-    // level. The export sets `align_multiline_argument = false` and `wrap_after_invocation_lpar =
+    // level. The export sets `align_multiline_argument = false` and `skala_wrap_after_invocation_lpar =
     // true`, so at the standard's own configuration there is no column for this key to allow or
     // refuse, which is why every earlier probe read flat. `OfInert` still states the truth about
     // Skala — it is flat at both values — but the reason is now "masked at the export" and no longer
     // "moves nothing on any shape tried". An `oracle` glob would report INERT, so none is added.
-    public static readonly OptionId DisableIntAlign = OfInert("resharper_disable_int_align");
-    public static readonly OptionId IntAlignFixInAdjacent = OfInert("resharper_csharp_int_align_fix_in_adjacent");
-    public static readonly OptionId AllowFarAlignment = OfInert("resharper_csharp_allow_far_alignment");
+    public static readonly OptionId DisableIntAlign = OfInert("skala_disable_int_align");
+    public static readonly OptionId IntAlignFixInAdjacent = OfInert("skala_int_align_fix_in_adjacent");
+    public static readonly OptionId AllowFarAlignment = OfInert("skala_allow_far_alignment");
 
     // ── The formatter's own off switches ─────────────────────────────────────────────────────
     //
@@ -1987,8 +1987,8 @@ public static class Ids {
     // ⚠ Two of the nine are not reachable at all and are recorded as such rather than as "not done
     // yet": `disable_space_changes_before_trailing_comment` and `ignore_space_preservation`, both
     // under SK-DIV-0060.
-    public static readonly OptionId DisableFormatter = Of("resharper_disable_formatter");
-    public static readonly OptionId DisableBlankLineChanges = Of("resharper_disable_blank_line_changes");
+    public static readonly OptionId DisableFormatter = Of("skala_disable_formatter");
+    public static readonly OptionId DisableBlankLineChanges = Of("skala_disable_blank_line_changes");
 
     // ⚠ The four the comment above records as "read by the oracle, not read here" are read here now.
     // The mechanism is the one the two above already use — a suppression resolved at the single site
@@ -1999,31 +1999,31 @@ public static class Ids {
     // ⚠ They stay Tier D and the registry keeps saying so. Tier A is "Skala reproduces Rider's
     // behaviour, and the committed sweep substantiates it"; the sweep has never reached these four,
     // so promoting them here would be a claim made by the same change that wrote the code.
-    public static readonly OptionId DisableIndenter = Of("resharper_disable_indenter");
-    public static readonly OptionId DisableSpaceChanges = Of("resharper_disable_space_changes");
-    public static readonly OptionId DisableLineBreakChanges = Of("resharper_disable_line_break_changes");
-    public static readonly OptionId DisableLineBreakRemoval = Of("resharper_disable_line_break_removal");
+    public static readonly OptionId DisableIndenter = Of("skala_disable_indenter");
+    public static readonly OptionId DisableSpaceChanges = Of("skala_disable_space_changes");
+    public static readonly OptionId DisableLineBreakChanges = Of("skala_disable_line_break_changes");
+    public static readonly OptionId DisableLineBreakRemoval = Of("skala_disable_line_break_removal");
 
     // ⚠ Read and Tier D on the measurement: the C# formatter does not consult the unprefixed
     // spellings at all. Asked directly with each set to true on a file that exercises it, the oracle
     // returns byte-identical output, while the `resharper_csharp_int_align_*` key covering the same
-    // construct changes it — `int_align_fields` is what aligns an enum's initializers, not
+    // construct changes it — `skala_int_align_fields` is what aligns an enum's initializers, not
     // `int_align_enum_initializers`. They are the C++ and VB formatters' keys, which this export
     // writes without a language prefix.
     // ⚠ WITHDRAWN, both halves, and the key is now fixtured and measured. It read: "Read and Tier D
     // on the configuration model rather than on the formatter. The registry records that
-    // `resharper_int_align` expands into the thirteen `resharper_csharp_int_align_*` keys … and
+    // `skala_int_align` expands into the thirteen `resharper_csharp_int_align_*` keys … and
     // nothing applies the expansion: OptionResolver resolves keys and aliases and leaves generalized
     // properties alone." That is stale — OptionResolver.Expand writes each generalized key's value
-    // into the keys it names, and `skala format --option resharper_int_align=true` on
+    // into the keys it names, and `skala format --option skala_int_align=true` on
     // constructs/alignment/int-align.cs pads the file. The companion claim recorded beside
-    // AllowFarAlignment — "`resharper_int_align = true` alone produces *no* alignment from the
+    // AllowFarAlignment — "`skala_int_align = true` alone produces *no* alignment from the
     // oracle" — is refuted too: at `true` the oracle pads ten files of an eighteen-file probe.
     //
     // Both engines therefore move, the key carries an `oracle` glob, and the sweep's verdict on it is
     // DIVERGENT with the baseline agreeing. The whole divergence is one line, and it is an
     // interaction *inside* the family that no member shows when flipped alone: with
-    // `int_align_methods` and `int_align_parameters` both on, the oracle pads inside the parameter
+    // `skala_int_align_methods` and `skala_int_align_parameters` both on, the oracle pads inside the parameter
     // list and Skala pads after the `)`.
     //
     //     oracle   void Method(int                a) { }
@@ -2035,39 +2035,39 @@ public static class Ids {
     // either Tier A or a committed sweep row, and there is no committed sweep row until the next full
     // run reaches the glob. The wiring change and the promotion are one commit." The run has happened,
     // the row is `Conformant`, so the wiring and the promotion land together as it asked.
-    public static readonly OptionId IntAlign = OfGeneralized("resharper_int_align");
+    public static readonly OptionId IntAlign = OfGeneralized("skala_int_align");
 
-    public static readonly OptionId IntAlignEq = OfInert("resharper_int_align_eq");
-    public static readonly OptionId IntAlignDeclarationNames = OfInert("resharper_int_align_declaration_names");
-    public static readonly OptionId IntAlignEnumInitializers = OfInert("resharper_int_align_enum_initializers");
+    public static readonly OptionId IntAlignEq = OfInert("skala_int_align_eq");
+    public static readonly OptionId IntAlignDeclarationNames = OfInert("skala_int_align_declaration_names");
+    public static readonly OptionId IntAlignEnumInitializers = OfInert("skala_int_align_enum_initializers");
 
-    public static readonly OptionId IndentSwitchLabels = Of("resharper_indent_switch_labels");
-    public static readonly OptionId IndentBreakFromCase = Of("resharper_indent_break_from_case");
-    public static readonly OptionId IndentInsideNamespace = Of("resharper_csharp_indent_inside_namespace");
-    public static readonly OptionId IndentTypeConstraints = Of("resharper_csharp_indent_type_constraints");
-    public static readonly OptionId IndentNestedForStmt = Of("resharper_csharp_indent_nested_for_stmt");
-    public static readonly OptionId IndentNestedForeachStmt = Of("resharper_csharp_indent_nested_foreach_stmt");
-    public static readonly OptionId IndentNestedWhileStmt = Of("resharper_csharp_indent_nested_while_stmt");
-    public static readonly OptionId IndentNestedUsingsStmt = Of("resharper_csharp_indent_nested_usings_stmt");
-    public static readonly OptionId IndentNestedLockStmt = Of("resharper_csharp_indent_nested_lock_stmt");
-    public static readonly OptionId IndentNestedFixedStmt = Of("resharper_csharp_indent_nested_fixed_stmt");
+    public static readonly OptionId IndentSwitchLabels = Of("skala_indent_switch_labels");
+    public static readonly OptionId IndentBreakFromCase = Of("skala_indent_break_from_case");
+    public static readonly OptionId IndentInsideNamespace = Of("skala_indent_inside_namespace");
+    public static readonly OptionId IndentTypeConstraints = Of("skala_indent_type_constraints");
+    public static readonly OptionId IndentNestedForStmt = Of("skala_indent_nested_for_stmt");
+    public static readonly OptionId IndentNestedForeachStmt = Of("skala_indent_nested_foreach_stmt");
+    public static readonly OptionId IndentNestedWhileStmt = Of("skala_indent_nested_while_stmt");
+    public static readonly OptionId IndentNestedUsingsStmt = Of("skala_indent_nested_usings_stmt");
+    public static readonly OptionId IndentNestedLockStmt = Of("skala_indent_nested_lock_stmt");
+    public static readonly OptionId IndentNestedFixedStmt = Of("skala_indent_nested_fixed_stmt");
 
     // ⚠ SK-DIV-0090, and `OfInert` here means what it means for `align_multiline_argument`: no input
     // distinguishes the values *under this configuration*, not that the formatter ignores them. The
-    // mask is `resharper_continuous_indent_multiplier = 1` in the export, which makes a continuation
+    // mask is `skala_continuous_indent_multiplier = 1` in the export, which makes a continuation
     // level and an indent width the same number — and `false` is one indent width, measured, not the
     // absence of an indent. At multiplier 2 both keys are decisive in both engines, which is what
     // `ContinuousIndentInsideTests` pins and what the sweep's one-key flip cannot reach.
     public static readonly OptionId UseContinuousIndentInsideParens =
-        OfInert("resharper_csharp_use_continuous_indent_inside_parens");
+        OfInert("skala_use_continuous_indent_inside_parens");
 
     public static readonly OptionId UseContinuousIndentInsideInitializerBraces =
-        OfInert("resharper_csharp_use_continuous_indent_inside_initializer_braces");
+        OfInert("skala_use_continuous_indent_inside_initializer_braces");
 
-    public static readonly OptionId ContinuousIndentMultiplier = Of("resharper_csharp_continuous_indent_multiplier");
-    public static readonly OptionId IndentPreprocessorIf = Of("resharper_csharp_indent_preprocessor_if");
-    public static readonly OptionId IndentPreprocessorOther = Of("resharper_csharp_indent_preprocessor_other");
-    public static readonly OptionId IndentPreprocessorRegion = Of("resharper_csharp_indent_preprocessor_region");
+    public static readonly OptionId ContinuousIndentMultiplier = Of("skala_continuous_indent_multiplier");
+    public static readonly OptionId IndentPreprocessorIf = Of("skala_indent_preprocessor_if");
+    public static readonly OptionId IndentPreprocessorOther = Of("skala_indent_preprocessor_other");
+    public static readonly OptionId IndentPreprocessorRegion = Of("skala_indent_preprocessor_region");
 
     // ⚠ Read and Tier D, and the reason is measured rather than "no probe found a shape". The shape
     // exists and is narrow: it is the *lambda* whose braced body ReSharper keeps on the call's line,
@@ -2086,35 +2086,35 @@ public static class Ids {
     // shape AlignsFromOwnColumn has no case for and which interacts with
     // place_single_method_argument_lambda_on_same_line — the key that puts the lambda there at all.
     public static readonly OptionId IndentAnonymousMethodBlock =
-        OfInert("resharper_csharp_indent_anonymous_method_block");
+        OfInert("skala_indent_anonymous_method_block");
 
-    public static readonly OptionId OutdentStatementLabels = Of("resharper_csharp_outdent_statement_labels");
+    public static readonly OptionId OutdentStatementLabels = Of("skala_outdent_statement_labels");
 
     // ── indent_*_pars / indent_*_angles ──────────────────────────────────────────────────────
     // ⚠ The registry summaries of the seven say the family "places a closing delimiter, which is
     // the wrapping pass's" and that four of them are inert. Both halves were measured again on a
-    // file where the delimiter reaches a line of its own — for `indent_invocation_pars` and
-    // `indent_method_decl_pars` because this export's wrap keys put it there, and for the rest
+    // file where the delimiter reaches a line of its own — for `skala_indent_invocation_pars` and
+    // `skala_indent_method_decl_pars` because this export's wrap keys put it there, and for the rest
     // because `keep_user_linebreaks = true` keeps an author's break before it. The family sets two
     // numbers, contents and closer; see PhaseOneOptions.IndentInvocationPars for the table.
-    public static readonly OptionId IndentInvocationPars = Of("resharper_csharp_indent_invocation_pars");
-    public static readonly OptionId IndentMethodDeclPars = Of("resharper_csharp_indent_method_decl_pars");
+    public static readonly OptionId IndentInvocationPars = Of("skala_indent_invocation_pars");
+    public static readonly OptionId IndentMethodDeclPars = Of("skala_indent_method_decl_pars");
 
     // ⚠ SK-DIV-0043 is RESOLVED, and the second half of its own note was the answer. At
     // `outside_and_inside` the oracle gives a primary constructor's parameters one level where the
     // family's table says two, because the outer of the two levels belongs to the *closing
-    // delimiter* and `wrap_before_primary_constructor_declaration_rpar = false` means that `)` is
+    // delimiter* and `skala_wrap_before_primary_constructor_declaration_rpar = false` means that `)` is
     // never a break point. `CSharpDocumentBuilder.ClosesAtABreakPoint` is the fact, and it is a
     // configuration fact rather than "one the fitter knows and the builder does not". All four
     // values agree.
     public static readonly OptionId IndentPrimaryConstructorDeclPars =
-        Of("resharper_csharp_indent_primary_constructor_decl_pars");
+        Of("skala_indent_primary_constructor_decl_pars");
 
     // ⚠ Read — ConditionLevels consults it — and inert under this export, which is a mask and not a
-    // gap: `align_multiline_statement_conditions = true` makes a statement condition's scope an
+    // gap: `skala_align_multiline_statement_conditions = true` makes a statement condition's scope an
     // absolute column, and a level count has nothing to say about a column. All four values return
     // the same file while that key is on; turn it off and the family's table applies here too.
-    public static readonly OptionId IndentStatementPars = OfInert("resharper_csharp_indent_statement_pars");
+    public static readonly OptionId IndentStatementPars = OfInert("skala_indent_statement_pars");
     // ⚠ SK-DIV-0041's shape is RESOLVED, and the sentence that carried it was wrong on its own
     // terms. It read: at `none` the oracle gives a `>` the author left on its own line the level of
     // its opener's line, Skala leaves it on the ambient continuation, and that "needs a zero-level
@@ -2123,19 +2123,19 @@ public static class Ids {
     // `none` is the one value of the family that asks for zero levels inside, zero levels meant no
     // scope at all, and with no scope there was nothing for the closing delimiter's `alignsCloser`
     // to be measured against. All four values agree.
-    public static readonly OptionId IndentTypeargAngles = Of("resharper_csharp_indent_typearg_angles");
+    public static readonly OptionId IndentTypeargAngles = Of("skala_indent_typearg_angles");
 
     // ⚠ Its *closer* half is out of reach under this export: the shape is a `>` on a line of its
     // own, and SK-DIV-0042 is that Skala rejoins the author's break before one where the oracle
     // keeps it. Its *contents* half is not — a type parameter list wide enough to wrap puts its
     // continuation at a level the four values move, and all four now agree; the `outside_and_inside`
     // one is SK-DIV-0043's, resolved with IndentPrimaryConstructorDeclPars above.
-    public static readonly OptionId IndentTypeparamAngles = Of("resharper_csharp_indent_typeparam_angles");
+    public static readonly OptionId IndentTypeparamAngles = Of("skala_indent_typeparam_angles");
 
     // ⚠ SK-DIV-0041's shape at one value too, and resolved with IndentTypeargAngles above: `none`
     // put a stray `]` on the ambient continuation where the oracle puts it at its opener's line
     // level. All four values agree.
-    public static readonly OptionId IndentPars = Of("resharper_csharp_indent_pars");
+    public static readonly OptionId IndentPars = Of("skala_indent_pars");
 
     // ⚠ The outdent family, and the sentence that kept it at Tier D for six milestones is retired.
     // docs/plan/05 § "Indentation" recorded these as "observable and **not** implemented … Each moves
@@ -2150,26 +2150,26 @@ public static class Ids {
     // ⚠ Re-measured against `jb cleanupcode` 2025.2.6 at a 70-column margin, one key at a time, on a
     // file that wraps the construct each names:
     //
-    //     outdent_binary_ops          `+`   12 → 10     `&&`  12 → 9
-    //     outdent_binary_pattern_ops  `and` 12 →  8
-    //     outdent_dots                `.`   12 → 11
+    //     skala_outdent_binary_ops          `+`   12 → 10     `&&`  12 → 9
+    //     skala_outdent_binary_pattern_ops  `and` 12 →  8
+    //     skala_outdent_dots                `.`   12 → 11
     //
-    // ⚠ `outdent_binary_pattern_ops` was registered "unverified: no input found that both wraps a
+    // ⚠ `skala_outdent_binary_pattern_ops` was registered "unverified: no input found that both wraps a
     // binary pattern chain under this export and shows the outdent". It is verified, and what the
     // earlier probes were missing is the same thing the tuple probes were missing — a chain long
     // enough to wrap. `value is > 100 and < 20000 and not 5000 …` at 60 columns wraps and moves.
-    public static readonly OptionId OutdentBinaryOps = Of("resharper_csharp_outdent_binary_ops");
+    public static readonly OptionId OutdentBinaryOps = Of("skala_outdent_binary_ops");
 
     public static readonly OptionId OutdentBinaryPatternOps =
-        Of("resharper_csharp_outdent_binary_pattern_ops");
+        Of("skala_outdent_binary_pattern_ops");
 
-    public static readonly OptionId OutdentDots = Of("resharper_csharp_outdent_dots");
+    public static readonly OptionId OutdentDots = Of("skala_outdent_dots");
 
     // ⚠ `outdent_commas` is the fourth member and is deliberately *not* declared here, because the
     // mechanism above is built and this key still cannot use it. Two facts, both measured:
-    //   1. It is masked. `wrap_before_comma = false` in the export puts the comma at the end of the
+    //   1. It is masked. `skala_wrap_before_comma = false` in the export puts the comma at the end of the
     //      line, and a trailing comma is not something a line can be outdented by. With
-    //      `wrap_before_comma = true` as well the oracle moves the leading comma from column 8 to 6
+    //      `skala_wrap_before_comma = true` as well the oracle moves the leading comma from column 8 to 6
     //      — the same width-plus-one — so the per-option unit cannot reach it either way.
     //   2. Its shape is not a scope's. The outdent applies to the second and later items and not to
     //      the first, which sits on the delimiter's own break point:
@@ -2184,86 +2184,86 @@ public static class Ids {
     //      because a chain's first operand really is on the scope's opening line. Recorded so that
     //      the next attempt starts from the shape rather than from the name.
 
-    public static readonly OptionId KeepBlankLinesInCode = Of("resharper_csharp_keep_blank_lines_in_code");
+    public static readonly OptionId KeepBlankLinesInCode = Of("skala_keep_blank_lines_in_code");
 
     public static readonly OptionId KeepBlankLinesInDeclarations =
-        Of("resharper_csharp_keep_blank_lines_in_declarations");
+        Of("skala_keep_blank_lines_in_declarations");
 
     public static readonly OptionId RemoveBlankLinesNearBracesInCode =
-        Of("resharper_csharp_remove_blank_lines_near_braces_in_code");
+        Of("skala_remove_blank_lines_near_braces_in_code");
 
     public static readonly OptionId RemoveBlankLinesNearBracesInDeclarations =
-        Of("resharper_csharp_remove_blank_lines_near_braces_in_declarations");
+        Of("skala_remove_blank_lines_near_braces_in_declarations");
 
-    public static readonly OptionId BlankLinesAroundType = Of("resharper_csharp_blank_lines_around_type");
+    public static readonly OptionId BlankLinesAroundType = Of("skala_blank_lines_around_type");
 
     public static readonly OptionId BlankLinesAroundSingleLineType =
-        Of("resharper_csharp_blank_lines_around_single_line_type");
+        Of("skala_blank_lines_around_single_line_type");
 
-    public static readonly OptionId BlankLinesAroundInvocable = Of("resharper_csharp_blank_lines_around_invocable");
+    public static readonly OptionId BlankLinesAroundInvocable = Of("skala_blank_lines_around_invocable");
 
     public static readonly OptionId BlankLinesAroundSingleLineInvocable =
-        Of("resharper_csharp_blank_lines_around_single_line_invocable");
+        Of("skala_blank_lines_around_single_line_invocable");
 
-    public static readonly OptionId BlankLinesAroundField = Of("resharper_csharp_blank_lines_around_field");
+    public static readonly OptionId BlankLinesAroundField = Of("skala_blank_lines_around_field");
 
     public static readonly OptionId BlankLinesAroundSingleLineField =
-        Of("resharper_csharp_blank_lines_around_single_line_field");
+        Of("skala_blank_lines_around_single_line_field");
 
-    public static readonly OptionId BlankLinesAroundProperty = Of("resharper_csharp_blank_lines_around_property");
+    public static readonly OptionId BlankLinesAroundProperty = Of("skala_blank_lines_around_property");
 
     // ⚠ SK-DIV-0092, `OfInert` in the established sense. It governs an ACCESSOR-LIST property that is
     // on one line — `public int X { get => 1; }` — and the export's
-    // `keep_existing_declaration_block_arrangement = false` expands exactly that shape onto three
+    // `skala_keep_existing_declaration_block_arrangement = false` expands exactly that shape onto three
     // lines, so nothing this configuration can produce is a single-line property. Measured, and it
     // refuted the claim the key's own fixture carried: an expression-bodied `X => 1;` is governed by
-    // neither this key nor `blank_lines_around_property`.
+    // neither this key nor `skala_blank_lines_around_property`.
     public static readonly OptionId BlankLinesAroundSingleLineProperty =
-        OfInert("resharper_csharp_blank_lines_around_single_line_property");
+        OfInert("skala_blank_lines_around_single_line_property");
 
     public static readonly OptionId BlankLinesAroundAutoProperty =
-        Of("resharper_csharp_blank_lines_around_auto_property");
+        Of("skala_blank_lines_around_auto_property");
 
     public static readonly OptionId BlankLinesAroundSingleLineAutoProperty =
-        Of("resharper_csharp_blank_lines_around_single_line_auto_property");
+        Of("skala_blank_lines_around_single_line_auto_property");
 
-    public static readonly OptionId BlankLinesAroundAccessor = Of("resharper_csharp_blank_lines_around_accessor");
+    public static readonly OptionId BlankLinesAroundAccessor = Of("skala_blank_lines_around_accessor");
 
     public static readonly OptionId BlankLinesAroundSingleLineAccessor =
-        Of("resharper_csharp_blank_lines_around_single_line_accessor");
+        Of("skala_blank_lines_around_single_line_accessor");
 
     public static readonly OptionId BlankLinesAroundLocalMethod =
-        Of("resharper_csharp_blank_lines_around_local_method");
+        Of("skala_blank_lines_around_local_method");
 
     public static readonly OptionId BlankLinesAroundSingleLineLocalMethod =
-        Of("resharper_csharp_blank_lines_around_single_line_local_method");
+        Of("skala_blank_lines_around_single_line_local_method");
 
-    public static readonly OptionId BlankLinesAroundNamespace = Of("resharper_csharp_blank_lines_around_namespace");
-    public static readonly OptionId BlankLinesAroundRegion = Of("resharper_csharp_blank_lines_around_region");
-    public static readonly OptionId BlankLinesInsideRegion = Of("resharper_csharp_blank_lines_inside_region");
+    public static readonly OptionId BlankLinesAroundNamespace = Of("skala_blank_lines_around_namespace");
+    public static readonly OptionId BlankLinesAroundRegion = Of("skala_blank_lines_around_region");
+    public static readonly OptionId BlankLinesInsideRegion = Of("skala_blank_lines_inside_region");
     // ⚠ No longer inert, and the reason they were is the reason to record. Both were `OfInert` on
-    // "the removal rules win over blank_lines_inside_type outright" — which was true of Skala and
+    // "the removal rules win over skala_blank_lines_inside_type outright" — which was true of Skala and
     // not of the oracle. Asked at `jb cleanupcode` 2025.2.6 under this repository's own
-    // .editorconfig, which sets `remove_blank_lines_near_braces_in_declarations = true`, the tool
+    // .editorconfig, which sets `skala_remove_blank_lines_near_braces_in_declarations = true`, the tool
     // still pads the braces:
     //
-    //     class C {                blank_lines_inside_type = 3      class C {
+    //     class C {                skala_blank_lines_inside_type = 3      class C {
     //         int a;                       ────────────►                (three blank lines)
     //     }                                                                int a;
     //                                                                  (three blank lines)
     //                                                                 }
     //
-    // and at `5` it pads five, so `keep_blank_lines_in_declarations = 2` does not bind either. The
+    // and at `5` it pads five, so `skala_keep_blank_lines_in_declarations = 2` does not bind either. The
     // requirement outranks both, and `CSharpDocumentBuilder.InsideDeclarationBraces` is where that
     // ordering lives. The export sets both keys to `0`, so honouring them costs nothing here — an
     // unimplemented key whose configured value coincides with the behaviour is exactly the shape
     // docs/plan/12 § "The key-flip sweep" exists to find.
-    public static readonly OptionId BlankLinesInsideType = Of("resharper_csharp_blank_lines_inside_type");
+    public static readonly OptionId BlankLinesInsideType = Of("skala_blank_lines_inside_type");
 
     public static readonly OptionId BlankLinesInsideNamespace =
-        Of("resharper_csharp_blank_lines_inside_namespace");
+        Of("skala_blank_lines_inside_namespace");
 
-    public static readonly OptionId BlankLinesAfterUsingList = Of("resharper_csharp_blank_lines_after_using_list");
+    public static readonly OptionId BlankLinesAfterUsingList = Of("skala_blank_lines_after_using_list");
 
     // ⚠ Beside `BlankLinesAfterUsingList` because it is the same family: that key owns the gap *after*
     // the using block and this one owns the gaps *inside* it. It was the arranger's until SK-DIV-0074
@@ -2272,43 +2272,43 @@ public static class Ids {
     public static readonly OptionId SeparateImportDirectiveGroups = Of("dotnet_separate_import_directive_groups");
 
     public static readonly OptionId BlankLinesAfterFileScopedNamespaceDirective =
-        Of("resharper_csharp_blank_lines_after_file_scoped_namespace_directive");
+        Of("skala_blank_lines_after_file_scoped_namespace_directive");
 
     public static readonly OptionId BlankLinesAfterBlockStatements =
-        Of("resharper_csharp_blank_lines_after_block_statements");
+        Of("skala_blank_lines_after_block_statements");
 
     public static readonly OptionId BlankLinesBeforeSingleLineComment =
-        Of("resharper_csharp_blank_lines_before_single_line_comment");
+        Of("skala_blank_lines_before_single_line_comment");
 
-    public static readonly OptionId BlankLinesAfterCase = Of("resharper_csharp_blank_lines_after_case");
-    public static readonly OptionId BlankLinesBeforeCase = Of("resharper_csharp_blank_lines_before_case");
+    public static readonly OptionId BlankLinesAfterCase = Of("skala_blank_lines_after_case");
+    public static readonly OptionId BlankLinesBeforeCase = Of("skala_blank_lines_before_case");
 
     public static readonly OptionId BlankLinesAfterStartComment =
-        Of("resharper_csharp_blank_lines_after_start_comment");
+        Of("skala_blank_lines_after_start_comment");
 
     public static readonly OptionId BlankLinesBeforeControlTransferStatements =
-        Of("resharper_csharp_blank_lines_before_control_transfer_statements");
+        Of("skala_blank_lines_before_control_transfer_statements");
 
     public static readonly OptionId BlankLinesAfterControlTransferStatements =
-        Of("resharper_csharp_blank_lines_after_control_transfer_statements");
+        Of("skala_blank_lines_after_control_transfer_statements");
 
     public static readonly OptionId BlankLinesBeforeMultilineStatements =
-        Of("resharper_csharp_blank_lines_before_multiline_statements");
+        Of("skala_blank_lines_before_multiline_statements");
 
     public static readonly OptionId BlankLinesAfterMultilineStatements =
-        Of("resharper_csharp_blank_lines_after_multiline_statements");
+        Of("skala_blank_lines_after_multiline_statements");
 
     public static readonly OptionId BlankLinesBeforeBlockStatements =
-        Of("resharper_csharp_blank_lines_before_block_statements");
+        Of("skala_blank_lines_before_block_statements");
 
     public static readonly OptionId BlankLinesAroundBlockCaseSection =
-        Of("resharper_csharp_blank_lines_around_block_case_section");
+        Of("skala_blank_lines_around_block_case_section");
 
     public static readonly OptionId BlankLinesAroundMultilineCaseSection =
-        Of("resharper_csharp_blank_lines_around_multiline_case_section");
+        Of("skala_blank_lines_around_multiline_case_section");
 
     // ── Break presence and position (phase 2) ────────────────────────────────────────────────
-    public static readonly OptionId KeepUserLinebreaks = Of("resharper_keep_user_linebreaks");
+    public static readonly OptionId KeepUserLinebreaks = Of("skala_keep_user_linebreaks");
 
     // ⚠ Inert, and established against the oracle rather than assumed: with
     // keep_user_linebreaks = true, setting keep_user_wrapping to false changes nothing on any shape
@@ -2331,72 +2331,72 @@ public static class Ids {
     // keep_user_wrapping does not appear in the answer at either of its values, at either margin, or
     // at the unbounded one. constructs/wrapping/lambda-arrow.cs pins the negative with ten other
     // keys beside it.
-    public static readonly OptionId KeepUserWrapping = OfInert("resharper_keep_user_wrapping");
+    public static readonly OptionId KeepUserWrapping = OfInert("skala_keep_user_wrapping");
 
     public static readonly OptionId KeepExistingInvocationParensArrangement =
-        Of("resharper_csharp_keep_existing_invocation_parens_arrangement");
+        Of("skala_keep_existing_invocation_parens_arrangement");
 
     public static readonly OptionId KeepExistingDeclarationParensArrangement =
-        Of("resharper_csharp_keep_existing_declaration_parens_arrangement");
+        Of("skala_keep_existing_declaration_parens_arrangement");
 
     // ⚠ SK-DIV-0093, and this one is NOT a mask: the C# formatter does not answer to this key at all.
-    // Measured — `keep_existing_declaration_parens_arrangement = false` rejoins a lambda's broken
+    // Measured — `skala_keep_existing_declaration_parens_arrangement = false` rejoins a lambda's broken
     // parentheses and this key changes nothing at either value, in either spelling. It is still read
     // and surfaced by `skala config explain`, because a key the registry knows and the tool silently
     // drops is worse than one it reports as having no effect; nothing acts on it.
     public static readonly OptionId KeepExistingLambdaParensArrangement =
-        OfInert("resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement");
+        OfInert("skala_keep_existing_lambda_and_anonymous_function_parens_arrangement");
 
     public static readonly OptionId KeepExistingPrimaryConstructorParensArrangement =
-        Of("resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement");
+        Of("skala_keep_existing_primary_constructor_declaration_parens_arrangement");
 
     public static readonly OptionId KeepExistingExprMemberArrangement =
-        Of("resharper_csharp_keep_existing_expr_member_arrangement");
+        Of("skala_keep_existing_expr_member_arrangement");
 
     public static readonly OptionId KeepExistingEmbeddedArrangement =
-        Of("resharper_csharp_keep_existing_embedded_arrangement");
+        Of("skala_keep_existing_embedded_arrangement");
 
     public static readonly OptionId KeepExistingAttributeArrangement =
-        Of("resharper_csharp_keep_existing_attribute_arrangement");
+        Of("skala_keep_existing_attribute_arrangement");
 
     public static readonly OptionId KeepExistingDeclarationBlockArrangement =
-        Of("resharper_keep_existing_declaration_block_arrangement");
+        Of("skala_keep_existing_declaration_block_arrangement");
 
     public static readonly OptionId KeepExistingEmbeddedBlockArrangement =
-        Of("resharper_keep_existing_embedded_block_arrangement");
+        Of("skala_keep_existing_embedded_block_arrangement");
 
-    public static readonly OptionId KeepExistingEnumArrangement = Of("resharper_csharp_keep_existing_enum_arrangement");
-    public static readonly OptionId KeepExistingLinebreaks = Of("resharper_csharp_keep_existing_linebreaks");
+    public static readonly OptionId KeepExistingEnumArrangement = Of("skala_keep_existing_enum_arrangement");
+    public static readonly OptionId KeepExistingLinebreaks = Of("skala_keep_existing_linebreaks");
 
-    public static readonly OptionId WrapEnumDeclaration = OfInert("resharper_csharp_wrap_enum_declaration");
-    public static readonly OptionId MaxEnumMembersOnLine = OfInert("resharper_csharp_max_enum_members_on_line");
-    public static readonly OptionId WrapSwitchExpression = Of("resharper_csharp_wrap_switch_expression");
-    public static readonly OptionId WrapArgumentsStyle = Of("resharper_csharp_wrap_arguments_style");
-    public static readonly OptionId WrapParametersStyle = Of("resharper_csharp_wrap_parameters_style");
+    public static readonly OptionId WrapEnumDeclaration = OfInert("skala_wrap_enum_declaration");
+    public static readonly OptionId MaxEnumMembersOnLine = OfInert("skala_max_enum_members_on_line");
+    public static readonly OptionId WrapSwitchExpression = Of("skala_wrap_switch_expression");
+    public static readonly OptionId WrapArgumentsStyle = Of("skala_wrap_arguments_style");
+    public static readonly OptionId WrapParametersStyle = Of("skala_wrap_parameters_style");
 
     public static readonly OptionId WrapPrimaryConstructorParametersStyle =
-        Of("resharper_csharp_wrap_primary_constructor_parameters_style");
+        Of("skala_wrap_primary_constructor_parameters_style");
 
     public static readonly OptionId WrapAfterPrimaryConstructorLpar =
-        Of("resharper_csharp_wrap_after_primary_constructor_declaration_lpar");
+        Of("skala_wrap_after_primary_constructor_declaration_lpar");
 
     public static readonly OptionId WrapBeforePrimaryConstructorRpar =
-        Of("resharper_csharp_wrap_before_primary_constructor_declaration_rpar");
+        Of("skala_wrap_before_primary_constructor_declaration_rpar");
 
-    public static readonly OptionId WrapBeforeBinaryOpsign = Of("resharper_csharp_wrap_before_binary_opsign");
-    public static readonly OptionId WrapBeforeBinaryPatternOp = Of("resharper_csharp_wrap_before_binary_pattern_op");
-    public static readonly OptionId WrapBeforeTernaryOpsigns = Of("resharper_csharp_wrap_before_ternary_opsigns");
+    public static readonly OptionId WrapBeforeBinaryOpsign = Of("skala_wrap_before_binary_opsign");
+    public static readonly OptionId WrapBeforeBinaryPatternOp = Of("skala_wrap_before_binary_pattern_op");
+    public static readonly OptionId WrapBeforeTernaryOpsigns = Of("skala_wrap_before_ternary_opsigns");
     // ⚠ No longer inert. Milestone 2 recorded that no input could tell its two values apart,
     // because M2 never *added* a break at either side of an `=` and the key only chooses a side.
     // M3 added one — GroupFacts.PrefersOuterBreak — and the key became observable the moment it
     // did; the M2 note outlived the reason for it. Asked directly at a 70-column margin,
     // `target = a + b + c;` comes back broken after the `=` at false and before it at true.
-    public static readonly OptionId WrapBeforeEq = Of("resharper_csharp_wrap_before_eq");
-    public static readonly OptionId WrapBeforeComma = Of("resharper_csharp_wrap_before_comma");
-    public static readonly OptionId WrapAfterInvocationLpar = Of("resharper_csharp_wrap_after_invocation_lpar");
-    public static readonly OptionId WrapBeforeInvocationRpar = Of("resharper_csharp_wrap_before_invocation_rpar");
-    public static readonly OptionId WrapAfterDeclarationLpar = Of("resharper_csharp_wrap_after_declaration_lpar");
-    public static readonly OptionId WrapBeforeDeclarationRpar = Of("resharper_csharp_wrap_before_declaration_rpar");
+    public static readonly OptionId WrapBeforeEq = Of("skala_wrap_before_eq");
+    public static readonly OptionId WrapBeforeComma = Of("skala_wrap_before_comma");
+    public static readonly OptionId WrapAfterInvocationLpar = Of("skala_wrap_after_invocation_lpar");
+    public static readonly OptionId WrapBeforeInvocationRpar = Of("skala_wrap_before_invocation_rpar");
+    public static readonly OptionId WrapAfterDeclarationLpar = Of("skala_wrap_after_declaration_lpar");
+    public static readonly OptionId WrapBeforeDeclarationRpar = Of("skala_wrap_before_declaration_rpar");
 
     // ⚠ The opening half of the three `lpar` pairs. `wrap_after_X_lpar` says whether the first item
     // gets a line of its own; these say whether the *parenthesis itself* does, which is a break at
@@ -2406,12 +2406,12 @@ public static class Ids {
     //         int a,                 argument
     //     ) { }                  );
     public static readonly OptionId WrapBeforeDeclarationLpar =
-        Of("resharper_csharp_wrap_before_declaration_lpar");
+        Of("skala_wrap_before_declaration_lpar");
 
-    public static readonly OptionId WrapBeforeInvocationLpar = Of("resharper_csharp_wrap_before_invocation_lpar");
+    public static readonly OptionId WrapBeforeInvocationLpar = Of("skala_wrap_before_invocation_lpar");
 
     public static readonly OptionId WrapBeforePrimaryConstructorLpar =
-        Of("resharper_csharp_wrap_before_primary_constructor_declaration_lpar");
+        Of("skala_wrap_before_primary_constructor_declaration_lpar");
 
     // ⚠ Tier A since T5a, and it was Tier D for a wrapping gap rather than for anything to do with
     // the key: with the key *on*, Skala's output on an over-long type parameter list was already
@@ -2420,13 +2420,13 @@ public static class Ids {
     // is the oracle's own shape: a fill, breaking after the `<` when a single parameter overflows
     // and at the last comma that fits when several do.
     public static readonly OptionId WrapBeforeTypeParameterLangle =
-        Of("resharper_csharp_wrap_before_type_parameter_langle");
+        Of("skala_wrap_before_type_parameter_langle");
 
     // ⚠ Read, implemented, and Tier D — blocked by a wrapping gap of its own rather than by
     // anything to do with the key.
     //
 
-    // ⚠ Implemented in PlanAroundEquals and it was `wrap_before_type_parameter_langle`'s neighbour
+    // ⚠ Implemented in PlanAroundEquals and it was `skala_wrap_before_type_parameter_langle`'s neighbour
     // in the note above, on the same argument: the key takes a query out of the ordering rule so
     // that it breaks whenever the whole query does not fit, which is what puts `from` on a line of
     // its own — and every query long enough to make that matter was one Skala laid out differently,
@@ -2435,26 +2435,26 @@ public static class Ids {
     // HidesFlatWidthWhenBroken on the query's group: the key also moves a *short* query the author
     // broke down onto its own line, and no width test on a 37-column value produces that.
     public static readonly OptionId WrapBeforeLinqExpression =
-        Of("resharper_csharp_wrap_before_linq_expression");
+        Of("skala_wrap_before_linq_expression");
 
     // ⚠ The rest of the `wrap_*` family the export sets, measured the same way and Tier D.
     //
     // Never read by the C# formatter. Each is the unprefixed spelling of a key whose C# form is
     // elsewhere in this list, and setting it changes nothing in the oracle's output on a file that
-    // exercises the construct: wrap_after_binary_opsign (the C# key is wrap_before_binary_opsign),
-    // wrap_after_dot (wrap_after_dot_in_method_calls), wrap_arguments (csharp_wrap_arguments_style),
-    // wrap_base_clause_style (csharp_wrap_extends_list_style), wrap_braced_init_list_style
-    // (wrap_array_initializer_style), wrap_ctor_initializer_style, wrap_enumeration_style
-    // (wrap_enum_declaration), wrap_before_colon, wrap_comments.
+    // exercises the construct: wrap_after_binary_opsign (the C# key is skala_wrap_before_binary_opsign),
+    // wrap_after_dot (skala_wrap_after_dot_in_method_calls), wrap_arguments (skala_wrap_arguments_style),
+    // wrap_base_clause_style (skala_wrap_extends_list_style), wrap_braced_init_list_style
+    // (skala_wrap_array_initializer_style), wrap_ctor_initializer_style, wrap_enumeration_style
+    // (skala_wrap_enum_declaration), wrap_before_colon, wrap_comments.
     //
     // ⚠ Two of those were re-asked in T6 with their C# key in the same batch, because the comment
     // near line 1279 saying the unprefixed forms belong to the C++/VB formatters has been refuted
     // twice this year and an inherited claim is not a measurement:
-    //   wrap_arguments = chop_always            ── no change; csharp_wrap_arguments_style =
+    //   wrap_arguments = chop_always            ── no change; skala_wrap_arguments_style =
     //                                              chop_always in the same run chops every argument
     //                                              list in the file, the ctor initializer included.
     //   wrap_before_colon = true                ── no change, in either spelling;
-    //                                              wrap_before_extends_colon = true in the same run
+    //                                              skala_wrap_before_extends_colon = true in the same run
     //                                              moves the base list's `:` onto its own line.
     // So for these two the claim holds and now has its control.
     //
@@ -2463,7 +2463,7 @@ public static class Ids {
     // wrap_lambda_and_anonymous_function_parameters_style and
     // max_lambda_and_anonymous_function_parameters_on_line at any value, the oracle's layout of a
     // lambda's parameter list does not move — and it *does* move when
-    // wrap_before_declaration_lpar changes. A lambda's parameter list is governed by the method
+    // skala_wrap_before_declaration_lpar changes. A lambda's parameter list is governed by the method
     // declaration keys; the five keys named for it are not read.
     //
     // ⚠ T6 re-asked all five with the controls beside them rather than inheriting the note above,
@@ -2472,8 +2472,8 @@ public static class Ids {
     // expected answer. It is not: on a file holding a parenthesized lambda and a `delegate(…)`,
     // asked at 120 columns and again at 60, each of the five at its other value returns output
     // byte-identical to the margin's own, while in the same batch
-    // csharp_max_formal_parameters_on_line = 1 and csharp_wrap_parameters_style = chop_always both
-    // chop the lambda's parameter list and wrap_before_declaration_lpar moves the `delegate`
+    // skala_max_formal_parameters_on_line = 1 and skala_wrap_parameters_style = chop_always both
+    // chop the lambda's parameter list and skala_wrap_before_declaration_lpar moves the `delegate`
     // keyword's parenthesis. Ten runs, five keys, two margins, four controls.
     //
     // Master switches with nothing behind them: enable_wrapping changes nothing, and
@@ -2495,7 +2495,7 @@ public static class Ids {
     // this group that were hunted rather than sampled, since each names a shape a probe can miss.
     //   indent_wrapped_function_names — a wrapped call chain, a wrapped qualified name, and a
     //     declaration whose return type and name split across lines; then the same three under
-    //     wrap_after_dot_in_method_calls, align_multiline_calls_chain, outdent_dots and
+    //     skala_wrap_after_dot_in_method_calls, align_multiline_calls_chain, skala_outdent_dots and
     //     continuous_line_indent = double. Every pairing returns exactly what the control alone
     //     returns, so the key contributes nothing to any of them. ⚠ The unprefixed-spelling excuse
     //     was not inherited: resharper_csharp_indent_wrapped_function_names was asked too, and is
@@ -2503,18 +2503,18 @@ public static class Ids {
     //   prefer_line_break_after_multiline_lparen — a call whose argument is a two-statement lambda,
     //     one whose argument is a wide object initializer, and a nested call, at 120 and at 80, with
     //     and without place_single_method_argument_lambda_on_same_line and with
-    //     wrap_arguments_style = chop_always. Inert at every one; the C#-prefixed spelling too.
+    //     skala_wrap_arguments_style = chop_always. Inert at every one; the C#-prefixed spelling too.
     // Both are recorded as "reached and not read" rather than "not reached".
     //
-    // ⚠ wrap_multiple_type_parameter_constraints_style and
-    // wrap_before_first_type_parameter_constraint were both on this list — the first as "reached and
+    // ⚠ skala_wrap_multiple_type_parameter_constraints_style and
+    // skala_wrap_before_first_type_parameter_constraint were both on this list — the first as "reached and
     // not implemented", the second as "not reached by any probe" — and both are Tier A since T5a.
     // The shape that reaches them is a declaration whose constraint clauses do not fit on one line,
     // and the probe that missed the second needed one more turn of the handle: it decides nothing
     // while the first `where` has to break anyway, and it decides everything when the declaration
     // and its first clause do fit. See PlanConstraints, and the two keys below.
     //
-    // ⚠ wrap_for_stmt_header_style was in this list and is not any more. The shape was right — a
+    // ⚠ skala_wrap_for_stmt_header_style was in this list and is not any more. The shape was right — a
     // `for` whose three clauses do not fit, where `wrap_if_long` keeps the initializer and the
     // condition together and the export's `chop_if_long` gives each clause a line — and so was the
     // reason it could not be implemented: Skala had no break point at the header's `;` and broke
@@ -2528,11 +2528,11 @@ public static class Ids {
     // ⚠ The two halves of a constraint list's layout, and they are two questions rather than one —
     // which is why one group is not enough. Measured against `jb cleanupcode` at 120 columns:
     //
-    //   wrap_before_first_type_parameter_constraint asks whether the *whole* constraint list has to
+    //   skala_wrap_before_first_type_parameter_constraint asks whether the *whole* constraint list has to
     //     fit on the declaration's line. At `true` — the export's value — a declaration whose
     //     constraints overflow puts every clause on the next line even when the first one would
     //     have fitted; at `false` the first clause stays put and only what does not fit moves.
-    //   wrap_multiple_type_parameter_constraints_style then decides what happens to the clauses
+    //   skala_wrap_multiple_type_parameter_constraints_style then decides what happens to the clauses
     //     *after* the first, on the line they land on. `chop_if_long` gives each its own line as
     //     soon as they do not fit together, `wrap_if_long` fills them, and `chop_always` gives each
     //     its own line whatever the width.
@@ -2543,31 +2543,31 @@ public static class Ids {
     //         where T1 : class where T2 : struct, IComparable, ICloneable, IEquatable<T2> { }
     // rather than a line per clause: the first break already made the constraints fit.
     public static readonly OptionId WrapMultipleTypeParameterConstraintsStyle =
-        Of("resharper_csharp_wrap_multiple_type_parameter_constraints_style");
+        Of("skala_wrap_multiple_type_parameter_constraints_style");
 
     public static readonly OptionId WrapBeforeFirstTypeParameterConstraint =
-        Of("resharper_csharp_wrap_before_first_type_parameter_constraint");
+        Of("skala_wrap_before_first_type_parameter_constraint");
 
     public static readonly OptionId WrapBeforeArrowWithExpressions =
-        Of("resharper_csharp_wrap_before_arrow_with_expressions");
+        Of("skala_wrap_before_arrow_with_expressions");
 
     public static readonly OptionId PlaceTypeAttributeOnSameLine =
-        Of("resharper_csharp_place_type_attribute_on_same_line");
+        Of("skala_place_type_attribute_on_same_line");
 
     public static readonly OptionId PlaceMethodAttributeOnSameLine =
-        Of("resharper_csharp_place_method_attribute_on_same_line");
+        Of("skala_place_method_attribute_on_same_line");
 
     public static readonly OptionId PlaceFieldAttributeOnSameLine =
-        Of("resharper_csharp_place_field_attribute_on_same_line");
+        Of("skala_place_field_attribute_on_same_line");
 
     public static readonly OptionId PlaceAccessorAttributeOnSameLine =
-        Of("resharper_csharp_place_accessor_attribute_on_same_line");
+        Of("skala_place_accessor_attribute_on_same_line");
 
     public static readonly OptionId PlaceAccessorHolderAttributeOnSameLine =
-        Of("resharper_csharp_place_accessorholder_attribute_on_same_line");
+        Of("skala_place_accessorholder_attribute_on_same_line");
 
     public static readonly OptionId PlaceRecordFieldAttributeOnSameLine =
-        Of("resharper_csharp_place_record_field_attribute_on_same_line");
+        Of("skala_place_record_field_attribute_on_same_line");
 
 
     /// <summary>
@@ -2580,12 +2580,12 @@ public static class Ids {
     ///     this shape.
     /// </summary>
     public static readonly OptionId PlaceAttributeOnSameLine =
-        OfGeneralized("resharper_place_attribute_on_same_line");
+        OfGeneralized("skala_place_attribute_on_same_line");
 
     // ⚠ Two keys read but never observable, and Tier D with the reason rather than Tier A:
     //   place_attribute_on_same_line — the six per-owner keys cover every C# attribute target, so
     //     the generalized key never gets to decide.
-    //   wrap_before_eq — it moves the break point from one side of the `=` to the other, and
+    //   skala_wrap_before_eq — it moves the break point from one side of the `=` to the other, and
     //     milestone 2 never adds a break at either side (that ordering is prefer_wrap_around_eq's,
     //     which is M3), so no input distinguishes the values.
 
@@ -2604,31 +2604,31 @@ public static class Ids {
     ///     </para>
     /// </summary>
     public static readonly OptionId MaxAttributeLengthForSameLine =
-        OfInert("resharper_csharp_max_attribute_length_for_same_line");
+        OfInert("skala_max_attribute_length_for_same_line");
 
     public static readonly OptionId PlaceSingleMethodArgumentLambdaOnSameLine =
-        Of("resharper_place_single_method_argument_lambda_on_same_line");
+        Of("skala_place_single_method_argument_lambda_on_same_line");
 
     public static readonly OptionId PlaceExprMethodOnSingleLine =
-        Of("resharper_csharp_place_expr_method_on_single_line");
+        Of("skala_place_expr_method_on_single_line");
 
     public static readonly OptionId PlaceExprPropertyOnSingleLine =
-        Of("resharper_csharp_place_expr_property_on_single_line");
+        Of("skala_place_expr_property_on_single_line");
 
     public static readonly OptionId PlaceExprAccessorOnSingleLine =
-        Of("resharper_csharp_place_expr_accessor_on_single_line");
+        Of("skala_place_expr_accessor_on_single_line");
 
     /// <summary>
     ///     ⚠ Implemented in full and unreachable from this export, which is
     ///     <c>align_multiline_argument</c>'s shape rather than a gap:
-    ///     <c>keep_existing_embedded_arrangement = true</c> outranks it in BOTH directions, so no
+    ///     <c>skala_keep_existing_embedded_arrangement = true</c> outranks it in BOTH directions, so no
     ///     one-key flip can move the oracle. <c>BreakPlan.PlanEmbeddedStatement</c> carries the
     ///     measurement with the mask lifted; SK-DIV-0083 carries the pair. ⚠ Marked inert and its
     ///     `oracle` glob KEPT: inert here means "no input distinguishes its values under this
     ///     configuration", and the committed sweep still needs the fixture to re-measure it.
     /// </summary>
     public static readonly OptionId PlaceSimpleEmbeddedStatementOnSameLine =
-        OfInert("resharper_csharp_place_simple_embedded_statement_on_same_line");
+        OfInert("skala_place_simple_embedded_statement_on_same_line");
 
     /// <summary>
     ///     ⚠ Read and not applied. The oracle never rearranges a switch section's statements — asked in
@@ -2637,16 +2637,16 @@ public static class Ids {
     ///     <c>BreakPlan.PlanCaseStatements</c> for the probes.
     /// </summary>
     public static readonly OptionId PlaceSimpleCaseStatementOnSameLine =
-        OfInert("resharper_csharp_place_simple_case_statement_on_same_line");
+        OfInert("skala_place_simple_case_statement_on_same_line");
 
     public static readonly OptionId PlaceTypeConstraintsOnSameLine =
-        Of("resharper_csharp_place_type_constraints_on_same_line");
+        Of("skala_place_type_constraints_on_same_line");
 
     public static readonly OptionId PlaceConstructorInitializerOnSameLine =
-        Of("resharper_csharp_place_constructor_initializer_on_same_line");
+        Of("skala_place_constructor_initializer_on_same_line");
 
     public static readonly OptionId PlacePrimaryConstructorInitializerOnSameLine =
-        Of("resharper_place_primary_constructor_initializer_on_same_line");
+        Of("skala_place_primary_constructor_initializer_on_same_line");
 
     // ⚠ Both were in the "read but never observable" note above, on a measurement that was correct
     // and asked too little. `from x in xs where p select x` on one line does come back on one line
@@ -2658,24 +2658,24 @@ public static class Ids {
     //     is chopped whole; at `false` the same two inputs keep exactly the author's breaks and gain
     //     one more only where the line runs out. That is the fill, and "permitting one is what
     //     keep_user_linebreaks already does" was the half of it that shows on input that fits.
-    //   place_linq_into_on_new_line governs the *continuation's* `into` — `group … by … into
+    //   skala_place_linq_into_on_new_line governs the *continuation's* `into` — `group … by … into
     //     bucket` — and it is a break point of the query's group, so it goes with the chop. It does
     //     not govern a `join … into matches`, which the oracle leaves on the join's line at `true`
     //     with the query chopped around it.
-    public static readonly OptionId PlaceLinqIntoOnNewLine = Of("resharper_csharp_place_linq_into_on_new_line");
+    public static readonly OptionId PlaceLinqIntoOnNewLine = Of("skala_place_linq_into_on_new_line");
 
     public static readonly OptionId NewLineBetweenQueryExpressionClauses =
         Of("csharp_new_line_between_query_expression_clauses");
 
     // ── Wrapping (phase 3) ───────────────────────────────────────────────────────────────────
-    public static readonly OptionId WrapArrayInitializerStyle = Of("resharper_csharp_wrap_array_initializer_style");
-    public static readonly OptionId MaxInitializerElementsOnLine = Of("resharper_max_initializer_elements_on_line");
+    public static readonly OptionId WrapArrayInitializerStyle = Of("skala_wrap_array_initializer_style");
+    public static readonly OptionId MaxInitializerElementsOnLine = Of("skala_max_initializer_elements_on_line");
 
     public static readonly OptionId MaxArrayInitializerElementsOnLine =
-        Of("resharper_max_array_initializer_elements_on_line");
+        Of("skala_max_array_initializer_elements_on_line");
 
     public static readonly OptionId PlaceSimpleInitializerOnSingleLine =
-        Of("resharper_place_simple_initializer_on_single_line");
+        Of("skala_place_simple_initializer_on_single_line");
 
     // ⚠ Inert, and it is the tool that ignores them rather than a rule of Skala's masking them.
     // Measured 2026-08-29 against `jb cleanupcode` 2025.2.6 on
@@ -2683,105 +2683,105 @@ public static class Ids {
     // the only other value, both are `true` in the export — the oracle returns the file
     // byte-identical, in the unprefixed spelling the export writes AND in a `csharp_`-prefixed one.
     // The negative control on the same file and in the same shape,
-    // `resharper_csharp_wrap_array_initializer_style = chop_always`, rewrites it, so the file can
+    // `skala_wrap_array_initializer_style = chop_always`, rewrites it, so the file can
     // move. BreakPlan now writes `true` for both, which is what the oracle does at either value: a
     // braced construct that wraps at all puts its braces on their own lines. Skala honouring them
     // is what made both rows SPURIOUS.
-    public static readonly OptionId WrapAfterExpressionLbrace = OfInert("resharper_wrap_after_expression_lbrace");
-    public static readonly OptionId WrapBeforeExpressionRbrace = OfInert("resharper_wrap_before_expression_rbrace");
+    public static readonly OptionId WrapAfterExpressionLbrace = OfInert("skala_wrap_after_expression_lbrace");
+    public static readonly OptionId WrapBeforeExpressionRbrace = OfInert("skala_wrap_before_expression_rbrace");
 
-    public static readonly OptionId WrapChainedMethodCalls = Of("resharper_csharp_wrap_chained_method_calls");
-    public static readonly OptionId WrapAfterDotInMethodCalls = Of("resharper_wrap_after_dot_in_method_calls");
-    public static readonly OptionId WrapBeforeFirstMethodCall = Of("resharper_wrap_before_first_method_call");
+    public static readonly OptionId WrapChainedMethodCalls = Of("skala_wrap_chained_method_calls");
+    public static readonly OptionId WrapAfterDotInMethodCalls = Of("skala_wrap_after_dot_in_method_calls");
+    public static readonly OptionId WrapBeforeFirstMethodCall = Of("skala_wrap_before_first_method_call");
 
     public static readonly OptionId WrapAfterPropertyInChainedMethodCalls =
-        Of("resharper_wrap_after_property_in_chained_method_calls");
+        Of("skala_wrap_after_property_in_chained_method_calls");
 
     public static readonly OptionId WrapChainedBinaryExpressions =
-        Of("resharper_csharp_wrap_chained_binary_expressions");
+        Of("skala_wrap_chained_binary_expressions");
 
-    public static readonly OptionId WrapChainedBinaryPatterns = Of("resharper_csharp_wrap_chained_binary_patterns");
+    public static readonly OptionId WrapChainedBinaryPatterns = Of("skala_wrap_chained_binary_patterns");
 
     public static readonly OptionId ForceChopCompoundIfExpression =
-        Of("resharper_csharp_force_chop_compound_if_expression");
+        Of("skala_force_chop_compound_if_expression");
 
     public static readonly OptionId ForceChopCompoundWhileExpression =
-        Of("resharper_csharp_force_chop_compound_while_expression");
+        Of("skala_force_chop_compound_while_expression");
 
     public static readonly OptionId ForceChopCompoundDoExpression =
-        Of("resharper_csharp_force_chop_compound_do_expression");
+        Of("skala_force_chop_compound_do_expression");
 
-    public static readonly OptionId WrapTernaryExprStyle = Of("resharper_csharp_wrap_ternary_expr_style");
+    public static readonly OptionId WrapTernaryExprStyle = Of("skala_wrap_ternary_expr_style");
 
     public static readonly OptionId WrapMultipleDeclarationStyle =
-        Of("resharper_csharp_wrap_multiple_declaration_style");
+        Of("skala_wrap_multiple_declaration_style");
 
-    public static readonly OptionId WrapExtendsListStyle = Of("resharper_csharp_wrap_extends_list_style");
+    public static readonly OptionId WrapExtendsListStyle = Of("skala_wrap_extends_list_style");
 
     // ⚠ No longer in the "reached and not implemented" list above. The reason recorded there was
     // right — Skala had no break point at the header's `;` and broke inside the incrementor
     // expression instead — and it was a reason to add the break rather than to stop. BreakPlan
     // .PlanForHeader now owns the two gaps after the semicolons; the alignment column the oracle
-    // writes them on was already there, from align_multiline_statement_conditions.
-    public static readonly OptionId WrapForStmtHeaderStyle = Of("resharper_csharp_wrap_for_stmt_header_style");
-    public static readonly OptionId WrapBeforeExtendsColon = Of("resharper_wrap_before_extends_colon");
+    // writes them on was already there, from skala_align_multiline_statement_conditions.
+    public static readonly OptionId WrapForStmtHeaderStyle = Of("skala_wrap_for_stmt_header_style");
+    public static readonly OptionId WrapBeforeExtendsColon = Of("skala_wrap_before_extends_colon");
 
-    // ⚠ Inert, and the base clause's comma side is not: `resharper_csharp_wrap_before_comma` — the
+    // ⚠ Inert, and the base clause's comma side is not: `skala_wrap_before_comma` — the
     // general key — moves it, and this one does not, in either spelling. Measured 2026-08-29 on
     // `constructs/wrapping/base-list.cs`, one key at a time appended to the export: at `true` this
-    // key returns the file byte-identical while `wrap_before_comma = true` returns
+    // key returns the file byte-identical while `skala_wrap_before_comma = true` returns
     // `class C : Base\n    , IFirst\n    , ISecond { }`. BreakPlan.PlanBaseList reads the general
     // key now; reading this one is what made its row SPURIOUS.
     public static readonly OptionId WrapBeforeCommaInBaseClause =
-        OfInert("resharper_wrap_before_comma_in_base_clause");
+        OfInert("skala_wrap_before_comma_in_base_clause");
 
-    public static readonly OptionId WrapPropertyPattern = Of("resharper_csharp_wrap_property_pattern");
-    public static readonly OptionId WrapListPattern = OfInert("resharper_csharp_wrap_list_pattern");
+    public static readonly OptionId WrapPropertyPattern = Of("skala_wrap_property_pattern");
+    public static readonly OptionId WrapListPattern = OfInert("skala_wrap_list_pattern");
 
     public static readonly OptionId KeepExistingListPatternsArrangement =
-        Of("resharper_keep_existing_list_patterns_arrangement");
+        Of("skala_keep_existing_list_patterns_arrangement");
 
     public static readonly OptionId KeepExistingPropertyPatternsArrangement =
-        Of("resharper_keep_existing_property_patterns_arrangement");
+        Of("skala_keep_existing_property_patterns_arrangement");
 
     public static readonly OptionId KeepExistingSwitchExpressionArrangement =
-        Of("resharper_keep_existing_switch_expression_arrangement");
+        Of("skala_keep_existing_switch_expression_arrangement");
 
-    // ⚠ Read, implemented, and Tier D — because `keep_existing_list_patterns_arrangement` defaults
+    // ⚠ Read, implemented, and Tier D — because `skala_keep_existing_list_patterns_arrangement` defaults
     // to true and outranks it in both directions. With keep on, the placement key neither joins a
     // list pattern the author broke nor forces a whole one apart, so no input can tell its two
     // values apart on ReSharper's own defaults. Verified against the oracle rather than assumed:
     // flipping it alone changes nothing; flipping it with keep off turns `xs is [1, 2, 3]` into
     // three lines. An option that cannot change behaviour must not claim a tier that says it was.
     public static readonly OptionId PlaceSimpleListPatternOnSingleLine =
-        OfInert("resharper_place_simple_list_pattern_on_single_line");
+        OfInert("skala_place_simple_list_pattern_on_single_line");
 
     public static readonly OptionId PlaceSimplePropertyPatternOnSingleLine =
-        Of("resharper_place_simple_property_pattern_on_single_line");
+        Of("skala_place_simple_property_pattern_on_single_line");
 
     /// <summary>
     ///     ⚠ Implemented and unreachable from this export, the same way
     ///     <see cref="PlaceSimpleEmbeddedStatementOnSameLine" /> is:
-    ///     <c>wrap_switch_expression = chop_always</c> outranks it, which is the reverse of what
+    ///     <c>skala_wrap_switch_expression = chop_always</c> outranks it, which is the reverse of what
     ///     <c>BreakPlan.PlanSwitchExpression</c> used to record. At `wrap_if_long` the key decides and
     ///     both values move; at `chop_always` neither does. SK-DIV-0083.
     /// </summary>
     public static readonly OptionId PlaceSimpleSwitchExpressionOnSingleLine =
-        OfInert("resharper_place_simple_switch_expression_on_single_line");
+        OfInert("skala_place_simple_switch_expression_on_single_line");
 
-    public static readonly OptionId MaxInvocationArgumentsOnLine = Of("resharper_max_invocation_arguments_on_line");
-    public static readonly OptionId MaxFormalParametersOnLine = Of("resharper_max_formal_parameters_on_line");
+    public static readonly OptionId MaxInvocationArgumentsOnLine = Of("skala_max_invocation_arguments_on_line");
+    public static readonly OptionId MaxFormalParametersOnLine = Of("skala_max_formal_parameters_on_line");
 
     public static readonly OptionId MaxPrimaryConstructorParametersOnLine =
-        Of("resharper_max_primary_constructor_parameters_on_line");
+        Of("skala_max_primary_constructor_parameters_on_line");
 
     // ⚠ Read, but Tier D on the evidence rather than on the wiring. `prefer_wrap_around_eq`'s
     // domain is not published and this export writes `default`; the ordering rule is implemented and
     // pinned by fixtures, but no second value is known to exist, so nothing can demonstrate the
     // option changing an output and Tier A would be a claim the corpus cannot support.
-    public static readonly OptionId PreferWrapAroundEq = OfInert("resharper_prefer_wrap_around_eq");
+    public static readonly OptionId PreferWrapAroundEq = OfInert("skala_prefer_wrap_around_eq");
 
-    public static readonly OptionId IndentRawLiteralString = Of("resharper_csharp_indent_raw_literal_string");
+    public static readonly OptionId IndentRawLiteralString = Of("skala_indent_raw_literal_string");
 
     // ⚠ SK-DIV-0089, and `OfInert` here is the same sense `align_multiline_argument` established: no
     // input distinguishes their values *under this configuration*, not that the formatter ignores
@@ -2791,10 +2791,10 @@ public static class Ids {
     // configured pair sitting on the built-in values there is nothing for `tags_enabled` or
     // `accept_regexp` to change; and `off_tag`'s probe values are the default and the default with an
     // `x` appended, of which the second is matched by the first's own prefix on every possible input.
-    public static readonly OptionId FormatterTagsEnabled = OfInert("resharper_formatter_tags_enabled");
-    public static readonly OptionId FormatterOffTag = OfInert("resharper_formatter_off_tag");
-    public static readonly OptionId FormatterOnTag = OfInert("resharper_formatter_on_tag");
-    public static readonly OptionId FormatterTagsAcceptRegexp = OfInert("resharper_formatter_tags_accept_regexp");
+    public static readonly OptionId FormatterTagsEnabled = OfInert("skala_formatter_tags_enabled");
+    public static readonly OptionId FormatterOffTag = OfInert("skala_formatter_off_tag");
+    public static readonly OptionId FormatterOnTag = OfInert("skala_formatter_on_tag");
+    public static readonly OptionId FormatterTagsAcceptRegexp = OfInert("skala_formatter_tags_accept_regexp");
 
     // ── The xmldoc sub-formatter's subset ────────────────────────────────────────────────────
     // ⚠ This block used to be 22 keys registered `OfUnoracled` under one shared reason: "no
@@ -2812,38 +2812,38 @@ public static class Ids {
     // that placed it where it is, and the nine that stayed carry a divergence id.
     //
     // ── Agreed with the oracle byte for byte, and promoted ───────────────────────────────────
-    public static readonly OptionId XmlDocKeepUserLinebreaks = Of("resharper_xmldoc_keep_user_linebreaks");
+    public static readonly OptionId XmlDocKeepUserLinebreaks = Of("skala_xmldoc_keep_user_linebreaks");
 
     public static readonly OptionId XmlDocMaxBlankLinesBetweenTags =
-        Of("resharper_xmldoc_max_blank_lines_between_tags");
+        Of("skala_xmldoc_max_blank_lines_between_tags");
 
-    public static readonly OptionId XmlDocIndentChildElements = Of("resharper_xmldoc_indent_child_elements");
-    public static readonly OptionId XmlDocIndentText = Of("resharper_xmldoc_indent_text");
+    public static readonly OptionId XmlDocIndentChildElements = Of("skala_xmldoc_indent_child_elements");
+    public static readonly OptionId XmlDocIndentText = Of("skala_xmldoc_indent_text");
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsWithChildElements =
-        Of("resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements");
+        Of("skala_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements");
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForMultilineElements =
-        Of("resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements");
+        Of("skala_xmldoc_linebreaks_inside_tags_for_multiline_elements");
 
-    public static readonly OptionId XmlDocSpaceBeforeSelfClosing = Of("resharper_xmldoc_space_before_self_closing");
+    public static readonly OptionId XmlDocSpaceBeforeSelfClosing = Of("skala_xmldoc_space_before_self_closing");
     // ⚠ Inert, and the sweep's `SPURIOUS` on both of them was right about the direction and wrong
     // about the cause. They were promoted on a fixture that agrees at `4`/`space` — which is what
     // the *C#* `indent_size` also produces — and the fixture could not tell the two keys apart.
     // Probed under `OracleProfile.DocComments` on `/// <remarks>` holding a `/// <para>`:
-    // `resharper_xmldoc_indent_size = 1` leaves the child at four columns, `indent_size = 1` moves it
+    // `skala_xmldoc_indent_size = 1` leaves the child at four columns, `indent_size = 1` moves it
     // to one, and `indent_size = 2` with `tab_width = 8` in the same run moves it to two — so it is
-    // the file's own indent width and not the tab width. `resharper_xmldoc_indent_style = tab`
+    // the file's own indent width and not the tab width. `skala_xmldoc_indent_style = tab`
     // leaves the child indented with spaces, and `indent_style = tab` tabs the *code* lines while
     // leaving the comment's inner indent four spaces. A documentation comment's indent is the C#
     // indent's width, always spent in spaces, and neither `xmldoc_` key reaches it.
-    public static readonly OptionId XmlDocIndentSize = OfInert("resharper_xmldoc_indent_size");
-    public static readonly OptionId XmlDocIndentStyle = OfInert("resharper_xmldoc_indent_style");
-    public static readonly OptionId XmlDocLinebreakBeforeElements = Of("resharper_xmldoc_linebreak_before_elements");
-    public static readonly OptionId XmlDocSpaceAfterLastAttribute = Of("resharper_xmldoc_space_after_last_attribute");
+    public static readonly OptionId XmlDocIndentSize = OfInert("skala_xmldoc_indent_size");
+    public static readonly OptionId XmlDocIndentStyle = OfInert("skala_xmldoc_indent_style");
+    public static readonly OptionId XmlDocLinebreakBeforeElements = Of("skala_xmldoc_linebreak_before_elements");
+    public static readonly OptionId XmlDocSpaceAfterLastAttribute = Of("skala_xmldoc_space_after_last_attribute");
 
     public static readonly OptionId XmlDocSpacesAroundEqInAttribute =
-        Of("resharper_xmldoc_spaces_around_eq_in_attribute");
+        Of("skala_xmldoc_spaces_around_eq_in_attribute");
 
     // ── Measured against the oracle, and disagreeing ─────────────────────────────────────────
     // ⚠ These stay Tier D and stay `OfUnoracled`, and the mark now means something narrower and
@@ -2855,40 +2855,40 @@ public static class Ids {
     // ⚠ SK-DIV-0019 closed the wrap column, and the sweep then reached these two and found the rest
     // of the arithmetic. `max_line_length = 0` is a width of zero and not a stand-in for 120 — at
     // `0` and at `1` the oracle puts every word of a 170-column summary on its own line — and
-    // `wrap_text` is permission for a *word* to move rather than for the element to be opened: at
+    // `skala_xmldoc_wrap_text` is permission for a *word* to move rather than for the element to be opened: at
     // `false` a `<summary>` of plain prose comes back whole on one line, while the same key over
     // prose carrying a `<see/>` opens the element and moves the `<see/>` alone. Both are Conformant
     // at every value now, so they are `Of`; the tier is the sweep's to set on its next run.
-    public static readonly OptionId XmlDocWrapLines = Of("resharper_xmldoc_wrap_lines");
-    public static readonly OptionId XmlDocMaxLineLength = Of("resharper_xmldoc_max_line_length");
-    public static readonly OptionId XmlDocWrapText = Of("resharper_xmldoc_wrap_text");
+    public static readonly OptionId XmlDocWrapLines = Of("skala_xmldoc_wrap_lines");
+    public static readonly OptionId XmlDocMaxLineLength = Of("skala_xmldoc_max_line_length");
+    public static readonly OptionId XmlDocWrapText = Of("skala_xmldoc_wrap_text");
 
-    // ⚠ `resharper_xmldoc_wrap_tags_and_pi` is not registered here at all any more. It is in
+    // ⚠ `skala_xmldoc_wrap_tags_and_pi` is not registered here at all any more. It is in
     // `XmlDocIds.Refused` with the four tag-header keys it belongs with: measured, it governs a
     // break *inside* a tag header, which Skala can neither emit nor re-read. SK-DIV-0079.
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsLongerThan =
-        Of("resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than");
+        Of("skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than");
 
     // ⚠ Conformant at both values since the sweep reached it. "Place single-line elements on a new
     // line" puts what *follows* the element on a new line too: measured on a `<remarks>` holding
     // `Leading prose. <c>Code.</c> Trailing prose.`, at `true` the oracle writes those on three
     // lines, and Skala used to break only in front of the `<c>`.
     public static readonly OptionId XmlDocLinebreakBeforeSinglelineElements =
-        Of("resharper_xmldoc_linebreak_before_singleline_elements");
+        Of("skala_xmldoc_linebreak_before_singleline_elements");
 
-    // ⚠ SK-DIV-0021: the oracle leaves the content of an element that `linebreak_before_elements`
+    // ⚠ SK-DIV-0021: the oracle leaves the content of an element that `skala_xmldoc_linebreak_before_elements`
     // does not name on one line however long it is; Skala wraps it.
     public static readonly OptionId XmlDocLinebreakBeforeMultilineElements =
-        Of("resharper_xmldoc_linebreak_before_multiline_elements");
+        Of("skala_xmldoc_linebreak_before_multiline_elements");
 
     // ⚠ SK-DIV-0022: `false` means "do not add a space inside the tags", not "remove the author's".
-    public static readonly OptionId XmlDocSpacesInsideTags = Of("resharper_xmldoc_spaces_inside_tags");
+    public static readonly OptionId XmlDocSpacesInsideTags = Of("skala_xmldoc_spaces_inside_tags");
 
     // ⚠ SK-DIV-0023, now down to its second half: the blank line the oracle writes after a
     // processing instruction carries a trailing space Skala deliberately omits. The first half — the
     // marker space missing from the instruction's own line — is fixed.
-    public static readonly OptionId XmlDocBlankLineAfterPi = Of("resharper_xmldoc_blank_line_after_pi");
+    public static readonly OptionId XmlDocBlankLineAfterPi = Of("skala_xmldoc_blank_line_after_pi");
 
     // ── Generalized keys ─────────────────────────────────────────────────────────────────────
     // ⚠ These are not read by the formatter and never will be. A generalized key is a way of
@@ -2899,25 +2899,25 @@ public static class Ids {
     // `EveryImplementedOption_ChangesTheOutputOfItsCorpusFile` is exactly the right question to ask
     // of them: set the generalized key and the output has to move.
     public static readonly OptionId SpaceAfterKeywordsInControlFlowStatements =
-        OfGeneralized("resharper_space_after_keywords_in_control_flow_statements");
+        OfGeneralized("skala_space_after_keywords_in_control_flow_statements");
 
     public static readonly OptionId SpaceAroundMemberAccessOperator =
-        OfGeneralized("resharper_space_around_member_access_operator");
+        OfGeneralized("skala_space_around_member_access_operator");
 
     public static readonly OptionId SpaceAroundTernaryOperator =
-        OfGeneralized("resharper_space_around_ternary_operator");
+        OfGeneralized("skala_space_around_ternary_operator");
 
     public static readonly OptionId SpaceBeforeOpenSquareBrackets =
-        OfGeneralized("resharper_space_before_open_square_brackets");
+        OfGeneralized("skala_space_before_open_square_brackets");
 
     public static readonly OptionId SpaceBetweenSquareBrackets =
-        OfGeneralized("resharper_space_between_square_brackets");
+        OfGeneralized("skala_space_between_square_brackets");
 
     public static readonly OptionId SpaceBetweenMethodCallNameAndOpeningParenthesis =
-        OfGeneralized("resharper_space_between_method_call_name_and_opening_parenthesis");
+        OfGeneralized("skala_space_between_method_call_name_and_opening_parenthesis");
 
     public static readonly OptionId SpaceBetweenMethodDeclarationNameAndOpenParenthesis =
-        OfGeneralized("resharper_space_between_method_declaration_name_and_open_parenthesis");
+        OfGeneralized("skala_space_between_method_declaration_name_and_open_parenthesis");
 
     public static readonly OptionId GeneralizedIndentSize = OfGeneralized("indent_size");
     public static readonly OptionId GeneralizedIndentStyle = OfGeneralized("indent_style");
@@ -2932,13 +2932,13 @@ public static class Ids {
     ///     answers on its own". Asked again it answers on every one of the nine —
     ///     <c>if ( b )</c>, <c>while ( b )</c>, <c>for ( … )</c>, <c>foreach ( … )</c>,
     ///     <c>switch ( b )</c>, <c>catch ( … )</c>, <c>lock ( o )</c>, <c>using ( … )</c>,
-    ///     <c>fixed ( … )</c> — and a <c>space_within_if_parentheses = false</c> written after it takes
+    ///     <c>fixed ( … )</c> — and a <c>skala_space_within_if_parentheses = false</c> written after it takes
     ///     the <c>if</c> back on its own, which is the expansion model and not a coincidence. An empty
     ///     <c>expands</c> is the shape a wrong "inert" verdict takes: nothing honours the key, so
     ///     nothing can disprove the verdict either.
     /// </remarks>
     public static readonly OptionId SpaceBetweenParenthesesOfControlFlowStatements =
-        OfGeneralized("resharper_space_between_parentheses_of_control_flow_statements");
+        OfGeneralized("skala_space_between_parentheses_of_control_flow_statements");
 
     // ── Microsoft-compatible spellings of the generalized keys ───────────────────────────────
     // ⚠ Separate registry entries rather than aliases, because they are separate lines in the
@@ -3022,7 +3022,7 @@ public static class Ids {
     ///     <c>remove_spaces_on_blank_lines</c> is inert because a blank line is a break followed by a
     ///     break and the writer never puts anything between them (the one place trailing whitespace
     ///     survives is inside a comment's own text, which is never a blank line); and
-    ///     <c>space_between_keyword_and_type</c> is inert because a type after a
+    ///     <c>skala_space_between_keyword_and_type</c> is inert because a type after a
     ///     keyword is always word-like, so the separation is mandatory whatever the option says.
     ///     <para>
     ///         They are read so the plumbing exists and so the crash snapshot can record them, and they
@@ -3065,7 +3065,7 @@ public static class Ids {
     ///     none of whose targets is implemented would be a Tier A claim with nothing behind it, which
     ///     is the exact failure mode M3.1 found. At least one target must be implemented and not
     ///     <see cref="OfInert" />; the rest may belong to a component that does not exist yet —
-    ///     <c>indent_size</c> also names <c>resharper_xmldoc_indent_size</c>, and Skala's honouring it
+    ///     <c>indent_size</c> also names <c>skala_xmldoc_indent_size</c>, and Skala's honouring it
     ///     for C# is not made less true by the doc-comment target being pinned differently.
     ///     <para>
     ///         ⚠ <see cref="OfUnoracled" /> targets do not satisfy the requirement either, for the same

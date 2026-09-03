@@ -152,8 +152,8 @@ public sealed class PairwiseClassificationTests {
     [Fact]
     public void TheGridIsRowMajorOverPrimaryThenSecondary() {
         var candidate = new PairCandidate(
-            Info("resharper_csharp_keep_existing_enum_arrangement"),
-            Info("resharper_keep_user_linebreaks"),
+            Info("skala_keep_existing_enum_arrangement"),
+            Info("skala_keep_user_linebreaks"),
             ["true", "false"],
             ["alpha", "beta"],
             new Rikarin.Skala.Testing.CorpusFile("constructs", "sample.cs", "/nowhere/sample.cs")

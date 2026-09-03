@@ -161,14 +161,14 @@ public sealed class AdoptionTests {
     ///     <b>
     ///         `skala explain` is documented as taking `&lt;ruleId | optionKey&gt;` and rejected every
     ///         option key tried
-    ///     </b> — <c>insert_final_newline</c>,
-    ///     <c>dotnet_sort_system_directives_first</c> — with "is not a Skala rule". The two halves of
+    ///     </b> — <c>skala_insert_final_newline</c>,
+    ///     <c>skala_sort_usings_with_system_first</c> — with "is not a Skala rule". The two halves of
     ///     what Skala reads are rules and options, and only one of them could be asked about.
     /// </summary>
     [Theory]
-    [InlineData("insert_final_newline")]
-    [InlineData("dotnet_sort_system_directives_first")]
-    [InlineData("resharper_csharp_max_line_length")]
+    [InlineData("skala_insert_final_newline")]
+    [InlineData("skala_sort_usings_with_system_first")]
+    [InlineData("skala_max_line_length")]
     public void Explain_AnswersAnOptionKey(string key) {
         var result = ExplainCommand.Run(key);
 
@@ -202,7 +202,7 @@ public sealed class AdoptionTests {
         var result = ExplainCommand.Run("insert_final_newlines");
 
         Assert.Equal(ExitCodes.ConfigurationError, result.ExitCode);
-        Assert.Contains("insert_final_newline", result.Output, StringComparison.Ordinal);
+        Assert.Contains("skala_insert_final_newline", result.Output, StringComparison.Ordinal);
     }
 
     /// <summary>

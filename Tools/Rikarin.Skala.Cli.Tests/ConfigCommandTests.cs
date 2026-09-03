@@ -22,7 +22,7 @@ public sealed class ConfigCommandTests {
 
         var width = Assert.Single(
             run.Lines,
-            static line => line.StartsWith("resharper_csharp_max_line_length ", StringComparison.Ordinal)
+            static line => line.StartsWith("skala_max_line_length ", StringComparison.Ordinal)
         );
         Assert.Contains("120", width, StringComparison.Ordinal);
         Assert.Contains(".editorconfig:", width, StringComparison.Ordinal);
@@ -31,7 +31,7 @@ public sealed class ConfigCommandTests {
         // tier. Milestone 1 read `max_line_length` and could not act on it, because nothing wrapped;
         // milestone 3 promoted it to A when the wrapping arrived. The key-flip sweep put it back:
         // both engines move across `120`, `0` and `1`, and they agree only at `120`. Confirmed
-        // unbatched with `sweep verify resharper_csharp_max_line_length`, which is what doc 12
+        // unbatched with `sweep verify skala_max_line_length`, which is what doc 12
         // requires before a row is acted on.
         //
         // A tier is a claim about behaviour matching Rider's, so it tracks the measurement in both
@@ -62,7 +62,7 @@ public sealed class ConfigCommandTests {
 
         var width = Assert.Single(
             run.Lines,
-            static line => line.StartsWith("resharper_csharp_max_line_length ", StringComparison.Ordinal)
+            static line => line.StartsWith("skala_max_line_length ", StringComparison.Ordinal)
         );
         Assert.Contains("editor_config_template:", width, StringComparison.Ordinal);
     }
@@ -86,24 +86,24 @@ public sealed class ConfigCommandTests {
 
         Assert.Contains("SK9005", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains(
-            "'insert_final_newline = false' contradicts 'resharper_csharp_insert_final_newline = true'",
+            "'skala_insert_final_newline = false' contradicts 'skala_insert_final_newline = true'",
             run.StandardOutput,
             StringComparison.Ordinal
         );
         Assert.Contains(
-            "'trim_trailing_whitespace = false' contradicts 'resharper_remove_spaces_on_blank_lines = true'",
+            "'trim_trailing_whitespace = false' contradicts 'skala_remove_spaces_on_blank_lines = true'",
             run.StandardOutput,
             StringComparison.Ordinal
         );
         Assert.Contains(
-            "'end_of_line = lf' contradicts 'resharper_enforce_line_ending_style = false'",
+            "'end_of_line = lf' contradicts 'skala_enforce_line_ending_style = false'",
             run.StandardOutput,
             StringComparison.Ordinal
         );
 
         Assert.Contains("has no `root = true`", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("no `max_line_length`", run.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("resharper_csharp_max_line_length = 120", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("skala_max_line_length = 120", run.StandardOutput, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -262,7 +262,7 @@ public sealed class ConfigCommandTests {
     ///     <c>config explain</c> reported the keys as <c>(default)</c>. A unit test on the resolver
     ///     would have passed throughout.
     ///     <para>
-    ///         ⚠ <c>keep_existing_declaration_block_arrangement</c> is in the fixture on purpose. It is
+    ///         ⚠ <c>skala_keep_existing_declaration_block_arrangement</c> is in the fixture on purpose. It is
     ///         the one where a discarded value is not a cosmetic difference: the arranger goes on to
     ///         rearrange the file on the strength of a setting the tool threw away.
     ///     </para>
@@ -279,12 +279,12 @@ public sealed class ConfigCommandTests {
 
                 [*.cs]
                 indent_size = tab
-                resharper_csharp_max_line_length = -1
+                skala_max_line_length = -1
                 resharper_align_ternary = sideways
-                resharper_csharp_wrap_arguments_style = sideways
-                resharper_csharp_keep_existing_declaration_block_arrangement = maybe
+                skala_wrap_arguments_style = sideways
+                skala_keep_existing_declaration_block_arrangement = maybe
                 csharp_using_directive_placement = nowhere
-                resharper_csharp_indent_size = 0
+                skala_indent_size = 0
 
                 """
             );
@@ -298,12 +298,12 @@ public sealed class ConfigCommandTests {
             Assert.Contains("SK9017: 6", run.StandardOutput, StringComparison.Ordinal);
 
             foreach (var (key, value, effective) in new[] {
-                         ("resharper_csharp_max_line_length", "-1", "120"),
+                         ("skala_max_line_length", "-1", "120"),
                          ("resharper_align_ternary", "sideways", "align_not_nested"),
-                         ("resharper_csharp_wrap_arguments_style", "sideways", "chop_if_long"),
-                         ("resharper_csharp_keep_existing_declaration_block_arrangement", "maybe", "false"),
+                         ("skala_wrap_arguments_style", "sideways", "chop_if_long"),
+                         ("skala_keep_existing_declaration_block_arrangement", "maybe", "false"),
                          ("csharp_using_directive_placement", "nowhere", "outside_namespace"),
-                         ("resharper_csharp_indent_size", "0", "4")
+                         ("skala_indent_size", "0", "4")
                      }) {
                 Assert.Contains(
                     $"'{key} = {value}' is not a value this option accepts",
@@ -342,7 +342,7 @@ public sealed class ConfigCommandTests {
 
             var row = Assert.Single(
                 run.Lines,
-                static line => line.StartsWith("resharper_csharp_wrap_arguments_style ", StringComparison.Ordinal)
+                static line => line.StartsWith("skala_wrap_arguments_style ", StringComparison.Ordinal)
             );
 
             Assert.Contains("chop_if_long", row, StringComparison.Ordinal);
@@ -423,7 +423,7 @@ public sealed class ConfigCommandTests {
             var run = CliRunner.Run("config", "diff", baseline, changed);
 
             Assert.Contains(
-                "resharper_csharp_max_line_length: 120 -> 100",
+                "skala_max_line_length: 120 -> 100",
                 run.StandardOutput,
                 StringComparison.Ordinal
             );

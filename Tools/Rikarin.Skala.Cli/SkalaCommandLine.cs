@@ -194,7 +194,7 @@ public static partial class SkalaCommandLine {
         // editor formats them; `jb cleanupcode` does not, which makes this the one place the oracle
         // and the editor are known to disagree and Skala sides with the editor. `--no-xmldoc` is
         // for a tree that would rather keep the oracle's answer, and it is a flag rather than
-        // `resharper_xmldoc_wrap_lines = false` because that key means "do not wrap long lines" and
+        // `skala_xmldoc_wrap_lines = false` because that key means "do not wrap long lines" and
         // would still leave the comment re-indented — inventing a ReSharper semantic to get a kill
         // switch is the mistake this default is undoing.
         var noXmlDoc = new Option<bool>("--no-xmldoc") {

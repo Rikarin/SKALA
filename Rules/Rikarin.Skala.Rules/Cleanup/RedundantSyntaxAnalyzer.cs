@@ -25,7 +25,7 @@ namespace Rikarin.Skala.Rules.Cleanup;
 ///     </para>
 ///     <para>
 ///         ⚠ <b><c>SK0209</c> is not being duplicated.</b> That rule removes redundant
-///         <em>expression</em> parentheses through <c>resharper_parentheses_redundancy_style</c>, and it
+///         <em>expression</em> parentheses through <c>skala_parentheses_redundancy_style</c>, and it
 ///         matches <c>ParenthesizedExpressionSyntax</c> and nothing else. The three parenthesis shapes
 ///         here are an attribute argument list, a lambda parameter list and a parenthesized
 ///         <em>pattern</em> — three different nodes, none of which that option can reach.

@@ -142,7 +142,7 @@ public sealed partial class CSharpDocumentBuilder {
             AnonymousObjectCreationExpressionSyntax anonymous => anonymous.OpenBraceToken.SpanStart,
 
             // ⚠ The first base type, two columns past the base list's own node, and measured: with
-            // `align_multiline_extends_list = true` the oracle puts the second interface under the
+            // `skala_align_multiline_extends_list = true` the oracle puts the second interface under the
             // first one rather than under the `:`.
             //
             //     public class Alpha : System.Collections.Generic.IReadOnlyCollection<int>,
@@ -204,7 +204,7 @@ public sealed partial class CSharpDocumentBuilder {
             // ⚠ `align_multiline_calls_chain` is deliberately absent, and the reason is a *layout*
             // dependency rather than a missing scope. Its anchor is the column the chain's first `.`
             // lands on, which is not a position in the source: at 120 columns
-            // `wrap_before_first_method_call = false` keeps `.Where(…)` on the head line and the rest
+            // `skala_wrap_before_first_method_call = false` keeps `.Where(…)` on the head line and the rest
             // align under that dot, 26 columns past the receiver's start; at 70 the first call no
             // longer fits, the layout breaks before that dot too, and the anchor becomes the
             // receiver's own column. AlignAnchor is a source position resolved before the fitter
@@ -219,7 +219,7 @@ public sealed partial class CSharpDocumentBuilder {
                 options.AlignMultipleDeclaration,
 
             // ⚠ Only where the list wraps at its own parameters. Under
-            // `wrap_before_type_parameter_langle` the break is the gap before the `<` and the list
+            // `skala_wrap_before_type_parameter_langle` the break is the gap before the `<` and the list
             // has no interior point to align, so an Align scope there would anchor a column nothing
             // ever lands on.
             TypeParameterListSyntax { Parameters.Count: > 0 } =>
@@ -251,7 +251,7 @@ public sealed partial class CSharpDocumentBuilder {
         // gap before the `:` and asks "does the whole list fit where the declaration reached"; its
         // inner group opens *after* that gap and asks "do the types fit on the line the first one
         // lands on". Emitting the gap before both would enter the inner one at the column before the
-        // break, and `wrap_before_extends_colon = true` would chop every comma of a list the oracle
+        // break, and `skala_wrap_before_extends_colon = true` would chop every comma of a list the oracle
         // leaves whole. Plans are outermost-first, so the claimants are a prefix of them.
         var gapAfter = 0;
         while (gapAfter < planned.Count && planned[gapAfter].LeadingGapInside) {
@@ -303,7 +303,7 @@ public sealed partial class CSharpDocumentBuilder {
         // LayoutWriter.Level walks the stack innermost-first and returns at the first block, and an
         // Align scope is a block — so an outdent opened *outside* one would never be reached. Inside
         // it, the two compose, which is what the oracle does: with `align_multiline_expression` and
-        // `outdent_binary_ops` both on, the operands take the expression's own column and the
+        // `skala_outdent_binary_ops` both on, the operands take the expression's own column and the
         // operators sit two to the left of it.
         var outdent = OutdentColumnsFor(node);
         if (outdent > 0) {
@@ -345,7 +345,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     </para>
     ///     <para>
     ///         ⚠ Guarded on the key that decides which side of the operator the break lands on.
-    ///         <c>wrap_before_binary_opsign = false</c> leaves the operator at the end of the previous line
+    ///         <c>skala_wrap_before_binary_opsign = false</c> leaves the operator at the end of the previous line
     ///         and there is then nothing at the head of a line to outdent; the oracle agrees, and returns
     ///         such a file byte-identical at both values.
     ///     </para>
@@ -530,7 +530,7 @@ public sealed partial class CSharpDocumentBuilder {
         // The level is spent lazily, at the first break before a `.`, so a chain that does not
         // break costs nothing and an argument list inside one is not pushed twice.
         // ⚠ A binary PATTERN chain takes a level of its own; a binary EXPRESSION chain does not.
-        // `wrap_chained_binary_patterns` and `wrap_chained_binary_expressions` are separate keys and
+        // `skala_wrap_chained_binary_patterns` and `skala_wrap_chained_binary_expressions` are separate keys and
         // ReSharper treats them differently:
         //   x is A            a
         //       or B    vs    + b     ← one level, not two
@@ -758,7 +758,7 @@ public sealed partial class CSharpDocumentBuilder {
                 return;
 
             case NodeLayout.Continuation when node is TypeParameterConstraintClauseSyntax:
-                // resharper_indent_type_constraints: a `where` clause on its own line is a
+                // skala_indent_type_constraints: a `where` clause on its own line is a
                 // continuation of the declaration, and the option says whether it takes a level.
                 if (!options.IndentTypeConstraints) {
                     VisitChildren(node);
@@ -1004,13 +1004,13 @@ public sealed partial class CSharpDocumentBuilder {
         var indentBraces = options.IndentBraces
             && (options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(open)) != 0;
 
-        // resharper_indent_inside_namespace = false flattens a block namespace's members.
+        // skala_indent_inside_namespace = false flattens a block namespace's members.
         var suppress = node is NamespaceDeclarationSyntax && !options.IndentInsideNamespace;
 
-        // ⚠ `use_continuous_indent_inside_initializer_braces = false` used to suppress the scope
+        // ⚠ `skala_use_continuous_indent_inside_initializer_braces = false` used to suppress the scope
         // outright — the initializer's contents landed on the level of the construct that owns them —
         // and that is measured wrong in the same way its `_parens` sibling was: the oracle gives them
-        // ONE INDENT WIDTH. With `continuous_indent_multiplier = 2`:
+        // ONE INDENT WIDTH. With `skala_continuous_indent_multiplier = 2`:
         //
         //   new List<int> {          new List<int> {
         //           1,                   1,          ← 12 + 1×4 at false, 12 + 2×4 at true
@@ -1021,7 +1021,7 @@ public sealed partial class CSharpDocumentBuilder {
         //
         // ⚠ The `true` arm is `IndentKind.Block` and stays that way in this pass. Block is one indent
         // width, so it is *also* the `false` answer at multiplier 1, and at any other multiplier the
-        // `true` arm is a level short. That is a `continuous_indent_multiplier` defect on braced
+        // `true` arm is a level short. That is a `skala_continuous_indent_multiplier` defect on braced
         // initializers rather than this key's, it is recorded at the key in options.json, and moving
         // it here would mean turning an absolute scope into a relative one under every initializer in
         // `corpus/real` on the strength of a row that does not ask about it.
@@ -1139,21 +1139,21 @@ public sealed partial class CSharpDocumentBuilder {
         //                                    fourthElementPatternName
         //                                ];
         // — which is the same relationship a braced initializer already gets from its own path, and
-        // is why `align_multiline_array_and_object_initializer` and
-        // `align_multiline_switch_expression` were conformant while `align_multiline_list_pattern`
+        // is why `skala_align_multiline_array_and_object_initializer` and
+        // `skala_align_multiline_switch_expression` were conformant while `skala_align_multiline_list_pattern`
         // was not. Reading "aligned" as "no level at all" put the elements on the bracket's column.
         var aligned = AlignsFromOwnColumn(node);
         var anchorsOnTheDelimiter = aligned && AlignAnchor(node) <= node.SpanStart;
 
-        // ⚠ `use_continuous_indent_inside_parens = false` used to suppress the scope outright, and
+        // ⚠ `skala_use_continuous_indent_inside_parens = false` used to suppress the scope outright, and
         // that was measured wrong: the oracle gives the contents ONE INDENT WIDTH, not none. The two
-        // readings are indistinguishable under the export's `continuous_indent_multiplier = 1` — which
+        // readings are indistinguishable under the export's `skala_continuous_indent_multiplier = 1` — which
         // is exactly why the sweep called this key `SPURIOUS`, with Skala moving where the oracle
         // could not — and separate at any other multiplier. See IndentKind.OneLevel.
         var singleInsideParens = layout == NodeLayout.Parens && !options.UseContinuousIndentInsideParens;
         var suppress = aligned;
 
-        // ⚠ `align_tuple_components = true`: the column *after* the tuple's `(`, which is a
+        // ⚠ `skala_align_tuple_components = true`: the column *after* the tuple's `(`, which is a
         // different anchor from every key AlignsFromOwnColumn answers and needs a different place
         // to open the scope. Measured —
         //
@@ -1204,10 +1204,10 @@ public sealed partial class CSharpDocumentBuilder {
         // whose closing delimiter is not a break point of its own never realises it. Measured, one
         // key at a time, at that value:
         //
-        //   Consume(                        ← wrap_before_invocation_rpar: the `)` is a point
+        //   Consume(                        ← skala_wrap_before_invocation_rpar: the `)` is a point
         //           argument                  contents 2 levels, `)` 1
         //   );
-        //   class Primary(                  ← wrap_before_primary_constructor_declaration_rpar is
+        //   class Primary(                  ← skala_wrap_before_primary_constructor_declaration_rpar is
         //       parameter) { }                false; the `)` is not a point — contents 1 level
         //   class Wide<TFirst, TSecond,     ← a `>` is never a point — contents 1 level
         //       TThird> { }
@@ -1360,7 +1360,7 @@ public sealed partial class CSharpDocumentBuilder {
     /// <summary>Which of the family's keys governs this construct's delimiters.</summary>
     /// <remarks>
     ///     ⚠ A record's or class's parameter list is the primary constructor's and has a key of its
-    ///     own, so the test is the parent and not the node. `indent_pars` is the default arm — every
+    ///     own, so the test is the parent and not the node. `skala_indent_pars` is the default arm — every
     ///     bracket, every grouping and tuple parenthesis, every pattern and attribute list.
     /// </remarks>
     ParenthesesIndentStyle ParenthesesStyleFor(SyntaxNode node) =>
@@ -1389,7 +1389,7 @@ public sealed partial class CSharpDocumentBuilder {
         var parenPending = 0;
 
         // ⚠ A group opened *inside* the parentheses, at the column the header's clauses land on. The
-        // one construct that asks for it is a `for` header under `wrap_for_stmt_header_style`, and it
+        // one construct that asks for it is a `for` header under `skala_wrap_for_stmt_header_style`, and it
         // has to be an inner group for the reason BreakPlan.PlanForHeader records: a group around the
         // statement spans the body too, so its flat width is unbounded and it would break every time.
         var hasHeader = plan.TryInnerGroup(node, out var header);
@@ -1470,7 +1470,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     with all three lines flush, and Skala put the labelled statement one level in — a
     ///     divergence that was invisible because <c>goto</c> occurs a handful of times in the corpus.
     ///     <para>
-    ///         <c>outdent_statement_labels = true</c> then moves the label alone one level out, which is
+    ///         <c>skala_outdent_statement_labels = true</c> then moves the label alone one level out, which is
     ///         the C-style <c>label:</c> convention, and is measured rather than inferred: it takes the
     ///         label from column 8 to column 4 and leaves the statement at 8.
     ///     </para>
@@ -1495,7 +1495,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     What a statement's condition parentheses open.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <c>align_multiline_statement_conditions = true</c> — the export's value — lays the
+    ///     ⚠ <c>skala_align_multiline_statement_conditions = true</c> — the export's value — lays the
     ///     condition out from the column just after the <c>(</c> rather than from an indent level:
     ///     <code>
     /// else if (ReflectionUtils.ImplementsGenericDefinition(
@@ -1513,12 +1513,12 @@ public sealed partial class CSharpDocumentBuilder {
             : IndentKind.Continuous;
 
     /// <summary>
-    ///     A statement condition's parenthesis levels: <c>indent_statement_pars</c>, unless alignment
+    ///     A statement condition's parenthesis levels: <c>skala_indent_statement_pars</c>, unless alignment
     ///     owns the column.
     /// </summary>
     /// <remarks>
-    ///     ⚠ This is the whole of why <c>indent_statement_pars</c> is inert under this export, and it
-    ///     is a mask rather than a gap. <c>align_multiline_statement_conditions = true</c> makes the
+    ///     ⚠ This is the whole of why <c>skala_indent_statement_pars</c> is inert under this export, and it
+    ///     is a mask rather than a gap. <c>skala_align_multiline_statement_conditions = true</c> makes the
     ///     scope an <see cref="IndentKind.Align" /> one — an absolute column — and a level count has
     ///     nothing to say about a column. Measured: all four values return the same file while that key
     ///     is on. Turn it off and the family's table applies here like anywhere else.
@@ -1533,7 +1533,7 @@ public sealed partial class CSharpDocumentBuilder {
     /// <remarks>
     ///     ⚠ It exists so that a construct with a level of its OWN — a chained call, a binary pattern
     ///     chain — does not add one on top of the header's when the header is paying a level rather
-    ///     than naming a column. Measured at `align_multiline_statement_conditions = false`, one key
+    ///     than naming a column. Measured at `skala_align_multiline_statement_conditions = false`, one key
     ///     flipped:
     ///     <code>
     /// foreach (var item in registry.Where(…)
@@ -1615,7 +1615,7 @@ public sealed partial class CSharpDocumentBuilder {
 
         EmitToken(node.OpenBraceToken);
 
-        // csharp_indent_switch_labels = true: the labels take one indent from the switch.
+        // skala_indent_switch_labels = true: the labels take one indent from the switch.
         var labelled = options.IndentSwitchLabels;
         if (labelled) {
             OpenIndent(IndentKind.Block);
@@ -1658,7 +1658,7 @@ public sealed partial class CSharpDocumentBuilder {
         // The statements of a case take one indent from the label.
         OpenIndent(IndentKind.Block);
         foreach (var statement in node.Statements) {
-            // ⚠ resharper_indent_break_from_case = false puts the control transfer back at the
+            // ⚠ skala_indent_break_from_case = false puts the control transfer back at the
             // label's own level, which is a different shape and not a rounding error.
             if (!options.IndentBreakFromCase
                 && statement is BreakStatementSyntax or ContinueStatementSyntax or GotoStatementSyntax) {
@@ -1836,7 +1836,7 @@ public sealed partial class CSharpDocumentBuilder {
 
         switch (piece.Kind) {
             case PieceKind.Token:
-                // ⚠ `indent_raw_literal_string`, all three values. A multi-line raw literal's
+                // ⚠ `skala_indent_raw_literal_string`, all three values. A multi-line raw literal's
                 // interior and its closing delimiter move together, and the shift is uniform, so
                 // the string's value is unchanged; see VerbatimFlags.Realign.
                 doc.Text(piece.Text, span, RawLiteralFlags(piece));
@@ -1867,11 +1867,11 @@ public sealed partial class CSharpDocumentBuilder {
 
             case PieceKind.BlockComment:
                 // A multi-line comment's continuation lines carry their own indentation; the first
-                // line takes the code's — unless `align_multiline_comments` claims them, below.
+                // line takes the code's — unless `skala_align_multiline_comments` claims them, below.
                 doc.Verbatim(piece.Text, span, CommentFlags(piece) | StarredFlag(piece));
                 break;
 
-            // ⚠ `/** … */` is deliberately not offered to `align_multiline_comments`. It is a
+            // ⚠ `/** … */` is deliberately not offered to `skala_align_multiline_comments`. It is a
             // *documentation* comment, the key names ordinary multiline comments, and the oracle was
             // never asked about the combination — so it keeps the behaviour it had rather than
             // inheriting a rule measured on a different token kind.
@@ -1882,7 +1882,7 @@ public sealed partial class CSharpDocumentBuilder {
             case PieceKind.DocCommentLine:
                 // ⚠ `space_after_triple_slash` is read and deliberately not applied. Milestone 1
                 // inserted the space; the oracle does not, on its own dedicated fixture
-                // (`constructs/trivia/resharper_space_after_triple_slash.cs` comes back with
+                // (`constructs/trivia/skala_space_after_triple_slash.cs` comes back with
                 // `///<summary>` untouched) and nowhere else either. Applying it costs 79 lines
                 // across 15 files of `corpus/real/`. See SK-DIV-0006: `jb cleanupcode`'s
                 // CSReformatCode does not format doc comments at all.
@@ -1899,7 +1899,7 @@ public sealed partial class CSharpDocumentBuilder {
             // over the export: at `true` and at `false` alike the oracle returns every one of them
             // byte-identical — `//x` never grows its space. The key sits in the export's unprefixed
             // block beside the C++ comment settings; the C# formatter has
-            // `space_before_trailing_comment`, which is the gap between the code and the `//` and is
+            // `skala_space_before_trailing_comment`, which is the gap between the code and the `//` and is
             // a different key with its own fixture.
             case PieceKind.LineComment:
                 doc.Text(piece.Text, span, CommentFlags(piece));
@@ -1914,7 +1914,7 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    ///     <c>indent_raw_literal_string</c>: where a multi-line raw literal's closing delimiter — and
+    ///     <c>skala_indent_raw_literal_string</c>: where a multi-line raw literal's closing delimiter — and
     ///     with it every interior line — is put.
     /// </summary>
     /// <remarks>
@@ -1945,12 +1945,12 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    ///     <c>stick_comment = true</c> — "Don't indent comments started at first column": a comment the
+    ///     <c>skala_stick_comment = true</c> — "Don't indent comments started at first column": a comment the
     ///     author wrote hard against the left margin stays there; every other comment is indented with
     ///     the code around it.
     /// </summary>
     /// <remarks>
-    ///     ⚠ This flag used to hang off <c>place_comments_at_first_column</c>, and it was the wrong key
+    ///     ⚠ This flag used to hang off <c>skala_place_comments_at_first_column</c>, and it was the wrong key
     ///     in both directions. That key is <em>inert</em> under <c>cleanupcode</c> — it governs the
     ///     editor's comment-out action, and the oracle returns the probe below byte-identical at
     ///     <c>true</c> and at <c>false</c> — while Skala at <c>true</c> pinned <em>every</em>
@@ -1971,7 +1971,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     </para>
     /// </remarks>
     /// <summary>
-    ///     <c>align_multiline_comments</c>: whether this block comment's asterisks are the formatter's to
+    ///     <c>skala_align_multiline_comments</c>: whether this block comment's asterisks are the formatter's to
     ///     move. SK-DIV-0033.
     /// </summary>
     /// <remarks>
@@ -2181,7 +2181,7 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ …and so is a gap that touches a directive *inside* the inactive branch (SK-FUZZ-0016).
         // Roslyn does not fold those into DisabledTextTrivia — `#region`, `#pragma`, a nested `#if`
         // in a branch that is not compiled all stay structured — so without Piece.Inactive the gap
-        // rules see two ordinary directives and `blank_lines_around_region` writes a blank line
+        // rules see two ordinary directives and `skala_blank_lines_around_region` writes a blank line
         // between them. That line is not spacing: re-parsed, it is a DisabledTextTrivia that was not
         // there before, and the safety net aborts the file with SK9099. The branch is opaque whether
         // or not Roslyn kept its contents structured.
@@ -2476,7 +2476,7 @@ public sealed partial class CSharpDocumentBuilder {
         // `else`, `catch` and `finally` do below — but those three have a clause node whose first
         // token they are, and this one is a keyword sitting directly in `DoStatementSyntax`. So the
         // walk read it as a continuation of the `do` and spent a level on it. Measured: at
-        // `new_line_before_while = true` the oracle puts `while (b);` flush with its `do` and Skala
+        // `skala_new_line_before_while = true` the oracle puts `while (b);` flush with its `do` and Skala
         // had it four columns in — the whole of that key's sweep row.
         if (token.IsKind(SyntaxKind.WhileKeyword) && token.Parent is DoStatementSyntax) {
             return true;
@@ -2622,7 +2622,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     ⚠ It sits above <see cref="GapSpace" />'s trailing-comment branch rather than inside it, so
     ///     the gap before a trailing comment is preserved too. That is measured: the narrow sibling
     ///     <c>disable_space_changes_before_trailing_comment</c> cannot move that gap at either of
-    ///     <c>space_before_trailing_comment</c>'s values, and this key can (SK-DIV-0060, SK-DIV-0062).
+    ///     <c>skala_space_before_trailing_comment</c>'s values, and this key can (SK-DIV-0060, SK-DIV-0062).
     /// </remarks>
     SpaceKind FlatGapSpace(Piece previous, PieceKind nextKind, SyntaxToken nextToken, string gap) {
         if (!options.DisableSpaceChanges) {
@@ -2633,7 +2633,7 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     SpaceKind GapSpace(Piece previous, PieceKind nextKind, SyntaxToken nextToken) {
-        // A trailing comment gets exactly one space before it (space_before_trailing_comment), and
+        // A trailing comment gets exactly one space before it (skala_space_before_trailing_comment), and
         // its own text is left alone (space_before_trailing_comment_text = false).
         if (nextKind is PieceKind.LineComment
             or PieceKind.BlockComment
@@ -2740,7 +2740,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     <para>
     ///         ⚠ The placement family's split direction is otherwise not implemented — a brace is never
     ///         moved onto a line of its own, so <c>new_line_before_open_brace</c>,
-    ///         <c>new_line_before_else</c> and their siblings only ever decide whether to *keep* the
+    ///         <c>skala_new_line_before_else</c> and their siblings only ever decide whether to *keep* the
     ///         break the author wrote. That gap is recorded in SK-DIV-0091 and is invisible to their
     ///         sweep rows, whose fixtures are all written with the break already there. The one arm
     ///         added here is the one whose row needs it and whose shape is a keyword rather than a
@@ -2754,14 +2754,14 @@ public sealed partial class CSharpDocumentBuilder {
 
         var previousToken = tokens[previous.TokenIndex];
 
-        // `allow_comment_after_lbrace = false`: a comment may not sit on the brace's line.
+        // `skala_allow_comment_after_lbrace = false`: a comment may not sit on the brace's line.
         if (!options.AllowCommentAfterLbrace
             && nextKind is PieceKind.LineComment or PieceKind.DocCommentLine
             && previousToken.IsKind(SyntaxKind.OpenBraceToken)) {
             return true;
         }
 
-        // ⚠ `special_else_if_treatment = false` splits `else if` and lets the `if` become what it
+        // ⚠ `skala_special_else_if_treatment = false` splits `else if` and lets the `if` become what it
         // structurally is — the `else`'s embedded statement, one level in. Measured, and symmetric:
         // the oracle splits a joined `else if` at `false` and joins a split one at `true`, so
         // `ShouldJoin`'s arm alone covered one direction of a two-directional key.
@@ -2876,7 +2876,7 @@ public sealed partial class CSharpDocumentBuilder {
             return false;
         }
 
-        // ⚠ special_else_if_treatment = true: `else if` is one line, not a nested block, so the
+        // ⚠ skala_special_else_if_treatment = true: `else if` is one line, not a nested block, so the
         // inner if takes no indent of its own.
         if (owner is ElseClauseSyntax && embedded is IfStatementSyntax && options.SpecialElseIfTreatment) {
             return false;

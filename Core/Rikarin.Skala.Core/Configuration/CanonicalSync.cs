@@ -297,8 +297,8 @@ public static class CanonicalSync {
     ///         which is what a reader of the two blocks would do, and what the local section is in practice
     ///         narrowing. ⚠ The tempting shortcut, "the canonical's last value for this
     ///         <see cref="OptionId" />", is wrong twice over: it conflates a key with its aliases (so
-    ///         <c>insert_final_newline = false</c> reads as an override of
-    ///         <c>resharper_csharp_insert_final_newline = true</c>, which is the export's own contradiction
+    ///         <c>skala_insert_final_newline = false</c> reads as an override of
+    ///         <c>skala_insert_final_newline = true</c>, which is the export's own contradiction
     ///         and already <c>SK9005</c>) and it conflates sections (so <c>[*.csv]</c> reads as overriding
     ///         <c>[*]</c>). Both fired on Skala's own configuration.
     ///     </para>

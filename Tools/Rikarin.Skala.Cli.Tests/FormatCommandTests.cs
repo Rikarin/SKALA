@@ -115,7 +115,7 @@ public sealed class FormatCommandTests : IDisposable {
     [Fact]
     public void Option_OverridesTheConfiguration() {
         var path = Write("F.cs", "class C{\nvoid M(){\nM();\n}\n}\n");
-        CliRunner.Run("format", "--option", "resharper_csharp_indent_size=2", path);
+        CliRunner.Run("format", "--option", "skala_indent_size=2", path);
         Assert.Contains("\n  void M()", File.ReadAllText(path), StringComparison.Ordinal);
     }
 

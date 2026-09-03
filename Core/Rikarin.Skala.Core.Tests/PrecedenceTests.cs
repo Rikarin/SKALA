@@ -22,20 +22,20 @@ public sealed class PrecedenceTests {
 
     [Fact]
     public void LanguageSpecificKey_BeatsTheGenericOne() {
-        // The contradiction the plan found: [*] insert_final_newline = false while
-        // resharper_csharp_insert_final_newline = true. They are one option and the C# key wins.
+        // The contradiction the plan found: [*] skala_insert_final_newline = false while
+        // skala_insert_final_newline = true. They are one option and the C# key wins.
         var resolution = Resolve(
             """
             root = true
             [*]
-            insert_final_newline = false
-            resharper_csharp_insert_final_newline = true
+            skala_insert_final_newline = false
+            skala_insert_final_newline = true
             """
         );
 
-        Assert.True(OptionRegistry.TryResolve("insert_final_newline", out var id));
+        Assert.True(OptionRegistry.TryResolve("skala_insert_final_newline", out var id));
         Assert.Equal("true", resolution[id].Value);
-        Assert.Equal("resharper_csharp_insert_final_newline", resolution[id].Origin!.Spelling);
+        Assert.Equal("skala_insert_final_newline", resolution[id].Origin!.Spelling);
     }
 
     [Fact]
@@ -46,12 +46,12 @@ public sealed class PrecedenceTests {
             """
             root = true
             [*]
-            resharper_csharp_insert_final_newline = true
-            insert_final_newline = false
+            skala_insert_final_newline = true
+            skala_insert_final_newline = false
             """
         );
 
-        Assert.True(OptionRegistry.TryResolve("insert_final_newline", out var id));
+        Assert.True(OptionRegistry.TryResolve("skala_insert_final_newline", out var id));
         Assert.Equal("true", resolution[id].Value);
     }
 
@@ -61,13 +61,13 @@ public sealed class PrecedenceTests {
             """
             root = true
             [*]
-            resharper_csharp_max_line_length = 100
+            skala_max_line_length = 100
             [*.cs]
-            resharper_csharp_max_line_length = 140
+            skala_max_line_length = 140
             """
         );
 
-        Assert.True(OptionRegistry.TryResolve("resharper_csharp_max_line_length", out var id));
+        Assert.True(OptionRegistry.TryResolve("skala_max_line_length", out var id));
         Assert.Equal("140", resolution[id].Value);
     }
 
@@ -76,15 +76,15 @@ public sealed class PrecedenceTests {
         var resolution = Resolve(
             """
             [*]
-            resharper_csharp_max_line_length = 100
+            skala_max_line_length = 100
             """,
             """
             [*]
-            resharper_csharp_max_line_length = 80
+            skala_max_line_length = 80
             """
         );
 
-        Assert.True(OptionRegistry.TryResolve("resharper_csharp_max_line_length", out var id));
+        Assert.True(OptionRegistry.TryResolve("skala_max_line_length", out var id));
         Assert.Equal("80", resolution[id].Value);
     }
 
@@ -94,15 +94,15 @@ public sealed class PrecedenceTests {
             """
             root = true
             [*]
-            space_after_cast = true
-            csharp_space_after_cast = false
-            resharper_space_after_cast = true
+            skala_space_after_cast = true
+            skala_space_after_cast = false
+            skala_space_after_cast = true
             """
         );
 
-        Assert.True(OptionRegistry.TryResolve("csharp_space_after_cast", out var id));
+        Assert.True(OptionRegistry.TryResolve("skala_space_after_cast", out var id));
         Assert.Equal("true", resolution[id].Value);
-        Assert.Equal("resharper_space_after_cast", resolution[id].Origin!.Spelling);
+        Assert.Equal("skala_space_after_cast", resolution[id].Origin!.Spelling);
     }
 
     [Fact]
@@ -113,16 +113,16 @@ public sealed class PrecedenceTests {
             """
             root = true
             [*]
-            resharper_csharp_max_line_length = 120
+            skala_max_line_length = 120
             """
         );
 
         var resolution = OptionResolver.Resolve(
             EditorConfigChain.Of("/repo/File.cs", document),
-            [new KeyValuePair<string, string>("resharper_csharp_max_line_length", "200")]
+            [new KeyValuePair<string, string>("skala_max_line_length", "200")]
         );
 
-        Assert.True(OptionRegistry.TryResolve("resharper_csharp_max_line_length", out var id));
+        Assert.True(OptionRegistry.TryResolve("skala_max_line_length", out var id));
         Assert.Equal("200", resolution[id].Value);
         Assert.Equal("(command line)", resolution[id].Origin!.File);
     }
@@ -162,7 +162,7 @@ public sealed class PrecedenceTests {
             """
             root = true
             [*]
-            resharper_csharp_wrap_arguments_style = sideways
+            skala_wrap_arguments_style = sideways
             """
         );
 

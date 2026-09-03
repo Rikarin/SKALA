@@ -226,13 +226,13 @@ public readonly struct ArrangementOptions {
     public ArgumentStyle ArgumentsAnonymousFunction { get; }
 
     /// <summary>
-    ///     <c>resharper_arguments_named</c>: an argument that <em>refers to</em> something by name.
+    ///     <c>skala_arguments_named</c>: an argument that <em>refers to</em> something by name.
     /// </summary>
     /// <remarks>
     ///     ⚠ A simple name or a member access, and nothing else, which is measured rather than read off
     ///     the key's wording. Asked with this key at <c>named</c> and the other four left alone, the
     ///     oracle names <c>local</c>, <c>Property</c>, <c>Field</c>, <c>Static</c> and
-    ///     <c>holder.Value</c>; asked with <c>arguments_other</c> at <c>named</c> instead it names the
+    ///     <c>holder.Value</c>; asked with <c>skala_arguments_other</c> at <c>named</c> instead it names the
     ///     complement — an invocation, a binary expression, a cast, an element access, <c>typeof</c>,
     ///     <c>nameof</c>, <c>default</c>, <c>new</c> and a conditional. The two sets partition the
     ///     arguments that are not literals, strings or lambdas, with no overlap and nothing left over.
@@ -242,7 +242,7 @@ public readonly struct ArrangementOptions {
     public ArgumentStyle ArgumentsOther { get; }
 
     /// <summary>
-    ///     <c>resharper_arguments_skip_single</c>: leave a one-argument call alone whatever the four
+    ///     <c>skala_arguments_skip_single</c>: leave a one-argument call alone whatever the four
     ///     style keys say.
     /// </summary>
     /// <remarks>
@@ -281,7 +281,7 @@ public readonly struct ArrangementOptions {
     // would keep claiming the arranger acts on it.
 
     /// <summary>
-    ///     <c>resharper_csharp_keep_nontrivial_alias</c>: an unused alias whose name is not the aliased
+    ///     <c>skala_keep_nontrivial_alias</c>: an unused alias whose name is not the aliased
     ///     type's own name survives removal.
     /// </summary>
     /// <remarks>
@@ -301,7 +301,7 @@ public readonly struct ArrangementOptions {
     /// </remarks>
     public bool KeepNontrivialAlias { get; }
 
-    /// <summary><c>resharper_remove_only_unused_aliases</c>. See <see cref="KeepNontrivialAlias" />.</summary>
+    /// <summary><c>skala_remove_only_unused_aliases</c>. See <see cref="KeepNontrivialAlias" />.</summary>
     public bool RemoveOnlyUnusedAliases { get; }
 
     public int MaxLineLength { get; }
@@ -343,35 +343,35 @@ public readonly struct ArrangementOptions {
         static readonly List<OptionId> Collected = [];
         static readonly List<OptionId> Inert = [];
 
-        public static readonly OptionId MethodOrOperatorBody = Of("resharper_csharp_method_or_operator_body");
-        public static readonly OptionId LocalFunctionBody = Of("resharper_csharp_local_function_body");
+        public static readonly OptionId MethodOrOperatorBody = Of("skala_method_or_operator_body");
+        public static readonly OptionId LocalFunctionBody = Of("skala_local_function_body");
 
         public static readonly OptionId ConstructorOrDestructorBody =
-            Of("resharper_csharp_constructor_or_destructor_body");
+            Of("skala_constructor_or_destructor_body");
 
-        public static readonly OptionId AccessorOwnerBody = Of("resharper_csharp_accessor_owner_body");
+        public static readonly OptionId AccessorOwnerBody = Of("skala_accessor_owner_body");
 
         public static readonly OptionId UseHeuristicsForBodyStyle =
-            Of("resharper_csharp_use_heuristics_for_body_style");
+            Of("skala_use_heuristics_for_body_style");
 
         public static readonly OptionId VarForBuiltInTypes = Of("csharp_style_var_for_built_in_types");
         public static readonly OptionId VarWhenTypeIsApparent = Of("csharp_style_var_when_type_is_apparent");
         public static readonly OptionId VarElsewhere = Of("csharp_style_var_elsewhere");
 
         public static readonly OptionId ObjectCreationWhenTypeEvident =
-            Of("resharper_csharp_object_creation_when_type_evident");
+            Of("skala_object_creation_when_type_evident");
 
         public static readonly OptionId ObjectCreationWhenTypeNotEvident =
-            Of("resharper_csharp_object_creation_when_type_not_evident");
+            Of("skala_object_creation_when_type_not_evident");
 
         public static readonly OptionId DefaultValueWhenTypeEvident =
-            Of("resharper_csharp_default_value_when_type_evident");
+            Of("skala_default_value_when_type_evident");
 
         public static readonly OptionId DefaultValueWhenTypeNotEvident =
-            Of("resharper_csharp_default_value_when_type_not_evident");
+            Of("skala_default_value_when_type_not_evident");
 
-        public static readonly OptionId NullCheckingPattern = Of("resharper_csharp_null_checking_pattern_style");
-        public static readonly OptionId EmptyString = Of("resharper_empty_string");
+        public static readonly OptionId NullCheckingPattern = Of("skala_null_checking_pattern_style");
+        public static readonly OptionId EmptyString = Of("skala_empty_string");
 
         public static readonly OptionId RequireAccessibilityModifiers =
             Of("dotnet_style_require_accessibility_modifiers");
@@ -384,7 +384,7 @@ public readonly struct ArrangementOptions {
         public static readonly OptionId QualificationForMethod = Of("dotnet_style_qualification_for_method");
         public static readonly OptionId QualificationForEvent = Of("dotnet_style_qualification_for_event");
 
-        public static readonly OptionId BracesRedundant = Of("resharper_csharp_braces_redundant");
+        public static readonly OptionId BracesRedundant = Of("skala_braces_redundant");
 
         public static readonly OptionId PredefinedTypeForLocals =
             Of("dotnet_style_predefined_type_for_locals_parameters_members");
@@ -393,7 +393,7 @@ public readonly struct ArrangementOptions {
             Of("dotnet_style_predefined_type_for_member_access");
 
         public static readonly OptionId ParenthesesRedundancy =
-            Of("resharper_csharp_parentheses_redundancy_style");
+            Of("skala_parentheses_redundancy_style");
 
         public static readonly OptionId ParenthesesInArithmetic =
             Of("dotnet_style_parentheses_in_arithmetic_binary_operators");
@@ -407,58 +407,58 @@ public readonly struct ArrangementOptions {
         public static readonly OptionId NamespaceDeclarations = Of("csharp_style_namespace_declarations");
 
         public static readonly OptionId StaticMembersQualifyMembers =
-            Of("resharper_csharp_static_members_qualify_members");
+            Of("skala_static_members_qualify_members");
 
         /// <summary>
-        ///     ⚠ Read and inert, and it stays Tier D for it. <c>static_members_qualify_with</c> chooses
+        ///     ⚠ Read and inert, and it stays Tier D for it. <c>skala_static_members_qualify_with</c> chooses
         ///     *which name* a qualifier is written with, and a qualifier is only ever written when
-        ///     <c>static_members_qualify_members</c> names a member kind. The export writes
+        ///     <c>skala_static_members_qualify_members</c> names a member kind. The export writes
         ///     <c>none</c>, so on this repository's configuration nothing is ever added and the key
         ///     cannot change a byte of output — <c>declared_type</c> and <c>containing_type</c> produce
         ///     identical files. Honoured vacuously is not implemented, and doc 03's Tier A is a claim
         ///     about behaviour rather than about wiring.
         /// </summary>
         public static readonly OptionId StaticMembersQualifyWith =
-            OfInert("resharper_csharp_static_members_qualify_with");
+            OfInert("skala_static_members_qualify_with");
 
         public static readonly OptionId TrailingCommaInMultilineLists =
-            Of("resharper_csharp_trailing_comma_in_multiline_lists");
+            Of("skala_trailing_comma_in_multiline_lists");
 
         public static readonly OptionId TrailingCommaInSinglelineLists =
-            Of("resharper_csharp_trailing_comma_in_singleline_lists");
+            Of("skala_trailing_comma_in_singleline_lists");
 
         public static readonly OptionId PreferExplicitDiscardDeclaration =
-            Of("resharper_csharp_prefer_explicit_discard_declaration");
+            Of("skala_prefer_explicit_discard_declaration");
 
-        public static readonly OptionId ArgumentsLiteral = Of("resharper_csharp_arguments_literal");
-        public static readonly OptionId ArgumentsStringLiteral = Of("resharper_csharp_arguments_string_literal");
+        public static readonly OptionId ArgumentsLiteral = Of("skala_arguments_literal");
+        public static readonly OptionId ArgumentsStringLiteral = Of("skala_arguments_string_literal");
 
         public static readonly OptionId ArgumentsAnonymousFunction =
-            Of("resharper_csharp_arguments_anonymous_function");
+            Of("skala_arguments_anonymous_function");
 
-        public static readonly OptionId ArgumentsNamed = Of("resharper_csharp_arguments_named");
-        public static readonly OptionId ArgumentsOther = Of("resharper_csharp_arguments_other");
-        public static readonly OptionId ArgumentsSkipSingle = Of("resharper_csharp_arguments_skip_single");
+        public static readonly OptionId ArgumentsNamed = Of("skala_arguments_named");
+        public static readonly OptionId ArgumentsOther = Of("skala_arguments_other");
+        public static readonly OptionId ArgumentsSkipSingle = Of("skala_arguments_skip_single");
 
-        public static readonly OptionId SortUsings = Of("resharper_sort_usings");
-        public static readonly OptionId SystemDirectivesFirst = Of("dotnet_sort_system_directives_first");
+        public static readonly OptionId SortUsings = Of("skala_sort_usings");
+        public static readonly OptionId SystemDirectivesFirst = Of("skala_sort_usings_with_system_first");
         public static readonly OptionId UsingDirectivePlacement = Of("csharp_using_directive_placement");
 
         // ⚠ `dotnet_separate_import_directive_groups` is deliberately absent. It is
         // `PhaseOneOptions.Ids`' since SK-DIV-0074; declaring it here as well would put it in
         // `Implemented` twice and re-open the seam the move closed.
-        public static readonly OptionId KeepNontrivialAlias = Of("resharper_csharp_keep_nontrivial_alias");
-        public static readonly OptionId RemoveOnlyUnusedAliases = Of("resharper_remove_only_unused_aliases");
+        public static readonly OptionId KeepNontrivialAlias = Of("skala_keep_nontrivial_alias");
+        public static readonly OptionId RemoveOnlyUnusedAliases = Of("skala_remove_only_unused_aliases");
 
         public static readonly OptionId MaxLineLength = OfInert("max_line_length");
         public static readonly OptionId IndentSize = OfInert("indent_size");
 
-        public static readonly OptionId FormatterTagsEnabled = OfInert("resharper_formatter_tags_enabled");
-        public static readonly OptionId FormatterOffTag = OfInert("resharper_formatter_off_tag");
-        public static readonly OptionId FormatterOnTag = OfInert("resharper_formatter_on_tag");
+        public static readonly OptionId FormatterTagsEnabled = OfInert("skala_formatter_tags_enabled");
+        public static readonly OptionId FormatterOffTag = OfInert("skala_formatter_off_tag");
+        public static readonly OptionId FormatterOnTag = OfInert("skala_formatter_on_tag");
 
         public static readonly OptionId FormatterTagsAcceptRegexp =
-            OfInert("resharper_formatter_tags_accept_regexp");
+            OfInert("skala_formatter_tags_accept_regexp");
 
         public static ImmutableArray<OptionId> All { get; } = [.. Collected.Distinct().Except(Inert).Order()];
 

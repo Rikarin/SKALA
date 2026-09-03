@@ -147,8 +147,8 @@ public static class OracleFixture {
     ///         <c>076fde6</c> the base configuration lost ~1 997 hand-stripped keys and its digest moved
     ///         <c>98ff5257</c> → <c>bd9791d3</c>. Of the 41 removed lines that are not <c>resharper_cpp_*</c>,
     ///         <c>resharper_vb_*</c> or <c>resharper_c_*</c>, 39 are F# and two are global ReSharper keys that a
-    ///         C# run could in principle read: <c>resharper_autodetect_indent_settings = false</c> and
-    ///         <c>resharper_use_old_engine = false</c>. Losing the first looks like the hazard SK9006 exists
+    ///         C# run could in principle read: <c>skala_autodetect_indent_settings = false</c> and
+    ///         <c>skala_use_old_engine = false</c>. Losing the first looks like the hazard SK9006 exists
     ///         for — a key whose absence hands indent autodetection back to a ReSharper default.
     ///     </para>
     ///     <para>
@@ -157,9 +157,9 @@ public static class OracleFixture {
     ///         of the shipped <c>GlobalTools 2025.2.6</c> assemblies:
     ///         <c>CommonFormatterSettingsKey.AUTODETECT_INDENT_SETTINGS</c> carries
     ///         <c>[SettingsEntry(false, …)]</c> — the default <em>is</em> <c>false</c>, so the stripped line
-    ///         was asserting the value already in force. And <c>resharper_use_old_engine</c> is not the C#
+    ///         was asserting the value already in force. And <c>skala_use_old_engine</c> is not the C#
     ///         key at all: it is <c>HtmlFormatterSettingsKey.UseOldEngine</c>, "use old engine for Razor
-    ///         formatting", also defaulting to <c>false</c>. The C# one is <c>resharper_csharp_old_engine</c>,
+    ///         formatting", also defaulting to <c>false</c>. The C# one is <c>skala_old_engine</c>,
     ///         which this repository has never set.
     ///     </para>
     ///     <para>
@@ -177,13 +177,13 @@ public static class OracleFixture {
     ///         ⚠ And the cause was established rather than assumed, because this project has been burned
     ///         once by reading a limitation of the oracle <em>profile</em> as a property of the tool
     ///         (SK-DIV-0006). The tempting explanation — that the surviving
-    ///         <c>resharper_apply_auto_detected_rules = false</c> neutralises the lost key — is <b>not</b>
+    ///         <c>skala_apply_auto_detected_rules = false</c> neutralises the lost key — is <b>not</b>
     ///         what the measurement shows, and it is not even the right mechanism:
     ///         <c>ApplyAutoDetectedRules</c> lives on <c>ClrLanguageNamingSettingsKeyBase</c> and governs
     ///         auto-detected <em>naming</em> rules, with no path to the indent services at all. What the
     ///         measurement shows is stronger: forcing all three of
-    ///         <c>resharper_autodetect_indent_settings</c>, <c>resharper_apply_auto_detected_rules</c> and
-    ///         <c>resharper_use_indent_from_vs</c> to <c>true</c> also produced byte-identical output, and
+    ///         <c>skala_autodetect_indent_settings</c>, <c>skala_apply_auto_detected_rules</c> and
+    ///         <c>skala_use_indent_from_vs</c> to <c>true</c> also produced byte-identical output, and
     ///         the tab- and two-space baits still came back at four spaces. <c>jb cleanupcode</c> performs
     ///         no indentation autodetection at all, at any setting of those keys, under either profile —
     ///         which matches ReSharper's own documented carve-outs, since autodetection is skipped for a

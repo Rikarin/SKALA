@@ -56,14 +56,14 @@ compilation is available) and are the subset an agent gets for free.
 ### Body styles
 
 ```ini
-resharper_method_or_operator_body        = expression_body
-resharper_accessor_owner_body            = expression_body
-resharper_local_function_body            = expression_body
-resharper_constructor_or_destructor_body = block_body
-resharper_use_heuristics_for_body_style  = true
+skala_method_or_operator_body        = expression_body
+skala_accessor_owner_body            = expression_body
+skala_local_function_body            = expression_body
+skala_constructor_or_destructor_body = block_body
+skala_use_heuristics_for_body_style  = true
 ```
 
-⚠ `use_heuristics_for_body_style = true` is what makes this liveable and it is easy to miss. Without
+⚠ `skala_use_heuristics_for_body_style = true` is what makes this liveable and it is easy to miss. Without
 it, *every* single-statement method becomes an expression body, including ones where the result is
 120 columns of unreadable ternary.
 
@@ -82,10 +82,10 @@ What `jb cleanupcode` 2025.2.6 actually does, with the heuristic on:
 So Skala's heuristic, as implemented and pinned: convert iff (a′) the body is one statement that is
 a `return` with a value — or, in an accessor, an expression statement; (b) it has no comments;
 (d) it is not `async void`; (e) the member has no `#if` inside. A constructor is exempt from (a′)
-because it has no return value at all, so `constructor_or_destructor_body = expression_body` would
+because it has no return value at all, so `skala_constructor_or_destructor_body = expression_body` would
 otherwise be a setting that could never fire.
 
-`accessor_owner_body = expression_body` has two shapes and the key names only one: a property whose
+`skala_accessor_owner_body = expression_body` has two shapes and the key names only one: a property whose
 only accessor is a `get` collapses onto the **property** (`public int P => _n;`); a property with
 more than one accessor keeps its accessor list and each accessor gets an expression body. An indexer
 is an accessor owner too.
@@ -102,10 +102,10 @@ nobody asked for.
 ```ini
 csharp_style_var_for_built_in_types = true      csharp_style_var_when_type_is_apparent = true
 csharp_style_var_elsewhere          = true      resharper_use_roslyn_logic_for_evident_types = false
-resharper_object_creation_when_type_evident     = target_typed
-resharper_object_creation_when_type_not_evident = target_typed
-resharper_default_value_when_type_evident       = default_literal
-resharper_default_value_when_type_not_evident   = default_literal
+skala_object_creation_when_type_evident     = target_typed
+skala_object_creation_when_type_not_evident = target_typed
+skala_default_value_when_type_evident       = default_literal
+skala_default_value_when_type_not_evident   = default_literal
 resharper_builtin_type_apply_to_native_integer  = false
 dotnet_style_predefined_type_for_locals_parameters_members = true
 ```
@@ -115,7 +115,7 @@ dotnet_style_predefined_type_for_locals_parameters_members = true
 `new()` requires a target type that is not `var`, not `dynamic`, and not an anonymous type; `default`
 requires no ambiguity in overload resolution.
 
-⚠ `object_creation_when_type_not_evident = target_typed` is aggressive: it produces
+⚠ `skala_object_creation_when_type_not_evident = target_typed` is aggressive: it produces
 `SomeVeryLongGenericType<A, B> x = new();`. That is the author's choice and Skala applies it, but
 note the interaction with `var`: `var x = new SomeType()` is *also* legal under these settings and
 ReSharper prefers `var` when the type is apparent from the right-hand side. The precedence — `var`
@@ -125,9 +125,9 @@ wins when the RHS names the type; target-typed `new` wins when the LHS names it 
 ### Null and pattern style
 
 ```ini
-resharper_null_checking_pattern_style = not_null_pattern      # `is not null`, not `!= null`
-resharper_empty_string                = string_empty          # `string.Empty`, not `""`
-resharper_prefer_explicit_discard_declaration = false         # `out _`, not `out var _`
+skala_null_checking_pattern_style = not_null_pattern      # `is not null`, not `!= null`
+skala_empty_string                = string_empty          # `string.Empty`, not `""`
+skala_prefer_explicit_discard_declaration = false         # `out _`, not `out var _`
 resharper_prefer_separate_deconstructed_variables_declaration = false
 resharper_arrange_var_keywords_in_deconstructing_declaration_highlighting = suggestion
 ```
@@ -144,7 +144,7 @@ does" and "what is safe" can diverge, and Skala takes the safe side and reports 
 does not perform this rewrite *at all* — nor `string.Empty` ⇒ `""`, nor redundant-brace removal —
 under any cleanup profile, with the inspections at their exported severities or raised to `warning`.
 The sweep is `docs/oracle-cleanup-profile.md`. The reading that fits is that
-`null_checking_pattern_style` and `empty_string` govern the pattern ReSharper **generates** in a
+`skala_null_checking_pattern_style` and `empty_string` govern the pattern ReSharper **generates** in a
 quick-fix, not a cleanup of code that already exists. Skala performs all three because the export
 asks for them and this catalogue lists them; they are pinned by hand-written fixtures
 (`ArrangementRuleTests`) rather than by the oracle, and excluded from the changed-span agreement
@@ -156,16 +156,16 @@ divergence. See `SK-DIV-0013`.
 ```ini
 resharper_remove_this_qualifier = true            dotnet_style_qualification_for_* = false:suggestion
 resharper_instance_members_qualify_declared_in = this_class, base_class
-resharper_static_members_qualify_with = declared_type
-resharper_braces_redundant = true                 csharp_prefer_braces = true:none
+skala_static_members_qualify_with = declared_type
+skala_braces_redundant = true                 csharp_prefer_braces = true:none
 dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary:none
 dotnet_style_parentheses_in_other_binary_operators      = always_for_clarity:none
 resharper_prefer_roslyn_rules_for_parentheses_clarity   = false
 ```
 
 ⚠ The braces pair is contradictory on its face: `csharp_prefer_braces = true` (Microsoft: always use
-braces) and `resharper_braces_redundant = true` (ReSharper: remove braces that add nothing). They are
-not actually in conflict — ReSharper's `braces_redundant` governs *nested* redundant blocks
+braces) and `skala_braces_redundant = true` (ReSharper: remove braces that add nothing). They are
+not actually in conflict — ReSharper's `skala_braces_redundant` governs *nested* redundant blocks
 (`{ { x; } }`), not the braces of an `if`. Skala implements both with that reading, and
 `skala config explain` prints the disambiguation, because the next person to read that file will
 have the same doubt.
@@ -221,12 +221,12 @@ only the cases you thought of is a fixture that agrees with you.
 ### Usings
 
 ```ini
-resharper_sort_usings = true            dotnet_sort_system_directives_first = false
+skala_sort_usings = true            skala_sort_usings_with_system_first = false
 csharp_using_directive_placement = outside_namespace:silent
 dotnet_separate_import_directive_groups = false
 resharper_can_use_global_alias = true   resharper_qualified_using_at_nested_scope = false
 resharper_remove_unused_only_aliases = false
-resharper_blank_lines_after_using_list = 1
+skala_blank_lines_after_using_list = 1
 ```
 
 Sort alphabetically with `System` *not* hoisted, no group separation, outside the namespace, one
@@ -256,10 +256,10 @@ Skala against that would reward deleting usings whose packages are missing. The 
 `csharp_preferred_modifier_order` (a 19-element list including `file`, `required`, and ReSharper's
 `closed`/`safe` which C# does not have — parsed, ignored, Tier C),
 `resharper_arrange_accessors_order_highlighting = hint`,
-`resharper_attribute_style = do_not_touch`, `resharper_sort_attributes = false`,
+`skala_xmldoc_attribute_style = do_not_touch`, `resharper_sort_attributes = false`,
 `dotnet_style_require_accessibility_modifiers = omit_if_default:suggestion`.
 
-`attribute_style = do_not_touch` means attribute *merging* (`[A][B]` ↔ `[A, B]`) is off. Good:
+`skala_xmldoc_attribute_style = do_not_touch` means attribute *merging* (`[A][B]` ↔ `[A, B]`) is off. Good:
 that rewrite interacts with attribute targets and is rarely worth it.
 
 ## ⚠ The fifteen Tier D arrangement options, settled
@@ -272,20 +272,20 @@ to be a rewrite at all.**
 
 | Inspection | Key | Verdict |
 |---|---|---|
-| `ArrangeRedundantParentheses` | `parentheses_redundancy_style` | ✅ Tier A. Rewritten against a re-parse proof; the `--aggressive` gate lifted |
+| `ArrangeRedundantParentheses` | `skala_parentheses_redundancy_style` | ✅ Tier A. Rewritten against a re-parse proof; the `--aggressive` gate lifted |
 | `ArrangeNamespaceBody` | `csharp_style_namespace_declarations` | ✅ Tier A. `namespace N { … }` ⇒ `namespace N;` |
 | `BuiltInTypeReferenceStyleForMemberAccess` | `dotnet_style_predefined_type_for_member_access` | ✅ Tier A — see below, it was implemented already |
-| `ArrangeStaticMemberQualifier` | `static_members_qualify_members` | ✅ Tier A, both directions |
-| `ArrangeTrailingCommaInMultilineLists` | `trailing_comma_in_multiline_lists` | ✅ Tier A |
-| `ArrangeTrailingCommaInSinglelineLists` | `trailing_comma_in_singleline_lists` | ✅ Tier A |
-| `ArgumentsStyleLiteral` | `arguments_literal` | ✅ Tier A |
-| `ArgumentsStyleStringLiteral` | `arguments_string_literal` | ✅ Tier A |
-| `ArgumentsStyleAnonymousFunction` | `arguments_anonymous_function` | ✅ Tier A |
-| `ArgumentsStyleOther` | `arguments_other` | ✅ Tier A |
-| `SuggestVarOrType_DeconstructionDeclarations` | `prefer_explicit_discard_declaration` | ✅ the **key** is Tier A; ⚠ the **inspection** is not — see below |
+| `ArrangeStaticMemberQualifier` | `skala_static_members_qualify_members` | ✅ Tier A, both directions |
+| `ArrangeTrailingCommaInMultilineLists` | `skala_trailing_comma_in_multiline_lists` | ✅ Tier A |
+| `ArrangeTrailingCommaInSinglelineLists` | `skala_trailing_comma_in_singleline_lists` | ✅ Tier A |
+| `ArgumentsStyleLiteral` | `skala_arguments_literal` | ✅ Tier A |
+| `ArgumentsStyleStringLiteral` | `skala_arguments_string_literal` | ✅ Tier A |
+| `ArgumentsStyleAnonymousFunction` | `skala_arguments_anonymous_function` | ✅ Tier A |
+| `ArgumentsStyleOther` | `skala_arguments_other` | ✅ Tier A |
+| `SuggestVarOrType_DeconstructionDeclarations` | `skala_prefer_explicit_discard_declaration` | ✅ the **key** is Tier A; ⚠ the **inspection** is not — see below |
 | `ArrangeAttributes` | `place_attribute_on_same_line` | ✅ Tier A **without a rewrite** — see below |
 | `ArrangeThisQualifier` | `instance_members_qualify_declared_in` | ⚠ stays **D**, honoured vacuously |
-| `SeparateControlTransferStatement` | `blank_lines_before_control_transfer_statements` | ⚠ stays **D**, wrong component |
+| `SeparateControlTransferStatement` | `skala_blank_lines_before_control_transfer_statements` | ⚠ stays **D**, wrong component |
 | `UnnecessaryWhitespace` | `trim_trailing_whitespace` | ⚠ stays **D**, the oracle ignores the key |
 
 ### ⚠ Two of the fifteen were measurement artefacts, not missing work
@@ -297,7 +297,7 @@ beside it: `PredefinedTypeRule` read
 be observed through its own value, so it read as Tier D. The fix is to read the right key in the
 right position, not to write a rewrite.
 
-`resharper_place_attribute_on_same_line` is a **generalized** key: the resolver expands it into the
+`skala_place_attribute_on_same_line` is a **generalized** key: the resolver expands it into the
 six `place_*_attribute_on_same_line` keys, every one of which the formatter implements and pins.
 `PhaseOneOptions` had it as `OfInert` when `OfGeneralized` — a mechanism that already existed for
 exactly this shape, and which checks that at least one expansion target is really implemented — is
@@ -315,7 +315,7 @@ than the seven: it is the reason to re-run a measurement rather than re-read it.
 `SuggestVarOrType_DeconstructionDeclarations` is the one place where promoting the option does *not*
 retire the inspection, and saying so is the point of this paragraph.
 
-The option `resharper_prefer_explicit_discard_declaration` is genuinely Tier A: it is implemented,
+The option `skala_prefer_explicit_discard_declaration` is genuinely Tier A: it is implemented,
 it is observable (at `true` the oracle turns `out _` into `out var _`, measured), and a cleanup
 fixture pins it. But the inspection doc 17 attached to it reports something else — `var (a, b)`
 against explicit types in a deconstruction — and *that* is governed by
@@ -345,7 +345,7 @@ conformance sweep already found.
    nonetheless covered: removing `this.` is `ThisQualifierRule` under `resharper_remove_this_qualifier`,
    which is Tier A and pinned. Doc 17's `gov.json` maps the inspection to the scoping key, and that
    mapping is what put it on the list.
-2. **`resharper_blank_lines_before_control_transfer_statements`** — measured observable: at `1` the
+2. **`skala_blank_lines_before_control_transfer_statements`** — measured observable: at `1` the
    oracle inserts a blank line before `return`, `continue`, `break` and `throw`. The export writes
    `0`, so it does nothing here, but that is not why it stays D. ⚠ **It is a blank-line option and
    blank lines belong to the formatter**, which is the component that owns that family; the arranger

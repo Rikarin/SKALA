@@ -67,7 +67,7 @@ using System.Globalization;
 //                     is as far from the rule as one with ninety and the ranked report never shows
 //                     it.
 //   margin [out]      SK-DIV-0005's constant, swept: eleven right-hand-side shapes at five block
-//                     depths under both values of `wrap_before_eq`, one character at a time.
+//                     depths under both values of `skala_wrap_before_eq`, one character at a time.
 //   preference [flags]
 //                     the preference fact, captured as data while the oracle can still be asked:
 //                     total width against the inner construct's own width, one column at a time, at
@@ -454,7 +454,7 @@ switch (args[0]) {
 // cleanup profile does not, and nothing but running both would have shown it.
 //
 // ⚠ It is the tool the milestone-3 rules were established with, and it is why they are rules rather
-// than readings of an option name. `wrap_array_initializer_style = wrap_if_long` does not say what
+// than readings of an option name. `skala_wrap_array_initializer_style = wrap_if_long` does not say what
 // happens to `new[] { a, b, c }` at 121 columns; asking cleanupcode does. It is also what derives
 // the default table (docs/plan/03 § "Deriving ReSharper's defaults"), where the override is
 // `root = true` and nothing else.

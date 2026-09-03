@@ -29,7 +29,7 @@ public static class Fixer {
             );
         }
 
-        var width = document.Assignments.FirstOrDefault(static a => a.Key == "resharper_csharp_max_line_length");
+        var width = document.Assignments.FirstOrDefault(static a => a.Key == "skala_max_line_length");
         var standardWidth = document.Assignments.FirstOrDefault(static a => a.Key == "max_line_length");
         if (width is not null && standardWidth is null) {
             if (!insertions.TryGetValue(width.Line, out var list)) {
@@ -112,7 +112,7 @@ public static class Fixer {
         genericKey switch {
             "trim_trailing_whitespace" => specificValue is "true" or "always" ? "true" : "false",
             "max_line_length" => specificValue,
-            // end_of_line names a line ending and resharper_enforce_line_ending_style is a switch, so
+            // end_of_line names a line ending and skala_enforce_line_ending_style is a switch, so
             // there is no value of end_of_line that agrees with `false`. The fix is to turn enforcement
             // on, which is a style decision, and `fix` does not make those.
             _ => null

@@ -5,7 +5,7 @@ public static class Discarding {
     }
 
     // ⚠ `out var _` is not this rule's shape. It becomes `out _` under
-    // `resharper_csharp_prefer_explicit_discard_declaration`, a tier-A option `SK0217` already
+    // `skala_prefer_explicit_discard_declaration`, a tier-A option `SK0217` already
     // performs in both directions against the oracle — so reporting it here would be one edit
     // owned by two ids.
     //

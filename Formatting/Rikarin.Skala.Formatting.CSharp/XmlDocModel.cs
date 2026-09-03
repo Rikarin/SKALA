@@ -38,7 +38,7 @@ public sealed record XmlDocBreak(int BlankLines) : XmlDocNode(false);
 /// </remarks>
 /// <param name="ProcessingInstruction">
 ///     ⚠ A <c>&lt;?…?&gt;</c> rather than a CDATA section or an XML comment. The three are emitted
-///     identically and only <c>resharper_xmldoc_blank_line_after_pi</c> tells them apart, so the flag
+///     identically and only <c>skala_xmldoc_blank_line_after_pi</c> tells them apart, so the flag
 ///     exists for that key alone.
 /// </param>
 public sealed record XmlDocVerbatim(ImmutableArray<string> Lines, bool ProcessingInstruction = false)
@@ -58,15 +58,15 @@ public sealed record XmlDocVerbatim(ImmutableArray<string> Lines, bool Processin
 public readonly record struct XmlDocNameValue(string Name, string Value);
 
 /// <summary>An element, with the pieces of its start tag taken from the source unchanged.</summary>
-/// <param name="Name">The tag name, for <c>linebreak_before_elements</c> and the closing tag.</param>
+/// <param name="Name">The tag name, for <c>skala_xmldoc_linebreak_before_elements</c> and the closing tag.</param>
 /// <param name="Header">
 ///     <c>&lt;</c> plus the tag name, and nothing else. ⚠ It held the whole header — attributes
 ///     included — until the tag-header keys were measured; see <see cref="XmlDocElement.Attributes" />.
 /// </param>
 /// <param name="Attributes">
 ///     ⚠ The header's attributes, in source order. The renderer re-emits the header from these rather
-///     than copying it, which is what makes <c>spaces_around_eq_in_attribute</c> and
-///     <c>space_after_last_attribute</c> mean anything. It also normalises the whitespace
+///     than copying it, which is what makes <c>skala_xmldoc_spaces_around_eq_in_attribute</c> and
+///     <c>skala_xmldoc_space_after_last_attribute</c> mean anything. It also normalises the whitespace
 ///     <em>between</em> attributes to one space, which is what the oracle does with the doc-comment
 ///     task on: <c>&lt;param   name="a"    other="x"  &gt;</c> comes back
 ///     <c>&lt;param name="a" other="x"&gt;</c>.
@@ -78,13 +78,13 @@ public readonly record struct XmlDocNameValue(string Name, string Value);
 /// <param name="GluedToWord">
 ///     ⚠ The thing directly before it, with no whitespace between, was <em>prose</em>. Only then is a
 ///     break before this element forbidden: <c>x&lt;see/&gt;</c> is one word, while
-///     <c>&lt;/summary&gt;&lt;param&gt;</c> is two tags that <c>linebreak_before_elements</c> exists to
+///     <c>&lt;/summary&gt;&lt;param&gt;</c> is two tags that <c>skala_xmldoc_linebreak_before_elements</c> exists to
 ///     put on separate lines.
 /// </param>
 /// <param name="InnerLead">
 ///     ⚠ The run of spaces or tabs the author wrote between the start tag and the content, and
 ///     <c>InnerTrail</c> the one before the end tag. Recorded because
-///     <c>spaces_inside_tags = false</c> means "do not add one", not "remove the author's" —
+///     <c>skala_xmldoc_spaces_inside_tags = false</c> means "do not add one", not "remove the author's" —
 ///     SK-DIV-0022 — so at the export's value the gap is the source's bytes rather than a decision,
 ///     a double space included. Empty when the gap holds a line break, which the renderer owns
 ///     instead, and irrelevant the moment the element is opened up: the oracle drops the author's

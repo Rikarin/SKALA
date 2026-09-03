@@ -6,7 +6,7 @@ namespace Rikarin.Skala.Conformance.Sweep.Tests;
 /// <remarks>
 ///     ⚠ This is the part of the harness most likely to be got wrong, and getting it wrong rebuilds the
 ///     exact defect the harness exists to detect. Skala reached 99.70 % fidelity while respecting 205 of
-///     the 458 keys the export sets, and flipping <c>resharper_int_align</c> produced byte-identical
+///     the 458 keys the export sets, and flipping <c>skala_int_align</c> produced byte-identical
 ///     output that no test noticed — both because a measurement at one configuration cannot tell
 ///     "honoured" from "happens to agree". A classifier that answers <c>Conformant</c> when neither
 ///     engine moved reproduces that hole inside the instrument built to find it.
@@ -36,7 +36,7 @@ public sealed class SweepClassificationTests {
             OptionSweep.Classify(2, 2, 1, 2)
         );
 
-    /// <summary>⚠ <c>resharper_int_align</c>: ReSharper honours the key and Skala ignores it.</summary>
+    /// <summary>⚠ <c>skala_int_align</c>: ReSharper honours the key and Skala ignores it.</summary>
     [Fact]
     public void OracleMoved_AndSkalaDidNot_IsInert() =>
         Assert.Equal(

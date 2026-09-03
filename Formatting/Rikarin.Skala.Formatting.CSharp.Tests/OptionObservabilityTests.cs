@@ -117,9 +117,9 @@ public sealed class OptionObservabilityTests {
     ///     empty and an empty <c>MemberData</c> is a red build rather than a green one. The emptiness is
     ///     the finding and is asserted below: nothing in the <c>resharper_xmldoc_*</c> family is
     ///     "asked, and answered differently" any more. Three of the four that were —
-    ///     <c>max_line_length</c>, <c>wrap_text</c>, <c>linebreak_before_singleline_elements</c> —
+    ///     <c>max_line_length</c>, <c>skala_xmldoc_wrap_text</c>, <c>skala_xmldoc_linebreak_before_singleline_elements</c> —
     ///     agree at every value once the model behind them was re-probed rather than read off a
-    ///     fixture, and the fourth, <c>wrap_tags_and_pi</c>, turned out to govern a construct Skala
+    ///     fixture, and the fourth, <c>skala_xmldoc_wrap_tags_and_pi</c>, turned out to govern a construct Skala
     ///     does not produce and moved to <c>XmlDocIds.Refused</c> (SK-DIV-0079). The loop still runs,
     ///     so the moment a key is registered <c>OfUnoracled</c> again it has to be observable.
     /// </remarks>
@@ -146,14 +146,14 @@ public sealed class OptionObservabilityTests {
         // are in it, so that a key acquiring the mark has to change a number here and cannot slip in
         // under an assertion that was passing on an empty list.
         //
-        // ⚠ It went from empty to one at SK-DIV-0033. `resharper_csharp_align_multiline_comments` is
+        // ⚠ It went from empty to one at SK-DIV-0033. `skala_align_multiline_comments` is
         // the mark in its documented sense — asked, and answered differently: Skala reproduces the
         // oracle byte for byte at the export's `true`, and at `false` the oracle freezes a starred
         // comment entire, including the column its opening `/*` is written at, which Skala re-indents
         // at both values. Honoured, observable, and not conformant at one of two values, which is
         // exactly what bars Tier A. The probe above carries the block comment it is observed on.
         Assert.Equal(
-            ["resharper_csharp_align_multiline_comments"],
+            ["skala_align_multiline_comments"],
             Ids.ReadButUnoracled.Select(static id => OptionRegistry.Get(id).Key)
         );
     }
@@ -163,27 +163,27 @@ public sealed class OptionObservabilityTests {
     /// </summary>
     /// <remarks>
     ///     ⚠ Deliberately ugly, and every piece of the ugliness is load-bearing: a summary past the
-    ///     column limit (wrapping), two <c>&lt;param&gt;</c>s sharing a line (linebreak_before_elements),
-    ///     an element with children and no text (indent_child_elements), an element with text
-    ///     (indent_text), a self-closing tag (space_before_self_closing), blank <c>///</c> lines between
-    ///     tags (max_blank_lines_between_tags), a single-line element after text
-    ///     (linebreak_before_singleline_elements) and a multi-line one
-    ///     (linebreak_before_multiline_elements). It must stay well-formed XML — a malformed comment is
+    ///     column limit (wrapping), two <c>&lt;param&gt;</c>s sharing a line (skala_xmldoc_linebreak_before_elements),
+    ///     an element with children and no text (skala_xmldoc_indent_child_elements), an element with text
+    ///     (skala_xmldoc_indent_text), a self-closing tag (skala_xmldoc_space_before_self_closing), blank <c>///</c> lines between
+    ///     tags (skala_xmldoc_max_blank_lines_between_tags), a single-line element after text
+    ///     (skala_xmldoc_linebreak_before_singleline_elements) and a multi-line one
+    ///     (skala_xmldoc_linebreak_before_multiline_elements). It must stay well-formed XML — a malformed comment is
     ///     left exactly as written (SK0003), which would make every key here look unobservable at once.
     ///     <para>
     ///         ⚠ Widened with a processing instruction and a multi-attribute tag header, which is what the
     ///         failure message above asks for when a key's shape is missing rather than its wiring. Four
-    ///         keys had no shape here to be observed on: <c>blank_line_after_pi</c> had no
-    ///         <c>&lt;?…?&gt;</c>, and <c>space_after_last_attribute</c>,
-    ///         <c>spaces_around_eq_in_attribute</c> and
-    ///         <c>linebreaks_inside_tags_for_elements_longer_than</c> had only single-attribute headers
+    ///         keys had no shape here to be observed on: <c>skala_xmldoc_blank_line_after_pi</c> had no
+    ///         <c>&lt;?…?&gt;</c>, and <c>skala_xmldoc_space_after_last_attribute</c>,
+    ///         <c>skala_xmldoc_spaces_around_eq_in_attribute</c> and
+    ///         <c>skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than</c> had only single-attribute headers
     ///         and short contents to work on.
     ///     </para>
     ///     <para>
     ///         ⚠ Widened again, and this time by a probe defect the wrap-column fix exposed rather than by
     ///         a missing construct. Every "long enough that it will not fit" phrase here was written
     ///         against a budget seven columns narrower than the one SK-DIV-0019 measured, so
-    ///         <c>linebreak_before_multiline_elements</c> lost its only shape: the <c>&lt;exception&gt;</c>
+    ///         <c>skala_xmldoc_linebreak_before_multiline_elements</c> lost its only shape: the <c>&lt;exception&gt;</c>
     ///         it governed is now moved by the width wrap at both values, and a key that is masked reads
     ///         exactly like a key that is unwired. The shape it actually governs is a <em>short</em>
     ///         element that is multi-line for a structural reason, beside prose — the line added below —
@@ -213,7 +213,7 @@ public sealed class OptionObservabilityTests {
 
                              /*
                           * A starred block comment whose asterisks are out of place, written at an opener
-                            * column the code does not put it at, so that `align_multiline_comments` has
+                            * column the code does not put it at, so that `skala_align_multiline_comments` has
                           * something to move. ⚠ Every continuation line begins with `*`, which is what
                           * makes the comment qualify — see CSharpDocumentBuilder.StarredFlag.
                               */

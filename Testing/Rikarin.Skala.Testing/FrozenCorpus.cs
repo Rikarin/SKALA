@@ -164,7 +164,7 @@ public static class FrozenCorpus {
     /// <summary>The frozen body, with the provenance header line removed.</summary>
     /// <remarks>
     ///     ⚠ Byte-exact after the first newline, and never normalised.
-    ///     <c>resharper_enforce_line_ending_style</c> and <c>resharper_csharp_insert_final_newline</c>
+    ///     <c>skala_enforce_line_ending_style</c> and <c>skala_insert_final_newline</c>
     ///     are two of the options frozen here and normalisation erases their entire effect — the sweep
     ///     records that it had to read their verdicts off the raw bytes for the same reason.
     /// </remarks>

@@ -27,9 +27,9 @@ public sealed class ConfigurationDiagnosticsTests {
 
         var finalNewline = Assert.Single(
             messages,
-            static m => m.Contains("insert_final_newline", StringComparison.Ordinal)
+            static m => m.Contains("skala_insert_final_newline", StringComparison.Ordinal)
         );
-        Assert.Contains("resharper_csharp_insert_final_newline = true", finalNewline, StringComparison.Ordinal);
+        Assert.Contains("skala_insert_final_newline = true", finalNewline, StringComparison.Ordinal);
         Assert.Contains("the C# key wins", finalNewline, StringComparison.Ordinal);
         Assert.Contains("the effective value is 'true'", finalNewline, StringComparison.Ordinal);
 
@@ -37,11 +37,11 @@ public sealed class ConfigurationDiagnosticsTests {
             messages,
             static m => m.Contains("trim_trailing_whitespace", StringComparison.Ordinal)
         );
-        Assert.Contains("resharper_remove_spaces_on_blank_lines = true", whitespace, StringComparison.Ordinal);
+        Assert.Contains("skala_remove_spaces_on_blank_lines = true", whitespace, StringComparison.Ordinal);
         Assert.Contains("the C# key wins", whitespace, StringComparison.Ordinal);
 
         var lineEndings = Assert.Single(messages, static m => m.Contains("end_of_line = lf", StringComparison.Ordinal));
-        Assert.Contains("resharper_enforce_line_ending_style = false", lineEndings, StringComparison.Ordinal);
+        Assert.Contains("skala_enforce_line_ending_style = false", lineEndings, StringComparison.Ordinal);
         Assert.Contains("the C# key wins", lineEndings, StringComparison.Ordinal);
     }
 
@@ -65,7 +65,7 @@ public sealed class ConfigurationDiagnosticsTests {
         // tool that emits two thousand warnings on first run gets uninstalled on first run.
         Assert.Equal(SkalaSeverity.Info, diagnostic.Severity);
         Assert.Contains(
-            "did you mean 'resharper_csharp_wrap_arguments_style'",
+            "did you mean 'skala_wrap_arguments_style'",
             diagnostic.Message,
             StringComparison.Ordinal
         );
@@ -119,7 +119,7 @@ public sealed class ConfigurationDiagnosticsTests {
         );
 
         Assert.Equal(SkalaSeverity.Info, diagnostic.Severity);
-        Assert.Contains("resharper_csharp_max_line_length", diagnostic.Detail!, StringComparison.Ordinal);
+        Assert.Contains("skala_max_line_length", diagnostic.Detail!, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public sealed class ConfigurationDiagnosticsTests {
             {
               // where to look
               "include": ["**/*.cs"],
-              "resharper_csharp_max_line_length": 120
+              "skala_max_line_length": 120
             }
             """
         );
@@ -150,8 +150,8 @@ public sealed class ConfigurationDiagnosticsTests {
             """
             root = true
             [*]
-            csharp_space_after_attribute_colon = true
-            csharp_space_after_colon = false
+            skala_space_after_attribute_colon = true
+            skala_space_after_attribute_colon = false
             """
         );
 
@@ -173,7 +173,7 @@ public sealed class ConfigurationDiagnosticsTests {
             """
             root = true
             [*]
-            resharper_autodetect_indent_settings = true
+            skala_autodetect_indent_settings = true
             """
         );
 

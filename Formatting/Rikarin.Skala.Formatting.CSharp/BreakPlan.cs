@@ -16,7 +16,7 @@ public enum GapRule {
     /// </summary>
     /// <remarks>
     ///     This is the half of the break-position model that removes lines. With
-    ///     <c>wrap_before_binary_opsign = true</c> the gap before the operator is a break point and the
+    ///     <c>skala_wrap_before_binary_opsign = true</c> the gap before the operator is a break point and the
     ///     gap after it is not, so <c>a +\n b</c> is re-joined and <c>a\n + b</c> is kept. Milestone 1
     ///     had nowhere to express the difference and kept both.
     /// </remarks>
@@ -37,7 +37,7 @@ public readonly record struct GapSpec(GapRule Rule, int Group);
 
 // ⚠ A break point carries no "what it looks like when flat". Its flat form is whatever the ninety
 // space rules say about that pair of tokens, and asking the plan instead means the plan has to know
-// space_after_comma, space_within_parentheses, space_before_ternary_quest and the rest — which is
+// skala_space_after_comma, skala_space_within_parentheses, skala_space_before_ternary_quest and the rest — which is
 // how three Tier A spacing keys silently stopped being observable the first time this was written
 // with a bool.
 
@@ -54,7 +54,7 @@ public readonly record struct GapSpec(GapRule Rule, int Group);
 ///     ⚠ The group's first break point is the gap <em>before</em> the node, so the group has to open
 ///     before that gap is written or the point is emitted outside the group it belongs to and the
 ///     writer, finding the group unresolved, renders it flat. The one construct that needs it is a base
-///     list under <c>wrap_before_extends_colon = true</c>, whose only break point is the colon that
+///     list under <c>skala_wrap_before_extends_colon = true</c>, whose only break point is the colon that
 ///     starts the node. Every other group's first point is at a token in its interior.
 /// </param>
 /// <param name="OwnLevel">
@@ -80,7 +80,7 @@ public readonly record struct GroupPlan(
 ///     Opened before the gap that precedes the first <c>where</c>, so it is entered at the column the
 ///     declaration has reached. It answers <em>does the whole constraint list fit on this line</em>, and
 ///     it owns the break before the first clause when
-///     <c>wrap_before_first_type_parameter_constraint</c> says the first clause is part of that answer.
+///     <c>skala_wrap_before_first_type_parameter_constraint</c> says the first clause is part of that answer.
 /// </param>
 /// <param name="Inner">
 ///     Opened <em>after</em> that gap, so it is entered at the column the first clause actually lands
@@ -106,9 +106,9 @@ public readonly record struct ConstraintRun(GroupPlan Outer, GroupPlan Inner, bo
 /// <remarks>
 ///     ⚠ This is the model milestone 1 did not have. M1 decided <em>whether</em> a gap holds a break by
 ///     copying the source; M2 has to decide <em>which side of a token</em> a break lands on, because
-///     that is what <c>wrap_before_binary_opsign</c>, <c>wrap_after_invocation_lpar</c>,
-///     <c>wrap_before_invocation_rpar</c>, <c>wrap_after_dot_in_method_calls</c> and
-///     <c>wrap_before_comma</c> configure, and a gap model with only "break / do not break" has nowhere
+///     that is what <c>skala_wrap_before_binary_opsign</c>, <c>skala_wrap_after_invocation_lpar</c>,
+///     <c>skala_wrap_before_invocation_rpar</c>, <c>skala_wrap_after_dot_in_method_calls</c> and
+///     <c>skala_wrap_before_comma</c> configure, and a gap model with only "break / do not break" has nowhere
 ///     to put the answer.
 ///     <para>
 ///         It is a pre-pass over the syntax tree rather than a decision taken during the walk, for one
@@ -176,7 +176,7 @@ public sealed class BreakPlan {
     /// <remarks>
     ///     ⚠ Positions rather than a group, and the reason is that the forced chop runs along a
     ///     <em>finer</em> chain than <see cref="SameChain" />. That test puts <c>&amp;&amp;</c> and
-    ///     <c>||</c> at one precedence on purpose, because <c>wrap_chained_binary_expressions</c> chops
+    ///     <c>||</c> at one precedence on purpose, because <c>skala_wrap_chained_binary_expressions</c> chops
     ///     <c>a &amp;&amp; b || c</c> at both operators; the forced chop takes only the root operator's
     ///     own kind, so <c>a.P &amp;&amp; b.P || c.P</c> comes back broken at the <c>||</c> and whole at
     ///     the <c>&amp;&amp;</c>. Reusing the chain-wide group would break both.
@@ -186,7 +186,7 @@ public sealed class BreakPlan {
     /// <summary>The group of a delimited list, keyed by the list node.</summary>
     /// <remarks>
     ///     ⚠ Recorded so that a construct <em>outside</em> the list can read whether the list broke.
-    ///     <c>place_expr_method_on_single_line = if_owner_is_single_line</c> asks whether the
+    ///     <c>skala_place_expr_method_on_single_line = if_owner_is_single_line</c> asks whether the
     ///     declaration occupies one line, and a chopped parameter list is the commonest way for it not
     ///     to — which no width test on the arrow itself can see.
     /// </remarks>
@@ -275,7 +275,7 @@ public sealed class BreakPlan {
     /// </summary>
     /// <remarks>
     ///     ⚠ The blank-line rules need this, which is not obvious until it bites. Whether a member takes
-    ///     <c>blank_lines_around_field</c> or <c>blank_lines_around_single_line_field</c> depends on
+    ///     <c>skala_blank_lines_around_field</c> or <c>skala_blank_lines_around_single_line_field</c> depends on
     ///     whether it is single-line — in the <em>output</em>. A one-line field the formatter is about to
     ///     chop is not single-line, and reading the input instead makes the first pass emit no blank line
     ///     and the second pass emit one. That is a non-idempotency the corpus does not contain, because
@@ -382,8 +382,8 @@ public sealed class BreakPlan {
 
             case ParameterListSyntax { Parent: TypeDeclarationSyntax } primaryParameters:
                 // ⚠ A primary constructor has its own four keys, and they do not agree with the
-                // declaration ones: wrap_before_primary_constructor_declaration_rpar is false where
-                // wrap_before_declaration_rpar is true, so `record R(\n int Y,\n int Z);` keeps the
+                // declaration ones: skala_wrap_before_primary_constructor_declaration_rpar is false where
+                // skala_wrap_before_declaration_rpar is true, so `record R(\n int Y,\n int Z);` keeps the
                 // closing parenthesis on the last parameter's line.
                 PlanList(
                     node,
@@ -477,7 +477,7 @@ public sealed class BreakPlan {
                     // Measured at both values of each, in both the unprefixed spelling the export
                     // writes and a `csharp_`-prefixed one: the oracle returns
                     // `constructs/wrapping/initializers.cs` byte-identical every time, while a
-                    // negative control on the same file — `csharp_wrap_array_initializer_style =
+                    // negative control on the same file — `skala_wrap_array_initializer_style =
                     // chop_always` — rewrites it. The C# formatter does not read them; a wrapped
                     // braced construct always puts its braces on their own lines, which is what
                     // these two constants say. See PhaseOneOptions.Ids.
@@ -553,7 +553,7 @@ public sealed class BreakPlan {
                 return;
 
             // ⚠ Two shapes and not a guard. Until T5a this arm ran only under
-            // `wrap_before_type_parameter_langle`, with the note that giving a type parameter list a
+            // `skala_wrap_before_type_parameter_langle`, with the note that giving a type parameter list a
             // group unconditionally "would change where a long generic declaration wraps at the
             // export's own values" — which was true, and was the divergence rather than the reason
             // to keep it. At the export's `false` the oracle wraps the list itself; see
@@ -567,7 +567,7 @@ public sealed class BreakPlan {
 
                 return;
 
-            // ⚠ `place_type_constraints_on_same_line = false`: the constraints leave the
+            // ⚠ `skala_place_type_constraints_on_same_line = false`: the constraints leave the
             // DECLARATION's line, and that is one break before the first `where` — not one before
             // every `where`, which is what this used to plan. Measured, one key flipped:
             //     class SameLine<T, U>
@@ -575,7 +575,7 @@ public sealed class BreakPlan {
             //     void M<V>(V v)
             //         where V : notnull { }
             // What separates the clauses from one another is
-            // `wrap_multiple_type_parameter_constraints_style` and the author's own breaks, which
+            // `skala_wrap_multiple_type_parameter_constraints_style` and the author's own breaks, which
             // survive here because this arm plans no gap between them at all: the same file's
             // `class OwnLines<T, U>` keeps the `where`s the author put on separate lines.
             case TypeParameterConstraintClauseSyntax constraint
@@ -608,7 +608,7 @@ public sealed class BreakPlan {
     // ── Constructs ───────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    ///     <c>wrap_enum_declaration = chop_always</c> with <c>max_enum_members_on_line = 1</c>: one
+    ///     <c>skala_wrap_enum_declaration = chop_always</c> with <c>skala_max_enum_members_on_line = 1</c>: one
     ///     member per line, always, whatever the source did.
     /// </summary>
     /// <remarks>
@@ -622,13 +622,13 @@ public sealed class BreakPlan {
             return;
         }
 
-        // ⚠ `keep_existing_enum_arrangement` is the ONLY key of the three that governs this, and the
+        // ⚠ `skala_keep_existing_enum_arrangement` is the ONLY key of the three that governs this, and the
         // other two are masked rather than partners. Measured, one key flipped at a time over the
         // export: the oracle returns `constructs/breaks/enum-members.cs` with every member on its own
-        // line at `wrap_enum_declaration = wrap_if_long`, at `chop_if_long`, at `chop_always`, at
-        // `max_enum_members_on_line = 1` and at `= 2` — five configurations, one output — and puts
+        // line at `skala_wrap_enum_declaration = wrap_if_long`, at `chop_if_long`, at `chop_always`, at
+        // `skala_max_enum_members_on_line = 1` and at `= 2` — five configurations, one output — and puts
         // `enum Compact { First, Second, Third, Fourth }` back on its line the moment
-        // `keep_existing_enum_arrangement` is true. Reading the wrap style and the counter as the
+        // `skala_keep_existing_enum_arrangement` is true. Reading the wrap style and the counter as the
         // forcing condition made Skala the only engine that varied, which is what SPURIOUS means, on
         // both of their rows at once.
         // ⚠ The rule the oracle is really applying is `resharper_new_line_before_enumerators`, which
@@ -663,8 +663,8 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     <c>wrap_switch_expression = chop_always</c> and
-    ///     <c>place_simple_switch_expression_on_single_line = false</c>: every arm, always.
+    ///     <c>skala_wrap_switch_expression = chop_always</c> and
+    ///     <c>skala_place_simple_switch_expression_on_single_line = false</c>: every arm, always.
     /// </summary>
     void PlanSwitchExpression(SwitchExpressionSyntax node) {
         if (node.Arms.Count == 0) {
@@ -687,8 +687,8 @@ public sealed class BreakPlan {
 
         // ⚠ The arms are the INNER group's and the braces the outer one's, which is the split a
         // braced initializer already has and for the same measured reason. The export sets
-        // `place_simple_switch_expression_on_single_line = false`, and at that value the oracle puts
-        // the braces on their own lines WHATEVER `wrap_switch_expression` says:
+        // `skala_place_simple_switch_expression_on_single_line = false`, and at that value the oracle puts
+        // the braces on their own lines WHATEVER `skala_wrap_switch_expression` says:
         //     int Compact(int v) =>
         //         v switch {
         //             1 => 10, 2 => 20, _ => 0     ← at wrap_if_long and at chop_if_long
@@ -710,12 +710,12 @@ public sealed class BreakPlan {
         Point(node.CloseBraceToken, group);
         broken |= BreaksBefore(node.CloseBraceToken);
 
-        // ⚠ `keep_existing_switch_expression_arrangement` outranks `chop_always`, which the option
+        // ⚠ `skala_keep_existing_switch_expression_arrangement` outranks `chop_always`, which the option
         // names do not suggest and the oracle settles: with it on, `value switch { 1 => 1, _ => 0 }`
         // comes back on one line although the wrap style says every arm gets one of its own. With it
         // off — the export's value — the same expression is chopped.
         //
-        // ⚠ `chop_always` outranks `place_simple_switch_expression_on_single_line`, and this used to
+        // ⚠ `chop_always` outranks `skala_place_simple_switch_expression_on_single_line`, and this used to
         // say the reverse. Measured, one key flipped from the export at a time:
         //
         //   chop_always + place = true    every arm on its own line — the placement key does nothing
@@ -734,7 +734,7 @@ public sealed class BreakPlan {
         // ⚠ The braces break when the placement key says so, whatever the arms' style, AND whenever
         // the arms are certain to chop — a switch whose arms each take a line cannot have its braces
         // joined around them. `always` gates the arms; `|| always` here is what stops
-        // `place_simple_switch_expression_on_single_line = true` from joining the braces back
+        // `skala_place_simple_switch_expression_on_single_line = true` from joining the braces back
         // together under `chop_always`, which is the precedence the row turned on.
         var forced = !keep && (always || !options.PlaceSimpleSwitchExpressionOnSingleLine);
 
@@ -753,8 +753,8 @@ public sealed class BreakPlan {
             node,
             arms,
 
-            // ⚠ And the arms re-flow when `keep_existing_switch_expression_arrangement` is off, which
-            // is the export's value. Measured at `wrap_switch_expression = chop_if_long`: a switch
+            // ⚠ And the arms re-flow when `skala_keep_existing_switch_expression_arrangement` is off, which
+            // is the export's value. Measured at `skala_wrap_switch_expression = chop_if_long`: a switch
             // the author wrote one arm per line comes back with the three arms on one continuation
             // line, byte for byte what the same switch written flat gets at that value. The braces
             // are still apart — that is the placement key's doing and not the author's — so the two
@@ -771,22 +771,22 @@ public sealed class BreakPlan {
 
     /// <summary>
     ///     A parenthesised list: <c>wrap_after_*_lpar</c>, <c>wrap_before_*_rpar</c>,
-    ///     <c>wrap_before_comma</c>, and a <c>chop_*</c> or <c>wrap_if_long</c> style.
+    ///     <c>skala_wrap_before_comma</c>, and a <c>chop_*</c> or <c>wrap_if_long</c> style.
     /// </summary>
     /// <remarks>
     ///     ⚠ The two delimiter points and the inter-item points are preserved by different keys, and
     ///     conflating them makes the <c>keep_existing_*</c> family unobservable. Measured against the
-    ///     oracle: with <c>keep_existing_invocation_parens_arrangement = false</c>, <c>Foo1(\n a)</c>
+    ///     oracle: with <c>skala_keep_existing_invocation_parens_arrangement = false</c>, <c>Foo1(\n a)</c>
     ///     re-joins and <c>Foo2(\n a,\n b)</c> does not, because the first has no inter-item break to
     ///     keep and the second has one.
     /// </remarks>
     /// <param name="maxOnLine">
     ///     <c>max_*_on_line</c>. ⚠ A hard chop and not a fill: measured against the oracle,
     ///     <c>new List&lt;int&gt; { 1, 2, 3, 4, 5 }</c> comes back with one element per line under
-    ///     <c>max_initializer_elements_on_line = 4</c> although it is 41 columns wide, while
+    ///     <c>skala_max_initializer_elements_on_line = 4</c> although it is 41 columns wide, while
     ///     <c>new[] { 1, 2, 3, 4, 5 }</c> — governed by
     ///     <c>
-    /// max_array_initializer_elements_on_line =
+    /// skala_max_array_initializer_elements_on_line =
     ///  10000
     ///     </c> — does not move. The counter is not a width and does not consult one.
     /// </param>
@@ -836,8 +836,8 @@ public sealed class BreakPlan {
         // these constructs at all rather than chop them, which is why an over-long initializer came
         // back untouched.
         // ⚠ And so is a construct the placement key forced apart, at whatever style. Measured, one
-        // key flipped: `place_simple_property_pattern_on_single_line = false` with
-        // `wrap_property_pattern = chop_if_long` returns
+        // key flipped: `skala_place_simple_property_pattern_on_single_line = false` with
+        // `skala_wrap_property_pattern = chop_if_long` returns
         //     o is Thing {
         //         Alpha: 1, Beta: 2
         //     };
@@ -868,10 +868,10 @@ public sealed class BreakPlan {
         // measured. The reading this replaces was "do not put the first item on a line of its own,
         // and do not join one the author wrote", taken from `record R(\n a,\n b\n)`, which the
         // oracle returns unmoved. It does — and the key holding it there is
-        // `keep_existing_declaration_parens_arrangement = true`, not this one. The export sets the
+        // `skala_keep_existing_declaration_parens_arrangement = true`, not this one. The export sets the
         // invocation half of that pair to FALSE, and there the same flip joins:
-        //   wrap_after_invocation_lpar = false    Call(firstArgument,\n    secondArgument\n);
-        //   wrap_before_invocation_rpar = false   Call(\n    firstArgument,\n    secondArgument);
+        //   skala_wrap_after_invocation_lpar = false    Call(firstArgument,\n    secondArgument\n);
+        //   skala_wrap_before_invocation_rpar = false   Call(\n    firstArgument,\n    secondArgument);
         // one gap each, and neither touches the other's. Attributing the declaration's answer to
         // this key made both invocation keys diverge at their non-export value.
         // ⚠ The sole-lambda case below joins regardless, and it says so with its own key.
@@ -889,13 +889,13 @@ public sealed class BreakPlan {
             // in front of one is joined rather than kept. MEASURED on
             // constructs/wrapping/patterns.cs, whose `return xs is\n[\n 1,\n 2\n];` comes back from
             // the oracle as `return xs is [\n 1,\n 2\n];` — the items keep their breaks, which is
-            // `keep_existing_list_patterns_arrangement = true`, and the gap before the `[` does not,
+            // `skala_keep_existing_list_patterns_arrangement = true`, and the gap before the `[` does not,
             // because that key governs the arrangement *inside* the brackets. Without this the gap
             // falls through to `keep_user_linebreaks = true` and stays broken, and the items then
             // sit a continuation level deeper than the oracle puts them.
             // ⚠ Brackets only. `CSharpDocumentBuilder.ShouldJoin` already does the same for the `{`
             // of a joinable body — a property pattern's among them — and a parenthesis is left
-            // alone because `wrap_before_declaration_lpar` and its siblings are real keys that put
+            // alone because `skala_wrap_before_declaration_lpar` and its siblings are real keys that put
             // one on a line of its own.
             Flat(open);
         }
@@ -907,7 +907,7 @@ public sealed class BreakPlan {
         }
 
         // ⚠ A fill re-flows every gap it owns, and one construct family will not have that.
-        // `keep_existing_list_patterns_arrangement = true` preserves the author's break at each
+        // `skala_keep_existing_list_patterns_arrangement = true` preserves the author's break at each
         // *individual* item gap, so a collection expression the author wrote one element per line
         // comes back one element per line however well two of them would have shared. Measured, and
         // the distinction is between the two constructs rather than between two widths:
@@ -930,7 +930,7 @@ public sealed class BreakPlan {
                 continue;
             }
 
-            // wrap_before_comma = false puts the break after the comma, which is the gap before the
+            // skala_wrap_before_comma = false puts the break after the comma, which is the gap before the
             // next item; true puts it before the comma.
             var gap = options.WrapBeforeComma ? comma : next;
             var broke = BreaksBefore(gap);
@@ -960,17 +960,17 @@ public sealed class BreakPlan {
         // The global switch turns the per-construct one off; the per-construct one does not turn the
         // global one on.
         // ⚠ `chop_always` is gated on the construct's own `keep_existing_*_arrangement` — for the
-        // constructs where that was measured, and for those alone. `wrap_list_pattern = chop_always`
+        // constructs where that was measured, and for those alone. `skala_wrap_list_pattern = chop_always`
         // leaves `xs is [1, 2, 3]` on its line, and a 113-column list pattern with it, because
-        // `keep_existing_list_patterns_arrangement = true` in this export; the same flip with that
+        // `skala_keep_existing_list_patterns_arrangement = true` in this export; the same flip with that
         // key turned OFF chops both. It is the keep key and not the placement key —
-        // `place_simple_list_pattern_on_single_line = false` beside `chop_always` still leaves the
+        // `skala_place_simple_list_pattern_on_single_line = false` beside `chop_always` still leaves the
         // pattern whole.
         // ⚠ And it is NOT general, which the committed sweep settles without another oracle run:
-        // `wrap_parameters_style`, `wrap_primary_constructor_parameters_style` and
-        // `wrap_arguments_style` are all conformant with THREE distinct oracle outputs on their
+        // `skala_wrap_parameters_style`, `skala_wrap_primary_constructor_parameters_style` and
+        // `skala_wrap_arguments_style` are all conformant with THREE distinct oracle outputs on their
         // fixtures, so those lists do chop at `chop_always` although
-        // `keep_existing_declaration_parens_arrangement` and its primary-constructor sibling are
+        // `skala_keep_existing_declaration_parens_arrangement` and its primary-constructor sibling are
         // true. Applying the gate to every caller made all three of them stop varying.
         var chopsAlways = style == WrapStyle.ChopAlways && !(keepOutranksChopAlways && keepExisting);
 
@@ -985,8 +985,8 @@ public sealed class BreakPlan {
 
         // ⚠ The per-construct `keep_existing_*` key outranks `place_simple_*_on_single_line`, and the
         // oracle is the only place that says so. With
-        // `keep_existing_list_patterns_arrangement = true` — the export's value — a list pattern the
-        // author split over three lines stays split, although `place_simple_list_pattern_on_single_line`
+        // `skala_keep_existing_list_patterns_arrangement = true` — the export's value — a list pattern the
+        // author split over three lines stays split, although `skala_place_simple_list_pattern_on_single_line`
         // is also true and would otherwise join it; flipping the keep key to false joins it. Reading
         // the placement key as the stronger of the two makes both of them unobservable at once.
         Describe(
@@ -1002,21 +1002,21 @@ public sealed class BreakPlan {
             // ⚠ The list's node starts *at* its opening parenthesis, so a break point registered on
             // that parenthesis is written before the group is opened and the writer, finding the
             // group unresolved, renders it flat. This is the same correction a base list needs
-            // under `wrap_before_extends_colon`; see GroupPlan.LeadingGapInside.
+            // under `skala_wrap_before_extends_colon`; see GroupPlan.LeadingGapInside.
             leadingGapInside: wrapBeforeOpen
         );
     }
 
     /// <summary>
-    ///     An initializer's braces: <c>wrap_array_initializer_style = wrap_if_long</c> plus the two
-    ///     element counters and <c>place_simple_initializer_on_single_line</c>.
+    ///     An initializer's braces: <c>skala_wrap_array_initializer_style = wrap_if_long</c> plus the two
+    ///     element counters and <c>skala_place_simple_initializer_on_single_line</c>.
     /// </summary>
     /// <remarks>
     ///     ⚠ Two counters, and which one applies is the syntax kind rather than the option name.
     ///     Measured against the oracle: <c>new List&lt;int&gt; { 1, 2, 3, 4, 5 }</c> comes back with one
     ///     element per line and <c>new[] { 1, 2, 3, 4, 5 }</c> does not, because the first is a
-    ///     collection initializer (<c>max_initializer_elements_on_line = 4</c>) and the second an array
-    ///     initializer (<c>max_array_initializer_elements_on_line = 10000</c>). Reading
+    ///     collection initializer (<c>skala_max_initializer_elements_on_line = 4</c>) and the second an array
+    ///     initializer (<c>skala_max_array_initializer_elements_on_line = 10000</c>). Reading
     ///     "array initializer" as "any initializer of a collection" gets both wrong at once.
     /// </remarks>
     void PlanInitializer(InitializerExpressionSyntax node) =>
@@ -1067,8 +1067,8 @@ public sealed class BreakPlan {
     ///         </c> comes back with five on one line and one on the next, while
     ///         <c>new List&lt;string&gt; { four, long, string, literals }</c> comes back with one per line
     ///         even though two of them would have shared. It matches the two counters —
-    ///         <c>max_array_initializer_elements_on_line = 10000</c> against
-    ///         <c>max_initializer_elements_on_line = 4</c> — being separate keys.
+    ///         <c>skala_max_array_initializer_elements_on_line = 10000</c> against
+    ///         <c>skala_max_initializer_elements_on_line = 4</c> — being separate keys.
     ///     </para>
     /// </remarks>
     void PlanBracedElements<T>(
@@ -1104,7 +1104,7 @@ public sealed class BreakPlan {
         // ⚠ A fill only for an array initializer; an object or collection initializer chops.
         // ⚠ …and never over the cap, which is what "a hard chop and not a fill" means on the
         // `maxOnLine` parameter above. Measured, one key flipped: at
-        // `max_array_initializer_elements_on_line = 1` the oracle puts `new[] { 1, 2, 3, 4, 5 }` one
+        // `skala_max_array_initializer_elements_on_line = 1` the oracle puts `new[] { 1, 2, 3, 4, 5 }` one
         // element per line, and at `0` it does the same, so the counter is not a width and does not
         // defer to one. The cap already forced the braces apart here; without this it left the five
         // elements filled on the continuation line, so the key moved the output and moved it wrong.
@@ -1131,7 +1131,7 @@ public sealed class BreakPlan {
         broken |= interBroken;
 
         // ⚠ `chop_always` is the ARRAY initializer's, and an object or collection one does not read
-        // it. Measured, one key flipped: at `wrap_array_initializer_style = chop_always` the oracle
+        // it. Measured, one key flipped: at `skala_wrap_array_initializer_style = chop_always` the oracle
         // returns `new List<int> { 1, 2, 3 }`, `new Thing { Alpha = 1, Beta = 2 }` and a
         // three-member `new { … }` exactly as written, and chops only `new[] { … }`. Skala read the
         // one key for every braced initializer and gave all four a line per element.
@@ -1142,7 +1142,7 @@ public sealed class BreakPlan {
         // `csharp_wrap_object_and_collection_initializer_style`, which this registry does not carry;
         // the export's answer is unchanged either way, so this narrows a wrong reading rather than
         // standing in for the missing key.
-        // ⚠ `place_simple_initializer_on_single_line = false` forces the BRACES apart and not the
+        // ⚠ `skala_place_simple_initializer_on_single_line = false` forces the BRACES apart and not the
         // elements, which is the outer group and not the inner one. Measured, one key flipped: the
         // oracle returns
         //     var a = new List<int> {
@@ -1171,7 +1171,7 @@ public sealed class BreakPlan {
 
                 // ⚠ And when the placement key forced the braces apart it re-flows the elements as
                 // well, overriding `keep_user_linebreaks` in the joining direction. Measured, one
-                // key flipped: at `place_simple_initializer_on_single_line = false` a `new Thing`
+                // key flipped: at `skala_place_simple_initializer_on_single_line = false` a `new Thing`
                 // the author wrote one member per line comes back as
                 //     var c = new Thing {
                 //         Alpha = 1, Beta = 2
@@ -1187,10 +1187,10 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     <c>wrap_extends_list_style = chop_if_long</c>: a long base list puts one base type per line.
+    ///     <c>skala_wrap_extends_list_style = chop_if_long</c>: a long base list puts one base type per line.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Neither delimiter is a break point. <c>wrap_before_extends_colon = false</c> keeps the
+    ///     ⚠ Neither delimiter is a break point. <c>skala_wrap_before_extends_colon = false</c> keeps the
     ///     <c>:</c> and the first base type on the declaration's line, and there is no closing delimiter
     ///     to move, so the only points are the commas:
     ///     <code>
@@ -1207,8 +1207,8 @@ public sealed class BreakPlan {
     ///     <para>
     ///         ⚠ <b>Two groups, and the split is the oracle's rather than a convenience</b> — the same
     ///         shape <see cref="ConstraintRun" /> records for a run of <c>where</c> clauses, and reached
-    ///         here by the same measurement. At <c>wrap_before_extends_colon = true</c> the oracle breaks
-    ///         at the <c>:</c> and then <em>stops</em>, although <c>wrap_extends_list_style</c> is
+    ///         here by the same measurement. At <c>skala_wrap_before_extends_colon = true</c> the oracle breaks
+    ///         at the <c>:</c> and then <em>stops</em>, although <c>skala_wrap_extends_list_style</c> is
     ///         <c>chop_if_long</c> and the list is what did not fit:
     ///         <code>
     /// class LongBaseClassNameHereOkAndMore
@@ -1251,7 +1251,7 @@ public sealed class BreakPlan {
         var outer = NewGroup();
         var broken = false;
 
-        // ⚠ `wrap_before_extends_colon = true` makes the `:` itself a break point, which is the only
+        // ⚠ `skala_wrap_before_extends_colon = true` makes the `:` itself a break point, which is the only
         // way a base list with a single base type can wrap at all. At `false` — the export's value —
         // the gap is left unplanned rather than marked flat: a `false` placement key is permissive
         // and does not remove a break the author wrote, which is the correction docs/plan/05 records
@@ -1302,11 +1302,11 @@ public sealed class BreakPlan {
                 continue;
             }
 
-            // ⚠ `wrap_before_comma`, the general key, and NOT
+            // ⚠ `skala_wrap_before_comma`, the general key, and NOT
             // `wrap_before_comma_in_base_clause`. Measured, one key at a time on this fixture: the
             // base-clause-specific spelling moves nothing at either value — neither the unprefixed
             // one the export writes nor a `csharp_`-prefixed one — while
-            // `resharper_csharp_wrap_before_comma = true` returns
+            // `skala_wrap_before_comma = true` returns
             //     class C : Base
             //         , IFirst
             //         , ISecond { }
@@ -1342,7 +1342,7 @@ public sealed class BreakPlan {
     ///     ⚠ The one delimited construct in this file with no wrap-style key of its own, and that is
     ///     measured rather than assumed. The oracle <em>fills</em> a tuple that does not fit — the
     ///     components run to the margin and the rest go to the next line — and
-    ///     <c>wrap_arguments_style = chop_always</c> does not change it, so the style is
+    ///     <c>skala_wrap_arguments_style = chop_always</c> does not change it, so the style is
     ///     <see cref="WrapStyle.WrapIfLong" /> unconditionally rather than borrowed from the argument
     ///     list's key:
     ///     <code>
@@ -1350,11 +1350,11 @@ public sealed class BreakPlan {
     ///     FifthComponentName: 5);
     ///     </code>
     ///     ⚠ Neither delimiter is a break point either: a tuple too wide even for the continuation line
-    ///     keeps <c>(</c> on the first line and <c>)</c> on the last. <c>wrap_before_comma</c> does apply
+    ///     keeps <c>(</c> on the first line and <c>)</c> on the last. <c>skala_wrap_before_comma</c> does apply
     ///     — at <c>true</c> the oracle writes <c>…: 3\n, FourthName: 4</c> — which is why the gap is
     ///     chosen by the same key here as everywhere else.
     ///     <para>
-    ///         <c>align_tuple_components</c> then decides which column the continuation lands on;
+    ///         <c>skala_align_tuple_components</c> then decides which column the continuation lands on;
     ///         <see cref="CSharpDocumentBuilder.VisitDelimited" /> opens that scope. Until this plan existed
     ///         there was no break for it to govern.
     ///     </para>
@@ -1388,12 +1388,12 @@ public sealed class BreakPlan {
         );
 
     /// <summary>
-    ///     <c>wrap_for_stmt_header_style = chop_if_long</c>: a <c>for</c> header that does not fit puts
+    ///     <c>skala_wrap_for_stmt_header_style = chop_if_long</c>: a <c>for</c> header that does not fit puts
     ///     the initializer, the condition and the incrementor each on a line of its own.
     /// </summary>
     /// <remarks>
     ///     ⚠ The break is after the <c>;</c> and there is no key that moves it to the other side — the
-    ///     <c>wrap_before_comma</c> family has no member for a semicolon. Measured at the export's
+    ///     <c>skala_wrap_before_comma</c> family has no member for a semicolon. Measured at the export's
     ///     120-column margin, one key flipped at a time:
     ///     <code>
     /// chop_if_long                              wrap_if_long
@@ -1406,7 +1406,7 @@ public sealed class BreakPlan {
     ///         around the statement. A group around the statement is the whole <c>for</c>, body included,
     ///         so its flat width is unbounded and it would break every time however short the header is.
     ///         See <see cref="inner" />; <see cref="CSharpDocumentBuilder.VisitEmbedded" /> opens it, just
-    ///         inside the scope <c>align_multiline_statement_conditions</c> already puts on the <c>(</c>'s
+    ///         inside the scope <c>skala_align_multiline_statement_conditions</c> already puts on the <c>(</c>'s
     ///         column — which is the column the oracle writes the clauses on, at both values of
     ///         <c>align_multiline_for_stmt</c>.
     ///     </para>
@@ -1488,7 +1488,7 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     A type parameter list at <c>wrap_before_type_parameter_langle = false</c>: a fill inside the
+    ///     A type parameter list at <c>skala_wrap_before_type_parameter_langle = false</c>: a fill inside the
     ///     angle brackets.
     /// </summary>
     /// <remarks>
@@ -1562,8 +1562,8 @@ public sealed class BreakPlan {
 
     /// <summary>
     ///     The <c>where</c> clauses of a generic declaration:
-    ///     <c>wrap_before_first_type_parameter_constraint</c> and
-    ///     <c>wrap_multiple_type_parameter_constraints_style</c>.
+    ///     <c>skala_wrap_before_first_type_parameter_constraint</c> and
+    ///     <c>skala_wrap_multiple_type_parameter_constraints_style</c>.
     /// </summary>
     /// <remarks>
     ///     ⚠ Planned from the <em>declaration</em> and not from the clause, because the construct being
@@ -1571,7 +1571,7 @@ public sealed class BreakPlan {
     ///     are two are in <see cref="ConstraintRun" />; what is decided here is which gap belongs to
     ///     which of them.
     ///     <para>
-    ///         ⚠ At <c>wrap_before_first_type_parameter_constraint = false</c> the first <c>where</c> is
+    ///         ⚠ At <c>skala_wrap_before_first_type_parameter_constraint = false</c> the first <c>where</c> is
     ///         still a break point — it is simply one measured against the first clause alone rather than
     ///         against the whole list. The oracle does move it when the declaration and its first clause do
     ///         not fit together, so reading <c>false</c> as "never break there" loses a break ReSharper
@@ -1582,7 +1582,7 @@ public sealed class BreakPlan {
     void PlanConstraints(SyntaxNode node) {
         var clauses = ConstraintsOf(node);
 
-        // place_type_constraints_on_same_line = false makes every `where` a mandatory break, and the
+        // skala_place_type_constraints_on_same_line = false makes every `where` a mandatory break, and the
         // arm below plans that. Two rules over one gap is one rule too many.
         if (clauses.Count == 0 || !options.PlaceTypeConstraintsOnSameLine) {
             return;
@@ -1606,7 +1606,7 @@ public sealed class BreakPlan {
             innerBroken |= BreaksBefore(where);
         }
 
-        // ⚠ `indent_type_constraints` and not an unconditional level. The clause's own
+        // ⚠ `skala_indent_type_constraints` and not an unconditional level. The clause's own
         // NodeLayout.Continuation arm is what spends it everywhere else, and the run takes the gaps
         // before the `where`s away from that arm — so if the run spent the level unconditionally the
         // key would stop being observable on exactly the shape its fixture pins.
@@ -1659,7 +1659,7 @@ public sealed class BreakPlan {
         };
 
     /// <summary>
-    ///     <c>wrap_multiple_declaration_style = chop_if_long</c>: <c>int a = 1, b = 2, c = 3;</c> puts
+    ///     <c>skala_wrap_multiple_declaration_style = chop_if_long</c>: <c>int a = 1, b = 2, c = 3;</c> puts
     ///     one declarator per line when it does not fit.
     /// </summary>
     void PlanDeclarators(VariableDeclarationSyntax node) {
@@ -1689,13 +1689,13 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     <c>wrap_chained_method_calls = chop_if_long</c>: every <c>.</c> of a chain that does not fit
+    ///     <c>skala_wrap_chained_method_calls = chop_if_long</c>: every <c>.</c> of a chain that does not fit
     ///     starts a line, and the first call does not.
     /// </summary>
     /// <remarks>
     ///     ⚠ Three keys decide which dots are points, and the answer is not "all of them".
-    ///     <c>wrap_before_first_method_call = false</c> keeps <c>source.Where(…)</c> together, so the
-    ///     first invoked dot is not a point; <c>wrap_after_property_in_chained_method_calls = false</c>
+    ///     <c>skala_wrap_before_first_method_call = false</c> keeps <c>source.Where(…)</c> together, so the
+    ///     first invoked dot is not a point; <c>skala_wrap_after_property_in_chained_method_calls = false</c>
     ///     means a dot that reaches a property rather than a method is not one either. Verified against
     ///     the oracle, which writes
     ///     <code>
@@ -1713,7 +1713,7 @@ public sealed class BreakPlan {
             return;
         }
 
-        // wrap_before_first_method_call = false: the first invoked dot stays with its receiver.
+        // skala_wrap_before_first_method_call = false: the first invoked dot stays with its receiver.
         // ⚠ The list is built outermost-first by the walk below, so the *last* entry is the first
         // dot of the chain.
         var first = options.WrapBeforeFirstMethodCall ? dots.Count : dots.Count - 1;
@@ -1742,7 +1742,7 @@ public sealed class BreakPlan {
                 // the `?`, because that is where a break before the link belongs, and the token
                 // after the `?` is the `.` rather than the name — so pointing at it blindly gives
                 // `…(more)?\n.Where(…)` where the oracle writes `…(more)?.\n Where(…)`. Measured:
-                // it took `resharper_csharp_wrap_after_dot_in_method_calls`, Tier A and Conformant,
+                // it took `skala_wrap_after_dot_in_method_calls`, Tier A and Conformant,
                 // to Divergent at its non-export value.
                 var dot = dots[i];
                 Flat(dot);
@@ -1808,7 +1808,7 @@ public sealed class BreakPlan {
             switch (node) {
                 case InvocationExpressionSyntax invocation:
                     if (invocation.Expression is MemberAccessExpressionSyntax access) {
-                        // ⚠ `wrap_after_property_in_chained_method_calls = false` does not mean "a
+                        // ⚠ `skala_wrap_after_property_in_chained_method_calls = false` does not mean "a
                         // property's dot is not a break point"; it means the break lands *before*
                         // the property rather than after it, so the property travels with the call
                         // it feeds. The oracle writes
@@ -1874,7 +1874,7 @@ public sealed class BreakPlan {
 
                 case MemberAccessExpressionSyntax member:
                     // ⚠ A dot that reaches a property is not a point in this export
-                    // (`wrap_after_property_in_chained_method_calls = false`), but it is still part
+                    // (`skala_wrap_after_property_in_chained_method_calls = false`), but it is still part
                     // of the chain and its receiver still has to be walked.
                     if (options.WrapAfterPropertyInChainedMethodCalls) {
                         dots.Add(member.OperatorToken);
@@ -1914,7 +1914,7 @@ public sealed class BreakPlan {
     ///     <para>
     ///         ⚠ Invisible until SK-DIV-0030 was fixed, and then only for a chain whose <em>receiver</em>
     ///         contributes a dot of its own. With a bare identifier receiver the binding's dot is the last
-    ///         entry in the list, which <c>wrap_before_first_method_call = false</c> holds back, so it is
+    ///         entry in the list, which <c>skala_wrap_before_first_method_call = false</c> holds back, so it is
     ///         never a break point and the token choice cannot be observed. It is observable the moment
     ///         the receiver is itself a chain — the shape three of Skala's own files carry.
     ///     </para>
@@ -1932,7 +1932,7 @@ public sealed class BreakPlan {
     ///     ⚠ It exists because the two behaviours the export asks for cannot live in one group.
     ///     <c>keep_user_linebreaks = true</c> means <c>a &amp;&amp; b\n || c</c> comes back with exactly
     ///     that one break, so each operator keeps its own <see cref="GroupMode.Preserve" /> group;
-    ///     <c>wrap_chained_binary_expressions = chop_if_long</c> means a chain that does not fit on one
+    ///     <c>skala_wrap_chained_binary_expressions = chop_if_long</c> means a chain that does not fit on one
     ///     line breaks at every operator at once, which no per-operator group can decide. This group
     ///     spans the whole chain, holds no break points of its own, and the operator groups read its
     ///     resolved mode through <see cref="GroupFacts.BreaksWithOwner" />.
@@ -1980,7 +1980,7 @@ public sealed class BreakPlan {
             // around it would have spent; a binary expression chain spends only the latter. See
             // GroupPlan.OwnLevel and docs/plan/04 § "Indentation".
             //
-            // ⚠ Except as a statement's condition, where `align_multiline_statement_conditions` puts
+            // ⚠ Except as a statement's condition, where `skala_align_multiline_statement_conditions` puts
             // the continuation level and the alignment at the same column and the oracle writes one
             // step, not two:
             //     if (o is IDisposable
@@ -1991,7 +1991,7 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     <c>wrap_before_binary_opsign = true</c>: the operator starts the new line, so the gap before
+    ///     <c>skala_wrap_before_binary_opsign = true</c>: the operator starts the new line, so the gap before
     ///     it is the break point and the gap after it is not one.
     /// </summary>
     /// <remarks>
@@ -2037,7 +2037,7 @@ public sealed class BreakPlan {
     ///         </item>
     ///         <item>Three or more operands always chop, whatever the operands are.</item>
     ///     </list>
-    ///     ⚠ The continuation column is not this rule's business: <c>align_multiline_statement_conditions</c>
+    ///     ⚠ The continuation column is not this rule's business: <c>skala_align_multiline_statement_conditions</c>
     ///     already puts it after the <c>(</c>, which is what the oracle writes for all three statements
     ///     — including <c>} else if (</c> and <c>} while (</c>, whose openers sit further right.
     /// </remarks>
@@ -2300,7 +2300,7 @@ public sealed class BreakPlan {
             SyntaxKind.CaretToken => 7,
             SyntaxKind.BarToken => 8,
             // ⚠ `&&` and `||` are one chain, not two. `a && b || c` is chopped at both operators by
-            // the oracle, which is what `wrap_chained_binary_expressions` means by "chained".
+            // the oracle, which is what `skala_wrap_chained_binary_expressions` means by "chained".
             SyntaxKind.AmpersandAmpersandToken or SyntaxKind.BarBarToken => 9,
             SyntaxKind.QuestionQuestionToken => 10,
             _ => 11
@@ -2340,13 +2340,13 @@ public sealed class BreakPlan {
     ///     <list type="bullet">
     ///         <item>
     ///             A conditional whose tail is <em>not</em> another conditional wraps at its signs —
-    ///             <c>wrap_before_ternary_opsigns</c>'s layout, sized by
-    ///             <c>wrap_ternary_expr_style</c>. <see cref="PlanTernary" />.
+    ///             <c>skala_wrap_before_ternary_opsigns</c>'s layout, sized by
+    ///             <c>skala_wrap_ternary_expr_style</c>. <see cref="PlanTernary" />.
     ///         </item>
     ///         <item>
     ///             A chain of them wraps <em>after each <c>:</c></em>, one member per line, and the two
-    ///             keys above move none of it: flipping <c>wrap_ternary_expr_style</c> to
-    ///             <c>chop_always</c> or <c>wrap_if_long</c>, or <c>wrap_before_ternary_opsigns</c> to
+    ///             keys above move none of it: flipping <c>skala_wrap_ternary_expr_style</c> to
+    ///             <c>chop_always</c> or <c>wrap_if_long</c>, or <c>skala_wrap_before_ternary_opsigns</c> to
     ///             <c>false</c>, returns every chain in the probe byte-identical while it moves the
     ///             single conditional beside them. <see cref="PlanTernaryChain" />.
     ///         </item>
@@ -2449,7 +2449,7 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     <c>wrap_before_ternary_opsigns = true</c>: <c>?</c> and <c>:</c> start their lines.
+    ///     <c>skala_wrap_before_ternary_opsigns = true</c>: <c>?</c> and <c>:</c> start their lines.
     /// </summary>
     void PlanTernary(ConditionalExpressionSyntax node) {
         var group = NewGroup();
@@ -2591,7 +2591,7 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     <c>wrap_before_eq = false</c>: a break around an assignment lands after the <c>=</c>, never
+    ///     <c>skala_wrap_before_eq = false</c>: a break around an assignment lands after the <c>=</c>, never
     ///     before it.
     /// </summary>
     /// <summary>
@@ -2650,12 +2650,12 @@ public sealed class BreakPlan {
     ///         </item>
     ///         <item>
     ///             The author's breaks are kept iff <em>both</em> <c>keep_user_linebreaks</c> and
-    ///             <c>keep_existing_linebreaks</c>: with either off, a query broken one clause per line
+    ///             <c>skala_keep_existing_linebreaks</c>: with either off, a query broken one clause per line
     ///             comes back on one line. A fill therefore pins them rather than re-flowing them, the
     ///             same correction <see cref="PlanList" /> records for a list pattern.
     ///         </item>
     ///         <item>
-    ///             <c>place_linq_into_on_new_line</c> governs the <em>continuation's</em> <c>into</c>
+    ///             <c>skala_place_linq_into_on_new_line</c> governs the <em>continuation's</em> <c>into</c>
     ///             — <c>group … by … into bucket</c> — and not a <c>join … into matches</c>, which the
     ///             oracle leaves on the join's line with the key at <c>true</c> and the query chopped.
     ///             At <c>false</c> the continuation's <c>into</c> is not a point either, and the gap is
@@ -2663,13 +2663,13 @@ public sealed class BreakPlan {
     ///             (docs/plan/05), and the oracle does keep a break the author put in front of it.
     ///         </item>
     ///         <item>
-    ///             <c>align_linq_query</c> needs nothing here. It is
+    ///             <c>skala_align_linq_query</c> needs nothing here. It is
     ///             <see cref="CSharpDocumentBuilder.AlignsFromOwnColumn" />'s already, and what it was
     ///             waiting for is this group: with the clauses breaking, the key moves them from one
     ///             continuation level to the <c>from</c>'s own column.
     ///         </item>
     ///     </list>
-    ///     ⚠ <c>HidesFlatWidthWhenBroken</c>, and it is <c>wrap_before_linq_expression</c> that needs
+    ///     ⚠ <c>HidesFlatWidthWhenBroken</c>, and it is <c>skala_wrap_before_linq_expression</c> that needs
     ///     it. A query the author broke and which may not re-join is certain to break, and the
     ///     <c>=</c> around it has to know: at <c>true</c> the oracle answers
     ///     <c>var q =</c> / <c>from n in xs</c> / … on a query whose own flat width is 37 columns and
@@ -2743,7 +2743,7 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         bool broken;
-        // ⚠ Only one side is planned. `wrap_before_eq = false` says a break the formatter *adds*
+        // ⚠ Only one side is planned. `skala_wrap_before_eq = false` says a break the formatter *adds*
         // goes after the `=`; it does not say a break the author put before it is illegal, and the
         // oracle keeps a break before the `=` exactly as written. Registering the other side as a
         // non-point would re-join it, which is a line the author wrote and nobody asked to remove.
@@ -2778,7 +2778,7 @@ public sealed class BreakPlan {
                 // GroupFacts.PrefersOuterBreak's rule, and it is what makes this key observable.
                 BreaksIfTooLong: true,
 
-                // ⚠ `wrap_before_linq_expression = true` takes the query out of the ordering rule.
+                // ⚠ `skala_wrap_before_linq_expression = true` takes the query out of the ordering rule.
                 // Every other right-hand side is measured by what is left of the line and breaks
                 // only when its own break is the one worth taking; a query under this key breaks
                 // whenever the whole query does not fit, which is what puts `from` on a line of its
@@ -2799,7 +2799,7 @@ public sealed class BreakPlan {
     ///     body shares the declaration's line exactly when the declaration fits on one.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <c>keep_existing_expr_member_arrangement = false</c> means a break the author put after the
+    ///     ⚠ <c>skala_keep_existing_expr_member_arrangement = false</c> means a break the author put after the
     ///     <c>=&gt;</c> is <em>not</em> preserved: a short expression-bodied member the author had split
     ///     over two lines is re-joined. It is one of the few places in this export where the formatter
     ///     removes a line break the author chose, and it is measured, not assumed —
@@ -2862,7 +2862,7 @@ public sealed class BreakPlan {
                 PrefersOuterBreak: node.Expression is CollectionExpressionSyntax,
                 BreaksWithOwner: ownerGroup >= 0,
                 Owner: ownerGroup,
-                // keep_existing_expr_member_arrangement = false: a break the author wrote after the
+                // skala_keep_existing_expr_member_arrangement = false: a break the author wrote after the
                 // arrow is removed when the declaration fits on one line, and left alone when it
                 // does not. Adding one where the author wrote none is milestone 3's.
                 JoinsIfFits: !options.KeepExistingExprMemberArrangement,
@@ -2875,7 +2875,7 @@ public sealed class BreakPlan {
                 // instead costs 0.12 points of line fidelity on `corpus/real/` and two of the four
                 // preservation corners, which is how the reading was settled rather than argued.
                 // ⚠ And gated on the keep key, the same way a delimited list's placement key is
-                // (see PlanList): `keep_existing_expr_member_arrangement = true` outranks the
+                // (see PlanList): `skala_keep_existing_expr_member_arrangement = true` outranks the
                 // placement key in *both* directions, so an arrow the author left on the
                 // declaration's line stays there however unbreakable the body is. Asked directly,
                 // `bool P(object o) => o is {\n First: 1\n };` comes back with the arrow where the
@@ -2886,10 +2886,10 @@ public sealed class BreakPlan {
             ),
             true,
 
-            // ⚠ At `wrap_before_arrow_with_expressions = true` the break point IS the gap before the
+            // ⚠ At `skala_wrap_before_arrow_with_expressions = true` the break point IS the gap before the
             // `=>`, and the `=>` is this node's own first token — so the point is written before the
             // group opens, the writer finds the group unresolved, and renders it flat. The same
-            // correction a base list needs under `wrap_before_extends_colon` and a list under
+            // correction a base list needs under `skala_wrap_before_extends_colon` and a list under
             // `wrap_before_*_lpar`; see GroupPlan.LeadingGapInside. Until it was made, `true` never
             // moved the arrow at all and the key's own fixture came back with the declaration
             // whole.
@@ -2898,15 +2898,15 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     <c>place_simple_embedded_statement_on_same_line = if_owner_is_single_line</c>: the statement
+    ///     <c>skala_place_simple_embedded_statement_on_same_line = if_owner_is_single_line</c>: the statement
     ///     shares its owner's line exactly when the owner fits on one.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <c>keep_existing_embedded_arrangement = true</c> in this export, and it outranks the
+    ///     ⚠ <c>skala_keep_existing_embedded_arrangement = true</c> in this export, and it outranks the
     ///     placement key in <em>both</em> directions — which is not what this plan used to say. Asked
     ///     one value at a time over the export, with keep at its own value:
     ///     <code>
-    /// // place_simple_embedded_statement_on_same_line = never, keep = true
+    /// // skala_place_simple_embedded_statement_on_same_line = never, keep = true
     /// if (c) M(c, d);                     ← left joined. `never` does not get to break it.
     /// if (depth &lt; 0) throw new …(…);      ← broken, because the `if` overflows the margin
     ///     </code>
@@ -2984,7 +2984,7 @@ public sealed class BreakPlan {
     ///     section does not fit.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <c>place_simple_case_statement_on_same_line</c> is read and deliberately not applied, which
+    ///     ⚠ <c>skala_place_simple_case_statement_on_same_line</c> is read and deliberately not applied, which
     ///     is a reversal: this plan used to force the break at <c>never</c> and remove it at
     ///     <c>always</c>, and the sweep called the row <c>SPURIOUS</c> because only Skala moved. The key
     ///     is inert under <c>cleanupcode</c>, and it was asked in both directions rather than one:
@@ -3040,7 +3040,7 @@ public sealed class BreakPlan {
     ///     no width test and no <c>keep_user_linebreaks</c> in it: a body with anything in it is broken.
     ///     <para>
     ///         ⚠ Three exclusions, each measured rather than assumed. An <em>empty</em> body stays together
-    ///         (<c>empty_block_style = together</c>). An accessor's body does not break —
+    ///         (<c>skala_empty_block_style = together</c>). An accessor's body does not break —
     ///         <c>get { return _street; }</c> comes back from the oracle exactly as written, and
     ///         <c>public int X { get; set; }</c> is one line and has its own spacing keys. And a lambda's or
     ///         anonymous method's block does not, because the call it is an argument to keeps it on its line:
@@ -3048,7 +3048,7 @@ public sealed class BreakPlan {
     ///     </para>
     ///     <para>
     ///         It is also what makes "single line" a stable property of the output. A member sharing a line
-    ///         with the member before it has no answer to <c>blank_lines_around_single_line_field</c>, which
+    ///         with the member before it has no answer to <c>skala_blank_lines_around_single_line_field</c>, which
     ///         is why <c>constructs/blank-lines/two-members-on-one-line.cs</c> was committed failing at M2.
     ///     </para>
     /// </remarks>
@@ -3084,8 +3084,8 @@ public sealed class BreakPlan {
     /// </summary>
     /// <remarks>
     ///     ⚠ Two keys, and which applies is what the block is the body of.
-    ///     <c>keep_existing_declaration_block_arrangement</c> governs a method's or a local function's;
-    ///     <c>keep_existing_embedded_block_arrangement</c> governs an <c>if</c>'s or a <c>while</c>'s.
+    ///     <c>skala_keep_existing_declaration_block_arrangement</c> governs a method's or a local function's;
+    ///     <c>skala_keep_existing_embedded_block_arrangement</c> governs an <c>if</c>'s or a <c>while</c>'s.
     ///     Both are <c>false</c> in the export, which is why the rule looks unconditional there; set
     ///     either to <c>true</c> and the oracle keeps <c>void M() { Body(); }</c> and
     ///     <c>if (flag) { First(); }</c> exactly as written. The four-way preservation table is what
@@ -3126,7 +3126,7 @@ public sealed class BreakPlan {
     ///     therefore a property of the declaration's whole formatted width, exactly as it is for
     ///     <see cref="PlanExpressionBody" />, and not of the attribute's.
     ///     <para>
-    ///         ⚠ <c>keep_existing_attribute_arrangement = true</c> outranks the key in the joining
+    ///         ⚠ <c>skala_keep_existing_attribute_arrangement = true</c> outranks the key in the joining
     ///         direction only. It says a break the author wrote is not removed; it does not say a break
     ///         may not be added, which is the same reading <see cref="PlanEmbeddedStatement" /> records
     ///         for the embedded-statement pair.
@@ -3148,7 +3148,7 @@ public sealed class BreakPlan {
 
         var placement = AttributePlacement(node);
         if (placement == PlacementStyle.Never) {
-            // keep_existing_attribute_arrangement = true leaves whatever the author wrote.
+            // skala_keep_existing_attribute_arrangement = true leaves whatever the author wrote.
             if (options.KeepExistingAttributeArrangement) {
                 return;
             }
@@ -3160,7 +3160,7 @@ public sealed class BreakPlan {
             return;
         }
 
-        // The joining half. `keep_existing_attribute_arrangement = true` is the author's break
+        // The joining half. `skala_keep_existing_attribute_arrangement = true` is the author's break
         // surviving, so there is nothing to plan.
         if (options.KeepExistingAttributeArrangement || !AttributeRunFitsTheCap(lists)) {
             return;
@@ -3193,7 +3193,7 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     <c>max_attribute_length_for_same_line</c>: an attribute run wider than the cap does not join
+    ///     <c>skala_max_attribute_length_for_same_line</c>: an attribute run wider than the cap does not join
     ///     its owner's line however the placement key is set.
     /// </summary>
     /// <remarks>
@@ -3202,7 +3202,7 @@ public sealed class BreakPlan {
     ///     that reason expired the moment <see cref="PlanAttributes" /> grew its joining half. The
     ///     reading below is measured, at the cap and either side of it:
     ///     <code>
-    /// // max_attribute_length_for_same_line = 6, place_method_attribute_on_same_line = always
+    /// // skala_max_attribute_length_for_same_line = 6, skala_place_method_attribute_on_same_line = always
     /// [Aaa] void Four() { }        // 5 — joined
     /// [Aaaa] void Five() { }       // 6 — joined, so the comparison is inclusive
     /// [Aaaaa]                      // 7 — not joined
@@ -3283,14 +3283,14 @@ public sealed class BreakPlan {
     /// </summary>
     /// <remarks>
     ///     ⚠ This used to route a lambda's and an anonymous method's parameter list to
-    ///     <c>resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement</c>, and the C#
+    ///     <c>skala_keep_existing_lambda_and_anonymous_function_parens_arrangement</c>, and the C#
     ///     formatter does not answer to that key at all. Measured 2026-08-30 against
     ///     <c>jb cleanupcode</c> 2025.2.6 on <c>constructs/preservation/lambda-parens.cs</c>, with the
     ///     author's break inside the lambda's parentheses:
     ///     <code>
     /// keep_existing_lambda_… = false                    unchanged — the break is kept
     /// keep_existing_lambda_… = true                     unchanged
-    /// keep_existing_declaration_parens_arrangement = false   REJOINED
+    /// skala_keep_existing_declaration_parens_arrangement = false   REJOINED
     /// both = false                                      rejoined, and no further
     /// declaration = false, lambda = true                rejoined
     ///     </code>
@@ -3328,7 +3328,7 @@ public sealed class BreakPlan {
     /// <remarks>
     ///     ⚠ The same predicate <see cref="CSharpDocumentBuilder" /> uses to decide which node spends the
     ///     chain's continuation level, and the same one it uses to decide which node opens
-    ///     <c>outdent_dots</c>' column scope; all three must agree, or the group and the indent scopes
+    ///     <c>skala_outdent_dots</c>' column scope; all three must agree, or the group and the indent scopes
     ///     are opened around different nodes.
     /// </remarks>
     internal static bool IsChainRoot(SyntaxNode node) =>

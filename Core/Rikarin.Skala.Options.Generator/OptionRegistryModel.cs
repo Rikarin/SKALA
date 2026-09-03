@@ -24,6 +24,7 @@ internal enum OptionValueKind {
 internal sealed record OptionEntry(
     string Key,
     IReadOnlyList<string> Aliases,
+    IReadOnlyList<string> Export,
     string Language,
     OptionValueKind Kind,
     string? EnumName,
@@ -54,8 +55,29 @@ internal sealed record OptionEntry(
 internal sealed record OptionRegistry(IReadOnlyList<OptionEnum> Enums, IReadOnlyList<OptionEntry> Options);
 
 internal static class Naming {
-    static readonly string[] CSharpGroup = ["ReSharper", "CSharp"];
-    static readonly string[] XmlDocGroup = ["ReSharper", "XmlDoc"];
+    static readonly string[] CSharpGroup = ["Skala"];
+    static readonly string[] XmlDocGroup = ["Skala", "XmlDoc"];
+
+    /// <summary>
+    ///     Every key prefix Skala knows, most specific first.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The single authority.</b> This list used to exist four times — here,
+    ///     <c>OptionResolver.SpecificityPrefixes</c>, <c>ConfigCommands.Family</c> and
+    ///     <c>SweepPlan.Strip</c> — with no two of them agreeing on the whole set and nothing
+    ///     comparing them. Each failed *silently* into a wrong-but-plausible answer rather than into
+    ///     an error: a prefix missing from <c>Family</c> puts an option in a family named after its
+    ///     vendor prefix, one missing from <c>Strip</c> makes <c>--family=space</c> quietly skip it,
+    ///     and one missing here scatters the generated API. The generator emits this list as
+    ///     <c>OptionKeyPrefixes.Ordered</c> so the three runtime call sites read it instead of
+    ///     restating it, and <c>OptionRegistryTests.EveryPrefixConsumer_ReadsTheGeneratedList</c>
+    ///     fails if a fifth copy appears.
+    ///     <para>
+    ///         Order is significance order and is load-bearing: <c>skala_xmldoc_</c> must be tested
+    ///         before <c>skala_</c> or every xmldoc key strips to the wrong stem.
+    ///     </para>
+    /// </remarks>
+    public static readonly string[] Prefixes = ["skala_xmldoc_", "skala_", "csharp_", "dotnet_"];
 
     public static string Pascal(string editorConfigName) {
         var builder = new StringBuilder(editorConfigName.Length);
@@ -75,32 +97,32 @@ internal static class Naming {
     }
 
     /// <summary>
-    ///     The <c>resharper_</c>/<c>csharp_</c>/<c>dotnet_</c> prefix is retained as a group, so
-    ///     <c>resharper_csharp_wrap_arguments_style</c> reads as
-    ///     <c>Options.ReSharper.CSharp.WrapArgumentsStyle</c> (docs/plan/02 § "Naming").
+    ///     The key prefix is retained as a group, so <c>skala_wrap_arguments_style</c> reads as
+    ///     <c>Options.Skala.WrapArgumentsStyle</c> (docs/plan/02 § "Naming").
     /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>skala_</c> is one group where <c>resharper_csharp_</c> and <c>resharper_</c> were two.
+    ///     That merge is safe only because the rename is collision-free over the whole registry —
+    ///     <c>skala_x</c> and <c>skala_xmldoc_x</c> are the one pair that could have collided, and
+    ///     <c>xmldoc</c> keeps its segment for exactly that reason.
+    /// </remarks>
     public static IReadOnlyList<string> GroupPath(string key) =>
         key switch {
-            _ when key.StartsWith("resharper_csharp_", StringComparison.Ordinal) => CSharpGroup,
-            _ when key.StartsWith("resharper_xmldoc_", StringComparison.Ordinal) => XmlDocGroup,
-            _ when key.StartsWith("resharper_", StringComparison.Ordinal) => ["ReSharper"],
+            _ when key.StartsWith("skala_xmldoc_", StringComparison.Ordinal) => XmlDocGroup,
+            _ when key.StartsWith("skala_", StringComparison.Ordinal) => CSharpGroup,
             _ when key.StartsWith("csharp_", StringComparison.Ordinal) => ["CSharp"],
             _ when key.StartsWith("dotnet_", StringComparison.Ordinal) => ["DotNet"],
             _ => ["Standard"]
         };
 
     public static string LeafName(string key) {
-        var path = GroupPath(key);
-        var prefix = path[0] switch {
-            "ReSharper" when path.Count == 2 && path[1] == "CSharp" => "resharper_csharp_",
-            "ReSharper" when path.Count == 2 => "resharper_xmldoc_",
-            "ReSharper" => "resharper_",
-            "CSharp" => "csharp_",
-            "DotNet" => "dotnet_",
-            _ => ""
-        };
+        foreach (var prefix in Prefixes) {
+            if (key.StartsWith(prefix, StringComparison.Ordinal)) {
+                return Pascal(key.Substring(prefix.Length));
+            }
+        }
 
-        return Pascal(key.Substring(prefix.Length));
+        return Pascal(key);
     }
 }
 
@@ -148,6 +170,7 @@ internal static class OptionRegistryReader {
                 new OptionEntry(
                     key,
                     item["aliases"].AsStringList(),
+                    item["export"].AsStringList(),
                     item["language"].AsString() ?? "any",
                     kind,
                     kind switch {

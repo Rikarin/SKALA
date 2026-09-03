@@ -152,7 +152,7 @@ export has. They are not arrangement rules: nothing here goes through the `arran
 each is an ordinary `DiagnosticAnalyzer` in `Rules/Rikarin.Skala.Rules/Cleanup/` under a new
 `Cleanup` category. They sit in the `SK02xx` band because that is where doc 17 puts the family, and
 because `SK0209` — redundant *expression* parentheses, governed by
-`resharper_parentheses_redundancy_style` — was already here to be double-counted against. ⚠ **That
+`skala_parentheses_redundancy_style` — was already here to be double-counted against. ⚠ **That
 double-count was checked rather than assumed.** `RedundantParenthesesRule` matches
 `ParenthesizedExpressionSyntax` and nothing else
 (`Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/RedundancyRules.cs`), while `SK0233`'s three
@@ -854,7 +854,7 @@ reports a *designation* of `_` on a declaration or recursive pattern — `o is s
 worse.** #133 declined the inspection because "`out var _` becomes `out _` only where nothing named
 `_` is in scope, and answering that needs a symbol lookup that would make the whole rule semantic".
 That reads the inspection as the `var _` ⇔ `_` style choice — and **that choice is
-`resharper_csharp_prefer_explicit_discard_declaration`, a tier-A option Skala already performs**
+`skala_prefer_explicit_discard_declaration`, a tier-A option Skala already performs**
 through `SK0217`'s `DiscardDeclarationRule` (`ArgumentStyleRule.cs`), in both directions, against the
 oracle. Shipping it would not have cost `SK0233` its syntactic scope; it would have been one edit
 owned by two ids, which is the double-count doc 17 § "Inspection ids are not concepts" exists to
@@ -2015,7 +2015,7 @@ arm produced it. `CultureAndQueryShapeBatchTests` asserts counts for that reason
 
 `SK3001` `async void` outside an event handler · `SK3002` blocking on async (`.Result`, `.Wait()`,
 `GetAwaiter().GetResult()`) · `SK3003` missing `ConfigureAwait` where the config asks for it
-(`resharper_configure_await_analysis_mode` is in the export) · `SK3004` `CancellationToken` accepted
+(`skala_configure_await_analysis_mode` is in the export) · `SK3004` `CancellationToken` accepted
 and never passed on · `SK3005` fire-and-forget `Task` with no continuation · `SK3006` `async` method
 with no `await` · `SK3007` `Task` returned from a `using` block that disposes what it awaits ·
 `SK3008` lock held across an `await` · `SK3009` `Lazy<T>` without a thread-safety mode in shared
@@ -3145,7 +3145,7 @@ directive. ⚠ **That residue is the wrong half to build a rule on**: a block th
 is a block that adds something besides nesting, which is the one case the proposed rule's own title
 excludes. A new `SK7xxx` rule here would either duplicate `SK0208` or report precisely the blocks that
 are not redundant, so it is not built and the number stays free. ⚠ Note for whoever revisits this:
-`resharper_csharp_braces_redundant` is **tier D**, which here does *not* mean unimplemented —
+`skala_braces_redundant` is **tier D**, which here does *not* mean unimplemented —
 `ArrangementOptions.Ids` collects the key and the rewriter runs. The conformance sweep records it as
 `❌ SPURIOUS`, "Skala moved and the oracle did not", so the tier is about fidelity to `jb cleanupcode`
 rather than about whether the shape is reached. It is reached, which is all this refutation needs; the
@@ -3717,7 +3717,7 @@ overloaded operators and constant-result ranges that could become compiler diagn
 bind the replacement overload and keep the existing slice operation intact.
 
 `SK3003` is report-only and requires explicit `library` mode from the resolved per-file
-`resharper_configure_await_analysis_mode` (or unprefixed alias). It respects existing explicit
+`skala_configure_await_analysis_mode` (or unprefixed alias). It respects existing explicit
 `ConfigureAwait` choices. Missing, disabled and UI mode do not report missing configuration;
 UI mode's redundant-`ConfigureAwait(true)` inspection is a different concept and is not implemented.
 

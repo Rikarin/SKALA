@@ -1,7 +1,7 @@
 [
   {
-    "Primary": "resharper_align_multiline_type_parameter_list",
-    "Secondary": "resharper_csharp_indent_size",
+    "Primary": "skala_align_multiline_type_parameter_list",
+    "Secondary": "skala_indent_size",
     "Fixture": "constructs/breaks/type-parameter-list.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 4,
@@ -47,8 +47,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_align_linq_query",
-    "Secondary": "resharper_csharp_indent_size",
+    "Primary": "skala_align_linq_query",
+    "Secondary": "skala_indent_size",
     "Fixture": "constructs/wrapping/linq-query-alignment.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 4,
@@ -94,8 +94,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_align_multiline_array_and_object_initializer",
-    "Secondary": "resharper_csharp_indent_size",
+    "Primary": "skala_align_multiline_array_and_object_initializer",
+    "Secondary": "skala_indent_size",
     "Fixture": "constructs/wrapping/alignment.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
@@ -141,8 +141,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_align_multiline_binary_expressions_chain",
-    "Secondary": "resharper_csharp_indent_size",
+    "Primary": "skala_align_multiline_binary_expressions_chain",
+    "Secondary": "skala_indent_size",
     "Fixture": "constructs/wrapping/alignment.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
@@ -188,8 +188,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_align_multiline_binary_patterns",
-    "Secondary": "resharper_csharp_indent_size",
+    "Primary": "skala_align_multiline_binary_patterns",
+    "Secondary": "skala_indent_size",
     "Fixture": "constructs/wrapping/alignment.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 4,
@@ -235,8 +235,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_align_multiline_extends_list",
-    "Secondary": "resharper_csharp_indent_size",
+    "Primary": "skala_align_multiline_extends_list",
+    "Secondary": "skala_indent_size",
     "Fixture": "constructs/wrapping/base-list-alignment.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 4,
@@ -282,8 +282,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_align_multiline_list_pattern",
-    "Secondary": "resharper_csharp_indent_size",
+    "Primary": "skala_align_multiline_list_pattern",
+    "Secondary": "skala_indent_size",
     "Fixture": "constructs/wrapping/alignment.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -329,8 +329,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_align_multiline_property_pattern",
-    "Secondary": "resharper_csharp_indent_size",
+    "Primary": "skala_align_multiline_property_pattern",
+    "Secondary": "skala_indent_size",
     "Fixture": "constructs/wrapping/alignment.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -376,9 +376,9 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_align_multiline_statement_conditions",
-    "Secondary": "resharper_csharp_indent_size",
-    "Fixture": "constructs/indentation/resharper_csharp_align_multiline_statement_conditions.cs",
+    "Primary": "skala_align_multiline_statement_conditions",
+    "Secondary": "skala_indent_size",
+    "Fixture": "constructs/indentation/skala_align_multiline_statement_conditions.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
     "SkalaDistinct": 4,
@@ -423,8 +423,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_align_multiline_switch_expression",
-    "Secondary": "resharper_csharp_indent_size",
+    "Primary": "skala_align_multiline_switch_expression",
+    "Secondary": "skala_indent_size",
     "Fixture": "constructs/wrapping/alignment.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 4,
@@ -470,8 +470,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_align_multiple_declaration",
-    "Secondary": "resharper_csharp_indent_size",
+    "Primary": "skala_align_multiple_declaration",
+    "Secondary": "skala_indent_size",
     "Fixture": "constructs/alignment/align-declaration.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
@@ -517,8 +517,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_align_tuple_components",
-    "Secondary": "resharper_csharp_indent_size",
+    "Primary": "skala_align_tuple_components",
+    "Secondary": "skala_indent_size",
     "Fixture": "constructs/wrapping/tuple-components.cs",
     "Outcome": "InteractionOnly",
     "OracleDistinct": 4,
@@ -564,8 +564,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_attribute_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_attribute_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/preservation/attributes.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -611,8 +611,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_declaration_block_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_declaration_block_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/preservation/declaration-blocks.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -658,8 +658,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_declaration_parens_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_declaration_parens_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/preservation/declaration-parens.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
@@ -705,8 +705,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_embedded_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_embedded_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/placement/embedded-statements.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -752,8 +752,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_embedded_block_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_embedded_block_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/preservation/embedded-blocks.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -799,8 +799,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_enum_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_enum_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/breaks/enum-members.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -846,8 +846,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_expr_member_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_expr_member_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/placement/expression-bodies.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -893,8 +893,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_invocation_parens_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_invocation_parens_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/preservation/invocation-parens.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
@@ -940,8 +940,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_list_patterns_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_list_patterns_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/wrapping/patterns.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 2,
@@ -987,8 +987,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_primary_constructor_declaration_parens_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/preservation/primary-constructor-single.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -1034,8 +1034,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_property_patterns_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_property_patterns_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/wrapping/patterns.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 2,
@@ -1081,8 +1081,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_keep_existing_switch_expression_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_switch_expression_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/wrapping/switch-expression.cs",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -1128,8 +1128,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_after_declaration_lpar",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_after_declaration_lpar",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/preservation/lambda-parens.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 3,
@@ -1193,8 +1193,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_after_dot_in_method_calls",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_after_dot_in_method_calls",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/chained-calls.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 5,
@@ -1258,8 +1258,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_after_invocation_lpar",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_after_invocation_lpar",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/invocation-lpar-rpar.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 3,
@@ -1323,8 +1323,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_after_primary_constructor_declaration_lpar",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_after_primary_constructor_declaration_lpar",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/preservation/primary-constructor-parens.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 3,
@@ -1388,8 +1388,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_after_property_in_chained_method_calls",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_after_property_in_chained_method_calls",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/chained-calls.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -1453,8 +1453,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_arguments_style",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_arguments_style",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/blank-lines/a-top-level-program.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 3,
@@ -1545,8 +1545,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_array_initializer_style",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_array_initializer_style",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/initializers.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 6,
@@ -1637,8 +1637,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_arrow_with_expressions",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_arrow_with_expressions",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/switch-expression-arms.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -1702,8 +1702,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_binary_opsign",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_binary_opsign",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/binary-operators.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -1767,8 +1767,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_binary_pattern_op",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_binary_pattern_op",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/binary-patterns.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 4,
@@ -1832,8 +1832,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_comma",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_comma",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/invocation-lpar-rpar.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -1897,8 +1897,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_declaration_lpar",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_declaration_lpar",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/paren-placement.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -1962,8 +1962,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_declaration_rpar",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_declaration_rpar",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/preservation/lambda-parens.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 4,
@@ -2027,8 +2027,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_eq",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_eq",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/around-eq.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 5,
@@ -2092,8 +2092,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_extends_colon",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_extends_colon",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/base-list.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 5,
@@ -2157,8 +2157,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_first_method_call",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_first_method_call",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/chained-calls.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -2222,8 +2222,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_first_type_parameter_constraint",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_first_type_parameter_constraint",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/type-parameter-constraints.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -2287,8 +2287,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_invocation_lpar",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_invocation_lpar",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/paren-placement.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -2352,8 +2352,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_invocation_rpar",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_invocation_rpar",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/invocation-lpar-rpar.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -2417,8 +2417,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_linq_expression",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_linq_expression",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/linq-query.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 5,
@@ -2482,8 +2482,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_primary_constructor_declaration_lpar",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_primary_constructor_declaration_lpar",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/paren-placement.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -2547,8 +2547,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_primary_constructor_declaration_rpar",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_primary_constructor_declaration_rpar",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/preservation/primary-constructor-parens.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -2612,8 +2612,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_ternary_opsigns",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_ternary_opsigns",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/ternary.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -2677,8 +2677,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_before_type_parameter_langle",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_type_parameter_langle",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/type-parameter-list.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 5,
@@ -2742,8 +2742,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_chained_binary_expressions",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_chained_binary_expressions",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/binary-chains.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -2807,8 +2807,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_chained_binary_patterns",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_chained_binary_patterns",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/binary-chains.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 4,
@@ -2872,8 +2872,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_chained_method_calls",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_chained_method_calls",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/chained-calls.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 5,
@@ -2964,8 +2964,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_enum_declaration",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_enum_declaration",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/enum-members.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 2,
@@ -3056,8 +3056,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_extends_list_style",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_extends_list_style",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/base-list.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 5,
@@ -3148,8 +3148,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_for_stmt_header_style",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_for_stmt_header_style",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/for-header.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 6,
@@ -3240,8 +3240,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_lines",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_lines",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/base-list.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 3,
@@ -3305,8 +3305,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_list_pattern",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_list_pattern",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/patterns.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 2,
@@ -3397,8 +3397,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_multiple_declaration_style",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_multiple_declaration_style",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/declarators.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 3,
@@ -3489,8 +3489,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_multiple_type_parameter_constraints_style",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_multiple_type_parameter_constraints_style",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/type-parameter-constraints.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 5,
@@ -3581,8 +3581,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_parameters_style",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_parameters_style",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/blank-lines/after-a-block-statement.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 3,
@@ -3673,8 +3673,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_primary_constructor_parameters_style",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_primary_constructor_parameters_style",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/constructor-initializer.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 3,
@@ -3765,8 +3765,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_property_pattern",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_property_pattern",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/patterns.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 3,
@@ -3857,8 +3857,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_switch_expression",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_switch_expression",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/breaks/switch-expression-arms.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 3,
@@ -3949,8 +3949,8 @@
     ]
   },
   {
-    "Primary": "resharper_csharp_wrap_ternary_expr_style",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_ternary_expr_style",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/ternary.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 3,
@@ -4041,8 +4041,8 @@
     ]
   },
   {
-    "Primary": "resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement",
-    "Secondary": "resharper_keep_user_linebreaks",
+    "Primary": "skala_keep_existing_lambda_and_anonymous_function_parens_arrangement",
+    "Secondary": "skala_keep_user_linebreaks",
     "Fixture": "constructs/preservation/lambda-parens.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 2,
@@ -4088,8 +4088,8 @@
     ]
   },
   {
-    "Primary": "resharper_wrap_after_expression_lbrace",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_after_expression_lbrace",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/initializers.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 3,
@@ -4153,8 +4153,8 @@
     ]
   },
   {
-    "Primary": "resharper_wrap_before_comma_in_base_clause",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_comma_in_base_clause",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/base-list.cs",
     "Outcome": "BaselineDivergent",
     "OracleDistinct": 3,
@@ -4218,8 +4218,8 @@
     ]
   },
   {
-    "Primary": "resharper_wrap_before_expression_rbrace",
-    "Secondary": "resharper_csharp_max_line_length",
+    "Primary": "skala_wrap_before_expression_rbrace",
+    "Secondary": "skala_max_line_length",
     "Fixture": "constructs/wrapping/initializers.cs",
     "Outcome": "Inherited",
     "OracleDistinct": 3,

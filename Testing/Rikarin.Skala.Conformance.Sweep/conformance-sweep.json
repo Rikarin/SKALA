@@ -688,7 +688,7 @@
     ]
   },
   {
-    "Key": "resharper_align_multiline_type_parameter_list",
+    "Key": "skala_align_multiline_type_parameter_list",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -711,7 +711,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_accessor_owner_body",
+    "Key": "skala_accessor_owner_body",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
@@ -740,7 +740,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_align_linq_query",
+    "Key": "skala_align_linq_query",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -763,7 +763,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_align_multiline_array_and_object_initializer",
+    "Key": "skala_align_multiline_array_and_object_initializer",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -786,7 +786,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_align_multiline_binary_expressions_chain",
+    "Key": "skala_align_multiline_binary_expressions_chain",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -809,7 +809,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_align_multiline_binary_patterns",
+    "Key": "skala_align_multiline_binary_patterns",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -832,7 +832,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_align_multiline_extends_list",
+    "Key": "skala_align_multiline_extends_list",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -855,7 +855,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_align_multiline_list_pattern",
+    "Key": "skala_align_multiline_list_pattern",
     "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
@@ -878,7 +878,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_align_multiline_property_pattern",
+    "Key": "skala_align_multiline_property_pattern",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -901,13 +901,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_align_multiline_statement_conditions",
+    "Key": "skala_align_multiline_statement_conditions",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_align_multiline_statement_conditions.cs",
+    "Fixture": "constructs/indentation/skala_align_multiline_statement_conditions.cs",
     "Values": [
       {
         "Value": "true",
@@ -924,7 +924,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_align_multiline_switch_expression",
+    "Key": "skala_align_multiline_switch_expression",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -947,7 +947,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_align_multiple_declaration",
+    "Key": "skala_align_multiple_declaration",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -970,7 +970,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_align_tuple_components",
+    "Key": "skala_align_tuple_components",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -993,13 +993,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_allow_comment_after_lbrace",
+    "Key": "skala_allow_comment_after_lbrace",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/braces/resharper_csharp_allow_comment_after_lbrace.cs",
+    "Fixture": "constructs/braces/skala_allow_comment_after_lbrace.cs",
     "Values": [
       {
         "Value": "true",
@@ -1016,7 +1016,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_arguments_anonymous_function",
+    "Key": "skala_arguments_anonymous_function",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -1039,7 +1039,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_arguments_literal",
+    "Key": "skala_arguments_literal",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -1062,7 +1062,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_arguments_named",
+    "Key": "skala_arguments_named",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -1085,7 +1085,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_arguments_other",
+    "Key": "skala_arguments_other",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -1108,7 +1108,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_arguments_skip_single",
+    "Key": "skala_arguments_skip_single",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -1131,7 +1131,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_arguments_string_literal",
+    "Key": "skala_arguments_string_literal",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -1154,13 +1154,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_after_block_statements",
+    "Key": "skala_blank_lines_after_block_statements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_after_block_statements.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_after_block_statements.cs",
     "Values": [
       {
         "Value": "1",
@@ -1177,13 +1177,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_after_case",
+    "Key": "skala_blank_lines_after_case",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_after_case.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_after_case.cs",
     "Values": [
       {
         "Value": "0",
@@ -1206,13 +1206,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_after_control_transfer_statements",
+    "Key": "skala_blank_lines_after_control_transfer_statements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_after_control_transfer_statements.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_after_control_transfer_statements.cs",
     "Values": [
       {
         "Value": "0",
@@ -1235,13 +1235,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_after_file_scoped_namespace_directive",
+    "Key": "skala_blank_lines_after_file_scoped_namespace_directive",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_after_file_scoped_namespace_directive.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_after_file_scoped_namespace_directive.cs",
     "Values": [
       {
         "Value": "1",
@@ -1258,13 +1258,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_after_multiline_statements",
+    "Key": "skala_blank_lines_after_multiline_statements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_after_multiline_statements.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_after_multiline_statements.cs",
     "Values": [
       {
         "Value": "0",
@@ -1287,13 +1287,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_after_start_comment",
+    "Key": "skala_blank_lines_after_start_comment",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_after_start_comment.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_after_start_comment.cs",
     "Values": [
       {
         "Value": "1",
@@ -1310,13 +1310,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_after_using_list",
+    "Key": "skala_blank_lines_after_using_list",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_after_using_list.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_after_using_list.cs",
     "Values": [
       {
         "Value": "1",
@@ -1333,13 +1333,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_accessor",
+    "Key": "skala_blank_lines_around_accessor",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_accessor.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_accessor.cs",
     "Values": [
       {
         "Value": "0",
@@ -1362,13 +1362,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_auto_property",
+    "Key": "skala_blank_lines_around_auto_property",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_auto_property.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_auto_property.cs",
     "Values": [
       {
         "Value": "1",
@@ -1385,13 +1385,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_block_case_section",
+    "Key": "skala_blank_lines_around_block_case_section",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_block_case_section.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_block_case_section.cs",
     "Values": [
       {
         "Value": "0",
@@ -1414,13 +1414,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_field",
+    "Key": "skala_blank_lines_around_field",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_field.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_field.cs",
     "Values": [
       {
         "Value": "1",
@@ -1437,13 +1437,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_invocable",
+    "Key": "skala_blank_lines_around_invocable",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_invocable.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_invocable.cs",
     "Values": [
       {
         "Value": "1",
@@ -1460,13 +1460,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_local_method",
+    "Key": "skala_blank_lines_around_local_method",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_local_method.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_local_method.cs",
     "Values": [
       {
         "Value": "1",
@@ -1483,13 +1483,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_multiline_case_section",
+    "Key": "skala_blank_lines_around_multiline_case_section",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_multiline_case_section.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_multiline_case_section.cs",
     "Values": [
       {
         "Value": "0",
@@ -1512,13 +1512,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_namespace",
+    "Key": "skala_blank_lines_around_namespace",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_namespace.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_namespace.cs",
     "Values": [
       {
         "Value": "1",
@@ -1535,13 +1535,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_property",
+    "Key": "skala_blank_lines_around_property",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_property.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_property.cs",
     "Values": [
       {
         "Value": "1",
@@ -1558,13 +1558,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_region",
+    "Key": "skala_blank_lines_around_region",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_region.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_region.cs",
     "Values": [
       {
         "Value": "1",
@@ -1581,13 +1581,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_single_line_accessor",
+    "Key": "skala_blank_lines_around_single_line_accessor",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_accessor.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_single_line_accessor.cs",
     "Values": [
       {
         "Value": "0",
@@ -1610,13 +1610,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_single_line_auto_property",
+    "Key": "skala_blank_lines_around_single_line_auto_property",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_auto_property.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_single_line_auto_property.cs",
     "Values": [
       {
         "Value": "0",
@@ -1639,13 +1639,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_single_line_field",
+    "Key": "skala_blank_lines_around_single_line_field",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_field.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_single_line_field.cs",
     "Values": [
       {
         "Value": "0",
@@ -1668,13 +1668,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_single_line_invocable",
+    "Key": "skala_blank_lines_around_single_line_invocable",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_invocable.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_single_line_invocable.cs",
     "Values": [
       {
         "Value": "0",
@@ -1697,13 +1697,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_single_line_local_method",
+    "Key": "skala_blank_lines_around_single_line_local_method",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_local_method.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_single_line_local_method.cs",
     "Values": [
       {
         "Value": "0",
@@ -1726,13 +1726,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_single_line_property",
+    "Key": "skala_blank_lines_around_single_line_property",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
     "SkalaDistinct": 1,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_property.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_single_line_property.cs",
     "Values": [
       {
         "Value": "0",
@@ -1755,13 +1755,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_single_line_type",
+    "Key": "skala_blank_lines_around_single_line_type",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_type.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_single_line_type.cs",
     "Values": [
       {
         "Value": "1",
@@ -1778,13 +1778,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_around_type",
+    "Key": "skala_blank_lines_around_type",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_type.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_around_type.cs",
     "Values": [
       {
         "Value": "1",
@@ -1801,13 +1801,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_before_block_statements",
+    "Key": "skala_blank_lines_before_block_statements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_before_block_statements.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_before_block_statements.cs",
     "Values": [
       {
         "Value": "0",
@@ -1830,13 +1830,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_before_case",
+    "Key": "skala_blank_lines_before_case",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_before_case.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_before_case.cs",
     "Values": [
       {
         "Value": "0",
@@ -1859,13 +1859,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_before_control_transfer_statements",
+    "Key": "skala_blank_lines_before_control_transfer_statements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_before_control_transfer_statements.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_before_control_transfer_statements.cs",
     "Values": [
       {
         "Value": "0",
@@ -1888,13 +1888,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_before_multiline_statements",
+    "Key": "skala_blank_lines_before_multiline_statements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_before_multiline_statements.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_before_multiline_statements.cs",
     "Values": [
       {
         "Value": "0",
@@ -1917,13 +1917,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_before_single_line_comment",
+    "Key": "skala_blank_lines_before_single_line_comment",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_before_single_line_comment.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_before_single_line_comment.cs",
     "Values": [
       {
         "Value": "0",
@@ -1946,13 +1946,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_inside_namespace",
+    "Key": "skala_blank_lines_inside_namespace",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_inside_namespace.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_inside_namespace.cs",
     "Values": [
       {
         "Value": "0",
@@ -1975,13 +1975,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_inside_region",
+    "Key": "skala_blank_lines_inside_region",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_inside_region.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_inside_region.cs",
     "Values": [
       {
         "Value": "1",
@@ -1998,13 +1998,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_blank_lines_inside_type",
+    "Key": "skala_blank_lines_inside_type",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_inside_type.cs",
+    "Fixture": "constructs/blank-lines/skala_blank_lines_inside_type.cs",
     "Values": [
       {
         "Value": "0",
@@ -2027,7 +2027,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_braces_redundant",
+    "Key": "skala_braces_redundant",
     "Tier": "D",
     "Outcome": "Spurious",
     "OracleDistinct": 1,
@@ -2050,7 +2050,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_constructor_or_destructor_body",
+    "Key": "skala_constructor_or_destructor_body",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2073,13 +2073,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_continuous_indent_multiplier",
+    "Key": "skala_continuous_indent_multiplier",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_continuous_indent_multiplier.cs",
+    "Fixture": "constructs/indentation/skala_continuous_indent_multiplier.cs",
     "Values": [
       {
         "Value": "1",
@@ -2096,7 +2096,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_default_value_when_type_evident",
+    "Key": "skala_default_value_when_type_evident",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2119,7 +2119,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_default_value_when_type_not_evident",
+    "Key": "skala_default_value_when_type_not_evident",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2142,13 +2142,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_empty_block_style",
+    "Key": "skala_empty_block_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/braces/resharper_csharp_empty_block_style.cs",
+    "Fixture": "constructs/braces/skala_empty_block_style.cs",
     "Values": [
       {
         "Value": "multiline",
@@ -2171,7 +2171,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_force_chop_compound_do_expression",
+    "Key": "skala_force_chop_compound_do_expression",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2194,7 +2194,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_force_chop_compound_if_expression",
+    "Key": "skala_force_chop_compound_if_expression",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2217,7 +2217,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_force_chop_compound_while_expression",
+    "Key": "skala_force_chop_compound_while_expression",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2240,13 +2240,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_inside_namespace",
+    "Key": "skala_indent_inside_namespace",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_inside_namespace.cs",
+    "Fixture": "constructs/indentation/skala_indent_inside_namespace.cs",
     "Values": [
       {
         "Value": "true",
@@ -2263,7 +2263,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_invocation_pars",
+    "Key": "skala_indent_invocation_pars",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 4,
@@ -2298,7 +2298,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_method_decl_pars",
+    "Key": "skala_indent_method_decl_pars",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 4,
@@ -2333,13 +2333,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_nested_fixed_stmt",
+    "Key": "skala_indent_nested_fixed_stmt",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_nested_fixed_stmt.cs",
+    "Fixture": "constructs/indentation/skala_indent_nested_fixed_stmt.cs",
     "Values": [
       {
         "Value": "true",
@@ -2356,13 +2356,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_nested_for_stmt",
+    "Key": "skala_indent_nested_for_stmt",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_nested_for_stmt.cs",
+    "Fixture": "constructs/indentation/skala_indent_nested_for_stmt.cs",
     "Values": [
       {
         "Value": "true",
@@ -2379,13 +2379,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_nested_foreach_stmt",
+    "Key": "skala_indent_nested_foreach_stmt",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_nested_foreach_stmt.cs",
+    "Fixture": "constructs/indentation/skala_indent_nested_foreach_stmt.cs",
     "Values": [
       {
         "Value": "true",
@@ -2402,13 +2402,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_nested_lock_stmt",
+    "Key": "skala_indent_nested_lock_stmt",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_nested_lock_stmt.cs",
+    "Fixture": "constructs/indentation/skala_indent_nested_lock_stmt.cs",
     "Values": [
       {
         "Value": "true",
@@ -2425,13 +2425,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_nested_usings_stmt",
+    "Key": "skala_indent_nested_usings_stmt",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_nested_usings_stmt.cs",
+    "Fixture": "constructs/indentation/skala_indent_nested_usings_stmt.cs",
     "Values": [
       {
         "Value": "true",
@@ -2448,13 +2448,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_nested_while_stmt",
+    "Key": "skala_indent_nested_while_stmt",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_nested_while_stmt.cs",
+    "Fixture": "constructs/indentation/skala_indent_nested_while_stmt.cs",
     "Values": [
       {
         "Value": "true",
@@ -2471,7 +2471,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_pars",
+    "Key": "skala_indent_pars",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2506,13 +2506,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_preprocessor_if",
+    "Key": "skala_indent_preprocessor_if",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 4,
     "SkalaDistinct": 4,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_preprocessor_if.cs",
+    "Fixture": "constructs/indentation/skala_indent_preprocessor_if.cs",
     "Values": [
       {
         "Value": "no_indent",
@@ -2541,13 +2541,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_preprocessor_other",
+    "Key": "skala_indent_preprocessor_other",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 4,
     "SkalaDistinct": 4,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_preprocessor_other.cs",
+    "Fixture": "constructs/indentation/skala_indent_preprocessor_other.cs",
     "Values": [
       {
         "Value": "no_indent",
@@ -2576,13 +2576,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_preprocessor_region",
+    "Key": "skala_indent_preprocessor_region",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_preprocessor_region.cs",
+    "Fixture": "constructs/indentation/skala_indent_preprocessor_region.cs",
     "Values": [
       {
         "Value": "no_indent",
@@ -2611,7 +2611,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_primary_constructor_decl_pars",
+    "Key": "skala_indent_primary_constructor_decl_pars",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2646,13 +2646,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_raw_literal_string",
+    "Key": "skala_indent_raw_literal_string",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/trivia/resharper_csharp_indent_raw_literal_string.cs",
+    "Fixture": "constructs/trivia/skala_indent_raw_literal_string.cs",
     "Values": [
       {
         "Value": "align",
@@ -2675,13 +2675,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_size",
+    "Key": "skala_indent_size",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_size.cs",
+    "Fixture": "constructs/indentation/skala_indent_size.cs",
     "Values": [
       {
         "Value": "4",
@@ -2698,13 +2698,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_style",
+    "Key": "skala_indent_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_style.cs",
+    "Fixture": "constructs/indentation/skala_indent_style.cs",
     "Values": [
       {
         "Value": "tab",
@@ -2721,13 +2721,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_type_constraints",
+    "Key": "skala_indent_type_constraints",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_type_constraints.cs",
+    "Fixture": "constructs/indentation/skala_indent_type_constraints.cs",
     "Values": [
       {
         "Value": "true",
@@ -2744,7 +2744,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_typearg_angles",
+    "Key": "skala_indent_typearg_angles",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2779,7 +2779,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_indent_typeparam_angles",
+    "Key": "skala_indent_typeparam_angles",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2814,13 +2814,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_insert_final_newline",
+    "Key": "skala_insert_final_newline",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/file/resharper_csharp_insert_final_newline.cs",
+    "Fixture": "constructs/file/skala_insert_final_newline.cs",
     "Values": [
       {
         "Value": "true",
@@ -2837,7 +2837,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_assignments",
+    "Key": "skala_int_align_assignments",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2860,7 +2860,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_comments",
+    "Key": "skala_int_align_comments",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2883,7 +2883,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_fields",
+    "Key": "skala_int_align_fields",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2906,7 +2906,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_invocations",
+    "Key": "skala_int_align_invocations",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2929,7 +2929,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_methods",
+    "Key": "skala_int_align_methods",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2952,7 +2952,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_nested_ternary",
+    "Key": "skala_int_align_nested_ternary",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2975,7 +2975,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_parameters",
+    "Key": "skala_int_align_parameters",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -2998,7 +2998,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_properties",
+    "Key": "skala_int_align_properties",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3021,7 +3021,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_property_patterns",
+    "Key": "skala_int_align_property_patterns",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3044,7 +3044,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_switch_expressions",
+    "Key": "skala_int_align_switch_expressions",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3067,7 +3067,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_switch_sections",
+    "Key": "skala_int_align_switch_sections",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3090,7 +3090,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_int_align_variables",
+    "Key": "skala_int_align_variables",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3113,13 +3113,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_blank_lines_in_code",
+    "Key": "skala_keep_blank_lines_in_code",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_keep_blank_lines_in_code.cs",
+    "Fixture": "constructs/blank-lines/skala_keep_blank_lines_in_code.cs",
     "Values": [
       {
         "Value": "2",
@@ -3142,13 +3142,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_blank_lines_in_declarations",
+    "Key": "skala_keep_blank_lines_in_declarations",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_keep_blank_lines_in_declarations.cs",
+    "Fixture": "constructs/blank-lines/skala_keep_blank_lines_in_declarations.cs",
     "Values": [
       {
         "Value": "2",
@@ -3171,7 +3171,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_attribute_arrangement",
+    "Key": "skala_keep_existing_attribute_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3194,7 +3194,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_declaration_block_arrangement",
+    "Key": "skala_keep_existing_declaration_block_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3217,7 +3217,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_declaration_parens_arrangement",
+    "Key": "skala_keep_existing_declaration_parens_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3240,7 +3240,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_embedded_arrangement",
+    "Key": "skala_keep_existing_embedded_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3263,7 +3263,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_embedded_block_arrangement",
+    "Key": "skala_keep_existing_embedded_block_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3286,7 +3286,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_enum_arrangement",
+    "Key": "skala_keep_existing_enum_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3309,7 +3309,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_expr_member_arrangement",
+    "Key": "skala_keep_existing_expr_member_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3332,7 +3332,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_invocation_parens_arrangement",
+    "Key": "skala_keep_existing_invocation_parens_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3355,7 +3355,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_linebreaks",
+    "Key": "skala_keep_existing_linebreaks",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3378,7 +3378,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_list_patterns_arrangement",
+    "Key": "skala_keep_existing_list_patterns_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3401,7 +3401,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement",
+    "Key": "skala_keep_existing_primary_constructor_declaration_parens_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3424,7 +3424,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_property_patterns_arrangement",
+    "Key": "skala_keep_existing_property_patterns_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3447,7 +3447,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_existing_switch_expression_arrangement",
+    "Key": "skala_keep_existing_switch_expression_arrangement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3470,7 +3470,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_keep_nontrivial_alias",
+    "Key": "skala_keep_nontrivial_alias",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3493,7 +3493,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_local_function_body",
+    "Key": "skala_local_function_body",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3516,7 +3516,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_max_array_initializer_elements_on_line",
+    "Key": "skala_max_array_initializer_elements_on_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3545,7 +3545,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_max_enum_members_on_line",
+    "Key": "skala_max_enum_members_on_line",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
@@ -3568,7 +3568,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_max_formal_parameters_on_line",
+    "Key": "skala_max_formal_parameters_on_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3597,7 +3597,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_max_initializer_elements_on_line",
+    "Key": "skala_max_initializer_elements_on_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3626,7 +3626,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_max_invocation_arguments_on_line",
+    "Key": "skala_max_invocation_arguments_on_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3655,7 +3655,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_max_line_length",
+    "Key": "skala_max_line_length",
     "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 3,
@@ -3684,7 +3684,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_max_primary_constructor_parameters_on_line",
+    "Key": "skala_max_primary_constructor_parameters_on_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3713,7 +3713,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_method_or_operator_body",
+    "Key": "skala_method_or_operator_body",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3736,13 +3736,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_new_line_before_while",
+    "Key": "skala_new_line_before_while",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/braces/resharper_csharp_new_line_before_while.cs",
+    "Fixture": "constructs/braces/skala_new_line_before_while.cs",
     "Values": [
       {
         "Value": "true",
@@ -3759,7 +3759,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_null_checking_pattern_style",
+    "Key": "skala_null_checking_pattern_style",
     "Tier": "D",
     "Outcome": "Spurious",
     "OracleDistinct": 1,
@@ -3782,7 +3782,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_object_creation_when_type_evident",
+    "Key": "skala_object_creation_when_type_evident",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3805,7 +3805,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_object_creation_when_type_not_evident",
+    "Key": "skala_object_creation_when_type_not_evident",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3828,7 +3828,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_outdent_binary_ops",
+    "Key": "skala_outdent_binary_ops",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3851,7 +3851,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_outdent_binary_pattern_ops",
+    "Key": "skala_outdent_binary_pattern_ops",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3874,7 +3874,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_outdent_dots",
+    "Key": "skala_outdent_dots",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3897,13 +3897,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_outdent_statement_labels",
+    "Key": "skala_outdent_statement_labels",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_outdent_statement_labels.cs",
+    "Fixture": "constructs/indentation/skala_outdent_statement_labels.cs",
     "Values": [
       {
         "Value": "true",
@@ -3920,7 +3920,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_parentheses_redundancy_style",
+    "Key": "skala_parentheses_redundancy_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3943,7 +3943,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_accessor_attribute_on_same_line",
+    "Key": "skala_place_accessor_attribute_on_same_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -3972,7 +3972,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_accessorholder_attribute_on_same_line",
+    "Key": "skala_place_accessorholder_attribute_on_same_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4001,13 +4001,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_comments_at_first_column",
+    "Key": "skala_place_comments_at_first_column",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
     "SkalaDistinct": 1,
     "BaselineAgrees": true,
-    "Fixture": "constructs/trivia/resharper_csharp_place_comments_at_first_column.cs",
+    "Fixture": "constructs/trivia/skala_place_comments_at_first_column.cs",
     "Values": [
       {
         "Value": "true",
@@ -4024,7 +4024,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_constructor_initializer_on_same_line",
+    "Key": "skala_place_constructor_initializer_on_same_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4047,7 +4047,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_expr_accessor_on_single_line",
+    "Key": "skala_place_expr_accessor_on_single_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4076,7 +4076,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_expr_method_on_single_line",
+    "Key": "skala_place_expr_method_on_single_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4105,7 +4105,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_expr_property_on_single_line",
+    "Key": "skala_place_expr_property_on_single_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4134,7 +4134,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_field_attribute_on_same_line",
+    "Key": "skala_place_field_attribute_on_same_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4163,7 +4163,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_linq_into_on_new_line",
+    "Key": "skala_place_linq_into_on_new_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4186,7 +4186,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_method_attribute_on_same_line",
+    "Key": "skala_place_method_attribute_on_same_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4215,7 +4215,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_record_field_attribute_on_same_line",
+    "Key": "skala_place_record_field_attribute_on_same_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4244,7 +4244,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_simple_case_statement_on_same_line",
+    "Key": "skala_place_simple_case_statement_on_same_line",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
@@ -4273,13 +4273,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_simple_embedded_statement_on_same_line",
+    "Key": "skala_place_simple_embedded_statement_on_same_line",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
     "SkalaDistinct": 1,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_indent_nested_for_stmt.cs",
+    "Fixture": "constructs/indentation/skala_indent_nested_for_stmt.cs",
     "Values": [
       {
         "Value": "never",
@@ -4302,7 +4302,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_simple_initializer_on_single_line",
+    "Key": "skala_place_simple_initializer_on_single_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4325,7 +4325,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_simple_property_pattern_on_single_line",
+    "Key": "skala_place_simple_property_pattern_on_single_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4348,7 +4348,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_simple_switch_expression_on_single_line",
+    "Key": "skala_place_simple_switch_expression_on_single_line",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
@@ -4371,7 +4371,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_type_attribute_on_same_line",
+    "Key": "skala_place_type_attribute_on_same_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4400,7 +4400,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_place_type_constraints_on_same_line",
+    "Key": "skala_place_type_constraints_on_same_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4423,7 +4423,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_prefer_explicit_discard_declaration",
+    "Key": "skala_prefer_explicit_discard_declaration",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4446,13 +4446,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_remove_blank_lines_near_braces_in_code",
+    "Key": "skala_remove_blank_lines_near_braces_in_code",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_remove_blank_lines_near_braces_in_code.cs",
+    "Fixture": "constructs/blank-lines/skala_remove_blank_lines_near_braces_in_code.cs",
     "Values": [
       {
         "Value": "true",
@@ -4469,13 +4469,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_remove_blank_lines_near_braces_in_declarations",
+    "Key": "skala_remove_blank_lines_near_braces_in_declarations",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_csharp_remove_blank_lines_near_braces_in_declarations.cs",
+    "Fixture": "constructs/blank-lines/skala_remove_blank_lines_near_braces_in_declarations.cs",
     "Values": [
       {
         "Value": "true",
@@ -4492,7 +4492,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_sort_usings_with_system_first",
+    "Key": "skala_sort_usings_with_system_first",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -4515,13 +4515,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_ampersand_op",
+    "Key": "skala_space_after_ampersand_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_ampersand_op.cs",
+    "Fixture": "constructs/spaces/skala_space_after_ampersand_op.cs",
     "Values": [
       {
         "Value": "true",
@@ -4538,13 +4538,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_asterik_op",
+    "Key": "skala_space_after_asterik_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_asterik_op.cs",
+    "Fixture": "constructs/spaces/skala_space_after_asterik_op.cs",
     "Values": [
       {
         "Value": "true",
@@ -4561,13 +4561,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_attribute_colon",
+    "Key": "skala_space_after_attribute_colon",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_attribute_colon.cs",
+    "Fixture": "constructs/spaces/skala_space_after_attribute_colon.cs",
     "Values": [
       {
         "Value": "true",
@@ -4584,13 +4584,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_attributes",
+    "Key": "skala_space_after_attributes",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_attributes.cs",
+    "Fixture": "constructs/spaces/skala_space_after_attributes.cs",
     "Values": [
       {
         "Value": "true",
@@ -4607,13 +4607,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_colon_in_case",
+    "Key": "skala_space_after_colon_in_case",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_colon_in_case.cs",
+    "Fixture": "constructs/spaces/skala_space_after_colon_in_case.cs",
     "Values": [
       {
         "Value": "true",
@@ -4630,13 +4630,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_logical_not_op",
+    "Key": "skala_space_after_logical_not_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_logical_not_op.cs",
+    "Fixture": "constructs/spaces/skala_space_after_logical_not_op.cs",
     "Values": [
       {
         "Value": "true",
@@ -4653,13 +4653,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_operator_keyword",
+    "Key": "skala_space_after_operator_keyword",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_operator_keyword.cs",
+    "Fixture": "constructs/spaces/skala_space_after_operator_keyword.cs",
     "Values": [
       {
         "Value": "true",
@@ -4676,13 +4676,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_ternary_colon",
+    "Key": "skala_space_after_ternary_colon",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_ternary_colon.cs",
+    "Fixture": "constructs/spaces/skala_space_after_ternary_colon.cs",
     "Values": [
       {
         "Value": "true",
@@ -4699,13 +4699,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_ternary_quest",
+    "Key": "skala_space_after_ternary_quest",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_ternary_quest.cs",
+    "Fixture": "constructs/spaces/skala_space_after_ternary_quest.cs",
     "Values": [
       {
         "Value": "true",
@@ -4722,13 +4722,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_type_parameter_constraint_colon",
+    "Key": "skala_space_after_type_parameter_constraint_colon",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_type_parameter_constraint_colon.cs",
+    "Fixture": "constructs/spaces/skala_space_after_type_parameter_constraint_colon.cs",
     "Values": [
       {
         "Value": "true",
@@ -4745,13 +4745,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_unary_minus_op",
+    "Key": "skala_space_after_unary_minus_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_unary_minus_op.cs",
+    "Fixture": "constructs/spaces/skala_space_after_unary_minus_op.cs",
     "Values": [
       {
         "Value": "true",
@@ -4768,13 +4768,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_unary_operator",
+    "Key": "skala_space_after_unary_operator",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_unary_operator.cs",
+    "Fixture": "constructs/spaces/skala_space_after_unary_operator.cs",
     "Values": [
       {
         "Value": "true",
@@ -4791,13 +4791,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_after_unary_plus_op",
+    "Key": "skala_space_after_unary_plus_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_after_unary_plus_op.cs",
+    "Fixture": "constructs/spaces/skala_space_after_unary_plus_op.cs",
     "Values": [
       {
         "Value": "true",
@@ -4814,13 +4814,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_around_additive_op",
+    "Key": "skala_space_around_additive_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_around_additive_op.cs",
+    "Fixture": "constructs/spaces/skala_space_around_additive_op.cs",
     "Values": [
       {
         "Value": "true",
@@ -4837,13 +4837,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_around_alias_eq",
+    "Key": "skala_space_around_alias_eq",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_around_alias_eq.cs",
+    "Fixture": "constructs/spaces/skala_space_around_alias_eq.cs",
     "Values": [
       {
         "Value": "true",
@@ -4860,13 +4860,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_around_arrow_op",
+    "Key": "skala_space_around_arrow_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_around_arrow_op.cs",
+    "Fixture": "constructs/spaces/skala_space_around_arrow_op.cs",
     "Values": [
       {
         "Value": "true",
@@ -4883,13 +4883,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_around_assignment_op",
+    "Key": "skala_space_around_assignment_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_around_assignment_op.cs",
+    "Fixture": "constructs/spaces/skala_space_around_assignment_op.cs",
     "Values": [
       {
         "Value": "true",
@@ -4906,13 +4906,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_around_dot",
+    "Key": "skala_space_around_dot",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_around_dot.cs",
+    "Fixture": "constructs/spaces/skala_space_around_dot.cs",
     "Values": [
       {
         "Value": "true",
@@ -4929,13 +4929,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_around_lambda_arrow",
+    "Key": "skala_space_around_lambda_arrow",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_around_lambda_arrow.cs",
+    "Fixture": "constructs/spaces/skala_space_around_lambda_arrow.cs",
     "Values": [
       {
         "Value": "true",
@@ -4952,13 +4952,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_around_relational_op",
+    "Key": "skala_space_around_relational_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_around_relational_op.cs",
+    "Fixture": "constructs/spaces/skala_space_around_relational_op.cs",
     "Values": [
       {
         "Value": "true",
@@ -4975,13 +4975,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_around_shift_op",
+    "Key": "skala_space_around_shift_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_around_shift_op.cs",
+    "Fixture": "constructs/spaces/skala_space_around_shift_op.cs",
     "Values": [
       {
         "Value": "true",
@@ -4998,13 +4998,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_array_access_brackets",
+    "Key": "skala_space_before_array_access_brackets",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_array_access_brackets.cs",
+    "Fixture": "constructs/spaces/skala_space_before_array_access_brackets.cs",
     "Values": [
       {
         "Value": "true",
@@ -5021,13 +5021,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_array_rank_brackets",
+    "Key": "skala_space_before_array_rank_brackets",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_array_rank_brackets.cs",
+    "Fixture": "constructs/spaces/skala_space_before_array_rank_brackets.cs",
     "Values": [
       {
         "Value": "true",
@@ -5044,13 +5044,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_attribute_colon",
+    "Key": "skala_space_before_attribute_colon",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_attribute_colon.cs",
+    "Fixture": "constructs/spaces/skala_space_before_attribute_colon.cs",
     "Values": [
       {
         "Value": "true",
@@ -5067,13 +5067,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_catch_parentheses",
+    "Key": "skala_space_before_catch_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_catch_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_catch_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5090,13 +5090,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_checked_parentheses",
+    "Key": "skala_space_before_checked_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_checked_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_checked_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5113,13 +5113,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_colon_in_case",
+    "Key": "skala_space_before_colon_in_case",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_colon_in_case.cs",
+    "Fixture": "constructs/spaces/skala_space_before_colon_in_case.cs",
     "Values": [
       {
         "Value": "true",
@@ -5136,13 +5136,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_default_parentheses",
+    "Key": "skala_space_before_default_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_default_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_default_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5159,13 +5159,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_empty_method_call_parentheses",
+    "Key": "skala_space_before_empty_method_call_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_empty_method_call_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_empty_method_call_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5182,13 +5182,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_empty_method_parentheses",
+    "Key": "skala_space_before_empty_method_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_empty_method_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_empty_method_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5205,13 +5205,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_fixed_parentheses",
+    "Key": "skala_space_before_fixed_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_fixed_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_fixed_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5228,13 +5228,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_for_parentheses",
+    "Key": "skala_space_before_for_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_for_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_for_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5251,13 +5251,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_foreach_parentheses",
+    "Key": "skala_space_before_foreach_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_foreach_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_foreach_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5274,13 +5274,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_if_parentheses",
+    "Key": "skala_space_before_if_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_if_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_if_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5297,13 +5297,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_lock_parentheses",
+    "Key": "skala_space_before_lock_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_lock_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_lock_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5320,13 +5320,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_method_call_parentheses",
+    "Key": "skala_space_before_method_call_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_method_call_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_method_call_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5343,13 +5343,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_method_parentheses",
+    "Key": "skala_space_before_method_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_method_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_method_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5366,13 +5366,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_nameof_parentheses",
+    "Key": "skala_space_before_nameof_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_nameof_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_nameof_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5389,13 +5389,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_new_parentheses",
+    "Key": "skala_space_before_new_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_new_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_new_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5412,13 +5412,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_nullable_mark",
+    "Key": "skala_space_before_nullable_mark",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_nullable_mark.cs",
+    "Fixture": "constructs/spaces/skala_space_before_nullable_mark.cs",
     "Values": [
       {
         "Value": "true",
@@ -5435,13 +5435,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_pointer_asterik_declaration",
+    "Key": "skala_space_before_pointer_asterik_declaration",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_pointer_asterik_declaration.cs",
+    "Fixture": "constructs/spaces/skala_space_before_pointer_asterik_declaration.cs",
     "Values": [
       {
         "Value": "true",
@@ -5458,13 +5458,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_semicolon",
+    "Key": "skala_space_before_semicolon",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_semicolon.cs",
+    "Fixture": "constructs/spaces/skala_space_before_semicolon.cs",
     "Values": [
       {
         "Value": "true",
@@ -5481,13 +5481,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_sizeof_parentheses",
+    "Key": "skala_space_before_sizeof_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_sizeof_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_sizeof_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5504,13 +5504,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_switch_parentheses",
+    "Key": "skala_space_before_switch_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_switch_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_switch_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5527,13 +5527,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_ternary_colon",
+    "Key": "skala_space_before_ternary_colon",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_ternary_colon.cs",
+    "Fixture": "constructs/spaces/skala_space_before_ternary_colon.cs",
     "Values": [
       {
         "Value": "true",
@@ -5550,13 +5550,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_ternary_quest",
+    "Key": "skala_space_before_ternary_quest",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_ternary_quest.cs",
+    "Fixture": "constructs/spaces/skala_space_before_ternary_quest.cs",
     "Values": [
       {
         "Value": "true",
@@ -5573,13 +5573,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_trailing_comment",
+    "Key": "skala_space_before_trailing_comment",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/trivia/resharper_csharp_space_before_trailing_comment.cs",
+    "Fixture": "constructs/trivia/skala_space_before_trailing_comment.cs",
     "Values": [
       {
         "Value": "true",
@@ -5596,13 +5596,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_type_argument_angle",
+    "Key": "skala_space_before_type_argument_angle",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_type_argument_angle.cs",
+    "Fixture": "constructs/spaces/skala_space_before_type_argument_angle.cs",
     "Values": [
       {
         "Value": "true",
@@ -5619,13 +5619,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_type_parameter_angle",
+    "Key": "skala_space_before_type_parameter_angle",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_type_parameter_angle.cs",
+    "Fixture": "constructs/spaces/skala_space_before_type_parameter_angle.cs",
     "Values": [
       {
         "Value": "true",
@@ -5642,13 +5642,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_type_parameter_constraint_colon",
+    "Key": "skala_space_before_type_parameter_constraint_colon",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_type_parameter_constraint_colon.cs",
+    "Fixture": "constructs/spaces/skala_space_before_type_parameter_constraint_colon.cs",
     "Values": [
       {
         "Value": "true",
@@ -5665,13 +5665,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_typeof_parentheses",
+    "Key": "skala_space_before_typeof_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_typeof_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_typeof_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5688,13 +5688,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_using_parentheses",
+    "Key": "skala_space_before_using_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_using_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_using_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5711,13 +5711,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_before_while_parentheses",
+    "Key": "skala_space_before_while_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_before_while_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_before_while_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5734,13 +5734,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_between_accessors_in_singleline_property",
+    "Key": "skala_space_between_accessors_in_singleline_property",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_between_accessors_in_singleline_property.cs",
+    "Fixture": "constructs/spaces/skala_space_between_accessors_in_singleline_property.cs",
     "Values": [
       {
         "Value": "true",
@@ -5757,13 +5757,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_between_attribute_sections",
+    "Key": "skala_space_between_attribute_sections",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_between_attribute_sections.cs",
+    "Fixture": "constructs/spaces/skala_space_between_attribute_sections.cs",
     "Values": [
       {
         "Value": "true",
@@ -5780,13 +5780,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_between_keyword_and_expression",
+    "Key": "skala_space_between_keyword_and_expression",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_between_keyword_and_expression.cs",
+    "Fixture": "constructs/spaces/skala_space_between_keyword_and_expression.cs",
     "Values": [
       {
         "Value": "true",
@@ -5803,13 +5803,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_between_typecast_parentheses",
+    "Key": "skala_space_between_typecast_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_between_typecast_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_between_typecast_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -5826,13 +5826,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_in_singleline_accessorholder",
+    "Key": "skala_space_in_singleline_accessorholder",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_in_singleline_accessorholder.cs",
+    "Fixture": "constructs/spaces/skala_space_in_singleline_accessorholder.cs",
     "Values": [
       {
         "Value": "true",
@@ -5849,13 +5849,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_in_singleline_anonymous_method",
+    "Key": "skala_space_in_singleline_anonymous_method",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_in_singleline_anonymous_method.cs",
+    "Fixture": "constructs/spaces/skala_space_in_singleline_anonymous_method.cs",
     "Values": [
       {
         "Value": "true",
@@ -5872,13 +5872,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_near_postfix_and_prefix_op",
+    "Key": "skala_space_near_postfix_and_prefix_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_near_postfix_and_prefix_op.cs",
+    "Fixture": "constructs/spaces/skala_space_near_postfix_and_prefix_op.cs",
     "Values": [
       {
         "Value": "true",
@@ -5895,13 +5895,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_array_access_brackets",
+    "Key": "skala_space_within_array_access_brackets",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_array_access_brackets.cs",
+    "Fixture": "constructs/spaces/skala_space_within_array_access_brackets.cs",
     "Values": [
       {
         "Value": "true",
@@ -5918,13 +5918,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_array_rank_brackets",
+    "Key": "skala_space_within_array_rank_brackets",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_array_rank_brackets.cs",
+    "Fixture": "constructs/spaces/skala_space_within_array_rank_brackets.cs",
     "Values": [
       {
         "Value": "true",
@@ -5941,13 +5941,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_array_rank_empty_brackets",
+    "Key": "skala_space_within_array_rank_empty_brackets",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_array_rank_empty_brackets.cs",
+    "Fixture": "constructs/spaces/skala_space_within_array_rank_empty_brackets.cs",
     "Values": [
       {
         "Value": "true",
@@ -5964,13 +5964,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_attribute_brackets",
+    "Key": "skala_space_within_attribute_brackets",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_attribute_brackets.cs",
+    "Fixture": "constructs/spaces/skala_space_within_attribute_brackets.cs",
     "Values": [
       {
         "Value": "true",
@@ -5987,13 +5987,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_catch_parentheses",
+    "Key": "skala_space_within_catch_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_catch_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_catch_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6010,13 +6010,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_checked_parentheses",
+    "Key": "skala_space_within_checked_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_checked_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_checked_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6033,13 +6033,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_default_parentheses",
+    "Key": "skala_space_within_default_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_default_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_default_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6056,13 +6056,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_empty_braces",
+    "Key": "skala_space_within_empty_braces",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_empty_braces.cs",
+    "Fixture": "constructs/spaces/skala_space_within_empty_braces.cs",
     "Values": [
       {
         "Value": "true",
@@ -6079,13 +6079,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_fixed_parentheses",
+    "Key": "skala_space_within_fixed_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_fixed_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_fixed_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6102,13 +6102,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_for_parentheses",
+    "Key": "skala_space_within_for_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_for_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_for_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6125,13 +6125,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_foreach_parentheses",
+    "Key": "skala_space_within_foreach_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_foreach_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_foreach_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6148,13 +6148,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_if_parentheses",
+    "Key": "skala_space_within_if_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_if_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_if_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6171,13 +6171,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_list_pattern_brackets",
+    "Key": "skala_space_within_list_pattern_brackets",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_list_pattern_brackets.cs",
+    "Fixture": "constructs/spaces/skala_space_within_list_pattern_brackets.cs",
     "Values": [
       {
         "Value": "true",
@@ -6194,13 +6194,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_lock_parentheses",
+    "Key": "skala_space_within_lock_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_lock_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_lock_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6217,13 +6217,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_nameof_parentheses",
+    "Key": "skala_space_within_nameof_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_nameof_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_nameof_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6240,13 +6240,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_parentheses",
+    "Key": "skala_space_within_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6263,13 +6263,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_single_line_array_initializer_braces",
+    "Key": "skala_space_within_single_line_array_initializer_braces",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_single_line_array_initializer_braces.cs",
+    "Fixture": "constructs/spaces/skala_space_within_single_line_array_initializer_braces.cs",
     "Values": [
       {
         "Value": "true",
@@ -6286,13 +6286,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_sizeof_parentheses",
+    "Key": "skala_space_within_sizeof_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_sizeof_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_sizeof_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6309,13 +6309,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_slice_pattern",
+    "Key": "skala_space_within_slice_pattern",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_slice_pattern.cs",
+    "Fixture": "constructs/spaces/skala_space_within_slice_pattern.cs",
     "Values": [
       {
         "Value": "true",
@@ -6332,13 +6332,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_switch_parentheses",
+    "Key": "skala_space_within_switch_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_switch_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_switch_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6355,13 +6355,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_type_argument_angles",
+    "Key": "skala_space_within_type_argument_angles",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_type_argument_angles.cs",
+    "Fixture": "constructs/spaces/skala_space_within_type_argument_angles.cs",
     "Values": [
       {
         "Value": "true",
@@ -6378,13 +6378,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_type_parameter_angles",
+    "Key": "skala_space_within_type_parameter_angles",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_type_parameter_angles.cs",
+    "Fixture": "constructs/spaces/skala_space_within_type_parameter_angles.cs",
     "Values": [
       {
         "Value": "true",
@@ -6401,13 +6401,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_typeof_parentheses",
+    "Key": "skala_space_within_typeof_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_typeof_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_typeof_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6424,13 +6424,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_using_parentheses",
+    "Key": "skala_space_within_using_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_using_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_using_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6447,13 +6447,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_space_within_while_parentheses",
+    "Key": "skala_space_within_while_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_csharp_space_within_while_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_within_while_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -6470,13 +6470,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_special_else_if_treatment",
+    "Key": "skala_special_else_if_treatment",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/braces/resharper_csharp_special_else_if_treatment.cs",
+    "Fixture": "constructs/braces/skala_special_else_if_treatment.cs",
     "Values": [
       {
         "Value": "true",
@@ -6493,7 +6493,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_static_members_qualify_members",
+    "Key": "skala_static_members_qualify_members",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 5,
@@ -6540,13 +6540,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_stick_comment",
+    "Key": "skala_stick_comment",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/trivia/resharper_csharp_stick_comment.cs",
+    "Fixture": "constructs/trivia/skala_stick_comment.cs",
     "Values": [
       {
         "Value": "true",
@@ -6563,7 +6563,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_trailing_comma_in_multiline_lists",
+    "Key": "skala_trailing_comma_in_multiline_lists",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6586,7 +6586,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_trailing_comma_in_singleline_lists",
+    "Key": "skala_trailing_comma_in_singleline_lists",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6609,13 +6609,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_use_continuous_indent_inside_initializer_braces",
+    "Key": "skala_use_continuous_indent_inside_initializer_braces",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
     "SkalaDistinct": 1,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_use_continuous_indent_inside_initializer_braces.cs",
+    "Fixture": "constructs/indentation/skala_use_continuous_indent_inside_initializer_braces.cs",
     "Values": [
       {
         "Value": "true",
@@ -6632,13 +6632,13 @@
     ]
   },
   {
-    "Key": "resharper_csharp_use_continuous_indent_inside_parens",
+    "Key": "skala_use_continuous_indent_inside_parens",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
     "SkalaDistinct": 1,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_csharp_use_continuous_indent_inside_parens.cs",
+    "Fixture": "constructs/indentation/skala_use_continuous_indent_inside_parens.cs",
     "Values": [
       {
         "Value": "true",
@@ -6655,7 +6655,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_use_heuristics_for_body_style",
+    "Key": "skala_use_heuristics_for_body_style",
     "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
@@ -6678,7 +6678,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_after_declaration_lpar",
+    "Key": "skala_wrap_after_declaration_lpar",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6701,7 +6701,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_after_dot_in_method_calls",
+    "Key": "skala_wrap_after_dot_in_method_calls",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6724,7 +6724,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_after_invocation_lpar",
+    "Key": "skala_wrap_after_invocation_lpar",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6747,7 +6747,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_after_primary_constructor_declaration_lpar",
+    "Key": "skala_wrap_after_primary_constructor_declaration_lpar",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6770,7 +6770,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_after_property_in_chained_method_calls",
+    "Key": "skala_wrap_after_property_in_chained_method_calls",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6793,7 +6793,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_arguments_style",
+    "Key": "skala_wrap_arguments_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6822,7 +6822,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_array_initializer_style",
+    "Key": "skala_wrap_array_initializer_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
@@ -6851,7 +6851,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_arrow_with_expressions",
+    "Key": "skala_wrap_before_arrow_with_expressions",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6874,7 +6874,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_binary_opsign",
+    "Key": "skala_wrap_before_binary_opsign",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6897,7 +6897,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_binary_pattern_op",
+    "Key": "skala_wrap_before_binary_pattern_op",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6920,7 +6920,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_comma",
+    "Key": "skala_wrap_before_comma",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6943,7 +6943,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_declaration_lpar",
+    "Key": "skala_wrap_before_declaration_lpar",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6966,7 +6966,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_declaration_rpar",
+    "Key": "skala_wrap_before_declaration_rpar",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -6989,7 +6989,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_eq",
+    "Key": "skala_wrap_before_eq",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7012,7 +7012,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_extends_colon",
+    "Key": "skala_wrap_before_extends_colon",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7035,7 +7035,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_first_method_call",
+    "Key": "skala_wrap_before_first_method_call",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7058,7 +7058,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_first_type_parameter_constraint",
+    "Key": "skala_wrap_before_first_type_parameter_constraint",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7081,7 +7081,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_invocation_lpar",
+    "Key": "skala_wrap_before_invocation_lpar",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7104,7 +7104,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_invocation_rpar",
+    "Key": "skala_wrap_before_invocation_rpar",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7127,7 +7127,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_linq_expression",
+    "Key": "skala_wrap_before_linq_expression",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7150,7 +7150,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_primary_constructor_declaration_lpar",
+    "Key": "skala_wrap_before_primary_constructor_declaration_lpar",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7173,7 +7173,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_primary_constructor_declaration_rpar",
+    "Key": "skala_wrap_before_primary_constructor_declaration_rpar",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7196,7 +7196,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_ternary_opsigns",
+    "Key": "skala_wrap_before_ternary_opsigns",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7219,7 +7219,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_before_type_parameter_langle",
+    "Key": "skala_wrap_before_type_parameter_langle",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7242,7 +7242,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_chained_binary_expressions",
+    "Key": "skala_wrap_chained_binary_expressions",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7265,7 +7265,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_chained_binary_patterns",
+    "Key": "skala_wrap_chained_binary_patterns",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7288,7 +7288,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_chained_method_calls",
+    "Key": "skala_wrap_chained_method_calls",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
@@ -7317,7 +7317,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_enum_declaration",
+    "Key": "skala_wrap_enum_declaration",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
@@ -7346,7 +7346,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_extends_list_style",
+    "Key": "skala_wrap_extends_list_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7375,7 +7375,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_for_stmt_header_style",
+    "Key": "skala_wrap_for_stmt_header_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
@@ -7404,7 +7404,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_lines",
+    "Key": "skala_wrap_lines",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7427,7 +7427,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_list_pattern",
+    "Key": "skala_wrap_list_pattern",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
@@ -7456,7 +7456,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_multiple_declaration_style",
+    "Key": "skala_wrap_multiple_declaration_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7485,7 +7485,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_multiple_type_parameter_constraints_style",
+    "Key": "skala_wrap_multiple_type_parameter_constraints_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
@@ -7514,7 +7514,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_parameters_style",
+    "Key": "skala_wrap_parameters_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7543,7 +7543,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_primary_constructor_parameters_style",
+    "Key": "skala_wrap_primary_constructor_parameters_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7572,7 +7572,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_property_pattern",
+    "Key": "skala_wrap_property_pattern",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7601,7 +7601,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_switch_expression",
+    "Key": "skala_wrap_switch_expression",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7630,7 +7630,7 @@
     ]
   },
   {
-    "Key": "resharper_csharp_wrap_ternary_expr_style",
+    "Key": "skala_wrap_ternary_expr_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -7659,13 +7659,13 @@
     ]
   },
   {
-    "Key": "resharper_disable_blank_line_changes",
+    "Key": "skala_disable_blank_line_changes",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/blank-lines/resharper_disable_blank_line_changes.cs",
+    "Fixture": "constructs/blank-lines/skala_disable_blank_line_changes.cs",
     "Values": [
       {
         "Value": "true",
@@ -7682,13 +7682,13 @@
     ]
   },
   {
-    "Key": "resharper_disable_formatter",
+    "Key": "skala_disable_formatter",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/file/resharper_disable_formatter.cs",
+    "Fixture": "constructs/file/skala_disable_formatter.cs",
     "Values": [
       {
         "Value": "true",
@@ -7705,13 +7705,13 @@
     ]
   },
   {
-    "Key": "resharper_disable_indenter",
+    "Key": "skala_disable_indenter",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/suppression/resharper_disable_indenter.cs",
+    "Fixture": "constructs/suppression/skala_disable_indenter.cs",
     "Values": [
       {
         "Value": "true",
@@ -7728,13 +7728,13 @@
     ]
   },
   {
-    "Key": "resharper_disable_line_break_changes",
+    "Key": "skala_disable_line_break_changes",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/suppression/resharper_disable_line_break_changes.cs",
+    "Fixture": "constructs/suppression/skala_disable_line_break_changes.cs",
     "Values": [
       {
         "Value": "true",
@@ -7751,13 +7751,13 @@
     ]
   },
   {
-    "Key": "resharper_disable_line_break_removal",
+    "Key": "skala_disable_line_break_removal",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/suppression/resharper_disable_line_break_removal.cs",
+    "Fixture": "constructs/suppression/skala_disable_line_break_removal.cs",
     "Values": [
       {
         "Value": "true",
@@ -7774,13 +7774,13 @@
     ]
   },
   {
-    "Key": "resharper_disable_space_changes",
+    "Key": "skala_disable_space_changes",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/suppression/resharper_disable_space_changes.cs",
+    "Fixture": "constructs/suppression/skala_disable_space_changes.cs",
     "Values": [
       {
         "Value": "true",
@@ -7797,7 +7797,7 @@
     ]
   },
   {
-    "Key": "resharper_empty_string",
+    "Key": "skala_empty_string",
     "Tier": "D",
     "Outcome": "Spurious",
     "OracleDistinct": 1,
@@ -7820,13 +7820,13 @@
     ]
   },
   {
-    "Key": "resharper_enforce_line_ending_style",
+    "Key": "skala_enforce_line_ending_style",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/file/resharper_enforce_line_ending_style.cs",
+    "Fixture": "constructs/file/skala_enforce_line_ending_style.cs",
     "Values": [
       {
         "Value": "true",
@@ -7843,13 +7843,13 @@
     ]
   },
   {
-    "Key": "resharper_formatter_off_tag",
+    "Key": "skala_formatter_off_tag",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
     "SkalaDistinct": 1,
     "BaselineAgrees": true,
-    "Fixture": "constructs/trivia/resharper_formatter_off_tag.cs",
+    "Fixture": "constructs/trivia/skala_formatter_off_tag.cs",
     "Values": [
       {
         "Value": "@formatter:off",
@@ -7866,13 +7866,13 @@
     ]
   },
   {
-    "Key": "resharper_formatter_on_tag",
+    "Key": "skala_formatter_on_tag",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
     "SkalaDistinct": 1,
     "BaselineAgrees": true,
-    "Fixture": "constructs/trivia/resharper_formatter_on_tag.cs",
+    "Fixture": "constructs/trivia/skala_formatter_on_tag.cs",
     "Values": [
       {
         "Value": "@formatter:on",
@@ -7889,13 +7889,13 @@
     ]
   },
   {
-    "Key": "resharper_formatter_tags_accept_regexp",
+    "Key": "skala_formatter_tags_accept_regexp",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
     "SkalaDistinct": 1,
     "BaselineAgrees": true,
-    "Fixture": "constructs/trivia/resharper_formatter_tags_accept_regexp.cs",
+    "Fixture": "constructs/trivia/skala_formatter_tags_accept_regexp.cs",
     "Values": [
       {
         "Value": "true",
@@ -7912,13 +7912,13 @@
     ]
   },
   {
-    "Key": "resharper_formatter_tags_enabled",
+    "Key": "skala_formatter_tags_enabled",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
     "SkalaDistinct": 1,
     "BaselineAgrees": true,
-    "Fixture": "constructs/trivia/resharper_formatter_tags_enabled.cs",
+    "Fixture": "constructs/trivia/skala_formatter_tags_enabled.cs",
     "Values": [
       {
         "Value": "true",
@@ -7935,13 +7935,13 @@
     ]
   },
   {
-    "Key": "resharper_indent_break_from_case",
+    "Key": "skala_indent_break_from_case",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_indent_break_from_case.cs",
+    "Fixture": "constructs/indentation/skala_indent_break_from_case.cs",
     "Values": [
       {
         "Value": "true",
@@ -7958,13 +7958,13 @@
     ]
   },
   {
-    "Key": "resharper_indent_switch_labels",
+    "Key": "skala_indent_switch_labels",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/indentation/resharper_indent_switch_labels.cs",
+    "Fixture": "constructs/indentation/skala_indent_switch_labels.cs",
     "Values": [
       {
         "Value": "true",
@@ -7981,7 +7981,7 @@
     ]
   },
   {
-    "Key": "resharper_int_align",
+    "Key": "skala_int_align",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -8004,7 +8004,7 @@
     ]
   },
   {
-    "Key": "resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement",
+    "Key": "skala_keep_existing_lambda_and_anonymous_function_parens_arrangement",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
@@ -8027,7 +8027,7 @@
     ]
   },
   {
-    "Key": "resharper_keep_user_linebreaks",
+    "Key": "skala_keep_user_linebreaks",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -8050,13 +8050,13 @@
     ]
   },
   {
-    "Key": "resharper_new_line_before_catch",
+    "Key": "skala_new_line_before_catch",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/braces/resharper_new_line_before_catch.cs",
+    "Fixture": "constructs/braces/skala_new_line_before_catch.cs",
     "Values": [
       {
         "Value": "true",
@@ -8073,13 +8073,13 @@
     ]
   },
   {
-    "Key": "resharper_new_line_before_else",
+    "Key": "skala_new_line_before_else",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/braces/resharper_new_line_before_else.cs",
+    "Fixture": "constructs/braces/skala_new_line_before_else.cs",
     "Values": [
       {
         "Value": "true",
@@ -8096,13 +8096,13 @@
     ]
   },
   {
-    "Key": "resharper_new_line_before_finally",
+    "Key": "skala_new_line_before_finally",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/braces/resharper_new_line_before_finally.cs",
+    "Fixture": "constructs/braces/skala_new_line_before_finally.cs",
     "Values": [
       {
         "Value": "true",
@@ -8119,7 +8119,7 @@
     ]
   },
   {
-    "Key": "resharper_place_attribute_on_same_line",
+    "Key": "skala_place_attribute_on_same_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -8148,7 +8148,7 @@
     ]
   },
   {
-    "Key": "resharper_place_primary_constructor_initializer_on_same_line",
+    "Key": "skala_place_primary_constructor_initializer_on_same_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -8171,7 +8171,7 @@
     ]
   },
   {
-    "Key": "resharper_place_single_method_argument_lambda_on_same_line",
+    "Key": "skala_place_single_method_argument_lambda_on_same_line",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -8194,7 +8194,7 @@
     ]
   },
   {
-    "Key": "resharper_remove_only_unused_aliases",
+    "Key": "skala_remove_only_unused_aliases",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
@@ -8217,7 +8217,7 @@
     ]
   },
   {
-    "Key": "resharper_sort_usings",
+    "Key": "skala_sort_usings",
     "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
@@ -8240,13 +8240,13 @@
     ]
   },
   {
-    "Key": "resharper_space_after_cast",
+    "Key": "skala_space_after_cast",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_after_cast.cs",
+    "Fixture": "constructs/spaces/skala_space_after_cast.cs",
     "Values": [
       {
         "Value": "true",
@@ -8263,13 +8263,13 @@
     ]
   },
   {
-    "Key": "resharper_space_after_colon_in_inheritance_clause",
+    "Key": "skala_space_after_colon_in_inheritance_clause",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_after_colon_in_inheritance_clause.cs",
+    "Fixture": "constructs/spaces/skala_space_after_colon_in_inheritance_clause.cs",
     "Values": [
       {
         "Value": "true",
@@ -8286,13 +8286,13 @@
     ]
   },
   {
-    "Key": "resharper_space_after_comma",
+    "Key": "skala_space_after_comma",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_after_comma.cs",
+    "Fixture": "constructs/spaces/skala_space_after_comma.cs",
     "Values": [
       {
         "Value": "true",
@@ -8309,13 +8309,13 @@
     ]
   },
   {
-    "Key": "resharper_space_after_keywords_in_control_flow_statements",
+    "Key": "skala_space_after_keywords_in_control_flow_statements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_after_keywords_in_control_flow_statements.cs",
+    "Fixture": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements.cs",
     "Values": [
       {
         "Value": "true",
@@ -8332,13 +8332,13 @@
     ]
   },
   {
-    "Key": "resharper_space_after_semicolon_in_for_statement",
+    "Key": "skala_space_after_semicolon_in_for_statement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_after_semicolon_in_for_statement.cs",
+    "Fixture": "constructs/spaces/skala_space_after_semicolon_in_for_statement.cs",
     "Values": [
       {
         "Value": "true",
@@ -8355,13 +8355,13 @@
     ]
   },
   {
-    "Key": "resharper_space_after_triple_slash",
+    "Key": "skala_space_after_triple_slash",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_space_after_triple_slash.cs",
+    "Fixture": "constructs/xmldoc/skala_space_after_triple_slash.cs",
     "Values": [
       {
         "Value": "true",
@@ -8378,13 +8378,13 @@
     ]
   },
   {
-    "Key": "resharper_space_around_member_access_operator",
+    "Key": "skala_space_around_member_access_operator",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_around_member_access_operator.cs",
+    "Fixture": "constructs/spaces/skala_space_around_member_access_operator.cs",
     "Values": [
       {
         "Value": "true",
@@ -8401,13 +8401,13 @@
     ]
   },
   {
-    "Key": "resharper_space_around_ternary_operator",
+    "Key": "skala_space_around_ternary_operator",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_around_ternary_operator.cs",
+    "Fixture": "constructs/spaces/skala_space_around_ternary_operator.cs",
     "Values": [
       {
         "Value": "true",
@@ -8424,13 +8424,13 @@
     ]
   },
   {
-    "Key": "resharper_space_before_colon_in_inheritance_clause",
+    "Key": "skala_space_before_colon_in_inheritance_clause",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_before_colon_in_inheritance_clause.cs",
+    "Fixture": "constructs/spaces/skala_space_before_colon_in_inheritance_clause.cs",
     "Values": [
       {
         "Value": "true",
@@ -8447,13 +8447,13 @@
     ]
   },
   {
-    "Key": "resharper_space_before_comma",
+    "Key": "skala_space_before_comma",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_before_comma.cs",
+    "Fixture": "constructs/spaces/skala_space_before_comma.cs",
     "Values": [
       {
         "Value": "true",
@@ -8470,13 +8470,13 @@
     ]
   },
   {
-    "Key": "resharper_space_before_open_square_brackets",
+    "Key": "skala_space_before_open_square_brackets",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_before_open_square_brackets.cs",
+    "Fixture": "constructs/spaces/skala_space_before_open_square_brackets.cs",
     "Values": [
       {
         "Value": "true",
@@ -8493,13 +8493,13 @@
     ]
   },
   {
-    "Key": "resharper_space_before_semicolon_in_for_statement",
+    "Key": "skala_space_before_semicolon_in_for_statement",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_before_semicolon_in_for_statement.cs",
+    "Fixture": "constructs/spaces/skala_space_before_semicolon_in_for_statement.cs",
     "Values": [
       {
         "Value": "true",
@@ -8516,13 +8516,13 @@
     ]
   },
   {
-    "Key": "resharper_space_between_method_call_empty_parameter_list_parentheses",
+    "Key": "skala_space_between_method_call_empty_parameter_list_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_between_method_call_empty_parameter_list_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -8539,13 +8539,13 @@
     ]
   },
   {
-    "Key": "resharper_space_between_method_call_name_and_opening_parenthesis",
+    "Key": "skala_space_between_method_call_name_and_opening_parenthesis",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_between_method_call_name_and_opening_parenthesis.cs",
+    "Fixture": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis.cs",
     "Values": [
       {
         "Value": "true",
@@ -8562,13 +8562,13 @@
     ]
   },
   {
-    "Key": "resharper_space_between_method_call_parameter_list_parentheses",
+    "Key": "skala_space_between_method_call_parameter_list_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_between_method_call_parameter_list_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -8585,13 +8585,13 @@
     ]
   },
   {
-    "Key": "resharper_space_between_method_declaration_empty_parameter_list_parentheses",
+    "Key": "skala_space_between_method_declaration_empty_parameter_list_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_between_method_declaration_empty_parameter_list_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -8608,13 +8608,13 @@
     ]
   },
   {
-    "Key": "resharper_space_between_method_declaration_name_and_open_parenthesis",
+    "Key": "skala_space_between_method_declaration_name_and_open_parenthesis",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_between_method_declaration_name_and_open_parenthesis.cs",
+    "Fixture": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis.cs",
     "Values": [
       {
         "Value": "true",
@@ -8631,13 +8631,13 @@
     ]
   },
   {
-    "Key": "resharper_space_between_method_declaration_parameter_list_parentheses",
+    "Key": "skala_space_between_method_declaration_parameter_list_parentheses",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_between_method_declaration_parameter_list_parentheses.cs",
+    "Fixture": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses.cs",
     "Values": [
       {
         "Value": "true",
@@ -8654,13 +8654,13 @@
     ]
   },
   {
-    "Key": "resharper_space_between_parentheses_of_control_flow_statements",
+    "Key": "skala_space_between_parentheses_of_control_flow_statements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_between_parentheses_of_control_flow_statements.cs",
+    "Fixture": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements.cs",
     "Values": [
       {
         "Value": "true",
@@ -8677,13 +8677,13 @@
     ]
   },
   {
-    "Key": "resharper_space_between_square_brackets",
+    "Key": "skala_space_between_square_brackets",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/spaces/resharper_space_between_square_brackets.cs",
+    "Fixture": "constructs/spaces/skala_space_between_square_brackets.cs",
     "Values": [
       {
         "Value": "true",
@@ -8700,7 +8700,7 @@
     ]
   },
   {
-    "Key": "resharper_wrap_after_expression_lbrace",
+    "Key": "skala_wrap_after_expression_lbrace",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
@@ -8723,7 +8723,7 @@
     ]
   },
   {
-    "Key": "resharper_wrap_before_comma_in_base_clause",
+    "Key": "skala_wrap_before_comma_in_base_clause",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
@@ -8746,7 +8746,7 @@
     ]
   },
   {
-    "Key": "resharper_wrap_before_expression_rbrace",
+    "Key": "skala_wrap_before_expression_rbrace",
     "Tier": "D",
     "Outcome": "Unexercised",
     "OracleDistinct": 1,
@@ -8769,13 +8769,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_blank_line_after_pi",
+    "Key": "skala_xmldoc_blank_line_after_pi",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_blank_line_after_pi.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_blank_line_after_pi.cs",
     "Values": [
       {
         "Value": "true",
@@ -8792,13 +8792,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_indent_child_elements",
+    "Key": "skala_xmldoc_indent_child_elements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_indent_child_elements.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_indent_child_elements.cs",
     "Values": [
       {
         "Value": "do_not_touch",
@@ -8827,13 +8827,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_indent_text",
+    "Key": "skala_xmldoc_indent_text",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_indent_text.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_indent_text.cs",
     "Values": [
       {
         "Value": "do_not_touch",
@@ -8862,13 +8862,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_keep_user_linebreaks",
+    "Key": "skala_xmldoc_keep_user_linebreaks",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_keep_user_linebreaks.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_keep_user_linebreaks.cs",
     "Values": [
       {
         "Value": "true",
@@ -8885,13 +8885,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_linebreak_before_elements",
+    "Key": "skala_xmldoc_linebreak_before_elements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_linebreak_before_elements.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_linebreak_before_elements.cs",
     "Values": [
       {
         "Value": "summary,remarks,example,returns,param,typeparam,value,para",
@@ -8908,13 +8908,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_linebreak_before_multiline_elements",
+    "Key": "skala_xmldoc_linebreak_before_multiline_elements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_linebreak_before_multiline_elements.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_linebreak_before_multiline_elements.cs",
     "Values": [
       {
         "Value": "true",
@@ -8931,13 +8931,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_linebreak_before_singleline_elements",
+    "Key": "skala_xmldoc_linebreak_before_singleline_elements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_linebreak_before_singleline_elements.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_linebreak_before_singleline_elements.cs",
     "Values": [
       {
         "Value": "true",
@@ -8954,13 +8954,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
+    "Key": "skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than.cs",
     "Values": [
       {
         "Value": "2147483647",
@@ -8983,13 +8983,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements",
+    "Key": "skala_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements.cs",
     "Values": [
       {
         "Value": "true",
@@ -9006,13 +9006,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements",
+    "Key": "skala_xmldoc_linebreaks_inside_tags_for_multiline_elements",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_linebreaks_inside_tags_for_multiline_elements.cs",
     "Values": [
       {
         "Value": "true",
@@ -9029,13 +9029,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_max_blank_lines_between_tags",
+    "Key": "skala_xmldoc_max_blank_lines_between_tags",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_max_blank_lines_between_tags.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_max_blank_lines_between_tags.cs",
     "Values": [
       {
         "Value": "0",
@@ -9058,13 +9058,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_max_line_length",
+    "Key": "skala_xmldoc_max_line_length",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_max_line_length.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_max_line_length.cs",
     "Values": [
       {
         "Value": "120",
@@ -9087,13 +9087,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_space_after_last_attribute",
+    "Key": "skala_xmldoc_space_after_last_attribute",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_space_after_last_attribute.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_space_after_last_attribute.cs",
     "Values": [
       {
         "Value": "true",
@@ -9110,13 +9110,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_space_before_self_closing",
+    "Key": "skala_xmldoc_space_before_self_closing",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_space_before_self_closing.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_space_before_self_closing.cs",
     "Values": [
       {
         "Value": "true",
@@ -9133,13 +9133,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_spaces_around_eq_in_attribute",
+    "Key": "skala_xmldoc_spaces_around_eq_in_attribute",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_spaces_around_eq_in_attribute.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_spaces_around_eq_in_attribute.cs",
     "Values": [
       {
         "Value": "true",
@@ -9156,13 +9156,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_spaces_inside_tags",
+    "Key": "skala_xmldoc_spaces_inside_tags",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_spaces_inside_tags.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_spaces_inside_tags.cs",
     "Values": [
       {
         "Value": "true",
@@ -9179,13 +9179,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_wrap_lines",
+    "Key": "skala_xmldoc_wrap_lines",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_wrap_lines.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_wrap_lines.cs",
     "Values": [
       {
         "Value": "true",
@@ -9202,13 +9202,13 @@
     ]
   },
   {
-    "Key": "resharper_xmldoc_wrap_text",
+    "Key": "skala_xmldoc_wrap_text",
     "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
     "BaselineAgrees": true,
-    "Fixture": "constructs/xmldoc/resharper_xmldoc_wrap_text.cs",
+    "Fixture": "constructs/xmldoc/skala_xmldoc_wrap_text.cs",
     "Values": [
       {
         "Value": "true",

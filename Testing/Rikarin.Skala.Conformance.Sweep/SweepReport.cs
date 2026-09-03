@@ -240,7 +240,7 @@ public static class SweepReport {
             foreach (var group in run.Excluded
                          .GroupBy(static exclusion => exclusion.Reason, StringComparer.Ordinal)
                          .OrderByDescending(static group => group.Count())) {
-                // ⚠ Broken down by tier rather than left as one number. `resharper_int_align` — the
+                // ⚠ Broken down by tier rather than left as one number. `skala_int_align` — the
                 // key whose two values produce byte-identical output and which no test noticed — is
                 // in the largest of these buckets, and a bare count is exactly the shape in which it
                 // stayed invisible.

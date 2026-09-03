@@ -88,7 +88,7 @@ public static class Distiller {
         // damage is cosmetic; in a hand-annotated configuration it is actively misleading text, and
         // producing a file a human can read is the entire purpose of `distill`.
         //
-        // The semantics are `resharper_stick_comment`'s, which this project already settled for
+        // The semantics are `skala_stick_comment`'s, which this project already settled for
         // code: a contiguous run of comment lines belongs to the single line directly beneath it.
         // So a run followed by a blank line, by a section header, or by nothing is attached to no
         // key and stays — which is what keeps a file's header and its section banners intact.

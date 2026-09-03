@@ -38,7 +38,7 @@ public static class CorpusVariants {
     ///     The per-construct preservation keys, set together so the table is 2×2.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <c>resharper_csharp_keep_existing_linebreaks</c> is deliberately not here. It reads like one
+    ///     ⚠ <c>skala_keep_existing_linebreaks</c> is deliberately not here. It reads like one
     ///     of the family and it is not: it is the per-language form of the global
     ///     <c>keep_user_linebreaks</c>, so putting it on the <c>keep_existing_*</c> axis collapses the
     ///     table — both "reflow" corners come out identical to their "keep" neighbours and the 2×2 stops
@@ -50,18 +50,18 @@ public static class CorpusVariants {
     ///     </para>
     /// </remarks>
     public static readonly ImmutableArray<string> KeepExistingKeys = [
-        "resharper_csharp_keep_existing_attribute_arrangement",
-        "resharper_csharp_keep_existing_declaration_block_arrangement",
-        "resharper_csharp_keep_existing_declaration_parens_arrangement",
-        "resharper_csharp_keep_existing_embedded_arrangement",
-        "resharper_csharp_keep_existing_embedded_block_arrangement", "resharper_csharp_keep_existing_enum_arrangement",
-        "resharper_csharp_keep_existing_expr_member_arrangement",
-        "resharper_csharp_keep_existing_invocation_parens_arrangement",
-        "resharper_csharp_keep_existing_list_patterns_arrangement",
-        "resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement",
-        "resharper_csharp_keep_existing_property_patterns_arrangement",
-        "resharper_csharp_keep_existing_switch_expression_arrangement",
-        "resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement"
+        "skala_keep_existing_attribute_arrangement",
+        "skala_keep_existing_declaration_block_arrangement",
+        "skala_keep_existing_declaration_parens_arrangement",
+        "skala_keep_existing_embedded_arrangement",
+        "skala_keep_existing_embedded_block_arrangement", "skala_keep_existing_enum_arrangement",
+        "skala_keep_existing_expr_member_arrangement",
+        "skala_keep_existing_invocation_parens_arrangement",
+        "skala_keep_existing_list_patterns_arrangement",
+        "skala_keep_existing_primary_constructor_declaration_parens_arrangement",
+        "skala_keep_existing_property_patterns_arrangement",
+        "skala_keep_existing_switch_expression_arrangement",
+        "skala_keep_existing_lambda_and_anonymous_function_parens_arrangement"
     ];
 
     /// <summary>The set whose files are run under <see cref="Preservation" />.</summary>
@@ -99,8 +99,8 @@ public static class CorpusVariants {
 
     static CorpusVariant Variant(string name, bool keepUserLinebreaks, bool keepExisting) {
         var overrides = new List<KeyValuePair<string, string>> {
-            new("resharper_keep_user_linebreaks", keepUserLinebreaks ? "true" : "false"),
-            new("resharper_keep_user_wrapping", keepUserLinebreaks ? "true" : "false")
+            new("skala_keep_user_linebreaks", keepUserLinebreaks ? "true" : "false"),
+            new("skala_keep_user_wrapping", keepUserLinebreaks ? "true" : "false")
         };
 
         foreach (var key in KeepExistingKeys) {

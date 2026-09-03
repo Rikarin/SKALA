@@ -393,7 +393,7 @@ public sealed class FuzzerTests {
     ///     ⚠ An absorbed mutation may not move a comment off the first column.
     /// </summary>
     /// <remarks>
-    ///     <c>resharper_csharp_stick_comment</c> — "Don't indent comments started at first column" — makes
+    ///     <c>skala_stick_comment</c> — "Don't indent comments started at first column" — makes
     ///     a comment's <em>source column</em> an input the oracle reads, and "at the first column" is
     ///     literal. The fixture's own oracle output is the measurement: the comment written at column 0
     ///     comes back at column 0, and the one written at column 2 comes back at the code's indent. So the
@@ -420,7 +420,7 @@ public sealed class FuzzerTests {
         var path = Path.Combine(
             Corpus.SetRoot(Corpus.Constructs),
             "trivia",
-            "resharper_csharp_stick_comment.cs"
+            "skala_stick_comment.cs"
         );
 
         var source = File.ReadAllText(path);

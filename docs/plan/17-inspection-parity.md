@@ -332,12 +332,12 @@ rather than the names is what shows it:
 | Inspection | Governing option | Tier |
 |---|---|---|
 | `ArrangeThisQualifier` | `resharper_instance_members_qualify_declared_in` | ⚠ **D** |
-| `ArrangeRedundantParentheses` | `resharper_parentheses_redundancy_style` | ⚠ **D** |
-| `ArrangeTrailingCommaInMultilineLists` | `resharper_trailing_comma_in_multiline_lists` | ⚠ **D** |
-| `ArrangeStaticMemberQualifier` | `resharper_static_members_qualify_members` | ⚠ **D** |
-| `ArrangeAttributes` | `resharper_place_attribute_on_same_line` | ⚠ **D** |
+| `ArrangeRedundantParentheses` | `skala_parentheses_redundancy_style` | ⚠ **D** |
+| `ArrangeTrailingCommaInMultilineLists` | `skala_trailing_comma_in_multiline_lists` | ⚠ **D** |
+| `ArrangeStaticMemberQualifier` | `skala_static_members_qualify_members` | ⚠ **D** |
+| `ArrangeAttributes` | `skala_place_attribute_on_same_line` | ⚠ **D** |
 | `UnnecessaryWhitespace` | `trim_trailing_whitespace` | ⚠ **D** |
-| `ArrangeAccessorOwnerBody` | `resharper_accessor_owner_body` | A |
+| `ArrangeAccessorOwnerBody` | `skala_accessor_owner_body` | A |
 | `SuggestVarOrType_BuiltInTypes` | `csharp_style_var_for_built_in_types` | A |
 | `WrongIndentSize` | `indent_size` | A |
 
@@ -552,7 +552,7 @@ they rely on until they are gone.
 
 ### ⚠ The Tier D arrangement gap has a number, and it is the largest single one in this measurement
 
-`ArrangeRedundantParentheses` — governed by `resharper_parentheses_redundancy_style`, **Tier D, not
+`ArrangeRedundantParentheses` — governed by `skala_parentheses_redundancy_style`, **Tier D, not
 implemented** — fires **1 231 times** on 900 files. `ArrangeObjectCreationWhenTypeNotEvident` fires
 950. Together with the rest of the `Option` bucket, arrangement accounts for **3 718 findings**,
 against 6 563 for the entire uncovered rule set.
@@ -603,14 +603,14 @@ one is `a * (x * y)`, which Skala keeps on purpose: equal precedence is not asso
 2. ⚠ **Five of the fifteen were never measurable.** `ArrangeNamespaces` and `ArrangeArgumentsStyle`
    are real `jb cleanupcode` tasks that the M4 profile sweep never probed, so the oracle was running
    without them and declining five of the export's own settings. Two more —
-   `dotnet_style_predefined_type_for_member_access` and `resharper_place_attribute_on_same_line` —
+   `dotnet_style_predefined_type_for_member_access` and `skala_place_attribute_on_same_line` —
    were already implemented and credited to a neighbouring key. **Seven of the fifteen were artefacts
    of the measurement rather than missing work**, which is the finding this re-run is really for:
    `gov.json` and `catalogued.json` are named above as "judgement, not measurement", and the oracle
    profile belongs on that list beside them.
 
 ⚠ **`SuggestVarOrType_DeconstructionDeclarations` is the double-count this document warned about,
-caught in the act.** Its option — `resharper_prefer_explicit_discard_declaration` — is now Tier A,
+caught in the act.** Its option — `skala_prefer_explicit_discard_declaration` — is now Tier A,
 implemented and pinned. Its *inspection* reports something else entirely, governed by
 `resharper_for_deconstruction_declarations`, which the author's export does not set and the registry
 does not know; `gov.json` names that key first and correctly, and `classify.py` fell through to the

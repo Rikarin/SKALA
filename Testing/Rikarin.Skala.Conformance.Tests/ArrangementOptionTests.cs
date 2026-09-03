@@ -318,8 +318,8 @@ public sealed class ArrangementOptionTests {
     public void Aliases_UnusedNonTrivialGoesOnlyAtTheExportsPair(string keep, string removeOnlyUnused, bool survives) {
         var output = Arrange(
             Aliases,
-            ("resharper_csharp_keep_nontrivial_alias", keep),
-            ("resharper_remove_only_unused_aliases", removeOnlyUnused)
+            ("skala_keep_nontrivial_alias", keep),
+            ("skala_remove_only_unused_aliases", removeOnlyUnused)
         );
 
         Assert.Contains("using Builder =", output, StringComparison.Ordinal);
@@ -374,8 +374,8 @@ public sealed class ArrangementOptionTests {
     ///     fixture agreed with either.
     /// </remarks>
     [Theory]
-    [InlineData("resharper_csharp_object_creation_when_type_evident", "new Held()", "new()")]
-    [InlineData("resharper_csharp_object_creation_when_type_not_evident", "new()", "new Held()")]
+    [InlineData("skala_object_creation_when_type_evident", "new Held()", "new()")]
+    [InlineData("skala_object_creation_when_type_not_evident", "new()", "new Held()")]
     public void ObjectCreation_AnAssignmentIsNotEvidentAndAReturnIs(string key, string evident, string notEvident) {
         var output = Arrange(TypeInference, (key, "explicitly_typed"));
 
@@ -389,7 +389,7 @@ public sealed class ArrangementOptionTests {
     public void ObjectCreation_ADeclaratorAndAPropertyInitialiserAreEvident() {
         var output = Arrange(
             TypeInference,
-            ("resharper_csharp_object_creation_when_type_evident", "explicitly_typed")
+            ("skala_object_creation_when_type_evident", "explicitly_typed")
         );
 
         Assert.Contains("Held _field = new Held();", output, StringComparison.Ordinal);
@@ -411,8 +411,8 @@ public sealed class ArrangementOptionTests {
     ///     evident — the type is on the parameter beside it — and an assignment is not.
     /// </summary>
     [Theory]
-    [InlineData("resharper_csharp_default_value_when_type_evident", "count = default(int)", "Slot = default;")]
-    [InlineData("resharper_csharp_default_value_when_type_not_evident", "Slot = default(int);", "count = default)")]
+    [InlineData("skala_default_value_when_type_evident", "count = default(int)", "Slot = default;")]
+    [InlineData("skala_default_value_when_type_not_evident", "Slot = default(int);", "count = default)")]
     public void DefaultValue_AParameterDefaultIsEvidentAndAnAssignmentIsNot(
         string key,
         string expanded,
@@ -456,7 +456,7 @@ public sealed class ArrangementOptionTests {
     }
 
     /// <summary>
-    ///     ⚠ <c>parentheses_redundancy_style = remove</c> is ReSharper's "Always" and outranks the three
+    ///     ⚠ <c>skala_parentheses_redundancy_style = remove</c> is ReSharper's "Always" and outranks the three
     ///     <c>dotnet_style_parentheses_in_*</c> keys and <c>parentheses_non_obvious_operations</c> both.
     ///     The proof layer is what still stands: a removal that changes the parse is refused at either
     ///     value.
@@ -465,7 +465,7 @@ public sealed class ArrangementOptionTests {
     public void Parentheses_Remove_OutranksEveryPolicyAndKeepsTheProof() {
         var output = Arrange(
             Parentheses + "\n",
-            ("resharper_csharp_parentheses_redundancy_style", "remove")
+            ("skala_parentheses_redundancy_style", "remove")
         );
 
         Assert.Contains("=> a + b * c;", output, StringComparison.Ordinal);
@@ -492,7 +492,7 @@ public sealed class ArrangementOptionTests {
     /// </remarks>
     [Fact]
     public void Discard_ExplicitDeclaration_WritesTheSpaceAfterVar() {
-        var output = Arrange(Discards, ("resharper_csharp_prefer_explicit_discard_declaration", "true"));
+        var output = Arrange(Discards, ("skala_prefer_explicit_discard_declaration", "true"));
 
         Assert.Contains("out var _", output, StringComparison.Ordinal);
         Assert.DoesNotContain("var_", output, StringComparison.Ordinal);

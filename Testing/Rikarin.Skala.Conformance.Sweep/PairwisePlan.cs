@@ -53,15 +53,15 @@ public sealed record PairwisePlanResult(
 public static class PairwisePlan {
     /// <summary>The named interacting families, as docs/plan/12 lists them.</summary>
     /// <remarks>
-    ///     ⚠ <c>keep_existing_linebreaks</c> is deliberately not a primary. docs/plan/05 warns that it
+    ///     ⚠ <c>skala_keep_existing_linebreaks</c> is deliberately not a primary. docs/plan/05 warns that it
     ///     "reads like one of the family and is not" — it is the per-language form of the global
     ///     <c>keep_user_linebreaks</c>, so pairing the two would measure a key against itself and report
     ///     a guaranteed interaction that means nothing.
     /// </remarks>
     public static readonly IReadOnlyList<PairFamily> Families = [
-        new("keep", "keep_existing", "resharper_keep_user_linebreaks", ["keep_existing_linebreaks"]),
-        new("wrap", "wrap", "resharper_csharp_max_line_length", []),
-        new("align", "align", "resharper_csharp_indent_size", [])
+        new("keep", "keep_existing", "skala_keep_user_linebreaks", ["skala_keep_existing_linebreaks"]),
+        new("wrap", "wrap", "skala_max_line_length", []),
+        new("align", "align", "skala_indent_size", [])
     ];
 
     public static PairwisePlanResult Build(IReadOnlyList<string> families) {

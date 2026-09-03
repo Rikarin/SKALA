@@ -16,7 +16,7 @@ namespace Rikarin.Skala.Cli.Tests;
 ///     <para>
 ///         ⚠ <b>The option that decides this is not <c>end_of_line</c>.</b> doc 04 § "File-level concerns"
 ///         and <c>PhaseOneOptions</c> both say it: <c>end_of_line</c> is <i>inert</i> while
-///         <c>resharper_enforce_line_ending_style</c> is false, which is the default — false means an
+///         <c>skala_enforce_line_ending_style</c> is false, which is the default — false means an
 ///         existing ending is preserved, mixed endings included. So the honest reading of the hazard is
 ///         two assertions, not one, and the first is the one that would be missed by testing only the
 ///         headline: <c>end_of_line = lf</c> alone must leave CRLF alone.

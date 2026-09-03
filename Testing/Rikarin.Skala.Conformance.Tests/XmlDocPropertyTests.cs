@@ -106,7 +106,7 @@ public sealed class XmlDocPropertyTests {
     [Theory]
     [MemberData(nameof(Files))]
     public void TheMarkerSpace_IsOnEveryLineTheSubFormatterWrote(CorpusFile file) {
-        // ⚠ `resharper_space_after_triple_slash` as a property over the corpus rather than as one
+        // ⚠ `skala_space_after_triple_slash` as a property over the corpus rather than as one
         // fixture's line, and it is here because the fixture could not reach the shape that broke it.
         // A verbatim region — a `<code>` or `<c>` body, a processing instruction, a CDATA section —
         // is the only thing in a doc comment written by a path that does not compose the line out of

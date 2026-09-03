@@ -159,7 +159,7 @@ public sealed class XmlDocSubFormatterTests {
         var text = string.Join(" ", Enumerable.Repeat("word", 40));
         var narrow = XmlDoc.Text(
             XmlDoc.InClass("/// <summary>" + text + "</summary>"),
-            ("resharper_xmldoc_max_line_length", "60")
+            ("skala_xmldoc_max_line_length", "60")
         );
 
         Assert.All(XmlDoc.DocLines(narrow), static line => Assert.True(Inner(line) <= 60, line));
@@ -177,7 +177,7 @@ public sealed class XmlDocSubFormatterTests {
         var text = string.Join(" ", Enumerable.Repeat("word", 60));
         var formatted = XmlDoc.Text(
             XmlDoc.InClass("/// <summary>" + text + "</summary>"),
-            ("resharper_xmldoc_wrap_lines", "false")
+            ("skala_xmldoc_wrap_lines", "false")
         );
 
         Assert.Single(XmlDoc.DocLines(formatted));
@@ -210,7 +210,7 @@ public sealed class XmlDocSubFormatterTests {
         Assert.Contains("""<see cref="C" />""", XmlDoc.Text(source), StringComparison.Ordinal);
         Assert.Contains(
             """<see cref="C"/>""",
-            XmlDoc.Text(source, ("resharper_xmldoc_space_before_self_closing", "false")),
+            XmlDoc.Text(source, ("skala_xmldoc_space_before_self_closing", "false")),
             StringComparison.Ordinal
         );
     }
@@ -230,11 +230,11 @@ public sealed class XmlDocSubFormatterTests {
         );
 
         // ⚠ `/// ` rather than `///`, and the trailing space is the marker's. SK-DIV-0023's surviving
-        // half generalised: probed at `max_blank_lines_between_tags = 1`, every blank `///` line the
+        // half generalised: probed at `skala_xmldoc_max_blank_lines_between_tags = 1`, every blank `///` line the
         // oracle writes carries the space, whether or not the author's did.
         Assert.Equal(
             ["/// <summary>One.</summary>", "/// ", "/// <remarks>Two.</remarks>"],
-            XmlDoc.DocLines(XmlDoc.Text(source, ("resharper_xmldoc_max_blank_lines_between_tags", "1")))
+            XmlDoc.DocLines(XmlDoc.Text(source, ("skala_xmldoc_max_blank_lines_between_tags", "1")))
         );
     }
 
@@ -249,7 +249,7 @@ public sealed class XmlDocSubFormatterTests {
 
         Assert.Equal(
             ["/// <remarks>", "/// <para>One.</para>", "/// <para>Two.</para>", "/// </remarks>"],
-            XmlDoc.DocLines(XmlDoc.Text(source, ("resharper_xmldoc_indent_child_elements", "zero_indent")))
+            XmlDoc.DocLines(XmlDoc.Text(source, ("skala_xmldoc_indent_child_elements", "zero_indent")))
         );
     }
 
@@ -259,12 +259,12 @@ public sealed class XmlDocSubFormatterTests {
     /// </summary>
     /// <remarks>
     ///     ⚠ It was <c>IndentSize_IsTheXmlDocsOwn</c>, asserting that
-    ///     <c>resharper_xmldoc_indent_size = 2</c> gives <c>///   &lt;para&gt;</c>. Measured under
+    ///     <c>skala_xmldoc_indent_size = 2</c> gives <c>///   &lt;para&gt;</c>. Measured under
     ///     <c>OracleProfile.DocComments</c> on this very shape: at
-    ///     <c>resharper_xmldoc_indent_size = 1</c> the child stays at four columns, at
+    ///     <c>skala_xmldoc_indent_size = 1</c> the child stays at four columns, at
     ///     <c>indent_size = 1</c> it moves to one, and at <c>indent_size = 2</c> — asked with
     ///     <c>tab_width = 8</c> in the same run, so a tab width could not be answering — it moves to
-    ///     two. <c>resharper_xmldoc_indent_style = tab</c> leaves the child indented with spaces, and
+    ///     two. <c>skala_xmldoc_indent_style = tab</c> leaves the child indented with spaces, and
     ///     <c>indent_style = tab</c> tabs the file's code lines while leaving the comment's inner
     ///     indent four spaces. Both <c>xmldoc_</c> keys are registered inert on that measurement; the
     ///     old assertion passed only because the committed fixture agrees at <c>4</c>/<c>space</c>,
@@ -282,13 +282,13 @@ public sealed class XmlDocSubFormatterTests {
 
         Assert.Contains(
             "///     <para>One.</para>",
-            XmlDoc.Text(source, ("resharper_xmldoc_indent_size", "2")),
+            XmlDoc.Text(source, ("skala_xmldoc_indent_size", "2")),
             StringComparison.Ordinal
         );
 
         Assert.Contains(
             "///     <para>One.</para>",
-            XmlDoc.Text(source, ("resharper_xmldoc_indent_style", "tab")),
+            XmlDoc.Text(source, ("skala_xmldoc_indent_style", "tab")),
             StringComparison.Ordinal
         );
     }
@@ -296,7 +296,7 @@ public sealed class XmlDocSubFormatterTests {
     [Fact]
     public void LinebreaksInsideTagsForElementsWithChildElements_False_KeepsThemOnOneLine() {
         // ⚠ `<b>` rather than `<para>`: an element the export lists in
-        // `linebreak_before_elements` owns its own line whatever this key says, and asserting on one
+        // `skala_xmldoc_linebreak_before_elements` owns its own line whatever this key says, and asserting on one
         // would be asserting that the other key does not work.
         var source = XmlDoc.InClass("/// <remarks><b>One.</b></remarks>");
 
@@ -310,7 +310,7 @@ public sealed class XmlDocSubFormatterTests {
             XmlDoc.DocLines(
                 XmlDoc.Text(
                     source,
-                    ("resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements", "false")
+                    ("skala_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements", "false")
                 )
             )
         );
@@ -321,7 +321,7 @@ public sealed class XmlDocSubFormatterTests {
         var source = XmlDoc.InClass("/// <summary>Docs.</summary>");
         Assert.Contains(
             "<summary> Docs. </summary>",
-            XmlDoc.Text(source, ("resharper_xmldoc_spaces_inside_tags", "true")),
+            XmlDoc.Text(source, ("skala_xmldoc_spaces_inside_tags", "true")),
             StringComparison.Ordinal
         );
     }
@@ -368,7 +368,7 @@ public sealed class XmlDocSubFormatterTests {
             "<summary> Docs. </summary>",
             XmlDoc.Text(
                 XmlDoc.InClass("/// <summary>  Docs.  </summary>"),
-                ("resharper_xmldoc_spaces_inside_tags", "true")
+                ("skala_xmldoc_spaces_inside_tags", "true")
             ),
             StringComparison.Ordinal
         );
@@ -388,7 +388,7 @@ public sealed class XmlDocSubFormatterTests {
         var source = XmlDoc.InClass("/// <summary>", "/// One.", "/// Two.", "/// </summary>");
         Assert.Equal(
             ["/// <summary>One. Two.</summary>"],
-            XmlDoc.DocLines(XmlDoc.Text(source, ("resharper_xmldoc_keep_user_linebreaks", "false")))
+            XmlDoc.DocLines(XmlDoc.Text(source, ("skala_xmldoc_keep_user_linebreaks", "false")))
         );
     }
 }
@@ -494,8 +494,8 @@ public sealed class XmlDocColumnTests {
     public void AnElementIsOpened_WhenItsContentOverflows_NotItsEndTag(int columns, bool opened) {
         // ⚠ `<item>` sits at doc indent 8 and closes at column 14, so its content fits at 105 and
         // not at 107 — and the `</item>` that follows is not in the comparison. It is what keeps the
-        // committed `linebreak_before_multiline_elements` fixture's 131-column `<item>` on one line,
-        // which SK-DIV-0021 attributed to `linebreak_before_elements` not naming `item`. Measured
+        // committed `skala_xmldoc_linebreak_before_multiline_elements` fixture's 131-column `<item>` on one line,
+        // which SK-DIV-0021 attributed to `skala_xmldoc_linebreak_before_elements` not naming `item`. Measured
         // false: the same `<item>` with longer content is opened up and wrapped.
         var formatted = XmlDoc.Text(
             XmlDoc.InClass("/// <remarks><list><item>" + Words(columns) + "</item></list></remarks>")
@@ -524,7 +524,7 @@ public sealed class XmlDocColumnTests {
     [Fact]
     public void AnElementHoldingAMultilineChild_HoistsItsProseToo() {
         // ⚠ SK-DIV-0020. `<list>` holds only elements, so
-        // `linebreaks_inside_tags_for_elements_with_child_elements` opens it; an element holding one
+        // `skala_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements` opens it; an element holding one
         // that is open cannot itself be flat, and its prose goes with it.
         Assert.Equal(
             [
@@ -775,7 +775,7 @@ public sealed class XmlDocHazardTests {
             "/// </summary>"
         );
 
-        var formatted = XmlDoc.Text(source, ("resharper_space_after_triple_slash", "false"));
+        var formatted = XmlDoc.Text(source, ("skala_space_after_triple_slash", "false"));
         var lines = XmlDoc.DocLines(formatted);
         Assert.Contains("///     var x = 1;", lines);
         Assert.Contains("///     var y = 2;", lines);
@@ -948,7 +948,7 @@ public sealed class XmlDocMeasuredTagHeaderTests {
 
         Assert.Contains(
             """/// <param name="a" >Text.</param>""",
-            XmlDoc.Text(source, ("resharper_xmldoc_space_after_last_attribute", "true")),
+            XmlDoc.Text(source, ("skala_xmldoc_space_after_last_attribute", "true")),
             StringComparison.Ordinal
         );
     }
@@ -956,11 +956,11 @@ public sealed class XmlDocMeasuredTagHeaderTests {
     [Fact]
     public void SpaceAfterLastAttribute_TouchesNeitherASelfClosingTagNorABareOne() {
         // ⚠ Measured, because "the gap before the bracket" is one obvious reading and it is wrong on
-        // both counts: a self-closing tag's gap belongs to `space_before_self_closing` alone, and a
+        // both counts: a self-closing tag's gap belongs to `skala_xmldoc_space_before_self_closing` alone, and a
         // tag with no attributes has no last attribute to follow.
         var formatted = XmlDoc.Text(
             XmlDoc.InClass("/// <summary>Short.</summary>", """/// <remarks><see cref="C" /></remarks>"""),
-            ("resharper_xmldoc_space_after_last_attribute", "true")
+            ("skala_xmldoc_space_after_last_attribute", "true")
         );
 
         Assert.Contains("/// <summary>Short.</summary>", formatted, StringComparison.Ordinal);
@@ -976,7 +976,7 @@ public sealed class XmlDocMeasuredTagHeaderTests {
 
         Assert.Contains(
             """/// <param name = "b">Text.</param>""",
-            XmlDoc.Text(source, ("resharper_xmldoc_spaces_around_eq_in_attribute", "true")),
+            XmlDoc.Text(source, ("skala_xmldoc_spaces_around_eq_in_attribute", "true")),
             StringComparison.Ordinal
         );
     }
@@ -1010,7 +1010,7 @@ public sealed class XmlDocMeasuredTagHeaderTests {
         // stated anywhere", which was true of the documentation and never true of the tool.
         var formatted = XmlDoc.Text(
             XmlDoc.InClass("/// <summary>" + content + "</summary>"),
-            ("resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than", "12")
+            ("skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than", "12")
         );
 
         Assert.Equal(opened, !formatted.Contains("<summary>" + content + "</summary>", StringComparison.Ordinal));
@@ -1023,7 +1023,7 @@ public sealed class XmlDocMeasuredTagHeaderTests {
         // int.MaxValue, which is exactly why this key looked like it could not be pinned.
         var formatted = XmlDoc.Text(
             XmlDoc.InClass("/// <summary>ab</summary>"),
-            ("resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than", "0")
+            ("skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than", "0")
         );
 
         Assert.DoesNotContain("<summary>ab</summary>", formatted, StringComparison.Ordinal);
@@ -1040,7 +1040,7 @@ public sealed class XmlDocMeasuredTagHeaderTests {
     ///     fixed it. That is SK-DIV-0023's first half, and it is fixed —
     ///     <c>XmlDocModel.SourceLines</c> takes the marker space off on the way in, so
     ///     <c>XmlDocFormatter</c> can write it back on every line without a code block gaining a column.
-    ///     The oracle's own <c>constructs/xmldoc/resharper_xmldoc_blank_line_after_pi</c> fixture is what
+    ///     The oracle's own <c>constructs/xmldoc/skala_xmldoc_blank_line_after_pi</c> fixture is what
     ///     says <c>/// &lt;?…?&gt;</c> is the right answer; what still diverges there is the trailing
     ///     space on the blank line after it, which is the entry's second half and a decision.
     /// </remarks>
@@ -1066,7 +1066,7 @@ public sealed class XmlDocMeasuredTagHeaderTests {
         var lines = XmlDoc.DocLines(
             XmlDoc.Text(
                 XmlDoc.InClass("""/// <?display mode="short"?>""", "/// <summary>After.</summary>"),
-                ("resharper_xmldoc_blank_line_after_pi", "false")
+                ("skala_xmldoc_blank_line_after_pi", "false")
             )
         );
 
@@ -1101,7 +1101,7 @@ public sealed class XmlDocKeyCoverageTests {
     ///     ⚠ The five processing-instruction keys used to be dropped from the count on the grounds that
     ///     "a processing instruction in a C# documentation comment is not a thing that occurs". It is —
     ///     Roslyn parses one, and the oracle acts on one: with <c>CSharpFormatDocComments</c> enabled,
-    ///     <c>resharper_xmldoc_blank_line_after_pi</c> puts a blank line after
+    ///     <c>skala_xmldoc_blank_line_after_pi</c> puts a blank line after
     ///     <c>&lt;?xml-stylesheet …?&gt;</c> at its default <c>true</c>, which is behaviour Skala was
     ///     missing on the default path for as long as the exclusion stood.
     ///     <para>
@@ -1133,7 +1133,7 @@ public sealed class XmlDocKeyCoverageTests {
         // ⚠ 18 / 14, moved from 21 / 11 by three measurements rather than by three decisions.
         // `indent_size` and `indent_style` are inert — a documentation comment's inner indent is the
         // C# `indent_size`'s width, always spent in spaces, and neither `xmldoc_` key reaches it —
-        // and `wrap_tags_and_pi` joins the four tag-header keys it turned out to belong with. Each
+        // and `skala_xmldoc_wrap_tags_and_pi` joins the four tag-header keys it turned out to belong with. Each
         // of the three had been read off a fixture that agrees at the export's own value and cannot
         // separate the key from what else produces that value.
         Assert.Equal(32, family.Count);
@@ -1208,8 +1208,8 @@ public sealed class XmlDocKeyCoverageTests {
         // ⚠ 19 and 0, and the zero is the finding. The `OfUnoracled` mark was carrying four keys on
         // the reading "the oracle was asked and said something else"; the oracle has now been asked
         // again, with a probe rather than only with the committed fixture, and it said the same thing
-        // as Skala at every value of all four. `max_line_length`, `wrap_text` and
-        // `linebreak_before_singleline_elements` are `Of`, and `wrap_tags_and_pi` left the family for
+        // as Skala at every value of all four. `max_line_length`, `skala_xmldoc_wrap_text` and
+        // `skala_xmldoc_linebreak_before_singleline_elements` are `Of`, and `skala_xmldoc_wrap_tags_and_pi` left the family for
         // `XmlDocIds.Refused` because what it governs — a break inside a tag header — is a
         // construct Skala can neither emit nor re-read (SK-DIV-0079).
         //

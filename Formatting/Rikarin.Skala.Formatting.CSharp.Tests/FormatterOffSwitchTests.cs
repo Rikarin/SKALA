@@ -67,7 +67,7 @@ public sealed class FormatterOffSwitchTests {
     /// </remarks>
     [Fact]
     public void DisableFormatter_ReturnsTheFileByteForByte() {
-        Assert.Equal(Crooked, Format(Crooked, ("resharper_disable_formatter", "true")));
+        Assert.Equal(Crooked, Format(Crooked, ("skala_disable_formatter", "true")));
         Assert.NotEqual(Crooked, Format(Crooked));
     }
 
@@ -79,7 +79,7 @@ public sealed class FormatterOffSwitchTests {
             SourceText.From(Crooked),
             OptionResolver.Resolve(
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [new KeyValuePair<string, string>("resharper_disable_formatter", "true")]
+                [new KeyValuePair<string, string>("skala_disable_formatter", "true")]
             )
                 .Options
         );
@@ -103,7 +103,7 @@ public sealed class FormatterOffSwitchTests {
             SourceText.From("class C { void M( { }"),
             OptionResolver.Resolve(
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [new KeyValuePair<string, string>("resharper_disable_formatter", "true")]
+                [new KeyValuePair<string, string>("skala_disable_formatter", "true")]
             )
                 .Options
         );
@@ -116,9 +116,9 @@ public sealed class FormatterOffSwitchTests {
     /// </summary>
     /// <remarks>
     ///     The subject exercises one of each and the assertions name them: the three-blank run above
-    ///     <c>Method</c> is past <c>keep_blank_lines_in_declarations</c>, the gap between <c>}</c> and
-    ///     the statement below it is where <c>blank_lines_around_invocable</c> inserts one, and the
-    ///     blank before a closing brace is what <c>remove_blank_lines_near_braces_in_code</c> deletes.
+    ///     <c>Method</c> is past <c>skala_keep_blank_lines_in_declarations</c>, the gap between <c>}</c> and
+    ///     the statement below it is where <c>skala_blank_lines_around_invocable</c> inserts one, and the
+    ///     blank before a closing brace is what <c>skala_remove_blank_lines_near_braces_in_code</c> deletes.
     ///     A one-system implementation passes on one of these and fails on the other two.
     /// </remarks>
     [Fact]
@@ -138,7 +138,7 @@ public sealed class FormatterOffSwitchTests {
 
                               """;
 
-        var off = Format(source, ("resharper_disable_blank_line_changes", "true"));
+        var off = Format(source, ("skala_disable_blank_line_changes", "true"));
 
         // The cap did not truncate the run …
         Assert.Contains("int _field;\n\n\n\n    void M()", off, StringComparison.Ordinal);
@@ -163,7 +163,7 @@ public sealed class FormatterOffSwitchTests {
     public void DisableBlankLineChanges_StillBreaksLines() {
         var off = Format(
             "class C { void M(bool b) { if(b){ M(b); } } }",
-            ("resharper_disable_blank_line_changes", "true")
+            ("skala_disable_blank_line_changes", "true")
         );
 
         Assert.Contains("if (b) {\n            M(b);\n        }", off, StringComparison.Ordinal);
@@ -190,7 +190,7 @@ public sealed class FormatterOffSwitchTests {
             SourceText.From(source),
             OptionResolver.Resolve(
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
-                [new KeyValuePair<string, string>("resharper_disable_blank_line_changes", "true")]
+                [new KeyValuePair<string, string>("skala_disable_blank_line_changes", "true")]
             )
                 .Options
         );
@@ -240,7 +240,7 @@ public sealed class FormatterOffSwitchTests {
     /// </remarks>
     [Fact]
     public void DisableIndenter_KeepsWhatTheAuthorWrote_AndGivesACreatedLineTheBreaksOwnFlatForm() {
-        var off = Format(Crooked5Indentation, ("resharper_disable_indenter", "true"));
+        var off = Format(Crooked5Indentation, ("skala_disable_indenter", "true"));
 
         // The lines that existed in the input, with the author's own (wrong) whitespace.
         Assert.Contains("class C {\n        public void Method() {\n    var value =", off, StringComparison.Ordinal);
@@ -292,13 +292,13 @@ public sealed class FormatterOffSwitchTests {
     /// </remarks>
     [Fact]
     public void DisableSpaceChanges_KeepsEveryInterTokenRunByteForByte() {
-        var off = Format(Crooked5Spacing, ("resharper_disable_space_changes", "true"));
+        var off = Format(Crooked5Spacing, ("skala_disable_space_changes", "true"));
 
         Assert.Contains("public int Alpha ;", off, StringComparison.Ordinal);
         Assert.Contains("public void Method( int one,int two ) {", off, StringComparison.Ordinal);
         Assert.Contains("var sum=one  +  two;", off, StringComparison.Ordinal);
         Assert.Contains("if(sum>0){", off, StringComparison.Ordinal);
-        // ⚠ The gap before a trailing comment too, which `space_before_trailing_comment` governs and
+        // ⚠ The gap before a trailing comment too, which `skala_space_before_trailing_comment` governs and
         // the narrow `disable_space_changes_before_trailing_comment` cannot move at either value.
         Assert.Contains("}    // note", off, StringComparison.Ordinal);
         // Indentation and wrapping are untouched: the body was one line in the input.
@@ -317,13 +317,13 @@ public sealed class FormatterOffSwitchTests {
     ///     One file carrying every break the formatter can add and every one it can remove.
     /// </summary>
     /// <remarks>
-    ///     Removals: the three-blank run is past <c>keep_blank_lines_in_declarations</c>, the blank
-    ///     before <c>}</c> is what <c>remove_blank_lines_near_braces_in_code</c> deletes, and the break
-    ///     after <c>=&gt;</c> is the one <c>keep_existing_expr_member_arrangement</c> re-joins.
+    ///     Removals: the three-blank run is past <c>skala_keep_blank_lines_in_declarations</c>, the blank
+    ///     before <c>}</c> is what <c>skala_remove_blank_lines_near_braces_in_code</c> deletes, and the break
+    ///     after <c>=&gt;</c> is the one <c>skala_keep_existing_expr_member_arrangement</c> re-joins.
     ///     Additions: <c>void M() { var x = 1;</c> is a body the brace rules break, and the gap between
-    ///     the two methods is where <c>blank_lines_around_invocable</c> inserts one.
+    ///     the two methods is where <c>skala_blank_lines_around_invocable</c> inserts one.
     ///     <para>
-    ///         ⚠ The same file as <c>constructs/suppression/resharper_disable_line_break_changes.cs</c>,
+    ///         ⚠ The same file as <c>constructs/suppression/skala_disable_line_break_changes.cs</c>,
     ///         and deliberately: the oracle reproduces Skala's output on it byte for byte at the export's
     ///         own configuration, so nothing asserted below is standing on a baseline that already
     ///         disagrees.
@@ -355,7 +355,7 @@ public sealed class FormatterOffSwitchTests {
     /// </remarks>
     [Fact]
     public void DisableLineBreakChanges_AddsNoBreakAndRemovesNone() {
-        var off = Format(Crooked5Breaks, ("resharper_disable_line_break_changes", "true"));
+        var off = Format(Crooked5Breaks, ("skala_disable_line_break_changes", "true"));
 
         // Removals, all three suppressed …
         Assert.Contains("int _field;\n\n\n\n    void M()", off, StringComparison.Ordinal);
@@ -385,7 +385,7 @@ public sealed class FormatterOffSwitchTests {
     /// </remarks>
     [Fact]
     public void DisableLineBreakRemoval_RemovesNoBreak_AndStillAddsOne() {
-        var off = Format(Crooked5Breaks, ("resharper_disable_line_break_removal", "true"));
+        var off = Format(Crooked5Breaks, ("skala_disable_line_break_removal", "true"));
 
         // Nothing the author wrote is taken away …
         Assert.Contains("int _field;\n\n\n\n    void M()", off, StringComparison.Ordinal);
@@ -409,8 +409,8 @@ public sealed class FormatterOffSwitchTests {
     /// </remarks>
     [Fact]
     public void TheTwoLineBreakKeys_AreNotTheSameKey() {
-        var changes = Format(Crooked5Breaks, ("resharper_disable_line_break_changes", "true"));
-        var removal = Format(Crooked5Breaks, ("resharper_disable_line_break_removal", "true"));
+        var changes = Format(Crooked5Breaks, ("skala_disable_line_break_changes", "true"));
+        var removal = Format(Crooked5Breaks, ("skala_disable_line_break_removal", "true"));
         var neither = Format(Crooked5Breaks);
 
         Assert.NotEqual(changes, removal);
@@ -443,10 +443,10 @@ public sealed class FormatterOffSwitchTests {
     ///     </para>
     /// </remarks>
     [Theory]
-    [InlineData("resharper_disable_indenter")]
-    [InlineData("resharper_disable_space_changes")]
-    [InlineData("resharper_disable_line_break_changes")]
-    [InlineData("resharper_disable_line_break_removal")]
+    [InlineData("skala_disable_indenter")]
+    [InlineData("skala_disable_space_changes")]
+    [InlineData("skala_disable_line_break_changes")]
+    [InlineData("skala_disable_line_break_removal")]
     public void EverySuppression_IsIdempotent_AndKeepsTheTokenStream(string key) {
         foreach (var subject in new[] { Crooked, Crooked5Indentation, Crooked5Spacing, Crooked5Breaks, Documented }) {
             var first = Result(subject, key);

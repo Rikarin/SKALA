@@ -31,7 +31,7 @@ a number: **over an operand chain the arrow always wins.** Both are in
 [The arrow, subtracted](#the-arrow-subtracted), and together they are the whole of what
 SK-DIV-0050 adds to SK-DIV-0005.
 
-Oracle: `jb cleanupcode 2025.2.6`, profile `SkalaFormatOnly`, the repository `.editorconfig` with `resharper_wrap_before_arrow_with_expressions = true` appended — margin 120, indent 4.
+Oracle: `jb cleanupcode 2025.2.6`, profile `SkalaFormatOnly`, the repository `.editorconfig` with `skala_wrap_before_arrow_with_expressions = true` appended — margin 120, indent 4.
 
 The machine-readable grid is [`sk-div-preference-sweep-wrap-before-arrow.json`](sk-div-preference-sweep-wrap-before-arrow.json).
 

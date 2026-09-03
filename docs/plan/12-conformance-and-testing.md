@@ -85,7 +85,7 @@ whose diff nobody could review when the oracle version moves.
 records as **inert** — honoured vacuously, because another rule decides first or because the oracle
 ignores it as well — and fails if it *does* change anything. "Inert" is the sentence a key gets both
 when it genuinely cannot be observed and when nobody looked, and only a test tells the two apart. It
-found one on its first run: `space_in_singleline_method` carried a true reason and wiring that
+found one on its first run: `skala_space_in_singleline_method` carried a true reason and wiring that
 contradicted it.
 
 ### 2. Differential — the number that matters
@@ -246,7 +246,7 @@ copy, and compare the two outputs. Same oracle, same fixtures-are-committed rule
 
 #### Two modes, and why one is not enough
 
-The export sets `resharper_keep_user_linebreaks = true` and `keep_user_wrapping = true` — ADR-002's
+The export sets `skala_keep_user_linebreaks = true` and `keep_user_wrapping = true` — ADR-002's
 whole preserve-and-repair model. **Destroying the author's line breaks destroys the input those
 options act on**, so a collapse-everything test measures the *reflow* path and says nothing about the
 *preserve* path, which is what runs in production.
@@ -421,7 +421,7 @@ That measures the output and not the options, and the gap between the two is not
 - Skala reached **99.70 %** fidelity while respecting **205 of the 458** options the export sets. An
   unimplemented key whose configured value happens to coincide with Skala's behaviour costs nothing
   and is invisible.
-- Flipping `resharper_int_align` between `false` and `true` produced **byte-identical output**. The
+- Flipping `skala_int_align` between `false` and `true` produced **byte-identical output**. The
   key was ignored and no test noticed.
 - M3.1 found options marked **Tier A — "pinned by an oracle fixture"** — that could not be observed
   at all.
@@ -439,7 +439,7 @@ configuration, and compare.
 | **neither moved** | ⚠ **`UNEXERCISED` — not a pass.** Either the fixture does not exercise the option, or the option is inert |
 
 Two more verdicts sit under `DIVERGENT` and are separated because the diagnosis differs. `INERT` is
-the oracle moving while Skala does not — the `resharper_int_align` shape, the defect a
+the oracle moving while Skala does not — the `skala_int_align` shape, the defect a
 one-configuration measurement cannot see at all. `SPURIOUS` is Skala moving while the oracle does
 not. **Treating "neither moved" as a pass rebuilds the exact defect this harness exists to detect**,
 which is why `UNEXERCISED` has its own row in every table the sweep writes and never a tick beside
@@ -466,11 +466,11 @@ rather than blamed on the key that was flipped on it.
 
 **Both engines are asked in the same units.** Every other measurement here compares line-ending
 *normalised* text, because a committed fixture may have been generated on another OS. Two options —
-`resharper_enforce_line_ending_style` and `resharper_csharp_insert_final_newline` — change nothing
+`skala_enforce_line_ending_style` and `skala_insert_final_newline` — change nothing
 that survives that normalisation, so the sweep falls back to raw bytes for them and marks the row
 `raw`. ⚠ The trap either side of that is real and the harness has been on both sides of it: normalise
 both and those two keys read `UNEXERCISED` for a reason that is about the instrument; normalise one
-side only and `insert_final_newline` reads `INERT` — *"ReSharper honours the key and Skala ignores
+side only and `skala_insert_final_newline` reads `INERT` — *"ReSharper honours the key and Skala ignores
 it"* — for a key `skala format --option` demonstrably honours. `SkalaSideTests` pins the units,
 because Skala's whole side of a 258-option sweep runs in under a second and needs no oracle at all.
 
@@ -606,10 +606,10 @@ than a null result.** Two options left the set and two joined it.
 
 **The 25 options this run measured for the first time** had never been swept at all — they were Tier A
 on a fixture and nothing else, and the previous run predates them. **23 were right.** The two that
-were not, `resharper_csharp_wrap_lines` and `resharper_place_attribute_on_same_line`, are `DIVERGENT`
+were not, `skala_wrap_lines` and `skala_place_attribute_on_same_line`, are `DIVERGENT`
 at their first measurement and are now Tier D, keeping their fixtures so a later sweep can reverse it.
 
-**Two options were promoted.** `indent_size` and `resharper_csharp_indent_size` moved `DIVERGENT` →
+**Two options were promoted.** `indent_size` and `skala_indent_size` moved `DIVERGENT` →
 `CONFORMANT`: the formatter improved, and the previous run's demotion had gone stale.
 
 ⚠ **Only those two verdicts moved across the 88 commits between the runs.** The third change,
@@ -714,32 +714,32 @@ missing. Each is marked as such — that is a real gap, not a dismissal.
 
 | key | verdict |
 |---|---|
-| `resharper_csharp_blank_lines_inside_type` | ✅ **implemented** — see below |
-| `resharper_csharp_blank_lines_inside_namespace` | ✅ **implemented** — see below |
+| `skala_blank_lines_inside_type` | ✅ **implemented** — see below |
+| `skala_blank_lines_inside_namespace` | ✅ **implemented** — see below |
 | `resharper_csharp_extra_spaces` | implementable — **4 distinct outputs**, the widest in the set; needs a preservation pass that does not exist |
 | `csharp_space_around_binary_operators` | implementable, blocked — the polarity-aware `expands` the registry already records |
 | `csharp_space_between_parentheses` | implementable, blocked — same missing mechanism |
 | `csharp_new_line_before_members_in_object_initializers` | implementable, blocked — same; and only observable on an initializer the single-line joiner does not put back |
-| `resharper_int_align` | implementable — `IntAlign.cs`, another agent's file |
-| `resharper_csharp_int_align_binary_expressions` | implementable — `IntAlign.cs`, another agent's file |
+| `skala_int_align` | implementable — `IntAlign.cs`, another agent's file |
+| `skala_int_align_binary_expressions` | implementable — `IntAlign.cs`, another agent's file |
 | `max_line_length` | implementable-with-a-gap — a fitting pass |
 | `csharp_preserve_single_line_blocks` | implementable-with-a-gap — forced expansion is a break point |
-| `resharper_csharp_force_chop_compound_if_expression` | implementable-with-a-gap — new break point |
-| `resharper_csharp_force_chop_compound_while_expression` | implementable-with-a-gap — new break point |
-| `resharper_csharp_force_chop_compound_do_expression` | implementable-with-a-gap — new break point |
+| `skala_force_chop_compound_if_expression` | implementable-with-a-gap — new break point |
+| `skala_force_chop_compound_while_expression` | implementable-with-a-gap — new break point |
+| `skala_force_chop_compound_do_expression` | implementable-with-a-gap — new break point |
 | `resharper_csharp_nested_ternary_style` | implementable-with-a-gap — **3 distinct outputs**, break point |
 | `resharper_csharp_wrap_verbatim_interpolated_strings` | implementable-with-a-gap — **3 distinct outputs**, break point |
-| `end_of_line` | masked — `resharper_enforce_line_ending_style = false` in the export; the mark on it was already right |
-| `resharper_csharp_max_attribute_length_for_same_line` | masked by `place_*_attribute_on_same_line = false`; moves at `1` once they are `always` |
-| `resharper_csharp_place_simple_list_pattern_on_single_line` | masked by `keep_existing_list_patterns_arrangement = true` |
-| `resharper_csharp_space_in_singleline_method` | ⚠ **masked, not inert** — see the correction below |
+| `end_of_line` | masked — `skala_enforce_line_ending_style = false` in the export; the mark on it was already right |
+| `skala_max_attribute_length_for_same_line` | masked by `place_*_attribute_on_same_line = false`; moves at `1` once they are `always` |
+| `skala_place_simple_list_pattern_on_single_line` | masked by `skala_keep_existing_list_patterns_arrangement = true` |
+| `skala_space_in_singleline_method` | ⚠ **masked, not inert** — see the correction below |
 
-⚠ **`space_in_singleline_method`'s recorded reason is wrong and this is the second time.** M9's
+⚠ **`skala_space_in_singleline_method`'s recorded reason is wrong and this is the second time.** M9's
 `OptionObservabilityTests` already caught it once carrying "a true reason and wiring that contradicted
 it". The reason it carries now — "the shape it governs no longer exists" — is a statement about
 Skala at this export, and the oracle contradicts it: with
-`place_simple_method_on_single_line = true` and `keep_existing_declaration_block_arrangement = true`
-the key moves, and so does its Tier A sibling `space_in_singleline_anonymous_method` on the same
+`place_simple_method_on_single_line = true` and `skala_keep_existing_declaration_block_arrangement = true`
+the key moves, and so does its Tier A sibling `skala_space_in_singleline_anonymous_method` on the same
 fixture. The `OfInert` mark is left in place because `AnInertKey_StillCannotBeObserved` asks about
 *Skala*, and that half still holds; what is wrong is the sentence, and the sentence is what the next
 agent reads.
@@ -773,32 +773,32 @@ to.
 
 | key | the spelling that works |
 |---|---|
-| `resharper_wrap_after_binary_opsign` | `resharper_csharp_wrap_before_binary_opsign` |
-| `resharper_wrap_after_dot` | `resharper_csharp_wrap_after_dot_in_method_calls` |
-| `csharp_space_after_dot` | `resharper_csharp_space_around_dot` |
-| `csharp_space_before_dot` | `resharper_csharp_space_around_dot` |
-| `resharper_int_align_eq` | `resharper_csharp_int_align_variables` |
-| `resharper_int_align_declaration_names` | `resharper_csharp_int_align_fields` |
-| `resharper_int_align_enum_initializers` | `resharper_csharp_int_align_fields` |
-| `resharper_align_multiline_type_parameter` | `resharper_align_multiline_type_parameter_list` |
-| `resharper_align_multiline_implements_list` | `resharper_csharp_align_multiline_extends_list` |
-| `resharper_wrap_base_clause_style` | `resharper_csharp_wrap_extends_list_style` |
-| `resharper_wrap_ctor_initializer_style` | `resharper_csharp_wrap_arguments_style` |
-| `resharper_csharp_space_within_new_parentheses` | `resharper_csharp_space_within_parentheses` |
-| `resharper_space_within_spread_pattern` | `resharper_csharp_space_within_slice_pattern` |
+| `resharper_wrap_after_binary_opsign` | `skala_wrap_before_binary_opsign` |
+| `resharper_wrap_after_dot` | `skala_wrap_after_dot_in_method_calls` |
+| `csharp_space_after_dot` | `skala_space_around_dot` |
+| `csharp_space_before_dot` | `skala_space_around_dot` |
+| `skala_int_align_eq` | `skala_int_align_variables` |
+| `skala_int_align_declaration_names` | `skala_int_align_fields` |
+| `skala_int_align_enum_initializers` | `skala_int_align_fields` |
+| `resharper_align_multiline_type_parameter` | `skala_align_multiline_type_parameter_list` |
+| `resharper_align_multiline_implements_list` | `skala_align_multiline_extends_list` |
+| `resharper_wrap_base_clause_style` | `skala_wrap_extends_list_style` |
+| `resharper_wrap_ctor_initializer_style` | `skala_wrap_arguments_style` |
+| `skala_space_within_new_parentheses` | `skala_space_within_parentheses` |
+| `skala_space_within_spread_pattern` | `skala_space_within_slice_pattern` |
 | `resharper_remove_blank_lines_near_braces` | `resharper_csharp_remove_blank_lines_near_braces_in_{code,declarations}` |
 | `resharper_simple_block_style` | `resharper_csharp_place_simple_method_on_single_line` |
-| `resharper_simple_embedded_statement_style` | `resharper_csharp_place_simple_embedded_statement_on_same_line` |
-| `resharper_simple_case_statement_style` | `resharper_csharp_place_simple_case_statement_on_same_line` |
-| `resharper_place_property_attribute_on_same_line` | `resharper_csharp_place_field_attribute_on_same_line` |
-| `resharper_place_event_attribute_on_same_line` | `resharper_csharp_place_accessorholder_attribute_on_same_line` |
+| `resharper_simple_embedded_statement_style` | `skala_place_simple_embedded_statement_on_same_line` |
+| `resharper_simple_case_statement_style` | `skala_place_simple_case_statement_on_same_line` |
+| `resharper_place_property_attribute_on_same_line` | `skala_place_field_attribute_on_same_line` |
+| `resharper_place_event_attribute_on_same_line` | `skala_place_accessorholder_attribute_on_same_line` |
 
 ⚠ **The two attribute rows were checked one step further, because "there is no C# spelling" is a
 strong claim.** `resharper_csharp_place_event_attribute_on_same_line` — the spelling the registry
 does *not* contain — was probed as a control and is flat too, while
-`resharper_csharp_place_field_attribute_on_same_line` moved the same file. So it is not that the
+`skala_place_field_attribute_on_same_line` moved the same file. So it is not that the
 registry has the wrong prefix: the C# formatter has no per-property and no per-event attribute
-placement at all, and the export's `resharper_place_attribute_on_same_line` expands list, which omits
+placement at all, and the export's `skala_place_attribute_on_same_line` expands list, which omits
 both, is right.
 
 ##### Unreachable — 34
@@ -808,32 +808,32 @@ names the control, because that is the whole of the evidence.
 
 | key | the control that moved the same fixture |
 |---|---|
-| `resharper_align_ternary` | `resharper_csharp_int_align_nested_ternary`, `max_line_length` |
+| `resharper_align_ternary` | `skala_int_align_nested_ternary`, `max_line_length` |
 | `resharper_indent_aligned_ternary` | same |
 | `resharper_outdent_ternary_ops` | same |
-| `resharper_wrap_enumeration_style` | `resharper_csharp_keep_existing_enum_arrangement` |
+| `resharper_wrap_enumeration_style` | `skala_keep_existing_enum_arrangement` |
 | `resharper_new_line_before_enumerators` | same |
-| `resharper_indent_comment` | `indent_size`, `resharper_csharp_allow_comment_after_lbrace` |
+| `resharper_indent_comment` | `indent_size`, `skala_allow_comment_after_lbrace` |
 | `resharper_wrap_comments` | same |
 | `resharper_place_namespace_definitions_on_same_line` | `indent_size` |
 | `resharper_labeled_statement_style` | `indent_size` |
 | `resharper_csharp_use_indent_from_previous_element` | `indent_size` |
 | `trim_trailing_whitespace` | `indent_size` |
-| `resharper_remove_spaces_on_blank_lines` | `indent_size` |
-| `resharper_expression_pars` | `resharper_csharp_wrap_before_binary_opsign` |
-| `resharper_continuous_line_indent` | `resharper_csharp_wrap_before_binary_opsign` |
-| `resharper_use_continuous_line_indent_in_method_pars` | `resharper_csharp_wrap_parameters_style`, `indent_method_decl_pars` |
-| `resharper_alignment_tab_fill_style` | `resharper_csharp_int_align_fields`, on a tab-indented fixture |
-| `resharper_csharp_int_align_fix_in_adjacent` | `resharper_csharp_int_align_fields` |
-| `resharper_blank_lines_around_global_attribute` | `resharper_csharp_blank_lines_after_using_list` |
-| `resharper_dont_remove_extra_blank_lines` | `resharper_csharp_keep_blank_lines_in_code` |
-| `resharper_align_multiline_type_parameter_constraints` | `resharper_align_multiline_type_parameter_list` |
+| `skala_remove_spaces_on_blank_lines` | `indent_size` |
+| `resharper_expression_pars` | `skala_wrap_before_binary_opsign` |
+| `resharper_continuous_line_indent` | `skala_wrap_before_binary_opsign` |
+| `resharper_use_continuous_line_indent_in_method_pars` | `skala_wrap_parameters_style`, `skala_indent_method_decl_pars` |
+| `resharper_alignment_tab_fill_style` | `skala_int_align_fields`, on a tab-indented fixture |
+| `skala_int_align_fix_in_adjacent` | `skala_int_align_fields` |
+| `resharper_blank_lines_around_global_attribute` | `skala_blank_lines_after_using_list` |
+| `resharper_dont_remove_extra_blank_lines` | `skala_keep_blank_lines_in_code` |
+| `resharper_align_multiline_type_parameter_constraints` | `skala_align_multiline_type_parameter_list` |
 | `resharper_align_multiline_type_argument` | same |
-| `resharper_align_multiline_ctor_init` | `resharper_csharp_wrap_arguments_style` |
+| `resharper_align_multiline_ctor_init` | `skala_wrap_arguments_style` |
 | `resharper_declaration_body_on_the_same_line` | `resharper_csharp_place_simple_method_on_single_line` |
 | `resharper_keep_existing_line_break_before_declaration_body` | same |
-| `resharper_treat_case_statement_with_break_as_simple` | `resharper_csharp_place_simple_case_statement_on_same_line` |
-| `resharper_csharp_static_members_qualify_with` | `..._qualify_members`, under the **cleanup** profile |
+| `resharper_treat_case_statement_with_break_as_simple` | `skala_place_simple_case_statement_on_same_line` |
+| `skala_static_members_qualify_with` | `..._qualify_members`, under the **cleanup** profile |
 | `resharper_csharp_instance_members_qualify_declared_in` | same |
 | `resharper_csharp_use_roslyn_logic_for_evident_types` | `csharp_style_var_for_built_in_types`, under **cleanup** |
 | `resharper_parentheses_same_type_operations` | `resharper_parentheses_non_obvious_operations`, under **cleanup** |
@@ -841,14 +841,14 @@ names the control, because that is the whole of the evidence.
 | `csharp_style_prefer_utf8_string_literals` | the cleanup batch's own `indent_size` control |
 | `dotnet_style_prefer_collection_expression` | same |
 | `tab_width` | `indent_style`, on a tab-indented fixture — see the note below |
-| `resharper_csharp_tab_width` | same |
+| `skala_tab_width` | same |
 
 ⚠ **`resharper_alignment_tab_fill_style` is worse than unreachable, and it is the one generalized
-key here.** It `expands` into `resharper_csharp_alignment_tab_fill_style`, which was probed as a
+key here.** It `expands` into `skala_alignment_tab_fill_style`, which was probed as a
 control and is *also* flat. A generalized key whose only C# target is itself unobservable has nothing
 to inherit a claim from; `OfGeneralized` would throw on it today, and correctly.
 
-⚠ **`tab_width` and `resharper_csharp_tab_width` are inert by construction, and that was measured
+⚠ **`tab_width` and `skala_tab_width` are inert by construction, and that was measured
 rather than argued.** On a tab-indented fixture with `indent_style = tab`, `tab_width = 2` and
 `tab_width = 8` returned the same bytes, while `indent_style` flipped to `space` moved it. A tab
 width is a *display* width: one indent level is one tab whatever the number says. The reason recorded
@@ -864,7 +864,7 @@ the day it emitted a tab; the reason above does not expire.
 | `resharper_event_handler_pattern_long` | code generation / naming |
 | `resharper_event_handler_pattern_short` | code generation / naming |
 | `resharper_support_vs_event_naming_pattern` | code generation / naming |
-| `resharper_configure_await_analysis_mode` | the analyser — it selects an inspection, not a layout |
+| `skala_configure_await_analysis_mode` | the analyser — it selects an inspection, not a layout |
 | `resharper_nullable_enable_for_new_files` | file templates |
 | `charset` | flat under both profiles: `cleanupcode` does not re-encode a file |
 | `file_header_template` | ⚠ flat **by construction** — both oracle profiles set `CSUpdateFileHeader` to `False`, so no fixture in this repository can ever exercise it |
@@ -873,11 +873,11 @@ the day it emitted a tab; the reason above does not expire.
 
 | key | why no verdict |
 |---|---|
-| `resharper_csharp_indent_braces_inside_statement_conditions` | the paired control `align_multiline_statement_conditions` was flat too; the fixture never chopped the condition |
+| `resharper_csharp_indent_braces_inside_statement_conditions` | the paired control `skala_align_multiline_statement_conditions` was flat too; the fixture never chopped the condition |
 | `resharper_use_indents_from_main_language_in_file` | no control moved on any fixture tried; the name suggests a mixed-language (Razor) key and **that is a guess, which is why it is here** |
-| `resharper_prefer_wrap_around_eq` | a `string` option with no documented domain — `default`, `true` and `false` were tried and nothing is known to be legal |
+| `skala_prefer_wrap_around_eq` | a `string` option with no documented domain — `default`, `true` and `false` were tried and nothing is known to be legal |
 | `csharp_prefer_braces` | flat under both profiles, and no control on its own cleanup fixture moved |
-| `resharper_csharp_space_between_keyword_and_type` | its Tier A sibling `space_between_keyword_and_expression` was flat on the same fixture; the oracle closed `typeof (int)` up at **both** values, so something else owns that gap. The `OfInert` reason on it — a type after a keyword is word-like, so the separation is mandatory — is consistent with everything seen and is not *established* by it |
+| `skala_space_between_keyword_and_type` | its Tier A sibling `skala_space_between_keyword_and_expression` was flat on the same fixture; the oracle closed `typeof (int)` up at **both** values, so something else owns that gap. The `OfInert` reason on it — a type after a keyword is word-like, so the separation is mandatory — is consistent with everything seen and is not *established* by it |
 
 ##### What this changes about the 120
 
@@ -899,11 +899,11 @@ the residue is exactly the guess this measurement exists to stop, and it is not 
 
 ##### The two that were implemented
 
-`blank_lines_inside_type` and `blank_lines_inside_namespace` were both `OfInert` on the reason
+`skala_blank_lines_inside_type` and `skala_blank_lines_inside_namespace` were both `OfInert` on the reason
 "`remove_blank_lines_near_braces` wins over it by the documented ordering, so no input distinguishes
 its values". **That was true of Skala and false of the oracle.** Under this repository's own
-`.editorconfig` — which sets `remove_blank_lines_near_braces_in_declarations = true` and
-`keep_blank_lines_in_declarations = 2` — `jb cleanupcode` pads a type's braces with three blank lines
+`.editorconfig` — which sets `skala_remove_blank_lines_near_braces_in_declarations = true` and
+`skala_keep_blank_lines_in_declarations = 2` — `jb cleanupcode` pads a type's braces with three blank lines
 at `3` and five at `5`. The requirement outranks both the removal and the cap, which is a fourth
 step in `ResolveBlankLines` and not a fourth requirement.
 
@@ -994,7 +994,7 @@ divergences would bury them.
 families are the ones the design already says interact, `keep_existing_*` because M2 measured its
 four-way table by hand. A fourth interacting family is a plan change, not a bigger run.
 
-⚠ **`keep_existing_linebreaks` is excluded as a primary.** [05](05-csharp-formatting-rules.md) warns
+⚠ **`skala_keep_existing_linebreaks` is excluded as a primary.** [05](05-csharp-formatting-rules.md) warns
 that it "reads like one of the family and is not" — it is the per-language form of the global
 `keep_user_linebreaks`, so pairing them would measure a key against itself and report a guaranteed
 interaction meaning nothing.
@@ -1022,7 +1022,7 @@ Three things the semantic profile needs that the whitespace profiles did not:
   full of CS0101.
 - **The whole subtree travels with the batch.** `usings/sort-and-remove.cs` imports `Alpha.Things`,
   which exists only because `usings/namespaces.cs` declares it. Without the context file the oracle
-  deletes the import as unresolvable at *every* value and `resharper_sort_usings` reads `DIVERGENT`
+  deletes the import as unresolvable at *every* value and `skala_sort_usings` reads `DIVERGENT`
   at 0 of 2 — a verdict about the scratch directory.
 - **The oracle runs to a fixed point, because Skala's half does.** Measured, not assumed:
   `sweep fixed-point` runs `cleanupcode` over the subtree and again over its own output. 27 of 27
@@ -1332,7 +1332,7 @@ unanswerable from the workflow's result.
 
 | Hazard | Test | Found |
 |---|---|---|
-| CRLF under `end_of_line = lf` | `Tools/…Cli.Tests/LineEndingTests.cs` | ⚠ **`end_of_line` is inert on its own.** The key that converts line endings is `resharper_enforce_line_ending_style`, `false` by default; `end_of_line = lf` alone leaves CRLF exactly as it found it. A test written from this document's own headline would have asserted the wrong thing |
+| CRLF under `end_of_line = lf` | `Tools/…Cli.Tests/LineEndingTests.cs` | ⚠ **`end_of_line` is inert on its own.** The key that converts line endings is `skala_enforce_line_ending_style`, `false` by default; `end_of_line = lf` alone leaves CRLF exactly as it found it. A test written from this document's own headline would have asserted the wrong thing |
 | SARIF paths repo-relative, forward slashes | `Tools/…Cli.Tests/SarifPathTests.cs` | ⚠ `SarifWriter.Relative` compared case-sensitively, had no component boundary, and took a non-nullable root that callers reach with a nullable one — all three printed absolute paths |
 | Case-insensitive path in the cache key | `Analysis/…Tests/CacheKeyPathTests.cs` | ⚠ **The key hashed the path's raw UTF-8**, so `C:\Src\A.cs` and `c:\src\a.cs` — one file on every Windows volume and on a default macOS volume — produced two entries. Benign in direction (a miss, never a stale hit) and therefore invisible for four milestones, but *permanent*: paths from MSBuild and paths from a directory walk never share an entry, so the warm run [13](13-performance.md) budgeted at under 5 s was a cold one every time (that budget is now withdrawn) |
 | Long paths | `Tools/…Cli.Tests/LongPathTests.cs` | 403-character path. Asserts the finding *appears*, not merely that nothing threw — the dangerous failure is swallowing `PathTooLongException` and reporting a clean tree |

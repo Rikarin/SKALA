@@ -411,12 +411,12 @@ are honoured now and were inert before, which is `minor`. The `major` is **six d
 on keys that were already Tier A**, three `keep_existing_*` and three wrapping keys:
 
 ```
-resharper_csharp_keep_existing_expr_member_arrangement          false → true
-resharper_csharp_keep_existing_property_patterns_arrangement    false → true
-resharper_csharp_keep_existing_switch_expression_arrangement    false → true
-resharper_csharp_wrap_after_declaration_lpar                    true  → false
-resharper_csharp_wrap_before_declaration_rpar                   true  → false
-resharper_csharp_wrap_extends_list_style           chop_if_long → wrap_if_long
+skala_keep_existing_expr_member_arrangement          false → true
+skala_keep_existing_property_patterns_arrangement    false → true
+skala_keep_existing_switch_expression_arrangement    false → true
+skala_wrap_after_declaration_lpar                    true  → false
+skala_wrap_before_declaration_rpar                   true  → false
+skala_wrap_extends_list_style           chop_if_long → wrap_if_long
 ```
 
 A default is what applies to every repository that has not written the key down, which is most of

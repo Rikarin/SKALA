@@ -38,15 +38,20 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["key", "aliases", "language", "type", "default", "defaultSource", "tier", "construct", "summary", "since"],
+        "required": ["key", "aliases", "export", "language", "type", "default", "defaultSource", "tier", "construct", "summary", "since"],
         "properties": {
           "key": {
-            "description": "The canonical .editorconfig spelling, verbatim. The most specific one ReSharper documents.",
+            "description": "The canonical .editorconfig spelling, verbatim. Skala's own namespace (`skala_`), or the standard EditorConfig/Microsoft spelling where the option is Microsoft's.",
             "type": "string",
             "pattern": "^[a-z0-9_.]+$"
           },
           "aliases": {
-            "description": "Every other spelling ReSharper accepts for this one option. An alias that reaches two options is SK9004.",
+            "description": "Every other spelling Skala accepts for this one option. An alias that reaches two options is SK9004. ⚠ ReSharper's spellings are NOT aliases — see `export`.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "export": {
+            "description": "The spelling(s) the Rider export (`editor_config_template`) uses for this option. ⚠ Provenance only: never indexed by `OptionRegistry.TryResolve`, so a `resharper_*` key in a user's .editorconfig is an unknown key (SK9001). `CanonicalEditorConfig.Compose` translates the export into Skala's namespace through this, and `EditorConfigIngestionTests` uses it to state that Skala's own configuration says what the export says.",
             "type": "array",
             "items": { "type": "string" }
           },
@@ -56,7 +61,7 @@
             "type": "string"
           },
           "min": {
-            "description": "For an int, the smallest value the option accepts, inclusive. Omit where no lower bound is knowable; a missing bound is better than a guessed one. ⚠ Read it together with the clamping the consumer does — `max_line_length = 0` and `max_invocation_arguments_on_line = 0` are values the formatter deliberately supports (0 means 'the default width' and 'chop always'), so their minimum is 0 and not 1.",
+            "description": "For an int, the smallest value the option accepts, inclusive. Omit where no lower bound is knowable; a missing bound is better than a guessed one. ⚠ Read it together with the clamping the consumer does — `max_line_length = 0` and `skala_max_invocation_arguments_on_line = 0` are values the formatter deliberately supports (0 means 'the default width' and 'chop always'), so their minimum is 0 and not 1.",
             "type": ["integer", "null"]
           },
           "max": {

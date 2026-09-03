@@ -35,7 +35,7 @@ resharper_html_space_before_self_closing = false
 resharper_html_insert_final_newline = false
 ```
 
-⚠ Note `attribute_indent = align_by_first_attribute` — alignment, which the C# configuration switches
+⚠ Note `skala_xmldoc_attribute_indent = align_by_first_attribute` — alignment, which the C# configuration switches
 off everywhere. The `Align` IR node exists partly for this ([05](05-csharp-formatting-rules.md) §
 "Alignment"), and the HTML front end is where it becomes hot rather than incidental.
 

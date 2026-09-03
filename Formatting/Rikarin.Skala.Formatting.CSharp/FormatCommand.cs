@@ -73,7 +73,7 @@ public sealed record FormatRequest {
     ///     together mean the oracle and the editor disagree, and Skala follows the editor: not
     ///     formatting doc comments is the divergence, not formatting them.
     ///     <para>
-    ///         ⚠ The escape hatch is a flag rather than <c>resharper_xmldoc_wrap_lines = false</c>, because
+    ///         ⚠ The escape hatch is a flag rather than <c>skala_xmldoc_wrap_lines = false</c>, because
     ///         that key means "do not wrap long lines" and not "do not touch documentation comments" —
     ///         with it false the sub-formatter still re-indents, still collapses blank lines between tags
     ///         and still inserts the marker space, which is what Rider does with it false too. Overloading
