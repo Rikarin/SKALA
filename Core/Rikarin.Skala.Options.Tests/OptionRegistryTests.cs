@@ -91,12 +91,12 @@ public sealed class OptionRegistryTests {
     public void NamedAccessors_ReadTheSameValueAsTheIndex() {
         var options = FormattingOptions.Defaults;
         Assert.Equal(
-            options.GetRaw(OptionId.ResharperCsharpWrapArgumentsStyle),
-            (int)options.ReSharper.CSharp.WrapArgumentsStyle
+            options.GetRaw(OptionId.SkalaWrapArgumentsStyle),
+            (int)options.Skala.WrapArgumentsStyle
         );
         Assert.Equal(
-            options.GetInt(OptionId.ResharperCsharpMaxLineLength),
-            options.ReSharper.CSharp.MaxLineLength
+            options.GetInt(OptionId.SkalaMaxLineLength),
+            options.Skala.MaxLineLength
         );
     }
 
@@ -105,10 +105,10 @@ public sealed class OptionRegistryTests {
         // docs/plan/03 § "The style this config actually describes", spot-checked against the
         // defaults the registry was seeded with.
         var options = FormattingOptions.Defaults;
-        Assert.Equal(120, options.ReSharper.CSharp.MaxLineLength);
-        Assert.Equal(WrapStyle.ChopIfLong, options.ReSharper.CSharp.WrapArgumentsStyle);
-        Assert.Equal(WrapStyle.ChopIfLong, options.ReSharper.CSharp.WrapParametersStyle);
-        Assert.Equal(4, options.ReSharper.CSharp.IndentSize);
+        Assert.Equal(120, options.Skala.MaxLineLength);
+        Assert.Equal(WrapStyle.ChopIfLong, options.Skala.WrapArgumentsStyle);
+        Assert.Equal(WrapStyle.ChopIfLong, options.Skala.WrapParametersStyle);
+        Assert.Equal(4, options.Skala.IndentSize);
     }
 
     [Fact]
@@ -167,16 +167,24 @@ public sealed class OptionRegistryTests {
         // this project cannot reach, so it is asserted in the conformance suite instead —
         // OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt.
 
+        // ⚠ Five, not six. `resharper_show_autodetect_configure_formatting_tip` was the sixth and is
+        // deleted: it governs whether an IDE shows a notification, nothing in Skala read it, and it
+        // is the one Tier C entry that no production literal or oracle fixture referred to.
         string[] permanentlyIgnored = [
             "skala_old_engine", "skala_use_old_engine", "skala_autodetect_indent_settings",
-            "skala_apply_auto_detected_rules",
-            "skala_use_indent_from_vs", "resharper_show_autodetect_configure_formatting_tip"
+            "skala_apply_auto_detected_rules", "skala_use_indent_from_vs"
         ];
 
         foreach (var key in permanentlyIgnored) {
             Assert.True(OptionRegistry.TryResolve(key, out var id), key);
             Assert.Equal(OptionTier.C, OptionRegistry.Get(id).Tier);
         }
+
+        // The set is closed: a sixth Tier C entry is a decision, not a drift.
+        Assert.Equal(
+            permanentlyIgnored.Length,
+            OptionRegistry.All.Count(static info => info.Tier == OptionTier.C)
+        );
     }
 
     /// <summary>
@@ -199,11 +207,14 @@ public sealed class OptionRegistryTests {
     public void Inert_OptionsCarryAReasonAndAreNotClaimedAsImplemented() {
         var inert = OptionRegistry.All.Where(static i => i.Inert is not null).ToList();
 
-        // Anti-vacuity: docs/plan/05 records these, and a registry that lost them would otherwise
-        // pass this test by having nothing to check.
+        // ⚠ Anti-vacuity, and the floor used to be 10 against a population of 97 — nine tenths of
+        // the inert set could have vanished without this firing, which is not a canary, it is a
+        // decoration. It is a ratchet now: the count at the commit that set it. Moving it down is a
+        // deliberate edit that says which options stopped being inert and why.
+        const int Measured = 52;
         Assert.True(
-            inert.Count >= 10,
-            $"Only {inert.Count} inert options. docs/plan/05 § \"Phase 1\" and § \"Spaces\" record at least ten."
+            inert.Count >= Measured,
+            $"Only {inert.Count} inert options, against {Measured} measured. An option stops being inert when something reads it, which is a promotion and needs a fixture — not a quiet drop."
         );
 
         foreach (var info in inert) {

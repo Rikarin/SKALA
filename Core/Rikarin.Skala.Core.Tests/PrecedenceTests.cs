@@ -88,21 +88,55 @@ public sealed class PrecedenceTests {
         Assert.Equal("80", resolution[id].Value);
     }
 
+    /// <remarks>
+    ///     ⚠ This was <c>MicrosoftKey_BeatsTheBareEditorConfigKey_AndLosesToTheReSharperKey</c>, over
+    ///     three spellings of one option. Two of the three were ReSharper's and are gone, and the
+    ///     mechanical rename left the case asserting <c>skala_space_after_cast</c> beats itself twice
+    ///     — three identical lines, a test that passes on any implementation at all. The ladder that
+    ///     is left is two rungs and it is the one that still matters: Microsoft's spelling is accepted,
+    ///     and Skala's own beats it.
+    /// </remarks>
     [Fact]
-    public void MicrosoftKey_BeatsTheBareEditorConfigKey_AndLosesToTheReSharperKey() {
+    public void MicrosoftKey_IsAccepted_AndLosesToSkalasOwn() {
         var resolution = Resolve(
             """
             root = true
             [*]
-            skala_space_after_cast = true
-            skala_space_after_cast = false
+            csharp_space_after_cast = false
             skala_space_after_cast = true
             """
         );
 
+        Assert.True(OptionRegistry.TryResolve("csharp_space_after_cast", out var alias));
         Assert.True(OptionRegistry.TryResolve("skala_space_after_cast", out var id));
+        Assert.Equal(id, alias);
         Assert.Equal("true", resolution[id].Value);
         Assert.Equal("skala_space_after_cast", resolution[id].Origin!.Spelling);
+    }
+
+    /// <summary>A <c>resharper_*</c> key configures nothing and is reported as unknown.</summary>
+    /// <remarks>
+    ///     ⚠ The claim the whole rename rests on, and it is asserted here rather than left implicit:
+    ///     pointing Skala at a Rider export must <em>not</em> configure it. The failure this catches is
+    ///     silent in both directions — an export spelling re-admitted to
+    ///     <see cref="OptionRegistry.TryResolve" /> would quietly restore ingestion, and nothing else
+    ///     in the suite would go red.
+    /// </remarks>
+    [Fact]
+    public void ReSharperKey_IsAnUnknownKey() {
+        Assert.False(OptionRegistry.TryResolve("resharper_space_after_cast", out _));
+        Assert.False(OptionRegistry.TryResolve("resharper_csharp_wrap_arguments_style", out _));
+
+        var resolution = Resolve(
+            """
+            root = true
+            [*]
+            resharper_space_after_cast = true
+            """
+        );
+
+        Assert.True(OptionRegistry.TryResolve("skala_space_after_cast", out var id));
+        Assert.True(resolution[id].IsDefault);
     }
 
     [Fact]
@@ -137,10 +171,10 @@ public sealed class PrecedenceTests {
             """
         );
 
-        var option = resolution[OptionId.ResharperCsharpWrapArgumentsStyle];
+        var option = resolution[OptionId.SkalaWrapArgumentsStyle];
         Assert.True(option.IsDefault);
         Assert.Equal("(default)", option.SourceText);
-        Assert.Equal(OptionRegistry.Get(OptionId.ResharperCsharpWrapArgumentsStyle).Default, option.Value);
+        Assert.Equal(OptionRegistry.Get(OptionId.SkalaWrapArgumentsStyle).Default, option.Value);
     }
 
     [Fact]
@@ -167,16 +201,16 @@ public sealed class PrecedenceTests {
         );
 
         var error = Assert.Single(resolution.ValueErrors);
-        Assert.Equal(OptionId.ResharperCsharpWrapArgumentsStyle, error.Id);
+        Assert.Equal(OptionId.SkalaWrapArgumentsStyle, error.Id);
         Assert.Equal("sideways", error.Value);
         Assert.Contains("chop_if_long", error.Reason, StringComparison.Ordinal);
 
         // ⚠ The part that makes the report actionable: what the file is being formatted with now.
         // Reporting the refusal alone leaves the reader unable to tell, and the fallback is not
         // guessable from the key.
-        Assert.Equal(OptionRegistry.Get(OptionId.ResharperCsharpWrapArgumentsStyle).Default, error.Effective);
+        Assert.Equal(OptionRegistry.Get(OptionId.SkalaWrapArgumentsStyle).Default, error.Effective);
 
-        var option = resolution[OptionId.ResharperCsharpWrapArgumentsStyle];
+        var option = resolution[OptionId.SkalaWrapArgumentsStyle];
         Assert.True(option.IsDefault);
         Assert.NotNull(option.Refused);
         Assert.Equal(3, option.Refused.Line);

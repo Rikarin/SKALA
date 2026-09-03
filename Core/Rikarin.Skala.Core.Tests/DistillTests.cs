@@ -38,8 +38,8 @@ public sealed class DistillTests {
         }
 
         Assert.Equal(
-            before.Options.GetText(OptionId.ResharperCsharpMaxLineLength),
-            after.Options.GetText(OptionId.ResharperCsharpMaxLineLength)
+            before.Options.GetText(OptionId.SkalaMaxLineLength),
+            after.Options.GetText(OptionId.SkalaMaxLineLength)
         );
     }
 
@@ -90,7 +90,7 @@ public sealed class DistillTests {
     ) {
         // The rule that makes distill safe. A distill that drops a key on a guessed default
         // silently changes formatting, which is unacceptable.
-        var info = OptionRegistry.Get(OptionId.ResharperCsharpWrapArgumentsStyle) with {
+        var info = OptionRegistry.Get(OptionId.SkalaWrapArgumentsStyle) with {
             Default = "chop_if_long", DefaultSource = source
         };
 

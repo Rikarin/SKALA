@@ -107,7 +107,7 @@ public sealed class DefaultsPass {
             foreach (var batch in Batches(work)) {
                 var produced = Format(
                     batch,
-                    candidate => BareConfig + "\n[*.cs]\n" + candidate.Key + " = "
+                    candidate => BareConfig + "\n[*.cs]\n" + OracleRunner.OracleKey(candidate.Key) + " = "
                         + candidate.Values[round] + "\n"
                 );
 

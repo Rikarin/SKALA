@@ -1111,16 +1111,43 @@ public sealed class XmlDocKeyCoverageTests {
     ///         <c>XmlDocIds.Refused</c> with reasons like every other undone key.
     ///     </para>
     /// </remarks>
+    /// <remarks>
+    ///     ⚠ <b>The prefix here was <c>resharper_xmldoc_</c> and the rename to <c>skala_xmldoc_</c>
+    ///     would have been silent either way.</b> Both this filter and the one in
+    ///     <see cref="HonouredAndRefused_PartitionTheFamilyExactly" /> select on the same literal, so a
+    ///     prefix that matched nothing would empty <em>both</em> sides of the partition and every
+    ///     <c>Assert.Empty</c> below would pass on two empty sets — the exact shape of vacuity this
+    ///     file already documents an exclusion for. <see cref="TheFamily_IsNotEmpty" /> is the canary,
+    ///     and the filter is spelled with <see cref="OptionKeyPrefixes" /> so it cannot drift from the
+    ///     registry's own idea of the prefix.
+    /// </remarks>
     static IEnumerable<string> Family =>
-        OptionRegistry.All
-            .Select(static info => info.Key)
-            .Where(static key => key.StartsWith("resharper_xmldoc_", StringComparison.Ordinal));
+        OptionRegistry.All.Select(static info => info.Key).Where(IsXmlDoc);
+
+    static bool IsXmlDoc(string key) => key.StartsWith(XmlDocPrefix, StringComparison.Ordinal);
+
+    static string XmlDocPrefix { get; } = OptionKeyPrefixes.Ordered.Single(static p => p.Contains("xmldoc"));
+
+    /// <summary>
+    ///     The population canary for the partition below.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Missing until the <c>skala_</c> rename, and its absence is what would have made that
+    ///     rename look clean: a partition of the empty set into two empty halves satisfies every
+    ///     assertion <see cref="HonouredAndRefused_PartitionTheFamilyExactly" /> makes.
+    /// </remarks>
+    [Fact]
+    public void TheFamily_IsNotEmpty() {
+        Assert.NotEmpty(Family);
+        Assert.NotEmpty(XmlDocIds.Honoured);
+        Assert.NotEmpty(XmlDocIds.Refused);
+    }
 
     [Fact]
     public void HonouredAndRefused_PartitionTheFamilyExactly() {
         var honoured = XmlDocIds.Honoured
             .Select(static id => OptionRegistry.Get(id).Key)
-            .Where(static key => key.StartsWith("resharper_xmldoc_", StringComparison.Ordinal))
+            .Where(IsXmlDoc)
             .ToHashSet(StringComparer.Ordinal);
         var refused = XmlDocIds.Refused.Select(static pair => pair.Key).ToHashSet(StringComparer.Ordinal);
         var family = Family.ToHashSet(StringComparer.Ordinal);

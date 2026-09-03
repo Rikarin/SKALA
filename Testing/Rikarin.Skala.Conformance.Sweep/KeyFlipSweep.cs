@@ -532,7 +532,8 @@ public sealed class KeyFlipSweep {
     ///     The appended section is <c>[*.cs]</c>, which is more specific than the export's own
     ///     <c>[*]</c> and than its multi-extension section, and comes last.
     /// </remarks>
-    public string ConfigFor(string key, string value) => baseConfig + "\n[*.cs]\n" + key + " = " + value + "\n";
+    public string ConfigFor(string key, string value) =>
+        baseConfig + "\n[*.cs]\n" + OracleRunner.OracleKey(key) + " = " + value + "\n";
 
     static string Digest(string text) => SkalaSide.Digest(text);
 

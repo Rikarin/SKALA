@@ -169,6 +169,11 @@ public sealed class AdoptionTests {
     [InlineData("skala_insert_final_newline")]
     [InlineData("skala_sort_usings_with_system_first")]
     [InlineData("skala_max_line_length")]
+    // ⚠ Microsoft's own spelling, which Skala still accepts as an alias. It is in this theory because
+    // it is the one spelling here that is not Skala's: `dotnet_sort_system_directives_first` is a key
+    // Roslyn reads, and dropping it with the rest of ReSharper's aliases would have made a line every
+    // other .NET tool honours report SK9001.
+    [InlineData("dotnet_sort_system_directives_first")]
     public void Explain_AnswersAnOptionKey(string key) {
         var result = ExplainCommand.Run(key);
 

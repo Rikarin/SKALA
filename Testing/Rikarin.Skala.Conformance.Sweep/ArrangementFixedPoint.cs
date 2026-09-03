@@ -33,7 +33,7 @@ namespace Rikarin.Skala.Conformance.Sweep;
 public static class ArrangementFixedPoint {
     public static int Run(string baseConfigPath, TextWriter log) {
         if (OracleRunner.FindExecutableOrNull() is null) {
-            log.WriteLine("jb (JetBrains.ReSharper.GlobalTools) is not installed; this asks the oracle a question.");
+            log.WriteLine("jb (JetBrains.Skala.GlobalTools) is not installed; this asks the oracle a question.");
             return 3;
         }
 

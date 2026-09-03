@@ -145,7 +145,7 @@ int PairwisePlanOnly() {
 int Pairwise() {
     if (OracleRunner.FindExecutableOrNull() is null) {
         Console.Error.WriteLine(
-            "jb (JetBrains.ReSharper.GlobalTools) is not installed. The pairwise sweep is a nightly job "
+            "jb (JetBrains.Skala.GlobalTools) is not installed. The pairwise sweep is a nightly job "
             + "and a developer-machine dependency (ADR-011); the committed table is what the fast path reads."
         );
         return 3;
@@ -214,7 +214,7 @@ int Measure(out SweepRun? measured) {
     measured = null;
     if (OracleRunner.FindExecutableOrNull() is null) {
         Console.Error.WriteLine(
-            "jb (JetBrains.ReSharper.GlobalTools) is not installed. The sweep is a nightly job and a "
+            "jb (JetBrains.Skala.GlobalTools) is not installed. The sweep is a nightly job and a "
             + "developer-machine dependency (ADR-011); the committed table is what the fast path reads."
         );
         return 3;
@@ -262,7 +262,7 @@ int Nightly() {
 
 int Defaults(IReadOnlyCollection<string>? inProcess) {
     if (OracleRunner.FindExecutableOrNull() is null) {
-        Console.Error.WriteLine("jb (JetBrains.ReSharper.GlobalTools) is not installed.");
+        Console.Error.WriteLine("jb (JetBrains.Skala.GlobalTools) is not installed.");
         return 3;
     }
 

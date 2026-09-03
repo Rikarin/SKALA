@@ -1733,8 +1733,8 @@
       "key": "skala_configure_await_analysis_mode",
       "aliases": [],
       "export": [
-        "configure_await_analysis_mode",
-        "resharper_configure_await_analysis_mode"
+        "resharper_configure_await_analysis_mode",
+        "configure_await_analysis_mode"
       ],
       "language": "csharp",
       "type": "enum:ConfigureAwaitAnalysisMode",
@@ -1753,10 +1753,10 @@
       "key": "skala_accessor_owner_body",
       "aliases": [],
       "export": [
-        "accessor_owner_body",
-        "csharp_accessor_owner_body",
         "resharper_accessor_owner_body",
-        "resharper_csharp_accessor_owner_body"
+        "resharper_csharp_accessor_owner_body",
+        "csharp_accessor_owner_body",
+        "accessor_owner_body"
       ],
       "language": "csharp",
       "type": "enum:AccessorOwnerBodyStyle",
@@ -1775,10 +1775,10 @@
       "key": "skala_align_linq_query",
       "aliases": [],
       "export": [
-        "align_linq_query",
-        "csharp_align_linq_query",
         "resharper_align_linq_query",
-        "resharper_csharp_align_linq_query"
+        "resharper_csharp_align_linq_query",
+        "csharp_align_linq_query",
+        "align_linq_query"
       ],
       "language": "csharp",
       "type": "bool",
@@ -1797,10 +1797,10 @@
       "key": "skala_align_multiline_array_and_object_initializer",
       "aliases": [],
       "export": [
-        "align_multiline_array_and_object_initializer",
-        "csharp_align_multiline_array_and_object_initializer",
         "resharper_align_multiline_array_and_object_initializer",
-        "resharper_csharp_align_multiline_array_and_object_initializer"
+        "resharper_csharp_align_multiline_array_and_object_initializer",
+        "csharp_align_multiline_array_and_object_initializer",
+        "align_multiline_array_and_object_initializer"
       ],
       "language": "csharp",
       "type": "bool",
@@ -1819,10 +1819,10 @@
       "key": "skala_align_multiline_binary_expressions_chain",
       "aliases": [],
       "export": [
-        "align_multiline_binary_expressions_chain",
-        "csharp_align_multiline_binary_expressions_chain",
         "resharper_align_multiline_binary_expressions_chain",
-        "resharper_csharp_align_multiline_binary_expressions_chain"
+        "resharper_csharp_align_multiline_binary_expressions_chain",
+        "csharp_align_multiline_binary_expressions_chain",
+        "align_multiline_binary_expressions_chain"
       ],
       "language": "csharp",
       "type": "bool",
@@ -1841,10 +1841,10 @@
       "key": "skala_align_multiline_binary_patterns",
       "aliases": [],
       "export": [
-        "align_multiline_binary_patterns",
-        "csharp_align_multiline_binary_patterns",
         "resharper_align_multiline_binary_patterns",
-        "resharper_csharp_align_multiline_binary_patterns"
+        "resharper_csharp_align_multiline_binary_patterns",
+        "csharp_align_multiline_binary_patterns",
+        "align_multiline_binary_patterns"
       ],
       "language": "csharp",
       "type": "bool",
@@ -1863,10 +1863,10 @@
       "key": "skala_align_multiline_comments",
       "aliases": [],
       "export": [
-        "align_multiline_comments",
-        "csharp_align_multiline_comments",
         "resharper_align_multiline_comments",
-        "resharper_csharp_align_multiline_comments"
+        "resharper_csharp_align_multiline_comments",
+        "csharp_align_multiline_comments",
+        "align_multiline_comments"
       ],
       "language": "csharp",
       "type": "bool",
@@ -1885,10 +1885,10 @@
       "key": "skala_align_multiline_extends_list",
       "aliases": [],
       "export": [
-        "align_multiline_extends_list",
-        "csharp_align_multiline_extends_list",
+        "resharper_csharp_align_multiline_extends_list",
         "resharper_align_multiline_extends_list",
-        "resharper_csharp_align_multiline_extends_list"
+        "csharp_align_multiline_extends_list",
+        "align_multiline_extends_list"
       ],
       "language": "csharp",
       "type": "bool",
@@ -1907,10 +1907,10 @@
       "key": "skala_align_multiline_list_pattern",
       "aliases": [],
       "export": [
-        "align_multiline_list_pattern",
-        "csharp_align_multiline_list_pattern",
         "resharper_align_multiline_list_pattern",
-        "resharper_csharp_align_multiline_list_pattern"
+        "resharper_csharp_align_multiline_list_pattern",
+        "csharp_align_multiline_list_pattern",
+        "align_multiline_list_pattern"
       ],
       "language": "csharp",
       "type": "bool",
@@ -1929,10 +1929,10 @@
       "key": "skala_align_multiline_property_pattern",
       "aliases": [],
       "export": [
-        "align_multiline_property_pattern",
-        "csharp_align_multiline_property_pattern",
         "resharper_align_multiline_property_pattern",
-        "resharper_csharp_align_multiline_property_pattern"
+        "resharper_csharp_align_multiline_property_pattern",
+        "csharp_align_multiline_property_pattern",
+        "align_multiline_property_pattern"
       ],
       "language": "csharp",
       "type": "bool",
@@ -1951,10 +1951,10 @@
       "key": "skala_align_multiline_statement_conditions",
       "aliases": [],
       "export": [
-        "align_multiline_statement_conditions",
-        "csharp_align_multiline_statement_conditions",
         "resharper_align_multiline_statement_conditions",
-        "resharper_csharp_align_multiline_statement_conditions"
+        "resharper_csharp_align_multiline_statement_conditions",
+        "csharp_align_multiline_statement_conditions",
+        "align_multiline_statement_conditions"
       ],
       "language": "csharp",
       "type": "bool",
@@ -1973,10 +1973,10 @@
       "key": "skala_align_multiline_switch_expression",
       "aliases": [],
       "export": [
-        "align_multiline_switch_expression",
-        "csharp_align_multiline_switch_expression",
         "resharper_align_multiline_switch_expression",
-        "resharper_csharp_align_multiline_switch_expression"
+        "resharper_csharp_align_multiline_switch_expression",
+        "csharp_align_multiline_switch_expression",
+        "align_multiline_switch_expression"
       ],
       "language": "csharp",
       "type": "bool",
@@ -1995,10 +1995,10 @@
       "key": "skala_align_multiple_declaration",
       "aliases": [],
       "export": [
-        "align_multiple_declaration",
-        "csharp_align_multiple_declaration",
+        "resharper_csharp_align_multiple_declaration",
         "resharper_align_multiple_declaration",
-        "resharper_csharp_align_multiple_declaration"
+        "csharp_align_multiple_declaration",
+        "align_multiple_declaration"
       ],
       "language": "csharp",
       "type": "bool",
@@ -2017,10 +2017,10 @@
       "key": "skala_align_tuple_components",
       "aliases": [],
       "export": [
-        "align_tuple_components",
-        "csharp_align_tuple_components",
         "resharper_align_tuple_components",
-        "resharper_csharp_align_tuple_components"
+        "resharper_csharp_align_tuple_components",
+        "csharp_align_tuple_components",
+        "align_tuple_components"
       ],
       "language": "csharp",
       "type": "bool",
@@ -2039,8 +2039,8 @@
       "key": "skala_alignment_tab_fill_style",
       "aliases": [],
       "export": [
-        "csharp_alignment_tab_fill_style",
-        "resharper_csharp_alignment_tab_fill_style"
+        "resharper_csharp_alignment_tab_fill_style",
+        "csharp_alignment_tab_fill_style"
       ],
       "language": "csharp",
       "type": "enum:TabFillStyle",
@@ -2059,10 +2059,10 @@
       "key": "skala_allow_comment_after_lbrace",
       "aliases": [],
       "export": [
-        "allow_comment_after_lbrace",
-        "csharp_allow_comment_after_lbrace",
         "resharper_allow_comment_after_lbrace",
-        "resharper_csharp_allow_comment_after_lbrace"
+        "resharper_csharp_allow_comment_after_lbrace",
+        "csharp_allow_comment_after_lbrace",
+        "allow_comment_after_lbrace"
       ],
       "language": "csharp",
       "type": "bool",
@@ -2081,8 +2081,8 @@
       "key": "skala_allow_far_alignment",
       "aliases": [],
       "export": [
-        "csharp_allow_far_alignment",
-        "resharper_csharp_allow_far_alignment"
+        "resharper_csharp_allow_far_alignment",
+        "csharp_allow_far_alignment"
       ],
       "language": "csharp",
       "type": "bool",
@@ -2101,10 +2101,10 @@
       "key": "skala_arguments_anonymous_function",
       "aliases": [],
       "export": [
-        "arguments_anonymous_function",
-        "csharp_arguments_anonymous_function",
         "resharper_arguments_anonymous_function",
-        "resharper_csharp_arguments_anonymous_function"
+        "resharper_csharp_arguments_anonymous_function",
+        "csharp_arguments_anonymous_function",
+        "arguments_anonymous_function"
       ],
       "language": "csharp",
       "type": "enum:ArgumentStyle",
@@ -2123,10 +2123,10 @@
       "key": "skala_arguments_literal",
       "aliases": [],
       "export": [
-        "arguments_literal",
-        "csharp_arguments_literal",
         "resharper_arguments_literal",
-        "resharper_csharp_arguments_literal"
+        "resharper_csharp_arguments_literal",
+        "csharp_arguments_literal",
+        "arguments_literal"
       ],
       "language": "csharp",
       "type": "enum:ArgumentStyle",
@@ -2145,10 +2145,10 @@
       "key": "skala_arguments_named",
       "aliases": [],
       "export": [
-        "arguments_named",
-        "csharp_arguments_named",
         "resharper_arguments_named",
-        "resharper_csharp_arguments_named"
+        "resharper_csharp_arguments_named",
+        "csharp_arguments_named",
+        "arguments_named"
       ],
       "language": "csharp",
       "type": "enum:ArgumentStyle",
@@ -2167,10 +2167,10 @@
       "key": "skala_arguments_other",
       "aliases": [],
       "export": [
-        "arguments_other",
-        "csharp_arguments_other",
         "resharper_arguments_other",
-        "resharper_csharp_arguments_other"
+        "resharper_csharp_arguments_other",
+        "csharp_arguments_other",
+        "arguments_other"
       ],
       "language": "csharp",
       "type": "enum:ArgumentStyle",
@@ -2189,10 +2189,10 @@
       "key": "skala_arguments_skip_single",
       "aliases": [],
       "export": [
-        "arguments_skip_single",
-        "csharp_arguments_skip_single",
         "resharper_arguments_skip_single",
-        "resharper_csharp_arguments_skip_single"
+        "resharper_csharp_arguments_skip_single",
+        "csharp_arguments_skip_single",
+        "arguments_skip_single"
       ],
       "language": "csharp",
       "type": "bool",
@@ -2211,10 +2211,10 @@
       "key": "skala_arguments_string_literal",
       "aliases": [],
       "export": [
-        "arguments_string_literal",
-        "csharp_arguments_string_literal",
         "resharper_arguments_string_literal",
-        "resharper_csharp_arguments_string_literal"
+        "resharper_csharp_arguments_string_literal",
+        "csharp_arguments_string_literal",
+        "arguments_string_literal"
       ],
       "language": "csharp",
       "type": "enum:ArgumentStyle",
@@ -2233,10 +2233,10 @@
       "key": "skala_blank_lines_after_block_statements",
       "aliases": [],
       "export": [
-        "blank_lines_after_block_statements",
-        "csharp_blank_lines_after_block_statements",
         "resharper_blank_lines_after_block_statements",
-        "resharper_csharp_blank_lines_after_block_statements"
+        "resharper_csharp_blank_lines_after_block_statements",
+        "csharp_blank_lines_after_block_statements",
+        "blank_lines_after_block_statements"
       ],
       "language": "csharp",
       "type": "int",
@@ -2257,10 +2257,10 @@
       "key": "skala_blank_lines_after_case",
       "aliases": [],
       "export": [
-        "blank_lines_after_case",
-        "csharp_blank_lines_after_case",
         "resharper_blank_lines_after_case",
-        "resharper_csharp_blank_lines_after_case"
+        "resharper_csharp_blank_lines_after_case",
+        "csharp_blank_lines_after_case",
+        "blank_lines_after_case"
       ],
       "language": "csharp",
       "type": "int",
@@ -2281,10 +2281,10 @@
       "key": "skala_blank_lines_after_control_transfer_statements",
       "aliases": [],
       "export": [
-        "blank_lines_after_control_transfer_statements",
-        "csharp_blank_lines_after_control_transfer_statements",
         "resharper_blank_lines_after_control_transfer_statements",
-        "resharper_csharp_blank_lines_after_control_transfer_statements"
+        "resharper_csharp_blank_lines_after_control_transfer_statements",
+        "csharp_blank_lines_after_control_transfer_statements",
+        "blank_lines_after_control_transfer_statements"
       ],
       "language": "csharp",
       "type": "int",
@@ -2305,10 +2305,10 @@
       "key": "skala_blank_lines_after_file_scoped_namespace_directive",
       "aliases": [],
       "export": [
-        "blank_lines_after_file_scoped_namespace_directive",
-        "csharp_blank_lines_after_file_scoped_namespace_directive",
         "resharper_blank_lines_after_file_scoped_namespace_directive",
-        "resharper_csharp_blank_lines_after_file_scoped_namespace_directive"
+        "resharper_csharp_blank_lines_after_file_scoped_namespace_directive",
+        "csharp_blank_lines_after_file_scoped_namespace_directive",
+        "blank_lines_after_file_scoped_namespace_directive"
       ],
       "language": "csharp",
       "type": "int",
@@ -2329,10 +2329,10 @@
       "key": "skala_blank_lines_after_multiline_statements",
       "aliases": [],
       "export": [
-        "blank_lines_after_multiline_statements",
-        "csharp_blank_lines_after_multiline_statements",
         "resharper_blank_lines_after_multiline_statements",
-        "resharper_csharp_blank_lines_after_multiline_statements"
+        "resharper_csharp_blank_lines_after_multiline_statements",
+        "csharp_blank_lines_after_multiline_statements",
+        "blank_lines_after_multiline_statements"
       ],
       "language": "csharp",
       "type": "int",
@@ -2353,10 +2353,10 @@
       "key": "skala_blank_lines_after_start_comment",
       "aliases": [],
       "export": [
-        "blank_lines_after_start_comment",
-        "csharp_blank_lines_after_start_comment",
         "resharper_blank_lines_after_start_comment",
-        "resharper_csharp_blank_lines_after_start_comment"
+        "resharper_csharp_blank_lines_after_start_comment",
+        "csharp_blank_lines_after_start_comment",
+        "blank_lines_after_start_comment"
       ],
       "language": "csharp",
       "type": "int",
@@ -2377,10 +2377,10 @@
       "key": "skala_blank_lines_after_using_list",
       "aliases": [],
       "export": [
-        "blank_lines_after_using_list",
-        "csharp_blank_lines_after_using_list",
         "resharper_blank_lines_after_using_list",
-        "resharper_csharp_blank_lines_after_using_list"
+        "resharper_csharp_blank_lines_after_using_list",
+        "csharp_blank_lines_after_using_list",
+        "blank_lines_after_using_list"
       ],
       "language": "csharp",
       "type": "int",
@@ -2401,10 +2401,10 @@
       "key": "skala_blank_lines_around_accessor",
       "aliases": [],
       "export": [
-        "blank_lines_around_accessor",
-        "csharp_blank_lines_around_accessor",
         "resharper_blank_lines_around_accessor",
-        "resharper_csharp_blank_lines_around_accessor"
+        "resharper_csharp_blank_lines_around_accessor",
+        "csharp_blank_lines_around_accessor",
+        "blank_lines_around_accessor"
       ],
       "language": "csharp",
       "type": "int",
@@ -2425,10 +2425,10 @@
       "key": "skala_blank_lines_around_auto_property",
       "aliases": [],
       "export": [
-        "blank_lines_around_auto_property",
-        "csharp_blank_lines_around_auto_property",
         "resharper_blank_lines_around_auto_property",
-        "resharper_csharp_blank_lines_around_auto_property"
+        "resharper_csharp_blank_lines_around_auto_property",
+        "csharp_blank_lines_around_auto_property",
+        "blank_lines_around_auto_property"
       ],
       "language": "csharp",
       "type": "int",
@@ -2449,10 +2449,10 @@
       "key": "skala_blank_lines_around_block_case_section",
       "aliases": [],
       "export": [
-        "blank_lines_around_block_case_section",
-        "csharp_blank_lines_around_block_case_section",
         "resharper_blank_lines_around_block_case_section",
-        "resharper_csharp_blank_lines_around_block_case_section"
+        "resharper_csharp_blank_lines_around_block_case_section",
+        "csharp_blank_lines_around_block_case_section",
+        "blank_lines_around_block_case_section"
       ],
       "language": "csharp",
       "type": "int",
@@ -2473,10 +2473,10 @@
       "key": "skala_blank_lines_around_field",
       "aliases": [],
       "export": [
-        "blank_lines_around_field",
-        "csharp_blank_lines_around_field",
         "resharper_blank_lines_around_field",
-        "resharper_csharp_blank_lines_around_field"
+        "resharper_csharp_blank_lines_around_field",
+        "csharp_blank_lines_around_field",
+        "blank_lines_around_field"
       ],
       "language": "csharp",
       "type": "int",
@@ -2497,10 +2497,10 @@
       "key": "skala_blank_lines_around_invocable",
       "aliases": [],
       "export": [
-        "blank_lines_around_invocable",
-        "csharp_blank_lines_around_invocable",
         "resharper_blank_lines_around_invocable",
-        "resharper_csharp_blank_lines_around_invocable"
+        "resharper_csharp_blank_lines_around_invocable",
+        "csharp_blank_lines_around_invocable",
+        "blank_lines_around_invocable"
       ],
       "language": "csharp",
       "type": "int",
@@ -2521,10 +2521,10 @@
       "key": "skala_blank_lines_around_local_method",
       "aliases": [],
       "export": [
-        "blank_lines_around_local_method",
-        "csharp_blank_lines_around_local_method",
         "resharper_blank_lines_around_local_method",
-        "resharper_csharp_blank_lines_around_local_method"
+        "resharper_csharp_blank_lines_around_local_method",
+        "csharp_blank_lines_around_local_method",
+        "blank_lines_around_local_method"
       ],
       "language": "csharp",
       "type": "int",
@@ -2545,10 +2545,10 @@
       "key": "skala_blank_lines_around_multiline_case_section",
       "aliases": [],
       "export": [
-        "blank_lines_around_multiline_case_section",
-        "csharp_blank_lines_around_multiline_case_section",
         "resharper_blank_lines_around_multiline_case_section",
-        "resharper_csharp_blank_lines_around_multiline_case_section"
+        "resharper_csharp_blank_lines_around_multiline_case_section",
+        "csharp_blank_lines_around_multiline_case_section",
+        "blank_lines_around_multiline_case_section"
       ],
       "language": "csharp",
       "type": "int",
@@ -2569,10 +2569,10 @@
       "key": "skala_blank_lines_around_namespace",
       "aliases": [],
       "export": [
-        "blank_lines_around_namespace",
-        "csharp_blank_lines_around_namespace",
         "resharper_blank_lines_around_namespace",
-        "resharper_csharp_blank_lines_around_namespace"
+        "resharper_csharp_blank_lines_around_namespace",
+        "csharp_blank_lines_around_namespace",
+        "blank_lines_around_namespace"
       ],
       "language": "csharp",
       "type": "int",
@@ -2593,10 +2593,10 @@
       "key": "skala_blank_lines_around_property",
       "aliases": [],
       "export": [
-        "blank_lines_around_property",
-        "csharp_blank_lines_around_property",
         "resharper_blank_lines_around_property",
-        "resharper_csharp_blank_lines_around_property"
+        "resharper_csharp_blank_lines_around_property",
+        "csharp_blank_lines_around_property",
+        "blank_lines_around_property"
       ],
       "language": "csharp",
       "type": "int",
@@ -2617,10 +2617,10 @@
       "key": "skala_blank_lines_around_region",
       "aliases": [],
       "export": [
-        "blank_lines_around_region",
-        "csharp_blank_lines_around_region",
         "resharper_blank_lines_around_region",
-        "resharper_csharp_blank_lines_around_region"
+        "resharper_csharp_blank_lines_around_region",
+        "csharp_blank_lines_around_region",
+        "blank_lines_around_region"
       ],
       "language": "csharp",
       "type": "int",
@@ -2641,10 +2641,10 @@
       "key": "skala_blank_lines_around_single_line_accessor",
       "aliases": [],
       "export": [
-        "blank_lines_around_single_line_accessor",
-        "csharp_blank_lines_around_single_line_accessor",
         "resharper_blank_lines_around_single_line_accessor",
-        "resharper_csharp_blank_lines_around_single_line_accessor"
+        "resharper_csharp_blank_lines_around_single_line_accessor",
+        "csharp_blank_lines_around_single_line_accessor",
+        "blank_lines_around_single_line_accessor"
       ],
       "language": "csharp",
       "type": "int",
@@ -2665,10 +2665,10 @@
       "key": "skala_blank_lines_around_single_line_auto_property",
       "aliases": [],
       "export": [
-        "blank_lines_around_single_line_auto_property",
-        "csharp_blank_lines_around_single_line_auto_property",
         "resharper_blank_lines_around_single_line_auto_property",
-        "resharper_csharp_blank_lines_around_single_line_auto_property"
+        "resharper_csharp_blank_lines_around_single_line_auto_property",
+        "csharp_blank_lines_around_single_line_auto_property",
+        "blank_lines_around_single_line_auto_property"
       ],
       "language": "csharp",
       "type": "int",
@@ -2689,10 +2689,10 @@
       "key": "skala_blank_lines_around_single_line_field",
       "aliases": [],
       "export": [
-        "blank_lines_around_single_line_field",
-        "csharp_blank_lines_around_single_line_field",
         "resharper_blank_lines_around_single_line_field",
-        "resharper_csharp_blank_lines_around_single_line_field"
+        "resharper_csharp_blank_lines_around_single_line_field",
+        "csharp_blank_lines_around_single_line_field",
+        "blank_lines_around_single_line_field"
       ],
       "language": "csharp",
       "type": "int",
@@ -2713,10 +2713,10 @@
       "key": "skala_blank_lines_around_single_line_invocable",
       "aliases": [],
       "export": [
-        "blank_lines_around_single_line_invocable",
-        "csharp_blank_lines_around_single_line_invocable",
         "resharper_blank_lines_around_single_line_invocable",
-        "resharper_csharp_blank_lines_around_single_line_invocable"
+        "resharper_csharp_blank_lines_around_single_line_invocable",
+        "csharp_blank_lines_around_single_line_invocable",
+        "blank_lines_around_single_line_invocable"
       ],
       "language": "csharp",
       "type": "int",
@@ -2737,10 +2737,10 @@
       "key": "skala_blank_lines_around_single_line_local_method",
       "aliases": [],
       "export": [
-        "blank_lines_around_single_line_local_method",
-        "csharp_blank_lines_around_single_line_local_method",
         "resharper_blank_lines_around_single_line_local_method",
-        "resharper_csharp_blank_lines_around_single_line_local_method"
+        "resharper_csharp_blank_lines_around_single_line_local_method",
+        "csharp_blank_lines_around_single_line_local_method",
+        "blank_lines_around_single_line_local_method"
       ],
       "language": "csharp",
       "type": "int",
@@ -2761,10 +2761,10 @@
       "key": "skala_blank_lines_around_single_line_property",
       "aliases": [],
       "export": [
-        "blank_lines_around_single_line_property",
-        "csharp_blank_lines_around_single_line_property",
         "resharper_blank_lines_around_single_line_property",
-        "resharper_csharp_blank_lines_around_single_line_property"
+        "resharper_csharp_blank_lines_around_single_line_property",
+        "csharp_blank_lines_around_single_line_property",
+        "blank_lines_around_single_line_property"
       ],
       "language": "csharp",
       "type": "int",
@@ -2786,10 +2786,10 @@
       "key": "skala_blank_lines_around_single_line_type",
       "aliases": [],
       "export": [
-        "blank_lines_around_single_line_type",
-        "csharp_blank_lines_around_single_line_type",
         "resharper_blank_lines_around_single_line_type",
-        "resharper_csharp_blank_lines_around_single_line_type"
+        "resharper_csharp_blank_lines_around_single_line_type",
+        "csharp_blank_lines_around_single_line_type",
+        "blank_lines_around_single_line_type"
       ],
       "language": "csharp",
       "type": "int",
@@ -2810,10 +2810,10 @@
       "key": "skala_blank_lines_around_type",
       "aliases": [],
       "export": [
-        "blank_lines_around_type",
-        "csharp_blank_lines_around_type",
         "resharper_blank_lines_around_type",
-        "resharper_csharp_blank_lines_around_type"
+        "resharper_csharp_blank_lines_around_type",
+        "csharp_blank_lines_around_type",
+        "blank_lines_around_type"
       ],
       "language": "csharp",
       "type": "int",
@@ -2834,10 +2834,10 @@
       "key": "skala_blank_lines_before_block_statements",
       "aliases": [],
       "export": [
-        "blank_lines_before_block_statements",
-        "csharp_blank_lines_before_block_statements",
         "resharper_blank_lines_before_block_statements",
-        "resharper_csharp_blank_lines_before_block_statements"
+        "resharper_csharp_blank_lines_before_block_statements",
+        "csharp_blank_lines_before_block_statements",
+        "blank_lines_before_block_statements"
       ],
       "language": "csharp",
       "type": "int",
@@ -2858,10 +2858,10 @@
       "key": "skala_blank_lines_before_case",
       "aliases": [],
       "export": [
-        "blank_lines_before_case",
-        "csharp_blank_lines_before_case",
         "resharper_blank_lines_before_case",
-        "resharper_csharp_blank_lines_before_case"
+        "resharper_csharp_blank_lines_before_case",
+        "csharp_blank_lines_before_case",
+        "blank_lines_before_case"
       ],
       "language": "csharp",
       "type": "int",
@@ -2882,10 +2882,10 @@
       "key": "skala_blank_lines_before_control_transfer_statements",
       "aliases": [],
       "export": [
-        "blank_lines_before_control_transfer_statements",
-        "csharp_blank_lines_before_control_transfer_statements",
         "resharper_blank_lines_before_control_transfer_statements",
-        "resharper_csharp_blank_lines_before_control_transfer_statements"
+        "resharper_csharp_blank_lines_before_control_transfer_statements",
+        "csharp_blank_lines_before_control_transfer_statements",
+        "blank_lines_before_control_transfer_statements"
       ],
       "language": "csharp",
       "type": "int",
@@ -2906,10 +2906,10 @@
       "key": "skala_blank_lines_before_multiline_statements",
       "aliases": [],
       "export": [
-        "blank_lines_before_multiline_statements",
-        "csharp_blank_lines_before_multiline_statements",
         "resharper_blank_lines_before_multiline_statements",
-        "resharper_csharp_blank_lines_before_multiline_statements"
+        "resharper_csharp_blank_lines_before_multiline_statements",
+        "csharp_blank_lines_before_multiline_statements",
+        "blank_lines_before_multiline_statements"
       ],
       "language": "csharp",
       "type": "int",
@@ -2930,10 +2930,10 @@
       "key": "skala_blank_lines_before_single_line_comment",
       "aliases": [],
       "export": [
-        "blank_lines_before_single_line_comment",
-        "csharp_blank_lines_before_single_line_comment",
         "resharper_blank_lines_before_single_line_comment",
-        "resharper_csharp_blank_lines_before_single_line_comment"
+        "resharper_csharp_blank_lines_before_single_line_comment",
+        "csharp_blank_lines_before_single_line_comment",
+        "blank_lines_before_single_line_comment"
       ],
       "language": "csharp",
       "type": "int",
@@ -2954,10 +2954,10 @@
       "key": "skala_blank_lines_inside_namespace",
       "aliases": [],
       "export": [
-        "blank_lines_inside_namespace",
-        "csharp_blank_lines_inside_namespace",
         "resharper_blank_lines_inside_namespace",
-        "resharper_csharp_blank_lines_inside_namespace"
+        "resharper_csharp_blank_lines_inside_namespace",
+        "csharp_blank_lines_inside_namespace",
+        "blank_lines_inside_namespace"
       ],
       "language": "csharp",
       "type": "int",
@@ -2978,10 +2978,10 @@
       "key": "skala_blank_lines_inside_region",
       "aliases": [],
       "export": [
-        "blank_lines_inside_region",
-        "csharp_blank_lines_inside_region",
         "resharper_blank_lines_inside_region",
-        "resharper_csharp_blank_lines_inside_region"
+        "resharper_csharp_blank_lines_inside_region",
+        "csharp_blank_lines_inside_region",
+        "blank_lines_inside_region"
       ],
       "language": "csharp",
       "type": "int",
@@ -3002,10 +3002,10 @@
       "key": "skala_blank_lines_inside_type",
       "aliases": [],
       "export": [
-        "blank_lines_inside_type",
-        "csharp_blank_lines_inside_type",
         "resharper_blank_lines_inside_type",
-        "resharper_csharp_blank_lines_inside_type"
+        "resharper_csharp_blank_lines_inside_type",
+        "csharp_blank_lines_inside_type",
+        "blank_lines_inside_type"
       ],
       "language": "csharp",
       "type": "int",
@@ -3026,10 +3026,10 @@
       "key": "skala_braces_redundant",
       "aliases": [],
       "export": [
-        "braces_redundant",
-        "csharp_braces_redundant",
         "resharper_braces_redundant",
-        "resharper_csharp_braces_redundant"
+        "resharper_csharp_braces_redundant",
+        "csharp_braces_redundant",
+        "braces_redundant"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3048,10 +3048,10 @@
       "key": "skala_constructor_or_destructor_body",
       "aliases": [],
       "export": [
-        "constructor_or_destructor_body",
-        "csharp_constructor_or_destructor_body",
         "resharper_constructor_or_destructor_body",
-        "resharper_csharp_constructor_or_destructor_body"
+        "resharper_csharp_constructor_or_destructor_body",
+        "csharp_constructor_or_destructor_body",
+        "constructor_or_destructor_body"
       ],
       "language": "csharp",
       "type": "enum:BodyStyle",
@@ -3070,10 +3070,10 @@
       "key": "skala_continuous_indent_multiplier",
       "aliases": [],
       "export": [
-        "continuous_indent_multiplier",
-        "csharp_continuous_indent_multiplier",
         "resharper_continuous_indent_multiplier",
-        "resharper_csharp_continuous_indent_multiplier"
+        "resharper_csharp_continuous_indent_multiplier",
+        "csharp_continuous_indent_multiplier",
+        "continuous_indent_multiplier"
       ],
       "language": "csharp",
       "type": "int",
@@ -3094,10 +3094,10 @@
       "key": "skala_default_value_when_type_evident",
       "aliases": [],
       "export": [
-        "csharp_default_value_when_type_evident",
-        "default_value_when_type_evident",
+        "resharper_default_value_when_type_evident",
         "resharper_csharp_default_value_when_type_evident",
-        "resharper_default_value_when_type_evident"
+        "csharp_default_value_when_type_evident",
+        "default_value_when_type_evident"
       ],
       "language": "csharp",
       "type": "enum:DefaultValueStyle",
@@ -3116,10 +3116,10 @@
       "key": "skala_default_value_when_type_not_evident",
       "aliases": [],
       "export": [
-        "csharp_default_value_when_type_not_evident",
-        "default_value_when_type_not_evident",
+        "resharper_default_value_when_type_not_evident",
         "resharper_csharp_default_value_when_type_not_evident",
-        "resharper_default_value_when_type_not_evident"
+        "csharp_default_value_when_type_not_evident",
+        "default_value_when_type_not_evident"
       ],
       "language": "csharp",
       "type": "enum:DefaultValueStyle",
@@ -3138,10 +3138,10 @@
       "key": "skala_empty_block_style",
       "aliases": [],
       "export": [
-        "csharp_empty_block_style",
-        "empty_block_style",
         "resharper_csharp_empty_block_style",
-        "resharper_empty_block_style"
+        "resharper_empty_block_style",
+        "csharp_empty_block_style",
+        "empty_block_style"
       ],
       "language": "csharp",
       "type": "enum:EmptyBlockStyle",
@@ -3160,10 +3160,10 @@
       "key": "skala_force_chop_compound_do_expression",
       "aliases": [],
       "export": [
-        "csharp_force_chop_compound_do_expression",
-        "force_chop_compound_do_expression",
+        "resharper_force_chop_compound_do_expression",
         "resharper_csharp_force_chop_compound_do_expression",
-        "resharper_force_chop_compound_do_expression"
+        "csharp_force_chop_compound_do_expression",
+        "force_chop_compound_do_expression"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3182,10 +3182,10 @@
       "key": "skala_force_chop_compound_if_expression",
       "aliases": [],
       "export": [
-        "csharp_force_chop_compound_if_expression",
-        "force_chop_compound_if_expression",
+        "resharper_force_chop_compound_if_expression",
         "resharper_csharp_force_chop_compound_if_expression",
-        "resharper_force_chop_compound_if_expression"
+        "csharp_force_chop_compound_if_expression",
+        "force_chop_compound_if_expression"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3204,10 +3204,10 @@
       "key": "skala_force_chop_compound_while_expression",
       "aliases": [],
       "export": [
-        "csharp_force_chop_compound_while_expression",
-        "force_chop_compound_while_expression",
+        "resharper_force_chop_compound_while_expression",
         "resharper_csharp_force_chop_compound_while_expression",
-        "resharper_force_chop_compound_while_expression"
+        "csharp_force_chop_compound_while_expression",
+        "force_chop_compound_while_expression"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3226,10 +3226,10 @@
       "key": "skala_indent_anonymous_method_block",
       "aliases": [],
       "export": [
-        "csharp_indent_anonymous_method_block",
-        "indent_anonymous_method_block",
+        "resharper_indent_anonymous_method_block",
         "resharper_csharp_indent_anonymous_method_block",
-        "resharper_indent_anonymous_method_block"
+        "csharp_indent_anonymous_method_block",
+        "indent_anonymous_method_block"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3249,10 +3249,10 @@
       "key": "skala_indent_inside_namespace",
       "aliases": [],
       "export": [
-        "csharp_indent_inside_namespace",
-        "indent_inside_namespace",
+        "resharper_indent_inside_namespace",
         "resharper_csharp_indent_inside_namespace",
-        "resharper_indent_inside_namespace"
+        "csharp_indent_inside_namespace",
+        "indent_inside_namespace"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3271,10 +3271,10 @@
       "key": "skala_indent_invocation_pars",
       "aliases": [],
       "export": [
-        "csharp_indent_invocation_pars",
-        "indent_invocation_pars",
+        "resharper_indent_invocation_pars",
         "resharper_csharp_indent_invocation_pars",
-        "resharper_indent_invocation_pars"
+        "csharp_indent_invocation_pars",
+        "indent_invocation_pars"
       ],
       "language": "csharp",
       "type": "enum:ParenthesesIndentStyle",
@@ -3293,10 +3293,10 @@
       "key": "skala_indent_method_decl_pars",
       "aliases": [],
       "export": [
-        "csharp_indent_method_decl_pars",
-        "indent_method_decl_pars",
+        "resharper_indent_method_decl_pars",
         "resharper_csharp_indent_method_decl_pars",
-        "resharper_indent_method_decl_pars"
+        "csharp_indent_method_decl_pars",
+        "indent_method_decl_pars"
       ],
       "language": "csharp",
       "type": "enum:ParenthesesIndentStyle",
@@ -3315,10 +3315,10 @@
       "key": "skala_indent_nested_fixed_stmt",
       "aliases": [],
       "export": [
-        "csharp_indent_nested_fixed_stmt",
-        "indent_nested_fixed_stmt",
+        "resharper_indent_nested_fixed_stmt",
         "resharper_csharp_indent_nested_fixed_stmt",
-        "resharper_indent_nested_fixed_stmt"
+        "csharp_indent_nested_fixed_stmt",
+        "indent_nested_fixed_stmt"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3337,10 +3337,10 @@
       "key": "skala_indent_nested_for_stmt",
       "aliases": [],
       "export": [
-        "csharp_indent_nested_for_stmt",
-        "indent_nested_for_stmt",
+        "resharper_indent_nested_for_stmt",
         "resharper_csharp_indent_nested_for_stmt",
-        "resharper_indent_nested_for_stmt"
+        "csharp_indent_nested_for_stmt",
+        "indent_nested_for_stmt"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3359,10 +3359,10 @@
       "key": "skala_indent_nested_foreach_stmt",
       "aliases": [],
       "export": [
-        "csharp_indent_nested_foreach_stmt",
-        "indent_nested_foreach_stmt",
+        "resharper_indent_nested_foreach_stmt",
         "resharper_csharp_indent_nested_foreach_stmt",
-        "resharper_indent_nested_foreach_stmt"
+        "csharp_indent_nested_foreach_stmt",
+        "indent_nested_foreach_stmt"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3381,10 +3381,10 @@
       "key": "skala_indent_nested_lock_stmt",
       "aliases": [],
       "export": [
-        "csharp_indent_nested_lock_stmt",
-        "indent_nested_lock_stmt",
+        "resharper_indent_nested_lock_stmt",
         "resharper_csharp_indent_nested_lock_stmt",
-        "resharper_indent_nested_lock_stmt"
+        "csharp_indent_nested_lock_stmt",
+        "indent_nested_lock_stmt"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3403,10 +3403,10 @@
       "key": "skala_indent_nested_usings_stmt",
       "aliases": [],
       "export": [
-        "csharp_indent_nested_usings_stmt",
-        "indent_nested_usings_stmt",
+        "resharper_indent_nested_usings_stmt",
         "resharper_csharp_indent_nested_usings_stmt",
-        "resharper_indent_nested_usings_stmt"
+        "csharp_indent_nested_usings_stmt",
+        "indent_nested_usings_stmt"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3425,10 +3425,10 @@
       "key": "skala_indent_nested_while_stmt",
       "aliases": [],
       "export": [
-        "csharp_indent_nested_while_stmt",
-        "indent_nested_while_stmt",
+        "resharper_indent_nested_while_stmt",
         "resharper_csharp_indent_nested_while_stmt",
-        "resharper_indent_nested_while_stmt"
+        "csharp_indent_nested_while_stmt",
+        "indent_nested_while_stmt"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3447,10 +3447,10 @@
       "key": "skala_indent_pars",
       "aliases": [],
       "export": [
-        "csharp_indent_pars",
-        "indent_pars",
+        "resharper_indent_pars",
         "resharper_csharp_indent_pars",
-        "resharper_indent_pars"
+        "csharp_indent_pars",
+        "indent_pars"
       ],
       "language": "csharp",
       "type": "enum:ParenthesesIndentStyle",
@@ -3469,10 +3469,10 @@
       "key": "skala_indent_preprocessor_if",
       "aliases": [],
       "export": [
-        "csharp_indent_preprocessor_if",
-        "indent_preprocessor_if",
+        "resharper_indent_preprocessor_if",
         "resharper_csharp_indent_preprocessor_if",
-        "resharper_indent_preprocessor_if"
+        "csharp_indent_preprocessor_if",
+        "indent_preprocessor_if"
       ],
       "language": "csharp",
       "type": "enum:PreprocessorIndentStyle",
@@ -3491,10 +3491,10 @@
       "key": "skala_indent_preprocessor_other",
       "aliases": [],
       "export": [
-        "csharp_indent_preprocessor_other",
-        "indent_preprocessor_other",
+        "resharper_indent_preprocessor_other",
         "resharper_csharp_indent_preprocessor_other",
-        "resharper_indent_preprocessor_other"
+        "csharp_indent_preprocessor_other",
+        "indent_preprocessor_other"
       ],
       "language": "csharp",
       "type": "enum:PreprocessorIndentStyle",
@@ -3513,10 +3513,10 @@
       "key": "skala_indent_preprocessor_region",
       "aliases": [],
       "export": [
-        "csharp_indent_preprocessor_region",
-        "indent_preprocessor_region",
+        "resharper_indent_preprocessor_region",
         "resharper_csharp_indent_preprocessor_region",
-        "resharper_indent_preprocessor_region"
+        "csharp_indent_preprocessor_region",
+        "indent_preprocessor_region"
       ],
       "language": "csharp",
       "type": "enum:PreprocessorIndentStyle",
@@ -3535,10 +3535,10 @@
       "key": "skala_indent_primary_constructor_decl_pars",
       "aliases": [],
       "export": [
-        "csharp_indent_primary_constructor_decl_pars",
-        "indent_primary_constructor_decl_pars",
+        "resharper_indent_primary_constructor_decl_pars",
         "resharper_csharp_indent_primary_constructor_decl_pars",
-        "resharper_indent_primary_constructor_decl_pars"
+        "csharp_indent_primary_constructor_decl_pars",
+        "indent_primary_constructor_decl_pars"
       ],
       "language": "csharp",
       "type": "enum:ParenthesesIndentStyle",
@@ -3557,10 +3557,10 @@
       "key": "skala_indent_raw_literal_string",
       "aliases": [],
       "export": [
-        "csharp_indent_raw_literal_string",
-        "indent_raw_literal_string",
+        "resharper_indent_raw_literal_string",
         "resharper_csharp_indent_raw_literal_string",
-        "resharper_indent_raw_literal_string"
+        "csharp_indent_raw_literal_string",
+        "indent_raw_literal_string"
       ],
       "language": "csharp",
       "type": "enum:RawStringIndentStyle",
@@ -3579,8 +3579,8 @@
       "key": "skala_indent_size",
       "aliases": [],
       "export": [
-        "csharp_indent_size",
-        "resharper_csharp_indent_size"
+        "resharper_csharp_indent_size",
+        "csharp_indent_size"
       ],
       "language": "csharp",
       "type": "int",
@@ -3601,10 +3601,10 @@
       "key": "skala_indent_statement_pars",
       "aliases": [],
       "export": [
-        "csharp_indent_statement_pars",
-        "indent_statement_pars",
+        "resharper_indent_statement_pars",
         "resharper_csharp_indent_statement_pars",
-        "resharper_indent_statement_pars"
+        "csharp_indent_statement_pars",
+        "indent_statement_pars"
       ],
       "language": "csharp",
       "type": "enum:ParenthesesIndentStyle",
@@ -3624,8 +3624,8 @@
       "key": "skala_indent_style",
       "aliases": [],
       "export": [
-        "csharp_indent_style",
-        "resharper_csharp_indent_style"
+        "resharper_csharp_indent_style",
+        "csharp_indent_style"
       ],
       "language": "csharp",
       "type": "enum:IndentStyle",
@@ -3644,10 +3644,10 @@
       "key": "skala_indent_type_constraints",
       "aliases": [],
       "export": [
-        "csharp_indent_type_constraints",
-        "indent_type_constraints",
+        "resharper_indent_type_constraints",
         "resharper_csharp_indent_type_constraints",
-        "resharper_indent_type_constraints"
+        "csharp_indent_type_constraints",
+        "indent_type_constraints"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3666,10 +3666,10 @@
       "key": "skala_indent_typearg_angles",
       "aliases": [],
       "export": [
-        "csharp_indent_typearg_angles",
-        "indent_typearg_angles",
+        "resharper_indent_typearg_angles",
         "resharper_csharp_indent_typearg_angles",
-        "resharper_indent_typearg_angles"
+        "csharp_indent_typearg_angles",
+        "indent_typearg_angles"
       ],
       "language": "csharp",
       "type": "enum:ParenthesesIndentStyle",
@@ -3688,10 +3688,10 @@
       "key": "skala_indent_typeparam_angles",
       "aliases": [],
       "export": [
-        "csharp_indent_typeparam_angles",
-        "indent_typeparam_angles",
+        "resharper_indent_typeparam_angles",
         "resharper_csharp_indent_typeparam_angles",
-        "resharper_indent_typeparam_angles"
+        "csharp_indent_typeparam_angles",
+        "indent_typeparam_angles"
       ],
       "language": "csharp",
       "type": "enum:ParenthesesIndentStyle",
@@ -3710,9 +3710,9 @@
       "key": "skala_insert_final_newline",
       "aliases": [],
       "export": [
-        "csharp_insert_final_newline",
+        "resharper_csharp_insert_final_newline",
         "insert_final_newline",
-        "resharper_csharp_insert_final_newline"
+        "csharp_insert_final_newline"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3731,10 +3731,10 @@
       "key": "skala_int_align_assignments",
       "aliases": [],
       "export": [
-        "csharp_int_align_assignments",
-        "int_align_assignments",
         "resharper_csharp_int_align_assignments",
-        "resharper_int_align_assignments"
+        "resharper_int_align_assignments",
+        "csharp_int_align_assignments",
+        "int_align_assignments"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3753,10 +3753,10 @@
       "key": "skala_int_align_binary_expressions",
       "aliases": [],
       "export": [
-        "csharp_int_align_binary_expressions",
-        "int_align_binary_expressions",
         "resharper_csharp_int_align_binary_expressions",
-        "resharper_int_align_binary_expressions"
+        "resharper_int_align_binary_expressions",
+        "csharp_int_align_binary_expressions",
+        "int_align_binary_expressions"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3775,10 +3775,10 @@
       "key": "skala_int_align_comments",
       "aliases": [],
       "export": [
-        "csharp_int_align_comments",
-        "int_align_comments",
+        "resharper_int_align_comments",
         "resharper_csharp_int_align_comments",
-        "resharper_int_align_comments"
+        "csharp_int_align_comments",
+        "int_align_comments"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3797,10 +3797,10 @@
       "key": "skala_int_align_fields",
       "aliases": [],
       "export": [
-        "csharp_int_align_fields",
-        "int_align_fields",
         "resharper_csharp_int_align_fields",
-        "resharper_int_align_fields"
+        "resharper_int_align_fields",
+        "csharp_int_align_fields",
+        "int_align_fields"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3819,10 +3819,10 @@
       "key": "skala_int_align_fix_in_adjacent",
       "aliases": [],
       "export": [
-        "csharp_int_align_fix_in_adjacent",
-        "int_align_fix_in_adjacent",
+        "resharper_int_align_fix_in_adjacent",
         "resharper_csharp_int_align_fix_in_adjacent",
-        "resharper_int_align_fix_in_adjacent"
+        "csharp_int_align_fix_in_adjacent",
+        "int_align_fix_in_adjacent"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3842,10 +3842,10 @@
       "key": "skala_int_align_invocations",
       "aliases": [],
       "export": [
-        "csharp_int_align_invocations",
-        "int_align_invocations",
         "resharper_csharp_int_align_invocations",
-        "resharper_int_align_invocations"
+        "resharper_int_align_invocations",
+        "csharp_int_align_invocations",
+        "int_align_invocations"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3864,10 +3864,10 @@
       "key": "skala_int_align_methods",
       "aliases": [],
       "export": [
-        "csharp_int_align_methods",
-        "int_align_methods",
         "resharper_csharp_int_align_methods",
-        "resharper_int_align_methods"
+        "resharper_int_align_methods",
+        "csharp_int_align_methods",
+        "int_align_methods"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3886,10 +3886,10 @@
       "key": "skala_int_align_nested_ternary",
       "aliases": [],
       "export": [
-        "csharp_int_align_nested_ternary",
-        "int_align_nested_ternary",
         "resharper_csharp_int_align_nested_ternary",
-        "resharper_int_align_nested_ternary"
+        "resharper_int_align_nested_ternary",
+        "csharp_int_align_nested_ternary",
+        "int_align_nested_ternary"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3908,10 +3908,10 @@
       "key": "skala_int_align_parameters",
       "aliases": [],
       "export": [
-        "csharp_int_align_parameters",
-        "int_align_parameters",
         "resharper_csharp_int_align_parameters",
-        "resharper_int_align_parameters"
+        "resharper_int_align_parameters",
+        "csharp_int_align_parameters",
+        "int_align_parameters"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3930,10 +3930,10 @@
       "key": "skala_int_align_properties",
       "aliases": [],
       "export": [
-        "csharp_int_align_properties",
-        "int_align_properties",
         "resharper_csharp_int_align_properties",
-        "resharper_int_align_properties"
+        "resharper_int_align_properties",
+        "csharp_int_align_properties",
+        "int_align_properties"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3952,10 +3952,10 @@
       "key": "skala_int_align_property_patterns",
       "aliases": [],
       "export": [
-        "csharp_int_align_property_patterns",
-        "int_align_property_patterns",
         "resharper_csharp_int_align_property_patterns",
-        "resharper_int_align_property_patterns"
+        "resharper_int_align_property_patterns",
+        "csharp_int_align_property_patterns",
+        "int_align_property_patterns"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3974,10 +3974,10 @@
       "key": "skala_int_align_switch_expressions",
       "aliases": [],
       "export": [
-        "csharp_int_align_switch_expressions",
-        "int_align_switch_expressions",
         "resharper_csharp_int_align_switch_expressions",
-        "resharper_int_align_switch_expressions"
+        "resharper_int_align_switch_expressions",
+        "csharp_int_align_switch_expressions",
+        "int_align_switch_expressions"
       ],
       "language": "csharp",
       "type": "bool",
@@ -3996,10 +3996,10 @@
       "key": "skala_int_align_switch_sections",
       "aliases": [],
       "export": [
-        "csharp_int_align_switch_sections",
-        "int_align_switch_sections",
         "resharper_csharp_int_align_switch_sections",
-        "resharper_int_align_switch_sections"
+        "resharper_int_align_switch_sections",
+        "csharp_int_align_switch_sections",
+        "int_align_switch_sections"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4018,10 +4018,10 @@
       "key": "skala_int_align_variables",
       "aliases": [],
       "export": [
-        "csharp_int_align_variables",
-        "int_align_variables",
         "resharper_csharp_int_align_variables",
-        "resharper_int_align_variables"
+        "resharper_int_align_variables",
+        "csharp_int_align_variables",
+        "int_align_variables"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4040,10 +4040,10 @@
       "key": "skala_keep_blank_lines_in_code",
       "aliases": [],
       "export": [
-        "csharp_keep_blank_lines_in_code",
-        "keep_blank_lines_in_code",
+        "resharper_keep_blank_lines_in_code",
         "resharper_csharp_keep_blank_lines_in_code",
-        "resharper_keep_blank_lines_in_code"
+        "csharp_keep_blank_lines_in_code",
+        "keep_blank_lines_in_code"
       ],
       "language": "csharp",
       "type": "int",
@@ -4064,10 +4064,10 @@
       "key": "skala_keep_blank_lines_in_declarations",
       "aliases": [],
       "export": [
-        "csharp_keep_blank_lines_in_declarations",
-        "keep_blank_lines_in_declarations",
+        "resharper_keep_blank_lines_in_declarations",
         "resharper_csharp_keep_blank_lines_in_declarations",
-        "resharper_keep_blank_lines_in_declarations"
+        "csharp_keep_blank_lines_in_declarations",
+        "keep_blank_lines_in_declarations"
       ],
       "language": "csharp",
       "type": "int",
@@ -4088,10 +4088,10 @@
       "key": "skala_keep_existing_attribute_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_attribute_arrangement",
-        "keep_existing_attribute_arrangement",
+        "resharper_keep_existing_attribute_arrangement",
         "resharper_csharp_keep_existing_attribute_arrangement",
-        "resharper_keep_existing_attribute_arrangement"
+        "csharp_keep_existing_attribute_arrangement",
+        "keep_existing_attribute_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4110,10 +4110,10 @@
       "key": "skala_keep_existing_declaration_block_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_declaration_block_arrangement",
-        "keep_existing_declaration_block_arrangement",
+        "resharper_keep_existing_declaration_block_arrangement",
         "resharper_csharp_keep_existing_declaration_block_arrangement",
-        "resharper_keep_existing_declaration_block_arrangement"
+        "csharp_keep_existing_declaration_block_arrangement",
+        "keep_existing_declaration_block_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4132,10 +4132,10 @@
       "key": "skala_keep_existing_declaration_parens_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_declaration_parens_arrangement",
-        "keep_existing_declaration_parens_arrangement",
+        "resharper_keep_existing_declaration_parens_arrangement",
         "resharper_csharp_keep_existing_declaration_parens_arrangement",
-        "resharper_keep_existing_declaration_parens_arrangement"
+        "csharp_keep_existing_declaration_parens_arrangement",
+        "keep_existing_declaration_parens_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4154,10 +4154,10 @@
       "key": "skala_keep_existing_embedded_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_embedded_arrangement",
-        "keep_existing_embedded_arrangement",
+        "resharper_keep_existing_embedded_arrangement",
         "resharper_csharp_keep_existing_embedded_arrangement",
-        "resharper_keep_existing_embedded_arrangement"
+        "csharp_keep_existing_embedded_arrangement",
+        "keep_existing_embedded_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4176,10 +4176,10 @@
       "key": "skala_keep_existing_embedded_block_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_embedded_block_arrangement",
-        "keep_existing_embedded_block_arrangement",
+        "resharper_keep_existing_embedded_block_arrangement",
         "resharper_csharp_keep_existing_embedded_block_arrangement",
-        "resharper_keep_existing_embedded_block_arrangement"
+        "csharp_keep_existing_embedded_block_arrangement",
+        "keep_existing_embedded_block_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4198,10 +4198,10 @@
       "key": "skala_keep_existing_enum_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_enum_arrangement",
-        "keep_existing_enum_arrangement",
         "resharper_csharp_keep_existing_enum_arrangement",
-        "resharper_keep_existing_enum_arrangement"
+        "resharper_keep_existing_enum_arrangement",
+        "csharp_keep_existing_enum_arrangement",
+        "keep_existing_enum_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4220,10 +4220,10 @@
       "key": "skala_keep_existing_expr_member_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_expr_member_arrangement",
-        "keep_existing_expr_member_arrangement",
+        "resharper_keep_existing_expr_member_arrangement",
         "resharper_csharp_keep_existing_expr_member_arrangement",
-        "resharper_keep_existing_expr_member_arrangement"
+        "csharp_keep_existing_expr_member_arrangement",
+        "keep_existing_expr_member_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4242,10 +4242,10 @@
       "key": "skala_keep_existing_invocation_parens_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_invocation_parens_arrangement",
-        "keep_existing_invocation_parens_arrangement",
+        "resharper_keep_existing_invocation_parens_arrangement",
         "resharper_csharp_keep_existing_invocation_parens_arrangement",
-        "resharper_keep_existing_invocation_parens_arrangement"
+        "csharp_keep_existing_invocation_parens_arrangement",
+        "keep_existing_invocation_parens_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4264,12 +4264,12 @@
       "key": "skala_keep_existing_linebreaks",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_linebreaks",
-        "csharp_keep_user_linebreaks",
-        "keep_existing_linebreaks",
         "resharper_csharp_keep_existing_linebreaks",
         "resharper_csharp_keep_user_linebreaks",
-        "resharper_keep_existing_linebreaks"
+        "resharper_keep_existing_linebreaks",
+        "csharp_keep_existing_linebreaks",
+        "csharp_keep_user_linebreaks",
+        "keep_existing_linebreaks"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4288,10 +4288,10 @@
       "key": "skala_keep_existing_list_patterns_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_list_patterns_arrangement",
-        "keep_existing_list_patterns_arrangement",
+        "resharper_keep_existing_list_patterns_arrangement",
         "resharper_csharp_keep_existing_list_patterns_arrangement",
-        "resharper_keep_existing_list_patterns_arrangement"
+        "csharp_keep_existing_list_patterns_arrangement",
+        "keep_existing_list_patterns_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4310,10 +4310,10 @@
       "key": "skala_keep_existing_primary_constructor_declaration_parens_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_primary_constructor_declaration_parens_arrangement",
-        "keep_existing_primary_constructor_declaration_parens_arrangement",
+        "resharper_keep_existing_primary_constructor_declaration_parens_arrangement",
         "resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement",
-        "resharper_keep_existing_primary_constructor_declaration_parens_arrangement"
+        "csharp_keep_existing_primary_constructor_declaration_parens_arrangement",
+        "keep_existing_primary_constructor_declaration_parens_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4332,10 +4332,10 @@
       "key": "skala_keep_existing_property_patterns_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_property_patterns_arrangement",
-        "keep_existing_property_patterns_arrangement",
+        "resharper_keep_existing_property_patterns_arrangement",
         "resharper_csharp_keep_existing_property_patterns_arrangement",
-        "resharper_keep_existing_property_patterns_arrangement"
+        "csharp_keep_existing_property_patterns_arrangement",
+        "keep_existing_property_patterns_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4354,10 +4354,10 @@
       "key": "skala_keep_existing_switch_expression_arrangement",
       "aliases": [],
       "export": [
-        "csharp_keep_existing_switch_expression_arrangement",
-        "keep_existing_switch_expression_arrangement",
+        "resharper_keep_existing_switch_expression_arrangement",
         "resharper_csharp_keep_existing_switch_expression_arrangement",
-        "resharper_keep_existing_switch_expression_arrangement"
+        "csharp_keep_existing_switch_expression_arrangement",
+        "keep_existing_switch_expression_arrangement"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4395,10 +4395,10 @@
       "key": "skala_local_function_body",
       "aliases": [],
       "export": [
-        "csharp_local_function_body",
-        "local_function_body",
+        "resharper_local_function_body",
         "resharper_csharp_local_function_body",
-        "resharper_local_function_body"
+        "csharp_local_function_body",
+        "local_function_body"
       ],
       "language": "csharp",
       "type": "enum:BodyStyle",
@@ -4417,10 +4417,10 @@
       "key": "skala_max_array_initializer_elements_on_line",
       "aliases": [],
       "export": [
-        "csharp_max_array_initializer_elements_on_line",
-        "max_array_initializer_elements_on_line",
+        "resharper_max_array_initializer_elements_on_line",
         "resharper_csharp_max_array_initializer_elements_on_line",
-        "resharper_max_array_initializer_elements_on_line"
+        "csharp_max_array_initializer_elements_on_line",
+        "max_array_initializer_elements_on_line"
       ],
       "language": "csharp",
       "type": "int",
@@ -4441,10 +4441,10 @@
       "key": "skala_max_attribute_length_for_same_line",
       "aliases": [],
       "export": [
-        "csharp_max_attribute_length_for_same_line",
-        "max_attribute_length_for_same_line",
+        "resharper_max_attribute_length_for_same_line",
         "resharper_csharp_max_attribute_length_for_same_line",
-        "resharper_max_attribute_length_for_same_line"
+        "csharp_max_attribute_length_for_same_line",
+        "max_attribute_length_for_same_line"
       ],
       "language": "csharp",
       "type": "int",
@@ -4465,10 +4465,10 @@
       "key": "skala_max_enum_members_on_line",
       "aliases": [],
       "export": [
-        "csharp_max_enum_members_on_line",
-        "max_enum_members_on_line",
         "resharper_csharp_max_enum_members_on_line",
-        "resharper_max_enum_members_on_line"
+        "resharper_max_enum_members_on_line",
+        "csharp_max_enum_members_on_line",
+        "max_enum_members_on_line"
       ],
       "language": "csharp",
       "type": "int",
@@ -4490,10 +4490,10 @@
       "key": "skala_max_formal_parameters_on_line",
       "aliases": [],
       "export": [
-        "csharp_max_formal_parameters_on_line",
-        "max_formal_parameters_on_line",
+        "resharper_max_formal_parameters_on_line",
         "resharper_csharp_max_formal_parameters_on_line",
-        "resharper_max_formal_parameters_on_line"
+        "csharp_max_formal_parameters_on_line",
+        "max_formal_parameters_on_line"
       ],
       "language": "csharp",
       "type": "int",
@@ -4514,10 +4514,10 @@
       "key": "skala_max_initializer_elements_on_line",
       "aliases": [],
       "export": [
-        "csharp_max_initializer_elements_on_line",
-        "max_initializer_elements_on_line",
+        "resharper_max_initializer_elements_on_line",
         "resharper_csharp_max_initializer_elements_on_line",
-        "resharper_max_initializer_elements_on_line"
+        "csharp_max_initializer_elements_on_line",
+        "max_initializer_elements_on_line"
       ],
       "language": "csharp",
       "type": "int",
@@ -4538,10 +4538,10 @@
       "key": "skala_max_invocation_arguments_on_line",
       "aliases": [],
       "export": [
-        "csharp_max_invocation_arguments_on_line",
-        "max_invocation_arguments_on_line",
+        "resharper_max_invocation_arguments_on_line",
         "resharper_csharp_max_invocation_arguments_on_line",
-        "resharper_max_invocation_arguments_on_line"
+        "csharp_max_invocation_arguments_on_line",
+        "max_invocation_arguments_on_line"
       ],
       "language": "csharp",
       "type": "int",
@@ -4562,8 +4562,8 @@
       "key": "skala_max_line_length",
       "aliases": [],
       "export": [
-        "csharp_max_line_length",
-        "resharper_csharp_max_line_length"
+        "resharper_csharp_max_line_length",
+        "csharp_max_line_length"
       ],
       "language": "csharp",
       "type": "int",
@@ -4584,10 +4584,10 @@
       "key": "skala_max_primary_constructor_parameters_on_line",
       "aliases": [],
       "export": [
-        "csharp_max_primary_constructor_parameters_on_line",
-        "max_primary_constructor_parameters_on_line",
+        "resharper_max_primary_constructor_parameters_on_line",
         "resharper_csharp_max_primary_constructor_parameters_on_line",
-        "resharper_max_primary_constructor_parameters_on_line"
+        "csharp_max_primary_constructor_parameters_on_line",
+        "max_primary_constructor_parameters_on_line"
       ],
       "language": "csharp",
       "type": "int",
@@ -4608,10 +4608,10 @@
       "key": "skala_method_or_operator_body",
       "aliases": [],
       "export": [
-        "csharp_method_or_operator_body",
-        "method_or_operator_body",
+        "resharper_method_or_operator_body",
         "resharper_csharp_method_or_operator_body",
-        "resharper_method_or_operator_body"
+        "csharp_method_or_operator_body",
+        "method_or_operator_body"
       ],
       "language": "csharp",
       "type": "enum:BodyStyle",
@@ -4630,10 +4630,10 @@
       "key": "skala_new_line_before_while",
       "aliases": [],
       "export": [
-        "csharp_new_line_before_while",
-        "new_line_before_while",
         "resharper_csharp_new_line_before_while",
-        "resharper_new_line_before_while"
+        "resharper_new_line_before_while",
+        "csharp_new_line_before_while",
+        "new_line_before_while"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4652,10 +4652,10 @@
       "key": "skala_null_checking_pattern_style",
       "aliases": [],
       "export": [
-        "csharp_null_checking_pattern_style",
-        "null_checking_pattern_style",
+        "resharper_null_checking_pattern_style",
         "resharper_csharp_null_checking_pattern_style",
-        "resharper_null_checking_pattern_style"
+        "csharp_null_checking_pattern_style",
+        "null_checking_pattern_style"
       ],
       "language": "csharp",
       "type": "enum:NullCheckingPatternStyle",
@@ -4674,10 +4674,10 @@
       "key": "skala_object_creation_when_type_evident",
       "aliases": [],
       "export": [
-        "csharp_object_creation_when_type_evident",
-        "object_creation_when_type_evident",
+        "resharper_object_creation_when_type_evident",
         "resharper_csharp_object_creation_when_type_evident",
-        "resharper_object_creation_when_type_evident"
+        "csharp_object_creation_when_type_evident",
+        "object_creation_when_type_evident"
       ],
       "language": "csharp",
       "type": "enum:ObjectCreationStyle",
@@ -4696,10 +4696,10 @@
       "key": "skala_object_creation_when_type_not_evident",
       "aliases": [],
       "export": [
-        "csharp_object_creation_when_type_not_evident",
-        "object_creation_when_type_not_evident",
+        "resharper_object_creation_when_type_not_evident",
         "resharper_csharp_object_creation_when_type_not_evident",
-        "resharper_object_creation_when_type_not_evident"
+        "csharp_object_creation_when_type_not_evident",
+        "object_creation_when_type_not_evident"
       ],
       "language": "csharp",
       "type": "enum:ObjectCreationStyle",
@@ -4718,10 +4718,10 @@
       "key": "skala_old_engine",
       "aliases": [],
       "export": [
-        "csharp_old_engine",
-        "old_engine",
+        "resharper_old_engine",
         "resharper_csharp_old_engine",
-        "resharper_old_engine"
+        "csharp_old_engine",
+        "old_engine"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4741,10 +4741,10 @@
       "key": "skala_outdent_binary_ops",
       "aliases": [],
       "export": [
-        "csharp_outdent_binary_ops",
-        "outdent_binary_ops",
+        "resharper_outdent_binary_ops",
         "resharper_csharp_outdent_binary_ops",
-        "resharper_outdent_binary_ops"
+        "csharp_outdent_binary_ops",
+        "outdent_binary_ops"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4763,10 +4763,10 @@
       "key": "skala_outdent_binary_pattern_ops",
       "aliases": [],
       "export": [
-        "csharp_outdent_binary_pattern_ops",
-        "outdent_binary_pattern_ops",
+        "resharper_outdent_binary_pattern_ops",
         "resharper_csharp_outdent_binary_pattern_ops",
-        "resharper_outdent_binary_pattern_ops"
+        "csharp_outdent_binary_pattern_ops",
+        "outdent_binary_pattern_ops"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4785,10 +4785,10 @@
       "key": "skala_outdent_dots",
       "aliases": [],
       "export": [
-        "csharp_outdent_dots",
-        "outdent_dots",
+        "resharper_outdent_dots",
         "resharper_csharp_outdent_dots",
-        "resharper_outdent_dots"
+        "csharp_outdent_dots",
+        "outdent_dots"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4807,10 +4807,10 @@
       "key": "skala_outdent_statement_labels",
       "aliases": [],
       "export": [
-        "csharp_outdent_statement_labels",
-        "outdent_statement_labels",
+        "resharper_outdent_statement_labels",
         "resharper_csharp_outdent_statement_labels",
-        "resharper_outdent_statement_labels"
+        "csharp_outdent_statement_labels",
+        "outdent_statement_labels"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4829,10 +4829,10 @@
       "key": "skala_parentheses_redundancy_style",
       "aliases": [],
       "export": [
-        "csharp_parentheses_redundancy_style",
-        "parentheses_redundancy_style",
+        "resharper_parentheses_redundancy_style",
         "resharper_csharp_parentheses_redundancy_style",
-        "resharper_parentheses_redundancy_style"
+        "csharp_parentheses_redundancy_style",
+        "parentheses_redundancy_style"
       ],
       "language": "csharp",
       "type": "enum:ParenthesesRedundancyStyle",
@@ -4851,10 +4851,10 @@
       "key": "skala_place_accessor_attribute_on_same_line",
       "aliases": [],
       "export": [
-        "csharp_place_accessor_attribute_on_same_line",
-        "place_accessor_attribute_on_same_line",
         "resharper_csharp_place_accessor_attribute_on_same_line",
-        "resharper_place_accessor_attribute_on_same_line"
+        "resharper_place_accessor_attribute_on_same_line",
+        "csharp_place_accessor_attribute_on_same_line",
+        "place_accessor_attribute_on_same_line"
       ],
       "language": "csharp",
       "type": "enum:PlacementStyle",
@@ -4873,10 +4873,10 @@
       "key": "skala_place_accessorholder_attribute_on_same_line",
       "aliases": [],
       "export": [
-        "csharp_place_accessorholder_attribute_on_same_line",
-        "place_accessorholder_attribute_on_same_line",
         "resharper_csharp_place_accessorholder_attribute_on_same_line",
-        "resharper_place_accessorholder_attribute_on_same_line"
+        "resharper_place_accessorholder_attribute_on_same_line",
+        "csharp_place_accessorholder_attribute_on_same_line",
+        "place_accessorholder_attribute_on_same_line"
       ],
       "language": "csharp",
       "type": "enum:PlacementStyle",
@@ -4895,10 +4895,10 @@
       "key": "skala_place_comments_at_first_column",
       "aliases": [],
       "export": [
-        "csharp_place_comments_at_first_column",
-        "place_comments_at_first_column",
+        "resharper_place_comments_at_first_column",
         "resharper_csharp_place_comments_at_first_column",
-        "resharper_place_comments_at_first_column"
+        "csharp_place_comments_at_first_column",
+        "place_comments_at_first_column"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4918,10 +4918,10 @@
       "key": "skala_place_constructor_initializer_on_same_line",
       "aliases": [],
       "export": [
-        "csharp_place_constructor_initializer_on_same_line",
-        "place_constructor_initializer_on_same_line",
+        "resharper_place_constructor_initializer_on_same_line",
         "resharper_csharp_place_constructor_initializer_on_same_line",
-        "resharper_place_constructor_initializer_on_same_line"
+        "csharp_place_constructor_initializer_on_same_line",
+        "place_constructor_initializer_on_same_line"
       ],
       "language": "csharp",
       "type": "bool",
@@ -4940,10 +4940,10 @@
       "key": "skala_place_expr_accessor_on_single_line",
       "aliases": [],
       "export": [
-        "csharp_place_expr_accessor_on_single_line",
-        "place_expr_accessor_on_single_line",
+        "resharper_place_expr_accessor_on_single_line",
         "resharper_csharp_place_expr_accessor_on_single_line",
-        "resharper_place_expr_accessor_on_single_line"
+        "csharp_place_expr_accessor_on_single_line",
+        "place_expr_accessor_on_single_line"
       ],
       "language": "csharp",
       "type": "enum:PlacementStyle",
@@ -4962,10 +4962,10 @@
       "key": "skala_place_expr_method_on_single_line",
       "aliases": [],
       "export": [
-        "csharp_place_expr_method_on_single_line",
-        "place_expr_method_on_single_line",
+        "resharper_place_expr_method_on_single_line",
         "resharper_csharp_place_expr_method_on_single_line",
-        "resharper_place_expr_method_on_single_line"
+        "csharp_place_expr_method_on_single_line",
+        "place_expr_method_on_single_line"
       ],
       "language": "csharp",
       "type": "enum:PlacementStyle",
@@ -4984,10 +4984,10 @@
       "key": "skala_place_expr_property_on_single_line",
       "aliases": [],
       "export": [
-        "csharp_place_expr_property_on_single_line",
-        "place_expr_property_on_single_line",
+        "resharper_place_expr_property_on_single_line",
         "resharper_csharp_place_expr_property_on_single_line",
-        "resharper_place_expr_property_on_single_line"
+        "csharp_place_expr_property_on_single_line",
+        "place_expr_property_on_single_line"
       ],
       "language": "csharp",
       "type": "enum:PlacementStyle",
@@ -5006,10 +5006,10 @@
       "key": "skala_place_field_attribute_on_same_line",
       "aliases": [],
       "export": [
-        "csharp_place_field_attribute_on_same_line",
-        "place_field_attribute_on_same_line",
         "resharper_csharp_place_field_attribute_on_same_line",
-        "resharper_place_field_attribute_on_same_line"
+        "resharper_place_field_attribute_on_same_line",
+        "csharp_place_field_attribute_on_same_line",
+        "place_field_attribute_on_same_line"
       ],
       "language": "csharp",
       "type": "enum:PlacementStyle",
@@ -5028,10 +5028,10 @@
       "key": "skala_place_linq_into_on_new_line",
       "aliases": [],
       "export": [
-        "csharp_place_linq_into_on_new_line",
-        "place_linq_into_on_new_line",
+        "resharper_place_linq_into_on_new_line",
         "resharper_csharp_place_linq_into_on_new_line",
-        "resharper_place_linq_into_on_new_line"
+        "csharp_place_linq_into_on_new_line",
+        "place_linq_into_on_new_line"
       ],
       "language": "csharp",
       "type": "bool",
@@ -5050,10 +5050,10 @@
       "key": "skala_place_method_attribute_on_same_line",
       "aliases": [],
       "export": [
-        "csharp_place_method_attribute_on_same_line",
-        "place_method_attribute_on_same_line",
         "resharper_csharp_place_method_attribute_on_same_line",
-        "resharper_place_method_attribute_on_same_line"
+        "resharper_place_method_attribute_on_same_line",
+        "csharp_place_method_attribute_on_same_line",
+        "place_method_attribute_on_same_line"
       ],
       "language": "csharp",
       "type": "enum:PlacementStyle",
@@ -5072,10 +5072,10 @@
       "key": "skala_place_record_field_attribute_on_same_line",
       "aliases": [],
       "export": [
-        "csharp_place_record_field_attribute_on_same_line",
-        "place_record_field_attribute_on_same_line",
         "resharper_csharp_place_record_field_attribute_on_same_line",
-        "resharper_place_record_field_attribute_on_same_line"
+        "resharper_place_record_field_attribute_on_same_line",
+        "csharp_place_record_field_attribute_on_same_line",
+        "place_record_field_attribute_on_same_line"
       ],
       "language": "csharp",
       "type": "enum:PlacementStyle",
@@ -5094,10 +5094,10 @@
       "key": "skala_place_simple_case_statement_on_same_line",
       "aliases": [],
       "export": [
-        "csharp_place_simple_case_statement_on_same_line",
-        "place_simple_case_statement_on_same_line",
+        "resharper_place_simple_case_statement_on_same_line",
         "resharper_csharp_place_simple_case_statement_on_same_line",
-        "resharper_place_simple_case_statement_on_same_line"
+        "csharp_place_simple_case_statement_on_same_line",
+        "place_simple_case_statement_on_same_line"
       ],
       "language": "csharp",
       "type": "enum:PlacementStyle",
@@ -5117,10 +5117,10 @@
       "key": "skala_place_simple_embedded_statement_on_same_line",
       "aliases": [],
       "export": [
-        "csharp_place_simple_embedded_statement_on_same_line",
-        "place_simple_embedded_statement_on_same_line",
+        "resharper_place_simple_embedded_statement_on_same_line",
         "resharper_csharp_place_simple_embedded_statement_on_same_line",
-        "resharper_place_simple_embedded_statement_on_same_line"
+        "csharp_place_simple_embedded_statement_on_same_line",
+        "place_simple_embedded_statement_on_same_line"
       ],
       "language": "csharp",
       "type": "enum:PlacementStyle",
@@ -5140,10 +5140,10 @@
       "key": "skala_place_simple_initializer_on_single_line",
       "aliases": [],
       "export": [
-        "csharp_place_simple_initializer_on_single_line",
-        "place_simple_initializer_on_single_line",
+        "resharper_place_simple_initializer_on_single_line",
         "resharper_csharp_place_simple_initializer_on_single_line",
-        "resharper_place_simple_initializer_on_single_line"
+        "csharp_place_simple_initializer_on_single_line",
+        "place_simple_initializer_on_single_line"
       ],
       "language": "csharp",
       "type": "bool",
@@ -5162,10 +5162,10 @@
       "key": "skala_place_simple_list_pattern_on_single_line",
       "aliases": [],
       "export": [
-        "csharp_place_simple_list_pattern_on_single_line",
-        "place_simple_list_pattern_on_single_line",
+        "resharper_place_simple_list_pattern_on_single_line",
         "resharper_csharp_place_simple_list_pattern_on_single_line",
-        "resharper_place_simple_list_pattern_on_single_line"
+        "csharp_place_simple_list_pattern_on_single_line",
+        "place_simple_list_pattern_on_single_line"
       ],
       "language": "csharp",
       "type": "bool",
@@ -5185,10 +5185,10 @@
       "key": "skala_place_simple_property_pattern_on_single_line",
       "aliases": [],
       "export": [
-        "csharp_place_simple_property_pattern_on_single_line",
-        "place_simple_property_pattern_on_single_line",
+        "resharper_place_simple_property_pattern_on_single_line",
         "resharper_csharp_place_simple_property_pattern_on_single_line",
-        "resharper_place_simple_property_pattern_on_single_line"
+        "csharp_place_simple_property_pattern_on_single_line",
+        "place_simple_property_pattern_on_single_line"
       ],
       "language": "csharp",
       "type": "bool",
@@ -5207,10 +5207,10 @@
       "key": "skala_place_simple_switch_expression_on_single_line",
       "aliases": [],
       "export": [
-        "csharp_place_simple_switch_expression_on_single_line",
-        "place_simple_switch_expression_on_single_line",
+        "resharper_place_simple_switch_expression_on_single_line",
         "resharper_csharp_place_simple_switch_expression_on_single_line",
-        "resharper_place_simple_switch_expression_on_single_line"
+        "csharp_place_simple_switch_expression_on_single_line",
+        "place_simple_switch_expression_on_single_line"
       ],
       "language": "csharp",
       "type": "bool",
@@ -5230,10 +5230,10 @@
       "key": "skala_place_type_attribute_on_same_line",
       "aliases": [],
       "export": [
-        "csharp_place_type_attribute_on_same_line",
-        "place_type_attribute_on_same_line",
         "resharper_csharp_place_type_attribute_on_same_line",
-        "resharper_place_type_attribute_on_same_line"
+        "resharper_place_type_attribute_on_same_line",
+        "csharp_place_type_attribute_on_same_line",
+        "place_type_attribute_on_same_line"
       ],
       "language": "csharp",
       "type": "enum:PlacementStyle",
@@ -5252,10 +5252,10 @@
       "key": "skala_place_type_constraints_on_same_line",
       "aliases": [],
       "export": [
-        "csharp_place_type_constraints_on_same_line",
-        "place_type_constraints_on_same_line",
+        "resharper_place_type_constraints_on_same_line",
         "resharper_csharp_place_type_constraints_on_same_line",
-        "resharper_place_type_constraints_on_same_line"
+        "csharp_place_type_constraints_on_same_line",
+        "place_type_constraints_on_same_line"
       ],
       "language": "csharp",
       "type": "bool",
@@ -5274,10 +5274,10 @@
       "key": "skala_prefer_explicit_discard_declaration",
       "aliases": [],
       "export": [
-        "csharp_prefer_explicit_discard_declaration",
-        "prefer_explicit_discard_declaration",
+        "resharper_prefer_explicit_discard_declaration",
         "resharper_csharp_prefer_explicit_discard_declaration",
-        "resharper_prefer_explicit_discard_declaration"
+        "csharp_prefer_explicit_discard_declaration",
+        "prefer_explicit_discard_declaration"
       ],
       "language": "csharp",
       "type": "bool",
@@ -5296,10 +5296,10 @@
       "key": "skala_remove_blank_lines_near_braces_in_code",
       "aliases": [],
       "export": [
-        "csharp_remove_blank_lines_near_braces_in_code",
-        "remove_blank_lines_near_braces_in_code",
+        "resharper_remove_blank_lines_near_braces_in_code",
         "resharper_csharp_remove_blank_lines_near_braces_in_code",
-        "resharper_remove_blank_lines_near_braces_in_code"
+        "csharp_remove_blank_lines_near_braces_in_code",
+        "remove_blank_lines_near_braces_in_code"
       ],
       "language": "csharp",
       "type": "bool",
@@ -5318,10 +5318,10 @@
       "key": "skala_remove_blank_lines_near_braces_in_declarations",
       "aliases": [],
       "export": [
-        "csharp_remove_blank_lines_near_braces_in_declarations",
-        "remove_blank_lines_near_braces_in_declarations",
+        "resharper_remove_blank_lines_near_braces_in_declarations",
         "resharper_csharp_remove_blank_lines_near_braces_in_declarations",
-        "resharper_remove_blank_lines_near_braces_in_declarations"
+        "csharp_remove_blank_lines_near_braces_in_declarations",
+        "remove_blank_lines_near_braces_in_declarations"
       ],
       "language": "csharp",
       "type": "bool",
@@ -5342,10 +5342,10 @@
         "dotnet_sort_system_directives_first"
       ],
       "export": [
-        "csharp_sort_usings_with_system_first",
         "dotnet_sort_system_directives_first",
         "resharper_csharp_sort_usings_with_system_first",
         "resharper_sort_usings_with_system_first",
+        "csharp_sort_usings_with_system_first",
         "sort_usings_with_system_first"
       ],
       "language": "csharp",
@@ -5365,9 +5365,9 @@
       "key": "skala_space_after_ampersand_op",
       "aliases": [],
       "export": [
-        "csharp_space_after_ampersand_op",
         "resharper_csharp_space_after_ampersand_op",
         "resharper_space_after_ampersand_op",
+        "csharp_space_after_ampersand_op",
         "space_after_ampersand_op"
       ],
       "language": "csharp",
@@ -5387,9 +5387,9 @@
       "key": "skala_space_after_asterik_op",
       "aliases": [],
       "export": [
-        "csharp_space_after_asterik_op",
         "resharper_csharp_space_after_asterik_op",
         "resharper_space_after_asterik_op",
+        "csharp_space_after_asterik_op",
         "space_after_asterik_op"
       ],
       "language": "csharp",
@@ -5409,12 +5409,12 @@
       "key": "skala_space_after_attribute_colon",
       "aliases": [],
       "export": [
-        "csharp_space_after_attribute_colon",
-        "csharp_space_after_colon",
+        "resharper_space_after_colon",
         "resharper_csharp_space_after_attribute_colon",
         "resharper_csharp_space_after_colon",
         "resharper_space_after_attribute_colon",
-        "resharper_space_after_colon",
+        "csharp_space_after_attribute_colon",
+        "csharp_space_after_colon",
         "space_after_attribute_colon",
         "space_after_colon"
       ],
@@ -5435,9 +5435,9 @@
       "key": "skala_space_after_attributes",
       "aliases": [],
       "export": [
-        "csharp_space_after_attributes",
-        "resharper_csharp_space_after_attributes",
         "resharper_space_after_attributes",
+        "resharper_csharp_space_after_attributes",
+        "csharp_space_after_attributes",
         "space_after_attributes"
       ],
       "language": "csharp",
@@ -5457,9 +5457,9 @@
       "key": "skala_space_after_colon_in_case",
       "aliases": [],
       "export": [
-        "csharp_space_after_colon_in_case",
-        "resharper_csharp_space_after_colon_in_case",
         "resharper_space_after_colon_in_case",
+        "resharper_csharp_space_after_colon_in_case",
+        "csharp_space_after_colon_in_case",
         "space_after_colon_in_case"
       ],
       "language": "csharp",
@@ -5479,9 +5479,9 @@
       "key": "skala_space_after_logical_not_op",
       "aliases": [],
       "export": [
-        "csharp_space_after_logical_not_op",
         "resharper_csharp_space_after_logical_not_op",
         "resharper_space_after_logical_not_op",
+        "csharp_space_after_logical_not_op",
         "space_after_logical_not_op"
       ],
       "language": "csharp",
@@ -5501,9 +5501,9 @@
       "key": "skala_space_after_operator_keyword",
       "aliases": [],
       "export": [
-        "csharp_space_after_operator_keyword",
-        "resharper_csharp_space_after_operator_keyword",
         "resharper_space_after_operator_keyword",
+        "resharper_csharp_space_after_operator_keyword",
+        "csharp_space_after_operator_keyword",
         "space_after_operator_keyword"
       ],
       "language": "csharp",
@@ -5523,9 +5523,9 @@
       "key": "skala_space_after_ternary_colon",
       "aliases": [],
       "export": [
-        "csharp_space_after_ternary_colon",
-        "resharper_csharp_space_after_ternary_colon",
         "resharper_space_after_ternary_colon",
+        "resharper_csharp_space_after_ternary_colon",
+        "csharp_space_after_ternary_colon",
         "space_after_ternary_colon"
       ],
       "language": "csharp",
@@ -5545,9 +5545,9 @@
       "key": "skala_space_after_ternary_quest",
       "aliases": [],
       "export": [
-        "csharp_space_after_ternary_quest",
-        "resharper_csharp_space_after_ternary_quest",
         "resharper_space_after_ternary_quest",
+        "resharper_csharp_space_after_ternary_quest",
+        "csharp_space_after_ternary_quest",
         "space_after_ternary_quest"
       ],
       "language": "csharp",
@@ -5567,9 +5567,9 @@
       "key": "skala_space_after_type_parameter_constraint_colon",
       "aliases": [],
       "export": [
-        "csharp_space_after_type_parameter_constraint_colon",
-        "resharper_csharp_space_after_type_parameter_constraint_colon",
         "resharper_space_after_type_parameter_constraint_colon",
+        "resharper_csharp_space_after_type_parameter_constraint_colon",
+        "csharp_space_after_type_parameter_constraint_colon",
         "space_after_type_parameter_constraint_colon"
       ],
       "language": "csharp",
@@ -5589,9 +5589,9 @@
       "key": "skala_space_after_unary_minus_op",
       "aliases": [],
       "export": [
-        "csharp_space_after_unary_minus_op",
         "resharper_csharp_space_after_unary_minus_op",
         "resharper_space_after_unary_minus_op",
+        "csharp_space_after_unary_minus_op",
         "space_after_unary_minus_op"
       ],
       "language": "csharp",
@@ -5636,9 +5636,9 @@
       "key": "skala_space_after_unary_plus_op",
       "aliases": [],
       "export": [
-        "csharp_space_after_unary_plus_op",
         "resharper_csharp_space_after_unary_plus_op",
         "resharper_space_after_unary_plus_op",
+        "csharp_space_after_unary_plus_op",
         "space_after_unary_plus_op"
       ],
       "language": "csharp",
@@ -5658,9 +5658,9 @@
       "key": "skala_space_around_additive_op",
       "aliases": [],
       "export": [
-        "csharp_space_around_additive_op",
-        "resharper_csharp_space_around_additive_op",
         "resharper_space_around_additive_op",
+        "resharper_csharp_space_around_additive_op",
+        "csharp_space_around_additive_op",
         "space_around_additive_op"
       ],
       "language": "csharp",
@@ -5680,9 +5680,9 @@
       "key": "skala_space_around_alias_eq",
       "aliases": [],
       "export": [
-        "csharp_space_around_alias_eq",
-        "resharper_csharp_space_around_alias_eq",
         "resharper_space_around_alias_eq",
+        "resharper_csharp_space_around_alias_eq",
+        "csharp_space_around_alias_eq",
         "space_around_alias_eq"
       ],
       "language": "csharp",
@@ -5702,9 +5702,9 @@
       "key": "skala_space_around_arrow_op",
       "aliases": [],
       "export": [
-        "csharp_space_around_arrow_op",
         "resharper_csharp_space_around_arrow_op",
         "resharper_space_around_arrow_op",
+        "csharp_space_around_arrow_op",
         "space_around_arrow_op"
       ],
       "language": "csharp",
@@ -5724,9 +5724,9 @@
       "key": "skala_space_around_assignment_op",
       "aliases": [],
       "export": [
-        "csharp_space_around_assignment_op",
-        "resharper_csharp_space_around_assignment_op",
         "resharper_space_around_assignment_op",
+        "resharper_csharp_space_around_assignment_op",
+        "csharp_space_around_assignment_op",
         "space_around_assignment_op"
       ],
       "language": "csharp",
@@ -5746,9 +5746,9 @@
       "key": "skala_space_around_dot",
       "aliases": [],
       "export": [
-        "csharp_space_around_dot",
         "resharper_csharp_space_around_dot",
         "resharper_space_around_dot",
+        "csharp_space_around_dot",
         "space_around_dot"
       ],
       "language": "csharp",
@@ -5768,9 +5768,9 @@
       "key": "skala_space_around_lambda_arrow",
       "aliases": [],
       "export": [
-        "csharp_space_around_lambda_arrow",
-        "resharper_csharp_space_around_lambda_arrow",
         "resharper_space_around_lambda_arrow",
+        "resharper_csharp_space_around_lambda_arrow",
+        "csharp_space_around_lambda_arrow",
         "space_around_lambda_arrow"
       ],
       "language": "csharp",
@@ -5790,9 +5790,9 @@
       "key": "skala_space_around_relational_op",
       "aliases": [],
       "export": [
-        "csharp_space_around_relational_op",
-        "resharper_csharp_space_around_relational_op",
         "resharper_space_around_relational_op",
+        "resharper_csharp_space_around_relational_op",
+        "csharp_space_around_relational_op",
         "space_around_relational_op"
       ],
       "language": "csharp",
@@ -5812,9 +5812,9 @@
       "key": "skala_space_around_shift_op",
       "aliases": [],
       "export": [
-        "csharp_space_around_shift_op",
-        "resharper_csharp_space_around_shift_op",
         "resharper_space_around_shift_op",
+        "resharper_csharp_space_around_shift_op",
+        "csharp_space_around_shift_op",
         "space_around_shift_op"
       ],
       "language": "csharp",
@@ -5834,9 +5834,9 @@
       "key": "skala_space_before_array_access_brackets",
       "aliases": [],
       "export": [
-        "csharp_space_before_array_access_brackets",
         "resharper_csharp_space_before_array_access_brackets",
         "resharper_space_before_array_access_brackets",
+        "csharp_space_before_array_access_brackets",
         "space_before_array_access_brackets"
       ],
       "language": "csharp",
@@ -5856,9 +5856,9 @@
       "key": "skala_space_before_array_rank_brackets",
       "aliases": [],
       "export": [
-        "csharp_space_before_array_rank_brackets",
         "resharper_csharp_space_before_array_rank_brackets",
         "resharper_space_before_array_rank_brackets",
+        "csharp_space_before_array_rank_brackets",
         "space_before_array_rank_brackets"
       ],
       "language": "csharp",
@@ -5878,12 +5878,12 @@
       "key": "skala_space_before_attribute_colon",
       "aliases": [],
       "export": [
-        "csharp_space_before_attribute_colon",
-        "csharp_space_before_colon",
+        "resharper_space_before_colon",
         "resharper_csharp_space_before_attribute_colon",
         "resharper_csharp_space_before_colon",
         "resharper_space_before_attribute_colon",
-        "resharper_space_before_colon",
+        "csharp_space_before_attribute_colon",
+        "csharp_space_before_colon",
         "space_before_attribute_colon",
         "space_before_colon"
       ],
@@ -5904,9 +5904,9 @@
       "key": "skala_space_before_catch_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_catch_parentheses",
         "resharper_csharp_space_before_catch_parentheses",
         "resharper_space_before_catch_parentheses",
+        "csharp_space_before_catch_parentheses",
         "space_before_catch_parentheses"
       ],
       "language": "csharp",
@@ -5926,9 +5926,9 @@
       "key": "skala_space_before_checked_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_checked_parentheses",
-        "resharper_csharp_space_before_checked_parentheses",
         "resharper_space_before_checked_parentheses",
+        "resharper_csharp_space_before_checked_parentheses",
+        "csharp_space_before_checked_parentheses",
         "space_before_checked_parentheses"
       ],
       "language": "csharp",
@@ -5948,9 +5948,9 @@
       "key": "skala_space_before_colon_in_case",
       "aliases": [],
       "export": [
-        "csharp_space_before_colon_in_case",
-        "resharper_csharp_space_before_colon_in_case",
         "resharper_space_before_colon_in_case",
+        "resharper_csharp_space_before_colon_in_case",
+        "csharp_space_before_colon_in_case",
         "space_before_colon_in_case"
       ],
       "language": "csharp",
@@ -5970,9 +5970,9 @@
       "key": "skala_space_before_default_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_default_parentheses",
-        "resharper_csharp_space_before_default_parentheses",
         "resharper_space_before_default_parentheses",
+        "resharper_csharp_space_before_default_parentheses",
+        "csharp_space_before_default_parentheses",
         "space_before_default_parentheses"
       ],
       "language": "csharp",
@@ -5992,9 +5992,9 @@
       "key": "skala_space_before_empty_method_call_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_empty_method_call_parentheses",
         "resharper_csharp_space_before_empty_method_call_parentheses",
         "resharper_space_before_empty_method_call_parentheses",
+        "csharp_space_before_empty_method_call_parentheses",
         "space_before_empty_method_call_parentheses"
       ],
       "language": "csharp",
@@ -6014,9 +6014,9 @@
       "key": "skala_space_before_empty_method_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_empty_method_parentheses",
-        "resharper_csharp_space_before_empty_method_parentheses",
         "resharper_space_before_empty_method_parentheses",
+        "resharper_csharp_space_before_empty_method_parentheses",
+        "csharp_space_before_empty_method_parentheses",
         "space_before_empty_method_parentheses"
       ],
       "language": "csharp",
@@ -6036,9 +6036,9 @@
       "key": "skala_space_before_fixed_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_fixed_parentheses",
         "resharper_csharp_space_before_fixed_parentheses",
         "resharper_space_before_fixed_parentheses",
+        "csharp_space_before_fixed_parentheses",
         "space_before_fixed_parentheses"
       ],
       "language": "csharp",
@@ -6058,9 +6058,9 @@
       "key": "skala_space_before_for_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_for_parentheses",
         "resharper_csharp_space_before_for_parentheses",
         "resharper_space_before_for_parentheses",
+        "csharp_space_before_for_parentheses",
         "space_before_for_parentheses"
       ],
       "language": "csharp",
@@ -6080,9 +6080,9 @@
       "key": "skala_space_before_foreach_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_foreach_parentheses",
         "resharper_csharp_space_before_foreach_parentheses",
         "resharper_space_before_foreach_parentheses",
+        "csharp_space_before_foreach_parentheses",
         "space_before_foreach_parentheses"
       ],
       "language": "csharp",
@@ -6102,9 +6102,9 @@
       "key": "skala_space_before_if_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_if_parentheses",
         "resharper_csharp_space_before_if_parentheses",
         "resharper_space_before_if_parentheses",
+        "csharp_space_before_if_parentheses",
         "space_before_if_parentheses"
       ],
       "language": "csharp",
@@ -6124,9 +6124,9 @@
       "key": "skala_space_before_lock_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_lock_parentheses",
         "resharper_csharp_space_before_lock_parentheses",
         "resharper_space_before_lock_parentheses",
+        "csharp_space_before_lock_parentheses",
         "space_before_lock_parentheses"
       ],
       "language": "csharp",
@@ -6146,9 +6146,9 @@
       "key": "skala_space_before_method_call_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_method_call_parentheses",
         "resharper_csharp_space_before_method_call_parentheses",
         "resharper_space_before_method_call_parentheses",
+        "csharp_space_before_method_call_parentheses",
         "space_before_method_call_parentheses"
       ],
       "language": "csharp",
@@ -6168,9 +6168,9 @@
       "key": "skala_space_before_method_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_method_parentheses",
-        "resharper_csharp_space_before_method_parentheses",
         "resharper_space_before_method_parentheses",
+        "resharper_csharp_space_before_method_parentheses",
+        "csharp_space_before_method_parentheses",
         "space_before_method_parentheses"
       ],
       "language": "csharp",
@@ -6190,9 +6190,9 @@
       "key": "skala_space_before_nameof_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_nameof_parentheses",
-        "resharper_csharp_space_before_nameof_parentheses",
         "resharper_space_before_nameof_parentheses",
+        "resharper_csharp_space_before_nameof_parentheses",
+        "csharp_space_before_nameof_parentheses",
         "space_before_nameof_parentheses"
       ],
       "language": "csharp",
@@ -6212,9 +6212,9 @@
       "key": "skala_space_before_new_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_new_parentheses",
-        "resharper_csharp_space_before_new_parentheses",
         "resharper_space_before_new_parentheses",
+        "resharper_csharp_space_before_new_parentheses",
+        "csharp_space_before_new_parentheses",
         "space_before_new_parentheses"
       ],
       "language": "csharp",
@@ -6234,9 +6234,9 @@
       "key": "skala_space_before_nullable_mark",
       "aliases": [],
       "export": [
-        "csharp_space_before_nullable_mark",
-        "resharper_csharp_space_before_nullable_mark",
         "resharper_space_before_nullable_mark",
+        "resharper_csharp_space_before_nullable_mark",
+        "csharp_space_before_nullable_mark",
         "space_before_nullable_mark"
       ],
       "language": "csharp",
@@ -6256,9 +6256,9 @@
       "key": "skala_space_before_pointer_asterik_declaration",
       "aliases": [],
       "export": [
-        "csharp_space_before_pointer_asterik_declaration",
-        "resharper_csharp_space_before_pointer_asterik_declaration",
         "resharper_space_before_pointer_asterik_declaration",
+        "resharper_csharp_space_before_pointer_asterik_declaration",
+        "csharp_space_before_pointer_asterik_declaration",
         "space_before_pointer_asterik_declaration"
       ],
       "language": "csharp",
@@ -6278,9 +6278,9 @@
       "key": "skala_space_before_semicolon",
       "aliases": [],
       "export": [
-        "csharp_space_before_semicolon",
-        "resharper_csharp_space_before_semicolon",
         "resharper_space_before_semicolon",
+        "resharper_csharp_space_before_semicolon",
+        "csharp_space_before_semicolon",
         "space_before_semicolon"
       ],
       "language": "csharp",
@@ -6300,9 +6300,9 @@
       "key": "skala_space_before_singleline_accessorholder",
       "aliases": [],
       "export": [
-        "csharp_space_before_singleline_accessorholder",
-        "resharper_csharp_space_before_singleline_accessorholder",
         "resharper_space_before_singleline_accessorholder",
+        "resharper_csharp_space_before_singleline_accessorholder",
+        "csharp_space_before_singleline_accessorholder",
         "space_before_singleline_accessorholder"
       ],
       "language": "csharp",
@@ -6323,9 +6323,9 @@
       "key": "skala_space_before_sizeof_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_sizeof_parentheses",
-        "resharper_csharp_space_before_sizeof_parentheses",
         "resharper_space_before_sizeof_parentheses",
+        "resharper_csharp_space_before_sizeof_parentheses",
+        "csharp_space_before_sizeof_parentheses",
         "space_before_sizeof_parentheses"
       ],
       "language": "csharp",
@@ -6345,9 +6345,9 @@
       "key": "skala_space_before_switch_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_switch_parentheses",
         "resharper_csharp_space_before_switch_parentheses",
         "resharper_space_before_switch_parentheses",
+        "csharp_space_before_switch_parentheses",
         "space_before_switch_parentheses"
       ],
       "language": "csharp",
@@ -6367,9 +6367,9 @@
       "key": "skala_space_before_ternary_colon",
       "aliases": [],
       "export": [
-        "csharp_space_before_ternary_colon",
-        "resharper_csharp_space_before_ternary_colon",
         "resharper_space_before_ternary_colon",
+        "resharper_csharp_space_before_ternary_colon",
+        "csharp_space_before_ternary_colon",
         "space_before_ternary_colon"
       ],
       "language": "csharp",
@@ -6389,9 +6389,9 @@
       "key": "skala_space_before_ternary_quest",
       "aliases": [],
       "export": [
-        "csharp_space_before_ternary_quest",
-        "resharper_csharp_space_before_ternary_quest",
         "resharper_space_before_ternary_quest",
+        "resharper_csharp_space_before_ternary_quest",
+        "csharp_space_before_ternary_quest",
         "space_before_ternary_quest"
       ],
       "language": "csharp",
@@ -6411,9 +6411,9 @@
       "key": "skala_space_before_trailing_comment",
       "aliases": [],
       "export": [
-        "csharp_space_before_trailing_comment",
-        "resharper_csharp_space_before_trailing_comment",
         "resharper_space_before_trailing_comment",
+        "resharper_csharp_space_before_trailing_comment",
+        "csharp_space_before_trailing_comment",
         "space_before_trailing_comment"
       ],
       "language": "csharp",
@@ -6433,9 +6433,9 @@
       "key": "skala_space_before_type_argument_angle",
       "aliases": [],
       "export": [
-        "csharp_space_before_type_argument_angle",
-        "resharper_csharp_space_before_type_argument_angle",
         "resharper_space_before_type_argument_angle",
+        "resharper_csharp_space_before_type_argument_angle",
+        "csharp_space_before_type_argument_angle",
         "space_before_type_argument_angle"
       ],
       "language": "csharp",
@@ -6455,9 +6455,9 @@
       "key": "skala_space_before_type_parameter_angle",
       "aliases": [],
       "export": [
-        "csharp_space_before_type_parameter_angle",
-        "resharper_csharp_space_before_type_parameter_angle",
         "resharper_space_before_type_parameter_angle",
+        "resharper_csharp_space_before_type_parameter_angle",
+        "csharp_space_before_type_parameter_angle",
         "space_before_type_parameter_angle"
       ],
       "language": "csharp",
@@ -6477,9 +6477,9 @@
       "key": "skala_space_before_type_parameter_constraint_colon",
       "aliases": [],
       "export": [
-        "csharp_space_before_type_parameter_constraint_colon",
-        "resharper_csharp_space_before_type_parameter_constraint_colon",
         "resharper_space_before_type_parameter_constraint_colon",
+        "resharper_csharp_space_before_type_parameter_constraint_colon",
+        "csharp_space_before_type_parameter_constraint_colon",
         "space_before_type_parameter_constraint_colon"
       ],
       "language": "csharp",
@@ -6499,9 +6499,9 @@
       "key": "skala_space_before_typeof_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_typeof_parentheses",
-        "resharper_csharp_space_before_typeof_parentheses",
         "resharper_space_before_typeof_parentheses",
+        "resharper_csharp_space_before_typeof_parentheses",
+        "csharp_space_before_typeof_parentheses",
         "space_before_typeof_parentheses"
       ],
       "language": "csharp",
@@ -6521,9 +6521,9 @@
       "key": "skala_space_before_using_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_using_parentheses",
         "resharper_csharp_space_before_using_parentheses",
         "resharper_space_before_using_parentheses",
+        "csharp_space_before_using_parentheses",
         "space_before_using_parentheses"
       ],
       "language": "csharp",
@@ -6543,9 +6543,9 @@
       "key": "skala_space_before_while_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_before_while_parentheses",
         "resharper_csharp_space_before_while_parentheses",
         "resharper_space_before_while_parentheses",
+        "csharp_space_before_while_parentheses",
         "space_before_while_parentheses"
       ],
       "language": "csharp",
@@ -6565,9 +6565,9 @@
       "key": "skala_space_between_accessors_in_singleline_property",
       "aliases": [],
       "export": [
-        "csharp_space_between_accessors_in_singleline_property",
-        "resharper_csharp_space_between_accessors_in_singleline_property",
         "resharper_space_between_accessors_in_singleline_property",
+        "resharper_csharp_space_between_accessors_in_singleline_property",
+        "csharp_space_between_accessors_in_singleline_property",
         "space_between_accessors_in_singleline_property"
       ],
       "language": "csharp",
@@ -6587,9 +6587,9 @@
       "key": "skala_space_between_attribute_sections",
       "aliases": [],
       "export": [
-        "csharp_space_between_attribute_sections",
-        "resharper_csharp_space_between_attribute_sections",
         "resharper_space_between_attribute_sections",
+        "resharper_csharp_space_between_attribute_sections",
+        "csharp_space_between_attribute_sections",
         "space_between_attribute_sections"
       ],
       "language": "csharp",
@@ -6609,9 +6609,9 @@
       "key": "skala_space_between_keyword_and_expression",
       "aliases": [],
       "export": [
-        "csharp_space_between_keyword_and_expression",
-        "resharper_csharp_space_between_keyword_and_expression",
         "resharper_space_between_keyword_and_expression",
+        "resharper_csharp_space_between_keyword_and_expression",
+        "csharp_space_between_keyword_and_expression",
         "space_between_keyword_and_expression"
       ],
       "language": "csharp",
@@ -6631,9 +6631,9 @@
       "key": "skala_space_between_keyword_and_type",
       "aliases": [],
       "export": [
-        "csharp_space_between_keyword_and_type",
-        "resharper_csharp_space_between_keyword_and_type",
         "resharper_space_between_keyword_and_type",
+        "resharper_csharp_space_between_keyword_and_type",
+        "csharp_space_between_keyword_and_type",
         "space_between_keyword_and_type"
       ],
       "language": "csharp",
@@ -6654,9 +6654,9 @@
       "key": "skala_space_between_typecast_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_between_typecast_parentheses",
-        "resharper_csharp_space_between_typecast_parentheses",
         "resharper_space_between_typecast_parentheses",
+        "resharper_csharp_space_between_typecast_parentheses",
+        "csharp_space_between_typecast_parentheses",
         "space_between_typecast_parentheses"
       ],
       "language": "csharp",
@@ -6676,9 +6676,9 @@
       "key": "skala_space_in_singleline_accessorholder",
       "aliases": [],
       "export": [
-        "csharp_space_in_singleline_accessorholder",
-        "resharper_csharp_space_in_singleline_accessorholder",
         "resharper_space_in_singleline_accessorholder",
+        "resharper_csharp_space_in_singleline_accessorholder",
+        "csharp_space_in_singleline_accessorholder",
         "space_in_singleline_accessorholder"
       ],
       "language": "csharp",
@@ -6698,9 +6698,9 @@
       "key": "skala_space_in_singleline_anonymous_method",
       "aliases": [],
       "export": [
-        "csharp_space_in_singleline_anonymous_method",
-        "resharper_csharp_space_in_singleline_anonymous_method",
         "resharper_space_in_singleline_anonymous_method",
+        "resharper_csharp_space_in_singleline_anonymous_method",
+        "csharp_space_in_singleline_anonymous_method",
         "space_in_singleline_anonymous_method"
       ],
       "language": "csharp",
@@ -6720,9 +6720,9 @@
       "key": "skala_space_in_singleline_method",
       "aliases": [],
       "export": [
-        "csharp_space_in_singleline_method",
-        "resharper_csharp_space_in_singleline_method",
         "resharper_space_in_singleline_method",
+        "resharper_csharp_space_in_singleline_method",
+        "csharp_space_in_singleline_method",
         "space_in_singleline_method"
       ],
       "language": "csharp",
@@ -6743,9 +6743,9 @@
       "key": "skala_space_near_postfix_and_prefix_op",
       "aliases": [],
       "export": [
-        "csharp_space_near_postfix_and_prefix_op",
-        "resharper_csharp_space_near_postfix_and_prefix_op",
         "resharper_space_near_postfix_and_prefix_op",
+        "resharper_csharp_space_near_postfix_and_prefix_op",
+        "csharp_space_near_postfix_and_prefix_op",
         "space_near_postfix_and_prefix_op"
       ],
       "language": "csharp",
@@ -6765,9 +6765,9 @@
       "key": "skala_space_within_array_access_brackets",
       "aliases": [],
       "export": [
-        "csharp_space_within_array_access_brackets",
         "resharper_csharp_space_within_array_access_brackets",
         "resharper_space_within_array_access_brackets",
+        "csharp_space_within_array_access_brackets",
         "space_within_array_access_brackets"
       ],
       "language": "csharp",
@@ -6787,9 +6787,9 @@
       "key": "skala_space_within_array_rank_brackets",
       "aliases": [],
       "export": [
-        "csharp_space_within_array_rank_brackets",
         "resharper_csharp_space_within_array_rank_brackets",
         "resharper_space_within_array_rank_brackets",
+        "csharp_space_within_array_rank_brackets",
         "space_within_array_rank_brackets"
       ],
       "language": "csharp",
@@ -6810,12 +6810,12 @@
       "aliases": [],
       "export": [
         "csharp_space_between_empty_square_brackets",
-        "csharp_space_within_array_rank_empty_brackets",
         "resharper_csharp_space_within_array_rank_empty_brackets",
-        "resharper_space_between_empty_square_brackets",
         "resharper_space_within_array_rank_empty_brackets",
-        "space_between_empty_square_brackets",
-        "space_within_array_rank_empty_brackets"
+        "resharper_space_between_empty_square_brackets",
+        "csharp_space_within_array_rank_empty_brackets",
+        "space_within_array_rank_empty_brackets",
+        "space_between_empty_square_brackets"
       ],
       "language": "csharp",
       "type": "bool",
@@ -6834,9 +6834,9 @@
       "key": "skala_space_within_attribute_brackets",
       "aliases": [],
       "export": [
-        "csharp_space_within_attribute_brackets",
         "resharper_csharp_space_within_attribute_brackets",
         "resharper_space_within_attribute_brackets",
+        "csharp_space_within_attribute_brackets",
         "space_within_attribute_brackets"
       ],
       "language": "csharp",
@@ -6856,9 +6856,9 @@
       "key": "skala_space_within_catch_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_catch_parentheses",
         "resharper_csharp_space_within_catch_parentheses",
         "resharper_space_within_catch_parentheses",
+        "csharp_space_within_catch_parentheses",
         "space_within_catch_parentheses"
       ],
       "language": "csharp",
@@ -6878,9 +6878,9 @@
       "key": "skala_space_within_checked_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_checked_parentheses",
-        "resharper_csharp_space_within_checked_parentheses",
         "resharper_space_within_checked_parentheses",
+        "resharper_csharp_space_within_checked_parentheses",
+        "csharp_space_within_checked_parentheses",
         "space_within_checked_parentheses"
       ],
       "language": "csharp",
@@ -6900,9 +6900,9 @@
       "key": "skala_space_within_default_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_default_parentheses",
-        "resharper_csharp_space_within_default_parentheses",
         "resharper_space_within_default_parentheses",
+        "resharper_csharp_space_within_default_parentheses",
+        "csharp_space_within_default_parentheses",
         "space_within_default_parentheses"
       ],
       "language": "csharp",
@@ -6922,9 +6922,9 @@
       "key": "skala_space_within_empty_braces",
       "aliases": [],
       "export": [
-        "csharp_space_within_empty_braces",
-        "resharper_csharp_space_within_empty_braces",
         "resharper_space_within_empty_braces",
+        "resharper_csharp_space_within_empty_braces",
+        "csharp_space_within_empty_braces",
         "space_within_empty_braces"
       ],
       "language": "csharp",
@@ -6944,9 +6944,9 @@
       "key": "skala_space_within_fixed_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_fixed_parentheses",
         "resharper_csharp_space_within_fixed_parentheses",
         "resharper_space_within_fixed_parentheses",
+        "csharp_space_within_fixed_parentheses",
         "space_within_fixed_parentheses"
       ],
       "language": "csharp",
@@ -6966,9 +6966,9 @@
       "key": "skala_space_within_for_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_for_parentheses",
         "resharper_csharp_space_within_for_parentheses",
         "resharper_space_within_for_parentheses",
+        "csharp_space_within_for_parentheses",
         "space_within_for_parentheses"
       ],
       "language": "csharp",
@@ -6988,9 +6988,9 @@
       "key": "skala_space_within_foreach_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_foreach_parentheses",
         "resharper_csharp_space_within_foreach_parentheses",
         "resharper_space_within_foreach_parentheses",
+        "csharp_space_within_foreach_parentheses",
         "space_within_foreach_parentheses"
       ],
       "language": "csharp",
@@ -7010,9 +7010,9 @@
       "key": "skala_space_within_if_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_if_parentheses",
         "resharper_csharp_space_within_if_parentheses",
         "resharper_space_within_if_parentheses",
+        "csharp_space_within_if_parentheses",
         "space_within_if_parentheses"
       ],
       "language": "csharp",
@@ -7032,9 +7032,9 @@
       "key": "skala_space_within_list_pattern_brackets",
       "aliases": [],
       "export": [
-        "csharp_space_within_list_pattern_brackets",
         "resharper_csharp_space_within_list_pattern_brackets",
         "resharper_space_within_list_pattern_brackets",
+        "csharp_space_within_list_pattern_brackets",
         "space_within_list_pattern_brackets"
       ],
       "language": "csharp",
@@ -7054,9 +7054,9 @@
       "key": "skala_space_within_lock_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_lock_parentheses",
         "resharper_csharp_space_within_lock_parentheses",
         "resharper_space_within_lock_parentheses",
+        "csharp_space_within_lock_parentheses",
         "space_within_lock_parentheses"
       ],
       "language": "csharp",
@@ -7076,9 +7076,9 @@
       "key": "skala_space_within_nameof_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_nameof_parentheses",
-        "resharper_csharp_space_within_nameof_parentheses",
         "resharper_space_within_nameof_parentheses",
+        "resharper_csharp_space_within_nameof_parentheses",
+        "csharp_space_within_nameof_parentheses",
         "space_within_nameof_parentheses"
       ],
       "language": "csharp",
@@ -7098,9 +7098,9 @@
       "key": "skala_space_within_new_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_new_parentheses",
-        "resharper_csharp_space_within_new_parentheses",
         "resharper_space_within_new_parentheses",
+        "resharper_csharp_space_within_new_parentheses",
+        "csharp_space_within_new_parentheses",
         "space_within_new_parentheses"
       ],
       "language": "csharp",
@@ -7121,9 +7121,9 @@
       "key": "skala_space_within_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_parentheses",
-        "resharper_csharp_space_within_parentheses",
         "resharper_space_within_parentheses",
+        "resharper_csharp_space_within_parentheses",
+        "csharp_space_within_parentheses",
         "space_within_parentheses"
       ],
       "language": "csharp",
@@ -7143,9 +7143,9 @@
       "key": "skala_space_within_single_line_array_initializer_braces",
       "aliases": [],
       "export": [
-        "csharp_space_within_single_line_array_initializer_braces",
-        "resharper_csharp_space_within_single_line_array_initializer_braces",
         "resharper_space_within_single_line_array_initializer_braces",
+        "resharper_csharp_space_within_single_line_array_initializer_braces",
+        "csharp_space_within_single_line_array_initializer_braces",
         "space_within_single_line_array_initializer_braces"
       ],
       "language": "csharp",
@@ -7165,9 +7165,9 @@
       "key": "skala_space_within_sizeof_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_sizeof_parentheses",
-        "resharper_csharp_space_within_sizeof_parentheses",
         "resharper_space_within_sizeof_parentheses",
+        "resharper_csharp_space_within_sizeof_parentheses",
+        "csharp_space_within_sizeof_parentheses",
         "space_within_sizeof_parentheses"
       ],
       "language": "csharp",
@@ -7187,9 +7187,9 @@
       "key": "skala_space_within_slice_pattern",
       "aliases": [],
       "export": [
-        "csharp_space_within_slice_pattern",
-        "resharper_csharp_space_within_slice_pattern",
         "resharper_space_within_slice_pattern",
+        "resharper_csharp_space_within_slice_pattern",
+        "csharp_space_within_slice_pattern",
         "space_within_slice_pattern"
       ],
       "language": "csharp",
@@ -7209,9 +7209,9 @@
       "key": "skala_space_within_switch_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_switch_parentheses",
         "resharper_csharp_space_within_switch_parentheses",
         "resharper_space_within_switch_parentheses",
+        "csharp_space_within_switch_parentheses",
         "space_within_switch_parentheses"
       ],
       "language": "csharp",
@@ -7231,9 +7231,9 @@
       "key": "skala_space_within_type_argument_angles",
       "aliases": [],
       "export": [
-        "csharp_space_within_type_argument_angles",
-        "resharper_csharp_space_within_type_argument_angles",
         "resharper_space_within_type_argument_angles",
+        "resharper_csharp_space_within_type_argument_angles",
+        "csharp_space_within_type_argument_angles",
         "space_within_type_argument_angles"
       ],
       "language": "csharp",
@@ -7253,9 +7253,9 @@
       "key": "skala_space_within_type_parameter_angles",
       "aliases": [],
       "export": [
-        "csharp_space_within_type_parameter_angles",
-        "resharper_csharp_space_within_type_parameter_angles",
         "resharper_space_within_type_parameter_angles",
+        "resharper_csharp_space_within_type_parameter_angles",
+        "csharp_space_within_type_parameter_angles",
         "space_within_type_parameter_angles"
       ],
       "language": "csharp",
@@ -7275,9 +7275,9 @@
       "key": "skala_space_within_typeof_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_typeof_parentheses",
-        "resharper_csharp_space_within_typeof_parentheses",
         "resharper_space_within_typeof_parentheses",
+        "resharper_csharp_space_within_typeof_parentheses",
+        "csharp_space_within_typeof_parentheses",
         "space_within_typeof_parentheses"
       ],
       "language": "csharp",
@@ -7297,9 +7297,9 @@
       "key": "skala_space_within_using_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_using_parentheses",
         "resharper_csharp_space_within_using_parentheses",
         "resharper_space_within_using_parentheses",
+        "csharp_space_within_using_parentheses",
         "space_within_using_parentheses"
       ],
       "language": "csharp",
@@ -7319,9 +7319,9 @@
       "key": "skala_space_within_while_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_within_while_parentheses",
         "resharper_csharp_space_within_while_parentheses",
         "resharper_space_within_while_parentheses",
+        "csharp_space_within_while_parentheses",
         "space_within_while_parentheses"
       ],
       "language": "csharp",
@@ -7341,9 +7341,9 @@
       "key": "skala_special_else_if_treatment",
       "aliases": [],
       "export": [
-        "csharp_special_else_if_treatment",
-        "resharper_csharp_special_else_if_treatment",
         "resharper_special_else_if_treatment",
+        "resharper_csharp_special_else_if_treatment",
+        "csharp_special_else_if_treatment",
         "special_else_if_treatment"
       ],
       "language": "csharp",
@@ -7363,9 +7363,9 @@
       "key": "skala_static_members_qualify_members",
       "aliases": [],
       "export": [
-        "csharp_static_members_qualify_members",
-        "resharper_csharp_static_members_qualify_members",
         "resharper_static_members_qualify_members",
+        "resharper_csharp_static_members_qualify_members",
+        "csharp_static_members_qualify_members",
         "static_members_qualify_members"
       ],
       "language": "csharp",
@@ -7385,9 +7385,9 @@
       "key": "skala_static_members_qualify_with",
       "aliases": [],
       "export": [
-        "csharp_static_members_qualify_with",
-        "resharper_csharp_static_members_qualify_with",
         "resharper_static_members_qualify_with",
+        "resharper_csharp_static_members_qualify_with",
+        "csharp_static_members_qualify_with",
         "static_members_qualify_with"
       ],
       "language": "csharp",
@@ -7407,9 +7407,9 @@
       "key": "skala_stick_comment",
       "aliases": [],
       "export": [
-        "csharp_stick_comment",
-        "resharper_csharp_stick_comment",
         "resharper_stick_comment",
+        "resharper_csharp_stick_comment",
+        "csharp_stick_comment",
         "stick_comment"
       ],
       "language": "csharp",
@@ -7429,8 +7429,8 @@
       "key": "skala_tab_width",
       "aliases": [],
       "export": [
-        "csharp_tab_width",
-        "resharper_csharp_tab_width"
+        "resharper_csharp_tab_width",
+        "csharp_tab_width"
       ],
       "language": "csharp",
       "type": "int",
@@ -7452,9 +7452,9 @@
       "key": "skala_trailing_comma_in_multiline_lists",
       "aliases": [],
       "export": [
-        "csharp_trailing_comma_in_multiline_lists",
-        "resharper_csharp_trailing_comma_in_multiline_lists",
         "resharper_trailing_comma_in_multiline_lists",
+        "resharper_csharp_trailing_comma_in_multiline_lists",
+        "csharp_trailing_comma_in_multiline_lists",
         "trailing_comma_in_multiline_lists"
       ],
       "language": "csharp",
@@ -7474,9 +7474,9 @@
       "key": "skala_trailing_comma_in_singleline_lists",
       "aliases": [],
       "export": [
-        "csharp_trailing_comma_in_singleline_lists",
-        "resharper_csharp_trailing_comma_in_singleline_lists",
         "resharper_trailing_comma_in_singleline_lists",
+        "resharper_csharp_trailing_comma_in_singleline_lists",
+        "csharp_trailing_comma_in_singleline_lists",
         "trailing_comma_in_singleline_lists"
       ],
       "language": "csharp",
@@ -7496,9 +7496,9 @@
       "key": "skala_use_continuous_indent_inside_initializer_braces",
       "aliases": [],
       "export": [
-        "csharp_use_continuous_indent_inside_initializer_braces",
-        "resharper_csharp_use_continuous_indent_inside_initializer_braces",
         "resharper_use_continuous_indent_inside_initializer_braces",
+        "resharper_csharp_use_continuous_indent_inside_initializer_braces",
+        "csharp_use_continuous_indent_inside_initializer_braces",
         "use_continuous_indent_inside_initializer_braces"
       ],
       "language": "csharp",
@@ -7519,9 +7519,9 @@
       "key": "skala_use_continuous_indent_inside_parens",
       "aliases": [],
       "export": [
-        "csharp_use_continuous_indent_inside_parens",
-        "resharper_csharp_use_continuous_indent_inside_parens",
         "resharper_use_continuous_indent_inside_parens",
+        "resharper_csharp_use_continuous_indent_inside_parens",
+        "csharp_use_continuous_indent_inside_parens",
         "use_continuous_indent_inside_parens"
       ],
       "language": "csharp",
@@ -7542,9 +7542,9 @@
       "key": "skala_use_heuristics_for_body_style",
       "aliases": [],
       "export": [
-        "csharp_use_heuristics_for_body_style",
-        "resharper_csharp_use_heuristics_for_body_style",
         "resharper_use_heuristics_for_body_style",
+        "resharper_csharp_use_heuristics_for_body_style",
+        "csharp_use_heuristics_for_body_style",
         "use_heuristics_for_body_style"
       ],
       "language": "csharp",
@@ -7564,9 +7564,9 @@
       "key": "skala_wrap_after_declaration_lpar",
       "aliases": [],
       "export": [
-        "csharp_wrap_after_declaration_lpar",
         "resharper_csharp_wrap_after_declaration_lpar",
         "resharper_wrap_after_declaration_lpar",
+        "csharp_wrap_after_declaration_lpar",
         "wrap_after_declaration_lpar"
       ],
       "language": "csharp",
@@ -7586,9 +7586,9 @@
       "key": "skala_wrap_after_dot_in_method_calls",
       "aliases": [],
       "export": [
-        "csharp_wrap_after_dot_in_method_calls",
-        "resharper_csharp_wrap_after_dot_in_method_calls",
         "resharper_wrap_after_dot_in_method_calls",
+        "resharper_csharp_wrap_after_dot_in_method_calls",
+        "csharp_wrap_after_dot_in_method_calls",
         "wrap_after_dot_in_method_calls"
       ],
       "language": "csharp",
@@ -7608,9 +7608,9 @@
       "key": "skala_wrap_after_invocation_lpar",
       "aliases": [],
       "export": [
-        "csharp_wrap_after_invocation_lpar",
         "resharper_csharp_wrap_after_invocation_lpar",
         "resharper_wrap_after_invocation_lpar",
+        "csharp_wrap_after_invocation_lpar",
         "wrap_after_invocation_lpar"
       ],
       "language": "csharp",
@@ -7630,9 +7630,9 @@
       "key": "skala_wrap_after_primary_constructor_declaration_lpar",
       "aliases": [],
       "export": [
-        "csharp_wrap_after_primary_constructor_declaration_lpar",
-        "resharper_csharp_wrap_after_primary_constructor_declaration_lpar",
         "resharper_wrap_after_primary_constructor_declaration_lpar",
+        "resharper_csharp_wrap_after_primary_constructor_declaration_lpar",
+        "csharp_wrap_after_primary_constructor_declaration_lpar",
         "wrap_after_primary_constructor_declaration_lpar"
       ],
       "language": "csharp",
@@ -7652,9 +7652,9 @@
       "key": "skala_wrap_after_property_in_chained_method_calls",
       "aliases": [],
       "export": [
-        "csharp_wrap_after_property_in_chained_method_calls",
-        "resharper_csharp_wrap_after_property_in_chained_method_calls",
         "resharper_wrap_after_property_in_chained_method_calls",
+        "resharper_csharp_wrap_after_property_in_chained_method_calls",
+        "csharp_wrap_after_property_in_chained_method_calls",
         "wrap_after_property_in_chained_method_calls"
       ],
       "language": "csharp",
@@ -7674,9 +7674,9 @@
       "key": "skala_wrap_arguments_style",
       "aliases": [],
       "export": [
-        "csharp_wrap_arguments_style",
         "resharper_csharp_wrap_arguments_style",
         "resharper_wrap_arguments_style",
+        "csharp_wrap_arguments_style",
         "wrap_arguments_style"
       ],
       "language": "csharp",
@@ -7696,9 +7696,9 @@
       "key": "skala_wrap_array_initializer_style",
       "aliases": [],
       "export": [
-        "csharp_wrap_array_initializer_style",
-        "resharper_csharp_wrap_array_initializer_style",
         "resharper_wrap_array_initializer_style",
+        "resharper_csharp_wrap_array_initializer_style",
+        "csharp_wrap_array_initializer_style",
         "wrap_array_initializer_style"
       ],
       "language": "csharp",
@@ -7718,9 +7718,9 @@
       "key": "skala_wrap_before_arrow_with_expressions",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_arrow_with_expressions",
-        "resharper_csharp_wrap_before_arrow_with_expressions",
         "resharper_wrap_before_arrow_with_expressions",
+        "resharper_csharp_wrap_before_arrow_with_expressions",
+        "csharp_wrap_before_arrow_with_expressions",
         "wrap_before_arrow_with_expressions"
       ],
       "language": "csharp",
@@ -7740,9 +7740,9 @@
       "key": "skala_wrap_before_binary_opsign",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_binary_opsign",
         "resharper_csharp_wrap_before_binary_opsign",
         "resharper_wrap_before_binary_opsign",
+        "csharp_wrap_before_binary_opsign",
         "wrap_before_binary_opsign"
       ],
       "language": "csharp",
@@ -7762,9 +7762,9 @@
       "key": "skala_wrap_before_binary_pattern_op",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_binary_pattern_op",
-        "resharper_csharp_wrap_before_binary_pattern_op",
         "resharper_wrap_before_binary_pattern_op",
+        "resharper_csharp_wrap_before_binary_pattern_op",
+        "csharp_wrap_before_binary_pattern_op",
         "wrap_before_binary_pattern_op"
       ],
       "language": "csharp",
@@ -7784,9 +7784,9 @@
       "key": "skala_wrap_before_comma",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_comma",
-        "resharper_csharp_wrap_before_comma",
         "resharper_wrap_before_comma",
+        "resharper_csharp_wrap_before_comma",
+        "csharp_wrap_before_comma",
         "wrap_before_comma"
       ],
       "language": "csharp",
@@ -7806,9 +7806,9 @@
       "key": "skala_wrap_before_declaration_lpar",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_declaration_lpar",
-        "resharper_csharp_wrap_before_declaration_lpar",
         "resharper_wrap_before_declaration_lpar",
+        "resharper_csharp_wrap_before_declaration_lpar",
+        "csharp_wrap_before_declaration_lpar",
         "wrap_before_declaration_lpar"
       ],
       "language": "csharp",
@@ -7828,9 +7828,9 @@
       "key": "skala_wrap_before_declaration_rpar",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_declaration_rpar",
         "resharper_csharp_wrap_before_declaration_rpar",
         "resharper_wrap_before_declaration_rpar",
+        "csharp_wrap_before_declaration_rpar",
         "wrap_before_declaration_rpar"
       ],
       "language": "csharp",
@@ -7850,9 +7850,9 @@
       "key": "skala_wrap_before_eq",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_eq",
-        "resharper_csharp_wrap_before_eq",
         "resharper_wrap_before_eq",
+        "resharper_csharp_wrap_before_eq",
+        "csharp_wrap_before_eq",
         "wrap_before_eq"
       ],
       "language": "csharp",
@@ -7872,9 +7872,9 @@
       "key": "skala_wrap_before_extends_colon",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_extends_colon",
-        "resharper_csharp_wrap_before_extends_colon",
         "resharper_wrap_before_extends_colon",
+        "resharper_csharp_wrap_before_extends_colon",
+        "csharp_wrap_before_extends_colon",
         "wrap_before_extends_colon"
       ],
       "language": "csharp",
@@ -7894,9 +7894,9 @@
       "key": "skala_wrap_before_first_method_call",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_first_method_call",
-        "resharper_csharp_wrap_before_first_method_call",
         "resharper_wrap_before_first_method_call",
+        "resharper_csharp_wrap_before_first_method_call",
+        "csharp_wrap_before_first_method_call",
         "wrap_before_first_method_call"
       ],
       "language": "csharp",
@@ -7916,9 +7916,9 @@
       "key": "skala_wrap_before_first_type_parameter_constraint",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_first_type_parameter_constraint",
         "resharper_csharp_wrap_before_first_type_parameter_constraint",
         "resharper_wrap_before_first_type_parameter_constraint",
+        "csharp_wrap_before_first_type_parameter_constraint",
         "wrap_before_first_type_parameter_constraint"
       ],
       "language": "csharp",
@@ -7938,9 +7938,9 @@
       "key": "skala_wrap_before_invocation_lpar",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_invocation_lpar",
-        "resharper_csharp_wrap_before_invocation_lpar",
         "resharper_wrap_before_invocation_lpar",
+        "resharper_csharp_wrap_before_invocation_lpar",
+        "csharp_wrap_before_invocation_lpar",
         "wrap_before_invocation_lpar"
       ],
       "language": "csharp",
@@ -7960,9 +7960,9 @@
       "key": "skala_wrap_before_invocation_rpar",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_invocation_rpar",
         "resharper_csharp_wrap_before_invocation_rpar",
         "resharper_wrap_before_invocation_rpar",
+        "csharp_wrap_before_invocation_rpar",
         "wrap_before_invocation_rpar"
       ],
       "language": "csharp",
@@ -7982,9 +7982,9 @@
       "key": "skala_wrap_before_linq_expression",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_linq_expression",
-        "resharper_csharp_wrap_before_linq_expression",
         "resharper_wrap_before_linq_expression",
+        "resharper_csharp_wrap_before_linq_expression",
+        "csharp_wrap_before_linq_expression",
         "wrap_before_linq_expression"
       ],
       "language": "csharp",
@@ -8004,9 +8004,9 @@
       "key": "skala_wrap_before_primary_constructor_declaration_lpar",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_primary_constructor_declaration_lpar",
-        "resharper_csharp_wrap_before_primary_constructor_declaration_lpar",
         "resharper_wrap_before_primary_constructor_declaration_lpar",
+        "resharper_csharp_wrap_before_primary_constructor_declaration_lpar",
+        "csharp_wrap_before_primary_constructor_declaration_lpar",
         "wrap_before_primary_constructor_declaration_lpar"
       ],
       "language": "csharp",
@@ -8026,9 +8026,9 @@
       "key": "skala_wrap_before_primary_constructor_declaration_rpar",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_primary_constructor_declaration_rpar",
-        "resharper_csharp_wrap_before_primary_constructor_declaration_rpar",
         "resharper_wrap_before_primary_constructor_declaration_rpar",
+        "resharper_csharp_wrap_before_primary_constructor_declaration_rpar",
+        "csharp_wrap_before_primary_constructor_declaration_rpar",
         "wrap_before_primary_constructor_declaration_rpar"
       ],
       "language": "csharp",
@@ -8048,9 +8048,9 @@
       "key": "skala_wrap_before_ternary_opsigns",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_ternary_opsigns",
-        "resharper_csharp_wrap_before_ternary_opsigns",
         "resharper_wrap_before_ternary_opsigns",
+        "resharper_csharp_wrap_before_ternary_opsigns",
+        "csharp_wrap_before_ternary_opsigns",
         "wrap_before_ternary_opsigns"
       ],
       "language": "csharp",
@@ -8070,9 +8070,9 @@
       "key": "skala_wrap_before_type_parameter_langle",
       "aliases": [],
       "export": [
-        "csharp_wrap_before_type_parameter_langle",
-        "resharper_csharp_wrap_before_type_parameter_langle",
         "resharper_wrap_before_type_parameter_langle",
+        "resharper_csharp_wrap_before_type_parameter_langle",
+        "csharp_wrap_before_type_parameter_langle",
         "wrap_before_type_parameter_langle"
       ],
       "language": "csharp",
@@ -8092,9 +8092,9 @@
       "key": "skala_wrap_chained_binary_expressions",
       "aliases": [],
       "export": [
-        "csharp_wrap_chained_binary_expressions",
-        "resharper_csharp_wrap_chained_binary_expressions",
         "resharper_wrap_chained_binary_expressions",
+        "resharper_csharp_wrap_chained_binary_expressions",
+        "csharp_wrap_chained_binary_expressions",
         "wrap_chained_binary_expressions"
       ],
       "language": "csharp",
@@ -8114,9 +8114,9 @@
       "key": "skala_wrap_chained_binary_patterns",
       "aliases": [],
       "export": [
-        "csharp_wrap_chained_binary_patterns",
-        "resharper_csharp_wrap_chained_binary_patterns",
         "resharper_wrap_chained_binary_patterns",
+        "resharper_csharp_wrap_chained_binary_patterns",
+        "csharp_wrap_chained_binary_patterns",
         "wrap_chained_binary_patterns"
       ],
       "language": "csharp",
@@ -8136,9 +8136,9 @@
       "key": "skala_wrap_chained_method_calls",
       "aliases": [],
       "export": [
-        "csharp_wrap_chained_method_calls",
-        "resharper_csharp_wrap_chained_method_calls",
         "resharper_wrap_chained_method_calls",
+        "resharper_csharp_wrap_chained_method_calls",
+        "csharp_wrap_chained_method_calls",
         "wrap_chained_method_calls"
       ],
       "language": "csharp",
@@ -8158,9 +8158,9 @@
       "key": "skala_wrap_enum_declaration",
       "aliases": [],
       "export": [
-        "csharp_wrap_enum_declaration",
-        "resharper_csharp_wrap_enum_declaration",
         "resharper_wrap_enum_declaration",
+        "resharper_csharp_wrap_enum_declaration",
+        "csharp_wrap_enum_declaration",
         "wrap_enum_declaration"
       ],
       "language": "csharp",
@@ -8181,9 +8181,9 @@
       "key": "skala_wrap_extends_list_style",
       "aliases": [],
       "export": [
-        "csharp_wrap_extends_list_style",
         "resharper_csharp_wrap_extends_list_style",
         "resharper_wrap_extends_list_style",
+        "csharp_wrap_extends_list_style",
         "wrap_extends_list_style"
       ],
       "language": "csharp",
@@ -8203,9 +8203,9 @@
       "key": "skala_wrap_for_stmt_header_style",
       "aliases": [],
       "export": [
-        "csharp_wrap_for_stmt_header_style",
-        "resharper_csharp_wrap_for_stmt_header_style",
         "resharper_wrap_for_stmt_header_style",
+        "resharper_csharp_wrap_for_stmt_header_style",
+        "csharp_wrap_for_stmt_header_style",
         "wrap_for_stmt_header_style"
       ],
       "language": "csharp",
@@ -8244,9 +8244,9 @@
       "key": "skala_wrap_list_pattern",
       "aliases": [],
       "export": [
-        "csharp_wrap_list_pattern",
-        "resharper_csharp_wrap_list_pattern",
         "resharper_wrap_list_pattern",
+        "resharper_csharp_wrap_list_pattern",
+        "csharp_wrap_list_pattern",
         "wrap_list_pattern"
       ],
       "language": "csharp",
@@ -8267,9 +8267,9 @@
       "key": "skala_wrap_multiple_declaration_style",
       "aliases": [],
       "export": [
-        "csharp_wrap_multiple_declaration_style",
-        "resharper_csharp_wrap_multiple_declaration_style",
         "resharper_wrap_multiple_declaration_style",
+        "resharper_csharp_wrap_multiple_declaration_style",
+        "csharp_wrap_multiple_declaration_style",
         "wrap_multiple_declaration_style"
       ],
       "language": "csharp",
@@ -8289,9 +8289,9 @@
       "key": "skala_wrap_multiple_type_parameter_constraints_style",
       "aliases": [],
       "export": [
-        "csharp_wrap_multiple_type_parameter_constraints_style",
-        "resharper_csharp_wrap_multiple_type_parameter_constraints_style",
         "resharper_wrap_multiple_type_parameter_constraints_style",
+        "resharper_csharp_wrap_multiple_type_parameter_constraints_style",
+        "csharp_wrap_multiple_type_parameter_constraints_style",
         "wrap_multiple_type_parameter_constraints_style"
       ],
       "language": "csharp",
@@ -8311,9 +8311,9 @@
       "key": "skala_wrap_parameters_style",
       "aliases": [],
       "export": [
-        "csharp_wrap_parameters_style",
         "resharper_csharp_wrap_parameters_style",
         "resharper_wrap_parameters_style",
+        "csharp_wrap_parameters_style",
         "wrap_parameters_style"
       ],
       "language": "csharp",
@@ -8333,9 +8333,9 @@
       "key": "skala_wrap_primary_constructor_parameters_style",
       "aliases": [],
       "export": [
-        "csharp_wrap_primary_constructor_parameters_style",
-        "resharper_csharp_wrap_primary_constructor_parameters_style",
         "resharper_wrap_primary_constructor_parameters_style",
+        "resharper_csharp_wrap_primary_constructor_parameters_style",
+        "csharp_wrap_primary_constructor_parameters_style",
         "wrap_primary_constructor_parameters_style"
       ],
       "language": "csharp",
@@ -8355,9 +8355,9 @@
       "key": "skala_wrap_property_pattern",
       "aliases": [],
       "export": [
-        "csharp_wrap_property_pattern",
-        "resharper_csharp_wrap_property_pattern",
         "resharper_wrap_property_pattern",
+        "resharper_csharp_wrap_property_pattern",
+        "csharp_wrap_property_pattern",
         "wrap_property_pattern"
       ],
       "language": "csharp",
@@ -8377,9 +8377,9 @@
       "key": "skala_wrap_switch_expression",
       "aliases": [],
       "export": [
-        "csharp_wrap_switch_expression",
-        "resharper_csharp_wrap_switch_expression",
         "resharper_wrap_switch_expression",
+        "resharper_csharp_wrap_switch_expression",
+        "csharp_wrap_switch_expression",
         "wrap_switch_expression"
       ],
       "language": "csharp",
@@ -8399,9 +8399,9 @@
       "key": "skala_wrap_ternary_expr_style",
       "aliases": [],
       "export": [
-        "csharp_wrap_ternary_expr_style",
-        "resharper_csharp_wrap_ternary_expr_style",
         "resharper_wrap_ternary_expr_style",
+        "resharper_csharp_wrap_ternary_expr_style",
+        "csharp_wrap_ternary_expr_style",
         "wrap_ternary_expr_style"
       ],
       "language": "csharp",
@@ -8694,8 +8694,8 @@
       "aliases": [],
       "export": [
         "csharp_indent_switch_labels",
-        "indent_switch_labels",
-        "resharper_indent_switch_labels"
+        "resharper_indent_switch_labels",
+        "indent_switch_labels"
       ],
       "language": "csharp",
       "type": "bool",
@@ -8870,8 +8870,8 @@
       "aliases": [],
       "export": [
         "csharp_new_line_before_catch",
-        "new_line_before_catch",
-        "resharper_new_line_before_catch"
+        "resharper_new_line_before_catch",
+        "new_line_before_catch"
       ],
       "language": "csharp",
       "type": "bool",
@@ -8891,8 +8891,8 @@
       "aliases": [],
       "export": [
         "csharp_new_line_before_else",
-        "new_line_before_else",
-        "resharper_new_line_before_else"
+        "resharper_new_line_before_else",
+        "new_line_before_else"
       ],
       "language": "csharp",
       "type": "bool",
@@ -8912,8 +8912,8 @@
       "aliases": [],
       "export": [
         "csharp_new_line_before_finally",
-        "new_line_before_finally",
-        "resharper_new_line_before_finally"
+        "resharper_new_line_before_finally",
+        "new_line_before_finally"
       ],
       "language": "csharp",
       "type": "bool",
@@ -9076,8 +9076,8 @@
         "csharp_space_after_cast"
       ],
       "export": [
-        "csharp_space_after_cast",
         "resharper_space_after_cast",
+        "csharp_space_after_cast",
         "space_after_cast"
       ],
       "language": "csharp",
@@ -9097,8 +9097,8 @@
       "key": "skala_space_after_colon_in_inheritance_clause",
       "aliases": [],
       "export": [
-        "csharp_space_after_colon_in_inheritance_clause",
         "resharper_space_after_colon_in_inheritance_clause",
+        "csharp_space_after_colon_in_inheritance_clause",
         "space_after_colon_in_inheritance_clause"
       ],
       "language": "csharp",
@@ -9118,8 +9118,8 @@
       "key": "skala_space_after_comma",
       "aliases": [],
       "export": [
-        "csharp_space_after_comma",
         "resharper_space_after_comma",
+        "csharp_space_after_comma",
         "space_after_comma"
       ],
       "language": "csharp",
@@ -9168,8 +9168,8 @@
       "key": "skala_space_after_semicolon_in_for_statement",
       "aliases": [],
       "export": [
-        "csharp_space_after_semicolon_in_for_statement",
         "resharper_space_after_semicolon_in_for_statement",
+        "csharp_space_after_semicolon_in_for_statement",
         "space_after_semicolon_in_for_statement"
       ],
       "language": "csharp",
@@ -9274,8 +9274,8 @@
       "key": "skala_space_before_colon_in_inheritance_clause",
       "aliases": [],
       "export": [
-        "csharp_space_before_colon_in_inheritance_clause",
         "resharper_space_before_colon_in_inheritance_clause",
+        "csharp_space_before_colon_in_inheritance_clause",
         "space_before_colon_in_inheritance_clause"
       ],
       "language": "csharp",
@@ -9295,8 +9295,8 @@
       "key": "skala_space_before_comma",
       "aliases": [],
       "export": [
-        "csharp_space_before_comma",
         "resharper_space_before_comma",
+        "csharp_space_before_comma",
         "space_before_comma"
       ],
       "language": "csharp",
@@ -9338,8 +9338,8 @@
       "key": "skala_space_before_semicolon_in_for_statement",
       "aliases": [],
       "export": [
-        "csharp_space_before_semicolon_in_for_statement",
         "resharper_space_before_semicolon_in_for_statement",
+        "csharp_space_before_semicolon_in_for_statement",
         "space_before_semicolon_in_for_statement"
       ],
       "language": "csharp",
@@ -9379,8 +9379,8 @@
       "key": "skala_space_between_method_call_empty_parameter_list_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_between_method_call_empty_parameter_list_parentheses",
         "resharper_space_between_method_call_empty_parameter_list_parentheses",
+        "csharp_space_between_method_call_empty_parameter_list_parentheses",
         "space_between_method_call_empty_parameter_list_parentheses"
       ],
       "language": "csharp",
@@ -9422,8 +9422,8 @@
       "key": "skala_space_between_method_call_parameter_list_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_between_method_call_parameter_list_parentheses",
         "resharper_space_between_method_call_parameter_list_parentheses",
+        "csharp_space_between_method_call_parameter_list_parentheses",
         "space_between_method_call_parameter_list_parentheses"
       ],
       "language": "csharp",
@@ -9443,8 +9443,8 @@
       "key": "skala_space_between_method_declaration_empty_parameter_list_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_between_method_declaration_empty_parameter_list_parentheses",
         "resharper_space_between_method_declaration_empty_parameter_list_parentheses",
+        "csharp_space_between_method_declaration_empty_parameter_list_parentheses",
         "space_between_method_declaration_empty_parameter_list_parentheses"
       ],
       "language": "csharp",
@@ -9486,8 +9486,8 @@
       "key": "skala_space_between_method_declaration_parameter_list_parentheses",
       "aliases": [],
       "export": [
-        "csharp_space_between_method_declaration_parameter_list_parentheses",
         "resharper_space_between_method_declaration_parameter_list_parentheses",
+        "csharp_space_between_method_declaration_parameter_list_parentheses",
         "space_between_method_declaration_parameter_list_parentheses"
       ],
       "language": "csharp",
@@ -9722,10 +9722,10 @@
       "key": "skala_xmldoc_attribute_indent",
       "aliases": [],
       "export": [
-        "attribute_indent",
-        "resharper_attribute_indent",
         "resharper_xmldoc_attribute_indent",
-        "xmldoc_attribute_indent"
+        "resharper_attribute_indent",
+        "xmldoc_attribute_indent",
+        "attribute_indent"
       ],
       "language": "xmldoc",
       "type": "enum:AttributeIndentStyle",
@@ -9745,10 +9745,10 @@
       "key": "skala_xmldoc_attribute_style",
       "aliases": [],
       "export": [
-        "attribute_style",
         "resharper_attribute_style",
         "resharper_xmldoc_attribute_style",
-        "xmldoc_attribute_style"
+        "xmldoc_attribute_style",
+        "attribute_style"
       ],
       "language": "xmldoc",
       "type": "enum:AttributeArrangementStyle",
@@ -9768,10 +9768,10 @@
       "key": "skala_xmldoc_blank_line_after_pi",
       "aliases": [],
       "export": [
-        "blank_line_after_pi",
         "resharper_blank_line_after_pi",
         "resharper_xmldoc_blank_line_after_pi",
-        "xmldoc_blank_line_after_pi"
+        "xmldoc_blank_line_after_pi",
+        "blank_line_after_pi"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -9790,10 +9790,10 @@
       "key": "skala_xmldoc_indent_child_elements",
       "aliases": [],
       "export": [
-        "indent_child_elements",
         "resharper_indent_child_elements",
         "resharper_xmldoc_indent_child_elements",
-        "xmldoc_indent_child_elements"
+        "xmldoc_indent_child_elements",
+        "indent_child_elements"
       ],
       "language": "xmldoc",
       "type": "enum:ChildIndentStyle",
@@ -9856,10 +9856,10 @@
       "key": "skala_xmldoc_indent_text",
       "aliases": [],
       "export": [
-        "indent_text",
         "resharper_indent_text",
         "resharper_xmldoc_indent_text",
-        "xmldoc_indent_text"
+        "xmldoc_indent_text",
+        "indent_text"
       ],
       "language": "xmldoc",
       "type": "enum:ChildIndentStyle",
@@ -9918,10 +9918,10 @@
       "key": "skala_xmldoc_linebreak_before_elements",
       "aliases": [],
       "export": [
-        "linebreak_before_elements",
-        "resharper_linebreak_before_elements",
         "resharper_xmldoc_linebreak_before_elements",
-        "xmldoc_linebreak_before_elements"
+        "resharper_linebreak_before_elements",
+        "xmldoc_linebreak_before_elements",
+        "linebreak_before_elements"
       ],
       "language": "xmldoc",
       "type": "string",
@@ -9941,10 +9941,10 @@
       "key": "skala_xmldoc_linebreak_before_multiline_elements",
       "aliases": [],
       "export": [
-        "linebreak_before_multiline_elements",
         "resharper_linebreak_before_multiline_elements",
         "resharper_xmldoc_linebreak_before_multiline_elements",
-        "xmldoc_linebreak_before_multiline_elements"
+        "xmldoc_linebreak_before_multiline_elements",
+        "linebreak_before_multiline_elements"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -9963,10 +9963,10 @@
       "key": "skala_xmldoc_linebreak_before_singleline_elements",
       "aliases": [],
       "export": [
-        "linebreak_before_singleline_elements",
         "resharper_linebreak_before_singleline_elements",
         "resharper_xmldoc_linebreak_before_singleline_elements",
-        "xmldoc_linebreak_before_singleline_elements"
+        "xmldoc_linebreak_before_singleline_elements",
+        "linebreak_before_singleline_elements"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -9985,10 +9985,10 @@
       "key": "skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
       "aliases": [],
       "export": [
-        "linebreaks_inside_tags_for_elements_longer_than",
         "resharper_linebreaks_inside_tags_for_elements_longer_than",
         "resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
-        "xmldoc_linebreaks_inside_tags_for_elements_longer_than"
+        "xmldoc_linebreaks_inside_tags_for_elements_longer_than",
+        "linebreaks_inside_tags_for_elements_longer_than"
       ],
       "language": "xmldoc",
       "type": "int",
@@ -10009,10 +10009,10 @@
       "key": "skala_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements",
       "aliases": [],
       "export": [
-        "linebreaks_inside_tags_for_elements_with_child_elements",
         "resharper_linebreaks_inside_tags_for_elements_with_child_elements",
         "resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements",
-        "xmldoc_linebreaks_inside_tags_for_elements_with_child_elements"
+        "xmldoc_linebreaks_inside_tags_for_elements_with_child_elements",
+        "linebreaks_inside_tags_for_elements_with_child_elements"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -10031,10 +10031,10 @@
       "key": "skala_xmldoc_linebreaks_inside_tags_for_multiline_elements",
       "aliases": [],
       "export": [
-        "linebreaks_inside_tags_for_multiline_elements",
         "resharper_linebreaks_inside_tags_for_multiline_elements",
         "resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements",
-        "xmldoc_linebreaks_inside_tags_for_multiline_elements"
+        "xmldoc_linebreaks_inside_tags_for_multiline_elements",
+        "linebreaks_inside_tags_for_multiline_elements"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -10053,10 +10053,10 @@
       "key": "skala_xmldoc_max_blank_lines_between_tags",
       "aliases": [],
       "export": [
-        "max_blank_lines_between_tags",
-        "resharper_max_blank_lines_between_tags",
         "resharper_xmldoc_max_blank_lines_between_tags",
-        "xmldoc_max_blank_lines_between_tags"
+        "resharper_max_blank_lines_between_tags",
+        "xmldoc_max_blank_lines_between_tags",
+        "max_blank_lines_between_tags"
       ],
       "language": "xmldoc",
       "type": "int",
@@ -10099,10 +10099,10 @@
       "key": "skala_xmldoc_pi_attribute_style",
       "aliases": [],
       "export": [
-        "pi_attribute_style",
-        "resharper_pi_attribute_style",
         "resharper_xmldoc_pi_attribute_style",
-        "xmldoc_pi_attribute_style"
+        "resharper_pi_attribute_style",
+        "xmldoc_pi_attribute_style",
+        "pi_attribute_style"
       ],
       "language": "xmldoc",
       "type": "enum:AttributeArrangementStyle",
@@ -10122,10 +10122,10 @@
       "key": "skala_xmldoc_pi_attributes_indent",
       "aliases": [],
       "export": [
-        "pi_attributes_indent",
         "resharper_pi_attributes_indent",
         "resharper_xmldoc_pi_attributes_indent",
-        "xmldoc_pi_attributes_indent"
+        "xmldoc_pi_attributes_indent",
+        "pi_attributes_indent"
       ],
       "language": "xmldoc",
       "type": "enum:AttributeIndentStyle",
@@ -10147,8 +10147,8 @@
       "export": [
         "resharper_space_after_last_attribute",
         "resharper_xmldoc_space_after_last_attribute",
-        "space_after_last_attribute",
-        "xmldoc_space_after_last_attribute"
+        "xmldoc_space_after_last_attribute",
+        "space_after_last_attribute"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -10167,10 +10167,10 @@
       "key": "skala_xmldoc_space_after_last_pi_attribute",
       "aliases": [],
       "export": [
-        "resharper_space_after_last_pi_attribute",
         "resharper_xmldoc_space_after_last_pi_attribute",
-        "space_after_last_pi_attribute",
-        "xmldoc_space_after_last_pi_attribute"
+        "resharper_space_after_last_pi_attribute",
+        "xmldoc_space_after_last_pi_attribute",
+        "space_after_last_pi_attribute"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -10190,10 +10190,10 @@
       "key": "skala_xmldoc_space_before_self_closing",
       "aliases": [],
       "export": [
-        "resharper_space_before_self_closing",
         "resharper_xmldoc_space_before_self_closing",
-        "space_before_self_closing",
-        "xmldoc_space_before_self_closing"
+        "resharper_space_before_self_closing",
+        "xmldoc_space_before_self_closing",
+        "space_before_self_closing"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -10214,8 +10214,8 @@
       "export": [
         "resharper_spaces_around_eq_in_attribute",
         "resharper_xmldoc_spaces_around_eq_in_attribute",
-        "spaces_around_eq_in_attribute",
-        "xmldoc_spaces_around_eq_in_attribute"
+        "xmldoc_spaces_around_eq_in_attribute",
+        "spaces_around_eq_in_attribute"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -10236,8 +10236,8 @@
       "export": [
         "resharper_spaces_around_eq_in_pi_attribute",
         "resharper_xmldoc_spaces_around_eq_in_pi_attribute",
-        "spaces_around_eq_in_pi_attribute",
-        "xmldoc_spaces_around_eq_in_pi_attribute"
+        "xmldoc_spaces_around_eq_in_pi_attribute",
+        "spaces_around_eq_in_pi_attribute"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -10259,8 +10259,8 @@
       "export": [
         "resharper_spaces_inside_tags",
         "resharper_xmldoc_spaces_inside_tags",
-        "spaces_inside_tags",
-        "xmldoc_spaces_inside_tags"
+        "xmldoc_spaces_inside_tags",
+        "spaces_inside_tags"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -10304,8 +10304,8 @@
       "export": [
         "resharper_wrap_around_elements",
         "resharper_xmldoc_wrap_around_elements",
-        "wrap_around_elements",
-        "xmldoc_wrap_around_elements"
+        "xmldoc_wrap_around_elements",
+        "wrap_around_elements"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -10344,10 +10344,10 @@
       "key": "skala_xmldoc_wrap_tags_and_pi",
       "aliases": [],
       "export": [
-        "resharper_wrap_tags_and_pi",
         "resharper_xmldoc_wrap_tags_and_pi",
-        "wrap_tags_and_pi",
-        "xmldoc_wrap_tags_and_pi"
+        "resharper_wrap_tags_and_pi",
+        "xmldoc_wrap_tags_and_pi",
+        "wrap_tags_and_pi"
       ],
       "language": "xmldoc",
       "type": "bool",
@@ -10366,10 +10366,10 @@
       "key": "skala_xmldoc_wrap_text",
       "aliases": [],
       "export": [
-        "resharper_wrap_text",
         "resharper_xmldoc_wrap_text",
-        "wrap_text",
-        "xmldoc_wrap_text"
+        "resharper_wrap_text",
+        "xmldoc_wrap_text",
+        "wrap_text"
       ],
       "language": "xmldoc",
       "type": "bool",

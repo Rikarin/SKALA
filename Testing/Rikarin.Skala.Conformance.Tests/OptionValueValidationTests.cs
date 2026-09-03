@@ -186,7 +186,7 @@ public sealed class OptionValueValidationTests {
         // What the file says is what provenance reports; what it resolved to is the width.
         Assert.Equal("tab", resolution[OptionId.IndentSize].Value);
         Assert.Equal(3, resolution.Options.GetInt(OptionId.IndentSize));
-        Assert.Equal(3, resolution.Options.GetInt(OptionId.ResharperCsharpIndentSize));
+        Assert.Equal(3, resolution.Options.GetInt(OptionId.SkalaIndentSize));
 
         // ⚠ Ordering must not matter, and it is the one thing that would: options are applied in
         // ordinal key order and `indent_size` sorts before `tab_width`.
