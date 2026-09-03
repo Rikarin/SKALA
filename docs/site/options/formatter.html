@@ -12,9 +12,9 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Formatter</h1>
-<p class="lede">14 keys.</p>
-<section class="option" id="resharper_disable_blank_line_changes">
-<h2><code>resharper_disable_blank_line_changes</code> <a class="self" href="#resharper_disable_blank_line_changes">#</a></h2>
+<p class="lede">12 keys.</p>
+<section class="option" id="skala_disable_blank_line_changes">
+<h2><code>skala_disable_blank_line_changes</code> <a class="self" href="#skala_disable_blank_line_changes">#</a></h2>
 <p>Every run of blank lines survives exactly as written: no cap truncates one, no requirement inserts one, no removal near a brace deletes one. Line breaks that are not blank lines still move. Implemented; Tier D until the key-flip sweep reaches it. SK-DIV-0060.</p>
 <table class="facts">
 <tbody>
@@ -28,8 +28,8 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_disable_formatter">
-<h2><code>resharper_disable_formatter</code> <a class="self" href="#resharper_disable_formatter">#</a></h2>
+<section class="option" id="skala_disable_formatter">
+<h2><code>skala_disable_formatter</code> <a class="self" href="#skala_disable_formatter">#</a></h2>
 <p>The formatting pass is off and the file comes back byte-identical — measured, not &quot;formats less&quot;. Implemented; Tier D until the key-flip sweep reaches it. SK-DIV-0060.</p>
 <table class="facts">
 <tbody>
@@ -43,8 +43,8 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_disable_indenter">
-<h2><code>resharper_disable_indenter</code> <a class="self" href="#resharper_disable_indenter">#</a></h2>
+<section class="option" id="skala_disable_indenter">
+<h2><code>skala_disable_indenter</code> <a class="self" href="#skala_disable_indenter">#</a></h2>
 <p>Line-start whitespace is never rewritten: a line that existed in the input keeps what the author wrote, and a line the wrap created gets the break point's own flat rendering â nothing after <code>(</code>, one space before a binary operator. Spacing, blank lines and wrapping still apply. Implemented; Tier D until the key-flip sweep reaches it. SK-DIV-0061.</p>
 <table class="facts">
 <tbody>
@@ -58,9 +58,9 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_disable_int_align">
-<h2><code>resharper_disable_int_align</code> <a class="self" href="#resharper_disable_int_align">#</a></h2>
-<p>A master switch over a family the export has already switched off, so inert alone and decisive one key away: with int_align = true supplied alongside it turns the whole family off again. Re-measured; the recorded probe holds. SK-DIV-0060. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable by a one-key flip. The recorded probe holds and is now separated from the sweep's reach. Alone, at the export's <code>resharper_int_align = false</code>, both engines are flat — a one-key <code>oracle</code> glob would report UNEXERCISED. With <code>resharper_int_align = true</code> supplied alongside, both engines distinguish the values and disagree at <code>false</code>, on a fixture whose baseline already disagrees. It is the pairwise pass's key, not the key-flip sweep's. SK-DIV-0060.</p>
+<section class="option" id="skala_disable_int_align">
+<h2><code>skala_disable_int_align</code> <a class="self" href="#skala_disable_int_align">#</a></h2>
+<p>A master switch over a family the export has already switched off, so inert alone and decisive one key away: with int_align = true supplied alongside it turns the whole family off again. Re-measured; the recorded probe holds. SK-DIV-0060. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable by a one-key flip. The recorded probe holds and is now separated from the sweep's reach. Alone, at the export's <code>skala_int_align = false</code>, both engines are flat — a one-key <code>oracle</code> glob would report UNEXERCISED. With <code>skala_int_align = true</code> supplied alongside, both engines distinguish the values and disagree at <code>false</code>, on a fixture whose baseline already disagrees. It is the pairwise pass's key, not the key-flip sweep's. SK-DIV-0060.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -72,8 +72,8 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_disable_line_break_changes">
-<h2><code>resharper_disable_line_break_changes</code> <a class="self" href="#resharper_disable_line_break_changes">#</a></h2>
+<section class="option" id="skala_disable_line_break_changes">
+<h2><code>skala_disable_line_break_changes</code> <a class="self" href="#skala_disable_line_break_changes">#</a></h2>
 <p>No line break is added and none is removed, blank runs included, while spaces and indentation still move. The union of disable_blank_line_changes and disable_line_break_removal, plus the additions neither of those blocks. Implemented; Tier D until the key-flip sweep reaches it. SK-DIV-0063.</p>
 <table class="facts">
 <tbody>
@@ -87,8 +87,8 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_disable_line_break_removal">
-<h2><code>resharper_disable_line_break_removal</code> <a class="self" href="#resharper_disable_line_break_removal">#</a></h2>
+<section class="option" id="skala_disable_line_break_removal">
+<h2><code>skala_disable_line_break_removal</code> <a class="self" href="#skala_disable_line_break_removal">#</a></h2>
 <p>One direction only â a line break the author wrote is never removed, and one the wrapping rules want is still added, as is a blank line a requirement asks for. Implemented; Tier D until the key-flip sweep reaches it. SK-DIV-0064.</p>
 <table class="facts">
 <tbody>
@@ -102,8 +102,8 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_disable_space_changes">
-<h2><code>resharper_disable_space_changes</code> <a class="self" href="#resharper_disable_space_changes">#</a></h2>
+<section class="option" id="skala_disable_space_changes">
+<h2><code>skala_disable_space_changes</code> <a class="self" href="#skala_disable_space_changes">#</a></h2>
 <p>⚠ The recorded &quot;inert at both values&quot; is refuted, and the fixture was the reason rather than the key: the oracle preserves every inter-token run byte for byte â the trailing-comment gap included â while still reindenting and rewrapping. Implemented; Tier D until the key-flip sweep reaches it. SK-DIV-0062.</p>
 <table class="facts">
 <tbody>
@@ -117,23 +117,9 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_disable_space_changes_before_trailing_comment">
-<h2><code>resharper_disable_space_changes_before_trailing_comment</code> <a class="self" href="#resharper_disable_space_changes_before_trailing_comment">#</a></h2>
-<p>Unreachable rather than unimplemented: the one rule it could gate is space_before_trailing_comment, and the oracle normalises the gap identically at both of that key's values with this one on. Its broad sibling disable_space_changes does preserve the same gap, so the narrow key is the one the C# formatter does not consult. SK-DIV-0060. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Confirmed at both values under three configurations: <code>resharper_csharp_space_before_trailing_comment</code> true, the same false, and the broad sibling <code>resharper_disable_space_changes = true</code>. Flat in both engines every time, on a fixture carrying a wide gap before a trailing comment.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_formatter_off_tag">
-<h2><code>resharper_formatter_off_tag</code> <a class="self" href="#resharper_formatter_off_tag">#</a></h2>
-<p>The comment that switches the formatter off. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6: the CLI oracle does honour formatter tags, it does read this key, and the configured tag is <strong>additive to</strong> the built-in <code>@formatter:off</code> rather than a replacement for it — with <code>resharper_formatter_off_tag = @zzz:off</code> a region written <code>// @formatter:off</code> is still preserved, while the negative control <code>// @fmt:off</code> under the export's own configuration is formatted straight through. Skala replaced rather than added, which silently stopped honouring every tag already written in a tree the moment the key was set; fixed at <code>FormatterTags.BuiltinOff</code>. ⚠ The sweep row reads UNEXERCISED and cannot do otherwise: the free-form-string probe offers the default and the default with <code>x</code> appended, and any comment matching <code>@formatter:offx</code> also matches the built-in <code>@formatter:off</code>, so both probe values give the same output on every possible input. SK-DIV-0089.</p>
+<section class="option" id="skala_formatter_off_tag">
+<h2><code>skala_formatter_off_tag</code> <a class="self" href="#skala_formatter_off_tag">#</a></h2>
+<p>The comment that switches the formatter off. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6: the CLI oracle does honour formatter tags, it does read this key, and the configured tag is <strong>additive to</strong> the built-in <code>@formatter:off</code> rather than a replacement for it — with <code>skala_formatter_off_tag = @zzz:off</code> a region written <code>// @formatter:off</code> is still preserved, while the negative control <code>// @fmt:off</code> under the export's own configuration is formatted straight through. Skala replaced rather than added, which silently stopped honouring every tag already written in a tree the moment the key was set; fixed at <code>FormatterTags.BuiltinOff</code>. ⚠ The sweep row reads UNEXERCISED and cannot do otherwise: the free-form-string probe offers the default and the default with <code>x</code> appended, and any comment matching <code>@formatter:offx</code> also matches the built-in <code>@formatter:off</code>, so both probe values give the same output on every possible input. SK-DIV-0089.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>string</td></tr>
@@ -146,9 +132,9 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_formatter_on_tag">
-<h2><code>resharper_formatter_on_tag</code> <a class="self" href="#resharper_formatter_on_tag">#</a></h2>
-<p>The comment that switches the formatter back on. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6, same shape as <code>resharper_formatter_off_tag</code>: read by the oracle, and additive to the built-in <code>@formatter:on</code> rather than a replacement — a region closed by <code>// @formatter:on</code> still closes with <code>resharper_formatter_on_tag = @zzz:on</code> set. ⚠ UNEXERCISED for the same reason as its <code>off</code> twin: <code>@formatter:onx</code> is matched by the built-in prefix, so the probe's two values cannot differ on any input. SK-DIV-0089.</p>
+<section class="option" id="skala_formatter_on_tag">
+<h2><code>skala_formatter_on_tag</code> <a class="self" href="#skala_formatter_on_tag">#</a></h2>
+<p>The comment that switches the formatter back on. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6, same shape as <code>skala_formatter_off_tag</code>: read by the oracle, and additive to the built-in <code>@formatter:on</code> rather than a replacement — a region closed by <code>// @formatter:on</code> still closes with <code>skala_formatter_on_tag = @zzz:on</code> set. ⚠ UNEXERCISED for the same reason as its <code>off</code> twin: <code>@formatter:onx</code> is matched by the built-in prefix, so the probe's two values cannot differ on any input. SK-DIV-0089.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>string</td></tr>
@@ -161,9 +147,9 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_formatter_tags_accept_regexp">
-<h2><code>resharper_formatter_tags_accept_regexp</code> <a class="self" href="#resharper_formatter_tags_accept_regexp">#</a></h2>
-<p>Whether the configured off/on tags are regular expressions. ⚠ Measured 2026-08-30: real and decisive against the oracle — <code>resharper_formatter_off_tag = @f.*:off</code> protects a <code>// @fmt:off</code> region at <code>true</code> and does not at <code>false</code>. Skala answered this key by opening the guard outright (&quot;not implemented, in any pass&quot;), so the one key a person sets to make their tags more expressive turned the escape hatch off; now implemented, anchored at the start of the comment's body so SK-DIV-0017's narrowing survives the regexp reading. ⚠ Masked at the export's own values — it governs only the <em>configured</em> pair, and the export leaves that pair sitting on the built-in tags, which are honoured whatever this key says. Reachable only as the pair (<code>accept_regexp</code>, <code>off_tag</code>). SK-DIV-0089.</p>
+<section class="option" id="skala_formatter_tags_accept_regexp">
+<h2><code>skala_formatter_tags_accept_regexp</code> <a class="self" href="#skala_formatter_tags_accept_regexp">#</a></h2>
+<p>Whether the configured off/on tags are regular expressions. ⚠ Measured 2026-08-30: real and decisive against the oracle — <code>skala_formatter_off_tag = @f.*:off</code> protects a <code>// @fmt:off</code> region at <code>true</code> and does not at <code>false</code>. Skala answered this key by opening the guard outright (&quot;not implemented, in any pass&quot;), so the one key a person sets to make their tags more expressive turned the escape hatch off; now implemented, anchored at the start of the comment's body so SK-DIV-0017's narrowing survives the regexp reading. ⚠ Masked at the export's own values — it governs only the <em>configured</em> pair, and the export leaves that pair sitting on the built-in tags, which are honoured whatever this key says. Reachable only as the pair (<code>accept_regexp</code>, <code>off_tag</code>). SK-DIV-0089.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -176,8 +162,8 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_formatter_tags_enabled">
-<h2><code>resharper_formatter_tags_enabled</code> <a class="self" href="#resharper_formatter_tags_enabled">#</a></h2>
+<section class="option" id="skala_formatter_tags_enabled">
+<h2><code>skala_formatter_tags_enabled</code> <a class="self" href="#skala_formatter_tags_enabled">#</a></h2>
 <p>Whether the <em>configured</em> off/on tags are honoured. ⚠ Measured 2026-08-30: it does not switch the escape hatch off. The oracle keeps honouring the built-in <code>@formatter:off</code> at <code>false</code> and stops honouring a custom <code>@fmt:off</code>, so the key governs the configured pair alone. Skala opened the guard outright at <code>false</code>, so one line of configuration disabled the hatch for every file; fixed. ⚠ Masked at the export's own values for the same reason as <code>accept_regexp</code>: the export's configured pair <em>is</em> the built-in pair, so no input distinguishes <code>true</code> from <code>false</code>. Reachable only as the pair (<code>tags_enabled</code>, <code>off_tag</code>). SK-DIV-0089.</p>
 <table class="facts">
 <tbody>
@@ -191,22 +177,8 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_ignore_space_preservation">
-<h2><code>resharper_ignore_space_preservation</code> <a class="self" href="#resharper_ignore_space_preservation">#</a></h2>
-<p>Inert on every shape and every pairing tried, including the three places the C# formatter demonstrably does preserve spaces — a disabled #if branch, an @formatter:off region and an int-aligned run. The confirmation the sweep could not give, because a one-key flip cannot rule out a mask. SK-DIV-0060. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Confirmed. Flat at both values on an <code>@formatter:off</code> region beside a disabled <code>#if</code> branch, and again on an extra-spaces fixture held at <code>resharper_csharp_extra_spaces = leave_all</code> — the configuration under which the oracle does preserve spaces, and therefore the one where a suppression switch would show. SK-DIV-0060.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_use_old_engine">
-<h2><code>resharper_use_old_engine</code> <a class="self" href="#resharper_use_old_engine">#</a></h2>
+<section class="option" id="skala_use_old_engine">
+<h2><code>skala_use_old_engine</code> <a class="self" href="#skala_use_old_engine">#</a></h2>
 <p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
 <table class="facts">
 <tbody>

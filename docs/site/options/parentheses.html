@@ -12,10 +12,10 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Parentheses</h1>
-<p class="lede">4 keys.</p>
+<p class="lede">2 keys.</p>
 <section class="option" id="csharp_space_between_parentheses">
 <h2><code>csharp_space_between_parentheses</code> <a class="self" href="#csharp_space_between_parentheses">#</a></h2>
-<p>Spacing inside parentheses. ⚠ Recorded as inert — &quot;the oracle returns the file unchanged at <code>control_flow_statements</code>, so this MS-compat spelling reaches nothing&quot; — and that is wrong. Measured at <code>false</code> against <code>control_flow_statements</code>, the oracle writes <code>if ( a &gt; 0 )</code>, <code>while ( … )</code>, <code>for ( … )</code>, <code>foreach ( … )</code> and <code>catch ( … )</code>, exactly as <code>resharper_space_between_parentheses_of_control_flow_statements</code> does. It is observable and unimplemented, which is a different thing from inert. ⚠ Blocked on the one mechanism the registry does not have: <code>expands</code> propagates a generalized key's value TEXT into the keys it names, so it can only reach targets whose domain — and whose polarity — is its own. Three keys need the same missing piece and none of them is a coverage gap: this one, <code>csharp_space_between_parentheses</code> and <code>csharp_new_line_before_members_in_object_initializers</code>. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified implementable — blocked on a polarity-aware <code>expands</code>. Verified: four distinct oracle outputs over <code>false</code>, <code>control_flow_statements</code>, <code>expressions</code> and <code>type_casts</code> on a fixture carrying <code>if</code>, <code>while</code>, <code>for</code>, <code>foreach</code>, <code>catch</code>, a parenthesized expression and a cast; Skala is flat at all four. The recorded correction — observable and unimplemented rather than inert — holds. An <code>oracle</code> glob would report INERT.</p>
+<p>Spacing inside parentheses. ⚠ Recorded as inert — &quot;the oracle returns the file unchanged at <code>control_flow_statements</code>, so this MS-compat spelling reaches nothing&quot; — and that is wrong. Measured at <code>false</code> against <code>control_flow_statements</code>, the oracle writes <code>if ( a &gt; 0 )</code>, <code>while ( … )</code>, <code>for ( … )</code>, <code>foreach ( … )</code> and <code>catch ( … )</code>, exactly as <code>skala_space_between_parentheses_of_control_flow_statements</code> does. It is observable and unimplemented, which is a different thing from inert. ⚠ Blocked on the one mechanism the registry does not have: <code>expands</code> propagates a generalized key's value TEXT into the keys it names, so it can only reach targets whose domain — and whose polarity — is its own. Three keys need the same missing piece and none of them is a coverage gap: this one, <code>csharp_space_between_parentheses</code> and <code>csharp_new_line_before_members_in_object_initializers</code>. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified implementable — blocked on a polarity-aware <code>expands</code>. Verified: four distinct oracle outputs over <code>false</code>, <code>control_flow_statements</code>, <code>expressions</code> and <code>type_casts</code> on a fixture carrying <code>if</code>, <code>while</code>, <code>for</code>, <code>foreach</code>, <code>catch</code>, a parenthesized expression and a cast; Skala is flat at all four. The recorded correction — observable and unimplemented rather than inert — holds. An <code>oracle</code> glob would report INERT.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>any combination, comma-separated, of <code>control_flow_statements</code>, <code>expressions</code>, <code>type_casts</code>, <code>false</code></td></tr>
@@ -28,8 +28,8 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_parentheses_redundancy_style">
-<h2><code>resharper_csharp_parentheses_redundancy_style</code> <a class="self" href="#resharper_csharp_parentheses_redundancy_style">#</a></h2>
+<section class="option" id="skala_parentheses_redundancy_style">
+<h2><code>skala_parentheses_redundancy_style</code> <a class="self" href="#skala_parentheses_redundancy_style">#</a></h2>
 <p>Parentheses — Remove redundant parentheses</p>
 <table class="facts">
 <tbody>
@@ -39,39 +39,9 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_parentheses_redundancy_style</code>, <code>parentheses_redundancy_style</code>, <code>resharper_parentheses_redundancy_style</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/arrangement/redundancy/parentheses.cs</code></td></tr>
 <tr><th>Read by</th><td><a href="../rules/SK0209.html">SK0209</a></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_parentheses_redundancy_style">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_parentheses_redundancy_style</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_expression_pars">
-<h2><code>resharper_expression_pars</code> <a class="self" href="#resharper_expression_pars">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Flat at all four <code>ParenthesesIndentStyle</code> values on two fixtures, one of them a parenthesized expression held at <code>resharper_csharp_max_line_length = 60</code> so that it demonstrably wraps inside its own parentheses. Not read by the C# formatter.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
-<tr><th>Default</th><td><code>inside</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_use_continuous_line_indent_in_method_pars">
-<h2><code>resharper_use_continuous_line_indent_in_method_pars</code> <a class="self" href="#resharper_use_continuous_line_indent_in_method_pars">#</a></h2>
-<p>Whether a parameter or argument list's contents take a continuation level. Inert: the oracle returns the file unchanged at both values. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Confirmed. Flat at both values on a fixture whose argument list demonstrably chops and carries a continuation indent, both at the export's wrapping and under <code>wrap_arguments_style = chop_always</code> with <code>wrap_after_invocation_lpar = false</code>.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.4</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Index.html">https://www.jetbrains.com/help/resharper/EditorConfig_Index.html</a></td></tr>
 </tbody>
 </table>
 </section>

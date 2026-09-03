@@ -12,73 +12,9 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Reference qualification andusing directives</h1>
-<p class="lede">5 keys.</p>
-<section class="option" id="resharper_csharp_allow_alias">
-<h2><code>resharper_csharp_allow_alias</code> <a class="self" href="#resharper_csharp_allow_alias">#</a></h2>
-<p>Reference qualification and 'using' directives — Use using alias directive to resolve conflicts ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — the arranger's. ⚠ Measured rather than filed by family resemblance, which is what the previous pass recorded it as. Flat at both values under the cleanup profile on a fixture where <code>CSOptimizeUsings</code> demonstrably removes three unused usings and shortens every reference to the <code>SB</code> alias. It governs whether a quick-fix may introduce an alias to resolve a conflict, which is an IDE action inside the arranger's half of the tool.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>allow_alias</code>, <code>csharp_allow_alias</code>, <code>resharper_allow_alias</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_allow_alias">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_allow_alias</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_can_use_global_alias">
-<h2><code>resharper_csharp_can_use_global_alias</code> <a class="self" href="#resharper_csharp_can_use_global_alias">#</a></h2>
-<p>Reference qualification and 'using' directives — Allow 'global::' prefix use ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — the arranger's. ⚠ Measured rather than filed by family resemblance. Flat at both values under the cleanup profile on a fixture carrying <code>global::System.Text.StringBuilder</code>, which that profile demonstrably shortens. It permits a rewrite to introduce <code>global::</code>, and no cleanup task consults it.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>can_use_global_alias</code>, <code>csharp_can_use_global_alias</code>, <code>resharper_can_use_global_alias</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_can_use_global_alias">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_can_use_global_alias</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_prefer_qualified_reference">
-<h2><code>resharper_csharp_prefer_qualified_reference</code> <a class="self" href="#resharper_csharp_prefer_qualified_reference">#</a></h2>
-<p>Reference qualification and 'using' directives — Prefer fully qualified references. ⚠ Not inert and not implemented. At <code>true</code> the oracle rewrites every simple name to its fully qualified form and drops the usings that become redundant; at the export's <code>false</code> it <em>shortens</em> an already-qualified reference — <code>System.Text.StringBuilder</code> becomes <code>StringBuilder</code> — which Skala does not do either. Skala has no reference-shortening rule, so the key is unreachable rather than unread. See SK-DIV-0073. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — the arranger's. Confirmed: flat under <code>CSReformatCode</code>, two distinct outputs under the cleanup profile, where <code>CSArrangeQualifiers</code> performs it. SK-DIV-0073 stands.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_prefer_qualified_reference</code>, <code>prefer_qualified_reference</code>, <code>resharper_prefer_qualified_reference</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_prefer_qualified_reference">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_prefer_qualified_reference</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_qualified_using_at_nested_scope">
-<h2><code>resharper_csharp_qualified_using_at_nested_scope</code> <a class="self" href="#resharper_csharp_qualified_using_at_nested_scope">#</a></h2>
-<p>Reference qualification and 'using' directives — Prefer fully qualified using name at nested scope ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — the arranger's. ⚠ Measured rather than filed by family resemblance. Flat at both values under the cleanup profile on a fixture carrying <code>using</code> directives inside a namespace block, both alone and with <code>resharper_csharp_prefer_qualified_reference = true</code> alongside. The positive control is the same fixture: <code>resharper_static_members_qualify_members</code> moves the oracle on it.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_qualified_using_at_nested_scope</code>, <code>qualified_using_at_nested_scope</code>, <code>resharper_qualified_using_at_nested_scope</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_qualified_using_at_nested_scope">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_qualified_using_at_nested_scope</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_sort_usings_with_system_first">
-<h2><code>resharper_csharp_sort_usings_with_system_first</code> <a class="self" href="#resharper_csharp_sort_usings_with_system_first">#</a></h2>
+<p class="lede">1 key.</p>
+<section class="option" id="skala_sort_usings_with_system_first">
+<h2><code>skala_sort_usings_with_system_first</code> <a class="self" href="#skala_sort_usings_with_system_first">#</a></h2>
 <p>Reference qualification and 'using' directives — Place 'System.*' and 'Windows.*' namespaces first when sorting 'using' directives</p>
 <table class="facts">
 <tbody>
@@ -88,7 +24,7 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_sort_usings_with_system_first</code>, <code>dotnet_sort_system_directives_first</code>, <code>resharper_sort_usings_with_system_first</code>, <code>sort_usings_with_system_first</code></td></tr>
+<tr><th>Also spelled</th><td><code>dotnet_sort_system_directives_first</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/arrangement/usings/sort-and-remove.cs</code></td></tr>
 <tr><th>Read by</th><td><a href="../rules/SK0210.html">SK0210</a></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_sort_usings_with_system_first">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_sort_usings_with_system_first</a></td></tr>

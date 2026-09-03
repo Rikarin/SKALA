@@ -12,7 +12,7 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Embedded statement</h1>
-<p class="lede">2 keys.</p>
+<p class="lede">1 key.</p>
 <section class="option" id="csharp_prefer_braces">
 <h2><code>csharp_prefer_braces</code> <a class="self" href="#csharp_prefer_braces">#</a></h2>
 <p>Whether braces are required. IDE0011 documents <code>true</code>, <code>false</code> and <code>when_multiline</code>. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — a Roslyn analyser's. Flat at <code>true:none</code>, <code>false:none</code>, <code>when_multiline:none</code>, <code>true:warning</code> and <code>false:warning</code>, under both <code>CSReformatCode</code> and the cleanup profile, on a fixture carrying braced and unbraced <code>if</code>, <code>while</code> and <code>foreach</code>. ⚠ The negative control is the point: ReSharper's own <code>resharper_braces_for_ifelse</code> is equally flat at <code>required</code>, <code>not_required</code> and <code>required_for_multiline</code> under both profiles, so neither oracle profile performs brace insertion at all and no oracle fixture can pin this key. It is IDE0011, a Roslyn analyser.</p>
@@ -26,21 +26,6 @@
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Severity suffix</th><td>accepted — <code>key = value:suggestion</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_simple_embedded_statement_style">
-<h2><code>resharper_simple_embedded_statement_style</code> <a class="self" href="#resharper_simple_embedded_statement_style">#</a></h2>
-<p>Whether a simple embedded statement is put on one line. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at all three values, at 120 and at 60 columns, and with <code>keep_existing_embedded_arrangement = false</code> in the same run — byte-identical to that run without this key. <code>csharp_place_simple_embedded_statement_on_same_line</code> is what joins and splits those statements.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>do_not_change</code>, <code>on_single_line</code>, <code>line_break</code></td></tr>
-<tr><th>Default</th><td><code>do_not_change</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.4</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Index.html">https://www.jetbrains.com/help/resharper/EditorConfig_Index.html</a></td></tr>
 </tbody>
 </table>
 </section>

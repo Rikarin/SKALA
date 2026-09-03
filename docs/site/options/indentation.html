@@ -12,10 +12,10 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Indentation</h1>
-<p class="lede">5 keys.</p>
-<section class="option" id="resharper_apply_auto_detected_rules">
-<h2><code>resharper_apply_auto_detected_rules</code> <a class="self" href="#resharper_apply_auto_detected_rules">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified Tier C — accepted and deliberately ignored. Flat at both values on a fixture whose wrapping demonstrably moves (<code>resharper_csharp_wrap_arguments_style</code> is CONFORMANT with three distinct outputs on it). It asks the IDE to prefer rules auto-detected from the surrounding source over the configured ones, which is an editor behaviour; Tier C is confirmed and no fixture is owed.</p>
+<p class="lede">3 keys.</p>
+<section class="option" id="skala_apply_auto_detected_rules">
+<h2><code>skala_apply_auto_detected_rules</code> <a class="self" href="#skala_apply_auto_detected_rules">#</a></h2>
+<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified Tier C — accepted and deliberately ignored. Flat at both values on a fixture whose wrapping demonstrably moves (<code>skala_wrap_arguments_style</code> is CONFORMANT with three distinct outputs on it). It asks the IDE to prefer rules auto-detected from the surrounding source over the configured ones, which is an editor behaviour; Tier C is confirmed and no fixture is owed.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -27,8 +27,8 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_autodetect_indent_settings">
-<h2><code>resharper_autodetect_indent_settings</code> <a class="self" href="#resharper_autodetect_indent_settings">#</a></h2>
+<section class="option" id="skala_autodetect_indent_settings">
+<h2><code>skala_autodetect_indent_settings</code> <a class="self" href="#skala_autodetect_indent_settings">#</a></h2>
 <p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
 <table class="facts">
 <tbody>
@@ -41,23 +41,8 @@
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_continuous_line_indent">
-<h2><code>resharper_continuous_line_indent</code> <a class="self" href="#resharper_continuous_line_indent">#</a></h2>
-<p>The size of one continuation level. Inert: the oracle returns wrapped arguments, binary chains, ternaries and call chains unchanged at <code>double</code>. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Confirmed. Flat at <code>single</code> and <code>double</code> on two fixtures that demonstrably carry continuation indents — a chopped argument list and a chopped binary chain in one, a wrapped parenthesized expression at <code>max_line_length = 60</code> in the other.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>single</code>, <code>double</code></td></tr>
-<tr><th>Default</th><td><code>single</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.4</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Index.html">https://www.jetbrains.com/help/resharper/EditorConfig_Index.html</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_use_indent_from_vs">
-<h2><code>resharper_use_indent_from_vs</code> <a class="self" href="#resharper_use_indent_from_vs">#</a></h2>
+<section class="option" id="skala_use_indent_from_vs">
+<h2><code>skala_use_indent_from_vs</code> <a class="self" href="#skala_use_indent_from_vs">#</a></h2>
 <p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified Tier C — accepted and deliberately ignored. ⚠ Observable, and decisively an editor setting: under <code>indent_style = tab</code>, <code>true</code> makes the oracle abandon the .editorconfig's tabs and emit Visual Studio's own four spaces, while <code>false</code> honours the file. Skala has no IDE settings to defer to, so an <code>oracle</code> glob would report INERT for a difference nobody intends to close. Tier C confirmed.</p>
 <table class="facts">
 <tbody>
@@ -65,20 +50,6 @@
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
 <tr><th>Tier</th><td>C — recorded, and it configures a language Skala does not format</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_use_indents_from_main_language_in_file">
-<h2><code>resharper_use_indents_from_main_language_in_file</code> <a class="self" href="#resharper_use_indents_from_main_language_in_file">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable by construction. Flat at both values on three fixtures, one of them tab-indented under <code>indent_style = tab</code>, where <code>resharper_csharp_max_line_length</code> and <code>resharper_csharp_indent_size</code> demonstrably move the layout. It chooses between the indent settings of the several languages a mixed-language file contains; a <code>.cs</code> corpus file has one language, so no C# fixture can reach it.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 </tbody>

@@ -13,8 +13,8 @@
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Align similar code in columns</h1>
 <p class="lede">14 keys.</p>
-<section class="option" id="resharper_csharp_int_align_assignments">
-<h2><code>resharper_csharp_int_align_assignments</code> <a class="self" href="#resharper_csharp_int_align_assignments">#</a></h2>
+<section class="option" id="skala_int_align_assignments">
+<h2><code>skala_int_align_assignments</code> <a class="self" href="#skala_int_align_assignments">#</a></h2>
 <p>Align similar code in columns — Other assignments and initializers</p>
 <table class="facts">
 <tbody>
@@ -24,14 +24,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_assignments</code>, <code>int_align_assignments</code>, <code>resharper_int_align_assignments</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_assignments">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_assignments</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_binary_expressions">
-<h2><code>resharper_csharp_int_align_binary_expressions</code> <a class="self" href="#resharper_csharp_int_align_binary_expressions">#</a></h2>
+<section class="option" id="skala_int_align_binary_expressions">
+<h2><code>skala_int_align_binary_expressions</code> <a class="self" href="#skala_int_align_binary_expressions">#</a></h2>
 <p>Align similar code in columns — Binary expressions. Implemented for the conditional chain and not for the rest of the key: with it on, the oracle also pads adjacent local variable <em>declarations</em> whose initializers are binary, at every operator of the chain — <code>var first = flag &gt; 1 &amp;&amp; other &gt; 2;</code> beside <code>var secondName = flag &gt; 100000 &amp;&amp; other &gt; 2;</code> comes back with both the <code>&gt;</code> and the <code>&amp;&amp;</code> in a column. Measured at the ternary-chain work on constructs/alignment/int-align-ternary.cs, and it is what keeps this key at Tier D now that the chain layout no longer does. ⚠ Adjacent <em>assignments</em> with binary right-hand sides do not move, so 'declarations' is the measured population and not a guess.</p>
 <table class="facts">
 <tbody>
@@ -41,13 +40,12 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_binary_expressions</code>, <code>int_align_binary_expressions</code>, <code>resharper_int_align_binary_expressions</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_binary_expressions">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_binary_expressions</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_comments">
-<h2><code>resharper_csharp_int_align_comments</code> <a class="self" href="#resharper_csharp_int_align_comments">#</a></h2>
+<section class="option" id="skala_int_align_comments">
+<h2><code>skala_int_align_comments</code> <a class="self" href="#skala_int_align_comments">#</a></h2>
 <p>Align similar code in columns — End comments</p>
 <table class="facts">
 <tbody>
@@ -57,14 +55,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_comments</code>, <code>int_align_comments</code>, <code>resharper_int_align_comments</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_comments">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_comments</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_fields">
-<h2><code>resharper_csharp_int_align_fields</code> <a class="self" href="#resharper_csharp_int_align_fields">#</a></h2>
+<section class="option" id="skala_int_align_fields">
+<h2><code>skala_int_align_fields</code> <a class="self" href="#skala_int_align_fields">#</a></h2>
 <p>Align similar code in columns — Fields and constants</p>
 <table class="facts">
 <tbody>
@@ -74,15 +71,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_fields</code>, <code>int_align_fields</code>, <code>resharper_int_align_fields</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_fields">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_fields</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_fix_in_adjacent">
-<h2><code>resharper_csharp_int_align_fix_in_adjacent</code> <a class="self" href="#resharper_csharp_int_align_fix_in_adjacent">#</a></h2>
-<p>Align similar code in columns — Fix column alignment in adjacent lines. Measured inert on a stronger probe than the recorded &quot;no answer while no run exists&quot;. <code>false</code> one key away from the export returns an 18-file probe byte-identical, which is the weak reading. It is also byte-identical with <code>int_align_variables = true</code> and <code>int_align_fields = true</code> supplied — so adjacent declarations really are padded into a column and the neighbours it claims to govern exist — and byte-identical again with <code>allow_far_alignment = true</code> added on top of that. Two second keys tried, and the key moves nothing in either, so this is not merely masking.</p>
+<section class="option" id="skala_int_align_fix_in_adjacent">
+<h2><code>skala_int_align_fix_in_adjacent</code> <a class="self" href="#skala_int_align_fix_in_adjacent">#</a></h2>
+<p>Align similar code in columns — Fix column alignment in adjacent lines. Measured inert on a stronger probe than the recorded &quot;no answer while no run exists&quot;. <code>false</code> one key away from the export returns an 18-file probe byte-identical, which is the weak reading. It is also byte-identical with <code>skala_int_align_variables = true</code> and <code>skala_int_align_fields = true</code> supplied — so adjacent declarations really are padded into a column and the neighbours it claims to govern exist — and byte-identical again with <code>allow_far_alignment = true</code> added on top of that. Two second keys tried, and the key moves nothing in either, so this is not merely masking.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -91,13 +87,12 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_fix_in_adjacent</code>, <code>int_align_fix_in_adjacent</code>, <code>resharper_int_align_fix_in_adjacent</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_fix_in_adjacent">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_fix_in_adjacent</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_invocations">
-<h2><code>resharper_csharp_int_align_invocations</code> <a class="self" href="#resharper_csharp_int_align_invocations">#</a></h2>
+<section class="option" id="skala_int_align_invocations">
+<h2><code>skala_int_align_invocations</code> <a class="self" href="#skala_int_align_invocations">#</a></h2>
 <p>Align similar code in columns — Invocations of the same method</p>
 <table class="facts">
 <tbody>
@@ -107,14 +102,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_invocations</code>, <code>int_align_invocations</code>, <code>resharper_int_align_invocations</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align-lists.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_invocations">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_invocations</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_methods">
-<h2><code>resharper_csharp_int_align_methods</code> <a class="self" href="#resharper_csharp_int_align_methods">#</a></h2>
+<section class="option" id="skala_int_align_methods">
+<h2><code>skala_int_align_methods</code> <a class="self" href="#skala_int_align_methods">#</a></h2>
 <p>Align similar code in columns — Simple methods, operators, delegates</p>
 <table class="facts">
 <tbody>
@@ -124,14 +118,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_methods</code>, <code>int_align_methods</code>, <code>resharper_int_align_methods</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_methods">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_methods</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_nested_ternary">
-<h2><code>resharper_csharp_int_align_nested_ternary</code> <a class="self" href="#resharper_csharp_int_align_nested_ternary">#</a></h2>
+<section class="option" id="skala_int_align_nested_ternary">
+<h2><code>skala_int_align_nested_ternary</code> <a class="self" href="#skala_int_align_nested_ternary">#</a></h2>
 <p>Align similar code in columns — Nested ternary operators</p>
 <table class="facts">
 <tbody>
@@ -141,14 +134,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_nested_ternary</code>, <code>int_align_nested_ternary</code>, <code>resharper_int_align_nested_ternary</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align-ternary.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_nested_ternary">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_nested_ternary</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_parameters">
-<h2><code>resharper_csharp_int_align_parameters</code> <a class="self" href="#resharper_csharp_int_align_parameters">#</a></h2>
+<section class="option" id="skala_int_align_parameters">
+<h2><code>skala_int_align_parameters</code> <a class="self" href="#skala_int_align_parameters">#</a></h2>
 <p>Align similar code in columns — Multiline method signature</p>
 <table class="facts">
 <tbody>
@@ -158,14 +150,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_parameters</code>, <code>int_align_parameters</code>, <code>resharper_int_align_parameters</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align-lists.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_parameters">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_parameters</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_properties">
-<h2><code>resharper_csharp_int_align_properties</code> <a class="self" href="#resharper_csharp_int_align_properties">#</a></h2>
+<section class="option" id="skala_int_align_properties">
+<h2><code>skala_int_align_properties</code> <a class="self" href="#skala_int_align_properties">#</a></h2>
 <p>Align similar code in columns — Properties and events</p>
 <table class="facts">
 <tbody>
@@ -175,14 +166,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_properties</code>, <code>int_align_properties</code>, <code>resharper_int_align_properties</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_properties">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_properties</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_property_patterns">
-<h2><code>resharper_csharp_int_align_property_patterns</code> <a class="self" href="#resharper_csharp_int_align_property_patterns">#</a></h2>
+<section class="option" id="skala_int_align_property_patterns">
+<h2><code>skala_int_align_property_patterns</code> <a class="self" href="#skala_int_align_property_patterns">#</a></h2>
 <p>Align similar code in columns — Property patterns</p>
 <table class="facts">
 <tbody>
@@ -192,14 +182,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_property_patterns</code>, <code>int_align_property_patterns</code>, <code>resharper_int_align_property_patterns</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align-lists.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_property_patterns">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_property_patterns</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_switch_expressions">
-<h2><code>resharper_csharp_int_align_switch_expressions</code> <a class="self" href="#resharper_csharp_int_align_switch_expressions">#</a></h2>
+<section class="option" id="skala_int_align_switch_expressions">
+<h2><code>skala_int_align_switch_expressions</code> <a class="self" href="#skala_int_align_switch_expressions">#</a></h2>
 <p>Align similar code in columns — Switch expressions</p>
 <table class="facts">
 <tbody>
@@ -209,14 +198,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_switch_expressions</code>, <code>int_align_switch_expressions</code>, <code>resharper_int_align_switch_expressions</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_switch_expressions">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_switch_expressions</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_switch_sections">
-<h2><code>resharper_csharp_int_align_switch_sections</code> <a class="self" href="#resharper_csharp_int_align_switch_sections">#</a></h2>
+<section class="option" id="skala_int_align_switch_sections">
+<h2><code>skala_int_align_switch_sections</code> <a class="self" href="#skala_int_align_switch_sections">#</a></h2>
 <p>Align similar code in columns — Simple switch sections</p>
 <table class="facts">
 <tbody>
@@ -226,14 +214,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_switch_sections</code>, <code>int_align_switch_sections</code>, <code>resharper_int_align_switch_sections</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_switch_sections">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_switch_sections</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_int_align_variables">
-<h2><code>resharper_csharp_int_align_variables</code> <a class="self" href="#resharper_csharp_int_align_variables">#</a></h2>
+<section class="option" id="skala_int_align_variables">
+<h2><code>skala_int_align_variables</code> <a class="self" href="#skala_int_align_variables">#</a></h2>
 <p>Align similar code in columns — Variables and local constants</p>
 <table class="facts">
 <tbody>
@@ -243,7 +230,6 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_int_align_variables</code>, <code>int_align_variables</code>, <code>resharper_int_align_variables</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_variables">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_variables</a></td></tr>
 </tbody>

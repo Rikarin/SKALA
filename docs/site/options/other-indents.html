@@ -12,109 +12,9 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Other indents</h1>
-<p class="lede">7 keys.</p>
-<section class="option" id="resharper_csharp_indent_braces_inside_statement_conditions">
-<h2><code>resharper_csharp_indent_braces_inside_statement_conditions</code> <a class="self" href="#resharper_csharp_indent_braces_inside_statement_conditions">#</a></h2>
-<p>Other indents — Indent braces inside statement conditions. Inert: the oracle returns the file unchanged at both values.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_indent_braces_inside_statement_conditions</code>, <code>indent_braces_inside_statement_conditions</code>, <code>resharper_indent_braces_inside_statement_conditions</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_braces_inside_statement_conditions">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_braces_inside_statement_conditions</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_indent_type_constraints">
-<h2><code>resharper_csharp_indent_type_constraints</code> <a class="self" href="#resharper_csharp_indent_type_constraints">#</a></h2>
-<p>Other indents — Indent type constraints</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
-<tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
-<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_indent_type_constraints</code>, <code>indent_type_constraints</code>, <code>resharper_indent_type_constraints</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/indentation/resharper_csharp_indent_type_constraints.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_type_constraints">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_type_constraints</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_outdent_statement_labels">
-<h2><code>resharper_csharp_outdent_statement_labels</code> <a class="self" href="#resharper_csharp_outdent_statement_labels">#</a></h2>
-<p>Other indents — Outdent statement labels</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
-<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_outdent_statement_labels</code>, <code>outdent_statement_labels</code>, <code>resharper_outdent_statement_labels</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/indentation/resharper_csharp_outdent_statement_labels.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_statement_labels">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_statement_labels</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_place_comments_at_first_column">
-<h2><code>resharper_csharp_place_comments_at_first_column</code> <a class="self" href="#resharper_csharp_place_comments_at_first_column">#</a></h2>
-<p>Other indents — Place comments at first column when commenting out code. ⚠ The name is the whole of it: it governs the editor's comment-out action, and <code>cleanupcode</code> never comments anything out, so the reformat cannot reach it.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_place_comments_at_first_column</code>, <code>place_comments_at_first_column</code>, <code>resharper_place_comments_at_first_column</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/trivia/resharper_csharp_place_comments_at_first_column.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_place_comments_at_first_column">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_place_comments_at_first_column</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_stick_comment">
-<h2><code>resharper_csharp_stick_comment</code> <a class="self" href="#resharper_csharp_stick_comment">#</a></h2>
-<p>Other indents — Don't indent comments started at first column</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_stick_comment</code>, <code>resharper_stick_comment</code>, <code>stick_comment</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/trivia/resharper_csharp_stick_comment.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_stick_comment">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_stick_comment</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_use_indent_from_previous_element">
-<h2><code>resharper_csharp_use_indent_from_previous_element</code> <a class="self" href="#resharper_csharp_use_indent_from_previous_element">#</a></h2>
-<p>Other indents — Use previous element's indent on partial format. Inert for a whole-file format, which is the only thing the oracle profile does; it governs a partial reformat. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable. Flat at both values on three fixtures. It governs what a <em>partial</em> reformat takes its indent from, and the oracle profile only ever reformats whole files, so no oracle fixture can reach it.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_use_indent_from_previous_element</code>, <code>resharper_use_indent_from_previous_element</code>, <code>use_indent_from_previous_element</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_use_indent_from_previous_element">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_use_indent_from_previous_element</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_indent_switch_labels">
-<h2><code>resharper_indent_switch_labels</code> <a class="self" href="#resharper_indent_switch_labels">#</a></h2>
+<p class="lede">5 keys.</p>
+<section class="option" id="skala_indent_switch_labels">
+<h2><code>skala_indent_switch_labels</code> <a class="self" href="#skala_indent_switch_labels">#</a></h2>
 <p>Other indents — Indent 'case' from 'switch'</p>
 <table class="facts">
 <tbody>
@@ -124,9 +24,73 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_indent_switch_labels</code>, <code>indent_switch_labels</code></td></tr>
+<tr><th>Also spelled</th><td><code>csharp_indent_switch_labels</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/resharper_indent_switch_labels.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_indent_switch_labels">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_indent_switch_labels</a></td></tr>
+</tbody>
+</table>
+</section>
+<section class="option" id="skala_indent_type_constraints">
+<h2><code>skala_indent_type_constraints</code> <a class="self" href="#skala_indent_type_constraints">#</a></h2>
+<p>Other indents — Indent type constraints</p>
+<table class="facts">
+<tbody>
+<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
+<tr><th>Default</th><td><code>true</code></td></tr>
+<tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
+<tr><th>Language</th><td>csharp</td></tr>
+<tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/indentation/resharper_csharp_indent_type_constraints.cs</code></td></tr>
+<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_type_constraints">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_type_constraints</a></td></tr>
+</tbody>
+</table>
+</section>
+<section class="option" id="skala_outdent_statement_labels">
+<h2><code>skala_outdent_statement_labels</code> <a class="self" href="#skala_outdent_statement_labels">#</a></h2>
+<p>Other indents — Outdent statement labels</p>
+<table class="facts">
+<tbody>
+<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
+<tr><th>Default</th><td><code>false</code></td></tr>
+<tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
+<tr><th>Language</th><td>csharp</td></tr>
+<tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/indentation/resharper_csharp_outdent_statement_labels.cs</code></td></tr>
+<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_statement_labels">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_statement_labels</a></td></tr>
+</tbody>
+</table>
+</section>
+<section class="option" id="skala_place_comments_at_first_column">
+<h2><code>skala_place_comments_at_first_column</code> <a class="self" href="#skala_place_comments_at_first_column">#</a></h2>
+<p>Other indents — Place comments at first column when commenting out code. ⚠ The name is the whole of it: it governs the editor's comment-out action, and <code>cleanupcode</code> never comments anything out, so the reformat cannot reach it.</p>
+<table class="facts">
+<tbody>
+<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
+<tr><th>Default</th><td><code>false</code></td></tr>
+<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
+<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Language</th><td>csharp</td></tr>
+<tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/trivia/resharper_csharp_place_comments_at_first_column.cs</code></td></tr>
+<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_place_comments_at_first_column">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_place_comments_at_first_column</a></td></tr>
+</tbody>
+</table>
+</section>
+<section class="option" id="skala_stick_comment">
+<h2><code>skala_stick_comment</code> <a class="self" href="#skala_stick_comment">#</a></h2>
+<p>Other indents — Don't indent comments started at first column</p>
+<table class="facts">
+<tbody>
+<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
+<tr><th>Default</th><td><code>true</code></td></tr>
+<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
+<tr><th>Language</th><td>csharp</td></tr>
+<tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/trivia/resharper_csharp_stick_comment.cs</code></td></tr>
+<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_stick_comment">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_stick_comment</a></td></tr>
 </tbody>
 </table>
 </section>

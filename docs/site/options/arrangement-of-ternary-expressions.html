@@ -12,25 +12,9 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Arrangement of ternary expressions</h1>
-<p class="lede">3 keys.</p>
-<section class="option" id="resharper_csharp_nested_ternary_style">
-<h2><code>resharper_csharp_nested_ternary_style</code> <a class="self" href="#resharper_csharp_nested_ternary_style">#</a></h2>
-<p>Arrangement of ternary expressions — Nested ternary expression style. Observable and not implemented: all four values are distinct on a flat nested chain, measured one at a time against <code>jb cleanupcode</code> 2025.2.6 at a 120-column margin. <code>autodetect</code> (the export's value, and what Skala writes) chops one member per line if the chain is long or already multiline; <code>compact</code> is the same layout chopped always, so a chain that fits is chopped too; <code>expanded</code> writes the staircase, breaking before every <code>?</code> and <code>:</code> with one further indent level per nesting depth; <code>simple_wrap</code> fills at the signs, breaking at the last <code>?</code> or <code>:</code> that does not fit. Promotion is the last three layouts, of which <code>expanded</code> needs the progressive per-depth indent the writer does not yet produce — a chain the author wrote as a staircase comes back from Skala with every arm at one level. None of it is governed by <code>wrap_ternary_expr_style</code> or <code>wrap_before_ternary_opsigns</code>, which leave every chain byte-identical. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified implementable — the oracle honours it and Skala does not. The recorded four-way reading is confirmed under <code>CSReformatCode</code>: three distinct oracle outputs across the four values on a flat nested chain at 120 columns, with <code>autodetect</code> matching Skala. Skala is flat, so an <code>oracle</code> glob would report INERT.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>simple_wrap</code>, <code>autodetect</code>, <code>compact</code>, <code>expanded</code></td></tr>
-<tr><th>Default</th><td><code>autodetect</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_nested_ternary_style</code>, <code>nested_ternary_style</code>, <code>resharper_nested_ternary_style</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_nested_ternary_style">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_nested_ternary_style</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_wrap_before_ternary_opsigns">
-<h2><code>resharper_csharp_wrap_before_ternary_opsigns</code> <a class="self" href="#resharper_csharp_wrap_before_ternary_opsigns">#</a></h2>
+<p class="lede">2 keys.</p>
+<section class="option" id="skala_wrap_before_ternary_opsigns">
+<h2><code>skala_wrap_before_ternary_opsigns</code> <a class="self" href="#skala_wrap_before_ternary_opsigns">#</a></h2>
 <p>Arrangement of ternary expressions — Prefer to wrap before '?' and ':' in ternary expressions</p>
 <table class="facts">
 <tbody>
@@ -40,14 +24,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_wrap_before_ternary_opsigns</code>, <code>resharper_wrap_before_ternary_opsigns</code>, <code>wrap_before_ternary_opsigns</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/breaks/ternary.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_before_ternary_opsigns">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_before_ternary_opsigns</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_wrap_ternary_expr_style">
-<h2><code>resharper_csharp_wrap_ternary_expr_style</code> <a class="self" href="#resharper_csharp_wrap_ternary_expr_style">#</a></h2>
+<section class="option" id="skala_wrap_ternary_expr_style">
+<h2><code>skala_wrap_ternary_expr_style</code> <a class="self" href="#skala_wrap_ternary_expr_style">#</a></h2>
 <p>Arrangement of ternary expressions — Wrap ternary expression</p>
 <table class="facts">
 <tbody>
@@ -57,7 +40,6 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_wrap_ternary_expr_style</code>, <code>resharper_wrap_ternary_expr_style</code>, <code>wrap_ternary_expr_style</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/wrapping/ternary.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_ternary_expr_style">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_ternary_expr_style</a></td></tr>
 </tbody>

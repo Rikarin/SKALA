@@ -1,4 +1,5 @@
 using Rikarin.Skala.Analysis.Loading;
+using Rikarin.Skala.Options;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
@@ -202,12 +203,24 @@ public sealed class AdoptionTests {
         Assert.Contains("is not a Skala rule", result.Output, StringComparison.Ordinal);
     }
 
+    /// <remarks>
+    ///     ⚠ The suggestion is <c>insert_final_newline</c> and not <c>skala_insert_final_newline</c>,
+    ///     which is right: the nearest spelling to the typo is the one the EditorConfig specification
+    ///     defines, and that spelling resolves. Asserted on the *option* rather than on one of its
+    ///     names, so this does not go red the next time a key is renamed.
+    /// </remarks>
     [Fact]
     public void Explain_OnAMisspeltOptionKey_Suggests() {
         var result = ExplainCommand.Run("insert_final_newlines");
 
         Assert.Equal(ExitCodes.ConfigurationError, result.ExitCode);
-        Assert.Contains("skala_insert_final_newline", result.Output, StringComparison.Ordinal);
+        Assert.True(OptionRegistry.TryResolve("insert_final_newline", out var id));
+
+        var info = OptionRegistry.Get(id);
+        Assert.Contains(
+            new[] { info.Key }.Concat(info.Aliases),
+            spelling => result.Output.Contains(spelling, StringComparison.Ordinal)
+        );
     }
 
     /// <summary>

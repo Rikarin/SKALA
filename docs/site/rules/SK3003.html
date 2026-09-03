@@ -27,10 +27,10 @@
 </tbody>
 </table>
 <h2 id="why">Why</h2>
-<p>Library code can choose not to capture its caller's synchronization context. The existing resharper_configure_await_analysis_mode policy determines whether this inspection applies; disabled, missing, invalid and UI mode do not require missing configuration. Explicit ConfigureAwait choices are respected. Scheduling policy is an author decision, so this rule reports without an automatic fix.</p>
+<p>Library code can choose not to capture its caller's synchronization context. The existing skala_configure_await_analysis_mode policy determines whether this inspection applies; disabled, missing, invalid and UI mode do not require missing configuration. Explicit ConfigureAwait choices are respected. Scheduling policy is an author decision, so this rule reports without an automatic fix.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
-<pre class="bad"><code>// resharper_configure_await_analysis_mode = library
+<pre class="bad"><code>// skala_configure_await_analysis_mode = library
 await ReadAsync();</code></pre>
 <p>Write:</p>
 <pre class="good"><code>await ReadAsync().ConfigureAwait(false);</code></pre>
@@ -38,8 +38,8 @@ await ReadAsync();</code></pre>
 <p>Only exact framework Task, Task&lt;T&gt;, ValueTask and ValueTask&lt;T&gt; awaits are included. Derived task types and custom awaitables are excluded. Already configured awaitables, including explicit true or variable arguments, are left alone. UI mode's redundant ConfigureAwait(true) inspection is not SK3003 and is not implemented here. await foreach and await using are outside the initial scope. The prefixed configuration key wins when both spellings exist.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
-<li><a href="../options/await-expression.html#resharper_configure_await_analysis_mode"><code>resharper_configure_await_analysis_mode</code></a></li>
-<li><a href="../options/await-expression.html#resharper_configure_await_analysis_mode"><code>resharper_configure_await_analysis_mode</code></a></li>
+<li><a href="../options/await-expression.html#skala_configure_await_analysis_mode"><code>skala_configure_await_analysis_mode</code></a></li>
+<li><a href="../options/await-expression.html#skala_configure_await_analysis_mode"><code>skala_configure_await_analysis_mode</code></a></li>
 <li><code>dotnet_diagnostic.SK3003.severity</code></li>
 </ul>
 </main>

@@ -13,8 +13,8 @@
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Static members qualification</h1>
 <p class="lede">2 keys.</p>
-<section class="option" id="resharper_csharp_static_members_qualify_members">
-<h2><code>resharper_csharp_static_members_qualify_members</code> <a class="self" href="#resharper_csharp_static_members_qualify_members">#</a></h2>
+<section class="option" id="skala_static_members_qualify_members">
+<h2><code>skala_static_members_qualify_members</code> <a class="self" href="#skala_static_members_qualify_members">#</a></h2>
 <p>Static members qualification — Members to qualify</p>
 <table class="facts">
 <tbody>
@@ -24,16 +24,15 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_static_members_qualify_members</code>, <code>resharper_static_members_qualify_members</code>, <code>static_members_qualify_members</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/arrangement/redundancy/static-qualifier.cs</code></td></tr>
 <tr><th>Read by</th><td><a href="../rules/SK0215.html">SK0215</a></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_static_members_qualify_members">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_static_members_qualify_members</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_static_members_qualify_with">
-<h2><code>resharper_csharp_static_members_qualify_with</code> <a class="self" href="#resharper_csharp_static_members_qualify_with">#</a></h2>
-<p>Static members qualification — Qualify with the name of ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified masked, and the arranger's. ⚠ Measured rather than filed by family resemblance. Masked by <code>resharper_static_members_qualify_members = none</code>, the export's own value. Set it to <code>all</code>, on a static member declared in a base class and used from a derived one, and <code>declared_type</code> against <code>current_type</code> gives two distinct oracle outputs. Performed by <code>CSArrangeQualifiers</code> under the cleanup profile and flat under <code>CSReformatCode</code>, so it is the arranger's key.</p>
+<section class="option" id="skala_static_members_qualify_with">
+<h2><code>skala_static_members_qualify_with</code> <a class="self" href="#skala_static_members_qualify_with">#</a></h2>
+<p>Static members qualification — Qualify with the name of ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified masked, and the arranger's. ⚠ Measured rather than filed by family resemblance. Masked by <code>skala_static_members_qualify_members = none</code>, the export's own value. Set it to <code>all</code>, on a static member declared in a base class and used from a derived one, and <code>declared_type</code> against <code>current_type</code> gives two distinct oracle outputs. Performed by <code>CSArrangeQualifiers</code> under the cleanup profile and flat under <code>CSReformatCode</code>, so it is the arranger's key.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>current_type</code>, <code>declared_type</code></td></tr>
@@ -42,7 +41,6 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_static_members_qualify_with</code>, <code>resharper_static_members_qualify_with</code>, <code>static_members_qualify_with</code></td></tr>
 <tr><th>Read by</th><td><a href="../rules/SK0215.html">SK0215</a></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_static_members_qualify_with">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_static_members_qualify_with</a></td></tr>
 </tbody>

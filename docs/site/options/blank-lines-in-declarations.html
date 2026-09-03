@@ -13,8 +13,8 @@
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Blank lines in declarations</h1>
 <p class="lede">20 keys.</p>
-<section class="option" id="resharper_csharp_blank_lines_after_file_scoped_namespace_directive">
-<h2><code>resharper_csharp_blank_lines_after_file_scoped_namespace_directive</code> <a class="self" href="#resharper_csharp_blank_lines_after_file_scoped_namespace_directive">#</a></h2>
+<section class="option" id="skala_blank_lines_after_file_scoped_namespace_directive">
+<h2><code>skala_blank_lines_after_file_scoped_namespace_directive</code> <a class="self" href="#skala_blank_lines_after_file_scoped_namespace_directive">#</a></h2>
 <p>Blank lines in declarations — After file-scoped namespace directive</p>
 <table class="facts">
 <tbody>
@@ -24,14 +24,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_after_file_scoped_namespace_directive</code>, <code>csharp_blank_lines_after_file_scoped_namespace_directive</code>, <code>resharper_blank_lines_after_file_scoped_namespace_directive</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_after_file_scoped_namespace_directive.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_file_scoped_namespace_directive">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_file_scoped_namespace_directive</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_after_start_comment">
-<h2><code>resharper_csharp_blank_lines_after_start_comment</code> <a class="self" href="#resharper_csharp_blank_lines_after_start_comment">#</a></h2>
+<section class="option" id="skala_blank_lines_after_start_comment">
+<h2><code>skala_blank_lines_after_start_comment</code> <a class="self" href="#skala_blank_lines_after_start_comment">#</a></h2>
 <p>Blank lines in declarations — After file header comment. Measured: the subject is the run of plain comments the file opens with, and only that. A <code>///</code> run at position 0 is not one — it belongs to the type under it and the oracle returns the file unchanged at both values — nor is a <code>//</code> that follows a <code>#nullable</code>, because the file has already started. Two <code>//</code> blocks separated by a blank line are one start comment and the gap is the one under the second. ⚠ The export sets it to 1, so this is one of the few blank-line keys whose value is not the no-op: <code>a-file-header-comment.cs</code> and <code>a-file-header-comment-with-no-blank-after-it.cs</code> both disagreed with their committed fixtures until the formatter read it.</p>
 <table class="facts">
 <tbody>
@@ -41,14 +40,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_after_start_comment</code>, <code>csharp_blank_lines_after_start_comment</code>, <code>resharper_blank_lines_after_start_comment</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_after_start_comment.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_start_comment">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_start_comment</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_after_using_list">
-<h2><code>resharper_csharp_blank_lines_after_using_list</code> <a class="self" href="#resharper_csharp_blank_lines_after_using_list">#</a></h2>
+<section class="option" id="skala_blank_lines_after_using_list">
+<h2><code>skala_blank_lines_after_using_list</code> <a class="self" href="#skala_blank_lines_after_using_list">#</a></h2>
 <p>Blank lines in declarations — After 'using' list</p>
 <table class="facts">
 <tbody>
@@ -58,14 +56,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_after_using_list</code>, <code>csharp_blank_lines_after_using_list</code>, <code>resharper_blank_lines_after_using_list</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_after_using_list.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_using_list">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_using_list</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_accessor">
-<h2><code>resharper_csharp_blank_lines_around_accessor</code> <a class="self" href="#resharper_csharp_blank_lines_around_accessor">#</a></h2>
+<section class="option" id="skala_blank_lines_around_accessor">
+<h2><code>skala_blank_lines_around_accessor</code> <a class="self" href="#skala_blank_lines_around_accessor">#</a></h2>
 <p>Blank lines in declarations — Around property/event accessor</p>
 <table class="facts">
 <tbody>
@@ -75,14 +72,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_accessor</code>, <code>csharp_blank_lines_around_accessor</code>, <code>resharper_blank_lines_around_accessor</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_accessor.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_accessor">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_accessor</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_auto_property">
-<h2><code>resharper_csharp_blank_lines_around_auto_property</code> <a class="self" href="#resharper_csharp_blank_lines_around_auto_property">#</a></h2>
+<section class="option" id="skala_blank_lines_around_auto_property">
+<h2><code>skala_blank_lines_around_auto_property</code> <a class="self" href="#skala_blank_lines_around_auto_property">#</a></h2>
 <p>Blank lines in declarations — Around auto/abstract property/event</p>
 <table class="facts">
 <tbody>
@@ -92,14 +88,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_auto_property</code>, <code>csharp_blank_lines_around_auto_property</code>, <code>resharper_blank_lines_around_auto_property</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_auto_property.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_auto_property">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_auto_property</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_field">
-<h2><code>resharper_csharp_blank_lines_around_field</code> <a class="self" href="#resharper_csharp_blank_lines_around_field">#</a></h2>
+<section class="option" id="skala_blank_lines_around_field">
+<h2><code>skala_blank_lines_around_field</code> <a class="self" href="#skala_blank_lines_around_field">#</a></h2>
 <p>Blank lines in declarations — Around field</p>
 <table class="facts">
 <tbody>
@@ -109,14 +104,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_field</code>, <code>csharp_blank_lines_around_field</code>, <code>resharper_blank_lines_around_field</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_field.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_field">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_field</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_invocable">
-<h2><code>resharper_csharp_blank_lines_around_invocable</code> <a class="self" href="#resharper_csharp_blank_lines_around_invocable">#</a></h2>
+<section class="option" id="skala_blank_lines_around_invocable">
+<h2><code>skala_blank_lines_around_invocable</code> <a class="self" href="#skala_blank_lines_around_invocable">#</a></h2>
 <p>Blank lines in declarations — Around method</p>
 <table class="facts">
 <tbody>
@@ -126,14 +120,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_invocable</code>, <code>csharp_blank_lines_around_invocable</code>, <code>resharper_blank_lines_around_invocable</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_invocable.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_invocable">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_invocable</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_namespace">
-<h2><code>resharper_csharp_blank_lines_around_namespace</code> <a class="self" href="#resharper_csharp_blank_lines_around_namespace">#</a></h2>
+<section class="option" id="skala_blank_lines_around_namespace">
+<h2><code>skala_blank_lines_around_namespace</code> <a class="self" href="#skala_blank_lines_around_namespace">#</a></h2>
 <p>Blank lines in declarations — Around namespace</p>
 <table class="facts">
 <tbody>
@@ -143,14 +136,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_namespace</code>, <code>csharp_blank_lines_around_namespace</code>, <code>resharper_blank_lines_around_namespace</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_namespace.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_namespace">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_namespace</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_property">
-<h2><code>resharper_csharp_blank_lines_around_property</code> <a class="self" href="#resharper_csharp_blank_lines_around_property">#</a></h2>
+<section class="option" id="skala_blank_lines_around_property">
+<h2><code>skala_blank_lines_around_property</code> <a class="self" href="#skala_blank_lines_around_property">#</a></h2>
 <p>Blank lines in declarations — Around property/event</p>
 <table class="facts">
 <tbody>
@@ -160,14 +152,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_property</code>, <code>csharp_blank_lines_around_property</code>, <code>resharper_blank_lines_around_property</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_property.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_property">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_property</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_single_line_accessor">
-<h2><code>resharper_csharp_blank_lines_around_single_line_accessor</code> <a class="self" href="#resharper_csharp_blank_lines_around_single_line_accessor">#</a></h2>
+<section class="option" id="skala_blank_lines_around_single_line_accessor">
+<h2><code>skala_blank_lines_around_single_line_accessor</code> <a class="self" href="#skala_blank_lines_around_single_line_accessor">#</a></h2>
 <p>Blank lines in declarations — Around single line property/event accessor</p>
 <table class="facts">
 <tbody>
@@ -177,14 +168,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_single_line_accessor</code>, <code>csharp_blank_lines_around_single_line_accessor</code>, <code>resharper_blank_lines_around_single_line_accessor</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_accessor.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_accessor">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_accessor</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_single_line_auto_property">
-<h2><code>resharper_csharp_blank_lines_around_single_line_auto_property</code> <a class="self" href="#resharper_csharp_blank_lines_around_single_line_auto_property">#</a></h2>
+<section class="option" id="skala_blank_lines_around_single_line_auto_property">
+<h2><code>skala_blank_lines_around_single_line_auto_property</code> <a class="self" href="#skala_blank_lines_around_single_line_auto_property">#</a></h2>
 <p>Blank lines in declarations — Around single line auto/abstract property/event</p>
 <table class="facts">
 <tbody>
@@ -194,14 +184,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_single_line_auto_property</code>, <code>csharp_blank_lines_around_single_line_auto_property</code>, <code>resharper_blank_lines_around_single_line_auto_property</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_auto_property.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_auto_property">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_auto_property</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_single_line_field">
-<h2><code>resharper_csharp_blank_lines_around_single_line_field</code> <a class="self" href="#resharper_csharp_blank_lines_around_single_line_field">#</a></h2>
+<section class="option" id="skala_blank_lines_around_single_line_field">
+<h2><code>skala_blank_lines_around_single_line_field</code> <a class="self" href="#skala_blank_lines_around_single_line_field">#</a></h2>
 <p>Blank lines in declarations — Around single line field</p>
 <table class="facts">
 <tbody>
@@ -211,14 +200,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_single_line_field</code>, <code>csharp_blank_lines_around_single_line_field</code>, <code>resharper_blank_lines_around_single_line_field</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_field.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_field">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_field</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_single_line_invocable">
-<h2><code>resharper_csharp_blank_lines_around_single_line_invocable</code> <a class="self" href="#resharper_csharp_blank_lines_around_single_line_invocable">#</a></h2>
+<section class="option" id="skala_blank_lines_around_single_line_invocable">
+<h2><code>skala_blank_lines_around_single_line_invocable</code> <a class="self" href="#skala_blank_lines_around_single_line_invocable">#</a></h2>
 <p>Blank lines in declarations — Around single line method</p>
 <table class="facts">
 <tbody>
@@ -228,15 +216,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_single_line_invocable</code>, <code>csharp_blank_lines_around_single_line_invocable</code>, <code>resharper_blank_lines_around_single_line_invocable</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_invocable.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_invocable">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_invocable</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_single_line_property">
-<h2><code>resharper_csharp_blank_lines_around_single_line_property</code> <a class="self" href="#resharper_csharp_blank_lines_around_single_line_property">#</a></h2>
-<p>Blank lines around a single-line property. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6, and it refutes the claim the key's own fixture carried: “a single-line property” is an ACCESSOR-LIST property on one line, <code>public int X { get =&gt; 1; }</code>, where the key is decisive at 2. An expression-bodied <code>public int X =&gt; 1;</code> is governed by NEITHER this key (0, 1, 2, 3, both spellings, on tight and pre-spaced input, in both directions) NOR <code>blank_lines_around_property</code>; <code>{ get; set; }</code> is <code>blank_lines_around_single_line_auto_property</code>'s, confirmed on the same run. Skala applied it to the expression-bodied form and so moved where the oracle could not, which was the whole of its SPURIOUS row. SK-DIV-0092.</p>
+<section class="option" id="skala_blank_lines_around_single_line_property">
+<h2><code>skala_blank_lines_around_single_line_property</code> <a class="self" href="#skala_blank_lines_around_single_line_property">#</a></h2>
+<p>Blank lines around a single-line property. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6, and it refutes the claim the key's own fixture carried: “a single-line property” is an ACCESSOR-LIST property on one line, <code>public int X { get =&gt; 1; }</code>, where the key is decisive at 2. An expression-bodied <code>public int X =&gt; 1;</code> is governed by NEITHER this key (0, 1, 2, 3, both spellings, on tight and pre-spaced input, in both directions) NOR <code>skala_blank_lines_around_property</code>; <code>{ get; set; }</code> is <code>skala_blank_lines_around_single_line_auto_property</code>'s, confirmed on the same run. Skala applied it to the expression-bodied form and so moved where the oracle could not, which was the whole of its SPURIOUS row. SK-DIV-0092.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
@@ -245,14 +232,13 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_single_line_property</code>, <code>csharp_blank_lines_around_single_line_property</code>, <code>resharper_blank_lines_around_single_line_property</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_property.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_property">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_property</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_single_line_type">
-<h2><code>resharper_csharp_blank_lines_around_single_line_type</code> <a class="self" href="#resharper_csharp_blank_lines_around_single_line_type">#</a></h2>
+<section class="option" id="skala_blank_lines_around_single_line_type">
+<h2><code>skala_blank_lines_around_single_line_type</code> <a class="self" href="#skala_blank_lines_around_single_line_type">#</a></h2>
 <p>Blank lines in declarations — Around single-line type</p>
 <table class="facts">
 <tbody>
@@ -262,14 +248,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_single_line_type</code>, <code>csharp_blank_lines_around_single_line_type</code>, <code>resharper_blank_lines_around_single_line_type</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_type.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_type">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_type</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_around_type">
-<h2><code>resharper_csharp_blank_lines_around_type</code> <a class="self" href="#resharper_csharp_blank_lines_around_type">#</a></h2>
+<section class="option" id="skala_blank_lines_around_type">
+<h2><code>skala_blank_lines_around_type</code> <a class="self" href="#skala_blank_lines_around_type">#</a></h2>
 <p>Blank lines in declarations — Around type</p>
 <table class="facts">
 <tbody>
@@ -279,15 +264,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_around_type</code>, <code>csharp_blank_lines_around_type</code>, <code>resharper_blank_lines_around_type</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_type.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_type">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_type</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_inside_namespace">
-<h2><code>resharper_csharp_blank_lines_inside_namespace</code> <a class="self" href="#resharper_csharp_blank_lines_inside_namespace">#</a></h2>
-<p>Blank lines in declarations — Inside namespace. Implemented at M9.1, on the same measurement as <code>blank_lines_inside_type</code>: the oracle pads a block-bodied namespace's braces and the requirement outranks <code>remove_blank_lines_near_braces_in_declarations</code>. ⚠ A file-scoped <code>namespace N;</code> gets nothing — it has no braces to be inside of, and the probe at <code>2</code> returned it byte-identical.</p>
+<section class="option" id="skala_blank_lines_inside_namespace">
+<h2><code>skala_blank_lines_inside_namespace</code> <a class="self" href="#skala_blank_lines_inside_namespace">#</a></h2>
+<p>Blank lines in declarations — Inside namespace. Implemented at M9.1, on the same measurement as <code>skala_blank_lines_inside_type</code>: the oracle pads a block-bodied namespace's braces and the requirement outranks <code>skala_remove_blank_lines_near_braces_in_declarations</code>. ⚠ A file-scoped <code>namespace N;</code> gets nothing — it has no braces to be inside of, and the probe at <code>2</code> returned it byte-identical.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
@@ -296,15 +280,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_inside_namespace</code>, <code>csharp_blank_lines_inside_namespace</code>, <code>resharper_blank_lines_inside_namespace</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_inside_namespace.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_inside_namespace">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_inside_namespace</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_blank_lines_inside_type">
-<h2><code>resharper_csharp_blank_lines_inside_type</code> <a class="self" href="#resharper_csharp_blank_lines_inside_type">#</a></h2>
-<p>Blank lines in declarations — Inside type. Implemented at M9.1. ⚠ The <code>inert</code> reason it carried — &quot;remove_blank_lines_near_braces wins over it by the documented ordering&quot; — was true of Skala and false of the oracle: under this repository's own .editorconfig, which sets <code>remove_blank_lines_near_braces_in_declarations = true</code> and <code>keep_blank_lines_in_declarations = 2</code>, <code>jb cleanupcode</code> 2025.2.6 pads a class, struct, interface, record and enum body with three blank lines at <code>3</code> and five at <code>5</code>. It does not pad a method body, an accessor list or an <code>if</code> block. The requirement outranks both the removal and the cap.</p>
+<section class="option" id="skala_blank_lines_inside_type">
+<h2><code>skala_blank_lines_inside_type</code> <a class="self" href="#skala_blank_lines_inside_type">#</a></h2>
+<p>Blank lines in declarations — Inside type. Implemented at M9.1. ⚠ The <code>inert</code> reason it carried — &quot;remove_blank_lines_near_braces wins over it by the documented ordering&quot; — was true of Skala and false of the oracle: under this repository's own .editorconfig, which sets <code>skala_remove_blank_lines_near_braces_in_declarations = true</code> and <code>skala_keep_blank_lines_in_declarations = 2</code>, <code>jb cleanupcode</code> 2025.2.6 pads a class, struct, interface, record and enum body with three blank lines at <code>3</code> and five at <code>5</code>. It does not pad a method body, an accessor list or an <code>if</code> block. The requirement outranks both the removal and the cap.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
@@ -313,14 +296,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>blank_lines_inside_type</code>, <code>csharp_blank_lines_inside_type</code>, <code>resharper_blank_lines_inside_type</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_inside_type.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_inside_type">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_inside_type</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_keep_blank_lines_in_declarations">
-<h2><code>resharper_csharp_keep_blank_lines_in_declarations</code> <a class="self" href="#resharper_csharp_keep_blank_lines_in_declarations">#</a></h2>
+<section class="option" id="skala_keep_blank_lines_in_declarations">
+<h2><code>skala_keep_blank_lines_in_declarations</code> <a class="self" href="#skala_keep_blank_lines_in_declarations">#</a></h2>
 <p>Blank lines in declarations — Keep max blank lines in declarations</p>
 <table class="facts">
 <tbody>
@@ -330,14 +312,13 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_keep_blank_lines_in_declarations</code>, <code>keep_blank_lines_in_declarations</code>, <code>resharper_keep_blank_lines_in_declarations</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_keep_blank_lines_in_declarations.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_keep_blank_lines_in_declarations">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_keep_blank_lines_in_declarations</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_csharp_remove_blank_lines_near_braces_in_declarations">
-<h2><code>resharper_csharp_remove_blank_lines_near_braces_in_declarations</code> <a class="self" href="#resharper_csharp_remove_blank_lines_near_braces_in_declarations">#</a></h2>
+<section class="option" id="skala_remove_blank_lines_near_braces_in_declarations">
+<h2><code>skala_remove_blank_lines_near_braces_in_declarations</code> <a class="self" href="#skala_remove_blank_lines_near_braces_in_declarations">#</a></h2>
 <p>Blank lines in declarations — Remove blank lines after '{' and before '}' in declarations</p>
 <table class="facts">
 <tbody>
@@ -347,7 +328,6 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Also spelled</th><td><code>csharp_remove_blank_lines_near_braces_in_declarations</code>, <code>remove_blank_lines_near_braces_in_declarations</code>, <code>resharper_remove_blank_lines_near_braces_in_declarations</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_remove_blank_lines_near_braces_in_declarations.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_remove_blank_lines_near_braces_in_declarations">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_remove_blank_lines_near_braces_in_declarations</a></td></tr>
 </tbody>

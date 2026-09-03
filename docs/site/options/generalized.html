@@ -12,7 +12,7 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Generalized</h1>
-<p class="lede">21 keys.</p>
+<p class="lede">20 keys.</p>
 <section class="option" id="csharp_space_after_keywords_in_control_flow_statements">
 <h2><code>csharp_space_after_keywords_in_control_flow_statements</code> <a class="self" href="#csharp_space_after_keywords_in_control_flow_statements">#</a></h2>
 <p>Generalized ReSharper property; sets every option it expands to at once. Measured: at <code>false</code> the oracle closes up all nine control-flow keywords at once — <code>if(b)</code>, <code>while(b)</code>, <code>for(…)</code>, <code>foreach(…)</code>, <code>switch(b)</code>, <code>catch(…)</code>, <code>lock(o)</code>, <code>using(…)</code>, <code>fixed(…)</code>. ⚠ The <code>resharper_</code> spelling of the same ReSharper property is also in this export, and the pair is two registry entries naming one group rather than two spellings of one option — so <code>OptionResolver.Expand</code> settles the overlap by position and the oracle does the same. The earlier claim that the more specific spelling takes it was never true of <code>Expand</code>, whose specificity tie-break is only reachable for two assignments on one line.</p>
@@ -24,7 +24,7 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_catch_parentheses"><code>resharper_csharp_space_before_catch_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_fixed_parentheses"><code>resharper_csharp_space_before_fixed_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_for_parentheses"><code>resharper_csharp_space_before_for_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_foreach_parentheses"><code>resharper_csharp_space_before_foreach_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_if_parentheses"><code>resharper_csharp_space_before_if_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_lock_parentheses"><code>resharper_csharp_space_before_lock_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_switch_parentheses"><code>resharper_csharp_space_before_switch_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_using_parentheses"><code>resharper_csharp_space_before_using_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_while_parentheses"><code>resharper_csharp_space_before_while_parentheses</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/before-parentheses-in-statements.html#skala_space_before_catch_parentheses"><code>skala_space_before_catch_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_fixed_parentheses"><code>skala_space_before_fixed_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_for_parentheses"><code>skala_space_before_for_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_foreach_parentheses"><code>skala_space_before_foreach_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_if_parentheses"><code>skala_space_before_if_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_lock_parentheses"><code>skala_space_before_lock_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_switch_parentheses"><code>skala_space_before_switch_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_using_parentheses"><code>skala_space_before_using_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_while_parentheses"><code>skala_space_before_while_parentheses</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/csharp_space_after_keywords_in_control_flow_statements.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
@@ -41,7 +41,7 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/around-array-brackets.html#resharper_csharp_space_before_array_access_brackets"><code>resharper_csharp_space_before_array_access_brackets</code></a>, <a href="../options/around-array-brackets.html#resharper_csharp_space_before_array_rank_brackets"><code>resharper_csharp_space_before_array_rank_brackets</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/around-array-brackets.html#skala_space_before_array_access_brackets"><code>skala_space_before_array_access_brackets</code></a>, <a href="../options/around-array-brackets.html#skala_space_before_array_rank_brackets"><code>skala_space_before_array_rank_brackets</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/csharp_space_before_open_square_brackets.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
@@ -58,7 +58,7 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/before-other-parentheses.html#resharper_csharp_space_before_empty_method_call_parentheses"><code>resharper_csharp_space_before_empty_method_call_parentheses</code></a>, <a href="../options/before-other-parentheses.html#resharper_csharp_space_before_method_call_parentheses"><code>resharper_csharp_space_before_method_call_parentheses</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/before-other-parentheses.html#skala_space_before_empty_method_call_parentheses"><code>skala_space_before_empty_method_call_parentheses</code></a>, <a href="../options/before-other-parentheses.html#skala_space_before_method_call_parentheses"><code>skala_space_before_method_call_parentheses</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/csharp_space_between_method_call_name_and_opening_parenthesis.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
@@ -75,7 +75,7 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/before-other-parentheses.html#resharper_csharp_space_before_empty_method_parentheses"><code>resharper_csharp_space_before_empty_method_parentheses</code></a>, <a href="../options/before-other-parentheses.html#resharper_csharp_space_before_method_parentheses"><code>resharper_csharp_space_before_method_parentheses</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/before-other-parentheses.html#skala_space_before_empty_method_parentheses"><code>skala_space_before_empty_method_parentheses</code></a>, <a href="../options/before-other-parentheses.html#skala_space_before_method_parentheses"><code>skala_space_before_method_parentheses</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/csharp_space_between_method_declaration_name_and_open_parenthesis.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
@@ -92,7 +92,7 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/around-array-brackets.html#resharper_csharp_space_within_array_access_brackets"><code>resharper_csharp_space_within_array_access_brackets</code></a>, <a href="../options/around-array-brackets.html#resharper_csharp_space_within_array_rank_brackets"><code>resharper_csharp_space_within_array_rank_brackets</code></a>, <a href="../options/attributes.html#resharper_csharp_space_within_attribute_brackets"><code>resharper_csharp_space_within_attribute_brackets</code></a>, <a href="../options/around-array-brackets.html#resharper_csharp_space_within_list_pattern_brackets"><code>resharper_csharp_space_within_list_pattern_brackets</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/around-array-brackets.html#skala_space_within_array_access_brackets"><code>skala_space_within_array_access_brackets</code></a>, <a href="../options/around-array-brackets.html#skala_space_within_array_rank_brackets"><code>skala_space_within_array_rank_brackets</code></a>, <a href="../options/attributes.html#skala_space_within_attribute_brackets"><code>skala_space_within_attribute_brackets</code></a>, <a href="../options/around-array-brackets.html#skala_space_within_list_pattern_brackets"><code>skala_space_within_list_pattern_brackets</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/csharp_space_between_square_brackets.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
@@ -109,7 +109,7 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/general.html#resharper_csharp_indent_size"><code>resharper_csharp_indent_size</code></a>, <a href="../options/tabs-and-indents.html#resharper_xmldoc_indent_size"><code>resharper_xmldoc_indent_size</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/general.html#skala_indent_size"><code>skala_indent_size</code></a>, <a href="../options/tabs-and-indents.html#skala_xmldoc_indent_size"><code>skala_xmldoc_indent_size</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/indent_size.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
@@ -126,48 +126,15 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/general.html#resharper_csharp_indent_style"><code>resharper_csharp_indent_style</code></a>, <a href="../options/tabs-and-indents.html#resharper_xmldoc_indent_style"><code>resharper_xmldoc_indent_style</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/general.html#skala_indent_style"><code>skala_indent_style</code></a>, <a href="../options/tabs-and-indents.html#skala_xmldoc_indent_style"><code>skala_xmldoc_indent_style</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/indent_style.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_alignment_tab_fill_style">
-<h2><code>resharper_alignment_tab_fill_style</code> <a class="self" href="#resharper_alignment_tab_fill_style">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once. Unreachable for two independent reasons, both measured. (1) Masked by <code>indent_style = space</code>: all three values return an 18-file probe byte-identical one key away from the export. Under <code>indent_style = tab</code> all three separate, and <code>use_tabs_only</code> and <code>optimal_fill</code> separate from each other as well — three distinct spellings of the same alignment column, which is SK-DIV-0032's table. (2) The corpus has no per-directory <code>.editorconfig</code>, so no fixture under a tab configuration can exist to carry it. ⚠ Reason (2) no longer says Skala writes one layout at every value: <code>resharper_csharp_alignment_tab_fill_style</code> writes all three as of SK-DIV-0032's fix, and what is left is the fixture.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>use_spaces</code>, <code>use_tabs_only</code>, <code>optimal_fill</code></td></tr>
-<tr><th>Default</th><td><code>use_spaces</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>any</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/align-multiline-constructs.html#resharper_csharp_alignment_tab_fill_style"><code>resharper_csharp_alignment_tab_fill_style</code></a>, <a href="../options/tabs-and-indents.html#resharper_xmldoc_alignment_tab_fill_style"><code>resharper_xmldoc_alignment_tab_fill_style</code></a></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_csharp_space_after_unary_operator">
-<h2><code>resharper_csharp_space_after_unary_operator</code> <a class="self" href="#resharper_csharp_space_after_unary_operator">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
-<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
-<tr><th>Language</th><td>any</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/after-unary-operators.html#resharper_csharp_space_after_ampersand_op"><code>resharper_csharp_space_after_ampersand_op</code></a>, <a href="../options/after-unary-operators.html#resharper_csharp_space_after_asterik_op"><code>resharper_csharp_space_after_asterik_op</code></a>, <a href="../options/after-unary-operators.html#resharper_csharp_space_after_logical_not_op"><code>resharper_csharp_space_after_logical_not_op</code></a>, <a href="../options/after-unary-operators.html#resharper_csharp_space_after_unary_minus_op"><code>resharper_csharp_space_after_unary_minus_op</code></a>, <a href="../options/after-unary-operators.html#resharper_csharp_space_after_unary_plus_op"><code>resharper_csharp_space_after_unary_plus_op</code></a></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_csharp_space_after_unary_operator.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_int_align">
-<h2><code>resharper_int_align</code> <a class="self" href="#resharper_int_align">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once. ⚠ Two recorded claims about this key are refuted, and it is measurable because of it. (1) &quot;<code>resharper_int_align = true</code> alone produces no alignment from the oracle&quot; is wrong: at <code>true</code> the oracle pads ten of an eighteen-file probe — fields, properties, methods, locals, assignments, trailing comments, switch sections, switch-expression arms, enum initializers, chopped parameter lists. (2) &quot;Nothing applies the expansion; OptionResolver resolves keys and aliases and leaves generalized properties alone&quot; is stale — OptionResolver.Expand has written each generalized key's value into the keys it names since the expansion work, so Skala moves too. Both engines therefore move on constructs/alignment/int-align.cs, and the sweep's verdict there is DIVERGENT with the baseline agreeing: they agree at <code>false</code> (the export's value) and disagree at <code>true</code>, on one line. The whole divergence is an interaction inside the family — with <code>int_align_methods</code> and <code>int_align_parameters</code> both on, the oracle pads <em>inside</em> the parameter list (<code>void Method(int                a) { }</code>) and Skala pads after the <code>)</code> (<code>void Method(int a)                { }</code>) — which neither key shows when flipped alone.</p>
+<section class="option" id="skala_int_align">
+<h2><code>skala_int_align</code> <a class="self" href="#skala_int_align">#</a></h2>
+<p>Generalized ReSharper property; sets every option it expands to at once. ⚠ Two recorded claims about this key are refuted, and it is measurable because of it. (1) &quot;<code>skala_int_align = true</code> alone produces no alignment from the oracle&quot; is wrong: at <code>true</code> the oracle pads ten of an eighteen-file probe — fields, properties, methods, locals, assignments, trailing comments, switch sections, switch-expression arms, enum initializers, chopped parameter lists. (2) &quot;Nothing applies the expansion; OptionResolver resolves keys and aliases and leaves generalized properties alone&quot; is stale — OptionResolver.Expand has written each generalized key's value into the keys it names since the expansion work, so Skala moves too. Both engines therefore move on constructs/alignment/int-align.cs, and the sweep's verdict there is DIVERGENT with the baseline agreeing: they agree at <code>false</code> (the export's value) and disagree at <code>true</code>, on one line. The whole divergence is an interaction inside the family — with <code>skala_int_align_methods</code> and <code>skala_int_align_parameters</code> both on, the oracle pads <em>inside</em> the parameter list (<code>void Method(int                a) { }</code>) and Skala pads after the <code>)</code> (<code>void Method(int a)                { }</code>) — which neither key shows when flipped alone.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -176,14 +143,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_assignments"><code>resharper_csharp_int_align_assignments</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_binary_expressions"><code>resharper_csharp_int_align_binary_expressions</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_comments"><code>resharper_csharp_int_align_comments</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_fields"><code>resharper_csharp_int_align_fields</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_invocations"><code>resharper_csharp_int_align_invocations</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_methods"><code>resharper_csharp_int_align_methods</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_nested_ternary"><code>resharper_csharp_int_align_nested_ternary</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_parameters"><code>resharper_csharp_int_align_parameters</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_properties"><code>resharper_csharp_int_align_properties</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_property_patterns"><code>resharper_csharp_int_align_property_patterns</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_switch_expressions"><code>resharper_csharp_int_align_switch_expressions</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_switch_sections"><code>resharper_csharp_int_align_switch_sections</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_variables"><code>resharper_csharp_int_align_variables</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/align-similar-code-in-columns.html#skala_int_align_assignments"><code>skala_int_align_assignments</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_binary_expressions"><code>skala_int_align_binary_expressions</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_comments"><code>skala_int_align_comments</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_fields"><code>skala_int_align_fields</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_invocations"><code>skala_int_align_invocations</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_methods"><code>skala_int_align_methods</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_nested_ternary"><code>skala_int_align_nested_ternary</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_parameters"><code>skala_int_align_parameters</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_properties"><code>skala_int_align_properties</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_property_patterns"><code>skala_int_align_property_patterns</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_switch_expressions"><code>skala_int_align_switch_expressions</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_switch_sections"><code>skala_int_align_switch_sections</code></a>, <a href="../options/align-similar-code-in-columns.html#skala_int_align_variables"><code>skala_int_align_variables</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_keep_user_linebreaks">
-<h2><code>resharper_keep_user_linebreaks</code> <a class="self" href="#resharper_keep_user_linebreaks">#</a></h2>
+<section class="option" id="skala_keep_user_linebreaks">
+<h2><code>skala_keep_user_linebreaks</code> <a class="self" href="#skala_keep_user_linebreaks">#</a></h2>
 <p>Generalized ReSharper property; sets every option it expands to at once.</p>
 <table class="facts">
 <tbody>
@@ -193,14 +160,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/general.html#resharper_csharp_keep_existing_linebreaks"><code>resharper_csharp_keep_existing_linebreaks</code></a>, <a href="../options/tag-content.html#resharper_xmldoc_keep_user_linebreaks"><code>resharper_xmldoc_keep_user_linebreaks</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/general.html#skala_keep_existing_linebreaks"><code>skala_keep_existing_linebreaks</code></a>, <a href="../options/tag-content.html#skala_xmldoc_keep_user_linebreaks"><code>skala_xmldoc_keep_user_linebreaks</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/blank-lines/after-a-multiline-statement.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_place_attribute_on_same_line">
-<h2><code>resharper_place_attribute_on_same_line</code> <a class="self" href="#resharper_place_attribute_on_same_line">#</a></h2>
+<section class="option" id="skala_place_attribute_on_same_line">
+<h2><code>skala_place_attribute_on_same_line</code> <a class="self" href="#skala_place_attribute_on_same_line">#</a></h2>
 <p>Generalized ReSharper property; sets every option it expands to at once.</p>
 <table class="facts">
 <tbody>
@@ -210,14 +177,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/arrangement-of-attributes.html#resharper_csharp_place_accessor_attribute_on_same_line"><code>resharper_csharp_place_accessor_attribute_on_same_line</code></a>, <a href="../options/arrangement-of-attributes.html#resharper_csharp_place_accessorholder_attribute_on_same_line"><code>resharper_csharp_place_accessorholder_attribute_on_same_line</code></a>, <a href="../options/arrangement-of-attributes.html#resharper_csharp_place_field_attribute_on_same_line"><code>resharper_csharp_place_field_attribute_on_same_line</code></a>, <a href="../options/arrangement-of-attributes.html#resharper_csharp_place_method_attribute_on_same_line"><code>resharper_csharp_place_method_attribute_on_same_line</code></a>, <a href="../options/arrangement-of-attributes.html#resharper_csharp_place_record_field_attribute_on_same_line"><code>resharper_csharp_place_record_field_attribute_on_same_line</code></a>, <a href="../options/arrangement-of-attributes.html#resharper_csharp_place_type_attribute_on_same_line"><code>resharper_csharp_place_type_attribute_on_same_line</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/arrangement-of-attributes.html#skala_place_accessor_attribute_on_same_line"><code>skala_place_accessor_attribute_on_same_line</code></a>, <a href="../options/arrangement-of-attributes.html#skala_place_accessorholder_attribute_on_same_line"><code>skala_place_accessorholder_attribute_on_same_line</code></a>, <a href="../options/arrangement-of-attributes.html#skala_place_field_attribute_on_same_line"><code>skala_place_field_attribute_on_same_line</code></a>, <a href="../options/arrangement-of-attributes.html#skala_place_method_attribute_on_same_line"><code>skala_place_method_attribute_on_same_line</code></a>, <a href="../options/arrangement-of-attributes.html#skala_place_record_field_attribute_on_same_line"><code>skala_place_record_field_attribute_on_same_line</code></a>, <a href="../options/arrangement-of-attributes.html#skala_place_type_attribute_on_same_line"><code>skala_place_type_attribute_on_same_line</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/preservation/attributes.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_space_after_keywords_in_control_flow_statements">
-<h2><code>resharper_space_after_keywords_in_control_flow_statements</code> <a class="self" href="#resharper_space_after_keywords_in_control_flow_statements">#</a></h2>
+<section class="option" id="skala_space_after_keywords_in_control_flow_statements">
+<h2><code>skala_space_after_keywords_in_control_flow_statements</code> <a class="self" href="#skala_space_after_keywords_in_control_flow_statements">#</a></h2>
 <p>Generalized ReSharper property; sets every option it expands to at once.</p>
 <table class="facts">
 <tbody>
@@ -227,14 +194,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_catch_parentheses"><code>resharper_csharp_space_before_catch_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_fixed_parentheses"><code>resharper_csharp_space_before_fixed_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_for_parentheses"><code>resharper_csharp_space_before_for_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_foreach_parentheses"><code>resharper_csharp_space_before_foreach_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_if_parentheses"><code>resharper_csharp_space_before_if_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_lock_parentheses"><code>resharper_csharp_space_before_lock_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_switch_parentheses"><code>resharper_csharp_space_before_switch_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_using_parentheses"><code>resharper_csharp_space_before_using_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_while_parentheses"><code>resharper_csharp_space_before_while_parentheses</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/before-parentheses-in-statements.html#skala_space_before_catch_parentheses"><code>skala_space_before_catch_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_fixed_parentheses"><code>skala_space_before_fixed_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_for_parentheses"><code>skala_space_before_for_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_foreach_parentheses"><code>skala_space_before_foreach_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_if_parentheses"><code>skala_space_before_if_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_lock_parentheses"><code>skala_space_before_lock_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_switch_parentheses"><code>skala_space_before_switch_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_using_parentheses"><code>skala_space_before_using_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#skala_space_before_while_parentheses"><code>skala_space_before_while_parentheses</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_space_after_keywords_in_control_flow_statements.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_space_around_member_access_operator">
-<h2><code>resharper_space_around_member_access_operator</code> <a class="self" href="#resharper_space_around_member_access_operator">#</a></h2>
+<section class="option" id="skala_space_after_unary_operator">
+<h2><code>skala_space_after_unary_operator</code> <a class="self" href="#skala_space_after_unary_operator">#</a></h2>
 <p>Generalized ReSharper property; sets every option it expands to at once.</p>
 <table class="facts">
 <tbody>
@@ -244,14 +211,31 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/around-binary-operators.html#resharper_csharp_space_around_arrow_op"><code>resharper_csharp_space_around_arrow_op</code></a>, <a href="../options/other.html#resharper_csharp_space_around_dot"><code>resharper_csharp_space_around_dot</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/after-unary-operators.html#skala_space_after_ampersand_op"><code>skala_space_after_ampersand_op</code></a>, <a href="../options/after-unary-operators.html#skala_space_after_asterik_op"><code>skala_space_after_asterik_op</code></a>, <a href="../options/after-unary-operators.html#skala_space_after_logical_not_op"><code>skala_space_after_logical_not_op</code></a>, <a href="../options/after-unary-operators.html#skala_space_after_unary_minus_op"><code>skala_space_after_unary_minus_op</code></a>, <a href="../options/after-unary-operators.html#skala_space_after_unary_plus_op"><code>skala_space_after_unary_plus_op</code></a></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_csharp_space_after_unary_operator.cs</code></td></tr>
+<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
+</tbody>
+</table>
+</section>
+<section class="option" id="skala_space_around_member_access_operator">
+<h2><code>skala_space_around_member_access_operator</code> <a class="self" href="#skala_space_around_member_access_operator">#</a></h2>
+<p>Generalized ReSharper property; sets every option it expands to at once.</p>
+<table class="facts">
+<tbody>
+<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
+<tr><th>Default</th><td><code>false</code></td></tr>
+<tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
+<tr><th>Language</th><td>any</td></tr>
+<tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Expands to</th><td><a href="../options/around-binary-operators.html#skala_space_around_arrow_op"><code>skala_space_around_arrow_op</code></a>, <a href="../options/other.html#skala_space_around_dot"><code>skala_space_around_dot</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_space_around_member_access_operator.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_space_around_ternary_operator">
-<h2><code>resharper_space_around_ternary_operator</code> <a class="self" href="#resharper_space_around_ternary_operator">#</a></h2>
+<section class="option" id="skala_space_around_ternary_operator">
+<h2><code>skala_space_around_ternary_operator</code> <a class="self" href="#skala_space_around_ternary_operator">#</a></h2>
 <p>Generalized ReSharper property; sets every option it expands to at once.</p>
 <table class="facts">
 <tbody>
@@ -261,14 +245,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/in-ternary-operator.html#resharper_csharp_space_after_ternary_colon"><code>resharper_csharp_space_after_ternary_colon</code></a>, <a href="../options/in-ternary-operator.html#resharper_csharp_space_after_ternary_quest"><code>resharper_csharp_space_after_ternary_quest</code></a>, <a href="../options/in-ternary-operator.html#resharper_csharp_space_before_ternary_colon"><code>resharper_csharp_space_before_ternary_colon</code></a>, <a href="../options/in-ternary-operator.html#resharper_csharp_space_before_ternary_quest"><code>resharper_csharp_space_before_ternary_quest</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/in-ternary-operator.html#skala_space_after_ternary_colon"><code>skala_space_after_ternary_colon</code></a>, <a href="../options/in-ternary-operator.html#skala_space_after_ternary_quest"><code>skala_space_after_ternary_quest</code></a>, <a href="../options/in-ternary-operator.html#skala_space_before_ternary_colon"><code>skala_space_before_ternary_colon</code></a>, <a href="../options/in-ternary-operator.html#skala_space_before_ternary_quest"><code>skala_space_before_ternary_quest</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_space_around_ternary_operator.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_space_before_open_square_brackets">
-<h2><code>resharper_space_before_open_square_brackets</code> <a class="self" href="#resharper_space_before_open_square_brackets">#</a></h2>
+<section class="option" id="skala_space_before_open_square_brackets">
+<h2><code>skala_space_before_open_square_brackets</code> <a class="self" href="#skala_space_before_open_square_brackets">#</a></h2>
 <p>Generalized ReSharper property; sets every option it expands to at once.</p>
 <table class="facts">
 <tbody>
@@ -278,14 +262,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/around-array-brackets.html#resharper_csharp_space_before_array_access_brackets"><code>resharper_csharp_space_before_array_access_brackets</code></a>, <a href="../options/around-array-brackets.html#resharper_csharp_space_before_array_rank_brackets"><code>resharper_csharp_space_before_array_rank_brackets</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/around-array-brackets.html#skala_space_before_array_access_brackets"><code>skala_space_before_array_access_brackets</code></a>, <a href="../options/around-array-brackets.html#skala_space_before_array_rank_brackets"><code>skala_space_before_array_rank_brackets</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_space_before_open_square_brackets.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_space_between_method_call_name_and_opening_parenthesis">
-<h2><code>resharper_space_between_method_call_name_and_opening_parenthesis</code> <a class="self" href="#resharper_space_between_method_call_name_and_opening_parenthesis">#</a></h2>
+<section class="option" id="skala_space_between_method_call_name_and_opening_parenthesis">
+<h2><code>skala_space_between_method_call_name_and_opening_parenthesis</code> <a class="self" href="#skala_space_between_method_call_name_and_opening_parenthesis">#</a></h2>
 <p>Generalized ReSharper property; sets every option it expands to at once.</p>
 <table class="facts">
 <tbody>
@@ -295,14 +279,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/before-other-parentheses.html#resharper_csharp_space_before_empty_method_call_parentheses"><code>resharper_csharp_space_before_empty_method_call_parentheses</code></a>, <a href="../options/before-other-parentheses.html#resharper_csharp_space_before_method_call_parentheses"><code>resharper_csharp_space_before_method_call_parentheses</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/before-other-parentheses.html#skala_space_before_empty_method_call_parentheses"><code>skala_space_before_empty_method_call_parentheses</code></a>, <a href="../options/before-other-parentheses.html#skala_space_before_method_call_parentheses"><code>skala_space_before_method_call_parentheses</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_space_between_method_call_name_and_opening_parenthesis.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_space_between_method_declaration_name_and_open_parenthesis">
-<h2><code>resharper_space_between_method_declaration_name_and_open_parenthesis</code> <a class="self" href="#resharper_space_between_method_declaration_name_and_open_parenthesis">#</a></h2>
+<section class="option" id="skala_space_between_method_declaration_name_and_open_parenthesis">
+<h2><code>skala_space_between_method_declaration_name_and_open_parenthesis</code> <a class="self" href="#skala_space_between_method_declaration_name_and_open_parenthesis">#</a></h2>
 <p>Generalized ReSharper property; sets every option it expands to at once.</p>
 <table class="facts">
 <tbody>
@@ -312,15 +296,15 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/before-other-parentheses.html#resharper_csharp_space_before_empty_method_parentheses"><code>resharper_csharp_space_before_empty_method_parentheses</code></a>, <a href="../options/before-other-parentheses.html#resharper_csharp_space_before_method_parentheses"><code>resharper_csharp_space_before_method_parentheses</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/before-other-parentheses.html#skala_space_before_empty_method_parentheses"><code>skala_space_before_empty_method_parentheses</code></a>, <a href="../options/before-other-parentheses.html#skala_space_before_method_parentheses"><code>skala_space_before_method_parentheses</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_space_between_method_declaration_name_and_open_parenthesis.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_space_between_parentheses_of_control_flow_statements">
-<h2><code>resharper_space_between_parentheses_of_control_flow_statements</code> <a class="self" href="#resharper_space_between_parentheses_of_control_flow_statements">#</a></h2>
-<p>Generalized ReSharper property; a space inside the parentheses of each of the nine control-flow keywords at once. ⚠ Recorded as inert until M11 asked the oracle again, and it is not: at <code>true</code> it writes <code>if ( b )</code>, <code>while ( b )</code>, <code>for ( … )</code>, <code>foreach ( … )</code>, <code>switch ( b )</code>, <code>catch ( … )</code>, <code>lock ( o )</code>, <code>using ( … )</code> and <code>fixed ( … )</code>, and a <code>space_within_if_parentheses = false</code> written after it takes the <code>if</code> back on its own — which is the expansion model exactly. The <code>expands</code> list was empty for the same wrong reason, so nothing honoured it either.</p>
+<section class="option" id="skala_space_between_parentheses_of_control_flow_statements">
+<h2><code>skala_space_between_parentheses_of_control_flow_statements</code> <a class="self" href="#skala_space_between_parentheses_of_control_flow_statements">#</a></h2>
+<p>Generalized ReSharper property; a space inside the parentheses of each of the nine control-flow keywords at once. ⚠ Recorded as inert until M11 asked the oracle again, and it is not: at <code>true</code> it writes <code>if ( b )</code>, <code>while ( b )</code>, <code>for ( … )</code>, <code>foreach ( … )</code>, <code>switch ( b )</code>, <code>catch ( … )</code>, <code>lock ( o )</code>, <code>using ( … )</code> and <code>fixed ( … )</code>, and a <code>skala_space_within_if_parentheses = false</code> written after it takes the <code>if</code> back on its own — which is the expansion model exactly. The <code>expands</code> list was empty for the same wrong reason, so nothing honoured it either.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -329,14 +313,14 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_catch_parentheses"><code>resharper_csharp_space_within_catch_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_fixed_parentheses"><code>resharper_csharp_space_within_fixed_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_for_parentheses"><code>resharper_csharp_space_within_for_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_foreach_parentheses"><code>resharper_csharp_space_within_foreach_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_if_parentheses"><code>resharper_csharp_space_within_if_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_lock_parentheses"><code>resharper_csharp_space_within_lock_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_switch_parentheses"><code>resharper_csharp_space_within_switch_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_using_parentheses"><code>resharper_csharp_space_within_using_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_while_parentheses"><code>resharper_csharp_space_within_while_parentheses</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/within-parentheses-in-statements.html#skala_space_within_catch_parentheses"><code>skala_space_within_catch_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#skala_space_within_fixed_parentheses"><code>skala_space_within_fixed_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#skala_space_within_for_parentheses"><code>skala_space_within_for_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#skala_space_within_foreach_parentheses"><code>skala_space_within_foreach_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#skala_space_within_if_parentheses"><code>skala_space_within_if_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#skala_space_within_lock_parentheses"><code>skala_space_within_lock_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#skala_space_within_switch_parentheses"><code>skala_space_within_switch_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#skala_space_within_using_parentheses"><code>skala_space_within_using_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#skala_space_within_while_parentheses"><code>skala_space_within_while_parentheses</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_space_between_parentheses_of_control_flow_statements.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
-<section class="option" id="resharper_space_between_square_brackets">
-<h2><code>resharper_space_between_square_brackets</code> <a class="self" href="#resharper_space_between_square_brackets">#</a></h2>
+<section class="option" id="skala_space_between_square_brackets">
+<h2><code>skala_space_between_square_brackets</code> <a class="self" href="#skala_space_between_square_brackets">#</a></h2>
 <p>Generalized ReSharper property; sets every option it expands to at once.</p>
 <table class="facts">
 <tbody>
@@ -346,7 +330,7 @@
 <tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/around-array-brackets.html#resharper_csharp_space_within_array_access_brackets"><code>resharper_csharp_space_within_array_access_brackets</code></a>, <a href="../options/around-array-brackets.html#resharper_csharp_space_within_array_rank_brackets"><code>resharper_csharp_space_within_array_rank_brackets</code></a>, <a href="../options/attributes.html#resharper_csharp_space_within_attribute_brackets"><code>resharper_csharp_space_within_attribute_brackets</code></a>, <a href="../options/around-array-brackets.html#resharper_csharp_space_within_list_pattern_brackets"><code>resharper_csharp_space_within_list_pattern_brackets</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/around-array-brackets.html#skala_space_within_array_access_brackets"><code>skala_space_within_array_access_brackets</code></a>, <a href="../options/around-array-brackets.html#skala_space_within_array_rank_brackets"><code>skala_space_within_array_rank_brackets</code></a>, <a href="../options/attributes.html#skala_space_within_attribute_brackets"><code>skala_space_within_attribute_brackets</code></a>, <a href="../options/around-array-brackets.html#skala_space_within_list_pattern_brackets"><code>skala_space_within_list_pattern_brackets</code></a></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_space_between_square_brackets.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
@@ -354,7 +338,7 @@
 </section>
 <section class="option" id="tab_width">
 <h2><code>tab_width</code> <a class="self" href="#tab_width">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified not a formatter option. Probed at 1, 4 and 8 under <code>indent_style = tab</code> on a four-level tab-indented fixture, and again with <code>resharper_csharp_max_line_length = 60</code> so that column arithmetic decides a wrap. Flat in both engines at every value. The positive control is on the same fixture: <code>resharper_csharp_max_line_length</code> at 120 against 40 is CONFORMANT with two distinct outputs, so the fixture's layout does depend on columns — a tab width is a display width, and one indent level is one tab whatever it counts as. <code>resharper_csharp_indent_size</code> at 4 against 8 is likewise flat under <code>indent_style = tab</code>.</p>
+<p>Generalized ReSharper property; sets every option it expands to at once. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified not a formatter option. Probed at 1, 4 and 8 under <code>indent_style = tab</code> on a four-level tab-indented fixture, and again with <code>skala_max_line_length = 60</code> so that column arithmetic decides a wrap. Flat in both engines at every value. The positive control is on the same fixture: <code>skala_max_line_length</code> at 120 against 40 is CONFORMANT with two distinct outputs, so the fixture's layout does depend on columns — a tab width is a display width, and one indent level is one tab whatever it counts as. <code>skala_indent_size</code> at 4 against 8 is likewise flat under <code>indent_style = tab</code>.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
@@ -363,7 +347,7 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Expands to</th><td><a href="../options/general.html#resharper_csharp_tab_width"><code>resharper_csharp_tab_width</code></a>, <a href="../options/tabs-and-indents.html#resharper_xmldoc_tab_width"><code>resharper_xmldoc_tab_width</code></a></td></tr>
+<tr><th>Expands to</th><td><a href="../options/general.html#skala_tab_width"><code>skala_tab_width</code></a>, <a href="../options/tabs-and-indents.html#skala_xmldoc_tab_width"><code>skala_xmldoc_tab_width</code></a></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
