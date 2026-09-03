@@ -156,7 +156,19 @@ public sealed class ConfigCommandTests {
         // milestone, so the assertion is that it is honest rather than that it is a number.
         var implemented = OptionRegistry.All.Count(static info => info.Tier == OptionTier.A);
         Assert.Contains(
-            $"Registry-wide — A (implemented): {implemented}",
+            $"Registry-wide — A (implemented, pinned by an oracle fixture): {implemented}",
+            run.StandardOutput,
+            StringComparison.Ordinal
+        );
+
+        // ⚠ Tier D is labelled "not pinned by a fixture", and the wording is the point rather than
+        // decoration. It read "not implemented", which is false: Tier A is the narrow claim that the
+        // formatter reads the option *and* a fixture pins it, so D has only ever meant "not A", and
+        // 70 of the 161 C+D options are read by production code by name — `skala_max_line_length`,
+        // the column limit the wrapping engine runs on, among them.
+        Assert.DoesNotContain("D (not implemented)", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains(
+            $"D (not pinned by a fixture): {OptionRegistry.All.Count(static info => info.Tier == OptionTier.D)}",
             run.StandardOutput,
             StringComparison.Ordinal
         );
