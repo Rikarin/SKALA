@@ -287,11 +287,22 @@ jobs:
       # measurement behind them name one commit, and so that the next run has something to measure
       # against the moment somebody pushes it. `git push --tags` is in the publish job, behind the
       # flag, with everything else that leaves this machine.
+      # ⚠ **A git identity, because `git tag -a` is a commit-shaped object and a runner has none.**
+      # The release failed here on its first real run — `fatal: empty ident name` — and it failed in
+      # `collect`, *after* three OS legs had built, tested, packed and smoke-tested the packages.
+      # cross-platform.yml has set an identity for this reason since it started driving real git; this
+      # workflow never did, because until the promotion landed no dispatch had ever reached an
+      # annotated tag.
+      - name: Give git an identity
+        run: |
+          git config user.email "release@skala.invalid"
+          git config user.name "Skala Release"
+
       - name: Create the tag, locally
         if: github.event.inputs.release == 'true'
         run: |
           git tag -a "${{ needs.measure.outputs.tag }}" \
-            -m "Skala ${{ needs.measure.outputs.version }} — ${{ needs.measure.outputs.bump }} against ${{ needs.measure.outputs.baseline }}"
+            -m "Skala ${{ needs.measure.outputs.version }} — ${{ needs.measure.outputs.bump }} against ${{ needs.measure.outputs.baseline || 'no previous release' }}"
           git show-ref --tags "${{ needs.measure.outputs.tag }}"
 
       # ⚠ The last step, and it is a message rather than an action. See this file's header.
@@ -379,11 +390,22 @@ jobs:
       # `.git/config`. Every other use of checkout here only reads. This one pushes, on the
       # credential checkout left behind, and it runs only on a `release: true` dispatch — so the
       # first real publish is also the first test of it. If it fails to authenticate, that is why.
+      # ⚠ **A git identity, because `git tag -a` is a commit-shaped object and a runner has none.**
+      # The release failed here on its first real run — `fatal: empty ident name` — and it failed in
+      # `collect`, *after* three OS legs had built, tested, packed and smoke-tested the packages.
+      # cross-platform.yml has set an identity for this reason since it started driving real git; this
+      # workflow never did, because until the promotion landed no dispatch had ever reached an
+      # annotated tag.
+      - name: Give git an identity
+        run: |
+          git config user.email "release@skala.invalid"
+          git config user.name "Skala Release"
+
       - name: Push the tag
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.release == 'true'
         run: |
           git tag -a "${{ needs.measure.outputs.tag }}" \
-            -m "Skala ${{ needs.measure.outputs.version }} — ${{ needs.measure.outputs.bump }} against ${{ needs.measure.outputs.baseline }}"
+            -m "Skala ${{ needs.measure.outputs.version }} — ${{ needs.measure.outputs.bump }} against ${{ needs.measure.outputs.baseline || 'no previous release' }}"
           git push origin "${{ needs.measure.outputs.tag }}"
 
       # `NuGet/login` needs the nuget.org *profile name* — not an email address. It defaults to the
