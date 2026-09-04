@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
@@ -91,6 +92,23 @@ public sealed class SpacingTests {
     public void CommentText_IsLeftAlone() {
         // space_before_trailing_comment_text = false leaves `//x` alone.
         Assert.Contains("M(); //x", Format.Text("class C { void M() { M();    //x\n } }"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MissingAllowCommentAfterLbrace_KeepsAControlFlowCommentAfterItsOpeningBrace() {
+        var document = EditorConfigDocument.FromText("/repo/.editorconfig", "root = true");
+        var options = new PhaseOneOptions(OptionResolver.Resolve(EditorConfigChain.Of("/repo/Test.cs", document)).Options);
+        var formatted = CSharpFormatter.Format(
+            "Test.cs",
+            SourceText.From("class C { void M(int k1) { if (k1 is 4 or 6) { // full-address: M = field\nM(); } } }"),
+            options
+        );
+
+        Assert.Contains(
+            "if (k1 is 4 or 6) { // full-address: M = field",
+            formatted.Formatted,
+            StringComparison.Ordinal
+        );
     }
 }
 

@@ -187,6 +187,15 @@ public sealed class PrecedenceTests {
     }
 
     [Fact]
+    public void MissingAllowCommentAfterLbrace_DefaultsToTrue() {
+        var resolution = Resolve("root = true");
+
+        Assert.True(OptionRegistry.TryResolve("skala_allow_comment_after_lbrace", out var id));
+        Assert.True(resolution[id].IsDefault);
+        Assert.Equal("true", resolution[id].Value);
+    }
+
+    [Fact]
     public void EveryResolvedOption_KnowsItsFileAndLine() {
         // `config explain` is useless without it (docs/plan/15 § M0).
         var resolution = OptionResolver.Resolve(RepositoryPaths.SampleSourceFile);

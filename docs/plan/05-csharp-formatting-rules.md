@@ -151,7 +151,9 @@ class C {                          // skala_remove_blank_lines_near_braces_in_de
 `skala_new_line_before_while = false` (`} while (x);`),
 `csharp_preserve_single_line_blocks = true`, `skala_empty_block_style = together` (`{ }`),
 `skala_special_else_if_treatment = true` (`else if` is one line, not a nested block),
-`skala_allow_comment_after_lbrace = false`.
+`skala_allow_comment_after_lbrace = true`, including when the key is absent (a comment describing a
+control-flow block stays beside its opening brace rather than being made to look like the block's
+first statement).
 
 `csharp_prefer_braces = true:none` and `skala_braces_redundant = true` are **arrangement**, not
 formatting — they add or remove braces, which changes the tree. Doc [06](06-arrangement-and-syntax-styles.md).
