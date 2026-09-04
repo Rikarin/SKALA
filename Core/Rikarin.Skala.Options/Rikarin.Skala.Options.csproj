@@ -19,6 +19,15 @@
 
   <ItemGroup>
     <AdditionalFiles Include="options.json" />
+    <!--
+      ⚠ The export's key spellings, and the only file in this project that names another tool.
+      The generator needs both: options.json carries every option, export-bridge.json carries the
+      spelling `jb cleanupcode` understands for each, and OptionInfo.Export is the join.
+      Missing or incomplete, that is SKG006/SKG007 and the build stops — which it must, because a
+      silently empty Export makes the key-flip sweep report every option INERT and leaves the
+      canonical payload unbuildable, with nothing erroring on either path.
+    -->
+    <AdditionalFiles Include="export-bridge.json" />
     <!-- Shipped so the CLI can report registry provenance without a build. -->
     <EmbeddedResource Include="options.json" LogicalName="Rikarin.Skala.Options.options.json" />
   </ItemGroup>

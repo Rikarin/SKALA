@@ -408,10 +408,10 @@ public static class DocsSite {
                 );
             }
 
-            if (option.Docs is { Length: > 0 } docs) {
-                Fact(builder, "Documented at", "<a href=\"" + Esc(docs) + "\">" + Esc(docs) + "</a>");
-            }
-
+            // ⚠ No "Documented at" row, and nothing replaced it. This page is the documentation now.
+            // The row pointed 368 of 436 options at jetbrains.com, at a page describing the key under
+            // the export's own name — the one spelling Skala does not read — so following it landed a
+            // reader on advice about a different tool's configuration.
             builder.Append("</tbody>\n</table>\n</section>\n");
         }
 

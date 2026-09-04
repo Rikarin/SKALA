@@ -10,4 +10,6 @@ SKG002  | Skala.Options | Error | The option registry could not be read.
 SKG003  | Skala.Options | Error | An option's default is not one of its values.
 SKG004  | Skala.Options | Error | An option's default is outside its own declared min/max.
 SKG005  | Skala.Options | Error | A free-form option carries no reason, a closed one carries one, or a bound carries none.
+SKG006  | Skala.Options | Error | The export bridge is missing.
+SKG007  | Skala.Options | Error | The export bridge and the option registry disagree.
 SK9004  | Skala.Options | Error | Duplicate option alias. docs/plan/02-repository-layout.md § "Naming".

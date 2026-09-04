@@ -111,14 +111,61 @@ public sealed class OptionRegistryTests {
         Assert.Equal(4, options.Skala.IndentSize);
     }
 
+    /// <summary>
+    ///     Every option reached the model with the export spelling the oracle needs.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This replaces <c>NoDefaultIsClaimedVerified_WithoutADocumentationLink</c>, which asserted
+    ///     that every <c>ReSharperDocs</c> default carried a <c>Docs</c> link and was <b>vacuous</b>:
+    ///     no entry in this registry has ever had that default source — options.json's own note says
+    ///     the published tables state no defaults — so the loop ran zero times and the assertion never
+    ///     executed. It is exactly the "a zero from a disabled check and a zero from clean code are the
+    ///     same zero" shape.
+    ///     <para>
+    ///         What is asserted instead is the invariant the <c>docs</c> removal made load-bearing: the
+    ///         export spellings now live in <c>export-bridge.json</c>, they are joined at generation
+    ///         time, and an option that lost its entry would be handed its own <c>skala_</c> key by
+    ///         <c>ExportSpellings.ForOracle</c> — which the oracle ignores without a word.
+    ///     </para>
+    /// </remarks>
     [Fact]
-    public void NoDefaultIsClaimedVerified_WithoutADocumentationLink() {
-        // The distill safety rule: only a resharper-docs default may be dropped, and a
-        // resharper-docs default has to point at the page it was read from.
-        foreach (var info in OptionRegistry.All.Where(static i => i.DefaultSource == OptionDefaultSource.ReSharperDocs
-                 )) {
-            Assert.NotNull(info.Docs);
+    public void EveryOption_CarriesTheExportsSpellingForIt() {
+        Assert.NotEmpty(OptionRegistry.All);
+        foreach (var info in OptionRegistry.All) {
+            Assert.True(
+                info.Export.Count > 0,
+                $"'{info.Key}' has no entry in export-bridge.json. The oracle would be handed "
+                + $"'{info.Key}', a key it does not recognise and silently ignores, and the sweep would "
+                + "report the option INERT."
+            );
         }
+    }
+
+    /// <summary>
+    ///     ⚠ No export spelling is reachable through the registry, and that is the whole rename.
+    /// </summary>
+    /// <remarks>
+    ///     The moment one resolves, pointing Skala at a Rider export configures it again and nothing
+    ///     else notices: <c>config check</c> stops reporting SK9001 for keys Skala is not supposed to
+    ///     read, and the canonical payload's translation step becomes a copy.
+    /// </remarks>
+    [Fact]
+    public void NoExportSpelling_ResolvesThroughTheRegistry() {
+        var checkedAny = false;
+        foreach (var info in OptionRegistry.All) {
+            foreach (var spelling in info.Export) {
+                if (spelling.StartsWith("resharper_", StringComparison.Ordinal)) {
+                    checkedAny = true;
+                    Assert.False(
+                        OptionRegistry.TryResolve(spelling, out _),
+                        $"'{spelling}' resolves through OptionRegistry; it is provenance, not an alias."
+                    );
+                }
+            }
+        }
+
+        // Anti-vacuity: a bridge that stopped carrying prefixed spellings would pass silently.
+        Assert.True(checkedAny, "no export spelling in the registry is in the export's own namespace.");
     }
 
     [Fact]

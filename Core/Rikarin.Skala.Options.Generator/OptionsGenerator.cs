@@ -21,6 +21,17 @@ namespace Rikarin.Skala.Options.Generator;
 [Generator(LanguageNames.CSharp)]
 public sealed class OptionsGenerator : IIncrementalGenerator {
     const string FileName = "options.json";
+
+    /// <summary>
+    ///     The export's key spellings, which <c>options.json</c> deliberately does not carry.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It must not end in <see cref="FileName" />: the registry is picked out of
+    ///     <c>AdditionalTexts</c> by suffix, so a bridge called <c>export-options.json</c> would match
+    ///     both filters and the generator would read one file as the other.
+    /// </remarks>
+    const string BridgeFileName = "export-bridge.json";
+
     const string Namespace = "Rikarin.Skala.Options";
 
     static readonly DiagnosticDescriptor MissingRegistry = new(
@@ -71,6 +82,26 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "`type: string` claims every string is legal. 27 options that are really enums carried that claim with no reason behind it and therefore validated nothing; `freeFormBecause` is what makes the claim reviewable."
     );
 
+    static readonly DiagnosticDescriptor MissingBridge = new(
+        "SKG006",
+        "The export bridge is missing",
+        "No AdditionalFile named '{0}' was found; the option model cannot be generated",
+        "Skala.Options",
+        DiagnosticSeverity.Error,
+        true,
+        "The export's key spellings are the only namespace `jb cleanupcode` understands. Generating an option model without them compiles, and then every measurement made through the oracle is a measurement of the export's own values."
+    );
+
+    static readonly DiagnosticDescriptor BridgeDisagrees = new(
+        "SKG007",
+        "The export bridge and the option registry disagree",
+        "{0}",
+        "Skala.Options",
+        DiagnosticSeverity.Error,
+        true,
+        "The join is checked both ways because both failures are silent at runtime: an option with no spelling is handed its own `skala_` key to the oracle, which ignores it and formats at the export's value, and a spelling for an option that no longer exists is a rename nobody finished."
+    );
+
     /// <summary>⚠ Named rather than inline: a bare id bypasses doc 08's register (ADR-012).</summary>
     const string DuplicateAliasId = "SK9004";
 
@@ -90,10 +121,22 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             .Select(static (text, token) => (text.Path, Content: text.GetText(token)?.ToString()))
             .Collect();
 
-        context.RegisterSourceOutput(registry, static (production, files) => Emit(production, files));
+        var bridge = context.AdditionalTextsProvider
+            .Where(static text => text.Path.EndsWith(BridgeFileName, StringComparison.OrdinalIgnoreCase))
+            .Select(static (text, token) => (text.Path, Content: text.GetText(token)?.ToString()))
+            .Collect();
+
+        context.RegisterSourceOutput(
+            registry.Combine(bridge),
+            static (production, files) => Emit(production, files.Left, files.Right)
+        );
     }
 
-    static void Emit(SourceProductionContext context, ImmutableArray<(string Path, string? Content)> files) {
+    static void Emit(
+        SourceProductionContext context,
+        ImmutableArray<(string Path, string? Content)> files,
+        ImmutableArray<(string Path, string? Content)> bridgeFiles
+    ) {
         if (files.Length == 0) {
             context.ReportDiagnostic(Diagnostic.Create(MissingRegistry, Location.None, FileName));
             return;
@@ -105,15 +148,34 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             return;
         }
 
+        if (bridgeFiles.Length == 0 || bridgeFiles[0].Content is null) {
+            context.ReportDiagnostic(Diagnostic.Create(MissingBridge, Location.None, BridgeFileName));
+            return;
+        }
+
+        var (bridgePath, bridgeContent) = bridgeFiles[0];
+        Dictionary<string, IReadOnlyList<string>> spellings;
+        try {
+            spellings = OptionRegistryReader.ReadBridge(bridgeContent!);
+        } catch (Exception exception) {
+            context.ReportDiagnostic(
+                Diagnostic.Create(UnreadableRegistry, Location.None, bridgePath, exception.Message)
+            );
+            return;
+        }
+
         OptionRegistry model;
         try {
-            model = OptionRegistryReader.Read(content);
+            model = OptionRegistryReader.Read(content, spellings);
         } catch (Exception exception) {
             context.ReportDiagnostic(Diagnostic.Create(UnreadableRegistry, Location.None, path, exception.Message));
             return;
         }
 
-        if (!CheckSpellings(context, model) || !CheckDefaults(context, model) || !CheckDomains(context, model)) {
+        if (!CheckBridge(context, model, spellings)
+            || !CheckSpellings(context, model)
+            || !CheckDefaults(context, model)
+            || !CheckDomains(context, model)) {
             return;
         }
 
@@ -122,6 +184,56 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         context.AddSource("OptionRegistry.g.cs", SourceText.From(EmitRegistry(model), Encoding.UTF8));
         context.AddSource("FormattingOptions.g.cs", SourceText.From(EmitFormattingOptions(model), Encoding.UTF8));
         context.AddSource("OptionKeyPrefixes.g.cs", SourceText.From(EmitKeyPrefixes(), Encoding.UTF8));
+    }
+
+    /// <summary>
+    ///     Every option has an export spelling, and every export spelling has an option.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Both directions, because neither failure raises anything at runtime.</b> An option the
+    ///     bridge forgets is handed its own <c>skala_</c> key by <c>ExportSpellings.ForOracle</c>; the
+    ///     oracle has never heard of that namespace, ignores the line without a word, and formats at
+    ///     whatever the export already said — so the sweep reports the option <c>INERT</c> and the
+    ///     canonical payload silently loses it. A spelling for an option that no longer exists is the
+    ///     other half of a rename, and it points the same machinery at a key nothing reads.
+    ///     <para>
+    ///         The build is where this has to fail. The bridge is edited by hand, once, by whoever
+    ///         adds an option — and both mistakes produce a green build and a plausible number.
+    ///     </para>
+    /// </remarks>
+    static bool CheckBridge(
+        SourceProductionContext context,
+        OptionRegistry model,
+        IReadOnlyDictionary<string, IReadOnlyList<string>> spellings
+    ) {
+        var clean = true;
+        var known = new HashSet<string>(model.Options.Select(static option => option.Key), StringComparer.Ordinal);
+
+        foreach (var option in model.Options.Where(static option => option.Export.Count == 0)) {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    BridgeDisagrees,
+                    Location.None,
+                    $"'{option.Key}' has no entry in '{BridgeFileName}'. The oracle would be handed "
+                    + "'" + option.Key + "', which it does not recognise and silently ignores."
+                )
+            );
+            clean = false;
+        }
+
+        foreach (var orphan in spellings.Keys.Where(key => !known.Contains(key))
+                     .OrderBy(static key => key, StringComparer.Ordinal)) {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    BridgeDisagrees,
+                    Location.None,
+                    $"'{BridgeFileName}' maps '{orphan}', which is not an option in '{FileName}'."
+                )
+            );
+            clean = false;
+        }
+
+        return clean;
     }
 
     static bool CheckSpellings(SourceProductionContext context, OptionRegistry model) {
@@ -483,7 +595,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             (null, "    OptionId Id,"),
             (null, "    string Key,"),
             (null, "    IReadOnlyList<string> Aliases,"),
-            ("    /// <summary>The spelling(s) the Rider export uses for this option. ⚠ Provenance only: never indexed for lookup, so a <c>resharper_*</c> key in a user's .editorconfig is an unknown key (SK9001). <c>CanonicalEditorConfig.Compose</c> translates the export through it, and <c>OracleRunner</c> speaks it to <c>jb cleanupcode</c>.</summary>",
+            ("    /// <summary>The spelling(s) the Rider export uses for this option, read from <c>export-bridge.json</c> rather than from <c>options.json</c>, which names no other tool. ⚠ Provenance only: never indexed for lookup, so a <c>resharper_*</c> key in a user's .editorconfig is an unknown key (SK9001). <c>CanonicalEditorConfig.Compose</c> translates the export through it, and <c>OracleRunner</c> speaks it to <c>jb cleanupcode</c>. Never empty — SKG007 fails the build.</summary>",
                 "    IReadOnlyList<string> Export,"),
             (null, "    string Language,"),
             (null, "    OptionValueKind Kind,"),
@@ -495,7 +607,6 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             (null, "    string Summary,"),
             (null, "    string Since,"),
             (null, "    string? Oracle,"),
-            (null, "    string? Docs,"),
             (null, "    int? TemplateLine,"),
             (null, "    bool SeveritySuffix,"),
             ("    /// <summary>Why this option can never be observed, or null when it can. ⚠ An inert option is Tier D but is NOT a gap: no input distinguishes its values, because another rule wins by the documented ordering or because the writer cannot produce the shape it governs. docs/plan/05 records each one and the reason. Reporting these as unimplemented makes the coverage number noise; omitting them from the report entirely hides that the configuration set them.</summary>",
@@ -574,7 +685,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 + $"OptionDefaultSource.{DefaultSourceMember(option.DefaultSource)}, OptionTier.{option.Tier}, "
                 + $"{OptionRegistryReader.Literal(option.Construct)}, {OptionRegistryReader.Literal(option.Summary)}, "
                 + $"{OptionRegistryReader.Literal(option.Since)}, {OptionRegistryReader.Literal(option.Oracle)}, "
-                + $"{OptionRegistryReader.Literal(option.Docs)}, {OptionRegistryReader.IntLiteral(option.TemplateLine)}, "
+                + $"{OptionRegistryReader.IntLiteral(option.TemplateLine)}, "
                 + $"{(option.SeveritySuffix ? "true" : "false")}, "
                 + $"{OptionRegistryReader.Literal(option.Inert)}, {expands}, "
                 + $"{OptionRegistryReader.IntLiteral(option.Min)}, {OptionRegistryReader.IntLiteral(option.Max)}, "
