@@ -84,7 +84,7 @@
             "type": ["string", "null"]
           },
           "default": {
-            "description": "ReSharper's default for this option, in its .editorconfig spelling. Read together with defaultSource: it is only trustworthy when defaultSource is resharper-docs.",
+            "description": "Skala's fallback when the option is absent. Formatter and arranger defaults must match the repository's canonical .editorconfig; defaultSource records the provenance of the chosen value.",
             "type": ["string", "null"]
           },
           "defaultSource": {

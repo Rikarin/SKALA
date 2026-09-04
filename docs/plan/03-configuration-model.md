@@ -307,12 +307,12 @@ Resolution order for a given file, first match wins within a key:
 3. **Language specialisation within a level**: `resharper_csharp_x` beats `resharper_x` beats the
    Microsoft equivalent (`csharp_x`) beats the generic editorconfig key. This is ReSharper's own
    order and the reason for hazard 3 above.
-4. `options.json` default — which is **ReSharper's default**, not a Skala opinion. A key absent from
-   the config must produce what Rider produces with that key absent. ⚠ M3 makes that true for **123**
-   keys by deriving the value from the oracle rather than taking the export's; see "Deriving
-   ReSharper's defaults" below for what the other 397 still record and why. (123 + 397 = 520. This
-   line said 126 and § "Deriving ReSharper's defaults" implied 127; both were wrong, and neither
-   reconciled with the other or with the registry.)
+4. `options.json` default — Skala's fallback when the key is absent. It must equal the effective value
+   of the repository's canonical `.editorconfig`, so adopting or removing that explicit configuration
+   does not silently change formatter or arranger output. `EditorConfigIngestionTests` compares the
+   two built `FormattingOptions` value sets by `OptionId`; that level is load-bearing because aliases
+   and generalized properties make a raw key/value comparison incomplete. `defaultSource` still
+   records whether the value was measured from the oracle or inherited from the template.
 
 `skala.jsonc` never participates. It cannot set a style option; attempting to is `SK9003` (error).
 
@@ -475,13 +475,12 @@ recorded the export's own value as its default, marked `defaultSource: "template
 and `distill` — which may only drop a key whose default was *checked* — dropped 0 of 4 226 and said
 so, at length, on stdout.
 
-⚠ **It cost more than `distill`, and M2 measured how much.** A registry entry whose `default` is the
-export's value is not merely unusable for distilling — it is what Skala *applies* to any repository
-whose `.editorconfig` leaves that key unset, which is most repositories. Rider applies its own
-default to the same file, and the two disagree. Over Vixen — 4 708 files, whose `.editorconfig` sets
-157 keys and no `wrap_*`, `keep_*` or `place_*` key at all — that was the difference between 2 374
-files changing and 1 301: **45 % of the diff on a real repository was this one gap**, and it is
-invisible on `corpus/real/`, which carries the export.
+⚠ **It cost more than `distill`, and M2 measured how much.** A registry entry whose `default` differs
+from the canonical profile makes formatting depend on whether that otherwise-redundant assignment is
+present. Over Vixen — 4 708 files — the earlier attempt to substitute the reference formatter's bare
+defaults changed 1 301 files instead of the canonical profile's 2 374. That fidelity experiment remains
+useful evidence about ReSharper, but it no longer defines Skala's fallback: the fallback and canonical
+profile are deliberately one value set, enforced in the core tests.
 
 ## Deriving ReSharper's defaults
 
@@ -518,16 +517,13 @@ it is a reviewed developer action rather than anything CI runs.
 | `Ambiguous` | 10 | several did, but not all |
 | `Contradicted` | 2 | none did; something else moved the fixture |
 
-⚠ Only `Derived` is written, and it is written as `defaultSource: "oracle-probe"` and never
-`"resharper-docs"`, because it is derived and JetBrains still documents nothing. ⚠ **The registry
-holds 123 `oracle-probe` entries, not 131 and not the 127 the paragraph below implies.** The probe's
-`Derived` verdict count and the number actually adopted into the registry are two different figures
-and this section conflated them; 123 is what `options.json` says, and it is the one the arithmetic
-in § "Precedence" has to agree with. 110 of the 131
-agree with the export, which is itself a result: those keys are Rider's defaults and the export is
-redundant in them. Fourteen genuinely differ, and they are recognisably ReSharper out of the box —
-Allman braces, `skala_new_line_before_else = true`, `skala_empty_block_style = multiline`,
-`skala_wrap_chained_method_calls = wrap_if_long`, `skala_keep_existing_invocation_parens_arrangement = true`.
+⚠ A `Derived` result is recorded as `defaultSource: "oracle-probe"`, never `"resharper-docs"`, because
+it is derived and JetBrains still documents no defaults. The first implementation copied every such
+result into the runtime fallback. That was the wrong contract: the probe measures ReSharper with a
+key absent, while Skala's fallback must match Skala's canonical profile. Derived values that disagree
+with the profile therefore remain measurement evidence but are not runtime defaults; the registry
+uses the template value and `defaultSource: "template"` for those keys. The parity test in
+`EditorConfigIngestionTests` keeps that distinction executable.
 
 ⚠ **Options interact, so this is a strong signal and not proof, and four of the fourteen are recorded
 `unknown` rather than adopted.** Formatting 60 Vixen files with Vixen's own `.editorconfig` and

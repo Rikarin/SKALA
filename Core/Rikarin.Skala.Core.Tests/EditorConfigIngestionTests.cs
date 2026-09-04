@@ -1,4 +1,5 @@
 using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Options;
 
 namespace Rikarin.Skala.Core.Tests;
 
@@ -92,6 +93,33 @@ public sealed class EditorConfigIngestionTests {
         // `Translate`, and a `Translate` that matched nothing would produce exactly this shape.
         Assert.NotEmpty(export);
         Assert.Equal(export, own);
+    }
+
+    /// <summary>
+    ///     A missing configuration and Skala's canonical configuration must give the formatter and
+    ///     arranger the same effective values.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Compare the built <see cref="FormattingOptions" /> rather than assignments or raw text.
+    ///     The repository uses Microsoft aliases for some options and generalized keys can expand into
+    ///     several values; neither is visible in a key-by-key comparison of <c>.editorconfig</c> with
+    ///     <c>options.json</c>. This is the actual pair of value sets the formatter and arranger read.
+    /// </remarks>
+    [Fact]
+    public void FormatterAndArrangerDefaults_MatchTheRepositoryEditorConfig() {
+        var configured = OptionResolver.Resolve(RepositoryPaths.SampleSourceFile).Options;
+        var defaults = FormattingOptions.Defaults;
+        var mismatches = OptionRegistry.All
+            .Select(info => (info.Key, Default: defaults.GetText(info.Id), Configured: configured.GetText(info.Id)))
+            .Where(static value => !string.Equals(value.Default, value.Configured, StringComparison.Ordinal))
+            .Select(static value => $"{value.Key}: default={value.Default}, .editorconfig={value.Configured}")
+            .ToArray();
+
+        Assert.True(
+            mismatches.Length == 0,
+            "formatter/arranger defaults differ from the repository .editorconfig:\n"
+            + string.Join("\n", mismatches)
+        );
     }
 
     /// <summary>Every option a chain configures, as <c>id = value</c>, ordered.</summary>
