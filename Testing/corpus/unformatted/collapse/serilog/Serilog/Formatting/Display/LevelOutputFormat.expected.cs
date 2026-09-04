@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright 2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,8 +43,7 @@ static class LevelOutputFormat {
         ["F", "FA", "FTL", "FATL", "FATAL"]
     ];
 
-    public static string GetLevelMoniker(LogEventLevel value, string? format = null) {
-        // handle unknown LogEventLevel
+    public static string GetLevelMoniker(LogEventLevel value, string? format = null) { // handle unknown LogEventLevel
         if (value is < 0 or > LogEventLevel.Fatal) return Casing.Format(value.ToString(), format);
         if (format == null || format.Length != 2 && format.Length != 3)
             return Casing.Format(

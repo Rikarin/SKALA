@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright © Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -85,8 +85,7 @@ class FailureAwareBatchScheduler {
     }
 
     public TimeSpan NextInterval {
-        get {
-            // Available, and first failure, just try the batch interval
+        get { // Available, and first failure, just try the batch interval
             if (_failuresSinceSuccessfulBatch <= 1)
                 return _bufferingTimeLimit; // Second failure, start ramping up the interval - first 2x, then 4x, ...
             var backoffFactor = Math.Pow(

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // ⚠ Wrong in indentation on every line, and two statements that have to wrap.
 //
 // The wraps are the half that separates `disable_indenter` from "indent to zero". A line that

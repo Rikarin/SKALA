@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -113,8 +113,7 @@ public sealed class WebSocketLoop : IWebSocketFactory {
             }
         }
 
-        public void Pump() {
-            // The far end hung up, and everything it sent before doing so has been taken. Only then
+        public void Pump() { // The far end hung up, and everything it sent before doing so has been taken. Only then
 // is the channel closed — a close that discarded undelivered messages would make "the
 // server said why it was disconnecting me" a race.
             if (State == WebSocketChannelState.Open && inbound.Closed && inbound.Drained) {

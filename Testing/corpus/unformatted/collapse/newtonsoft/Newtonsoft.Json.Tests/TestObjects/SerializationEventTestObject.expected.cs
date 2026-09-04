@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -31,8 +31,7 @@ using System.Runtime.Serialization;
 using Newtonsoft.Json.Serialization;
 
 namespace Newtonsoft.Json.Tests.TestObjects {
-    public class SerializationEventTestObject {
-        // This member is serialized and deserialized with no change.
+    public class SerializationEventTestObject { // This member is serialized and deserialized with no change.
         public int Member1 { get; set; } // The value of this field is set and reset during and 
 
 // after serialization.

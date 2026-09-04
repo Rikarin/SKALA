@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -26,8 +26,7 @@ static class VectorFormat {
         ReadOnlySpan<char> format,
         IFormatProvider? provider,
         ReadOnlySpan<float> components
-    ) {
-        // Counted separately and published only on success: ISpanFormattable requires charsWritten
+    ) { // Counted separately and published only on success: ISpanFormattable requires charsWritten
 // to be 0 when the destination was too small, not however far we got before running out.
         charsWritten = 0;
         provider ??= DefaultProvider;

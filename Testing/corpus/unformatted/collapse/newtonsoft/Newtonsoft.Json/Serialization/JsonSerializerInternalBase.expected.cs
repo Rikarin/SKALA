@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -39,8 +39,7 @@ namespace Newtonsoft.Json.Serialization {
                 return ReferenceEquals(x, y);
             }
 
-            int IEqualityComparer<object>.GetHashCode(object obj) {
-                // put objects in a bucket based on their reference
+            int IEqualityComparer<object>.GetHashCode(object obj) { // put objects in a bucket based on their reference
                 return RuntimeHelpers.GetHashCode(obj);
             }
         }
@@ -58,8 +57,7 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         internal BidirectionalDictionary<string, object> DefaultReferenceMappings {
-            get {
-                // override equality comparer for object key dictionary
+            get { // override equality comparer for object key dictionary
 // object will be modified as it deserializes and might have mutable hashcode
                 if (_mappings == null) {
                     _mappings = new BidirectionalDictionary<string, object>(

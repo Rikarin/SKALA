@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -20,8 +20,7 @@ public class MathUtilTests {
     }
 
     [Fact]
-    public void NearEqual_is_absolute_near_zero_and_relative_far_from_it() {
-        // Near zero a fixed epsilon is right.
+    public void NearEqual_is_absolute_near_zero_and_relative_far_from_it() { // Near zero a fixed epsilon is right.
         Assert.True(MathUtil.NearEqual(0f, 1e-7f));
         Assert.False(
             MathUtil.NearEqual(0f, 1e-4f)

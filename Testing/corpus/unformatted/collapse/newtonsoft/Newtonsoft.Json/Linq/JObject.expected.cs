@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -417,8 +417,7 @@ namespace Newtonsoft.Json.Linq {
         public new static JObject Parse(string json, JsonLoadSettings? settings) {
             using (JsonReader reader = new JsonTextReader(new StringReader(json))) {
                 JObject o = Load(reader, settings);
-                while (reader.Read()) {
-                    // Any content encountered here other than a comment will throw in the reader.
+                while (reader.Read()) { // Any content encountered here other than a comment will throw in the reader.
                 }
 
                 return o;

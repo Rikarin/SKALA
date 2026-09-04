@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -322,8 +322,7 @@ public sealed partial class RadialMenu : Overlay {
         }
 
         held = false;
-        if (!Accept()) {
-            // A release with nothing aimed at is somebody who opened the menu to look at it. It stays
+        if (!Accept()) { // A release with nothing aimed at is somebody who opened the menu to look at it. It stays
 // up and becomes the click-to-choose kind, which is the first of the two gestures.
             Hold = false;
         }

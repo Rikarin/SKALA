@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -125,8 +125,7 @@ static class WebGpuLoader {
                 }
 
                 var missing = Required.Where(name => !NativeLibrary.TryGetExport(handle, name, out _)).ToArray();
-                if (missing.Length > 0) {
-                    // Not `continue`: a library that loaded under the right name and exports the
+                if (missing.Length > 0) { // Not `continue`: a library that loaded under the right name and exports the
 // wrong entry points is the version problem, not a search problem, and trying
 // the next candidate would report "not found" for something that was found.
                     failure = TooNew(candidate, missing);

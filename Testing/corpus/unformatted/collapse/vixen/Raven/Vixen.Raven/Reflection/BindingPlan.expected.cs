@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -142,8 +142,7 @@ public static class BindingPlan {
             foreach (var kind in (IrBindingKind[]) [
                          IrBindingKind.Texture, IrBindingKind.Sampler, IrBindingKind.StorageBuffer,
                          IrBindingKind.StorageImage, IrBindingKind.AccelerationStructure
-                     ]) {
-                // A shared binding declared by several features is one binding, recognised by the
+                     ]) { // A shared binding declared by several features is one binding, recognised by the
 // name they all wrote. Grouped rather than deduplicated in place so that the first
 // declaration keeps the slot and the rest become its aliases — every one of them has
 // a variable some feature's body refers to, and all of them have to resolve.

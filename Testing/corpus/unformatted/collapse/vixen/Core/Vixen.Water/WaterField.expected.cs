@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -358,8 +358,7 @@ public sealed class WaterField {
                         remaining -= take;
                     }
 
-                    if (subtracted > 0f) {
-                        // An island takes its share and gives no water back, which is what makes it
+                    if (subtracted > 0f) { // An island takes its share and gives no water back, which is what makes it
 // hide the bodies underneath rather than blend with them.
                         remaining -= subtracted * remaining;
                     }
@@ -368,8 +367,7 @@ public sealed class WaterField {
                 }
 
                 ground[index] = MathF.Max(bed, raised);
-                if (claimed > 0f) {
-                    // Normalised, so a place a single body half-covers still reads that body's own
+                if (claimed > 0f) { // Normalised, so a place a single body half-covers still reads that body's own
 // surface height rather than half of it plus half of nothing.
                     surface[index] = height / claimed;
                     flowX[index] = vx / claimed;

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright © Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -83,11 +83,12 @@ public static class SelfLog {
             IReadOnlyCollection<LogEvent>? events,
             Exception? exception
         ) {
-            var tags = new TagList {
-                // Calling `ToString()` on a valid enum member is non-allocating, so we avoid boxing, here (at the
+            var tags =
+                new TagList {
+                    // Calling `ToString()` on a valid enum member is non-allocating, so we avoid boxing, here (at the
 // cost of invoking some minor internal `Enum` machinery).
-                { SelfMetrics.TagNames.LoggingFailureKind, kind.ToString() },
-            };
+                    { SelfMetrics.TagNames.LoggingFailureKind, kind.ToString() },
+                };
             SelfMetrics.DiagnosticsDefaultFailureListenerLoggingFailures.Add(1, tags);
             var o = _output;
             if (o == null) return;

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -39,8 +39,7 @@ public sealed partial class Lowerer {
         return lowered;
     }
 
-    IrType LowerTypeCore(TypeSymbol type, SyntaxNode? syntax) {
-        // The binder already reported this one; stay quiet.
+    IrType LowerTypeCore(TypeSymbol type, SyntaxNode? syntax) { // The binder already reported this one; stay quiet.
         if (type.IsErrorType) {
             return IrScalarType.Void;
         }
@@ -159,8 +158,7 @@ public sealed partial class Lowerer {
         var members = tuple.GetMembers().OfType<FieldSymbol>().ToArray();
         foreach (var member in members) {
             var elementType = LowerType(member.Type, syntax);
-            if (elementType.IsVoid) {
-                // The element's own diagnostic has already been reported.
+            if (elementType.IsVoid) { // The element's own diagnostic has already been reported.
                 return IrScalarType.Void;
             }
 

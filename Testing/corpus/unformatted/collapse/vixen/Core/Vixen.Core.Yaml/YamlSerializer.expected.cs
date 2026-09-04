@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -102,8 +102,7 @@ public static class YamlSerializer {
     ) {
         var underlying = Nullable.GetUnderlyingType(expected) ?? expected;
         var nullable = (underlying != expected || !expected.IsValueType) && declaredNullable;
-        if (IsNull(node)) {
-            // A few types have a null of their own — AssetReference's is a real reference to
+        if (IsNull(node)) { // A few types have a null of their own — AssetReference's is a real reference to
 // nothing, not the absence of a reference — so the converter gets asked before the
 // document's null is treated as C#'s.
             if (!nullable
@@ -456,8 +455,7 @@ public static class YamlSerializer {
         var mapping = new YamlMapping();
         var defaults = options.OmitDefaults ? DefaultOf(descriptor) : null;
         foreach (var member in descriptor.Members) {
-            if (!member.CanWrite) {
-                // Nothing can read it back, so writing it would be a key that vanishes on the next
+            if (!member.CanWrite) { // Nothing can read it back, so writing it would be a key that vanishes on the next
 // load — a diff that appears and disappears with no edit behind it.
                 continue;
             } // ⚠ And `[DataMemberIgnore]`, which is the same question asked the other way: a member

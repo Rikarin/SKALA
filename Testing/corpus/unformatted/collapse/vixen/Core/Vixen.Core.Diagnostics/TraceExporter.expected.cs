@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -42,8 +42,7 @@ public static class TraceExporter {
         writer.WriteStartObject();
         writer.WriteString("displayTimeUnit", "ms");
         writer.WriteStartArray("traceEvents");
-        foreach (var thread in threads) {
-            // Name the thread first, or the viewer labels every track with a bare number.
+        foreach (var thread in threads) { // Name the thread first, or the viewer labels every track with a bare number.
             writer.WriteStartObject();
             writer.WriteString("name", "thread_name");
             writer.WriteString("ph", "M");

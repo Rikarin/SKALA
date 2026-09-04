@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -32,8 +32,7 @@ namespace Vixen.Samples.HelloTriangle;
 ///         and calls <c>RunFrame</c> instead.
 ///     </para>
 /// </remarks>
-static class Program {
-    // ⚠ The platform is the host's to choose, and this used to take the choice away. It built a
+static class Program { // ⚠ The platform is the host's to choose, and this used to take the choice away. It built a
 // `DesktopPlatform` and handed it to `WithPlatform`, which `AppBuilder.Build` honours ahead of
 // the factory — so `--vixen-headless` was parsed into `AppConfig.Headless` and then never asked,
 // and a run that said it wanted no display server opened an SDL window regardless. The reason

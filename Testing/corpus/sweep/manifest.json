@@ -1,9 +1,9 @@
 {
   "Provenance": {
     "ReSharperVersion": "2025.2.6",
-    "ConfigDigest": "14c031ee7ef4b616",
-    "Commit": "74b54a2d39cc7280bbe4b9d2620bf352928bbe99",
-    "Frozen": "2026-09-02",
+    "ConfigDigest": "9bf4b7e7193c5da3",
+    "Commit": "479de29cf45041a3c833e5421630202dcfe0e7dc",
+    "Frozen": "2026-09-04",
     "Sweep": "conformance-sweep.json"
   },
   "Outputs": [
@@ -1472,6 +1472,22 @@
       "Origin": "skala-reproduced"
     },
     {
+      "Path": "constructs/blank-lines/skala_disable_blank_line_changes/ae938df7.expected.cs",
+      "Fixture": "constructs/blank-lines/skala_disable_blank_line_changes.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "ae938df7",
+      "Bytes": 112,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/blank-lines/skala_disable_blank_line_changes/c9582986.expected.cs",
+      "Fixture": "constructs/blank-lines/skala_disable_blank_line_changes.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "c9582986",
+      "Bytes": 111,
+      "Origin": "skala-reproduced"
+    },
+    {
       "Path": "constructs/blank-lines/skala_keep_blank_lines_in_code/971eb168.expected.cs",
       "Fixture": "constructs/blank-lines/skala_keep_blank_lines_in_code.cs",
       "Profile": "SkalaFormatOnly",
@@ -1552,22 +1568,6 @@
       "Origin": "skala-reproduced"
     },
     {
-      "Path": "constructs/blank-lines/skala_disable_blank_line_changes/ae938df7.expected.cs",
-      "Fixture": "constructs/blank-lines/skala_disable_blank_line_changes.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "ae938df7",
-      "Bytes": 112,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/blank-lines/skala_disable_blank_line_changes/c9582986.expected.cs",
-      "Fixture": "constructs/blank-lines/skala_disable_blank_line_changes.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "c9582986",
-      "Bytes": 111,
-      "Origin": "skala-reproduced"
-    },
-    {
       "Path": "constructs/braces/csharp_new_line_before_open_brace/12750d8f.expected.cs",
       "Fixture": "constructs/braces/csharp_new_line_before_open_brace.cs",
       "Profile": "SkalaFormatOnly",
@@ -1640,38 +1640,6 @@
       "Origin": "skala-reproduced"
     },
     {
-      "Path": "constructs/braces/skala_new_line_before_while/11515d1f.expected.cs",
-      "Fixture": "constructs/braces/skala_new_line_before_while.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "11515d1f",
-      "Bytes": 99,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/braces/skala_new_line_before_while/3683cd84.expected.cs",
-      "Fixture": "constructs/braces/skala_new_line_before_while.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "3683cd84",
-      "Bytes": 91,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/braces/skala_special_else_if_treatment/228a4dc5.expected.cs",
-      "Fixture": "constructs/braces/skala_special_else_if_treatment.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "228a4dc5",
-      "Bytes": 155,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/braces/skala_special_else_if_treatment/ba0b6164.expected.cs",
-      "Fixture": "constructs/braces/skala_special_else_if_treatment.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "ba0b6164",
-      "Bytes": 135,
-      "Origin": "skala-reproduced"
-    },
-    {
       "Path": "constructs/braces/skala_new_line_before_catch/04a8fa9f.expected.cs",
       "Fixture": "constructs/braces/skala_new_line_before_catch.cs",
       "Profile": "SkalaFormatOnly",
@@ -1717,6 +1685,38 @@
       "Profile": "SkalaFormatOnly",
       "OracleHash": "ce03115d",
       "Bytes": 119,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/braces/skala_new_line_before_while/11515d1f.expected.cs",
+      "Fixture": "constructs/braces/skala_new_line_before_while.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "11515d1f",
+      "Bytes": 99,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/braces/skala_new_line_before_while/3683cd84.expected.cs",
+      "Fixture": "constructs/braces/skala_new_line_before_while.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "3683cd84",
+      "Bytes": 91,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/braces/skala_special_else_if_treatment/228a4dc5.expected.cs",
+      "Fixture": "constructs/braces/skala_special_else_if_treatment.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "228a4dc5",
+      "Bytes": 155,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/braces/skala_special_else_if_treatment/ba0b6164.expected.cs",
+      "Fixture": "constructs/braces/skala_special_else_if_treatment.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "ba0b6164",
+      "Bytes": 135,
       "Origin": "skala-reproduced"
     },
     {
@@ -1984,22 +1984,6 @@
       "Origin": "skala-reproduced"
     },
     {
-      "Path": "constructs/file/skala_insert_final_newline/7eccb3bb.expected.cs",
-      "Fixture": "constructs/file/skala_insert_final_newline.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "7eccb3bb",
-      "Bytes": 12,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/file/skala_insert_final_newline/a078bba8.expected.cs",
-      "Fixture": "constructs/file/skala_insert_final_newline.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "a078bba8",
-      "Bytes": 11,
-      "Origin": "skala-reproduced"
-    },
-    {
       "Path": "constructs/file/skala_disable_formatter/69917b0e.expected.cs",
       "Fixture": "constructs/file/skala_disable_formatter.cs",
       "Profile": "SkalaFormatOnly",
@@ -2029,6 +2013,22 @@
       "Profile": "SkalaFormatOnly",
       "OracleHash": "f4c02df5",
       "Bytes": 51,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/file/skala_insert_final_newline/7eccb3bb.expected.cs",
+      "Fixture": "constructs/file/skala_insert_final_newline.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "7eccb3bb",
+      "Bytes": 12,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/file/skala_insert_final_newline/a078bba8.expected.cs",
+      "Fixture": "constructs/file/skala_insert_final_newline.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "a078bba8",
+      "Bytes": 11,
       "Origin": "skala-reproduced"
     },
     {
@@ -2189,6 +2189,22 @@
       "Profile": "SkalaFormatOnly",
       "OracleHash": "58e4ffb0",
       "Bytes": 438,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/indentation/skala_indent_break_from_case/d3ad987f.expected.cs",
+      "Fixture": "constructs/indentation/skala_indent_break_from_case.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "d3ad987f",
+      "Bytes": 134,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/indentation/skala_indent_break_from_case/e983560b.expected.cs",
+      "Fixture": "constructs/indentation/skala_indent_break_from_case.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "e983560b",
+      "Bytes": 130,
       "Origin": "skala-reproduced"
     },
     {
@@ -2416,6 +2432,22 @@
       "Origin": "skala-reproduced"
     },
     {
+      "Path": "constructs/indentation/skala_indent_switch_labels/289a7d94.expected.cs",
+      "Fixture": "constructs/indentation/skala_indent_switch_labels.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "289a7d94",
+      "Bytes": 156,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/indentation/skala_indent_switch_labels/c3a08c47.expected.cs",
+      "Fixture": "constructs/indentation/skala_indent_switch_labels.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "c3a08c47",
+      "Bytes": 140,
+      "Origin": "skala-reproduced"
+    },
+    {
       "Path": "constructs/indentation/skala_indent_type_constraints/5b4bd8ee.expected.cs",
       "Fixture": "constructs/indentation/skala_indent_type_constraints.cs",
       "Profile": "SkalaFormatOnly",
@@ -2461,38 +2493,6 @@
       "Profile": "SkalaFormatOnly",
       "OracleHash": "314c045e",
       "Bytes": 96,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/indentation/skala_indent_break_from_case/d3ad987f.expected.cs",
-      "Fixture": "constructs/indentation/skala_indent_break_from_case.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "d3ad987f",
-      "Bytes": 134,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/indentation/skala_indent_break_from_case/e983560b.expected.cs",
-      "Fixture": "constructs/indentation/skala_indent_break_from_case.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "e983560b",
-      "Bytes": 130,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/indentation/skala_indent_switch_labels/289a7d94.expected.cs",
-      "Fixture": "constructs/indentation/skala_indent_switch_labels.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "289a7d94",
-      "Bytes": 156,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/indentation/skala_indent_switch_labels/c3a08c47.expected.cs",
-      "Fixture": "constructs/indentation/skala_indent_switch_labels.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "c3a08c47",
-      "Bytes": 140,
       "Origin": "skala-reproduced"
     },
     {
@@ -2920,6 +2920,22 @@
       "Origin": "skala-reproduced"
     },
     {
+      "Path": "constructs/spaces/skala_space_after_cast/34bbd534.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_after_cast.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "34bbd534",
+      "Bytes": 47,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_after_cast/f5e79a15.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_after_cast.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "f5e79a15",
+      "Bytes": 46,
+      "Origin": "skala-reproduced"
+    },
+    {
       "Path": "constructs/spaces/skala_space_after_colon_in_case/661f8860.expected.cs",
       "Fixture": "constructs/spaces/skala_space_after_colon_in_case.cs",
       "Profile": "SkalaFormatOnly",
@@ -2933,6 +2949,54 @@
       "Profile": "SkalaFormatOnly",
       "OracleHash": "86c48cb5",
       "Bytes": 127,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_after_colon_in_inheritance_clause/90a54511.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_after_colon_in_inheritance_clause.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "90a54511",
+      "Bytes": 28,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_after_colon_in_inheritance_clause/e9bad7aa.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_after_colon_in_inheritance_clause.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "e9bad7aa",
+      "Bytes": 29,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_after_comma/aaf7432b.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_after_comma.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "aaf7432b",
+      "Bytes": 104,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_after_comma/ce6d8d99.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_after_comma.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "ce6d8d99",
+      "Bytes": 98,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements/314f37d1.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "314f37d1",
+      "Bytes": 211,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements/6aef8790.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "6aef8790",
+      "Bytes": 208,
       "Origin": "skala-reproduced"
     },
     {
@@ -2965,6 +3029,22 @@
       "Profile": "SkalaFormatOnly",
       "OracleHash": "c974cd0e",
       "Bytes": 58,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_after_semicolon_in_for_statement/869de653.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_after_semicolon_in_for_statement.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "869de653",
+      "Bytes": 99,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_after_semicolon_in_for_statement/9b311eef.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_after_semicolon_in_for_statement.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "9b311eef",
+      "Bytes": 97,
       "Origin": "skala-reproduced"
     },
     {
@@ -3160,6 +3240,22 @@
       "Origin": "skala-reproduced"
     },
     {
+      "Path": "constructs/spaces/skala_space_around_member_access_operator/8134e3b8.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_around_member_access_operator.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "8134e3b8",
+      "Bytes": 82,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_around_member_access_operator/8fcdb4de.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_around_member_access_operator.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "8fcdb4de",
+      "Bytes": 74,
+      "Origin": "skala-reproduced"
+    },
+    {
       "Path": "constructs/spaces/skala_space_around_relational_op/4bcad281.expected.cs",
       "Fixture": "constructs/spaces/skala_space_around_relational_op.cs",
       "Profile": "SkalaFormatOnly",
@@ -3189,6 +3285,22 @@
       "Profile": "SkalaFormatOnly",
       "OracleHash": "c871431a",
       "Bytes": 227,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_around_ternary_operator/07a0ee4e.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_around_ternary_operator.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "07a0ee4e",
+      "Bytes": 58,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_around_ternary_operator/f7381561.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_around_ternary_operator.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "f7381561",
+      "Bytes": 54,
       "Origin": "skala-reproduced"
     },
     {
@@ -3285,6 +3397,38 @@
       "Profile": "SkalaFormatOnly",
       "OracleHash": "5f81cfa0",
       "Bytes": 158,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_before_colon_in_inheritance_clause/139c4a04.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_before_colon_in_inheritance_clause.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "139c4a04",
+      "Bytes": 28,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_before_colon_in_inheritance_clause/e9bad7aa.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_before_colon_in_inheritance_clause.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "e9bad7aa",
+      "Bytes": 29,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_before_comma/2b94146a.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_before_comma.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "2b94146a",
+      "Bytes": 51,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_before_comma/c9648a31.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_before_comma.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "c9648a31",
+      "Bytes": 49,
       "Origin": "skala-reproduced"
     },
     {
@@ -3496,6 +3640,22 @@
       "Origin": "skala-reproduced"
     },
     {
+      "Path": "constructs/spaces/skala_space_before_open_square_brackets/ad9f9722.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_before_open_square_brackets.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "ad9f9722",
+      "Bytes": 44,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_before_open_square_brackets/cba02eed.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_before_open_square_brackets.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "cba02eed",
+      "Bytes": 42,
+      "Origin": "skala-reproduced"
+    },
+    {
       "Path": "constructs/spaces/skala_space_before_pointer_asterik_declaration/5f4c2fd7.expected.cs",
       "Fixture": "constructs/spaces/skala_space_before_pointer_asterik_declaration.cs",
       "Profile": "SkalaFormatOnly",
@@ -3525,6 +3685,22 @@
       "Profile": "SkalaFormatOnly",
       "OracleHash": "84a7c2b5",
       "Bytes": 67,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_before_semicolon_in_for_statement/7ee14e5a.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_before_semicolon_in_for_statement.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "7ee14e5a",
+      "Bytes": 101,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_before_semicolon_in_for_statement/869de653.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_before_semicolon_in_for_statement.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "869de653",
+      "Bytes": 99,
       "Origin": "skala-reproduced"
     },
     {
@@ -3733,6 +3909,134 @@
       "Profile": "SkalaFormatOnly",
       "OracleHash": "a9312c8d",
       "Bytes": 61,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses/53456a8a.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "53456a8a",
+      "Bytes": 47,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses/9a496499.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "9a496499",
+      "Bytes": 46,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis/b36be3dc.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "b36be3dc",
+      "Bytes": 83,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis/d489a4c7.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "d489a4c7",
+      "Bytes": 85,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses/320c7691.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "320c7691",
+      "Bytes": 54,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses/9028167b.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "9028167b",
+      "Bytes": 52,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses/6afa55b7.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "6afa55b7",
+      "Bytes": 30,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses/d827062a.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "d827062a",
+      "Bytes": 29,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis/0d511bdf.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "0d511bdf",
+      "Bytes": 54,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis/c7694c14.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "c7694c14",
+      "Bytes": 52,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses/8c0363ef.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "8c0363ef",
+      "Bytes": 43,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses/ed3ae146.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "ed3ae146",
+      "Bytes": 41,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements/1fcab6f7.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "1fcab6f7",
+      "Bytes": 368,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements/5413d59f.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "5413d59f",
+      "Bytes": 378,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_square_brackets/15169162.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_square_brackets.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "15169162",
+      "Bytes": 42,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/spaces/skala_space_between_square_brackets/fcbc1bf2.expected.cs",
+      "Fixture": "constructs/spaces/skala_space_between_square_brackets.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "fcbc1bf2",
+      "Bytes": 40,
       "Origin": "skala-reproduced"
     },
     {
@@ -4200,310 +4504,6 @@
       "Origin": "skala-reproduced"
     },
     {
-      "Path": "constructs/spaces/skala_space_after_cast/34bbd534.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_after_cast.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "34bbd534",
-      "Bytes": 47,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_after_cast/f5e79a15.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_after_cast.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "f5e79a15",
-      "Bytes": 46,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_after_colon_in_inheritance_clause/90a54511.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_after_colon_in_inheritance_clause.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "90a54511",
-      "Bytes": 28,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_after_colon_in_inheritance_clause/e9bad7aa.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_after_colon_in_inheritance_clause.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "e9bad7aa",
-      "Bytes": 29,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_after_comma/aaf7432b.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_after_comma.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "aaf7432b",
-      "Bytes": 104,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_after_comma/ce6d8d99.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_after_comma.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "ce6d8d99",
-      "Bytes": 98,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements/314f37d1.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "314f37d1",
-      "Bytes": 211,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements/6aef8790.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "6aef8790",
-      "Bytes": 208,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_after_semicolon_in_for_statement/869de653.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_after_semicolon_in_for_statement.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "869de653",
-      "Bytes": 99,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_after_semicolon_in_for_statement/9b311eef.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_after_semicolon_in_for_statement.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "9b311eef",
-      "Bytes": 97,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_around_member_access_operator/8134e3b8.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_around_member_access_operator.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "8134e3b8",
-      "Bytes": 82,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_around_member_access_operator/8fcdb4de.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_around_member_access_operator.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "8fcdb4de",
-      "Bytes": 74,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_around_ternary_operator/07a0ee4e.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_around_ternary_operator.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "07a0ee4e",
-      "Bytes": 58,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_around_ternary_operator/f7381561.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_around_ternary_operator.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "f7381561",
-      "Bytes": 54,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_before_colon_in_inheritance_clause/139c4a04.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_before_colon_in_inheritance_clause.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "139c4a04",
-      "Bytes": 28,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_before_colon_in_inheritance_clause/e9bad7aa.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_before_colon_in_inheritance_clause.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "e9bad7aa",
-      "Bytes": 29,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_before_comma/2b94146a.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_before_comma.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "2b94146a",
-      "Bytes": 51,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_before_comma/c9648a31.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_before_comma.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "c9648a31",
-      "Bytes": 49,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_before_open_square_brackets/ad9f9722.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_before_open_square_brackets.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "ad9f9722",
-      "Bytes": 44,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_before_open_square_brackets/cba02eed.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_before_open_square_brackets.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "cba02eed",
-      "Bytes": 42,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_before_semicolon_in_for_statement/7ee14e5a.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_before_semicolon_in_for_statement.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "7ee14e5a",
-      "Bytes": 101,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_before_semicolon_in_for_statement/869de653.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_before_semicolon_in_for_statement.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "869de653",
-      "Bytes": 99,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses/53456a8a.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "53456a8a",
-      "Bytes": 47,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses/9a496499.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "9a496499",
-      "Bytes": 46,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis/b36be3dc.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "b36be3dc",
-      "Bytes": 83,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis/d489a4c7.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "d489a4c7",
-      "Bytes": 85,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses/320c7691.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "320c7691",
-      "Bytes": 54,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses/9028167b.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "9028167b",
-      "Bytes": 52,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses/6afa55b7.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "6afa55b7",
-      "Bytes": 30,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses/d827062a.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "d827062a",
-      "Bytes": 29,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis/0d511bdf.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "0d511bdf",
-      "Bytes": 54,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis/c7694c14.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "c7694c14",
-      "Bytes": 52,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses/8c0363ef.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "8c0363ef",
-      "Bytes": 43,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses/ed3ae146.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "ed3ae146",
-      "Bytes": 41,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements/1fcab6f7.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "1fcab6f7",
-      "Bytes": 368,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements/5413d59f.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "5413d59f",
-      "Bytes": 378,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_square_brackets/15169162.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_square_brackets.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "15169162",
-      "Bytes": 42,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/spaces/skala_space_between_square_brackets/fcbc1bf2.expected.cs",
-      "Fixture": "constructs/spaces/skala_space_between_square_brackets.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "fcbc1bf2",
-      "Bytes": 40,
-      "Origin": "skala-reproduced"
-    },
-    {
       "Path": "constructs/suppression/skala_disable_indenter/4019f4e9.expected.cs",
       "Fixture": "constructs/suppression/skala_disable_indenter.cs",
       "Profile": "SkalaFormatOnly",
@@ -4568,6 +4568,38 @@
       "Origin": "skala-reproduced"
     },
     {
+      "Path": "constructs/trivia/skala_formatter_off_tag/430c08c9.expected.cs",
+      "Fixture": "constructs/trivia/skala_formatter_off_tag.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "430c08c9",
+      "Bytes": 81,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/trivia/skala_formatter_on_tag/c7fbbb69.expected.cs",
+      "Fixture": "constructs/trivia/skala_formatter_on_tag.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "c7fbbb69",
+      "Bytes": 98,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/trivia/skala_formatter_tags_accept_regexp/430c08c9.expected.cs",
+      "Fixture": "constructs/trivia/skala_formatter_tags_accept_regexp.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "430c08c9",
+      "Bytes": 81,
+      "Origin": "skala-reproduced"
+    },
+    {
+      "Path": "constructs/trivia/skala_formatter_tags_enabled/c7fbbb69.expected.cs",
+      "Fixture": "constructs/trivia/skala_formatter_tags_enabled.cs",
+      "Profile": "SkalaFormatOnly",
+      "OracleHash": "c7fbbb69",
+      "Bytes": 98,
+      "Origin": "skala-reproduced"
+    },
+    {
       "Path": "constructs/trivia/skala_indent_raw_literal_string/626ec9c6.expected.cs",
       "Fixture": "constructs/trivia/skala_indent_raw_literal_string.cs",
       "Profile": "SkalaFormatOnly",
@@ -4629,38 +4661,6 @@
       "Profile": "SkalaFormatOnly",
       "OracleHash": "e71b5652",
       "Bytes": 343,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/trivia/skala_formatter_off_tag/430c08c9.expected.cs",
-      "Fixture": "constructs/trivia/skala_formatter_off_tag.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "430c08c9",
-      "Bytes": 81,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/trivia/skala_formatter_on_tag/c7fbbb69.expected.cs",
-      "Fixture": "constructs/trivia/skala_formatter_on_tag.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "c7fbbb69",
-      "Bytes": 98,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/trivia/skala_formatter_tags_accept_regexp/430c08c9.expected.cs",
-      "Fixture": "constructs/trivia/skala_formatter_tags_accept_regexp.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "430c08c9",
-      "Bytes": 81,
-      "Origin": "skala-reproduced"
-    },
-    {
-      "Path": "constructs/trivia/skala_formatter_tags_enabled/c7fbbb69.expected.cs",
-      "Fixture": "constructs/trivia/skala_formatter_tags_enabled.cs",
-      "Profile": "SkalaFormatOnly",
-      "OracleHash": "c7fbbb69",
-      "Bytes": 98,
       "Origin": "skala-reproduced"
     },
     {
@@ -6540,38 +6540,6 @@
     {
       "Overrides": [
         {
-          "Key": "skala_align_multiline_type_parameter_list",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/breaks/type-parameter-list.cs",
-      "Output": "constructs/breaks/type-parameter-list/0a7c705f.expected.cs",
-      "OracleHash": "0a7c705f",
-      "SkalaHash": "0a7c705f",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_align_multiline_type_parameter_list",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/breaks/type-parameter-list.cs",
-      "Output": "constructs/breaks/type-parameter-list/fcb694c6.expected.cs",
-      "OracleHash": "fcb694c6",
-      "SkalaHash": "fcb694c6",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
           "Key": "skala_accessor_owner_body",
           "Value": "accessors_with_block_body"
         }
@@ -6900,6 +6868,38 @@
       "Output": "constructs/wrapping/alignment/628d673e.expected.cs",
       "OracleHash": "628d673e",
       "SkalaHash": "628d673e",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_align_multiline_type_parameter_list",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/breaks/type-parameter-list.cs",
+      "Output": "constructs/breaks/type-parameter-list/0a7c705f.expected.cs",
+      "OracleHash": "0a7c705f",
+      "SkalaHash": "0a7c705f",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_align_multiline_type_parameter_list",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/breaks/type-parameter-list.cs",
+      "Output": "constructs/breaks/type-parameter-list/fcb694c6.expected.cs",
+      "OracleHash": "fcb694c6",
+      "SkalaHash": "fcb694c6",
       "Outcome": "Conformant",
       "Expectation": "reproduces",
       "Divergence": null,
@@ -8716,6 +8716,198 @@
     {
       "Overrides": [
         {
+          "Key": "skala_disable_blank_line_changes",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/blank-lines/skala_disable_blank_line_changes.cs",
+      "Output": "constructs/blank-lines/skala_disable_blank_line_changes/c9582986.expected.cs",
+      "OracleHash": "c9582986",
+      "SkalaHash": "c9582986",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_disable_blank_line_changes",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/blank-lines/skala_disable_blank_line_changes.cs",
+      "Output": "constructs/blank-lines/skala_disable_blank_line_changes/ae938df7.expected.cs",
+      "OracleHash": "ae938df7",
+      "SkalaHash": "ae938df7",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_disable_formatter",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/file/skala_disable_formatter.cs",
+      "Output": "constructs/file/skala_disable_formatter/8f4fd5a4.expected.cs",
+      "OracleHash": "8f4fd5a4",
+      "SkalaHash": "8f4fd5a4",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_disable_formatter",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/file/skala_disable_formatter.cs",
+      "Output": "constructs/file/skala_disable_formatter/69917b0e.expected.cs",
+      "OracleHash": "69917b0e",
+      "SkalaHash": "69917b0e",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_disable_indenter",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/suppression/skala_disable_indenter.cs",
+      "Output": "constructs/suppression/skala_disable_indenter/be645f28.expected.cs",
+      "OracleHash": "be645f28",
+      "SkalaHash": "be645f28",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_disable_indenter",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/suppression/skala_disable_indenter.cs",
+      "Output": "constructs/suppression/skala_disable_indenter/4019f4e9.expected.cs",
+      "OracleHash": "4019f4e9",
+      "SkalaHash": "4019f4e9",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_disable_line_break_changes",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/suppression/skala_disable_line_break_changes.cs",
+      "Output": "constructs/suppression/skala_disable_line_break_changes/b9da239a.expected.cs",
+      "OracleHash": "b9da239a",
+      "SkalaHash": "b9da239a",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_disable_line_break_changes",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/suppression/skala_disable_line_break_changes.cs",
+      "Output": "constructs/suppression/skala_disable_line_break_changes/9b0dc3d6.expected.cs",
+      "OracleHash": "9b0dc3d6",
+      "SkalaHash": "9b0dc3d6",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_disable_line_break_removal",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/suppression/skala_disable_line_break_removal.cs",
+      "Output": "constructs/suppression/skala_disable_line_break_removal/9336f81f.expected.cs",
+      "OracleHash": "9336f81f",
+      "SkalaHash": "9336f81f",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_disable_line_break_removal",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/suppression/skala_disable_line_break_removal.cs",
+      "Output": "constructs/suppression/skala_disable_line_break_removal/3a1bcd1c.expected.cs",
+      "OracleHash": "3a1bcd1c",
+      "SkalaHash": "3a1bcd1c",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_disable_space_changes",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/suppression/skala_disable_space_changes.cs",
+      "Output": "constructs/suppression/skala_disable_space_changes/6021893e.expected.cs",
+      "OracleHash": "6021893e",
+      "SkalaHash": "6021893e",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_disable_space_changes",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/suppression/skala_disable_space_changes.cs",
+      "Output": "constructs/suppression/skala_disable_space_changes/32955e2c.expected.cs",
+      "OracleHash": "32955e2c",
+      "SkalaHash": "32955e2c",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_empty_block_style",
           "Value": "multiline"
         }
@@ -8756,6 +8948,70 @@
       "Output": "constructs/braces/skala_empty_block_style/d827062a.expected.cs",
       "OracleHash": "d827062a",
       "SkalaHash": "d827062a",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_empty_string",
+          "Value": "empty_literal"
+        }
+      ],
+      "Fixture": "constructs/arrangement/redundancy/empty-string.cs",
+      "Output": "constructs/arrangement/redundancy/empty-string/0bcdfae3.expected.cs",
+      "OracleHash": "0bcdfae3",
+      "SkalaHash": "c1854e7a",
+      "Outcome": "Spurious",
+      "Expectation": "divergent",
+      "Divergence": "SK-DIV-0013",
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_empty_string",
+          "Value": "string_empty"
+        }
+      ],
+      "Fixture": "constructs/arrangement/redundancy/empty-string.cs",
+      "Output": "constructs/arrangement/redundancy/empty-string/0bcdfae3.expected.cs",
+      "OracleHash": "0bcdfae3",
+      "SkalaHash": "0bcdfae3",
+      "Outcome": "Spurious",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_enforce_line_ending_style",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/file/skala_enforce_line_ending_style.cs",
+      "Output": "constructs/file/skala_enforce_line_ending_style/f4c02df5.expected.cs",
+      "OracleHash": "f4c02df5",
+      "SkalaHash": "f4c02df5",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_enforce_line_ending_style",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/file/skala_enforce_line_ending_style.cs",
+      "Output": "constructs/file/skala_enforce_line_ending_style/9a496499.expected.cs",
+      "OracleHash": "9a496499",
+      "SkalaHash": "9a496499",
       "Outcome": "Conformant",
       "Expectation": "reproduces",
       "Divergence": null,
@@ -8852,6 +9108,166 @@
       "Output": "constructs/breaks/force-chop-compound/56bce4e8.expected.cs",
       "OracleHash": "56bce4e8",
       "SkalaHash": "56bce4e8",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_formatter_off_tag",
+          "Value": "@formatter:off"
+        }
+      ],
+      "Fixture": "constructs/trivia/skala_formatter_off_tag.cs",
+      "Output": "constructs/trivia/skala_formatter_off_tag/430c08c9.expected.cs",
+      "OracleHash": "430c08c9",
+      "SkalaHash": "430c08c9",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_formatter_off_tag",
+          "Value": "@formatter:offx"
+        }
+      ],
+      "Fixture": "constructs/trivia/skala_formatter_off_tag.cs",
+      "Output": "constructs/trivia/skala_formatter_off_tag/430c08c9.expected.cs",
+      "OracleHash": "430c08c9",
+      "SkalaHash": "430c08c9",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_formatter_on_tag",
+          "Value": "@formatter:on"
+        }
+      ],
+      "Fixture": "constructs/trivia/skala_formatter_on_tag.cs",
+      "Output": "constructs/trivia/skala_formatter_on_tag/c7fbbb69.expected.cs",
+      "OracleHash": "c7fbbb69",
+      "SkalaHash": "c7fbbb69",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_formatter_on_tag",
+          "Value": "@formatter:onx"
+        }
+      ],
+      "Fixture": "constructs/trivia/skala_formatter_on_tag.cs",
+      "Output": "constructs/trivia/skala_formatter_on_tag/c7fbbb69.expected.cs",
+      "OracleHash": "c7fbbb69",
+      "SkalaHash": "c7fbbb69",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_formatter_tags_accept_regexp",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/trivia/skala_formatter_tags_accept_regexp.cs",
+      "Output": "constructs/trivia/skala_formatter_tags_accept_regexp/430c08c9.expected.cs",
+      "OracleHash": "430c08c9",
+      "SkalaHash": "430c08c9",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_formatter_tags_accept_regexp",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/trivia/skala_formatter_tags_accept_regexp.cs",
+      "Output": "constructs/trivia/skala_formatter_tags_accept_regexp/430c08c9.expected.cs",
+      "OracleHash": "430c08c9",
+      "SkalaHash": "430c08c9",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_formatter_tags_enabled",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/trivia/skala_formatter_tags_enabled.cs",
+      "Output": "constructs/trivia/skala_formatter_tags_enabled/c7fbbb69.expected.cs",
+      "OracleHash": "c7fbbb69",
+      "SkalaHash": "c7fbbb69",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_formatter_tags_enabled",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/trivia/skala_formatter_tags_enabled.cs",
+      "Output": "constructs/trivia/skala_formatter_tags_enabled/c7fbbb69.expected.cs",
+      "OracleHash": "c7fbbb69",
+      "SkalaHash": "c7fbbb69",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_indent_break_from_case",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/indentation/skala_indent_break_from_case.cs",
+      "Output": "constructs/indentation/skala_indent_break_from_case/e983560b.expected.cs",
+      "OracleHash": "e983560b",
+      "SkalaHash": "e983560b",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_indent_break_from_case",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/indentation/skala_indent_break_from_case.cs",
+      "Output": "constructs/indentation/skala_indent_break_from_case/d3ad987f.expected.cs",
+      "OracleHash": "d3ad987f",
+      "SkalaHash": "d3ad987f",
       "Outcome": "Conformant",
       "Expectation": "reproduces",
       "Divergence": null,
@@ -9644,6 +10060,38 @@
     {
       "Overrides": [
         {
+          "Key": "skala_indent_switch_labels",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/indentation/skala_indent_switch_labels.cs",
+      "Output": "constructs/indentation/skala_indent_switch_labels/c3a08c47.expected.cs",
+      "OracleHash": "c3a08c47",
+      "SkalaHash": "c3a08c47",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_indent_switch_labels",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/indentation/skala_indent_switch_labels.cs",
+      "Output": "constructs/indentation/skala_indent_switch_labels/289a7d94.expected.cs",
+      "OracleHash": "289a7d94",
+      "SkalaHash": "289a7d94",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_indent_type_constraints",
           "Value": "false"
         }
@@ -9828,6 +10276,38 @@
       "Output": "constructs/file/skala_insert_final_newline/7eccb3bb.expected.cs",
       "OracleHash": "7eccb3bb",
       "SkalaHash": "7eccb3bb",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_int_align",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/alignment/int-align.cs",
+      "Output": "constructs/alignment/int-align/e181aad5.expected.cs",
+      "OracleHash": "e181aad5",
+      "SkalaHash": "e181aad5",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_int_align",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/alignment/int-align.cs",
+      "Output": "constructs/alignment/int-align/05325f77.expected.cs",
+      "OracleHash": "05325f77",
+      "SkalaHash": "05325f77",
       "Outcome": "Conformant",
       "Expectation": "reproduces",
       "Divergence": null,
@@ -10572,6 +11052,38 @@
     {
       "Overrides": [
         {
+          "Key": "skala_keep_existing_lambda_and_anonymous_function_parens_arrangement",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/preservation/lambda-parens.cs",
+      "Output": "constructs/preservation/lambda-parens/b0c3f58c.expected.cs",
+      "OracleHash": "b0c3f58c",
+      "SkalaHash": "b0c3f58c",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_keep_existing_lambda_and_anonymous_function_parens_arrangement",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/preservation/lambda-parens.cs",
+      "Output": "constructs/preservation/lambda-parens/b0c3f58c.expected.cs",
+      "OracleHash": "b0c3f58c",
+      "SkalaHash": "b0c3f58c",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_keep_existing_linebreaks",
           "Value": "false"
         }
@@ -10756,6 +11268,38 @@
       "Output": "constructs/arrangement/usings/aliases/5e3c2dc7.expected.cs",
       "OracleHash": "5e3c2dc7",
       "SkalaHash": "5e3c2dc7",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_keep_user_linebreaks",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/blank-lines/after-a-multiline-statement.cs",
+      "Output": "constructs/blank-lines/after-a-multiline-statement/4ff1091e.expected.cs",
+      "OracleHash": "4ff1091e",
+      "SkalaHash": "4ff1091e",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_keep_user_linebreaks",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/blank-lines/after-a-multiline-statement.cs",
+      "Output": "constructs/blank-lines/after-a-multiline-statement/38a376b1.expected.cs",
+      "OracleHash": "38a376b1",
+      "SkalaHash": "38a376b1",
       "Outcome": "Conformant",
       "Expectation": "reproduces",
       "Divergence": null,
@@ -11148,6 +11692,102 @@
     {
       "Overrides": [
         {
+          "Key": "skala_new_line_before_catch",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/braces/skala_new_line_before_catch.cs",
+      "Output": "constructs/braces/skala_new_line_before_catch/12da47ef.expected.cs",
+      "OracleHash": "12da47ef",
+      "SkalaHash": "12da47ef",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_new_line_before_catch",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/braces/skala_new_line_before_catch.cs",
+      "Output": "constructs/braces/skala_new_line_before_catch/04a8fa9f.expected.cs",
+      "OracleHash": "04a8fa9f",
+      "SkalaHash": "04a8fa9f",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_new_line_before_else",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/braces/skala_new_line_before_else.cs",
+      "Output": "constructs/braces/skala_new_line_before_else/fd06b189.expected.cs",
+      "OracleHash": "fd06b189",
+      "SkalaHash": "fd06b189",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_new_line_before_else",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/braces/skala_new_line_before_else.cs",
+      "Output": "constructs/braces/skala_new_line_before_else/1512c53d.expected.cs",
+      "OracleHash": "1512c53d",
+      "SkalaHash": "1512c53d",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_new_line_before_finally",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/braces/skala_new_line_before_finally.cs",
+      "Output": "constructs/braces/skala_new_line_before_finally/5c89ceeb.expected.cs",
+      "OracleHash": "5c89ceeb",
+      "SkalaHash": "5c89ceeb",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_new_line_before_finally",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/braces/skala_new_line_before_finally.cs",
+      "Output": "constructs/braces/skala_new_line_before_finally/ce03115d.expected.cs",
+      "OracleHash": "ce03115d",
+      "SkalaHash": "ce03115d",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_new_line_before_while",
           "Value": "false"
         }
@@ -11532,6 +12172,54 @@
     {
       "Overrides": [
         {
+          "Key": "skala_place_attribute_on_same_line",
+          "Value": "always"
+        }
+      ],
+      "Fixture": "constructs/preservation/attributes.cs",
+      "Output": "constructs/preservation/attributes/912e56e4.expected.cs",
+      "OracleHash": "912e56e4",
+      "SkalaHash": "912e56e4",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_place_attribute_on_same_line",
+          "Value": "if_owner_is_single_line"
+        }
+      ],
+      "Fixture": "constructs/preservation/attributes.cs",
+      "Output": "constructs/preservation/attributes/912e56e4.expected.cs",
+      "OracleHash": "912e56e4",
+      "SkalaHash": "912e56e4",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_place_attribute_on_same_line",
+          "Value": "never"
+        }
+      ],
+      "Fixture": "constructs/preservation/attributes.cs",
+      "Output": "constructs/preservation/attributes/a871be9e.expected.cs",
+      "OracleHash": "a871be9e",
+      "SkalaHash": "a871be9e",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_place_comments_at_first_column",
           "Value": "false"
         }
@@ -11868,6 +12556,38 @@
     {
       "Overrides": [
         {
+          "Key": "skala_place_primary_constructor_initializer_on_same_line",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/breaks/constructor-initializer.cs",
+      "Output": "constructs/breaks/constructor-initializer/03c32d53.expected.cs",
+      "OracleHash": "03c32d53",
+      "SkalaHash": "03c32d53",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_place_primary_constructor_initializer_on_same_line",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/breaks/constructor-initializer.cs",
+      "Output": "constructs/breaks/constructor-initializer/abd3d24f.expected.cs",
+      "OracleHash": "abd3d24f",
+      "SkalaHash": "abd3d24f",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_place_record_field_attribute_on_same_line",
           "Value": "always"
         }
@@ -12108,6 +12828,38 @@
     {
       "Overrides": [
         {
+          "Key": "skala_place_single_method_argument_lambda_on_same_line",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/placement/single-lambda-argument.cs",
+      "Output": "constructs/placement/single-lambda-argument/3d99ec4d.expected.cs",
+      "OracleHash": "3d99ec4d",
+      "SkalaHash": "3d99ec4d",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_place_single_method_argument_lambda_on_same_line",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/placement/single-lambda-argument.cs",
+      "Output": "constructs/placement/single-lambda-argument/6cf69dce.expected.cs",
+      "OracleHash": "6cf69dce",
+      "SkalaHash": "6cf69dce",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_place_type_attribute_on_same_line",
           "Value": "always"
         }
@@ -12284,6 +13036,70 @@
     {
       "Overrides": [
         {
+          "Key": "skala_remove_only_unused_aliases",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/arrangement/usings/aliases.cs",
+      "Output": "constructs/arrangement/usings/aliases/5e3c2dc7.expected.cs",
+      "OracleHash": "5e3c2dc7",
+      "SkalaHash": "5e3c2dc7",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_remove_only_unused_aliases",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/arrangement/usings/aliases.cs",
+      "Output": "constructs/arrangement/usings/aliases/5d909e01.expected.cs",
+      "OracleHash": "5d909e01",
+      "SkalaHash": "5d909e01",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_sort_usings",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/arrangement/usings/sort-and-remove.cs",
+      "Output": "constructs/arrangement/usings/sort-and-remove/25f59917.expected.cs",
+      "OracleHash": "25f59917",
+      "SkalaHash": "10534a96",
+      "Outcome": "Divergent",
+      "Expectation": "divergent",
+      "Divergence": "SK-DIV-0085",
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_sort_usings",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/arrangement/usings/sort-and-remove.cs",
+      "Output": "constructs/arrangement/usings/sort-and-remove/0deb5d42.expected.cs",
+      "OracleHash": "0deb5d42",
+      "SkalaHash": "0deb5d42",
+      "Outcome": "Divergent",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_sort_usings_with_system_first",
           "Value": "false"
         }
@@ -12444,6 +13260,38 @@
     {
       "Overrides": [
         {
+          "Key": "skala_space_after_cast",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_after_cast.cs",
+      "Output": "constructs/spaces/skala_space_after_cast/f5e79a15.expected.cs",
+      "OracleHash": "f5e79a15",
+      "SkalaHash": "f5e79a15",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_after_cast",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_after_cast.cs",
+      "Output": "constructs/spaces/skala_space_after_cast/34bbd534.expected.cs",
+      "OracleHash": "34bbd534",
+      "SkalaHash": "34bbd534",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_space_after_colon_in_case",
           "Value": "false"
         }
@@ -12468,6 +13316,102 @@
       "Output": "constructs/spaces/skala_space_after_colon_in_case/661f8860.expected.cs",
       "OracleHash": "661f8860",
       "SkalaHash": "661f8860",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_after_colon_in_inheritance_clause",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_after_colon_in_inheritance_clause.cs",
+      "Output": "constructs/spaces/skala_space_after_colon_in_inheritance_clause/90a54511.expected.cs",
+      "OracleHash": "90a54511",
+      "SkalaHash": "90a54511",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_after_colon_in_inheritance_clause",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_after_colon_in_inheritance_clause.cs",
+      "Output": "constructs/spaces/skala_space_after_colon_in_inheritance_clause/e9bad7aa.expected.cs",
+      "OracleHash": "e9bad7aa",
+      "SkalaHash": "e9bad7aa",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_after_comma",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_after_comma.cs",
+      "Output": "constructs/spaces/skala_space_after_comma/ce6d8d99.expected.cs",
+      "OracleHash": "ce6d8d99",
+      "SkalaHash": "ce6d8d99",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_after_comma",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_after_comma.cs",
+      "Output": "constructs/spaces/skala_space_after_comma/aaf7432b.expected.cs",
+      "OracleHash": "aaf7432b",
+      "SkalaHash": "aaf7432b",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_after_keywords_in_control_flow_statements",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements.cs",
+      "Output": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements/6aef8790.expected.cs",
+      "OracleHash": "6aef8790",
+      "SkalaHash": "6aef8790",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_after_keywords_in_control_flow_statements",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements.cs",
+      "Output": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements/314f37d1.expected.cs",
+      "OracleHash": "314f37d1",
+      "SkalaHash": "314f37d1",
       "Outcome": "Conformant",
       "Expectation": "reproduces",
       "Divergence": null,
@@ -12540,6 +13484,38 @@
     {
       "Overrides": [
         {
+          "Key": "skala_space_after_semicolon_in_for_statement",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_after_semicolon_in_for_statement.cs",
+      "Output": "constructs/spaces/skala_space_after_semicolon_in_for_statement/9b311eef.expected.cs",
+      "OracleHash": "9b311eef",
+      "SkalaHash": "9b311eef",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_after_semicolon_in_for_statement",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_after_semicolon_in_for_statement.cs",
+      "Output": "constructs/spaces/skala_space_after_semicolon_in_for_statement/869de653.expected.cs",
+      "OracleHash": "869de653",
+      "SkalaHash": "869de653",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_space_after_ternary_colon",
           "Value": "false"
         }
@@ -12596,6 +13572,38 @@
       "Output": "constructs/spaces/skala_space_after_ternary_quest/db6e5747.expected.cs",
       "OracleHash": "db6e5747",
       "SkalaHash": "db6e5747",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_after_triple_slash",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/xmldoc/skala_space_after_triple_slash.cs",
+      "Output": "constructs/xmldoc/skala_space_after_triple_slash/201f1806.expected.cs",
+      "OracleHash": "201f1806",
+      "SkalaHash": "201f1806",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_after_triple_slash",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/xmldoc/skala_space_after_triple_slash.cs",
+      "Output": "constructs/xmldoc/skala_space_after_triple_slash/868020b0.expected.cs",
+      "OracleHash": "868020b0",
+      "SkalaHash": "868020b0",
       "Outcome": "Conformant",
       "Expectation": "reproduces",
       "Divergence": null,
@@ -12924,6 +13932,38 @@
     {
       "Overrides": [
         {
+          "Key": "skala_space_around_member_access_operator",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_around_member_access_operator.cs",
+      "Output": "constructs/spaces/skala_space_around_member_access_operator/8fcdb4de.expected.cs",
+      "OracleHash": "8fcdb4de",
+      "SkalaHash": "8fcdb4de",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_around_member_access_operator",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_around_member_access_operator.cs",
+      "Output": "constructs/spaces/skala_space_around_member_access_operator/8134e3b8.expected.cs",
+      "OracleHash": "8134e3b8",
+      "SkalaHash": "8134e3b8",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_space_around_relational_op",
           "Value": "false"
         }
@@ -12980,6 +14020,38 @@
       "Output": "constructs/spaces/skala_space_around_shift_op/c871431a.expected.cs",
       "OracleHash": "c871431a",
       "SkalaHash": "c871431a",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_around_ternary_operator",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_around_ternary_operator.cs",
+      "Output": "constructs/spaces/skala_space_around_ternary_operator/f7381561.expected.cs",
+      "OracleHash": "f7381561",
+      "SkalaHash": "f7381561",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_around_ternary_operator",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_around_ternary_operator.cs",
+      "Output": "constructs/spaces/skala_space_around_ternary_operator/07a0ee4e.expected.cs",
+      "OracleHash": "07a0ee4e",
+      "SkalaHash": "07a0ee4e",
       "Outcome": "Conformant",
       "Expectation": "reproduces",
       "Divergence": null,
@@ -13172,6 +14244,70 @@
       "Output": "constructs/spaces/skala_space_before_colon_in_case/5f81cfa0.expected.cs",
       "OracleHash": "5f81cfa0",
       "SkalaHash": "5f81cfa0",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_before_colon_in_inheritance_clause",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_before_colon_in_inheritance_clause.cs",
+      "Output": "constructs/spaces/skala_space_before_colon_in_inheritance_clause/139c4a04.expected.cs",
+      "OracleHash": "139c4a04",
+      "SkalaHash": "139c4a04",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_before_colon_in_inheritance_clause",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_before_colon_in_inheritance_clause.cs",
+      "Output": "constructs/spaces/skala_space_before_colon_in_inheritance_clause/e9bad7aa.expected.cs",
+      "OracleHash": "e9bad7aa",
+      "SkalaHash": "e9bad7aa",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_before_comma",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_before_comma.cs",
+      "Output": "constructs/spaces/skala_space_before_comma/c9648a31.expected.cs",
+      "OracleHash": "c9648a31",
+      "SkalaHash": "c9648a31",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_before_comma",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_before_comma.cs",
+      "Output": "constructs/spaces/skala_space_before_comma/2b94146a.expected.cs",
+      "OracleHash": "2b94146a",
+      "SkalaHash": "2b94146a",
       "Outcome": "Conformant",
       "Expectation": "reproduces",
       "Divergence": null,
@@ -13596,6 +14732,38 @@
     {
       "Overrides": [
         {
+          "Key": "skala_space_before_open_square_brackets",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_before_open_square_brackets.cs",
+      "Output": "constructs/spaces/skala_space_before_open_square_brackets/cba02eed.expected.cs",
+      "OracleHash": "cba02eed",
+      "SkalaHash": "cba02eed",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_before_open_square_brackets",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_before_open_square_brackets.cs",
+      "Output": "constructs/spaces/skala_space_before_open_square_brackets/ad9f9722.expected.cs",
+      "OracleHash": "ad9f9722",
+      "SkalaHash": "ad9f9722",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_space_before_pointer_asterik_declaration",
           "Value": "false"
         }
@@ -13652,6 +14820,38 @@
       "Output": "constructs/spaces/skala_space_before_semicolon/84a7c2b5.expected.cs",
       "OracleHash": "84a7c2b5",
       "SkalaHash": "84a7c2b5",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_before_semicolon_in_for_statement",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_before_semicolon_in_for_statement.cs",
+      "Output": "constructs/spaces/skala_space_before_semicolon_in_for_statement/869de653.expected.cs",
+      "OracleHash": "869de653",
+      "SkalaHash": "869de653",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_before_semicolon_in_for_statement",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_before_semicolon_in_for_statement.cs",
+      "Output": "constructs/spaces/skala_space_before_semicolon_in_for_statement/7ee14e5a.expected.cs",
+      "OracleHash": "7ee14e5a",
+      "SkalaHash": "7ee14e5a",
       "Outcome": "Conformant",
       "Expectation": "reproduces",
       "Divergence": null,
@@ -14100,6 +15300,262 @@
       "Output": "constructs/spaces/skala_space_between_keyword_and_expression/a9312c8d.expected.cs",
       "OracleHash": "a9312c8d",
       "SkalaHash": "a9312c8d",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_call_empty_parameter_list_parentheses",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses.cs",
+      "Output": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses/9a496499.expected.cs",
+      "OracleHash": "9a496499",
+      "SkalaHash": "9a496499",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_call_empty_parameter_list_parentheses",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses.cs",
+      "Output": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses/53456a8a.expected.cs",
+      "OracleHash": "53456a8a",
+      "SkalaHash": "53456a8a",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_call_name_and_opening_parenthesis",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis.cs",
+      "Output": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis/b36be3dc.expected.cs",
+      "OracleHash": "b36be3dc",
+      "SkalaHash": "b36be3dc",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_call_name_and_opening_parenthesis",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis.cs",
+      "Output": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis/d489a4c7.expected.cs",
+      "OracleHash": "d489a4c7",
+      "SkalaHash": "d489a4c7",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_call_parameter_list_parentheses",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses.cs",
+      "Output": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses/9028167b.expected.cs",
+      "OracleHash": "9028167b",
+      "SkalaHash": "9028167b",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_call_parameter_list_parentheses",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses.cs",
+      "Output": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses/320c7691.expected.cs",
+      "OracleHash": "320c7691",
+      "SkalaHash": "320c7691",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_declaration_empty_parameter_list_parentheses",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses.cs",
+      "Output": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses/d827062a.expected.cs",
+      "OracleHash": "d827062a",
+      "SkalaHash": "d827062a",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_declaration_empty_parameter_list_parentheses",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses.cs",
+      "Output": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses/6afa55b7.expected.cs",
+      "OracleHash": "6afa55b7",
+      "SkalaHash": "6afa55b7",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_declaration_name_and_open_parenthesis",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis.cs",
+      "Output": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis/c7694c14.expected.cs",
+      "OracleHash": "c7694c14",
+      "SkalaHash": "c7694c14",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_declaration_name_and_open_parenthesis",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis.cs",
+      "Output": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis/0d511bdf.expected.cs",
+      "OracleHash": "0d511bdf",
+      "SkalaHash": "0d511bdf",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_declaration_parameter_list_parentheses",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses.cs",
+      "Output": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses/ed3ae146.expected.cs",
+      "OracleHash": "ed3ae146",
+      "SkalaHash": "ed3ae146",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_method_declaration_parameter_list_parentheses",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses.cs",
+      "Output": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses/8c0363ef.expected.cs",
+      "OracleHash": "8c0363ef",
+      "SkalaHash": "8c0363ef",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_parentheses_of_control_flow_statements",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements.cs",
+      "Output": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements/1fcab6f7.expected.cs",
+      "OracleHash": "1fcab6f7",
+      "SkalaHash": "1fcab6f7",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_parentheses_of_control_flow_statements",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements.cs",
+      "Output": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements/5413d59f.expected.cs",
+      "OracleHash": "5413d59f",
+      "SkalaHash": "5413d59f",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_square_brackets",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_square_brackets.cs",
+      "Output": "constructs/spaces/skala_space_between_square_brackets/fcbc1bf2.expected.cs",
+      "OracleHash": "fcbc1bf2",
+      "SkalaHash": "fcbc1bf2",
+      "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_space_between_square_brackets",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/spaces/skala_space_between_square_brackets.cs",
+      "Output": "constructs/spaces/skala_space_between_square_brackets/15169162.expected.cs",
+      "OracleHash": "15169162",
+      "SkalaHash": "15169162",
       "Outcome": "Conformant",
       "Expectation": "reproduces",
       "Divergence": null,
@@ -15420,6 +16876,38 @@
     {
       "Overrides": [
         {
+          "Key": "skala_wrap_after_expression_lbrace",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/wrapping/initializers.cs",
+      "Output": "constructs/wrapping/initializers/3bf9f2c9.expected.cs",
+      "OracleHash": "3bf9f2c9",
+      "SkalaHash": "3bf9f2c9",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_wrap_after_expression_lbrace",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/wrapping/initializers.cs",
+      "Output": "constructs/wrapping/initializers/3bf9f2c9.expected.cs",
+      "OracleHash": "3bf9f2c9",
+      "SkalaHash": "3bf9f2c9",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_wrap_after_invocation_lpar",
           "Value": "false"
         }
@@ -15740,6 +17228,38 @@
     {
       "Overrides": [
         {
+          "Key": "skala_wrap_before_comma_in_base_clause",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/wrapping/base-list.cs",
+      "Output": "constructs/wrapping/base-list/72304cb8.expected.cs",
+      "OracleHash": "72304cb8",
+      "SkalaHash": "72304cb8",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_wrap_before_comma_in_base_clause",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/wrapping/base-list.cs",
+      "Output": "constructs/wrapping/base-list/72304cb8.expected.cs",
+      "OracleHash": "72304cb8",
+      "SkalaHash": "72304cb8",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
           "Key": "skala_wrap_before_declaration_lpar",
           "Value": "false"
         }
@@ -15829,6 +17349,38 @@
       "OracleHash": "70cfc503",
       "SkalaHash": "70cfc503",
       "Outcome": "Conformant",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_wrap_before_expression_rbrace",
+          "Value": "false"
+        }
+      ],
+      "Fixture": "constructs/wrapping/initializers.cs",
+      "Output": "constructs/wrapping/initializers/3bf9f2c9.expected.cs",
+      "OracleHash": "3bf9f2c9",
+      "SkalaHash": "3bf9f2c9",
+      "Outcome": "Unexercised",
+      "Expectation": "reproduces",
+      "Divergence": null,
+      "Source": "conformance-sweep.json"
+    },
+    {
+      "Overrides": [
+        {
+          "Key": "skala_wrap_before_expression_rbrace",
+          "Value": "true"
+        }
+      ],
+      "Fixture": "constructs/wrapping/initializers.cs",
+      "Output": "constructs/wrapping/initializers/3bf9f2c9.expected.cs",
+      "OracleHash": "3bf9f2c9",
+      "SkalaHash": "3bf9f2c9",
+      "Outcome": "Unexercised",
       "Expectation": "reproduces",
       "Divergence": null,
       "Source": "conformance-sweep.json"
@@ -16821,1558 +18373,6 @@
       "OracleHash": "a8430eda",
       "SkalaHash": "a8430eda",
       "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_blank_line_changes",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/blank-lines/skala_disable_blank_line_changes.cs",
-      "Output": "constructs/blank-lines/skala_disable_blank_line_changes/c9582986.expected.cs",
-      "OracleHash": "c9582986",
-      "SkalaHash": "c9582986",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_blank_line_changes",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/blank-lines/skala_disable_blank_line_changes.cs",
-      "Output": "constructs/blank-lines/skala_disable_blank_line_changes/ae938df7.expected.cs",
-      "OracleHash": "ae938df7",
-      "SkalaHash": "ae938df7",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_formatter",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/file/skala_disable_formatter.cs",
-      "Output": "constructs/file/skala_disable_formatter/8f4fd5a4.expected.cs",
-      "OracleHash": "8f4fd5a4",
-      "SkalaHash": "8f4fd5a4",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_formatter",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/file/skala_disable_formatter.cs",
-      "Output": "constructs/file/skala_disable_formatter/69917b0e.expected.cs",
-      "OracleHash": "69917b0e",
-      "SkalaHash": "69917b0e",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_indenter",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/suppression/skala_disable_indenter.cs",
-      "Output": "constructs/suppression/skala_disable_indenter/be645f28.expected.cs",
-      "OracleHash": "be645f28",
-      "SkalaHash": "be645f28",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_indenter",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/suppression/skala_disable_indenter.cs",
-      "Output": "constructs/suppression/skala_disable_indenter/4019f4e9.expected.cs",
-      "OracleHash": "4019f4e9",
-      "SkalaHash": "4019f4e9",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_line_break_changes",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/suppression/skala_disable_line_break_changes.cs",
-      "Output": "constructs/suppression/skala_disable_line_break_changes/b9da239a.expected.cs",
-      "OracleHash": "b9da239a",
-      "SkalaHash": "b9da239a",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_line_break_changes",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/suppression/skala_disable_line_break_changes.cs",
-      "Output": "constructs/suppression/skala_disable_line_break_changes/9b0dc3d6.expected.cs",
-      "OracleHash": "9b0dc3d6",
-      "SkalaHash": "9b0dc3d6",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_line_break_removal",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/suppression/skala_disable_line_break_removal.cs",
-      "Output": "constructs/suppression/skala_disable_line_break_removal/9336f81f.expected.cs",
-      "OracleHash": "9336f81f",
-      "SkalaHash": "9336f81f",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_line_break_removal",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/suppression/skala_disable_line_break_removal.cs",
-      "Output": "constructs/suppression/skala_disable_line_break_removal/3a1bcd1c.expected.cs",
-      "OracleHash": "3a1bcd1c",
-      "SkalaHash": "3a1bcd1c",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_space_changes",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/suppression/skala_disable_space_changes.cs",
-      "Output": "constructs/suppression/skala_disable_space_changes/6021893e.expected.cs",
-      "OracleHash": "6021893e",
-      "SkalaHash": "6021893e",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_disable_space_changes",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/suppression/skala_disable_space_changes.cs",
-      "Output": "constructs/suppression/skala_disable_space_changes/32955e2c.expected.cs",
-      "OracleHash": "32955e2c",
-      "SkalaHash": "32955e2c",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_empty_string",
-          "Value": "empty_literal"
-        }
-      ],
-      "Fixture": "constructs/arrangement/redundancy/empty-string.cs",
-      "Output": "constructs/arrangement/redundancy/empty-string/0bcdfae3.expected.cs",
-      "OracleHash": "0bcdfae3",
-      "SkalaHash": "c1854e7a",
-      "Outcome": "Spurious",
-      "Expectation": "divergent",
-      "Divergence": "SK-DIV-0013",
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_empty_string",
-          "Value": "string_empty"
-        }
-      ],
-      "Fixture": "constructs/arrangement/redundancy/empty-string.cs",
-      "Output": "constructs/arrangement/redundancy/empty-string/0bcdfae3.expected.cs",
-      "OracleHash": "0bcdfae3",
-      "SkalaHash": "0bcdfae3",
-      "Outcome": "Spurious",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_enforce_line_ending_style",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/file/skala_enforce_line_ending_style.cs",
-      "Output": "constructs/file/skala_enforce_line_ending_style/f4c02df5.expected.cs",
-      "OracleHash": "f4c02df5",
-      "SkalaHash": "f4c02df5",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_enforce_line_ending_style",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/file/skala_enforce_line_ending_style.cs",
-      "Output": "constructs/file/skala_enforce_line_ending_style/9a496499.expected.cs",
-      "OracleHash": "9a496499",
-      "SkalaHash": "9a496499",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_formatter_off_tag",
-          "Value": "@formatter:off"
-        }
-      ],
-      "Fixture": "constructs/trivia/skala_formatter_off_tag.cs",
-      "Output": "constructs/trivia/skala_formatter_off_tag/430c08c9.expected.cs",
-      "OracleHash": "430c08c9",
-      "SkalaHash": "430c08c9",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_formatter_off_tag",
-          "Value": "@formatter:offx"
-        }
-      ],
-      "Fixture": "constructs/trivia/skala_formatter_off_tag.cs",
-      "Output": "constructs/trivia/skala_formatter_off_tag/430c08c9.expected.cs",
-      "OracleHash": "430c08c9",
-      "SkalaHash": "430c08c9",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_formatter_on_tag",
-          "Value": "@formatter:on"
-        }
-      ],
-      "Fixture": "constructs/trivia/skala_formatter_on_tag.cs",
-      "Output": "constructs/trivia/skala_formatter_on_tag/c7fbbb69.expected.cs",
-      "OracleHash": "c7fbbb69",
-      "SkalaHash": "c7fbbb69",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_formatter_on_tag",
-          "Value": "@formatter:onx"
-        }
-      ],
-      "Fixture": "constructs/trivia/skala_formatter_on_tag.cs",
-      "Output": "constructs/trivia/skala_formatter_on_tag/c7fbbb69.expected.cs",
-      "OracleHash": "c7fbbb69",
-      "SkalaHash": "c7fbbb69",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_formatter_tags_accept_regexp",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/trivia/skala_formatter_tags_accept_regexp.cs",
-      "Output": "constructs/trivia/skala_formatter_tags_accept_regexp/430c08c9.expected.cs",
-      "OracleHash": "430c08c9",
-      "SkalaHash": "430c08c9",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_formatter_tags_accept_regexp",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/trivia/skala_formatter_tags_accept_regexp.cs",
-      "Output": "constructs/trivia/skala_formatter_tags_accept_regexp/430c08c9.expected.cs",
-      "OracleHash": "430c08c9",
-      "SkalaHash": "430c08c9",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_formatter_tags_enabled",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/trivia/skala_formatter_tags_enabled.cs",
-      "Output": "constructs/trivia/skala_formatter_tags_enabled/c7fbbb69.expected.cs",
-      "OracleHash": "c7fbbb69",
-      "SkalaHash": "c7fbbb69",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_formatter_tags_enabled",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/trivia/skala_formatter_tags_enabled.cs",
-      "Output": "constructs/trivia/skala_formatter_tags_enabled/c7fbbb69.expected.cs",
-      "OracleHash": "c7fbbb69",
-      "SkalaHash": "c7fbbb69",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_indent_break_from_case",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/indentation/skala_indent_break_from_case.cs",
-      "Output": "constructs/indentation/skala_indent_break_from_case/e983560b.expected.cs",
-      "OracleHash": "e983560b",
-      "SkalaHash": "e983560b",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_indent_break_from_case",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/indentation/skala_indent_break_from_case.cs",
-      "Output": "constructs/indentation/skala_indent_break_from_case/d3ad987f.expected.cs",
-      "OracleHash": "d3ad987f",
-      "SkalaHash": "d3ad987f",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_indent_switch_labels",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/indentation/skala_indent_switch_labels.cs",
-      "Output": "constructs/indentation/skala_indent_switch_labels/c3a08c47.expected.cs",
-      "OracleHash": "c3a08c47",
-      "SkalaHash": "c3a08c47",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_indent_switch_labels",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/indentation/skala_indent_switch_labels.cs",
-      "Output": "constructs/indentation/skala_indent_switch_labels/289a7d94.expected.cs",
-      "OracleHash": "289a7d94",
-      "SkalaHash": "289a7d94",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_int_align",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/alignment/int-align.cs",
-      "Output": "constructs/alignment/int-align/e181aad5.expected.cs",
-      "OracleHash": "e181aad5",
-      "SkalaHash": "e181aad5",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_int_align",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/alignment/int-align.cs",
-      "Output": "constructs/alignment/int-align/05325f77.expected.cs",
-      "OracleHash": "05325f77",
-      "SkalaHash": "05325f77",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_keep_existing_lambda_and_anonymous_function_parens_arrangement",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/preservation/lambda-parens.cs",
-      "Output": "constructs/preservation/lambda-parens/b0c3f58c.expected.cs",
-      "OracleHash": "b0c3f58c",
-      "SkalaHash": "b0c3f58c",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_keep_existing_lambda_and_anonymous_function_parens_arrangement",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/preservation/lambda-parens.cs",
-      "Output": "constructs/preservation/lambda-parens/b0c3f58c.expected.cs",
-      "OracleHash": "b0c3f58c",
-      "SkalaHash": "b0c3f58c",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_keep_user_linebreaks",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/blank-lines/after-a-multiline-statement.cs",
-      "Output": "constructs/blank-lines/after-a-multiline-statement/4ff1091e.expected.cs",
-      "OracleHash": "4ff1091e",
-      "SkalaHash": "4ff1091e",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_keep_user_linebreaks",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/blank-lines/after-a-multiline-statement.cs",
-      "Output": "constructs/blank-lines/after-a-multiline-statement/38a376b1.expected.cs",
-      "OracleHash": "38a376b1",
-      "SkalaHash": "38a376b1",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_new_line_before_catch",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/braces/skala_new_line_before_catch.cs",
-      "Output": "constructs/braces/skala_new_line_before_catch/12da47ef.expected.cs",
-      "OracleHash": "12da47ef",
-      "SkalaHash": "12da47ef",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_new_line_before_catch",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/braces/skala_new_line_before_catch.cs",
-      "Output": "constructs/braces/skala_new_line_before_catch/04a8fa9f.expected.cs",
-      "OracleHash": "04a8fa9f",
-      "SkalaHash": "04a8fa9f",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_new_line_before_else",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/braces/skala_new_line_before_else.cs",
-      "Output": "constructs/braces/skala_new_line_before_else/fd06b189.expected.cs",
-      "OracleHash": "fd06b189",
-      "SkalaHash": "fd06b189",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_new_line_before_else",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/braces/skala_new_line_before_else.cs",
-      "Output": "constructs/braces/skala_new_line_before_else/1512c53d.expected.cs",
-      "OracleHash": "1512c53d",
-      "SkalaHash": "1512c53d",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_new_line_before_finally",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/braces/skala_new_line_before_finally.cs",
-      "Output": "constructs/braces/skala_new_line_before_finally/5c89ceeb.expected.cs",
-      "OracleHash": "5c89ceeb",
-      "SkalaHash": "5c89ceeb",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_new_line_before_finally",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/braces/skala_new_line_before_finally.cs",
-      "Output": "constructs/braces/skala_new_line_before_finally/ce03115d.expected.cs",
-      "OracleHash": "ce03115d",
-      "SkalaHash": "ce03115d",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_place_attribute_on_same_line",
-          "Value": "always"
-        }
-      ],
-      "Fixture": "constructs/preservation/attributes.cs",
-      "Output": "constructs/preservation/attributes/912e56e4.expected.cs",
-      "OracleHash": "912e56e4",
-      "SkalaHash": "912e56e4",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_place_attribute_on_same_line",
-          "Value": "if_owner_is_single_line"
-        }
-      ],
-      "Fixture": "constructs/preservation/attributes.cs",
-      "Output": "constructs/preservation/attributes/912e56e4.expected.cs",
-      "OracleHash": "912e56e4",
-      "SkalaHash": "912e56e4",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_place_attribute_on_same_line",
-          "Value": "never"
-        }
-      ],
-      "Fixture": "constructs/preservation/attributes.cs",
-      "Output": "constructs/preservation/attributes/a871be9e.expected.cs",
-      "OracleHash": "a871be9e",
-      "SkalaHash": "a871be9e",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_place_primary_constructor_initializer_on_same_line",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/breaks/constructor-initializer.cs",
-      "Output": "constructs/breaks/constructor-initializer/03c32d53.expected.cs",
-      "OracleHash": "03c32d53",
-      "SkalaHash": "03c32d53",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_place_primary_constructor_initializer_on_same_line",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/breaks/constructor-initializer.cs",
-      "Output": "constructs/breaks/constructor-initializer/abd3d24f.expected.cs",
-      "OracleHash": "abd3d24f",
-      "SkalaHash": "abd3d24f",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_place_single_method_argument_lambda_on_same_line",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/placement/single-lambda-argument.cs",
-      "Output": "constructs/placement/single-lambda-argument/3d99ec4d.expected.cs",
-      "OracleHash": "3d99ec4d",
-      "SkalaHash": "3d99ec4d",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_place_single_method_argument_lambda_on_same_line",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/placement/single-lambda-argument.cs",
-      "Output": "constructs/placement/single-lambda-argument/6cf69dce.expected.cs",
-      "OracleHash": "6cf69dce",
-      "SkalaHash": "6cf69dce",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_remove_only_unused_aliases",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/arrangement/usings/aliases.cs",
-      "Output": "constructs/arrangement/usings/aliases/5e3c2dc7.expected.cs",
-      "OracleHash": "5e3c2dc7",
-      "SkalaHash": "5e3c2dc7",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_remove_only_unused_aliases",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/arrangement/usings/aliases.cs",
-      "Output": "constructs/arrangement/usings/aliases/5d909e01.expected.cs",
-      "OracleHash": "5d909e01",
-      "SkalaHash": "5d909e01",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_sort_usings",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/arrangement/usings/sort-and-remove.cs",
-      "Output": "constructs/arrangement/usings/sort-and-remove/25f59917.expected.cs",
-      "OracleHash": "25f59917",
-      "SkalaHash": "10534a96",
-      "Outcome": "Divergent",
-      "Expectation": "divergent",
-      "Divergence": "SK-DIV-0085",
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_sort_usings",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/arrangement/usings/sort-and-remove.cs",
-      "Output": "constructs/arrangement/usings/sort-and-remove/0deb5d42.expected.cs",
-      "OracleHash": "0deb5d42",
-      "SkalaHash": "0deb5d42",
-      "Outcome": "Divergent",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_cast",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_after_cast.cs",
-      "Output": "constructs/spaces/skala_space_after_cast/f5e79a15.expected.cs",
-      "OracleHash": "f5e79a15",
-      "SkalaHash": "f5e79a15",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_cast",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_after_cast.cs",
-      "Output": "constructs/spaces/skala_space_after_cast/34bbd534.expected.cs",
-      "OracleHash": "34bbd534",
-      "SkalaHash": "34bbd534",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_colon_in_inheritance_clause",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_after_colon_in_inheritance_clause.cs",
-      "Output": "constructs/spaces/skala_space_after_colon_in_inheritance_clause/90a54511.expected.cs",
-      "OracleHash": "90a54511",
-      "SkalaHash": "90a54511",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_colon_in_inheritance_clause",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_after_colon_in_inheritance_clause.cs",
-      "Output": "constructs/spaces/skala_space_after_colon_in_inheritance_clause/e9bad7aa.expected.cs",
-      "OracleHash": "e9bad7aa",
-      "SkalaHash": "e9bad7aa",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_comma",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_after_comma.cs",
-      "Output": "constructs/spaces/skala_space_after_comma/ce6d8d99.expected.cs",
-      "OracleHash": "ce6d8d99",
-      "SkalaHash": "ce6d8d99",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_comma",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_after_comma.cs",
-      "Output": "constructs/spaces/skala_space_after_comma/aaf7432b.expected.cs",
-      "OracleHash": "aaf7432b",
-      "SkalaHash": "aaf7432b",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_keywords_in_control_flow_statements",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements.cs",
-      "Output": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements/6aef8790.expected.cs",
-      "OracleHash": "6aef8790",
-      "SkalaHash": "6aef8790",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_keywords_in_control_flow_statements",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements.cs",
-      "Output": "constructs/spaces/skala_space_after_keywords_in_control_flow_statements/314f37d1.expected.cs",
-      "OracleHash": "314f37d1",
-      "SkalaHash": "314f37d1",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_semicolon_in_for_statement",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_after_semicolon_in_for_statement.cs",
-      "Output": "constructs/spaces/skala_space_after_semicolon_in_for_statement/9b311eef.expected.cs",
-      "OracleHash": "9b311eef",
-      "SkalaHash": "9b311eef",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_semicolon_in_for_statement",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_after_semicolon_in_for_statement.cs",
-      "Output": "constructs/spaces/skala_space_after_semicolon_in_for_statement/869de653.expected.cs",
-      "OracleHash": "869de653",
-      "SkalaHash": "869de653",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_triple_slash",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/xmldoc/skala_space_after_triple_slash.cs",
-      "Output": "constructs/xmldoc/skala_space_after_triple_slash/201f1806.expected.cs",
-      "OracleHash": "201f1806",
-      "SkalaHash": "201f1806",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_after_triple_slash",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/xmldoc/skala_space_after_triple_slash.cs",
-      "Output": "constructs/xmldoc/skala_space_after_triple_slash/868020b0.expected.cs",
-      "OracleHash": "868020b0",
-      "SkalaHash": "868020b0",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_around_member_access_operator",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_around_member_access_operator.cs",
-      "Output": "constructs/spaces/skala_space_around_member_access_operator/8fcdb4de.expected.cs",
-      "OracleHash": "8fcdb4de",
-      "SkalaHash": "8fcdb4de",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_around_member_access_operator",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_around_member_access_operator.cs",
-      "Output": "constructs/spaces/skala_space_around_member_access_operator/8134e3b8.expected.cs",
-      "OracleHash": "8134e3b8",
-      "SkalaHash": "8134e3b8",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_around_ternary_operator",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_around_ternary_operator.cs",
-      "Output": "constructs/spaces/skala_space_around_ternary_operator/f7381561.expected.cs",
-      "OracleHash": "f7381561",
-      "SkalaHash": "f7381561",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_around_ternary_operator",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_around_ternary_operator.cs",
-      "Output": "constructs/spaces/skala_space_around_ternary_operator/07a0ee4e.expected.cs",
-      "OracleHash": "07a0ee4e",
-      "SkalaHash": "07a0ee4e",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_before_colon_in_inheritance_clause",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_before_colon_in_inheritance_clause.cs",
-      "Output": "constructs/spaces/skala_space_before_colon_in_inheritance_clause/139c4a04.expected.cs",
-      "OracleHash": "139c4a04",
-      "SkalaHash": "139c4a04",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_before_colon_in_inheritance_clause",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_before_colon_in_inheritance_clause.cs",
-      "Output": "constructs/spaces/skala_space_before_colon_in_inheritance_clause/e9bad7aa.expected.cs",
-      "OracleHash": "e9bad7aa",
-      "SkalaHash": "e9bad7aa",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_before_comma",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_before_comma.cs",
-      "Output": "constructs/spaces/skala_space_before_comma/c9648a31.expected.cs",
-      "OracleHash": "c9648a31",
-      "SkalaHash": "c9648a31",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_before_comma",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_before_comma.cs",
-      "Output": "constructs/spaces/skala_space_before_comma/2b94146a.expected.cs",
-      "OracleHash": "2b94146a",
-      "SkalaHash": "2b94146a",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_before_open_square_brackets",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_before_open_square_brackets.cs",
-      "Output": "constructs/spaces/skala_space_before_open_square_brackets/cba02eed.expected.cs",
-      "OracleHash": "cba02eed",
-      "SkalaHash": "cba02eed",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_before_open_square_brackets",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_before_open_square_brackets.cs",
-      "Output": "constructs/spaces/skala_space_before_open_square_brackets/ad9f9722.expected.cs",
-      "OracleHash": "ad9f9722",
-      "SkalaHash": "ad9f9722",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_before_semicolon_in_for_statement",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_before_semicolon_in_for_statement.cs",
-      "Output": "constructs/spaces/skala_space_before_semicolon_in_for_statement/869de653.expected.cs",
-      "OracleHash": "869de653",
-      "SkalaHash": "869de653",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_before_semicolon_in_for_statement",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_before_semicolon_in_for_statement.cs",
-      "Output": "constructs/spaces/skala_space_before_semicolon_in_for_statement/7ee14e5a.expected.cs",
-      "OracleHash": "7ee14e5a",
-      "SkalaHash": "7ee14e5a",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_call_empty_parameter_list_parentheses",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses.cs",
-      "Output": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses/9a496499.expected.cs",
-      "OracleHash": "9a496499",
-      "SkalaHash": "9a496499",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_call_empty_parameter_list_parentheses",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses.cs",
-      "Output": "constructs/spaces/skala_space_between_method_call_empty_parameter_list_parentheses/53456a8a.expected.cs",
-      "OracleHash": "53456a8a",
-      "SkalaHash": "53456a8a",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_call_name_and_opening_parenthesis",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis.cs",
-      "Output": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis/b36be3dc.expected.cs",
-      "OracleHash": "b36be3dc",
-      "SkalaHash": "b36be3dc",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_call_name_and_opening_parenthesis",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis.cs",
-      "Output": "constructs/spaces/skala_space_between_method_call_name_and_opening_parenthesis/d489a4c7.expected.cs",
-      "OracleHash": "d489a4c7",
-      "SkalaHash": "d489a4c7",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_call_parameter_list_parentheses",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses.cs",
-      "Output": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses/9028167b.expected.cs",
-      "OracleHash": "9028167b",
-      "SkalaHash": "9028167b",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_call_parameter_list_parentheses",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses.cs",
-      "Output": "constructs/spaces/skala_space_between_method_call_parameter_list_parentheses/320c7691.expected.cs",
-      "OracleHash": "320c7691",
-      "SkalaHash": "320c7691",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_declaration_empty_parameter_list_parentheses",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses.cs",
-      "Output": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses/d827062a.expected.cs",
-      "OracleHash": "d827062a",
-      "SkalaHash": "d827062a",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_declaration_empty_parameter_list_parentheses",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses.cs",
-      "Output": "constructs/spaces/skala_space_between_method_declaration_empty_parameter_list_parentheses/6afa55b7.expected.cs",
-      "OracleHash": "6afa55b7",
-      "SkalaHash": "6afa55b7",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_declaration_name_and_open_parenthesis",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis.cs",
-      "Output": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis/c7694c14.expected.cs",
-      "OracleHash": "c7694c14",
-      "SkalaHash": "c7694c14",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_declaration_name_and_open_parenthesis",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis.cs",
-      "Output": "constructs/spaces/skala_space_between_method_declaration_name_and_open_parenthesis/0d511bdf.expected.cs",
-      "OracleHash": "0d511bdf",
-      "SkalaHash": "0d511bdf",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_declaration_parameter_list_parentheses",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses.cs",
-      "Output": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses/ed3ae146.expected.cs",
-      "OracleHash": "ed3ae146",
-      "SkalaHash": "ed3ae146",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_method_declaration_parameter_list_parentheses",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses.cs",
-      "Output": "constructs/spaces/skala_space_between_method_declaration_parameter_list_parentheses/8c0363ef.expected.cs",
-      "OracleHash": "8c0363ef",
-      "SkalaHash": "8c0363ef",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_parentheses_of_control_flow_statements",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements.cs",
-      "Output": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements/1fcab6f7.expected.cs",
-      "OracleHash": "1fcab6f7",
-      "SkalaHash": "1fcab6f7",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_parentheses_of_control_flow_statements",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements.cs",
-      "Output": "constructs/spaces/skala_space_between_parentheses_of_control_flow_statements/5413d59f.expected.cs",
-      "OracleHash": "5413d59f",
-      "SkalaHash": "5413d59f",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_square_brackets",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_square_brackets.cs",
-      "Output": "constructs/spaces/skala_space_between_square_brackets/fcbc1bf2.expected.cs",
-      "OracleHash": "fcbc1bf2",
-      "SkalaHash": "fcbc1bf2",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_space_between_square_brackets",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/spaces/skala_space_between_square_brackets.cs",
-      "Output": "constructs/spaces/skala_space_between_square_brackets/15169162.expected.cs",
-      "OracleHash": "15169162",
-      "SkalaHash": "15169162",
-      "Outcome": "Conformant",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_wrap_after_expression_lbrace",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/wrapping/initializers.cs",
-      "Output": "constructs/wrapping/initializers/3bf9f2c9.expected.cs",
-      "OracleHash": "3bf9f2c9",
-      "SkalaHash": "3bf9f2c9",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_wrap_after_expression_lbrace",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/wrapping/initializers.cs",
-      "Output": "constructs/wrapping/initializers/3bf9f2c9.expected.cs",
-      "OracleHash": "3bf9f2c9",
-      "SkalaHash": "3bf9f2c9",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_wrap_before_comma_in_base_clause",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/wrapping/base-list.cs",
-      "Output": "constructs/wrapping/base-list/72304cb8.expected.cs",
-      "OracleHash": "72304cb8",
-      "SkalaHash": "72304cb8",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_wrap_before_comma_in_base_clause",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/wrapping/base-list.cs",
-      "Output": "constructs/wrapping/base-list/72304cb8.expected.cs",
-      "OracleHash": "72304cb8",
-      "SkalaHash": "72304cb8",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_wrap_before_expression_rbrace",
-          "Value": "false"
-        }
-      ],
-      "Fixture": "constructs/wrapping/initializers.cs",
-      "Output": "constructs/wrapping/initializers/3bf9f2c9.expected.cs",
-      "OracleHash": "3bf9f2c9",
-      "SkalaHash": "3bf9f2c9",
-      "Outcome": "Unexercised",
-      "Expectation": "reproduces",
-      "Divergence": null,
-      "Source": "conformance-sweep.json"
-    },
-    {
-      "Overrides": [
-        {
-          "Key": "skala_wrap_before_expression_rbrace",
-          "Value": "true"
-        }
-      ],
-      "Fixture": "constructs/wrapping/initializers.cs",
-      "Output": "constructs/wrapping/initializers/3bf9f2c9.expected.cs",
-      "OracleHash": "3bf9f2c9",
-      "SkalaHash": "3bf9f2c9",
-      "Outcome": "Unexercised",
       "Expectation": "reproduces",
       "Divergence": null,
       "Source": "conformance-sweep.json"

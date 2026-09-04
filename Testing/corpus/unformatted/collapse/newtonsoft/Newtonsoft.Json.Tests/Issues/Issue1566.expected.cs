@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -43,8 +43,7 @@ namespace Newtonsoft.Json.Tests.Issues {
     [TestFixture]
     public class Issue1566 : TestFixtureBase {
         [Test]
-        public void Github_deserialize_pr_state_should_be_case_insensitive() {
-            // Arrange
+        public void Github_deserialize_pr_state_should_be_case_insensitive() { // Arrange
             var jsonWithUppercase = "{\"state\": \"APPROVED\"}";
             var jsonWithLowercase = "{\"state\": \"approved\"}"; // Act
             var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
@@ -55,8 +54,7 @@ namespace Newtonsoft.Json.Tests.Issues {
         }
 
         [Test]
-        public void Github_deserialize_pr_state_changes_requested_should_be_case_insensitive() {
-            // Arrange
+        public void Github_deserialize_pr_state_changes_requested_should_be_case_insensitive() { // Arrange
             var jsonWithUppercase = "{\"state\": \"CHANGES_REQUESTED\"}";
             var jsonWithLowercase = "{\"state\": \"changes_requested\"}"; // Act
             var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);

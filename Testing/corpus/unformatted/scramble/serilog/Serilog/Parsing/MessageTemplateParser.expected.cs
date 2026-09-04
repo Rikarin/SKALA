@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -274,8 +274,7 @@ public class MessageTemplateParser : IMessageTemplateParser {
         // Most of the time we won't hit escapes, so we can get away with just a single Substring() allocation at
         // the end.
         var i = messageTemplate.IndexOfAny(CurlyBraceChars, startAt);
-        if (i == -1) {
-            // No more interesting characters in the template, everything left is text.
+        if (i == -1) { // No more interesting characters in the template, everything left is text.
             next = messageTemplate.Length;
             return new(messageTemplate[startAt..]);
         }

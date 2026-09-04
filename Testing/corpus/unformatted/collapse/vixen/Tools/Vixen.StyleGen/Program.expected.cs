@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -6,8 +6,7 @@ using Vixen.StyleGen; // The whole of the entry point. Everything worth testing 
 // which is deliberate: a build step whose behaviour lives in `Main` is one whose tests have to spawn
 // a process to find out what it did.
 var request = Arguments.Parse(args, out var problem);
-if (request is null) {
-    // ⚠ MSBuild's canonical diagnostic shape — `subcategory code: text` on standard error — so that
+if (request is null) { // ⚠ MSBuild's canonical diagnostic shape — `subcategory code: text` on standard error — so that
 // this lands in an IDE's error list and in a CI log's summary rather than scrolling past as
 // prose from a subprocess. The same reason `Vixen.Sdk.targets` asks the CLI for `--format
 // msbuild`.

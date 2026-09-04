@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,7 @@
 
 namespace Serilog.Settings.KeyValuePairs;
 
-class SettingValueConversions {
-    // should match "The.NameSpace.TypeName::MemberName" optionally followed by
+class SettingValueConversions { // should match "The.NameSpace.TypeName::MemberName" optionally followed by
 // usual assembly qualifiers like :
 // ", MyAssembly, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
     static Regex StaticMemberAccessorRegex = new(
@@ -62,15 +61,13 @@ class SettingValueConversions {
                 )!; // is there a public static property with that name ?
                 var publicStaticPropertyInfo = accessorType.GetProperties(BindingFlags.Static | BindingFlags.Public)
                     .FirstOrDefault(x => x.Name == memberName && x.GetMethod != null);
-                if (publicStaticPropertyInfo != null) {
-                    // static property, no instance to pass
+                if (publicStaticPropertyInfo != null) { // static property, no instance to pass
                     return publicStaticPropertyInfo.GetValue(null);
                 } // no property ? look for a public static field
 
                 var publicStaticFieldInfo = accessorType.GetFields(BindingFlags.Static | BindingFlags.Public)
                     .FirstOrDefault(x => x.Name == memberName);
-                if (publicStaticFieldInfo != null) {
-                    // static field, no instance to pass
+                if (publicStaticFieldInfo != null) { // static field, no instance to pass
                     return publicStaticFieldInfo.GetValue(null);
                 }
 

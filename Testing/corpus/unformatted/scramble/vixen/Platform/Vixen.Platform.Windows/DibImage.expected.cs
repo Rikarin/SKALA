@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -130,8 +130,7 @@ static class DibImage {
                     BinaryPrimitives.ReadUInt32LittleEndian(dib[44..]);
                 blueMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[48..]);
                 alphaMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[52..]);
-            } else {
-                // A V3 header carries three of them immediately after it, and never a fourth.
+            } else { // A V3 header carries three of them immediately after it, and never a fourth.
                 if (dib.Length
                     < headerSize
                     + 12) {

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,9 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Serilog.Policies;
+namespace Serilog.Policies; // Byte arrays, when logged, need to be copied so that they are
 
-// Byte arrays, when logged, need to be copied so that they are
 // safe from concurrent modification when written to asynchronous
 // sinks. Byte arrays larger than 1k are written as descriptive strings.
 class ByteArrayScalarConversionPolicy : IScalarConversionPolicy {

@@ -1,7 +1,6 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 namespace Fuzz.N1 {
-    internal class T2 {
-        // fuzz
+    internal class T2 { // fuzz
         public override Span<Guid> M23(
             Dictionary<int, List<int>> p24,
             (byte First, object Second) p25,

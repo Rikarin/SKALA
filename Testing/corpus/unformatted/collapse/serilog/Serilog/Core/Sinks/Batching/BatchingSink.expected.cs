@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright © Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,8 +24,7 @@ sealed class BatchingSink : ILogEventSink, IDisposable, ISetLoggingFailureListen
 #if FEATURE_ASYNCDISPOSABLE
         , IAsyncDisposable
 #endif
-{
-    // Buffers events from the write- to the read side.
+{ // Buffers events from the write- to the read side.
     readonly Channel<LogEvent> _queue; // These fields are used by the write side to signal shutdown.
 
 // A mutex is required because the queue writer `Complete()` call is not idempotent and will throw if
@@ -102,8 +101,7 @@ sealed class BatchingSink : ILogEventSink, IDisposable, ISetLoggingFailureListen
 
     async Task LoopAsync() {
         var isEagerBatch = _eagerlyEmitFirstEvent;
-        do {
-            // Code from here through to the `try` block is expected to be infallible. It's structured this way because
+        do { // Code from here through to the `try` block is expected to be infallible. It's structured this way because
 // any failure modes within it haven't been accounted for in the rest of the sink design, and would need
 // consideration in order for the sink to function robustly (i.e. to avoid hot/infinite looping).
             var fillBatch = Task.Delay(_batchScheduler.NextInterval);
@@ -261,8 +259,7 @@ sealed class BatchingSink : ILogEventSink, IDisposable, ISetLoggingFailureListen
         SignalShutdown();
         try {
             _runLoop.Wait();
-        } catch (Exception ex) {
-            // E.g. the task was canceled before ever being run, or internally failed and threw
+        } catch (Exception ex) { // E.g. the task was canceled before ever being run, or internally failed and threw
 // an unexpected exception.
             _failureListener.OnLoggingFailed(
                 this,

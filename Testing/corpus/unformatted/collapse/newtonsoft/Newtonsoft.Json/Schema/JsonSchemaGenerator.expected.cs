@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -226,8 +226,7 @@ namespace Newtonsoft.Json.Schema {
             string explicitId = GetTypeId(type, true);
             if (!StringUtils.IsNullOrEmpty(resolvedId)) {
                 JsonSchema resolvedSchema = _resolver.GetSchema(resolvedId);
-                if (resolvedSchema != null) {
-                    // resolved schema is not null but referencing member allows nulls
+                if (resolvedSchema != null) { // resolved schema is not null but referencing member allows nulls
 // change resolved schema to allow nulls. hacky but what are ya gonna do?
                     if (valueRequired != Required.Always && !HasFlag(resolvedSchema.Type, JsonSchemaType.Null)) {
                         resolvedSchema.Type |= JsonSchemaType.Null;
@@ -261,8 +260,7 @@ namespace Newtonsoft.Json.Schema {
 
             CurrentSchema.Title = GetTitle(type);
             CurrentSchema.Description = GetDescription(type);
-            if (converter != null) {
-                // todo: Add GetSchema to JsonConverter and use here?
+            if (converter != null) { // todo: Add GetSchema to JsonConverter and use here?
                 CurrentSchema.Type = JsonSchemaType.Any;
             } else {
                 switch (contract.ContractType) {
@@ -391,8 +389,7 @@ namespace Newtonsoft.Json.Schema {
             CurrentSchema.AllowAdditionalProperties = true;
         }
 #endif
-        internal static bool HasFlag(JsonSchemaType? value, JsonSchemaType flag) {
-            // default value is Any
+        internal static bool HasFlag(JsonSchemaType? value, JsonSchemaType flag) { // default value is Any
             if (value == null) {
                 return true;
             }

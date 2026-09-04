@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -164,8 +164,7 @@ namespace Newtonsoft.Json.Utilities {
                 ToUniversalTicks(dateTime, dateTime.GetUtcOffset());
         }
 
-        private static long ToUniversalTicks(DateTime dateTime, TimeSpan offset) {
-            // special case min and max value
+        private static long ToUniversalTicks(DateTime dateTime, TimeSpan offset) { // special case min and max value
 // they never have a timezone appended to avoid issues
             if
                 (dateTime.Kind == DateTimeKind.Utc || dateTime == DateTime.MaxValue || dateTime == DateTime.MinValue) {

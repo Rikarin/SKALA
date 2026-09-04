@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // The three `force_chop_compound_*` keys: a compound statement condition chopped at every operator
 // of its root chain, however well it fits. Each key governs exactly one statement kind, so the
 // `while` and `do` cases below do not move when only the `if` key is on.

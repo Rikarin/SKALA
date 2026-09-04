@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // LineSpanDirectiveTrivia and LineDirectivePosition — C# 10's `#line (a, b) - (c, d) e "file"` —
 // occurred nowhere, while the plain LineDirectiveTrivia did. A directive is a DirectiveNode, so
 // `resharper_csharp_indent_preprocessor_other` decides its column, and the span form is the only

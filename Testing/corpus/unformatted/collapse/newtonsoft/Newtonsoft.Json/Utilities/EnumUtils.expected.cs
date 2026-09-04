@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -183,11 +183,9 @@ namespace Newtonsoft.Json.Utilities {
             }
 
             string? returnString;
-            if (result != 0) {
-                // We were unable to represent this number as a bitwise or of valid flags
+            if (result != 0) { // We were unable to represent this number as a bitwise or of valid flags
                 returnString = null; // return null so the caller knows to .ToString() the input
-            } else if (saveResult == 0) {
-                // For the cases when we have zero
+            } else if (saveResult == 0) { // For the cases when we have zero
                 if (values.Length > 0 && values[0] == 0) {
                     returnString = resolvedNames[0]; // Zero was one of the enum values.
                 } else {
@@ -266,8 +264,7 @@ namespace Newtonsoft.Json.Utilities {
                 object? temp = null;
                 try {
                     temp = Convert.ChangeType(value, underlyingType, CultureInfo.InvariantCulture);
-                } catch (FormatException) {
-                    // We need to Parse this as a String instead. There are cases
+                } catch (FormatException) { // We need to Parse this as a String instead. There are cases
 // when you tlbimp enums that can have values of the form "3D".
 // Don't fix this code.
                 }
@@ -286,8 +283,7 @@ namespace Newtonsoft.Json.Utilities {
             ulong result = 0;
             int valueIndex = firstNonWhitespaceIndex;
             while (valueIndex <= value.Length) // '=' is to handle invalid case of an ending comma
-            {
-                // Find the next separator, if there is one, otherwise the end of the string.
+            { // Find the next separator, if there is one, otherwise the end of the string.
                 int endIndex = value.IndexOf(EnumSeparatorChar, valueIndex);
                 if (endIndex == -1) {
                     endIndex = value.Length;
@@ -322,8 +318,7 @@ namespace Newtonsoft.Json.Utilities {
                     );
                 }
 
-                if (matchingIndex == null) {
-                    // still can't find a match
+                if (matchingIndex == null) { // still can't find a match
 // before we throw an error, check whether the entire string has a case insensitive match against resolve names
                     matchingIndex = FindIndexByName(
                         resolvedNames,

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -83,8 +83,7 @@ public class MessageTemplateTextFormatter : ITextFormatter {
                 }
 
                 Padding.Apply(output, exception, pt.Alignment);
-            } else {
-                // In this block, `writer` may be used to buffer output so that
+            } else { // In this block, `writer` may be used to buffer output so that
 // padding can be applied.
                 var writer = pt.Alignment.HasValue ? ReusableStringWriter.GetOrCreate() : output;
                 if (pt.PropertyName == OutputProperties.MessagePropertyName) {

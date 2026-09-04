@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright 2013-2020 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -149,12 +149,12 @@ public class LoggerConfiguration {
             auditing
         );
         var processor = new MessageTemplateProcessor(converter);
-        var enricher = _enrichers.Count switch {
-            // Should be a rare case, so no problem making that extra interface dispatch.
-            0 => new EmptyEnricher(),
-            1 => _enrichers[0], // Enrichment failures are not considered blocking for auditing purposes.
-            _ => new SafeAggregateEnricher(_enrichers)
-        };
+        var enricher =
+            _enrichers.Count switch { // Should be a rare case, so no problem making that extra interface dispatch.
+                0 => new EmptyEnricher(),
+                1 => _enrichers[0], // Enrichment failures are not considered blocking for auditing purposes.
+                _ => new SafeAggregateEnricher(_enrichers)
+            };
         LevelOverrideMap? overrideMap = null;
         if (_overrides.Count != 0) {
             overrideMap = new(_overrides, _minimumLevel, _levelSwitch);

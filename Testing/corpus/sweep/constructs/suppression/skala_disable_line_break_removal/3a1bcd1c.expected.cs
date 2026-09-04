@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // ⚠ The same shape as its sibling, because the pair is only separable on a file that carries both
 // directions at once. `disable_line_break_removal` keeps the three-blank run, the blank above the
 // closing brace and the author's break after `=>` — and still breaks `void N() {` off its statement

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -309,8 +309,7 @@ public sealed class AssetDatabase {
                     CultureInfo.InvariantCulture,
                     DateTimeStyles.RoundtripKind,
                     out var written
-                )) {
-                // Skipped, which the terminator then catches: one line fewer than the count the file
+                )) { // Skipped, which the terminator then catches: one line fewer than the count the file
 // declares means the whole index is refused. Salvaging the readable lines would be
 // the tempting thing and the wrong one — an index missing an entry it does not know
 // it is missing is exactly the "fresh but incomplete" state this must never reach.

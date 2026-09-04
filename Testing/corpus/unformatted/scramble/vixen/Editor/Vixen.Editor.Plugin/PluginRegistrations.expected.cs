@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -60,8 +60,7 @@ public sealed class PluginRegistrations : IDisposable {
 
     /// <summary>Takes everything back out.</summary>
     /// <remarks>Safe to call twice: the second time there is nothing left to undo.</remarks>
-    public void Dispose() {
-        // Before the undo list, because an undo that removes an update would otherwise be walking a
+    public void Dispose() { // Before the undo list, because an undo that removes an update would otherwise be walking a
         // list this is about to clear anyway — and because a plugin half-way through unloading must
         // not be called again from a frame that lands mid-teardown.
         Updates.Clear();

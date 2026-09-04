@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -101,8 +101,7 @@ public static class DistanceField {
         var green = Prepare(edges, EdgeChannels.Green);
         var blue = Prepare(edges, EdgeChannels.Blue);
         for (var y = 0; y < height; y++) {
-            for (var x = 0; x < width; x++) {
-                // The pixel's centre, back in the outline's own units.
+            for (var x = 0; x < width; x++) { // The pixel's centre, back in the outline's own units.
                 var point = new Vector2(
                     ((x + 0.5f) / scale) + origin.X,
                     ((height - 1 - y + 0.5f) / scale) + origin.Y

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -106,14 +106,12 @@ static class DibImage {
         uint redMask, greenMask, blueMask, alphaMask;
         var offset = headerSize;
         if (compression == BiBitfields) {
-            if (headerSize >= V4HeaderSize) {
-                // A V4 or V5 header carries the masks in the header itself.
+            if (headerSize >= V4HeaderSize) { // A V4 or V5 header carries the masks in the header itself.
                 redMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[40 ..]);
                 greenMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[44 ..]);
                 blueMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[48 ..]);
                 alphaMask = BinaryPrimitives.ReadUInt32LittleEndian(dib[52 ..]);
-            } else {
-                // A V3 header carries three of them immediately after it, and never a fourth.
+            } else { // A V3 header carries three of them immediately after it, and never a fourth.
                 if (dib.Length < headerSize + 12) {
                     return false;
                 }
@@ -124,8 +122,7 @@ static class DibImage {
                 alphaMask = 0;
                 offset += 12;
             }
-        } else {
-            // BI_RGB is BGR(A) in memory, which is these masks read as one little-endian word.
+        } else { // BI_RGB is BGR(A) in memory, which is these masks read as one little-endian word.
             (redMask, greenMask, blueMask) = (0x00FF_0000u, 0x0000_FF00u, 0x0000_00FFu);
             alphaMask = bits == 32 ? 0xFF00_0000u : 0u;
         }
@@ -163,8 +160,7 @@ static class DibImage {
             }
         }
 
-        if (!alphaSeen) {
-            // Every pixel fully transparent is what an application that left the fourth byte alone
+        if (!alphaSeen) { // Every pixel fully transparent is what an application that left the fourth byte alone
 // produces, and is never what one that meant it produces — an image nobody can see is
 // not something anybody copies. See the remarks.
             for (var index = 3; index < pixels.Length; index += 4) {

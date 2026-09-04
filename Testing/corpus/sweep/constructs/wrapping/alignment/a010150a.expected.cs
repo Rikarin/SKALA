@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 public class Alignment {
     // The `align_multiline_*` family: whether a wrapped construct's continuation lines take an
     // indent level from the line they are on, or a column from the construct's own first token.

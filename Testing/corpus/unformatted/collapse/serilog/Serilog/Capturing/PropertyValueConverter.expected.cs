@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 // Copyright 2013-2021 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,9 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Serilog.Capturing;
+namespace Serilog.Capturing; // Values in Serilog are simplified down into a lowest-common-denominator internal
 
-// Values in Serilog are simplified down into a lowest-common-denominator internal
 // type system so that there is a better chance of code written with one sink in
 // mind working correctly with any other. This technique also makes the programmer
 // writing a log event (roughly) in control of the cost of recording that event.
@@ -139,8 +138,7 @@ partial class PropertyValueConverter : ILogEventPropertyFactory, ILogEventProper
         Destructuring destructuring,
         [NotNullWhen(true)] out LogEventPropertyValue? result
     ) {
-        if (value is IEnumerable enumerable) {
-            // Only dictionaries with 'scalar' keys are permitted, as
+        if (value is IEnumerable enumerable) { // Only dictionaries with 'scalar' keys are permitted, as
 // more complex keys may not serialize to unique values for
 // representation in sinks. This check strengthens the expectation
 // that resulting dictionary is representable in JSON as well
@@ -217,8 +215,7 @@ partial class PropertyValueConverter : ILogEventPropertyFactory, ILogEventProper
     /// <param name="destructuring">The destructuring strategy.</param>
     /// <returns>A LogEventPropertyValue representing the array's structure and elements.</returns>
     LogEventPropertyValue BuildArrayValue(Array array, int[] indices, int dimension, Destructuring destructuring) {
-        if (dimension == array.Rank) {
-            // Base case: get the value at the current indices
+        if (dimension == array.Rank) { // Base case: get the value at the current indices
             object? value = array.GetValue(indices);
             return _depthLimiter.CreatePropertyValue(value, destructuring);
         }

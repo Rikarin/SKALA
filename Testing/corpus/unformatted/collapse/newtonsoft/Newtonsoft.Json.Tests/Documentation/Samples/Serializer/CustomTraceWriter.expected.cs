@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:14c031ee7ef4b616 profile=SkalaFormatOnly generated=2026-09-02
+// skala-oracle: resharper=2025.2.6 config=sha256:9bf4b7e7193c5da3 profile=SkalaFormatOnly generated=2026-09-04
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -48,8 +48,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
         public class NLogTraceWriter : ITraceWriter {
             private static readonly Logger Logger = LogManager.GetLogger("NLogTraceWriter");
 
-            public TraceLevel LevelFilter {
-                // trace all messages. nlog can handle filtering
+            public TraceLevel LevelFilter { // trace all messages. nlog can handle filtering
                 get { return TraceLevel.Verbose; }
             }
 
