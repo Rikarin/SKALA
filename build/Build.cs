@@ -55,10 +55,22 @@ class Build : NukeBuild {
         definition => definition
             .Executes(() => DotNetRestore(settings => settings.SetProjectFile(Solution)));
 
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         <see cref="PackageVersion" /> is applied here as well as at pack time, and the release
+    ///         that discovered why is 2.0.0.
+    ///     </b> `Pack` is `EnableNoBuild`, so stamping the version only on
+    ///     the pack put `2.0.0` in the .nuspec and left the assembly carrying
+    ///     `Directory.Build.props`' `2.0.0-alpha.1`. The published tool then answered
+    ///     <c>skala --version</c> with `2.0.0-alpha.1+&lt;sha&gt;` — a package and a binary disagreeing
+    ///     about what they are, which is the same defect as the discarded `-p:Version` one layer down:
+    ///     the measured number reached the artefact's label and not its contents.
+    /// </remarks>
     Target Compile =>
         definition => definition
             .DependsOn(Restore)
-            .Executes(() => DotNetBuild(settings => settings
+            .Executes(() => DotNetBuild(settings => Stamp(settings)
                         .SetProjectFile(Solution)
                         .SetConfiguration(Configuration)
                         .EnableNoRestore()
@@ -582,6 +594,10 @@ class Build : NukeBuild {
     ///     <c>./build.sh Pack</c> is unchanged.
     /// </remarks>
     DotNetPackSettings Stamp(DotNetPackSettings settings) =>
+        string.IsNullOrEmpty(PackageVersion) ? settings : settings.SetProperty("Version", PackageVersion);
+
+    /// <summary>The same stamp for the compile, so the assembly and the package agree.</summary>
+    DotNetBuildSettings Stamp(DotNetBuildSettings settings) =>
         string.IsNullOrEmpty(PackageVersion) ? settings : settings.SetProperty("Version", PackageVersion);
 
     AbsolutePath CanonicalDirectory => RootDirectory / "Distribution" / "Rikarin.Skala.Canonical";
