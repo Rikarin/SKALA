@@ -60,7 +60,7 @@
 </section>
 <section class="option" id="max_line_length">
 <h2><code>max_line_length</code> <a class="self" href="#max_line_length">#</a></h2>
-<p>The standard EditorConfig column limit. ReSharper reads skala_max_line_length instead; when both exist the ReSharper key wins and SK9005 reports the disagreement.</p>
+<p>The standard EditorConfig column limit. ReSharper reads its own <code>resharper_csharp_max_line_length</code> instead — the export spelling of <code>skala_max_line_length</code> — and when both exist that key wins, which SK9005 reports as a disagreement.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
