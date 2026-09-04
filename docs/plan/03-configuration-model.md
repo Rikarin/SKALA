@@ -35,17 +35,20 @@ that § "Severities" below now turns on what those values actually are.
    mono-repo root — still applies, and Rider's export silently inherits it. Skala emits `SK9002`
    (info) when the effective config for a file draws from a file above the repository root, naming
    which keys came from where.
-2. ⚠ **The standard `max_line_length` key is absent**; the width lives only in
-   `skala_max_line_length = 120`. Every other tool in the ecosystem (CSharpier, most
-   editors, `git diff --stat` heuristics) therefore does not know the width. `skala config fix`
-   offers to add `max_line_length = 120` alongside it, and Skala reads the ReSharper key as
-   authoritative when both exist and disagree — with `SK9005` telling you they disagree.
-3. ⚠ **`[*]` sets `skala_insert_final_newline = false` and `trim_trailing_whitespace = false`, while
-   `skala_insert_final_newline = true` and `skala_remove_spaces_on_blank_lines = true`.**
-   These are direct contradictions between the generic keys and the C# ones. ReSharper resolves them
-   by language specificity — the C# key wins for `.cs`. Skala must do the same, and must say so
-   (`SK9005`, one report per run, not per file), because a reader of that file will otherwise
-   reasonably conclude Skala is ignoring `skala_insert_final_newline`.
+2. ⚠ **The standard `max_line_length` key is absent** from the export; the width lives only in that
+   file's `resharper_csharp_max_line_length = 120`, which Skala carries as `skala_max_line_length`.
+   Every other tool in the ecosystem (CSharpier, most editors, `git diff --stat` heuristics)
+   therefore does not know the width. `skala config fix` offers to add `max_line_length = 120`
+   alongside it, and Skala reads `skala_max_line_length` as authoritative when both exist and
+   disagree — with `SK9005` telling you they disagree.
+3. ⚠ **`[*]` sets `insert_final_newline = false` and `trim_trailing_whitespace = false`, while the
+   export's own `resharper_csharp_insert_final_newline = true` and
+   `resharper_remove_spaces_on_blank_lines = true`.** (Lines 4, 5, 271 and 457 of
+   `editor_config_template`.) These are direct contradictions between the generic keys and the C#
+   ones. The reference formatter resolves them by language specificity — the C# key wins for `.cs`.
+   Skala must do the same, and must say so (`SK9005`, one report per run, not per file), because a
+   reader of that file will otherwise reasonably conclude Skala is ignoring
+   `skala_insert_final_newline`.
 4. **The 47-extension glob at the bottom is Rider's "these are code files" list**, and it sets only
    indentation. It includes `.cs`, and it is *last*, so under editorconfig precedence it overrides
    `[*]` for indentation. Skala uses Roslyn's `AnalyzerConfigSet` so this is handled by the same code
@@ -88,7 +91,7 @@ export bridge" below:
 ```jsonc
 {
   "key": "skala_wrap_arguments_style",
-  "aliases": ["skala_wrap_arguments_style"],   // ReSharper's language-generic spelling
+  "aliases": [],                                   // other spellings Skala also accepts
   "language": "csharp",
   "type": "enum:WrapStyle",                        // wrap_if_long | chop_if_long | chop_always
   "default": "wrap_if_long",                       // ReSharper's default, not ours — and since M3
@@ -708,8 +711,9 @@ hand-written config and the Rider export:
 
 ⚠ Comparison is by **exact spelling within a section**, falling back to the canonical's `[*]`. The
 tempting shortcut — "the canonical's last value for this `OptionId`" — is wrong twice over: it
-conflates a key with its aliases, so `skala_insert_final_newline = false` reads as an override of
-`skala_insert_final_newline = true`, which is the export's own contradiction and already
+conflates a key with its aliases, so the export's `insert_final_newline = false` reads as an override
+of its `resharper_csharp_insert_final_newline = true`, which is that file's own contradiction and
+already
 `SK9005`; and it conflates sections, so `[*.csv]` reads as overriding `[*]`. Both fired against
 Skala's own configuration, which is the export, and which must report **zero** overrides. It does.
 
