@@ -825,7 +825,7 @@ class Build : NukeBuild {
                     }
 
                     Serilog.Log.Information(
-                        "Nothing was tagged, pushed or published. docs/plan/18 § \"Armed, not firing\"."
+                        """Nothing was tagged, pushed or published. docs/plan/18 § "Armed, not firing"."""
                     );
                 }
             );

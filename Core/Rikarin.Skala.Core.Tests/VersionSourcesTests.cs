@@ -219,7 +219,7 @@ public sealed partial class VersionSourcesTests {
     [GeneratedRegex(@"<VersionPrefix>")]
     private static partial Regex VersionPrefixElement();
 
-    [GeneratedRegex(@"readonly string CanonicalVersion\s*=\s*""[^""]*"";")]
+    [GeneratedRegex("""readonly string CanonicalVersion\s*=\s*"[^"]*";""")]
     private static partial Regex CanonicalVersionParameter();
 
     [GeneratedRegex(@"^## (?<version>\d+\.\d+\.\d+[0-9A-Za-z.\-]*) — ", RegexOptions.Multiline)]
