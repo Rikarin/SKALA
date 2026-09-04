@@ -1,4 +1,5 @@
 using Rikarin.Skala.Testing;
+using System.Diagnostics;
 
 namespace Rikarin.Skala.Cli.Tests;
 
@@ -55,6 +56,76 @@ public sealed class ArrangeCommandTests {
     }
 
     /// <summary>
+    ///     A solution nested below the Git root is still the workspace target when <c>arrange</c>
+    ///     is run from that project without an explicit path.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The collected files are below <c>App/src</c>, while the solution is at <c>App/App.slnx</c>.
+    ///     Re-deriving discovery from the first collected file searches <c>src</c> and then the outer
+    ///     Git root, skipping <c>App</c>; the loose compilation then lacks the project-defined symbol
+    ///     and names the arguments after the wrong conditional signature.
+    /// </remarks>
+    [Fact]
+    public void DefaultArrange_LoadsTheSlnxUnderTheRequestedNestedProject() {
+        using var scratch = new Scratch();
+        scratch.Write(
+            "App/.editorconfig",
+            """
+            root = true
+
+            [*.cs]
+            skala_arguments_literal = named
+            skala_arguments_skip_single = false
+            """
+        );
+        scratch.Write(
+            "App/src/Callee.cs",
+            """
+            internal static class Callee {
+            #if PROJECT_BUILD
+                public static int Sum(int first, int second) => first + second;
+            #else
+                public static int Sum(int x, int y) => x + y;
+            #endif
+            }
+            """
+        );
+        var caller = scratch.Write(
+            "App/src/Caller.cs",
+            """
+            internal static class Caller {
+                public static int Call() => Callee.Sum(1, 2);
+            }
+            """
+        );
+        scratch.Write(
+            "App/App.csproj",
+            """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+                <DefineConstants>PROJECT_BUILD</DefineConstants>
+              </PropertyGroup>
+            </Project>
+            """
+        );
+        scratch.Write(
+            "App/App.slnx",
+            """
+            <Solution>
+              <Project Path="App.csproj" />
+            </Solution>
+            """
+        );
+
+        var arranged = RunIn(Path.Combine(scratch.Root, "App"), "arrange");
+
+        Assert.Equal(0, arranged.ExitCode);
+        var rewritten = File.ReadAllText(caller);
+        Assert.Contains("Callee.Sum(first: 1, second: 2)", rewritten, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     ⚠ #336: <c>arrange</c> had neither <c>--binlog</c> nor <c>--require-fresh-binlog</c>, so
     ///     <c>--load=binlog</c> could only auto-discover and could never be told the log had to be
     ///     current.
@@ -103,6 +174,26 @@ public sealed class ArrangeCommandTests {
         Assert.Equal(withBinlog.ExitCode, withFresh.ExitCode);
     }
 
+    static CliRun RunIn(string workingDirectory, params string[] arguments) {
+        var start = new ProcessStartInfo("dotnet") {
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+
+        start.ArgumentList.Add(CliRunner.Assembly);
+        foreach (var argument in arguments) {
+            start.ArgumentList.Add(argument);
+        }
+
+        using var process = Process.Start(start)!;
+        var output = process.StandardOutput.ReadToEnd();
+        var error = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        return new(process.ExitCode, output, error);
+    }
+
     sealed class Scratch : IDisposable {
         public Scratch() {
             Root = Path.Combine(Path.GetTempPath(), "skala-cli-arrange", Guid.NewGuid().ToString("n"));
@@ -117,6 +208,7 @@ public sealed class ArrangeCommandTests {
 
         public string Write(string relative, string text) {
             var path = Path.Combine(Root, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(path, text + "\n");
             return path;
         }

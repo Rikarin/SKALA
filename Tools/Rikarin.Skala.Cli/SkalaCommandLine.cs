@@ -244,6 +244,7 @@ public static partial class SkalaCommandLine {
         command.Options.Add(noXmlDoc);
 
         command.SetAction(parse => {
+                var requestedPaths = parse.GetValue(paths) ?? [];
                 var stagedValue = parse.GetResult(staged) is null
                     ? StagedMode.Off
                     : string.Equals(parse.GetValue(staged), "worktree", StringComparison.Ordinal)
@@ -257,7 +258,7 @@ public static partial class SkalaCommandLine {
                 var symbols = ParseDefines(parse.GetValue(define));
                 if (parse.GetValue(load) is { Length: > 0 } loadMode
                     && !string.Equals(loadMode, "none", StringComparison.OrdinalIgnoreCase)) {
-                    symbols = [.. symbols, .. SymbolsFromProject(parse.GetValue(paths) ?? [], loadMode)];
+                    symbols = [.. symbols, .. SymbolsFromProject(requestedPaths, loadMode)];
                 }
 
                 // `--arrange` with no value means syntactic, which is the mode that always works.
@@ -265,7 +266,7 @@ public static partial class SkalaCommandLine {
                     var full = string.Equals(parse.GetValue(arrange), "full", StringComparison.OrdinalIgnoreCase);
                     var loadDiagnostics = new List<SkalaDiagnostic>();
                     var arrangeRequest = new ArrangeRequest {
-                        Paths = parse.GetValue(paths) ?? [],
+                        Paths = requestedPaths,
                         Check = parse.GetValue(check),
                         Diff = parse.GetValue(diff),
                         Quiet = parse.GetValue(quiet),
@@ -273,7 +274,12 @@ public static partial class SkalaCommandLine {
                         Overrides = ParseOverrides(parse.GetValue(option)),
                         Define = symbols,
                         Compilations = full
-                            ? files => CompilationsFor(files, parse.GetValue(load) ?? "loose", loadDiagnostics)
+                            ? files => CompilationsFor(
+                                files,
+                                parse.GetValue(load) ?? "loose",
+                                loadDiagnostics,
+                                requestedPaths
+                            )
                             : null
                     };
 
@@ -421,8 +427,9 @@ public static partial class SkalaCommandLine {
                 // signal either way was the "N files were in no loaded compilation" line, which is
                 // correct, easy to read past, and does not say "a third of your tree".
                 var loadDiagnostics = new List<SkalaDiagnostic>();
+                var requestedPaths = parse.GetValue(paths) ?? [];
                 var request = new ArrangeRequest {
-                    Paths = parse.GetValue(paths) ?? [],
+                    Paths = requestedPaths,
                     Check = parse.GetValue(check),
                     Diff = parse.GetValue(diff),
                     Quiet = parse.GetValue(quiet),
@@ -438,6 +445,7 @@ public static partial class SkalaCommandLine {
                             files,
                             mode,
                             loadDiagnostics,
+                            requestedPaths,
                             parse.GetValue(project),
                             parse.GetValue(binlog),
                             parse.GetValue(requireFresh)
@@ -483,17 +491,32 @@ public static partial class SkalaCommandLine {
         IReadOnlyList<string> files,
         string mode,
         List<SkalaDiagnostic> diagnostics,
+        string[]? requestedPaths = null,
         string? projectPath = null,
         string? binlogPath = null,
         bool requireFreshBinlog = false
     ) {
         try {
-            var root = FindRepositoryRoot(files.Count > 0 ? files[0] : ".") ?? Directory.GetCurrentDirectory();
+            // ⚠ Workspace discovery is about what the user named, not where the first source file
+            // happened to live. A positional directory can contain App.slnx beside src/, while the
+            // collected list contains only src/*.cs; replacing the former with the latter skips the
+            // solution directory and silently selects loose loading. Empty positional paths mean the
+            // current directory, so preserve that location explicitly as well.
+            IReadOnlyList<string> loadPaths = requestedPaths is null
+                ? files
+                : requestedPaths.Length > 0
+                    ? requestedPaths
+                    : [Directory.GetCurrentDirectory()];
+            var root = FindRepositoryRoot(loadPaths.Count > 0 ? loadPaths[0] : ".")
+                ?? Directory.GetCurrentDirectory();
             var loadMode = LoadModes.Parse(mode);
             if (string.Equals(mode, "auto", StringComparison.OrdinalIgnoreCase)) {
                 loadMode = ProjectLoader.ResolveAutoMode(
                     new LoadRequest {
-                        RepositoryRoot = root, Mode = LoadMode.Workspace, ProjectPath = projectPath, Paths = files
+                        RepositoryRoot = root,
+                        Mode = LoadMode.Workspace,
+                        ProjectPath = projectPath,
+                        Paths = loadPaths
                     }
                 );
             }
@@ -507,10 +530,10 @@ public static partial class SkalaCommandLine {
                     RequireFreshBinlog = requireFreshBinlog,
                     AllowFallback = loadMode != LoadMode.Workspace,
 
-                    // ⚠ The files `arrange` actually collected, so the coverage check compares the
-                    // binlog against what this run is about rather than against the whole tree.
-                    // `arrange Core/` against a binlog covering `Core/` is complete.
-                    Paths = files
+                    // ⚠ The paths the user named, so workspace discovery sees a solution beside a
+                    // source directory and the binlog coverage check still measures only the selected
+                    // subtree. Both loaders expand directories to the source files under them.
+                    Paths = loadPaths
                 }
             );
 
