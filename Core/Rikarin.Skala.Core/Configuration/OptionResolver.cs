@@ -75,15 +75,13 @@ public sealed record OptionValueError(
 public sealed record UnknownKey(EditorConfigAssignment Assignment, KeyNamespace Namespace);
 
 /// <summary>
-///     What kind of key an unrecognised name is. Only <see cref="Option" /> is an SK9001: the export
-///     carries three thousand inspection severities, and a tool that warns about all of them on first
-///     run gets uninstalled on first run.
+///     What kind of key an unrecognised name is. Only <see cref="Option" /> is an SK9001, because a
+///     severity or a naming rule is not a style option Skala failed to implement — it belongs to
+///     Roslyn, which reads it directly.
 /// </summary>
 public enum KeyNamespace {
     /// <summary>A style option Skala does not have in its registry.</summary>
     Option,
-    /// <summary><c>resharper_*_highlighting</c> — an inspection severity. Milestone 5.</summary>
-    InspectionSeverity,
     /// <summary><c>dotnet_diagnostic.*.severity</c> — a Roslyn analyzer severity. Milestone 5.</summary>
     DiagnosticSeverity,
     /// <summary><c>dotnet_naming_*</c> — passed to Roslyn's hosted IDE1006 analyzer (doc 03).</summary>
@@ -413,10 +411,6 @@ public static class OptionResolver {
     }
 
     public static KeyNamespace Classify(string key) {
-        if (key.EndsWith("_highlighting", StringComparison.Ordinal)) {
-            return KeyNamespace.InspectionSeverity;
-        }
-
         if (key.StartsWith("dotnet_diagnostic.", StringComparison.Ordinal)) {
             return KeyNamespace.DiagnosticSeverity;
         }

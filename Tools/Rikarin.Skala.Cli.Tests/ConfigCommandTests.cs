@@ -193,8 +193,13 @@ public sealed class ConfigCommandTests {
 
             var namespaces = CliRunner.Run("config", "check", directory);
 
-            Assert.Contains("InspectionSeverity", namespaces.StandardOutput, StringComparison.Ordinal);
-            Assert.Contains("Milestone 5", namespaces.StandardOutput, StringComparison.Ordinal);
+            // ⚠ `InspectionSeverity` is gone as a namespace, so the `_highlighting` key is reported
+            // as an ordinary unknown option and `DiagnosticSeverity` is the only severity namespace
+            // `config check` still names. Asserting the absence is the half that fails if the
+            // ReSharper special case comes back.
+            Assert.DoesNotContain("InspectionSeverity", namespaces.StandardOutput, StringComparison.Ordinal);
+            Assert.Contains("DiagnosticSeverity", namespaces.StandardOutput, StringComparison.Ordinal);
+            Assert.Contains("SK9001", namespaces.StandardOutput, StringComparison.Ordinal);
         } finally {
             Directory.Delete(directory, true);
         }

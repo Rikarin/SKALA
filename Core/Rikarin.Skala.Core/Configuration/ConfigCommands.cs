@@ -180,7 +180,6 @@ public static class ConfigCommands {
                 .AppendLine(
                     group.Key switch {
                         KeyNamespace.Option => "  reported as SK9001",
-                        KeyNamespace.InspectionSeverity => "  ReSharper inspection severities — Milestone 5",
                         KeyNamespace.DiagnosticSeverity => "  Roslyn analyzer severities — Milestone 5",
                         KeyNamespace.NamingRule => "  passed to Roslyn's IDE1006 analyzer; Skala never reimplements it",
                         _ => string.Empty

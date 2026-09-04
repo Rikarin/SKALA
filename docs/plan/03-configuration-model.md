@@ -269,12 +269,20 @@ with no new configuration and adoption is a copy rather than a project.
 version that shipped has since been removed outright.** The section below is kept because the four
 measurements are still the argument, and because someone will propose the feature again.
 
-⚠ **Only the severity axis went.** Reading a Rider export for formatting and arrangement **options**
-is Skala's core premise and is untouched: `options.json`, `config check`/`explain`/`distill`/`diff`/
-`fix`/`sync`/`canonical`, and every `resharper_*` key that is not `_highlighting` are exactly as they
-were. `OptionResolver.Classify` still buckets any `_highlighting` key as `InspectionSeverity`
-precisely so that an export's three thousand inspection severities do not produce three thousand
-`SK9001`s.
+⚠ **The severity axis went first, and the option axis followed.** When this paragraph was written it
+said the option side was untouched and that `OptionResolver.Classify` still bucketed any
+`_highlighting` key as `InspectionSeverity`, so that an export's three thousand inspection severities
+did not produce three thousand `SK9001`s. Both halves of that are now false:
+
+- Skala's option keys are `skala_*`. A `resharper_*` key is an unknown key — the registry carries the
+  export spelling as provenance only, never indexed for lookup.
+- **`KeyNamespace.InspectionSeverity` no longer exists.** With no `resharper_*` vocabulary left to
+  read, a `_highlighting` key is what it actually is to this tool: a key it does not know. `SK9001` is
+  `info`, and saying nothing about a key that configures nothing is the more misleading of the two.
+
+`dotnet_diagnostic.*.severity` and `dotnet_naming_*` keep namespaces of their own, and for a different
+reason that still holds: they are **Roslyn's**, read directly by it, so reporting them as options
+Skala failed to implement would be wrong rather than merely noisy.
 
 ### Q5, resolved twice: recorded as a choice, then removed
 

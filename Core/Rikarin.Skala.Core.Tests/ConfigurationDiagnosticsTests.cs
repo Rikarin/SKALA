@@ -129,19 +129,32 @@ public sealed class ConfigurationDiagnosticsTests {
     }
 
     /// <summary>
-    ///     An inspection severity, a Roslyn diagnostic severity and a naming key are classified, not
-    ///     reported as unknown options.
+    ///     A Roslyn diagnostic severity and a naming key are classified rather than reported as unknown
+    ///     options; an inspection severity is not, and no longer has a namespace of its own.
     /// </summary>
     /// <remarks>
     ///     ⚠ <b>The sample is inline on purpose.</b> This test used to read the repository's own
     ///     <c>editor_config_template</c> and assert it contained an <c>InspectionSeverity</c> key —
-    ///     so it broke the moment somebody legitimately removed the 1 062 <c>resharper_*_highlighting</c>
-    ///     lines from it, which says nothing about whether the classifier still works. A real Rider
-    ///     export still carries about three thousand of these, and that is the input this is about;
-    ///     what this repository happens to keep in its own configuration is a different question.
+    ///     so it broke the moment somebody legitimately removed the 1 062 <c>_highlighting</c> lines
+    ///     from it, which says nothing about whether the classifier still works.
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             <c>KeyNamespace.InspectionSeverity</c> is gone and this test now asserts its
+    ///             absence.
+    ///         </b> It existed so that a Rider export's ~3 000 inspection severities did not each
+    ///         become an <c>SK9001</c>. Skala reads none of that vocabulary any more, so a
+    ///         <c>_highlighting</c> key is an ordinary unknown key — which is the second assertion here,
+    ///         and it is the one that fails if the special case comes back.
+    ///     </para>
+    ///     <para>
+    ///         The two that stay are not Skala's to implement: <c>dotnet_diagnostic.*.severity</c> and
+    ///         <c>dotnet_naming_*</c> are read by Roslyn, so reporting them as options Skala lacks would
+    ///         be wrong rather than merely noisy.
+    ///     </para>
     /// </remarks>
     [Fact]
-    public void SK9001_IgnoresTheSeverityNamespaces() {
+    public void SK9001_IgnoresTheSeverityNamespacesRoslynOwns_AndReportsAnInspectionSeverity() {
         var document = EditorConfigDocument.FromText(
             "/repo/.editorconfig",
             """
@@ -154,12 +167,22 @@ public sealed class ConfigurationDiagnosticsTests {
         );
 
         var resolution = OptionResolver.Resolve(EditorConfigChain.Of("/repo/File.cs", document));
+        var diagnostics = ConfigurationAnalyzer.Analyze(resolution);
 
-        Assert.Contains(resolution.Unknown, static key => key.Namespace == KeyNamespace.InspectionSeverity);
-        Assert.DoesNotContain(
-            ConfigurationAnalyzer.Analyze(resolution),
-            static d => d.Id == ConfigDiagnosticIds.UnknownKey
+        Assert.Equal(
+            KeyNamespace.Option,
+            Assert.Single(
+                resolution.Unknown,
+                key => key.Assignment.Key.EndsWith("_highlighting", StringComparison.Ordinal)
+            ).Namespace
         );
+
+        Assert.Single(diagnostics, d => d.Id == ConfigDiagnosticIds.UnknownKey);
+
+        // The two Roslyn owns are still classified out of SK9001, and named so this cannot pass by
+        // finding nothing: a resolution that dropped them entirely would satisfy a DoesNotContain.
+        Assert.Contains(resolution.Unknown, static key => key.Namespace == KeyNamespace.DiagnosticSeverity);
+        Assert.Contains(resolution.Unknown, static key => key.Namespace == KeyNamespace.NamingRule);
     }
 
     [Fact]
