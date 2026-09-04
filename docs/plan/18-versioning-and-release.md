@@ -271,11 +271,17 @@ conditions it should be made against** — none of them a workflow's to check:
    moving on their own.
 
 ⚠ **2.0.0 was cut with condition 1 unmet**, and that is the record rather than an oversight: **#337**
-(SK-FUZZ-0017, an idempotency non-convergence, cause not established) and **#338** (SK-FUZZ-0008, the
+(SK-FUZZ-0017, an idempotency non-convergence, cause not established), **#338** (SK-FUZZ-0008, the
 `indent` mutation misclassified as absorbed — a defect in the fuzzer's own catalogue rather than in
-the formatter) were both open. Condition 1 is a condition for promoting a pre-release to a stable
-`2.0.0`, and it is written down as unmet so that a later reader does not infer from a `2.0.0` tag
-that the queue was empty when it was cut.
+the formatter) and **#339** (a second idempotency non-convergence, from the nightly's own red run the
+day the register was removed, whose signature matches #337's on every axis measured) were all open.
+Condition 1 is a condition for promoting a pre-release to a stable `2.0.0`, and it is written down as
+unmet so that a later reader does not infer from a `2.0.0` tag that the queue was empty when it was
+cut.
+
+⚠ #339 is also the first evidence that the new wording works where the old one would not have. The
+old condition named a file; #339 arrived after that file was deleted, so it could never have appeared
+in it, and the gate would have read "empty" while three defects were open. An issue query counts it.
 
 ⚠ The jump from an unpublished 1.0.0 to 2.0.0 costs nobody anything, because nothing was ever
 published under 1.0.0 — zero tags, zero packages on any feed. It is also the honest record: the
