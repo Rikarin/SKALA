@@ -1,15 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    The shippable analyzer package (ADR-006): Skala's rules are ordinary DiagnosticAnalyzers, so
-    they run inside csc, inside Rider and inside `skala check` from one implementation.
-
-    ⚠ docs/plan/02 § "The project graph": this project may reference nothing but Roslyn and
-    Rules.Metadata. A transitive reference on anything that is not netstandard2.0 makes the analyzer
-    package fail to load with an error message that names none of it. Enforced by
-    ProjectGraphTests.RulesPackage_ReferencesNothingButRoslyn, not by discipline.
-  -->
-
   <PropertyGroup>
     <RootNamespace>Rikarin.Skala.Rules</RootNamespace>
     <PackageId>Rikarin.Skala.Rules</PackageId>
@@ -20,20 +9,15 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" ExcludeAssets="runtime" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="../Rikarin.Skala.Rules.Metadata/Rikarin.Skala.Rules.Metadata.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
-
-  <!-- The package layout Roslyn looks for. -->
   <ItemGroup>
     <None Include="$(OutputPath)/$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(OutputPath)/Rikarin.Skala.Rules.Metadata.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
-
 </Project>

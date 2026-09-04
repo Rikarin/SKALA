@@ -1,7 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
     <ProjectReference Include="../Rikarin.Skala.Options/Rikarin.Skala.Options.csproj" />
   </ItemGroup>
-
 </Project>

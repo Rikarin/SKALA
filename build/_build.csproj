@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
@@ -13,27 +12,13 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <!--
-    ⚠ The NUKE project globs `**/*.cs` from this directory, so a second project nested under
-    `build/` is compiled into it as well — twice, once per project, with two `Program` entry points.
-    `Rikarin.Skala.Release` is the measured-version tool (docs/plan/18) and it lives here because it
-    is release engineering rather than product; this removal is what keeps the two apart.
-  -->
   <ItemGroup>
     <Compile Remove="Rikarin.Skala.Release/**" />
     <None Remove="Rikarin.Skala.Release/**" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Nuke.Common" />
-
-    <!--
-      ⚠ Not used by any target. These exist only to pin Nuke.Common's vulnerable transitives
-      forward; see the note in Directory.Packages.props. Removing Nuke.Common removes the need
-      for both. `dotnet list package` with the vulnerable and include-transitive flags is the check.
-    -->
     <PackageReference Include="System.Security.Cryptography.Xml" />
     <PackageReference Include="NuGet.Packaging" />
   </ItemGroup>
-
 </Project>

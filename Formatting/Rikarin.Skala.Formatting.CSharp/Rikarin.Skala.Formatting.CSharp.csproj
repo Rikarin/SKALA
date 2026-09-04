@@ -1,23 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    The C# front end: the trivia model, the document builder, the token-equivalence safety net and
-    the implementation behind `skala format`.
-
-    The IR and the fitting pass live in Rikarin.Skala.Formatting, which knows nothing about C#.
-  -->
-
   <PropertyGroup>
     <RootNamespace>Rikarin.Skala.Formatting.CSharp</RootNamespace>
   </PropertyGroup>
-
+    
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="../Rikarin.Skala.Formatting/Rikarin.Skala.Formatting.csproj" />
     <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
   </ItemGroup>
-
 </Project>

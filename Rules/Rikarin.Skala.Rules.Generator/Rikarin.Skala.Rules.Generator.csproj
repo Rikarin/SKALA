@@ -1,11 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    Analyzer profile (netstandard2.0). Reads rules.json as an AdditionalFile and emits the rule
-    catalogue: RuleIds, RuleCatalog.All and the per-rule metadata every rule surface reads.
-    docs/plan/08-rule-catalogue.md § "Rule metadata".
-  -->
-
   <PropertyGroup>
     <RootNamespace>Rikarin.Skala.Rules.Generator</RootNamespace>
   </PropertyGroup>
@@ -13,13 +6,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" ExcludeAssets="runtime" />
   </ItemGroup>
-
   <ItemGroup>
-    <!--
-      ⚠ Linked, not copied. The reader is the same one the option generator carries and there is no
-      reason for two of them; a source generator may not reference another assembly that is not
-      already in csc's load context, so a shared project is not available either.
-    -->
     <Compile Include="../../Core/Rikarin.Skala.Options.Generator/Json.cs" Link="Json.cs" />
     <Compile Include="../../Core/Rikarin.Skala.Options.Generator/Compat.cs" Link="Compat.cs" />
   </ItemGroup>
@@ -28,5 +15,4 @@
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
-
 </Project>

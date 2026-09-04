@@ -1,31 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    The key-flip conformance sweep: every option, at every legal value, against `jb cleanupcode`.
-
-    ⚠ A nightly job and never a commit gate. It needs JetBrains installed, which is a
-    developer-machine and nightly dependency only (ADR-011); the committed result table is what the
-    fast path reads, exactly as the committed `.expected.cs` fixtures are.
-
-    ⚠ Not a `.Tests` project on purpose. Naming it `*.Tests` would make Directory.Build.props hand
-    it the test profile and would invite `dotnet test` to run it, and a suite that shells out to
-    `jb` for half an hour is not a test.
-  -->
-
   <PropertyGroup>
     <RootNamespace>Rikarin.Skala.Conformance.Sweep</RootNamespace>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
-    <!--
-      ⚠ The oracle plumbing is reused rather than reimplemented, and it is used read-only:
-      `OracleRunner.FormatInPlace` drives `jb` over a directory tree this project lays out itself.
-      Nothing here writes a `.expected.cs`.
-    -->
     <ProjectReference Include="../Rikarin.Skala.Testing/Rikarin.Skala.Testing.csproj" />
     <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
     <ProjectReference Include="../../Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
   </ItemGroup>
-
 </Project>

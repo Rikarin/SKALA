@@ -1,13 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    rules.json and the catalogue generated from it. netstandard2.0, because Rikarin.Skala.Rules
-    references it and that assembly loads into csc and into Rider (ADR-006).
-  -->
-
   <PropertyGroup>
     <RootNamespace>Rikarin.Skala.Rules.Metadata</RootNamespace>
-    <!-- The catalogue is the assembly's entire surface; being able to read the generated file matters. -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
@@ -16,19 +9,10 @@
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>
-
   <ItemGroup>
     <AdditionalFiles Include="rules.json" />
-    <!-- Shipped so `skala explain` and the docs generator can read provenance without a build. -->
     <EmbeddedResource Include="rules.json" LogicalName="Rikarin.Skala.Rules.Metadata.rules.json" />
-
-    <!--
-      docs/plan/08 § "SK5000 — Security": the taint-tracked rules read "a declared source/sink/
-      sanitizer table in taint.json". Same shape as rules.json and for the same reason — a source
-      generator, so that Rikarin.Skala.Rules keeps a dependency closure csc can load.
-    -->
     <AdditionalFiles Include="taint.json" />
     <EmbeddedResource Include="taint.json" LogicalName="Rikarin.Skala.Rules.Metadata.taint.json" />
   </ItemGroup>
-
 </Project>

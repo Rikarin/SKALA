@@ -1,34 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    The canonical .editorconfig, versioned and restorable.
-
-    ⚠ This package does not install anything, and it cannot: measured on a probe repository,
-    NuGet copies neither `content/` nor `contentFiles/` into a consuming project directory under
-    PackageReference, and a package's `build/*.targets` are not imported during restore at all.
-    docs/plan/03 § "Canonical distribution across repositories" has the measurements.
-
-    What it is instead: the versioned carrier. A repository pins it in Directory.Packages.props
-    beside everything else it pins, and the targets file makes "this repository is not on the
-    canonical this package carries" visible in the build, where people already look.
-
-    It is separate from Rikarin.Skala.Sdk, and separate from Rikarin.Skala.Rules, because a
-    canonical bump is a repository-wide reformatting commit and a rule bump is not. Sharing a
-    version between them would force one to wait for the other.
-  -->
-
   <PropertyGroup>
-    <!--
-      ⚠ netstandard2.0, and it is a compatibility declaration rather than a build target: the
-      assembly is not in the package. The dependency group's framework is what a consumer's restore
-      matches against, so a `net10.0` group would refuse this package to a net8.0 or netstandard2.0
-      project — and every project in a repository has one .editorconfig, including the old ones.
-      It is also what lets `Rikarin.Skala.Sdk` reference it without pinning the meta package to
-      net10.0 as well.
-    -->
     <TargetFramework>netstandard2.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
-
     <IsPackable>true</IsPackable>
     <PackageId>Rikarin.Skala.Canonical</PackageId>
     <Description>The canonical .editorconfig shared across Rikarin repositories. Installed by `skala config sync`; verified by `skala config diff --canonical`.</Description>
@@ -45,30 +18,19 @@
   <ItemGroup>
     <Compile Include="PackageMarker.cs" />
   </ItemGroup>
-
   <ItemGroup>
     <None Include="canonical.editorconfig" Pack="true" PackagePath="content/" />
     <None Include="canonical.json" Pack="true" PackagePath="content/" />
     <None Include="build/Rikarin.Skala.Canonical.targets" Pack="true" PackagePath="build/" />
     <None Include="buildTransitive/Rikarin.Skala.Canonical.targets" Pack="true" PackagePath="buildTransitive/" />
   </ItemGroup>
-
-  <!--
-    ⚠ The two .targets are copied into the package verbatim and are never parsed by this build, so
-    nothing in them can be wrong until it is wrong on somebody else's machine — which happened to
-    the MSBuild package's .props, as MSB4024 on the first build of the first repository that
-    referenced it. This file's own header already notes that an XML comment cannot contain a double
-    hyphen; the note is what a person remembers and this is what the build checks. XmlPeek fails on
-    malformed XML, so asking it for the root element is a parse.
-  -->
   <ItemGroup>
     <SkalaPackagedMSBuildFile Include="build/Rikarin.Skala.Canonical.targets" />
     <SkalaPackagedMSBuildFile Include="buildTransitive/Rikarin.Skala.Canonical.targets" />
   </ItemGroup>
-
+    
   <Target Name="SkalaValidatePackagedMSBuildFiles" BeforeTargets="Build" Inputs="@(SkalaPackagedMSBuildFile)" Outputs="$(IntermediateOutputPath)msbuild-files-parse.stamp">
     <XmlPeek XmlInputPath="%(SkalaPackagedMSBuildFile.Identity)" Query="/Project" />
     <Touch Files="$(IntermediateOutputPath)msbuild-files-parse.stamp" AlwaysCreate="true" />
   </Target>
-
 </Project>

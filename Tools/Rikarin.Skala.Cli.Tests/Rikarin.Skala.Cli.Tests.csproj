@@ -1,18 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    ⚠ Nothing references Cli (docs/plan/02). These tests drive the built `skala` binary as a
-    process; the reference guard in Rikarin.Skala.Core.Tests asserts the missing edge stays missing.
-  -->
-
   <ItemGroup>
     <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
-
-    <!--
-      CliRunner and the corpus harness live in Rikarin.Skala.Testing (docs/plan/02), which carries
-      the build-order-only edge on the CLI so that a test run has a `skala` binary to drive.
-    -->
     <ProjectReference Include="../../Testing/Rikarin.Skala.Testing/Rikarin.Skala.Testing.csproj" />
   </ItemGroup>
-
 </Project>

@@ -1,22 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    The measured-version tool. docs/plan/18-versioning-and-release.md.
-
-    ⚠ It lives under `build/` rather than under `Tools/` because it is release engineering and not
-    part of the product: nothing here is packaged, and `skala` gains no command from it. The
-    `Compile Remove` in build/_build.csproj is what keeps these sources out of the NUKE project,
-    which globs `**/*.cs` from the directory above.
-
-    ⚠ The reference on Rikarin.Skala.Testing is for `Fidelity` and `LineDiff` — the differential
-    harness's line diff and its divergence classifier — and for nothing else. The output detector
-    **never formats anything in this process**: both sides of its comparison are read back off disk
-    after two external `skala` binaries wrote them. A detector that formatted in-process would be
-    comparing the candidate against the candidate, which is the failure mode doc 18 § "The output
-    detector" spends most of its length on, and `OutputSurface` refuses two identical tools for the
-    same reason.
-  -->
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Rikarin.Skala.Release</RootNamespace>
@@ -31,5 +13,4 @@
   <ItemGroup>
     <AssemblyMetadata Include="SkalaRepositoryRoot" Value="$(SkalaRepositoryRoot)" />
   </ItemGroup>
-
 </Project>

@@ -1,13 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    The option registry. options.json is the single source of truth; every C# type in this
-    assembly other than the hand-written value model is generated from it.
-  -->
-
   <PropertyGroup>
     <RootNamespace>Rikarin.Skala.Options</RootNamespace>
-    <!-- The generated option model is the assembly's entire public surface; being able to read it matters. -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
@@ -16,7 +9,6 @@
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>
-
   <ItemGroup>
     <AdditionalFiles Include="options.json" />
     <!--
@@ -31,5 +23,4 @@
     <!-- Shipped so the CLI can report registry provenance without a build. -->
     <EmbeddedResource Include="options.json" LogicalName="Rikarin.Skala.Options.options.json" />
   </ItemGroup>
-
 </Project>

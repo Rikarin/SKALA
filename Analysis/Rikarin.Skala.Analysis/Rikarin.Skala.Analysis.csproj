@@ -1,14 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    Project loading (ADR-007), the analyzer host, the incremental cache, and the implementations
-    behind `skala check`, `verify`, `fix` and `explain`.
-
-    ⚠ It references Reporting and not the other way round. Analysis produces a RunReport; Reporting
-    renders one. That direction is what makes docs/plan/09's "no renderer contains analysis logic" a
-    compile-time fact.
-  -->
-
   <PropertyGroup>
     <RootNamespace>Rikarin.Skala.Analysis</RootNamespace>
   </PropertyGroup>
@@ -79,5 +69,4 @@
           CopyToOutputDirectory="PreserveNewest"
           CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
-
 </Project>

@@ -1,28 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    Analyzer profile (netstandard2.0). Reads options.json as an AdditionalFile and emits the
-    OptionId enum, the FormattingOptions struct-of-arrays, the key parser and the option enums.
-    docs/plan/03-configuration-model.md § "The option registry".
-  -->
-
   <PropertyGroup>
     <RootNamespace>Rikarin.Skala.Options.Generator</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <!--
-      Microsoft.CodeAnalysis.Analyzers is not referenced explicitly: Roslyn 5.9.0 requires a
-      prerelease of it, and the 3.3.4 pin in docs/plan/01 predates that. It arrives transitively at
-      the version Roslyn asks for, so the analyzer-authoring analyzers still run.
-    -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" ExcludeAssets="runtime" />
   </ItemGroup>
-
   <ItemGroup>
-    <!-- ADR-012: rule ids are permanent, and release tracking is what makes that a build failure. -->
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
-
 </Project>

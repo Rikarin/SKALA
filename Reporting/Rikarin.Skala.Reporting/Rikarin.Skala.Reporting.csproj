@@ -1,13 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    SARIF is the canonical report (ADR-009); everything else in here is a renderer over it.
-
-    ⚠ This project must not reference Rikarin.Skala.Analysis. The dependency runs the other way —
-    Analysis produces a RunReport and hands it here — and that is what makes docs/plan/09's
-    "no renderer contains analysis logic" a compile-time fact rather than a review comment.
-  -->
-
   <PropertyGroup>
     <RootNamespace>Rikarin.Skala.Reporting</RootNamespace>
   </PropertyGroup>
@@ -16,10 +7,8 @@
     <PackageReference Include="Sarif.Sdk" />
     <PackageReference Include="System.IO.Hashing" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
     <ProjectReference Include="../../Rules/Rikarin.Skala.Rules.Metadata/Rikarin.Skala.Rules.Metadata.csproj" />
   </ItemGroup>
-
 </Project>

@@ -1,48 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    The test harness docs/plan/02 specifies: fixtures, the oracle, the corpus, the fidelity
-    measurement, and the CliRunner every command test drives.
-
-    ⚠ Nothing references Rikarin.Skala.Cli. The build-order edge below creates no assembly
-    reference; it exists so that a test run has a `skala` binary to drive.
-  -->
-
   <PropertyGroup>
     <RootNamespace>Rikarin.Skala.Testing</RootNamespace>
-    <!--
-      An entry point for the two deliberate developer-machine actions: regenerating the oracle
-      fixtures and printing the differential report. Never packaged, never the `skala` tool.
-    -->
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
-
-    <!--
-      ⚠ The harness measures the analysis half too, and `preprocessor` reads a real binary log
-      through the same loader `skala check` uses — which is what makes the symbol set it measures
-      with the build's own rather than a list someone typed.
-    -->
     <ProjectReference Include="../../Analysis/Rikarin.Skala.Analysis/Rikarin.Skala.Analysis.csproj" />
-
     <ProjectReference Include="../../Tools/Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj"
                       ReferenceOutputAssembly="false"
                       Private="false"
                       SkipGetTargetFrameworkProperties="true" />
   </ItemGroup>
-
   <ItemGroup>
     <AssemblyMetadata Include="SkalaRepositoryRoot" Value="$(SkalaRepositoryRoot)" />
-    <!--
-      ⚠ `skala.dll` again. It was `skala-tool.dll` from M7 until the daemon was deleted, because a
-      NativeAOT thin client published as `skala` had to sit in the same directory as the full tool
-      and two binaries need two names. The client is gone, so there is one binary and it has the
-      obvious name — see the comment in Rikarin.Skala.Cli.csproj.
-    -->
     <AssemblyMetadata Include="SkalaCliAssembly"
                       Value="$(SkalaRepositoryRoot)Tools/Rikarin.Skala.Cli/bin/$(Configuration)/net10.0/skala.dll" />
   </ItemGroup>
-
 </Project>

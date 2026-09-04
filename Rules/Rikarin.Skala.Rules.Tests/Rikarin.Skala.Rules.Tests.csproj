@@ -1,43 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-    The rule unit level: for each shipped rule, a positive fixture set and a "should not fire"
-    fixture set at least as large (docs/plan/16 § R3).
-  -->
-
-  <!--
-    ⚠ The fixtures are data, not code. Several of them deliberately declare the same type twice
-    across two files and several deliberately do not compile as a set; they are compiled one at a
-    time by RuleFixtures.Compile, which is the only compilation whose result means anything.
-  -->
-  <!--
-    ⚠ corpus/ is the SK5xxx evidence and is data for the same reason fixtures/ is: half of it is
-    deliberately vulnerable code. Compiling it into the test assembly would make this project fail
-    its own security rules, and `skala check` over the repository would report the corpus as
-    findings rather than measuring against it. SecurityCorpusTests compiles both halves itself,
-    which is the only compilation whose result means anything.
-  -->
   <ItemGroup>
     <Compile Remove="fixtures/**/*.cs" />
     <None Include="fixtures/**/*.cs" />
     <Compile Remove="corpus/**/*.cs" />
     <None Include="corpus/**/*.cs" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="../Rikarin.Skala.Rules/Rikarin.Skala.Rules.csproj" />
     <ProjectReference Include="../Rikarin.Skala.Rules.Metadata/Rikarin.Skala.Rules.Metadata.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-
-    <!--
-      ⚠ `SignedXml` lives in a NuGet package, not the shared framework, so without this the SK5030
-      fixtures do not compile — and `RuleFixtureTests` fails a fixture that does not compile rather
-      than passing it, which is the only reason the gap is visible at all. RuleFixtures.Compile
-      builds against the test host's TRUSTED_PLATFORM_ASSEMBLIES, so a PackageReference here is what
-      puts the type within reach of a fixture. Pinned centrally at 10.0.11; the 9.0.0 that
-      Nuke.Common drags in carries seven high-severity advisories (Directory.Packages.props).
-    -->
     <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
-
 </Project>
