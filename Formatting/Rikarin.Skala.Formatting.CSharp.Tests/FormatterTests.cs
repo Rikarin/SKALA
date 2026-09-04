@@ -97,7 +97,9 @@ public sealed class SpacingTests {
     [Fact]
     public void MissingAllowCommentAfterLbrace_KeepsAControlFlowCommentAfterItsOpeningBrace() {
         var document = EditorConfigDocument.FromText("/repo/.editorconfig", "root = true");
-        var options = new PhaseOneOptions(OptionResolver.Resolve(EditorConfigChain.Of("/repo/Test.cs", document)).Options);
+        var options = new PhaseOneOptions(
+            OptionResolver.Resolve(EditorConfigChain.Of("/repo/Test.cs", document)).Options
+        );
         var formatted = CSharpFormatter.Format(
             "Test.cs",
             SourceText.From("class C { void M(int k1) { if (k1 is 4 or 6) { // full-address: M = field\nM(); } } }"),

@@ -502,7 +502,7 @@ public static partial class SkalaCommandLine {
             // collected list contains only src/*.cs; replacing the former with the latter skips the
             // solution directory and silently selects loose loading. Empty positional paths mean the
             // current directory, so preserve that location explicitly as well.
-            IReadOnlyList<string> loadPaths = requestedPaths is null
+            var loadPaths = requestedPaths is null
                 ? files
                 : requestedPaths.Length > 0
                     ? requestedPaths
@@ -513,10 +513,7 @@ public static partial class SkalaCommandLine {
             if (string.Equals(mode, "auto", StringComparison.OrdinalIgnoreCase)) {
                 loadMode = ProjectLoader.ResolveAutoMode(
                     new LoadRequest {
-                        RepositoryRoot = root,
-                        Mode = LoadMode.Workspace,
-                        ProjectPath = projectPath,
-                        Paths = loadPaths
+                        RepositoryRoot = root, Mode = LoadMode.Workspace, ProjectPath = projectPath, Paths = loadPaths
                     }
                 );
             }
