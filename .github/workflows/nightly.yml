@@ -139,7 +139,9 @@ jobs:
       # named a `probe:` that deleted its trigger, and the finding was accepted only if the property
       # then held. The register is gone, deliberately, and so is that mechanism: the two defects it
       # still tracked are GitHub issues #337 (SK-FUZZ-0017, the idempotency non-convergence) and #338
-      # (SK-FUZZ-0008, the `indent` mutation misclassified as absorbed).
+      # (SK-FUZZ-0008, the `indent` mutation misclassified as absorbed). ⚠ #339 joined them the same
+      # day, from this job's own last red run — a second idempotency non-convergence whose signature
+      # matches #337's on every axis measured, so check a new finding against all three.
       #
       # ⚠ **What that costs: a rediscovery of #337 reds this job as a new finding**, and somebody has
       # to recognise it by hand from the seed and the minimised artefact. That is the accepted cost.
@@ -157,7 +159,7 @@ jobs:
         run: |
           echo "::error::the fuzzer found a property violation — see the run summary and the"
           echo "::error::fuzz-findings artefact. Nothing is screened out, so check it against the"
-          echo "::error::open SK-FUZZ issues (#337, #338) before treating it as new. Each finding"
+          echo "::error::open SK-FUZZ issues (#337, #338, #339) before treating it as new. Each finding"
           echo "::error::replays from its own seed with"
           echo "::error::  dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz --replay=<seed>"
           echo "::error::and a genuinely new one is filed as a GitHub issue."
