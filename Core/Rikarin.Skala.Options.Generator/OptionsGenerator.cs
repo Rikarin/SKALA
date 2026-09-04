@@ -215,9 +215,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                     BridgeDisagrees,
                     Location.None,
                     $"'{option.Key}' has no entry in '{BridgeFileName}'. The oracle would be handed "
-                    + "'"
-                    + option.Key
-                    + "', which it does not recognise and silently ignores."
+                    + $"'{option.Key}', which it does not recognise and silently ignores."
                 )
             );
             clean = false;
