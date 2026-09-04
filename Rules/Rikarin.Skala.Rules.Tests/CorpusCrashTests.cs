@@ -81,13 +81,7 @@ public sealed class CorpusCrashTests {
         }
     }
 
-    /// <summary>
-    ///     ⚠ <c>pathological/open/</c> is excluded, for the reason <c>Corpus.Files</c> excludes it.
-    /// </summary>
     /// <remarks>
-    ///     Those are minimised fuzz findings whose defect is <em>not fixed yet</em>, held to account by
-    ///     <c>OpenDefectTests</c> instead. Including them here would assert that a known-open defect is
-    ///     closed, and this suite would be red for a reason it is not about.
     ///     <para>
     ///         ⚠
     ///         <b>

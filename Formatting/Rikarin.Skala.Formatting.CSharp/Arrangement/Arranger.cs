@@ -184,8 +184,7 @@ public static class Arranger {
             // query in its initializer — makes Roslyn's binder throw `IndexOutOfRangeException` out
             // of `SemanticModel.GetSymbolInfo`, which `PredefinedTypeRule` calls on a node of the
             // model's own tree. There is nothing wrong with the call; there is no version of this
-            // loop that can know in advance which node will do it. See
-            // `pathological/open/register.md`, SK-FUZZ-0012.
+            // loop that can know in advance which node will do it. The finding was SK-FUZZ-0012.
             SyntaxNode rewritten;
             try {
                 rewritten = rule.Apply(new ArrangementContext(current, model, options, guard));

@@ -1182,21 +1182,38 @@ sat underneath:
   protecting only the line it ends on left every line above it open to a trailing-space mutation, and
   the space landed inside an XML text token. 1 870 more.
 
-#### `corpus/pathological/open/`
+#### `corpus/pathological/open/` — removed, and what that cost
 
-Where a minimised finding lives **before** the defect it pins is fixed, with
-[`register.md`](../../Testing/corpus/pathological/open/register.md) beside it.
+⚠ **This directory is gone, and it is a record rather than an instrument.** It held minimised fuzz
+findings **before** the defect each pinned was fixed, with a `register.md` beside them. The two
+defects it still tracked when it was removed are now GitHub issues: **#337** (SK-FUZZ-0017, the
+idempotency non-convergence) and **#338** (SK-FUZZ-0008, the `indent` mutation misclassified as
+absorbed). The minimised reproduction is on #337 and in git history at `54703b61`.
 
-⚠ It is excluded from `Corpus.Files()`, and the exclusion is the point rather than a dodge: one of
-the entries makes `skala format` throw, and a file that throws does not fail one assertion — it takes
-down every harness path that formats the corpus, the fidelity number and the differential report
-included. What holds those files to account instead is `OpenDefectTests`, which asserts of every
-entry that it **still fails, in the way its register entry records**. A defect that gets fixed breaks
-that suite and is told where its file goes next; a defect that changes shape breaks it too. It is
-deliberately not an `[Fact(Skip = …)]`: a skipped test is invisible in a green run and stays skipped
-for a year. The register is capped, because a handful of open findings is a queue and thirty are a
-policy of not fixing them — and the cap is raised in a commit that argues for it rather than met by
-dropping a finding, which would hide exactly what this directory exists to show.
+⚠ **What stopped being checked, stated plainly, because the register made the argument against its
+own deletion** — *"an entry nothing tests is a note, and this directory exists because a note is not
+enough."* Three things went:
+
+1. **`OpenDefectTests` asserted of every entry that it still failed in the way recorded.** A defect
+   that got fixed broke that suite and was told where to move its file; a defect that changed shape
+   broke it too. Nothing now notices if #337 starts passing, or starts failing differently. It was
+   deliberately not an `[Fact(Skip = …)]` for exactly this reason, and the removal gives up the
+   property that argument was protecting.
+2. **The cap** (`TheRegister_HasNotBecomeAFilingCabinet`, at 8) that made adding an open finding a
+   decision somebody took rather than a thing that happened.
+3. **The `probe:` accounting**, which let the nightly *report* a rediscovery without failing on it —
+   see "The expedition" below.
+
+⚠ **What it did not cost, measured rather than assumed:** the register's last surviving entry
+carried **no** `probe:`, and `OpenDefects.Explain` skipped every entry without one. So on the day it
+was removed the accounting accounted for nothing, and the nightly's exit code did not change. The
+mechanism went; the behaviour was already this.
+
+⚠ The replacement for the exclusion is that there is nothing to exclude. `Corpus.Files()` no longer
+filters `open/`, and the reason it did — one of the entries made `skala format` throw, taking down
+every harness path that formats the corpus rather than failing one assertion — applies again the
+moment such a file is committed to a measured set. A future unfixable reproduction belongs in an
+issue, not in `pathological/`, until the tool can process it.
 
 #### What the first day found
 

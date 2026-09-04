@@ -168,29 +168,9 @@ public static class Corpus {
             .. Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
                 .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))
                 .Select(path => new CorpusFile(set, Path.GetRelativePath(root, path).Replace('\\', '/'), path))
-                .Where(static file => !IsOpenDefect(file.RelativePath))
                 .OrderBy(static file => file.Path, StringComparer.Ordinal)
         ];
     }
-
-    /// <summary>
-    ///     <c>pathological/open/</c> — minimised fuzz findings whose defect is not fixed yet.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Excluded from every measured set, and the exclusion is the point rather than a dodge. One
-    ///     of the entries makes <c>skala format</c> throw an unhandled exception, and a file that throws
-    ///     does not fail one assertion — it takes down every harness path that formats the corpus, the
-    ///     fidelity number and the differential report included. What holds those files to account
-    ///     instead is <c>OpenDefectTests</c>, which asserts that each of them
-    ///     <b>
-    ///         still fails, in the way
-    ///         its register entry records
-    ///     </b>: a defect that gets fixed breaks that suite and is told to
-    ///     move its file into <c>pathological/</c> proper with an oracle fixture. See
-    ///     <c>Testing/corpus/pathological/open/register.md</c>.
-    /// </remarks>
-    static bool IsOpenDefect(string relativePath) =>
-        relativePath.StartsWith(OpenDefects.OpenDirectory + "/", StringComparison.Ordinal);
 
     public static IReadOnlyList<CorpusFile> All() => [.. Files(Constructs), .. Files(Real), .. Files(Pathological)];
 

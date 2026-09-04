@@ -82,12 +82,6 @@ public sealed record FuzzFinding(
     string Minimised,
     string MinimisedDetail) {
     public string Property => Violation.Property;
-
-    /// <summary>
-    ///     The <c>SK-FUZZ-…</c> id of the register entry that accounts for this finding, or <c>null</c>
-    ///     when it is new. <see cref="OpenDefects.Explain" /> decides, and the run's exit code follows.
-    /// </summary>
-    public string? AccountedFor { get; init; }
 }
 
 /// <summary>What a run covered, which is the half of a fuzz report that is read when nothing failed.</summary>
@@ -106,14 +100,7 @@ public sealed record FuzzReport(
     IReadOnlyList<string> CorpusFilesTouched,
     long ParseLost,
     ImmutableArray<ulong> ParseLostSeeds,
-    ImmutableArray<FuzzFinding> Findings,
-    IReadOnlyDictionary<string, long> Accounted) {
-    /// <summary>
-    ///     The findings the register does not account for. <b>This is what the run's exit code is.</b>
-    /// </summary>
-    public ImmutableArray<FuzzFinding> NewFindings =>
-        [.. Findings.Where(static finding => finding.AccountedFor is null)];
-
+    ImmutableArray<FuzzFinding> Findings) {
     public string Render() {
         var report = new StringBuilder();
         var seconds = Math.Max(Elapsed.TotalSeconds, 0.001);
@@ -202,51 +189,22 @@ public sealed record FuzzReport(
             }
         }
 
+        // ⚠ **The line that says whether this run reds the nightly.** Every finding is a finding: the
+        // expedition fails on any of them, including a rediscovery of a defect already tracked as a
+        // GitHub issue. That is a deliberate reversal of the accounting the open register used to
+        // provide, and the cost is stated where the decision was taken — a rediscovery of #337 reds
+        // this job and somebody has to recognise it by hand. The alternative on offer was a
+        // suppression list keyed on the defect the fuzzer exists to find, which would hide the next
+        // variant too.
         if (Violations.Count > 0) {
-            var fresh = NewFindings.Length;
+            var fresh = Findings.Length;
             report.AppendLine();
             report.AppendLine(
                 fresh == 0
-                    ? "**The expedition passes.** Every violation reduces to an entry in "
-                    + "`Testing/corpus/pathological/open/register.md` by the check described below."
-                    : $"**The expedition fails: {fresh.ToString(CultureInfo.InvariantCulture)} finding(s) "
-                    + "the register does not account for.**"
+                    ? "**The expedition passes.** Every violation was deduplicated away before it "
+                    + "became a finding."
+                    : $"**The expedition fails: {fresh.ToString(CultureInfo.InvariantCulture)} finding(s).**"
             );
-        }
-
-        // ⚠ **The line that says whether this run reds the nightly, and why.** A violation count alone
-        // stopped meaning that the day the register gained its first entry: a registered open defect is
-        // rediscovered from a fresh seed on most nights, and a job that fails on any finding is a job
-        // that is red for a reason nobody has to act on — which is a job people stop reading. The
-        // expedition fails on a finding the register does **not** account for.
-        if (Accounted.Count > 0) {
-            report.AppendLine();
-            report.AppendLine("### already registered — reported, not failed");
-            report.AppendLine();
-            report.AppendLine(
-                "Each of these was screened by removing the trigger its register entry names and asking "
-                + "the property again; the property held, so the entry accounts for it. A finding that "
-                + "still fails without the registered trigger is a *new* defect and is listed above."
-            );
-
-            report.AppendLine();
-            report.AppendLine("| entry | property | violations accounted for |");
-            report.AppendLine("|---|---|---:|");
-            foreach (var entry in Accounted.OrderByDescending(static e => e.Value)
-                         .ThenBy(static e => e.Key, StringComparer.Ordinal)) {
-                var registered = OpenDefects.Register.FirstOrDefault(candidate => string.Equals(
-                        candidate.Id,
-                        entry.Key,
-                        StringComparison.Ordinal
-                    )
-                );
-
-                report.AppendLine(
-                    $"| `{entry.Key}` | `{registered?.Property ?? "?"}` | "
-                    + entry.Value.ToString("N0", CultureInfo.InvariantCulture)
-                    + " |"
-                );
-            }
         }
 
         if (!Findings.IsEmpty) {
@@ -254,7 +212,6 @@ public sealed record FuzzReport(
             foreach (var finding in Findings.Take(25)) {
                 report.AppendLine(
                     $"### {finding.Property} — seed {FuzzRandom.Format(finding.Seed)} ({finding.Origin})"
-                    + (finding.AccountedFor is { } id ? $" — already registered as {id}" : string.Empty)
                 );
 
                 report.AppendLine();
@@ -612,7 +569,7 @@ public static class Fuzzer {
         // this comment. `CSharpDocumentBuilder.ContainsTag` is a plain `Contains` over a comment's
         // text, so a comment that merely *mentions* the tag turns formatting off from that point to
         // the end of the file — and with SK-FUZZ-0005 open, that made `./build.sh Lint` refuse to
-        // format this file at all. See `corpus/pathological/open/register.md`.
+        // format this file at all.
         (string None, string Defined)? baseline = null;
         if (subject.AbsorbedOnly
             && !subject.Baseline.Contains("@formatter:off", StringComparison.Ordinal)) {
@@ -675,11 +632,6 @@ public static class Fuzzer {
         // all of them is a report nobody reads to the end. The first of each is minimised; the rest
         // are counted.
         var seen = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
-
-        // ⚠ Counted per register entry rather than per property, because "the nightly rediscovered
-        // SK-FUZZ-0016 forty times" is the number that says whether an open entry is costing anything.
-        var accounted = new ConcurrentDictionary<string, long>(StringComparer.Ordinal);
-        var accountedSeen = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
 
         var batch = Math.Max(options.Parallelism * 4, 8);
         for (long start = 0; !cancellation.IsCancellationRequested; start += batch) {
@@ -747,44 +699,6 @@ public static class Fuzzer {
 
                         violations.AddOrUpdate(violation.Property, 1, static (_, value) => value + 1);
 
-                        // ⚠ **Screened here, before the dedup below, and that order is the whole
-                        // safety property.** The dedup keeps one finding per property; if a
-                        // registered defect took that slot, every new defect sharing its property
-                        // would be counted and never looked at. So every violation is asked
-                        // individually whether the register explains it — see OpenDefects.Explain,
-                        // which answers by deleting the registered trigger and re-running the
-                        // oracle, not by comparing names.
-                        //
-                        // ⚠ The cost is one extra property check per violation, and it is bounded by
-                        // the violation count rather than the case count: measured on nightly
-                        // 33207471534, 24 violations in 102,456 cases. The short-circuit below keeps
-                        // it bounded even when a property starts firing on everything — once a
-                        // property has an unaccounted finding the run is already failing on it, and
-                        // screening more of the same property cannot change that verdict.
-                        var entry = seen.ContainsKey(violation.Property)
-                            ? null
-                            : OpenDefects.Explain(
-                                violation.Property,
-                                subject.Path,
-                                subject.Text,
-                                OptionsFor(subject.Path),
-                                Corpus.PropertySymbols,
-                                arrangement,
-                                cancellation
-                            );
-
-                        if (entry is not null) {
-                            accounted.AddOrUpdate(entry.Id, 1, static (_, value) => value + 1);
-
-                            // One worked example per entry, minimised, so the report can show what
-                            // the register absorbed rather than only asserting that it did.
-                            if (accountedSeen.TryAdd(entry.Id, 0)) {
-                                findings.Add((index, Report(subject, violation, options, arrangement, entry.Id)));
-                            }
-
-                            continue;
-                        }
-
                         if (!seen.TryAdd(violation.Property, 0)) {
                             continue;
                         }
@@ -812,8 +726,7 @@ public static class Fuzzer {
             [.. touched.Keys.Order(StringComparer.Ordinal)],
             parseLost,
             [.. parseLostSeeds.Order().Take(5)],
-            [.. findings.OrderBy(static f => f.Index).Select(static f => f.Finding)],
-            accounted.ToDictionary(static e => e.Key, static e => e.Value, StringComparer.Ordinal)
+            [.. findings.OrderBy(static f => f.Index).Select(static f => f.Finding)]
         );
     }
 
@@ -825,8 +738,7 @@ public static class Fuzzer {
         FuzzCase subject,
         PropertyViolation violation,
         FuzzOptions options,
-        bool arrangement,
-        string? accountedFor = null
+        bool arrangement
     ) {
         // ⚠ Absorption minimises the *pre-mutation* text, every other property the mutated text, and
         // the asymmetry is the property's own shape. "format(mutate_whitespace(x)) ≡ format(x)" is a
@@ -858,7 +770,7 @@ public static class Fuzzer {
             artefact,
             minimised,
             minimisedDetail
-        ) { AccountedFor = accountedFor };
+        );
 
         if (options.OutputDirectory is { Length: > 0 } directory) {
             Directory.CreateDirectory(directory);
@@ -873,13 +785,6 @@ public static class Fuzzer {
                 $"seed {FuzzRandom.Format(subject.Seed)}\norigin {subject.Origin}\n"
                 + $"mutations {string.Join(", ", subject.Mutations.Select(static m => m.Name))}\n"
                 + $"as found: {violation}\nminimised: {minimisedDetail}\n"
-                // ⚠ Named in the artefact too, not only in the report. The artefact is what somebody
-                // downloads from a run six months later, and "this is SK-FUZZ-0016 again" is the
-                // first thing they need to know before spending an afternoon on it.
-                + (accountedFor is null
-                        ? string.Empty
-                        : $"accounted for by: {accountedFor} "
-                        + "(Testing/corpus/pathological/open/register.md; reported, did not fail the run)\n")
                 // ⚠ `--origin` for a mutate case: the seed draws the file by index into a corpus
                 // that grows, so the seed on its own stops rebuilding this case the next time a
                 // file is committed. See Build's remarks.

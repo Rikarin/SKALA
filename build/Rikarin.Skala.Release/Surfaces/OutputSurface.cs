@@ -59,11 +59,6 @@ public sealed record OutputMeasurement(
 ///         relative paths, so config discovery walks the directories it walks in the repository. The only
 ///         variable in the experiment is which binary ran.
 ///     </para>
-///     <para>
-///         ⚠ <c>pathological/open/</c> is excluded, the same exclusion <see cref="Corpus.Files" /> makes and
-///         for the same reason: one of those files makes <c>skala format</c> throw, and they are held to
-///         account by <c>OpenDefectTests</c> instead.
-///     </para>
 /// </remarks>
 public static class OutputSurface {
     public const string Name = "formatted output";
@@ -187,7 +182,6 @@ public static class OutputSurface {
                 .. Directory.EnumerateFiles(corpusRoot, "*.cs", SearchOption.AllDirectories)
                     .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))
                     .Select(path => Path.GetRelativePath(corpusRoot, path).Replace('\\', '/'))
-                    .Where(static relative => !relative.StartsWith("pathological/open/", StringComparison.Ordinal))
             ]
             : [];
 
