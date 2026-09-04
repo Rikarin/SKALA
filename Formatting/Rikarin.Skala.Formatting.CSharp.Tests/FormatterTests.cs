@@ -52,6 +52,11 @@ public sealed class SpacingTests {
     [InlineData("class C { void M(bool b) { if(b){} } }", "if (b) { }")]
     [InlineData("class C { int M(int a) => a<1?2:3; }", "int M(int a) => a < 1 ? 2 : 3;")]
     [InlineData(
+        "class C { void M() { t.GassingRate = 50.0 .CubicCentimetersPerSecond(); } }",
+        "t.GassingRate = 50.0.CubicCentimetersPerSecond();"
+    )]
+    [InlineData("class C { string M() => 1 .ToString(); }", "string M() => 1 .ToString();")]
+    [InlineData(
         "class C { System.Collections.Generic.List<int> M() => new System.Collections.Generic.List < int > (); }",
         "new System.Collections.Generic.List<int>();"
     )]

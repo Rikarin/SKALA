@@ -819,10 +819,12 @@ public static class SpaceRules {
             return true;
         }
 
-        // `1 .ToString()`: without the space `1.` lexes as the start of a numeric literal.
-        // ⚠ Only for an actual numeric literal. Testing the last character alone puts a space in
-        // `v2.Count`, which is one of the most common shapes in any real tree.
-        if (prev.IsKind(SyntaxKind.NumericLiteralToken) && b == '.' && !next.IsKind(SyntaxKind.DotDotToken)) {
+        // `1 .ToString()`: without the space `1.` lexes as the start of a real literal. Only an
+        // unsuffixed decimal integer can consume that dot: `50.0.CubicCentimetersPerSecond()`,
+        // `1e2.ToString()` and `1L.ToString()` already have a lexical boundary and must close up.
+        // ⚠ Testing NumericLiteralToken alone put a space after every real literal; testing the last
+        // character alone also puts one in `v2.Count`, one of the commonest shapes in a real tree.
+        if (IsUnsuffixedDecimalInteger(prev) && b == '.' && !next.IsKind(SyntaxKind.DotDotToken)) {
             return true;
         }
 
@@ -837,6 +839,10 @@ public static class SpaceRules {
     }
 
     static bool IsWordChar(char c) => char.IsLetterOrDigit(c) || c is '_' or '@' or '$';
+
+    static bool IsUnsuffixedDecimalInteger(SyntaxToken token) =>
+        token.IsKind(SyntaxKind.NumericLiteralToken)
+        && token.Text.All(static c => c is >= '0' and <= '9' or '_');
 
     static bool Combines(char a, char b) =>
         (a, b) switch {
