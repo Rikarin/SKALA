@@ -805,9 +805,8 @@ public sealed class ArrangementRuleTests {
     ///     the stale answer and converges; the caller who feeds that output back in recomputes, and
     ///     removes what the first run had only moved. <c>pipeline(pipeline(x)) ≠ pipeline(x)</c>.
     ///     <para>
-    ///         ⚠ Two shapes, and the second is why the fix is not "refuse the move". The first is the
-    ///         minimised finding, committed as
-    ///         <c>pathological/open/using-inside-a-wrapped-file-scoped-namespace.cs</c>: a
+    ///         ⚠ Two shapes, and the second is why the fix is not "refuse the move". The first is
+    ///         SK-FUZZ-0018's minimised finding — a
     ///         <c>using System;</c> written after a file-scoped namespace declaration is *inside* it,
     ///         where it is the thing that binds <c>Console</c>; hoisted out by
     ///         <c>csharp_using_directive_placement = outside_namespace</c> it duplicates the implicit

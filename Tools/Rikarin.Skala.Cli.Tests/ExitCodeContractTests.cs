@@ -190,8 +190,8 @@ public sealed class ExitCodeContractTests : IDisposable {
     ///         returns. Faking the exit code instead would test nothing.
     ///     </para>
     ///     <para>
-    ///         ⚠ If a real SK9099 case is ever found again it belongs here in place of the seam — and in
-    ///         <c>pathological/open/register.md</c> first.
+    ///         ⚠ If a real SK9099 case is ever found again it belongs here in place of the seam — and
+    ///         as a GitHub issue first.
     ///     </para>
     /// </remarks>
     [Fact]

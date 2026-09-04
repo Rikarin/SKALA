@@ -283,8 +283,8 @@ class Build : NukeBuild {
     ///     (<c>--only=</c>), which is why this target translates rather than forwarding the string.
     ///     <para>
     ///         ⚠ Both halves of that were broken at once. The target did not pass the flag on at all, so
-    ///         <c>./build.sh Oracle --only=&lt;name&gt;</c> — the command <c>OpenDefectTests</c>'s own
-    ///         failure message tells you to run when a defect is fixed — rewrote all 1 212 fixtures
+    ///         <c>./build.sh Oracle --only=&lt;name&gt;</c> — the command you run after promoting a fixed
+    ///         fuzz reproduction into the measured corpus — rewrote all 1 212 fixtures
     ///         instead of the one. The diff was a date stamp on 52 files and nothing else, which is the
     ///         worst shape a mistake like this can take: it reviews as noise, and the next regeneration
     ///         after a ReSharper upgrade would have hidden a real change inside it. See docs/plan/12 §

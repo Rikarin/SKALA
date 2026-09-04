@@ -248,20 +248,34 @@ a **pre-release** — `2.0.0-alpha.N`.
 - Semver's pre-release identifier means precisely "this is not a compatibility promise", which is the
   whole content of the recommendation.
 - NuGet makes it **opt-in**: `dotnet tool install -g Rikarin.Skala.Cli` finds nothing; the
-  `--prerelease` flag finds it. For a tool with six open formatter defects in
-  `Testing/corpus/pathological/open/register.md`, 236 of 520 options at Tier D, line fidelity at
-  99.70 % against a 99.9 % bar, `arrange` unfinished and no adopting repository outside this one,
-  that is the correct default for a bare install.
+  `--prerelease` flag finds it. For a tool with open formatter defects tracked as `SK-FUZZ` issues,
+  236 of 520 options at Tier D, line fidelity at 99.70 % against a 99.9 % bar, `arrange` unfinished
+  and no adopting repository outside this one, that is the correct default for a bare install.
 - The three-position vocabulary survives, and every alpha carries its own measurement.
 
 **The gate for promoting `2.0.0-alpha.N` to `2.0.0` is a decision a person makes, and these are the
 conditions it should be made against** — none of them a workflow's to check:
 
-1. `pathological/open/register.md` is empty.
+1. **No open `SK-FUZZ` issue on `Rikarin/SKALA`** — `gh issue list --repo Rikarin/SKALA --state open
+   --search "SK-FUZZ in:title"` returns nothing. ⚠ This condition used to read *"`pathological/open/register.md`
+   is empty"*, and it was rewritten when that register was deleted. A gate whose condition is a file
+   that no longer exists is not a satisfied gate, it is an **unfalsifiable** one — vacuously true for
+   ever, and the worst possible shape for a release condition. The replacement is checkable against
+   something that still exists and that a person actually maintains. ⚠ It is a weaker instrument than
+   what it replaces: the register was a *test* (`OpenDefectTests` asserted every entry still failed as
+   recorded), and an issue tracker asserts nothing. Nothing now notices if an open defect quietly
+   starts passing.
 2. Line fidelity is at the 99.9 % bar doc 12 sets, or the shortfall is a documented `SK-DIV-*`.
 3. At least one repository other than this one has adopted the tool and taken a version bump.
 4. The last three alpha releases measured `patch` on the output detector — the surfaces have stopped
    moving on their own.
+
+⚠ **2.0.0 was cut with condition 1 unmet**, and that is the record rather than an oversight: **#337**
+(SK-FUZZ-0017, an idempotency non-convergence, cause not established) and **#338** (SK-FUZZ-0008, the
+`indent` mutation misclassified as absorbed — a defect in the fuzzer's own catalogue rather than in
+the formatter) were both open. Condition 1 is a condition for promoting a pre-release to a stable
+`2.0.0`, and it is written down as unmet so that a later reader does not infer from a `2.0.0` tag
+that the queue was empty when it was cut.
 
 ⚠ The jump from an unpublished 1.0.0 to 2.0.0 costs nobody anything, because nothing was ever
 published under 1.0.0 — zero tags, zero packages on any feed. It is also the honest record: the

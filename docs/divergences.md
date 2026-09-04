@@ -579,7 +579,9 @@ keys away, which is the failure mode this file exists to catch.
 
 Worth +31 exact lines of `corpus/real/` on the every-line basis (74 436 → 74 467 of 77 312, 96.28 % →
 96.32 %), and nothing on the outside-doc-comments basis, which by construction cannot see it. It also
-retired SK-FUZZ-0015 — see `pathological/open/register.md`.
+retired SK-FUZZ-0015, whose reproduction is pinned by
+`XmlDocSubFormatterTests.ADocCommentRunUnderALeadingCrlf_KeepsItsOwnEnding`. ⚠ The open-defect
+register that recorded it was deleted; its text is in git history at `54703b61`.
 
 What is implemented is the half [05](plan/05-csharp-formatting-rules.md) calls the hazard and that
 needs no oracle: a doc comment that is not well-formed XML is left exactly as it is and reported at

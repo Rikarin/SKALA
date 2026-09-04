@@ -546,18 +546,17 @@ static int Defaults(string? outputPath) {
 
 // `fuzz [flags]`: docs/plan/12 § "4. Fuzzing".
 //
-// ⚠ The exit code is 1 when a property did not hold **and the open register does not account for
-// it**, so the nightly job fails rather than uploading a green report with a finding buried in it. It
-// is 0 when the run found nothing new — which is a claim the report is required to back up with
-// coverage numbers, because a fuzzer whose mutations never reach the formatter also finds nothing and
-// looks identical from the outside.
+// ⚠ The exit code is 1 when a property did not hold, so the nightly job fails rather than uploading a
+// green report with a finding buried in it. It is 0 when the run found nothing — which is a claim the
+// report is required to back up with coverage numbers, because a fuzzer whose mutations never reach
+// the formatter also finds nothing and looks identical from the outside.
 //
-// ⚠ "And the register does not account for it" is the clause that was missing, and its absence made
-// the nightly permanently red rather than informative: a registered open defect is rediscovered from a
-// fresh seed most nights, so every night failed, and a job that is always red is a job nobody reads.
-// See `OpenDefects.Explain` for what the accounting actually checks — it deletes the trigger the
-// register entry names and re-runs the property oracle, and believes the entry only if the property
-// then holds. An entry with no `probe:` accounts for nothing and keeps reding the nightly, on purpose.
+// ⚠ **Any finding fails the run, including a rediscovery of a defect that is already tracked.** The
+// open register used to screen those out; it is gone, and with it the `probe:` mechanism. So a
+// rediscovery of the idempotency non-convergence tracked as #337 reds this job and somebody has to
+// recognise it by hand from the seed and the minimised artefact. That cost is accepted deliberately:
+// the alternative was a suppression list keyed on the defect the fuzzer exists to find, which would
+// hide the next variant of it too.
 static int Fuzz(string[] args) {
     string? Flag(string name) =>
         args.FirstOrDefault(argument => argument.StartsWith("--" + name + "=", StringComparison.Ordinal))
@@ -740,20 +739,14 @@ static int Fuzz(string[] args) {
         // The written report is a convenience; a read-only tree does not fail the run.
     }
 
-    // ⚠ **A finding the register does not account for**, not "a finding". The two were the same thing
-    // until the register had entries in it, and then they stopped being: a registered open defect is
-    // rediscovered from a fresh seed on most nights — SK-FUZZ-0016's own entry records the same defect
-    // arriving twice from two seeds on two origins — so failing on any finding made the nightly
-    // permanently red, and a signal that is always red is not a signal. The three findings of run
-    // 33207471534 were all rediscoveries of entries registered the day before.
-    //
-    // ⚠ The accounting is not a rule-id match and not a suppression list. `OpenDefects.Explain` deletes
-    // the trigger the register entry names and asks the property again; the entry accounts for the
-    // violation only if the property then holds. An input carrying a second, unregistered defect still
-    // fails after the deletion and is reported as new — which is why a new defect cannot hide behind a
-    // registered one. Every violation is screened individually, before the per-property dedup, so a
-    // registered defect cannot take a property's one reporting slot either.
-    return report.NewFindings.IsEmpty ? 0 : 1;
+    // ⚠ **Any finding, with no register to screen it against.** The open register and its `probe:`
+    // accounting are gone, so a rediscovery of a known-open defect reds this job exactly like a new
+    // one. ⚠ Measured before the removal rather than assumed: the register's last surviving entry
+    // (SK-FUZZ-0017, now #337) carried **no** `probe:` — its own status line said "cause not
+    // established" — and `Explain` skipped every entry without one, so the accounting already
+    // accounted for nothing and this line already behaved as it now does. The removal changed the
+    // mechanism, not the exit code.
+    return report.Findings.IsEmpty ? 0 : 1;
 }
 
 // `arrangement [--aggressive] [--all-rules] [set…]`: the M4 differential.

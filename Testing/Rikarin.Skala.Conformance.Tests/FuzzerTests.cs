@@ -344,11 +344,16 @@ public sealed class FuzzerTests {
     ///     this assertion fails first. Three attempts to fix it in <c>SourceMap</c> did not (protecting
     ///     raw-string nodes as verbatim regions, intersecting rather than containing, and protecting
     ///     every line a multi-line token spans — the first two are kept because they are correct in
-    ///     their own right). It is <c>SK-FUZZ-0008</c> in the open register, which is the mechanism for
-    ///     exactly this: a defect that is reproduced, minimised, and not yet understood.
+    ///     their own right). It is <c>SK-FUZZ-0008</c>, tracked as <b>GitHub issue #338</b>.
     ///     <para>
     ///         ⚠ The exclusion is by name and by name only. Widening it to "skip raw strings" would
     ///         silence the whole class this fuzzer exists to find.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ This exclusion is now the <i>only</i> thing recording that the defect exists in the
+    ///         tree. The open register that held its diagnosis was deleted; the characterisation — the
+    ///         unsafe region is everything from the unclosed <c>{{</c> to end of file, not the string's
+    ///         content lines — is on #338 and in git history at <c>54703b61</c>.
     ///     </para>
     /// </remarks>
     [Fact]
@@ -463,9 +468,9 @@ public sealed class FuzzerTests {
     /// </summary>
     /// <remarks>
     ///     ⚠ It asserts *coverage*, not absence of findings. Whether a 250-case run finds something is
-    ///     not this suite's business — the nightly job runs for an hour and the register in
-    ///     <c>corpus/pathological/open/</c> holds what it found. What must hold on every commit is that
-    ///     the cases reach the formatter at all, which is the one thing a broken fuzzer cannot fake.
+    ///     not this suite's business — the nightly job runs for an hour and what it finds is triaged
+    ///     into GitHub issues. What must hold on every commit is that the cases reach the formatter at
+    ///     all, which is the one thing a broken fuzzer cannot fake.
     /// </remarks>
     [Fact]
     public void AShortRun_ReachesTheFormatter() {
