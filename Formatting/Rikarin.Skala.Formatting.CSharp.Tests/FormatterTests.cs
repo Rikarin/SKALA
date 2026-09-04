@@ -112,6 +112,35 @@ public sealed class SpacingTests {
             StringComparison.Ordinal
         );
     }
+
+    /// <summary>
+    ///     ⚠ The other half of the pair above, which nothing pinned until it broke.
+    /// </summary>
+    /// <remarks>
+    ///     <c>skala_allow_comment_after_lbrace</c> governs a *trailing* comment; a <c>///</c> is
+    ///     documentation for the member below it and comes down onto its own line at either value.
+    ///     Measured against the oracle on 2026-09-04 under the configuration in force
+    ///     (<c>sha256:9bf4b7e7193c5da3</c>, the key at <c>true</c>): <c>cleanupcode</c> moves the
+    ///     marker down under <c>SkalaFormatOnly</c> and <c>SkalaDocComments</c> alike.
+    ///     <para>
+    ///         ⚠ The option's own fixture exercises only <c>// why</c>, so the corpus cannot catch a
+    ///         regression here — this test is the pin.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void AllowCommentAfterLbrace_DoesNotKeepADocumentationCommentOnTheBraceLine() {
+        var document = EditorConfigDocument.FromText("/repo/.editorconfig", "root = true");
+        var options = new PhaseOneOptions(OptionResolver.Resolve(EditorConfigChain.Of("/repo/Test.cs", document)).Options);
+        var formatted = CSharpFormatter.Format(
+            "Test.cs",
+            SourceText.From("class C { /// <summary>Docs.</summary>\nint M() => 0; }"),
+            options
+        );
+
+        Assert.True(options.AllowCommentAfterLbrace, "the default this test is about is `true`.");
+        Assert.DoesNotContain("{ ///", formatted.Formatted, StringComparison.Ordinal);
+        Assert.Contains("/// <summary>Docs.</summary>", formatted.Formatted, StringComparison.Ordinal);
+    }
 }
 
 public sealed class IndentationTests {

@@ -2754,9 +2754,28 @@ public sealed partial class CSharpDocumentBuilder {
 
         var previousToken = tokens[previous.TokenIndex];
 
+        // ⚠ A documentation comment starts its own line whatever `skala_allow_comment_after_lbrace`
+        // says, and this arm is deliberately unconditional. Measured on 2026-09-04 under the
+        // configuration in force (`allow_comment_after_lbrace = true`, sha256:9bf4b7e7193c5da3): given
+        // `class C { /// <summary>…</summary>` the oracle moves the `///` down to its own line, under
+        // `SkalaFormatOnly` and `SkalaDocComments` alike. The key is Braces Layout's "allow comment
+        // after '{'" and it governs a *trailing* comment; a `///` is documentation for the member
+        // below it, not a trailing remark about the brace.
+        //
+        // ⚠ It was folded into the arm below until the default flipped to `true`, and the cost of
+        // that was invisible: this option's fixture
+        // (`constructs/braces/skala_allow_comment_after_lbrace.cs`) exercises only `// why`, so
+        // nothing in the corpus pinned the doc-comment half of the pair. What caught it was
+        // `McpServerTests.Format_FormatsDocumentationCommentsToo` — a doc comment left on the brace's
+        // line is not re-anchored by the xmldoc sub-formatter either, so an agent was told its draft
+        // was formatted while the comment was untouched.
+        if (nextKind == PieceKind.DocCommentLine && previousToken.IsKind(SyntaxKind.OpenBraceToken)) {
+            return true;
+        }
+
         // `skala_allow_comment_after_lbrace = false`: a comment may not sit on the brace's line.
         if (!options.AllowCommentAfterLbrace
-            && nextKind is PieceKind.LineComment or PieceKind.DocCommentLine
+            && nextKind == PieceKind.LineComment
             && previousToken.IsKind(SyntaxKind.OpenBraceToken)) {
             return true;
         }
