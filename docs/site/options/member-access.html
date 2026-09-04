@@ -15,7 +15,7 @@
 <p class="lede">6 keys.</p>
 <section class="option" id="csharp_space_after_dot">
 <h2><code>csharp_space_after_dot</code> <a class="self" href="#csharp_space_after_dot">#</a></h2>
-<p>Space after '.'. Inert: the oracle returns the file unchanged at both values. <code>skala_space_around_dot</code> is the key that governs the gap, and it is Tier A. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified duplicate spelling. Confirmed with a named control on the same fixture. Flat in both engines at both values on a chain written <code>s . Trim() . ToUpper()</code>, while <code>skala_space_around_dot</code> on that same fixture is CONFORMANT with two distinct outputs. The C# formatter answers to <code>skala_space_around_dot</code> and not to this MS spelling.</p>
+<p>Space after '.'. Inert: the oracle returns the file unchanged at both values. <code>skala_space_around_dot</code> is the key that governs the gap, and it is Tier A. ⚠ Measured 2026-08-29 against the oracle at 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified duplicate spelling. Confirmed with a named control on the same fixture. Flat in both engines at both values on a chain written <code>s . Trim() . ToUpper()</code>, while <code>skala_space_around_dot</code> on that same fixture is CONFORMANT with two distinct outputs. The C# formatter answers to <code>skala_space_around_dot</code> and not to this MS spelling.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -24,13 +24,12 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="csharp_space_before_dot">
 <h2><code>csharp_space_before_dot</code> <a class="self" href="#csharp_space_before_dot">#</a></h2>
-<p>Space before '.'. Inert: the oracle returns the file unchanged at both values. <code>skala_space_around_dot</code> is the key that governs the gap, and it is Tier A. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified duplicate spelling. Confirmed with the same named control on the same fixture as <code>csharp_space_after_dot</code>: flat at both values where <code>skala_space_around_dot</code> gives two distinct outputs.</p>
+<p>Space before '.'. Inert: the oracle returns the file unchanged at both values. <code>skala_space_around_dot</code> is the key that governs the gap, and it is Tier A. ⚠ Measured 2026-08-29 against the oracle at 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified duplicate spelling. Confirmed with the same named control on the same fixture as <code>csharp_space_after_dot</code>: flat at both values where <code>skala_space_around_dot</code> gives two distinct outputs.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -39,7 +38,6 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>
@@ -57,13 +55,12 @@
 <tr><th>Severity suffix</th><td>accepted — <code>key = value:suggestion</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/arrangement/redundancy/instance-qualifier.cs</code></td></tr>
 <tr><th>Read by</th><td><a href="../rules/SK0207.html">SK0207</a></td></tr>
-<tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="dotnet_style_qualification_for_field">
 <h2><code>dotnet_style_qualification_for_field</code> <a class="self" href="#dotnet_style_qualification_for_field">#</a></h2>
-<p>Qualify field access with 'this'. ⚠ This is the key the oracle reads for <code>this.</code> and <code>resharper_remove_this_qualifier</code> is not — see SK-DIV-0070.</p>
+<p>Qualify field access with 'this'. ⚠ This is the key the oracle reads for <code>this.</code> and the reference formatter's own <code>remove_this_qualifier</code> is not — see SK-DIV-0070.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -75,7 +72,6 @@
 <tr><th>Severity suffix</th><td>accepted — <code>key = value:suggestion</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/arrangement/redundancy/instance-qualifier.cs</code></td></tr>
 <tr><th>Read by</th><td><a href="../rules/SK0207.html">SK0207</a></td></tr>
-<tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>
@@ -93,7 +89,6 @@
 <tr><th>Severity suffix</th><td>accepted — <code>key = value:suggestion</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/arrangement/redundancy/instance-qualifier.cs</code></td></tr>
 <tr><th>Read by</th><td><a href="../rules/SK0207.html">SK0207</a></td></tr>
-<tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>
@@ -111,7 +106,6 @@
 <tr><th>Severity suffix</th><td>accepted — <code>key = value:suggestion</code></td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/arrangement/redundancy/instance-qualifier.cs</code></td></tr>
 <tr><th>Read by</th><td><a href="../rules/SK0207.html">SK0207</a></td></tr>
-<tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>

@@ -25,7 +25,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/delimiter-indent.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_invocation_pars">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_invocation_pars</a></td></tr>
 </tbody>
 </table>
 </section>
@@ -41,7 +40,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/delimiter-indent.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_method_decl_pars">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_method_decl_pars</a></td></tr>
 </tbody>
 </table>
 </section>
@@ -57,7 +55,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/delimiter-indent.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_pars">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_pars</a></td></tr>
 </tbody>
 </table>
 </section>
@@ -74,7 +71,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/delimiter-indent.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_primary_constructor_decl_pars">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_primary_constructor_decl_pars</a></td></tr>
 </tbody>
 </table>
 </section>
@@ -89,7 +85,6 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_statement_pars">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_statement_pars</a></td></tr>
 </tbody>
 </table>
 </section>
@@ -105,7 +100,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/delimiter-indent.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_typearg_angles">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_typearg_angles</a></td></tr>
 </tbody>
 </table>
 </section>
@@ -121,13 +115,12 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/breaks/type-parameter-list.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_typeparam_angles">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_typeparam_angles</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="skala_use_continuous_indent_inside_parens">
 <h2><code>skala_use_continuous_indent_inside_parens</code> <a class="self" href="#skala_use_continuous_indent_inside_parens">#</a></h2>
-<p>Whether the contents of a parenthesis take a continuation level. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6 with <code>skala_continuous_indent_multiplier = 2</code>, which is the only configuration that can ask: <code>M(</code> at column 8 puts its arguments on 16 at <code>true</code> and on 12 at <code>false</code>. So <code>false</code> is one indent width rather than none. Under the export's own multiplier of 1 the two answers coincide and the key is unobservable. SK-DIV-0090.</p>
+<p>Whether the contents of a parenthesis take a continuation level. ⚠ Measured 2026-08-30 against the oracle at 2025.2.6 with <code>skala_continuous_indent_multiplier = 2</code>, which is the only configuration that can ask: <code>M(</code> at column 8 puts its arguments on 16 at <code>true</code> and on 12 at <code>false</code>. So <code>false</code> is one indent width rather than none. Under the export's own multiplier of 1 the two answers coincide and the key is unobservable. SK-DIV-0090.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -137,7 +130,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/skala_use_continuous_indent_inside_parens.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_use_continuous_indent_inside_parens">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_use_continuous_indent_inside_parens</a></td></tr>
 </tbody>
 </table>
 </section>

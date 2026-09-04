@@ -60,7 +60,7 @@
 </section>
 <section class="option" id="skala_disable_int_align">
 <h2><code>skala_disable_int_align</code> <a class="self" href="#skala_disable_int_align">#</a></h2>
-<p>A master switch over a family the export has already switched off, so inert alone and decisive one key away: with int_align = true supplied alongside it turns the whole family off again. Re-measured; the recorded probe holds. SK-DIV-0060. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable by a one-key flip. The recorded probe holds and is now separated from the sweep's reach. Alone, at the export's <code>skala_int_align = false</code>, both engines are flat — a one-key <code>oracle</code> glob would report UNEXERCISED. With <code>skala_int_align = true</code> supplied alongside, both engines distinguish the values and disagree at <code>false</code>, on a fixture whose baseline already disagrees. It is the pairwise pass's key, not the key-flip sweep's. SK-DIV-0060.</p>
+<p>A master switch over a family the export has already switched off, so inert alone and decisive one key away: with int_align = true supplied alongside it turns the whole family off again. Re-measured; the recorded probe holds. SK-DIV-0060. ⚠ Measured 2026-08-29 against the oracle at 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable by a one-key flip. The recorded probe holds and is now separated from the sweep's reach. Alone, at the export's <code>skala_int_align = false</code>, both engines are flat — a one-key <code>oracle</code> glob would report UNEXERCISED. With <code>skala_int_align = true</code> supplied alongside, both engines distinguish the values and disagree at <code>false</code>, on a fixture whose baseline already disagrees. It is the pairwise pass's key, not the key-flip sweep's. SK-DIV-0060.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -119,7 +119,7 @@
 </section>
 <section class="option" id="skala_formatter_off_tag">
 <h2><code>skala_formatter_off_tag</code> <a class="self" href="#skala_formatter_off_tag">#</a></h2>
-<p>The comment that switches the formatter off. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6: the CLI oracle does honour formatter tags, it does read this key, and the configured tag is <strong>additive to</strong> the built-in <code>@formatter:off</code> rather than a replacement for it — with <code>skala_formatter_off_tag = @zzz:off</code> a region written <code>// @formatter:off</code> is still preserved, while the negative control <code>// @fmt:off</code> under the export's own configuration is formatted straight through. Skala replaced rather than added, which silently stopped honouring every tag already written in a tree the moment the key was set; fixed at <code>FormatterTags.BuiltinOff</code>. ⚠ The sweep row reads UNEXERCISED and cannot do otherwise: the free-form-string probe offers the default and the default with <code>x</code> appended, and any comment matching <code>@formatter:offx</code> also matches the built-in <code>@formatter:off</code>, so both probe values give the same output on every possible input. SK-DIV-0089.</p>
+<p>The comment that switches the formatter off. ⚠ Measured 2026-08-30 against the oracle at 2025.2.6: the CLI oracle does honour formatter tags, it does read this key, and the configured tag is <strong>additive to</strong> the built-in <code>@formatter:off</code> rather than a replacement for it — with <code>skala_formatter_off_tag = @zzz:off</code> a region written <code>// @formatter:off</code> is still preserved, while the negative control <code>// @fmt:off</code> under the export's own configuration is formatted straight through. Skala replaced rather than added, which silently stopped honouring every tag already written in a tree the moment the key was set; fixed at <code>FormatterTags.BuiltinOff</code>. ⚠ The sweep row reads UNEXERCISED and cannot do otherwise: the free-form-string probe offers the default and the default with <code>x</code> appended, and any comment matching <code>@formatter:offx</code> also matches the built-in <code>@formatter:off</code>, so both probe values give the same output on every possible input. SK-DIV-0089.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>string</td></tr>
@@ -134,7 +134,7 @@
 </section>
 <section class="option" id="skala_formatter_on_tag">
 <h2><code>skala_formatter_on_tag</code> <a class="self" href="#skala_formatter_on_tag">#</a></h2>
-<p>The comment that switches the formatter back on. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6, same shape as <code>skala_formatter_off_tag</code>: read by the oracle, and additive to the built-in <code>@formatter:on</code> rather than a replacement — a region closed by <code>// @formatter:on</code> still closes with <code>skala_formatter_on_tag = @zzz:on</code> set. ⚠ UNEXERCISED for the same reason as its <code>off</code> twin: <code>@formatter:onx</code> is matched by the built-in prefix, so the probe's two values cannot differ on any input. SK-DIV-0089.</p>
+<p>The comment that switches the formatter back on. ⚠ Measured 2026-08-30 against the oracle at 2025.2.6, same shape as <code>skala_formatter_off_tag</code>: read by the oracle, and additive to the built-in <code>@formatter:on</code> rather than a replacement — a region closed by <code>// @formatter:on</code> still closes with <code>skala_formatter_on_tag = @zzz:on</code> set. ⚠ UNEXERCISED for the same reason as its <code>off</code> twin: <code>@formatter:onx</code> is matched by the built-in prefix, so the probe's two values cannot differ on any input. SK-DIV-0089.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>string</td></tr>
@@ -179,7 +179,7 @@
 </section>
 <section class="option" id="skala_use_old_engine">
 <h2><code>skala_use_old_engine</code> <a class="self" href="#skala_use_old_engine">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Undocumented export property; classified as C#-relevant by vocabulary.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

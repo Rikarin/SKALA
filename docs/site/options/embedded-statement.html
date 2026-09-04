@@ -15,7 +15,7 @@
 <p class="lede">1 key.</p>
 <section class="option" id="csharp_prefer_braces">
 <h2><code>csharp_prefer_braces</code> <a class="self" href="#csharp_prefer_braces">#</a></h2>
-<p>Whether braces are required. IDE0011 documents <code>true</code>, <code>false</code> and <code>when_multiline</code>. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — a Roslyn analyser's. Flat at <code>true:none</code>, <code>false:none</code>, <code>when_multiline:none</code>, <code>true:warning</code> and <code>false:warning</code>, under both <code>CSReformatCode</code> and the cleanup profile, on a fixture carrying braced and unbraced <code>if</code>, <code>while</code> and <code>foreach</code>. ⚠ The negative control is the point: ReSharper's own <code>resharper_braces_for_ifelse</code> is equally flat at <code>required</code>, <code>not_required</code> and <code>required_for_multiline</code> under both profiles, so neither oracle profile performs brace insertion at all and no oracle fixture can pin this key. It is IDE0011, a Roslyn analyser.</p>
+<p>Whether braces are required. IDE0011 documents <code>true</code>, <code>false</code> and <code>when_multiline</code>. ⚠ Measured 2026-08-29 against the oracle at 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — a Roslyn analyser's. Flat at <code>true:none</code>, <code>false:none</code>, <code>when_multiline:none</code>, <code>true:warning</code> and <code>false:warning</code>, under both <code>CSReformatCode</code> and the cleanup profile, on a fixture carrying braced and unbraced <code>if</code>, <code>while</code> and <code>foreach</code>. ⚠ The negative control is the point: the reference formatter's own brace key, <code>braces_for_ifelse</code> (<code>export-bridge.json</code>, <code>unmapped</code>), is equally flat at <code>required</code>, <code>not_required</code> and <code>required_for_multiline</code> under both profiles, so neither oracle profile performs brace insertion at all and no oracle fixture can pin this key. It is IDE0011, a Roslyn analyser.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>true</code>, <code>false</code>, <code>when_multiline</code></td></tr>
@@ -25,7 +25,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Severity suffix</th><td>accepted — <code>key = value:suggestion</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>
