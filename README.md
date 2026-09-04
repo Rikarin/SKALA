@@ -8,33 +8,30 @@ CI and any AI agent working in the repository all read the same configuration fi
 about what the code should look like by construction rather than by convention.
 
 ```bash
-dotnet tool install --global Rikarin.Skala.Cli --prerelease
+dotnet tool install --global Rikarin.Skala.Cli
 skala format .
 skala check .
 ```
-
-> **Status: alpha.** Skala is published as `2.0.0-alpha.*` prereleases and has not reached 1.0. The
-> command surface and the option names are still moving. See [Versioning](#versioning).
 
 ## Install
 
 **As a .NET tool**, for the command line and CI:
 
 ```bash
-dotnet tool install --global Rikarin.Skala.Cli --prerelease
+dotnet tool install --global Rikarin.Skala.Cli
 ```
 
 Prefer a local tool manifest so everyone on the repository runs the same version:
 
 ```bash
 dotnet new tool-manifest
-dotnet tool install Rikarin.Skala.Cli --prerelease
+dotnet tool install Rikarin.Skala.Cli
 ```
 
 **As a package**, to get the analyzers and the build integration in every `dotnet build`:
 
 ```xml
-<PackageReference Include="Rikarin.Skala.Sdk" Version="[2.0.0-alpha.1273]" PrivateAssets="all" />
+<PackageReference Include="Rikarin.Skala.Sdk" Version="[2.0.0]" PrivateAssets="all" />
 ```
 
 The square brackets are deliberate. All five packages ship at one version, and an exact pin is what
@@ -167,7 +164,8 @@ codes, the SARIF shape and the option registry — and the bump is whatever the 
 implies. A formatting change is a minor bump at minimum, because downstream it is a repository-wide
 diff.
 
-Every push to `master` publishes a `2.0.0-alpha.N` prerelease, where `N` counts commits.
+`2.0.0` is the first stable release. Every push to `master` publishes a `2.0.0-alpha.N` prerelease
+beside it, where `N` counts commits — those are opt-in, found only with `--prerelease`.
 
 ## License
 
