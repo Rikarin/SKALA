@@ -98,7 +98,21 @@ public static class ReleasePlan {
         // The number the release moves from: the last published one when there is one, and what the
         // tree declares when there is not.
         var current = previous ?? declared;
-        var next = current.Next(bump);
+
+        // ⚠ **Cutting a release PROMOTES a pre-release; it does not bump it.** `Next` on
+        // `2.0.0-alpha.1` is `2.0.0-alpha.2` — the counter, never the release — so before this the
+        // pipeline had no path to a stable version at all: `--release` produced another alpha, and
+        // clearing `VersionSuffix` by hand would have produced `2.0.1`, a version whose `2.0.0`
+        // never existed. `2.0.0-alpha.N` is a build *of* 2.0.0 (doc 18 § "Why the first published
+        // artefact is a pre-release"), so the release the series names is the one it publishes.
+        //
+        // ⚠ The measured `bump` is deliberately not applied here, and it is not being discarded: it
+        // describes the distance from the previous *release*, and a pre-release series has none — a
+        // promotion breaks nothing because nothing stable was ever published to break. The verdict
+        // is still recorded in the notes, and it governs the release after this one.
+        var next = !request.DryRun && current.IsPreRelease
+            ? current with { PreRelease = null }
+            : current.Next(bump);
 
         // ⚠ A dry run on `master` is not a release, so it is stamped as one build of the *pending*
         // pre-release series rather than as the release itself. Height is the commit count since the
