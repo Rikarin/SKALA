@@ -171,9 +171,6 @@ Every push to `master` publishes a `2.0.0-alpha.N` prerelease, where `N` counts 
 
 ## License
 
-Apache-2.0 — declared as the packages' `PackageLicenseExpression`.
-
-> ⚠ There is no `LICENSE` file in this repository yet, though the published packages already declare
-> Apache-2.0. Adding one is outstanding.
+[Apache-2.0](LICENSE).
 
 [jb]: https://www.jetbrains.com/help/resharper/ReSharper_Command_Line_Tools.html
