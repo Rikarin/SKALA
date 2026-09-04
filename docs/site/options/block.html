@@ -15,7 +15,7 @@
 <p class="lede">2 keys.</p>
 <section class="option" id="csharp_indent_braces">
 <h2><code>csharp_indent_braces</code> <a class="self" href="#csharp_indent_braces">#</a></h2>
-<p>Indent the braces of a block themselves. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6: it governs a brace that is on a LINE OF ITS OWN, and the oracle is flat at both values under the export's <code>csharp_new_line_before_open_brace = none</code>. With the braces split (<code>= all</code>) the answer is Whitesmiths — the brace takes one level and the body takes the SAME level: <code>class C</code> / <code>    {</code> / <code>    void M()</code> / <code>        {</code> / <code>        if (true)</code>. Skala applied it whatever the brace placement, so under <code>none</code> the joined opening brace could not move and the closing one did, producing a shape no configuration of either key writes. SK-DIV-0091.</p>
+<p>Indent the braces of a block themselves. ⚠ Measured 2026-08-30 against the oracle at 2025.2.6: it governs a brace that is on a LINE OF ITS OWN, and the oracle is flat at both values under the export's <code>csharp_new_line_before_open_brace = none</code>. With the braces split (<code>= all</code>) the answer is Whitesmiths — the brace takes one level and the body takes the SAME level: <code>class C</code> / <code>    {</code> / <code>    void M()</code> / <code>        {</code> / <code>        if (true)</code>. Skala applied it whatever the brace placement, so under <code>none</code> the joined opening brace could not move and the closing one did, producing a shape no configuration of either key writes. SK-DIV-0091.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -25,13 +25,12 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/indentation/csharp_indent_braces.cs</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="csharp_preserve_single_line_blocks">
 <h2><code>csharp_preserve_single_line_blocks</code> <a class="self" href="#csharp_preserve_single_line_blocks">#</a></h2>
-<p>Keep a block that was written on one line on one line. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified implementable — the oracle honours it and Skala does not. ⚠ The unprefixed-spelling claim is refuted here too: the C# formatter reads this key. Two distinct oracle outputs under <code>CSReformatCode</code> at <code>true</code> against <code>false</code> on single-line method, <code>if</code>, <code>while</code> and accessor bodies; Skala is flat and already disagrees with the oracle on that fixture before the key is touched. An <code>oracle</code> glob would report INERT, so none is added until the baseline is closed.</p>
+<p>Keep a block that was written on one line on one line. ⚠ Measured 2026-08-29 against the oracle at 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified implementable — the oracle honours it and Skala does not. ⚠ The unprefixed-spelling claim is refuted here too: the C# formatter reads this key. Two distinct oracle outputs under <code>CSReformatCode</code> at <code>true</code> against <code>false</code> on single-line method, <code>if</code>, <code>while</code> and accessor bodies; Skala is flat and already disagrees with the oracle on that fixture before the key is touched. An <code>oracle</code> glob would report INERT, so none is added until the baseline is closed.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -40,7 +39,6 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-<tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>

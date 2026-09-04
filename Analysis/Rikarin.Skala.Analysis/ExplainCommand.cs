@@ -146,10 +146,12 @@ public static class ExplainCommand {
             builder.AppendLine("oracle: " + oracle);
         }
 
-        if (option.Docs is { Length: > 0 } docs) {
-            builder.AppendLine("docs: " + docs);
-        }
-
+        // ⚠ There is deliberately no `docs:` line, and nothing took its place. It used to print a
+        // jetbrains.com URL for 368 of the 436 options, which said "the documentation for this option
+        // is somebody else's" — and that stopped being true when the keys became Skala's own. What is
+        // printed above IS the documentation: the summary carries the measurement, `oracle` names the
+        // fixture that pins it, and `inert` says when no input can move it. A "see also" that leaves
+        // the reader on a page about a key Skala does not read is worse than no line at all.
         return builder.ToString();
     }
 

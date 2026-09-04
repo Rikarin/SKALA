@@ -15,7 +15,7 @@
 <p class="lede">2 keys.</p>
 <section class="option" id="skala_keep_existing_lambda_and_anonymous_function_parens_arrangement">
 <h2><code>skala_keep_existing_lambda_and_anonymous_function_parens_arrangement</code> <a class="self" href="#skala_keep_existing_lambda_and_anonymous_function_parens_arrangement">#</a></h2>
-<p>Keep the existing arrangement of a lambda's or an anonymous method's parentheses. ⚠ Measured 2026-08-30 against <code>jb cleanupcode</code> 2025.2.6 on <code>constructs/preservation/lambda-parens.cs</code>, with the author's break inside the lambda's parentheses: THE C# FORMATTER DOES NOT ANSWER TO THIS KEY. It is flat at <code>true</code> and at <code>false</code>, in both spellings; what rejoins the parentheses is <code>skala_keep_existing_declaration_parens_arrangement = false</code>, and with that key at <code>false</code> this one still changes nothing in either direction. The same shape as <code>remove_this_qualifier</code>: a documented editorconfig property the C# formatter is not wired to. Skala answered to it — <code>BreakPlan.DeclarationKeeps</code> routed a lambda's parameter list here — which is why the sweep read SPURIOUS. One key now governs every parameter list. SK-DIV-0093.</p>
+<p>Keep the existing arrangement of a lambda's or an anonymous method's parentheses. ⚠ Measured 2026-08-30 against the oracle at 2025.2.6 on <code>constructs/preservation/lambda-parens.cs</code>, with the author's break inside the lambda's parentheses: THE C# FORMATTER DOES NOT ANSWER TO THIS KEY. It is flat at <code>true</code> and at <code>false</code>, in both spellings; what rejoins the parentheses is <code>skala_keep_existing_declaration_parens_arrangement = false</code>, and with that key at <code>false</code> this one still changes nothing in either direction. The same shape as <code>remove_this_qualifier</code>: a documented editorconfig property the C# formatter is not wired to. Skala answered to it — <code>BreakPlan.DeclarationKeeps</code> routed a lambda's parameter list here — which is why the sweep read SPURIOUS. One key now governs every parameter list. SK-DIV-0093.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="skala_place_single_method_argument_lambda_on_same_line">
 <h2><code>skala_place_single_method_argument_lambda_on_same_line</code> <a class="self" href="#skala_place_single_method_argument_lambda_on_same_line">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Undocumented export property; classified as C#-relevant by vocabulary.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

@@ -35,7 +35,6 @@ internal sealed record OptionEntry(
     string Summary,
     string Since,
     string? Oracle,
-    string? Docs,
     int? TemplateLine,
     bool SeveritySuffix,
     string? Inert,
@@ -133,7 +132,27 @@ internal static class Naming {
 }
 
 internal static class OptionRegistryReader {
-    public static OptionRegistry Read(string json) {
+    /// <summary>
+    ///     Reads the export's spelling(s) for each option out of <c>export-bridge.json</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A second file rather than a field on the option, because <c>options.json</c> names no other
+    ///     tool and these are another tool's key names. The data is not optional: <c>jb cleanupcode</c>
+    ///     understands the export's namespace and no other, so an option that loses its spelling here is
+    ///     an option the oracle silently ignores — the sweep reports it <c>INERT</c>, and the canonical
+    ///     payload drops its line. <c>OptionsGenerator</c> checks the join both ways (SKG006, SKG007).
+    /// </remarks>
+    public static Dictionary<string, IReadOnlyList<string>> ReadBridge(string json) {
+        var root = Json.Parse(json);
+        var spellings = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var member in root["spellings"].Members) {
+            spellings[member.Key] = member.Value.AsStringList();
+        }
+
+        return spellings;
+    }
+
+    public static OptionRegistry Read(string json, IReadOnlyDictionary<string, IReadOnlyList<string>> bridge) {
         var root = Json.Parse(json);
 
         var enums = new List<OptionEnum>();
@@ -176,7 +195,7 @@ internal static class OptionRegistryReader {
                 new OptionEntry(
                     key,
                     item["aliases"].AsStringList(),
-                    item["export"].AsStringList(),
+                    bridge.TryGetValue(key, out var export) ? export : [],
                     item["language"].AsString() ?? "any",
                     kind,
                     kind switch {
@@ -191,7 +210,6 @@ internal static class OptionRegistryReader {
                     item["summary"].AsString() ?? string.Empty,
                     item["since"].AsString() ?? "0.1",
                     item["oracle"].IsNull ? null : item["oracle"].AsString(),
-                    item["docs"].IsNull ? null : item["docs"].AsString(),
                     item["templateLine"].IsNull ? null : item["templateLine"].AsInt(),
                     item["severitySuffix"].AsBool(),
                     item["inert"].IsNull ? null : item["inert"].AsString(),

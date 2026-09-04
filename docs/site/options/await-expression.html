@@ -15,7 +15,7 @@
 <p class="lede">1 key.</p>
 <section class="option" id="skala_configure_await_analysis_mode">
 <h2><code>skala_configure_await_analysis_mode</code> <a class="self" href="#skala_configure_await_analysis_mode">#</a></h2>
-<p>Selects ConfigureAwait inspection policy, not cleanup behavior. SK3003 reports bare framework Task/ValueTask awaits in library mode; disabled and ui do not require missing configuration. Explicit ConfigureAwait choices are respected. UI mode's separate redundant ConfigureAwait(true) inspection is not implemented. The prefixed key wins if both spellings are supplied. Measured 2026-08-29: jb cleanupcode 2025.2.6 does not change bare awaits in any mode, so this remains outside the arrangement tiers.</p>
+<p>Selects ConfigureAwait inspection policy, not cleanup behavior. SK3003 reports bare framework Task/ValueTask awaits in library mode; disabled and ui do not require missing configuration. Explicit ConfigureAwait choices are respected. UI mode's separate redundant ConfigureAwait(true) inspection is not implemented. The prefixed key wins if both spellings are supplied. Measured 2026-08-29: the oracle at 2025.2.6 does not change bare awaits in any mode, so this remains outside the arrangement tiers.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>disabled</code>, <code>library</code>, <code>ui</code></td></tr>
@@ -25,7 +25,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Read by</th><td><a href="../rules/SK3003.html">SK3003</a></td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/ConfigureAwait_Analysis.html">https://www.jetbrains.com/help/resharper/ConfigureAwait_Analysis.html</a></td></tr>
 </tbody>
 </table>
 </section>

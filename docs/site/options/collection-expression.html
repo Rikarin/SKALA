@@ -15,7 +15,7 @@
 <p class="lede">1 key.</p>
 <section class="option" id="dotnet_style_prefer_collection_expression">
 <h2><code>dotnet_style_prefer_collection_expression</code> <a class="self" href="#dotnet_style_prefer_collection_expression">#</a></h2>
-<p>Prefer collection expressions. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — a Roslyn analyser's. Flat at <code>when_types_loosely_match:suggestion</code>, <code>never:suggestion</code> and <code>when_types_exactly_match:warning</code> under the cleanup profile on a fixture where <code>new List&lt;int&gt; { 1, 2, 3 }</code> is left as written, with the same positive control as <code>csharp_style_prefer_utf8_string_literals</code>. The oracle does not perform IDE0300.</p>
+<p>Prefer collection expressions. ⚠ Measured 2026-08-29 against the oracle at 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — a Roslyn analyser's. Flat at <code>when_types_loosely_match:suggestion</code>, <code>never:suggestion</code> and <code>when_types_exactly_match:warning</code> under the cleanup profile on a fixture where <code>new List&lt;int&gt; { 1, 2, 3 }</code> is left as written, with the same positive control as <code>csharp_style_prefer_utf8_string_literals</code>. The oracle does not perform IDE0300.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>when_types_exactly_match</code>, <code>when_types_loosely_match</code>, <code>never</code></td></tr>
@@ -25,7 +25,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Severity suffix</th><td>accepted — <code>key = value:suggestion</code></td></tr>
-<tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>

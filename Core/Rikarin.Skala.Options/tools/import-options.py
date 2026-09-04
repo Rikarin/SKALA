@@ -2,6 +2,12 @@
 """
 One-off importer that seeds Core/Rikarin.Skala.Options/options.json (docs/plan/15 § M0).
 
+⚠ It has not been runnable as a regeneration for a long time, and it emits no `export` array — that
+field never came from here; the `skala_` rename added it, and the M12 split moved it out of
+options.json entirely into export-bridge.json. It emits no `docs` either: the field is gone from the
+registry, the schema and both renderers. Read this as the record of how the seed was derived, not as
+a button. Re-running it produces a file the generator rejects (SKG006/SKG007 at least).
+
 It is committed for provenance, not because it runs in the build: options.json is the source of
 truth and is edited by hand from here on. Re-running it would discard tier promotions.
 
@@ -658,7 +664,6 @@ def build(repo: str, cache: str) -> dict:
                 "summary": f"{prop['group']} — {prop['title']}" if prop["group"] else prop["title"],
                 "since": "0.1",
                 "oracle": None,
-                "docs": f"https://www.jetbrains.com/help/resharper/{prop['page']}#{prop['anchor']}",
                 "templateLine": line,
                 "expands": expands,
             }
@@ -690,10 +695,9 @@ def build(repo: str, cache: str) -> dict:
                 "defaultSource": "template",
                 "tier": "D",
                 "construct": "Generalized",
-                "summary": "Generalized ReSharper property; sets every option it expands to at once.",
+                "summary": "Generalized export property; sets every option it expands to at once.",
                 "since": "0.1",
                 "oracle": None,
-                "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html",
                 "templateLine": line,
                 "expands": sorted(set(expanded)),
             }
@@ -716,7 +720,6 @@ def build(repo: str, cache: str) -> dict:
                 "summary": summary,
                 "since": "0.1",
                 "oracle": None,
-                "docs": "https://spec.editorconfig.org/",
                 "templateLine": line,
                 "expands": [],
             }
@@ -740,7 +743,6 @@ def build(repo: str, cache: str) -> dict:
                 "summary": summary,
                 "since": "0.1",
                 "oracle": None,
-                "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
                 "templateLine": line,
                 "severitySuffix": severity_suffix,
                 "expands": [],
@@ -762,10 +764,9 @@ def build(repo: str, cache: str) -> dict:
                 "defaultSource": "unknown",
                 "tier": "C" if key in TIER_C_KEYS else "D",
                 "construct": construct,
-                "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
+                "summary": "Undocumented export property; classified as C#-relevant by vocabulary.",
                 "since": "0.1",
                 "oracle": None,
-                "docs": None,
                 "templateLine": line,
                 "expands": [],
             }
@@ -778,11 +779,12 @@ def build(repo: str, cache: str) -> dict:
         "generator": "Core/Rikarin.Skala.Options/tools/import-options.py",
         "notes": [
             "Seeded from editor_config_template. One entry per option the export actually sets.",
-            "defaultSource is never 'resharper-docs' in this seed: JetBrains' EditorConfig property "
-            "tables document names, languages and possible values, and never a default. "
-            "`skala config distill` drops a key only when defaultSource == 'resharper-docs' and the "
-            "value equals the default, so on this registry it drops nothing. That is deliberate: a "
-            "distill that removes a key on a guessed default silently changes formatting.",
+            "No entry claims the published-tables defaultSource in this seed: the reference "
+            "formatter's EditorConfig property tables document names, languages and possible values, "
+            "and never a default. `skala config distill` drops a key only when its defaultSource is a "
+            "verified one and the value equals the default, so on this registry it drops nothing. That "
+            "is deliberate: a distill that removes a key on a guessed default silently changes "
+            "formatting.",
             "Nearly every entry is Tier D. Tier D means 'not implemented yet', which is the honest "
             "state of the formatter at M0, not a defect in the registry.",
         ],
