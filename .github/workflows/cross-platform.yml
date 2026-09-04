@@ -73,8 +73,20 @@ jobs:
 
       # ⚠ `--no-build`, so this cannot silently rebuild in Debug and test something other than what
       # the step above compiled under TreatWarningsAsErrors.
+      # ⚠ **`VSTEST_CONNECTION_TIMEOUT` is in SECONDS and the default is 90.** The Windows runner
+      # aborted a run at `f61a64a1` on `vstest.console process failed to connect to testhost process
+      # after 90 seconds` — a handshake between the runner and the test host, not a test. ⚠ Not the
+      # same thing as the `MSBuildWorkspace` build-host pipe timeout the Release job's Build step
+      # comments on, which is Roslyn starting its own child process; these are two different
+      # processes failing to be started on the same slow runner. The tell here is that
+      # every project still reports `Failed: 0` and the aborted project passes when it re-runs
+      # seconds later; only the abort sets the exit code, so the job goes red with nothing red in it.
+      # Do not read a green run here as evidence the timeout was the problem: it is a race, and it
+      # loses only sometimes.
       - name: Test
         run: dotnet test Skala.slnx -c Release --no-build
+        env:
+          VSTEST_CONNECTION_TIMEOUT: 300
 
   # ADR-015 — Skala formats Skala. ⚠ `skala.yml` runs `skala check`, which is the analysis gate, and
   # never the NUKE `Lint` target, which is `skala format --check` over the repository plus
