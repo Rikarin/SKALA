@@ -130,7 +130,9 @@ public sealed class SpacingTests {
     [Fact]
     public void AllowCommentAfterLbrace_DoesNotKeepADocumentationCommentOnTheBraceLine() {
         var document = EditorConfigDocument.FromText("/repo/.editorconfig", "root = true");
-        var options = new PhaseOneOptions(OptionResolver.Resolve(EditorConfigChain.Of("/repo/Test.cs", document)).Options);
+        var options = new PhaseOneOptions(
+            OptionResolver.Resolve(EditorConfigChain.Of("/repo/Test.cs", document)).Options
+        );
         var formatted = CSharpFormatter.Format(
             "Test.cs",
             SourceText.From("class C { /// <summary>Docs.</summary>\nint M() => 0; }"),
