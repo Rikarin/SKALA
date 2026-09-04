@@ -1,0 +1,2323 @@
+{
+  "$schema": "./export-bridge.schema.json",
+  "version": 1,
+  "generator": "Core/Rikarin.Skala.Options/tools/import-options.py",
+  "notes": [
+    "The bridge between ReSharper's key namespace and Skala's, in the one direction that still exists. Skala's own keys are `skala_*`; this file records the spelling(s) the Rider export (`editor_config_template`) writes for each of them. It is the only place in the option registry that names another tool's keys.",
+    "⚠ Provenance, not ingestion. Nothing here is indexed by `OptionRegistry.TryResolve`, so a `resharper_*` key in a user's .editorconfig is still an unknown key (SK9001). Three consumers read it as an artefact: `CanonicalEditorConfig.Compose`, which translates the export into the payload `skala config sync` ships; `OracleRunner`, which has to speak this namespace to `jb cleanupcode` because that is the only namespace it understands; and `EditorConfigIngestionTests`.",
+    "⚠ The mapping is recorded, not computed. `skala_x` is `resharper_x` for some keys and `resharper_csharp_x` for others, and most keys carry both plus unprefixed forms, so no rule derives it. Delete an entry and the key-flip sweep reports that option INERT — silently, because the oracle ignores a key it cannot read — and the canonical payload loses the line.",
+    "⚠ Order within each array is significance order, most specific first, and is load-bearing twice: `CanonicalEditorConfig.Translate` uses the index as the specificity rank when the export sets one option under two spellings in one section, and `ExportSpellings.ForOracle` hands element 0 to the oracle. Handing the oracle a generic spelling whose specific spelling the export also sets would leave the export's value in force and measure nothing.",
+    "Every option in options.json has an entry here and every entry names an option that exists; the generator fails the build (SKG006, SKG007) if either stops being true.",
+    "`unmapped` is the other half: foreign keys that options.json's measurements name but that Skala carries no option for. They are here so that a measurement stays reproducible — a reader who wants to repeat a negative control needs the exact spelling — without options.json holding it. ⚠ Not all of them are export keys: `braces_for_ifelse` and `remove_this_qualifier` are the reference formatter's settings, verified absent from `editor_config_template` on 2026-09-04; the other three the export does write."
+  ],
+  "unmapped": {
+    "resharper_braces_for_ifelse": "csharp_prefer_braces' negative control. Flat at required, not_required and required_for_multiline under both oracle profiles, which is what shows neither profile performs brace insertion at all. ⚠ Not written by the export.",
+    "resharper_csharp_align_multiline_argument": "Named by skala_allow_far_alignment's measurement. The export sets it false at editor_config_template:262; the probe that overturned the OfInert registration set it true.",
+    "resharper_new_line_before_enumerators": "The key that actually chops an enum under this export (editor_config_template:413, = true). It is what masks skala_wrap_enum_declaration and skala_max_enum_members_on_line.",
+    "resharper_parentheses_non_obvious_operations": "Shift and the bitwise family, which dotnet_style_parentheses_in_arithmetic_binary_operators does not govern (editor_config_template:426).",
+    "resharper_remove_this_qualifier": "Named by dotnet_style_qualification_for_field: the key the oracle does NOT read for `this.` (SK-DIV-0070). ⚠ Not written by the export."
+  },
+  "spellings": {
+    "charset": [
+      "charset"
+    ],
+    "csharp_indent_braces": [
+      "csharp_indent_braces"
+    ],
+    "csharp_new_line_before_members_in_object_initializers": [
+      "csharp_new_line_before_members_in_object_initializers"
+    ],
+    "csharp_new_line_before_open_brace": [
+      "csharp_new_line_before_open_brace"
+    ],
+    "csharp_new_line_between_query_expression_clauses": [
+      "csharp_new_line_between_query_expression_clauses"
+    ],
+    "csharp_prefer_braces": [
+      "csharp_prefer_braces"
+    ],
+    "csharp_preferred_modifier_order": [
+      "csharp_preferred_modifier_order"
+    ],
+    "csharp_preserve_single_line_blocks": [
+      "csharp_preserve_single_line_blocks"
+    ],
+    "csharp_space_after_dot": [
+      "csharp_space_after_dot"
+    ],
+    "csharp_space_after_keywords_in_control_flow_statements": [
+      "csharp_space_after_keywords_in_control_flow_statements"
+    ],
+    "csharp_space_around_binary_operators": [
+      "csharp_space_around_binary_operators"
+    ],
+    "csharp_space_before_dot": [
+      "csharp_space_before_dot"
+    ],
+    "csharp_space_before_open_square_brackets": [
+      "csharp_space_before_open_square_brackets"
+    ],
+    "csharp_space_between_method_call_name_and_opening_parenthesis": [
+      "csharp_space_between_method_call_name_and_opening_parenthesis"
+    ],
+    "csharp_space_between_method_declaration_name_and_open_parenthesis": [
+      "csharp_space_between_method_declaration_name_and_open_parenthesis"
+    ],
+    "csharp_space_between_parentheses": [
+      "csharp_space_between_parentheses"
+    ],
+    "csharp_space_between_square_brackets": [
+      "csharp_space_between_square_brackets"
+    ],
+    "csharp_style_namespace_declarations": [
+      "csharp_style_namespace_declarations"
+    ],
+    "csharp_style_prefer_utf8_string_literals": [
+      "csharp_style_prefer_utf8_string_literals"
+    ],
+    "csharp_style_var_elsewhere": [
+      "csharp_style_var_elsewhere"
+    ],
+    "csharp_style_var_for_built_in_types": [
+      "csharp_style_var_for_built_in_types"
+    ],
+    "csharp_style_var_when_type_is_apparent": [
+      "csharp_style_var_when_type_is_apparent"
+    ],
+    "csharp_using_directive_placement": [
+      "csharp_using_directive_placement"
+    ],
+    "dotnet_separate_import_directive_groups": [
+      "dotnet_separate_import_directive_groups"
+    ],
+    "dotnet_style_parentheses_in_arithmetic_binary_operators": [
+      "dotnet_style_parentheses_in_arithmetic_binary_operators"
+    ],
+    "dotnet_style_parentheses_in_other_binary_operators": [
+      "dotnet_style_parentheses_in_other_binary_operators"
+    ],
+    "dotnet_style_parentheses_in_relational_binary_operators": [
+      "dotnet_style_parentheses_in_relational_binary_operators"
+    ],
+    "dotnet_style_predefined_type_for_locals_parameters_members": [
+      "dotnet_style_predefined_type_for_locals_parameters_members"
+    ],
+    "dotnet_style_predefined_type_for_member_access": [
+      "dotnet_style_predefined_type_for_member_access"
+    ],
+    "dotnet_style_prefer_collection_expression": [
+      "dotnet_style_prefer_collection_expression"
+    ],
+    "dotnet_style_qualification_for_event": [
+      "dotnet_style_qualification_for_event"
+    ],
+    "dotnet_style_qualification_for_field": [
+      "dotnet_style_qualification_for_field"
+    ],
+    "dotnet_style_qualification_for_method": [
+      "dotnet_style_qualification_for_method"
+    ],
+    "dotnet_style_qualification_for_property": [
+      "dotnet_style_qualification_for_property"
+    ],
+    "dotnet_style_require_accessibility_modifiers": [
+      "dotnet_style_require_accessibility_modifiers"
+    ],
+    "end_of_line": [
+      "end_of_line"
+    ],
+    "file_header_template": [
+      "file_header_template"
+    ],
+    "indent_size": [
+      "indent_size"
+    ],
+    "indent_style": [
+      "indent_style"
+    ],
+    "max_line_length": [
+      "max_line_length"
+    ],
+    "skala_accessor_owner_body": [
+      "resharper_accessor_owner_body",
+      "resharper_csharp_accessor_owner_body",
+      "csharp_accessor_owner_body",
+      "accessor_owner_body"
+    ],
+    "skala_align_linq_query": [
+      "resharper_align_linq_query",
+      "resharper_csharp_align_linq_query",
+      "csharp_align_linq_query",
+      "align_linq_query"
+    ],
+    "skala_align_multiline_array_and_object_initializer": [
+      "resharper_align_multiline_array_and_object_initializer",
+      "resharper_csharp_align_multiline_array_and_object_initializer",
+      "csharp_align_multiline_array_and_object_initializer",
+      "align_multiline_array_and_object_initializer"
+    ],
+    "skala_align_multiline_binary_expressions_chain": [
+      "resharper_align_multiline_binary_expressions_chain",
+      "resharper_csharp_align_multiline_binary_expressions_chain",
+      "csharp_align_multiline_binary_expressions_chain",
+      "align_multiline_binary_expressions_chain"
+    ],
+    "skala_align_multiline_binary_patterns": [
+      "resharper_align_multiline_binary_patterns",
+      "resharper_csharp_align_multiline_binary_patterns",
+      "csharp_align_multiline_binary_patterns",
+      "align_multiline_binary_patterns"
+    ],
+    "skala_align_multiline_comments": [
+      "resharper_align_multiline_comments",
+      "resharper_csharp_align_multiline_comments",
+      "csharp_align_multiline_comments",
+      "align_multiline_comments"
+    ],
+    "skala_align_multiline_extends_list": [
+      "resharper_csharp_align_multiline_extends_list",
+      "resharper_align_multiline_extends_list",
+      "csharp_align_multiline_extends_list",
+      "align_multiline_extends_list"
+    ],
+    "skala_align_multiline_list_pattern": [
+      "resharper_align_multiline_list_pattern",
+      "resharper_csharp_align_multiline_list_pattern",
+      "csharp_align_multiline_list_pattern",
+      "align_multiline_list_pattern"
+    ],
+    "skala_align_multiline_property_pattern": [
+      "resharper_align_multiline_property_pattern",
+      "resharper_csharp_align_multiline_property_pattern",
+      "csharp_align_multiline_property_pattern",
+      "align_multiline_property_pattern"
+    ],
+    "skala_align_multiline_statement_conditions": [
+      "resharper_align_multiline_statement_conditions",
+      "resharper_csharp_align_multiline_statement_conditions",
+      "csharp_align_multiline_statement_conditions",
+      "align_multiline_statement_conditions"
+    ],
+    "skala_align_multiline_switch_expression": [
+      "resharper_align_multiline_switch_expression",
+      "resharper_csharp_align_multiline_switch_expression",
+      "csharp_align_multiline_switch_expression",
+      "align_multiline_switch_expression"
+    ],
+    "skala_align_multiline_type_parameter_list": [
+      "resharper_align_multiline_type_parameter_list"
+    ],
+    "skala_align_multiple_declaration": [
+      "resharper_csharp_align_multiple_declaration",
+      "resharper_align_multiple_declaration",
+      "csharp_align_multiple_declaration",
+      "align_multiple_declaration"
+    ],
+    "skala_align_tuple_components": [
+      "resharper_align_tuple_components",
+      "resharper_csharp_align_tuple_components",
+      "csharp_align_tuple_components",
+      "align_tuple_components"
+    ],
+    "skala_alignment_tab_fill_style": [
+      "resharper_csharp_alignment_tab_fill_style",
+      "csharp_alignment_tab_fill_style"
+    ],
+    "skala_allow_comment_after_lbrace": [
+      "resharper_allow_comment_after_lbrace",
+      "resharper_csharp_allow_comment_after_lbrace",
+      "csharp_allow_comment_after_lbrace",
+      "allow_comment_after_lbrace"
+    ],
+    "skala_allow_far_alignment": [
+      "resharper_csharp_allow_far_alignment",
+      "csharp_allow_far_alignment"
+    ],
+    "skala_apply_auto_detected_rules": [
+      "resharper_apply_auto_detected_rules"
+    ],
+    "skala_arguments_anonymous_function": [
+      "resharper_arguments_anonymous_function",
+      "resharper_csharp_arguments_anonymous_function",
+      "csharp_arguments_anonymous_function",
+      "arguments_anonymous_function"
+    ],
+    "skala_arguments_literal": [
+      "resharper_arguments_literal",
+      "resharper_csharp_arguments_literal",
+      "csharp_arguments_literal",
+      "arguments_literal"
+    ],
+    "skala_arguments_named": [
+      "resharper_arguments_named",
+      "resharper_csharp_arguments_named",
+      "csharp_arguments_named",
+      "arguments_named"
+    ],
+    "skala_arguments_other": [
+      "resharper_arguments_other",
+      "resharper_csharp_arguments_other",
+      "csharp_arguments_other",
+      "arguments_other"
+    ],
+    "skala_arguments_skip_single": [
+      "resharper_arguments_skip_single",
+      "resharper_csharp_arguments_skip_single",
+      "csharp_arguments_skip_single",
+      "arguments_skip_single"
+    ],
+    "skala_arguments_string_literal": [
+      "resharper_arguments_string_literal",
+      "resharper_csharp_arguments_string_literal",
+      "csharp_arguments_string_literal",
+      "arguments_string_literal"
+    ],
+    "skala_autodetect_indent_settings": [
+      "resharper_autodetect_indent_settings"
+    ],
+    "skala_blank_lines_after_block_statements": [
+      "resharper_blank_lines_after_block_statements",
+      "resharper_csharp_blank_lines_after_block_statements",
+      "csharp_blank_lines_after_block_statements",
+      "blank_lines_after_block_statements"
+    ],
+    "skala_blank_lines_after_case": [
+      "resharper_blank_lines_after_case",
+      "resharper_csharp_blank_lines_after_case",
+      "csharp_blank_lines_after_case",
+      "blank_lines_after_case"
+    ],
+    "skala_blank_lines_after_control_transfer_statements": [
+      "resharper_blank_lines_after_control_transfer_statements",
+      "resharper_csharp_blank_lines_after_control_transfer_statements",
+      "csharp_blank_lines_after_control_transfer_statements",
+      "blank_lines_after_control_transfer_statements"
+    ],
+    "skala_blank_lines_after_file_scoped_namespace_directive": [
+      "resharper_blank_lines_after_file_scoped_namespace_directive",
+      "resharper_csharp_blank_lines_after_file_scoped_namespace_directive",
+      "csharp_blank_lines_after_file_scoped_namespace_directive",
+      "blank_lines_after_file_scoped_namespace_directive"
+    ],
+    "skala_blank_lines_after_multiline_statements": [
+      "resharper_blank_lines_after_multiline_statements",
+      "resharper_csharp_blank_lines_after_multiline_statements",
+      "csharp_blank_lines_after_multiline_statements",
+      "blank_lines_after_multiline_statements"
+    ],
+    "skala_blank_lines_after_start_comment": [
+      "resharper_blank_lines_after_start_comment",
+      "resharper_csharp_blank_lines_after_start_comment",
+      "csharp_blank_lines_after_start_comment",
+      "blank_lines_after_start_comment"
+    ],
+    "skala_blank_lines_after_using_list": [
+      "resharper_blank_lines_after_using_list",
+      "resharper_csharp_blank_lines_after_using_list",
+      "csharp_blank_lines_after_using_list",
+      "blank_lines_after_using_list"
+    ],
+    "skala_blank_lines_around_accessor": [
+      "resharper_blank_lines_around_accessor",
+      "resharper_csharp_blank_lines_around_accessor",
+      "csharp_blank_lines_around_accessor",
+      "blank_lines_around_accessor"
+    ],
+    "skala_blank_lines_around_auto_property": [
+      "resharper_blank_lines_around_auto_property",
+      "resharper_csharp_blank_lines_around_auto_property",
+      "csharp_blank_lines_around_auto_property",
+      "blank_lines_around_auto_property"
+    ],
+    "skala_blank_lines_around_block_case_section": [
+      "resharper_blank_lines_around_block_case_section",
+      "resharper_csharp_blank_lines_around_block_case_section",
+      "csharp_blank_lines_around_block_case_section",
+      "blank_lines_around_block_case_section"
+    ],
+    "skala_blank_lines_around_field": [
+      "resharper_blank_lines_around_field",
+      "resharper_csharp_blank_lines_around_field",
+      "csharp_blank_lines_around_field",
+      "blank_lines_around_field"
+    ],
+    "skala_blank_lines_around_invocable": [
+      "resharper_blank_lines_around_invocable",
+      "resharper_csharp_blank_lines_around_invocable",
+      "csharp_blank_lines_around_invocable",
+      "blank_lines_around_invocable"
+    ],
+    "skala_blank_lines_around_local_method": [
+      "resharper_blank_lines_around_local_method",
+      "resharper_csharp_blank_lines_around_local_method",
+      "csharp_blank_lines_around_local_method",
+      "blank_lines_around_local_method"
+    ],
+    "skala_blank_lines_around_multiline_case_section": [
+      "resharper_blank_lines_around_multiline_case_section",
+      "resharper_csharp_blank_lines_around_multiline_case_section",
+      "csharp_blank_lines_around_multiline_case_section",
+      "blank_lines_around_multiline_case_section"
+    ],
+    "skala_blank_lines_around_namespace": [
+      "resharper_blank_lines_around_namespace",
+      "resharper_csharp_blank_lines_around_namespace",
+      "csharp_blank_lines_around_namespace",
+      "blank_lines_around_namespace"
+    ],
+    "skala_blank_lines_around_property": [
+      "resharper_blank_lines_around_property",
+      "resharper_csharp_blank_lines_around_property",
+      "csharp_blank_lines_around_property",
+      "blank_lines_around_property"
+    ],
+    "skala_blank_lines_around_region": [
+      "resharper_blank_lines_around_region",
+      "resharper_csharp_blank_lines_around_region",
+      "csharp_blank_lines_around_region",
+      "blank_lines_around_region"
+    ],
+    "skala_blank_lines_around_single_line_accessor": [
+      "resharper_blank_lines_around_single_line_accessor",
+      "resharper_csharp_blank_lines_around_single_line_accessor",
+      "csharp_blank_lines_around_single_line_accessor",
+      "blank_lines_around_single_line_accessor"
+    ],
+    "skala_blank_lines_around_single_line_auto_property": [
+      "resharper_blank_lines_around_single_line_auto_property",
+      "resharper_csharp_blank_lines_around_single_line_auto_property",
+      "csharp_blank_lines_around_single_line_auto_property",
+      "blank_lines_around_single_line_auto_property"
+    ],
+    "skala_blank_lines_around_single_line_field": [
+      "resharper_blank_lines_around_single_line_field",
+      "resharper_csharp_blank_lines_around_single_line_field",
+      "csharp_blank_lines_around_single_line_field",
+      "blank_lines_around_single_line_field"
+    ],
+    "skala_blank_lines_around_single_line_invocable": [
+      "resharper_blank_lines_around_single_line_invocable",
+      "resharper_csharp_blank_lines_around_single_line_invocable",
+      "csharp_blank_lines_around_single_line_invocable",
+      "blank_lines_around_single_line_invocable"
+    ],
+    "skala_blank_lines_around_single_line_local_method": [
+      "resharper_blank_lines_around_single_line_local_method",
+      "resharper_csharp_blank_lines_around_single_line_local_method",
+      "csharp_blank_lines_around_single_line_local_method",
+      "blank_lines_around_single_line_local_method"
+    ],
+    "skala_blank_lines_around_single_line_property": [
+      "resharper_blank_lines_around_single_line_property",
+      "resharper_csharp_blank_lines_around_single_line_property",
+      "csharp_blank_lines_around_single_line_property",
+      "blank_lines_around_single_line_property"
+    ],
+    "skala_blank_lines_around_single_line_type": [
+      "resharper_blank_lines_around_single_line_type",
+      "resharper_csharp_blank_lines_around_single_line_type",
+      "csharp_blank_lines_around_single_line_type",
+      "blank_lines_around_single_line_type"
+    ],
+    "skala_blank_lines_around_type": [
+      "resharper_blank_lines_around_type",
+      "resharper_csharp_blank_lines_around_type",
+      "csharp_blank_lines_around_type",
+      "blank_lines_around_type"
+    ],
+    "skala_blank_lines_before_block_statements": [
+      "resharper_blank_lines_before_block_statements",
+      "resharper_csharp_blank_lines_before_block_statements",
+      "csharp_blank_lines_before_block_statements",
+      "blank_lines_before_block_statements"
+    ],
+    "skala_blank_lines_before_case": [
+      "resharper_blank_lines_before_case",
+      "resharper_csharp_blank_lines_before_case",
+      "csharp_blank_lines_before_case",
+      "blank_lines_before_case"
+    ],
+    "skala_blank_lines_before_control_transfer_statements": [
+      "resharper_blank_lines_before_control_transfer_statements",
+      "resharper_csharp_blank_lines_before_control_transfer_statements",
+      "csharp_blank_lines_before_control_transfer_statements",
+      "blank_lines_before_control_transfer_statements"
+    ],
+    "skala_blank_lines_before_multiline_statements": [
+      "resharper_blank_lines_before_multiline_statements",
+      "resharper_csharp_blank_lines_before_multiline_statements",
+      "csharp_blank_lines_before_multiline_statements",
+      "blank_lines_before_multiline_statements"
+    ],
+    "skala_blank_lines_before_single_line_comment": [
+      "resharper_blank_lines_before_single_line_comment",
+      "resharper_csharp_blank_lines_before_single_line_comment",
+      "csharp_blank_lines_before_single_line_comment",
+      "blank_lines_before_single_line_comment"
+    ],
+    "skala_blank_lines_inside_namespace": [
+      "resharper_blank_lines_inside_namespace",
+      "resharper_csharp_blank_lines_inside_namespace",
+      "csharp_blank_lines_inside_namespace",
+      "blank_lines_inside_namespace"
+    ],
+    "skala_blank_lines_inside_region": [
+      "resharper_blank_lines_inside_region",
+      "resharper_csharp_blank_lines_inside_region",
+      "csharp_blank_lines_inside_region",
+      "blank_lines_inside_region"
+    ],
+    "skala_blank_lines_inside_type": [
+      "resharper_blank_lines_inside_type",
+      "resharper_csharp_blank_lines_inside_type",
+      "csharp_blank_lines_inside_type",
+      "blank_lines_inside_type"
+    ],
+    "skala_braces_redundant": [
+      "resharper_braces_redundant",
+      "resharper_csharp_braces_redundant",
+      "csharp_braces_redundant",
+      "braces_redundant"
+    ],
+    "skala_configure_await_analysis_mode": [
+      "resharper_configure_await_analysis_mode",
+      "configure_await_analysis_mode"
+    ],
+    "skala_constructor_or_destructor_body": [
+      "resharper_constructor_or_destructor_body",
+      "resharper_csharp_constructor_or_destructor_body",
+      "csharp_constructor_or_destructor_body",
+      "constructor_or_destructor_body"
+    ],
+    "skala_continuous_indent_multiplier": [
+      "resharper_continuous_indent_multiplier",
+      "resharper_csharp_continuous_indent_multiplier",
+      "csharp_continuous_indent_multiplier",
+      "continuous_indent_multiplier"
+    ],
+    "skala_default_value_when_type_evident": [
+      "resharper_default_value_when_type_evident",
+      "resharper_csharp_default_value_when_type_evident",
+      "csharp_default_value_when_type_evident",
+      "default_value_when_type_evident"
+    ],
+    "skala_default_value_when_type_not_evident": [
+      "resharper_default_value_when_type_not_evident",
+      "resharper_csharp_default_value_when_type_not_evident",
+      "csharp_default_value_when_type_not_evident",
+      "default_value_when_type_not_evident"
+    ],
+    "skala_disable_blank_line_changes": [
+      "resharper_disable_blank_line_changes"
+    ],
+    "skala_disable_formatter": [
+      "resharper_disable_formatter"
+    ],
+    "skala_disable_indenter": [
+      "resharper_disable_indenter"
+    ],
+    "skala_disable_int_align": [
+      "resharper_disable_int_align"
+    ],
+    "skala_disable_line_break_changes": [
+      "resharper_disable_line_break_changes"
+    ],
+    "skala_disable_line_break_removal": [
+      "resharper_disable_line_break_removal"
+    ],
+    "skala_disable_space_changes": [
+      "resharper_disable_space_changes"
+    ],
+    "skala_empty_block_style": [
+      "resharper_csharp_empty_block_style",
+      "resharper_empty_block_style",
+      "csharp_empty_block_style",
+      "empty_block_style"
+    ],
+    "skala_empty_string": [
+      "resharper_empty_string"
+    ],
+    "skala_enforce_line_ending_style": [
+      "resharper_enforce_line_ending_style"
+    ],
+    "skala_force_chop_compound_do_expression": [
+      "resharper_force_chop_compound_do_expression",
+      "resharper_csharp_force_chop_compound_do_expression",
+      "csharp_force_chop_compound_do_expression",
+      "force_chop_compound_do_expression"
+    ],
+    "skala_force_chop_compound_if_expression": [
+      "resharper_force_chop_compound_if_expression",
+      "resharper_csharp_force_chop_compound_if_expression",
+      "csharp_force_chop_compound_if_expression",
+      "force_chop_compound_if_expression"
+    ],
+    "skala_force_chop_compound_while_expression": [
+      "resharper_force_chop_compound_while_expression",
+      "resharper_csharp_force_chop_compound_while_expression",
+      "csharp_force_chop_compound_while_expression",
+      "force_chop_compound_while_expression"
+    ],
+    "skala_formatter_off_tag": [
+      "resharper_formatter_off_tag"
+    ],
+    "skala_formatter_on_tag": [
+      "resharper_formatter_on_tag"
+    ],
+    "skala_formatter_tags_accept_regexp": [
+      "resharper_formatter_tags_accept_regexp"
+    ],
+    "skala_formatter_tags_enabled": [
+      "resharper_formatter_tags_enabled"
+    ],
+    "skala_indent_anonymous_method_block": [
+      "resharper_indent_anonymous_method_block",
+      "resharper_csharp_indent_anonymous_method_block",
+      "csharp_indent_anonymous_method_block",
+      "indent_anonymous_method_block"
+    ],
+    "skala_indent_break_from_case": [
+      "resharper_indent_break_from_case"
+    ],
+    "skala_indent_inside_namespace": [
+      "resharper_indent_inside_namespace",
+      "resharper_csharp_indent_inside_namespace",
+      "csharp_indent_inside_namespace",
+      "indent_inside_namespace"
+    ],
+    "skala_indent_invocation_pars": [
+      "resharper_indent_invocation_pars",
+      "resharper_csharp_indent_invocation_pars",
+      "csharp_indent_invocation_pars",
+      "indent_invocation_pars"
+    ],
+    "skala_indent_method_decl_pars": [
+      "resharper_indent_method_decl_pars",
+      "resharper_csharp_indent_method_decl_pars",
+      "csharp_indent_method_decl_pars",
+      "indent_method_decl_pars"
+    ],
+    "skala_indent_nested_fixed_stmt": [
+      "resharper_indent_nested_fixed_stmt",
+      "resharper_csharp_indent_nested_fixed_stmt",
+      "csharp_indent_nested_fixed_stmt",
+      "indent_nested_fixed_stmt"
+    ],
+    "skala_indent_nested_for_stmt": [
+      "resharper_indent_nested_for_stmt",
+      "resharper_csharp_indent_nested_for_stmt",
+      "csharp_indent_nested_for_stmt",
+      "indent_nested_for_stmt"
+    ],
+    "skala_indent_nested_foreach_stmt": [
+      "resharper_indent_nested_foreach_stmt",
+      "resharper_csharp_indent_nested_foreach_stmt",
+      "csharp_indent_nested_foreach_stmt",
+      "indent_nested_foreach_stmt"
+    ],
+    "skala_indent_nested_lock_stmt": [
+      "resharper_indent_nested_lock_stmt",
+      "resharper_csharp_indent_nested_lock_stmt",
+      "csharp_indent_nested_lock_stmt",
+      "indent_nested_lock_stmt"
+    ],
+    "skala_indent_nested_usings_stmt": [
+      "resharper_indent_nested_usings_stmt",
+      "resharper_csharp_indent_nested_usings_stmt",
+      "csharp_indent_nested_usings_stmt",
+      "indent_nested_usings_stmt"
+    ],
+    "skala_indent_nested_while_stmt": [
+      "resharper_indent_nested_while_stmt",
+      "resharper_csharp_indent_nested_while_stmt",
+      "csharp_indent_nested_while_stmt",
+      "indent_nested_while_stmt"
+    ],
+    "skala_indent_pars": [
+      "resharper_indent_pars",
+      "resharper_csharp_indent_pars",
+      "csharp_indent_pars",
+      "indent_pars"
+    ],
+    "skala_indent_preprocessor_if": [
+      "resharper_indent_preprocessor_if",
+      "resharper_csharp_indent_preprocessor_if",
+      "csharp_indent_preprocessor_if",
+      "indent_preprocessor_if"
+    ],
+    "skala_indent_preprocessor_other": [
+      "resharper_indent_preprocessor_other",
+      "resharper_csharp_indent_preprocessor_other",
+      "csharp_indent_preprocessor_other",
+      "indent_preprocessor_other"
+    ],
+    "skala_indent_preprocessor_region": [
+      "resharper_indent_preprocessor_region",
+      "resharper_csharp_indent_preprocessor_region",
+      "csharp_indent_preprocessor_region",
+      "indent_preprocessor_region"
+    ],
+    "skala_indent_primary_constructor_decl_pars": [
+      "resharper_indent_primary_constructor_decl_pars",
+      "resharper_csharp_indent_primary_constructor_decl_pars",
+      "csharp_indent_primary_constructor_decl_pars",
+      "indent_primary_constructor_decl_pars"
+    ],
+    "skala_indent_raw_literal_string": [
+      "resharper_indent_raw_literal_string",
+      "resharper_csharp_indent_raw_literal_string",
+      "csharp_indent_raw_literal_string",
+      "indent_raw_literal_string"
+    ],
+    "skala_indent_size": [
+      "resharper_csharp_indent_size",
+      "csharp_indent_size"
+    ],
+    "skala_indent_statement_pars": [
+      "resharper_indent_statement_pars",
+      "resharper_csharp_indent_statement_pars",
+      "csharp_indent_statement_pars",
+      "indent_statement_pars"
+    ],
+    "skala_indent_style": [
+      "resharper_csharp_indent_style",
+      "csharp_indent_style"
+    ],
+    "skala_indent_switch_labels": [
+      "csharp_indent_switch_labels",
+      "resharper_indent_switch_labels",
+      "indent_switch_labels"
+    ],
+    "skala_indent_type_constraints": [
+      "resharper_indent_type_constraints",
+      "resharper_csharp_indent_type_constraints",
+      "csharp_indent_type_constraints",
+      "indent_type_constraints"
+    ],
+    "skala_indent_typearg_angles": [
+      "resharper_indent_typearg_angles",
+      "resharper_csharp_indent_typearg_angles",
+      "csharp_indent_typearg_angles",
+      "indent_typearg_angles"
+    ],
+    "skala_indent_typeparam_angles": [
+      "resharper_indent_typeparam_angles",
+      "resharper_csharp_indent_typeparam_angles",
+      "csharp_indent_typeparam_angles",
+      "indent_typeparam_angles"
+    ],
+    "skala_insert_final_newline": [
+      "resharper_csharp_insert_final_newline",
+      "insert_final_newline",
+      "csharp_insert_final_newline"
+    ],
+    "skala_int_align": [
+      "resharper_int_align"
+    ],
+    "skala_int_align_assignments": [
+      "resharper_csharp_int_align_assignments",
+      "resharper_int_align_assignments",
+      "csharp_int_align_assignments",
+      "int_align_assignments"
+    ],
+    "skala_int_align_binary_expressions": [
+      "resharper_csharp_int_align_binary_expressions",
+      "resharper_int_align_binary_expressions",
+      "csharp_int_align_binary_expressions",
+      "int_align_binary_expressions"
+    ],
+    "skala_int_align_comments": [
+      "resharper_int_align_comments",
+      "resharper_csharp_int_align_comments",
+      "csharp_int_align_comments",
+      "int_align_comments"
+    ],
+    "skala_int_align_declaration_names": [
+      "resharper_int_align_declaration_names"
+    ],
+    "skala_int_align_enum_initializers": [
+      "resharper_int_align_enum_initializers"
+    ],
+    "skala_int_align_eq": [
+      "resharper_int_align_eq"
+    ],
+    "skala_int_align_fields": [
+      "resharper_csharp_int_align_fields",
+      "resharper_int_align_fields",
+      "csharp_int_align_fields",
+      "int_align_fields"
+    ],
+    "skala_int_align_fix_in_adjacent": [
+      "resharper_int_align_fix_in_adjacent",
+      "resharper_csharp_int_align_fix_in_adjacent",
+      "csharp_int_align_fix_in_adjacent",
+      "int_align_fix_in_adjacent"
+    ],
+    "skala_int_align_invocations": [
+      "resharper_csharp_int_align_invocations",
+      "resharper_int_align_invocations",
+      "csharp_int_align_invocations",
+      "int_align_invocations"
+    ],
+    "skala_int_align_methods": [
+      "resharper_csharp_int_align_methods",
+      "resharper_int_align_methods",
+      "csharp_int_align_methods",
+      "int_align_methods"
+    ],
+    "skala_int_align_nested_ternary": [
+      "resharper_csharp_int_align_nested_ternary",
+      "resharper_int_align_nested_ternary",
+      "csharp_int_align_nested_ternary",
+      "int_align_nested_ternary"
+    ],
+    "skala_int_align_parameters": [
+      "resharper_csharp_int_align_parameters",
+      "resharper_int_align_parameters",
+      "csharp_int_align_parameters",
+      "int_align_parameters"
+    ],
+    "skala_int_align_properties": [
+      "resharper_csharp_int_align_properties",
+      "resharper_int_align_properties",
+      "csharp_int_align_properties",
+      "int_align_properties"
+    ],
+    "skala_int_align_property_patterns": [
+      "resharper_csharp_int_align_property_patterns",
+      "resharper_int_align_property_patterns",
+      "csharp_int_align_property_patterns",
+      "int_align_property_patterns"
+    ],
+    "skala_int_align_switch_expressions": [
+      "resharper_csharp_int_align_switch_expressions",
+      "resharper_int_align_switch_expressions",
+      "csharp_int_align_switch_expressions",
+      "int_align_switch_expressions"
+    ],
+    "skala_int_align_switch_sections": [
+      "resharper_csharp_int_align_switch_sections",
+      "resharper_int_align_switch_sections",
+      "csharp_int_align_switch_sections",
+      "int_align_switch_sections"
+    ],
+    "skala_int_align_variables": [
+      "resharper_csharp_int_align_variables",
+      "resharper_int_align_variables",
+      "csharp_int_align_variables",
+      "int_align_variables"
+    ],
+    "skala_keep_blank_lines_in_code": [
+      "resharper_keep_blank_lines_in_code",
+      "resharper_csharp_keep_blank_lines_in_code",
+      "csharp_keep_blank_lines_in_code",
+      "keep_blank_lines_in_code"
+    ],
+    "skala_keep_blank_lines_in_declarations": [
+      "resharper_keep_blank_lines_in_declarations",
+      "resharper_csharp_keep_blank_lines_in_declarations",
+      "csharp_keep_blank_lines_in_declarations",
+      "keep_blank_lines_in_declarations"
+    ],
+    "skala_keep_existing_attribute_arrangement": [
+      "resharper_keep_existing_attribute_arrangement",
+      "resharper_csharp_keep_existing_attribute_arrangement",
+      "csharp_keep_existing_attribute_arrangement",
+      "keep_existing_attribute_arrangement"
+    ],
+    "skala_keep_existing_declaration_block_arrangement": [
+      "resharper_keep_existing_declaration_block_arrangement",
+      "resharper_csharp_keep_existing_declaration_block_arrangement",
+      "csharp_keep_existing_declaration_block_arrangement",
+      "keep_existing_declaration_block_arrangement"
+    ],
+    "skala_keep_existing_declaration_parens_arrangement": [
+      "resharper_keep_existing_declaration_parens_arrangement",
+      "resharper_csharp_keep_existing_declaration_parens_arrangement",
+      "csharp_keep_existing_declaration_parens_arrangement",
+      "keep_existing_declaration_parens_arrangement"
+    ],
+    "skala_keep_existing_embedded_arrangement": [
+      "resharper_keep_existing_embedded_arrangement",
+      "resharper_csharp_keep_existing_embedded_arrangement",
+      "csharp_keep_existing_embedded_arrangement",
+      "keep_existing_embedded_arrangement"
+    ],
+    "skala_keep_existing_embedded_block_arrangement": [
+      "resharper_keep_existing_embedded_block_arrangement",
+      "resharper_csharp_keep_existing_embedded_block_arrangement",
+      "csharp_keep_existing_embedded_block_arrangement",
+      "keep_existing_embedded_block_arrangement"
+    ],
+    "skala_keep_existing_enum_arrangement": [
+      "resharper_csharp_keep_existing_enum_arrangement",
+      "resharper_keep_existing_enum_arrangement",
+      "csharp_keep_existing_enum_arrangement",
+      "keep_existing_enum_arrangement"
+    ],
+    "skala_keep_existing_expr_member_arrangement": [
+      "resharper_keep_existing_expr_member_arrangement",
+      "resharper_csharp_keep_existing_expr_member_arrangement",
+      "csharp_keep_existing_expr_member_arrangement",
+      "keep_existing_expr_member_arrangement"
+    ],
+    "skala_keep_existing_invocation_parens_arrangement": [
+      "resharper_keep_existing_invocation_parens_arrangement",
+      "resharper_csharp_keep_existing_invocation_parens_arrangement",
+      "csharp_keep_existing_invocation_parens_arrangement",
+      "keep_existing_invocation_parens_arrangement"
+    ],
+    "skala_keep_existing_lambda_and_anonymous_function_parens_arrangement": [
+      "resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement"
+    ],
+    "skala_keep_existing_linebreaks": [
+      "resharper_csharp_keep_existing_linebreaks",
+      "resharper_csharp_keep_user_linebreaks",
+      "resharper_keep_existing_linebreaks",
+      "csharp_keep_existing_linebreaks",
+      "csharp_keep_user_linebreaks",
+      "keep_existing_linebreaks"
+    ],
+    "skala_keep_existing_list_patterns_arrangement": [
+      "resharper_keep_existing_list_patterns_arrangement",
+      "resharper_csharp_keep_existing_list_patterns_arrangement",
+      "csharp_keep_existing_list_patterns_arrangement",
+      "keep_existing_list_patterns_arrangement"
+    ],
+    "skala_keep_existing_primary_constructor_declaration_parens_arrangement": [
+      "resharper_keep_existing_primary_constructor_declaration_parens_arrangement",
+      "resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement",
+      "csharp_keep_existing_primary_constructor_declaration_parens_arrangement",
+      "keep_existing_primary_constructor_declaration_parens_arrangement"
+    ],
+    "skala_keep_existing_property_patterns_arrangement": [
+      "resharper_keep_existing_property_patterns_arrangement",
+      "resharper_csharp_keep_existing_property_patterns_arrangement",
+      "csharp_keep_existing_property_patterns_arrangement",
+      "keep_existing_property_patterns_arrangement"
+    ],
+    "skala_keep_existing_switch_expression_arrangement": [
+      "resharper_keep_existing_switch_expression_arrangement",
+      "resharper_csharp_keep_existing_switch_expression_arrangement",
+      "csharp_keep_existing_switch_expression_arrangement",
+      "keep_existing_switch_expression_arrangement"
+    ],
+    "skala_keep_nontrivial_alias": [
+      "resharper_csharp_keep_nontrivial_alias"
+    ],
+    "skala_keep_user_linebreaks": [
+      "resharper_keep_user_linebreaks"
+    ],
+    "skala_keep_user_wrapping": [
+      "resharper_keep_user_wrapping"
+    ],
+    "skala_local_function_body": [
+      "resharper_local_function_body",
+      "resharper_csharp_local_function_body",
+      "csharp_local_function_body",
+      "local_function_body"
+    ],
+    "skala_max_array_initializer_elements_on_line": [
+      "resharper_max_array_initializer_elements_on_line",
+      "resharper_csharp_max_array_initializer_elements_on_line",
+      "csharp_max_array_initializer_elements_on_line",
+      "max_array_initializer_elements_on_line"
+    ],
+    "skala_max_attribute_length_for_same_line": [
+      "resharper_max_attribute_length_for_same_line",
+      "resharper_csharp_max_attribute_length_for_same_line",
+      "csharp_max_attribute_length_for_same_line",
+      "max_attribute_length_for_same_line"
+    ],
+    "skala_max_enum_members_on_line": [
+      "resharper_csharp_max_enum_members_on_line",
+      "resharper_max_enum_members_on_line",
+      "csharp_max_enum_members_on_line",
+      "max_enum_members_on_line"
+    ],
+    "skala_max_formal_parameters_on_line": [
+      "resharper_max_formal_parameters_on_line",
+      "resharper_csharp_max_formal_parameters_on_line",
+      "csharp_max_formal_parameters_on_line",
+      "max_formal_parameters_on_line"
+    ],
+    "skala_max_initializer_elements_on_line": [
+      "resharper_max_initializer_elements_on_line",
+      "resharper_csharp_max_initializer_elements_on_line",
+      "csharp_max_initializer_elements_on_line",
+      "max_initializer_elements_on_line"
+    ],
+    "skala_max_invocation_arguments_on_line": [
+      "resharper_max_invocation_arguments_on_line",
+      "resharper_csharp_max_invocation_arguments_on_line",
+      "csharp_max_invocation_arguments_on_line",
+      "max_invocation_arguments_on_line"
+    ],
+    "skala_max_line_length": [
+      "resharper_csharp_max_line_length",
+      "csharp_max_line_length"
+    ],
+    "skala_max_primary_constructor_parameters_on_line": [
+      "resharper_max_primary_constructor_parameters_on_line",
+      "resharper_csharp_max_primary_constructor_parameters_on_line",
+      "csharp_max_primary_constructor_parameters_on_line",
+      "max_primary_constructor_parameters_on_line"
+    ],
+    "skala_method_or_operator_body": [
+      "resharper_method_or_operator_body",
+      "resharper_csharp_method_or_operator_body",
+      "csharp_method_or_operator_body",
+      "method_or_operator_body"
+    ],
+    "skala_new_line_before_catch": [
+      "csharp_new_line_before_catch",
+      "resharper_new_line_before_catch",
+      "new_line_before_catch"
+    ],
+    "skala_new_line_before_else": [
+      "csharp_new_line_before_else",
+      "resharper_new_line_before_else",
+      "new_line_before_else"
+    ],
+    "skala_new_line_before_finally": [
+      "csharp_new_line_before_finally",
+      "resharper_new_line_before_finally",
+      "new_line_before_finally"
+    ],
+    "skala_new_line_before_while": [
+      "resharper_csharp_new_line_before_while",
+      "resharper_new_line_before_while",
+      "csharp_new_line_before_while",
+      "new_line_before_while"
+    ],
+    "skala_null_checking_pattern_style": [
+      "resharper_null_checking_pattern_style",
+      "resharper_csharp_null_checking_pattern_style",
+      "csharp_null_checking_pattern_style",
+      "null_checking_pattern_style"
+    ],
+    "skala_object_creation_when_type_evident": [
+      "resharper_object_creation_when_type_evident",
+      "resharper_csharp_object_creation_when_type_evident",
+      "csharp_object_creation_when_type_evident",
+      "object_creation_when_type_evident"
+    ],
+    "skala_object_creation_when_type_not_evident": [
+      "resharper_object_creation_when_type_not_evident",
+      "resharper_csharp_object_creation_when_type_not_evident",
+      "csharp_object_creation_when_type_not_evident",
+      "object_creation_when_type_not_evident"
+    ],
+    "skala_old_engine": [
+      "resharper_old_engine",
+      "resharper_csharp_old_engine",
+      "csharp_old_engine",
+      "old_engine"
+    ],
+    "skala_outdent_binary_ops": [
+      "resharper_outdent_binary_ops",
+      "resharper_csharp_outdent_binary_ops",
+      "csharp_outdent_binary_ops",
+      "outdent_binary_ops"
+    ],
+    "skala_outdent_binary_pattern_ops": [
+      "resharper_outdent_binary_pattern_ops",
+      "resharper_csharp_outdent_binary_pattern_ops",
+      "csharp_outdent_binary_pattern_ops",
+      "outdent_binary_pattern_ops"
+    ],
+    "skala_outdent_dots": [
+      "resharper_outdent_dots",
+      "resharper_csharp_outdent_dots",
+      "csharp_outdent_dots",
+      "outdent_dots"
+    ],
+    "skala_outdent_statement_labels": [
+      "resharper_outdent_statement_labels",
+      "resharper_csharp_outdent_statement_labels",
+      "csharp_outdent_statement_labels",
+      "outdent_statement_labels"
+    ],
+    "skala_parentheses_redundancy_style": [
+      "resharper_parentheses_redundancy_style",
+      "resharper_csharp_parentheses_redundancy_style",
+      "csharp_parentheses_redundancy_style",
+      "parentheses_redundancy_style"
+    ],
+    "skala_place_accessor_attribute_on_same_line": [
+      "resharper_csharp_place_accessor_attribute_on_same_line",
+      "resharper_place_accessor_attribute_on_same_line",
+      "csharp_place_accessor_attribute_on_same_line",
+      "place_accessor_attribute_on_same_line"
+    ],
+    "skala_place_accessorholder_attribute_on_same_line": [
+      "resharper_csharp_place_accessorholder_attribute_on_same_line",
+      "resharper_place_accessorholder_attribute_on_same_line",
+      "csharp_place_accessorholder_attribute_on_same_line",
+      "place_accessorholder_attribute_on_same_line"
+    ],
+    "skala_place_attribute_on_same_line": [
+      "resharper_place_attribute_on_same_line"
+    ],
+    "skala_place_comments_at_first_column": [
+      "resharper_place_comments_at_first_column",
+      "resharper_csharp_place_comments_at_first_column",
+      "csharp_place_comments_at_first_column",
+      "place_comments_at_first_column"
+    ],
+    "skala_place_constructor_initializer_on_same_line": [
+      "resharper_place_constructor_initializer_on_same_line",
+      "resharper_csharp_place_constructor_initializer_on_same_line",
+      "csharp_place_constructor_initializer_on_same_line",
+      "place_constructor_initializer_on_same_line"
+    ],
+    "skala_place_expr_accessor_on_single_line": [
+      "resharper_place_expr_accessor_on_single_line",
+      "resharper_csharp_place_expr_accessor_on_single_line",
+      "csharp_place_expr_accessor_on_single_line",
+      "place_expr_accessor_on_single_line"
+    ],
+    "skala_place_expr_method_on_single_line": [
+      "resharper_place_expr_method_on_single_line",
+      "resharper_csharp_place_expr_method_on_single_line",
+      "csharp_place_expr_method_on_single_line",
+      "place_expr_method_on_single_line"
+    ],
+    "skala_place_expr_property_on_single_line": [
+      "resharper_place_expr_property_on_single_line",
+      "resharper_csharp_place_expr_property_on_single_line",
+      "csharp_place_expr_property_on_single_line",
+      "place_expr_property_on_single_line"
+    ],
+    "skala_place_field_attribute_on_same_line": [
+      "resharper_csharp_place_field_attribute_on_same_line",
+      "resharper_place_field_attribute_on_same_line",
+      "csharp_place_field_attribute_on_same_line",
+      "place_field_attribute_on_same_line"
+    ],
+    "skala_place_linq_into_on_new_line": [
+      "resharper_place_linq_into_on_new_line",
+      "resharper_csharp_place_linq_into_on_new_line",
+      "csharp_place_linq_into_on_new_line",
+      "place_linq_into_on_new_line"
+    ],
+    "skala_place_method_attribute_on_same_line": [
+      "resharper_csharp_place_method_attribute_on_same_line",
+      "resharper_place_method_attribute_on_same_line",
+      "csharp_place_method_attribute_on_same_line",
+      "place_method_attribute_on_same_line"
+    ],
+    "skala_place_primary_constructor_initializer_on_same_line": [
+      "resharper_place_primary_constructor_initializer_on_same_line"
+    ],
+    "skala_place_record_field_attribute_on_same_line": [
+      "resharper_csharp_place_record_field_attribute_on_same_line",
+      "resharper_place_record_field_attribute_on_same_line",
+      "csharp_place_record_field_attribute_on_same_line",
+      "place_record_field_attribute_on_same_line"
+    ],
+    "skala_place_simple_case_statement_on_same_line": [
+      "resharper_place_simple_case_statement_on_same_line",
+      "resharper_csharp_place_simple_case_statement_on_same_line",
+      "csharp_place_simple_case_statement_on_same_line",
+      "place_simple_case_statement_on_same_line"
+    ],
+    "skala_place_simple_embedded_statement_on_same_line": [
+      "resharper_place_simple_embedded_statement_on_same_line",
+      "resharper_csharp_place_simple_embedded_statement_on_same_line",
+      "csharp_place_simple_embedded_statement_on_same_line",
+      "place_simple_embedded_statement_on_same_line"
+    ],
+    "skala_place_simple_initializer_on_single_line": [
+      "resharper_place_simple_initializer_on_single_line",
+      "resharper_csharp_place_simple_initializer_on_single_line",
+      "csharp_place_simple_initializer_on_single_line",
+      "place_simple_initializer_on_single_line"
+    ],
+    "skala_place_simple_list_pattern_on_single_line": [
+      "resharper_place_simple_list_pattern_on_single_line",
+      "resharper_csharp_place_simple_list_pattern_on_single_line",
+      "csharp_place_simple_list_pattern_on_single_line",
+      "place_simple_list_pattern_on_single_line"
+    ],
+    "skala_place_simple_property_pattern_on_single_line": [
+      "resharper_place_simple_property_pattern_on_single_line",
+      "resharper_csharp_place_simple_property_pattern_on_single_line",
+      "csharp_place_simple_property_pattern_on_single_line",
+      "place_simple_property_pattern_on_single_line"
+    ],
+    "skala_place_simple_switch_expression_on_single_line": [
+      "resharper_place_simple_switch_expression_on_single_line",
+      "resharper_csharp_place_simple_switch_expression_on_single_line",
+      "csharp_place_simple_switch_expression_on_single_line",
+      "place_simple_switch_expression_on_single_line"
+    ],
+    "skala_place_single_method_argument_lambda_on_same_line": [
+      "resharper_place_single_method_argument_lambda_on_same_line"
+    ],
+    "skala_place_type_attribute_on_same_line": [
+      "resharper_csharp_place_type_attribute_on_same_line",
+      "resharper_place_type_attribute_on_same_line",
+      "csharp_place_type_attribute_on_same_line",
+      "place_type_attribute_on_same_line"
+    ],
+    "skala_place_type_constraints_on_same_line": [
+      "resharper_place_type_constraints_on_same_line",
+      "resharper_csharp_place_type_constraints_on_same_line",
+      "csharp_place_type_constraints_on_same_line",
+      "place_type_constraints_on_same_line"
+    ],
+    "skala_prefer_explicit_discard_declaration": [
+      "resharper_prefer_explicit_discard_declaration",
+      "resharper_csharp_prefer_explicit_discard_declaration",
+      "csharp_prefer_explicit_discard_declaration",
+      "prefer_explicit_discard_declaration"
+    ],
+    "skala_prefer_wrap_around_eq": [
+      "resharper_prefer_wrap_around_eq"
+    ],
+    "skala_remove_blank_lines_near_braces_in_code": [
+      "resharper_remove_blank_lines_near_braces_in_code",
+      "resharper_csharp_remove_blank_lines_near_braces_in_code",
+      "csharp_remove_blank_lines_near_braces_in_code",
+      "remove_blank_lines_near_braces_in_code"
+    ],
+    "skala_remove_blank_lines_near_braces_in_declarations": [
+      "resharper_remove_blank_lines_near_braces_in_declarations",
+      "resharper_csharp_remove_blank_lines_near_braces_in_declarations",
+      "csharp_remove_blank_lines_near_braces_in_declarations",
+      "remove_blank_lines_near_braces_in_declarations"
+    ],
+    "skala_remove_only_unused_aliases": [
+      "resharper_remove_only_unused_aliases"
+    ],
+    "skala_remove_spaces_on_blank_lines": [
+      "resharper_remove_spaces_on_blank_lines"
+    ],
+    "skala_sort_usings": [
+      "resharper_sort_usings"
+    ],
+    "skala_sort_usings_with_system_first": [
+      "dotnet_sort_system_directives_first",
+      "resharper_csharp_sort_usings_with_system_first",
+      "resharper_sort_usings_with_system_first",
+      "csharp_sort_usings_with_system_first",
+      "sort_usings_with_system_first"
+    ],
+    "skala_space_after_ampersand_op": [
+      "resharper_csharp_space_after_ampersand_op",
+      "resharper_space_after_ampersand_op",
+      "csharp_space_after_ampersand_op",
+      "space_after_ampersand_op"
+    ],
+    "skala_space_after_asterik_op": [
+      "resharper_csharp_space_after_asterik_op",
+      "resharper_space_after_asterik_op",
+      "csharp_space_after_asterik_op",
+      "space_after_asterik_op"
+    ],
+    "skala_space_after_attribute_colon": [
+      "resharper_space_after_colon",
+      "resharper_csharp_space_after_attribute_colon",
+      "resharper_csharp_space_after_colon",
+      "resharper_space_after_attribute_colon",
+      "csharp_space_after_attribute_colon",
+      "csharp_space_after_colon",
+      "space_after_attribute_colon",
+      "space_after_colon"
+    ],
+    "skala_space_after_attributes": [
+      "resharper_space_after_attributes",
+      "resharper_csharp_space_after_attributes",
+      "csharp_space_after_attributes",
+      "space_after_attributes"
+    ],
+    "skala_space_after_cast": [
+      "resharper_space_after_cast",
+      "csharp_space_after_cast",
+      "space_after_cast"
+    ],
+    "skala_space_after_colon_in_case": [
+      "resharper_space_after_colon_in_case",
+      "resharper_csharp_space_after_colon_in_case",
+      "csharp_space_after_colon_in_case",
+      "space_after_colon_in_case"
+    ],
+    "skala_space_after_colon_in_inheritance_clause": [
+      "resharper_space_after_colon_in_inheritance_clause",
+      "csharp_space_after_colon_in_inheritance_clause",
+      "space_after_colon_in_inheritance_clause"
+    ],
+    "skala_space_after_comma": [
+      "resharper_space_after_comma",
+      "csharp_space_after_comma",
+      "space_after_comma"
+    ],
+    "skala_space_after_keywords_in_control_flow_statements": [
+      "resharper_space_after_keywords_in_control_flow_statements"
+    ],
+    "skala_space_after_logical_not_op": [
+      "resharper_csharp_space_after_logical_not_op",
+      "resharper_space_after_logical_not_op",
+      "csharp_space_after_logical_not_op",
+      "space_after_logical_not_op"
+    ],
+    "skala_space_after_operator_keyword": [
+      "resharper_space_after_operator_keyword",
+      "resharper_csharp_space_after_operator_keyword",
+      "csharp_space_after_operator_keyword",
+      "space_after_operator_keyword"
+    ],
+    "skala_space_after_semicolon_in_for_statement": [
+      "resharper_space_after_semicolon_in_for_statement",
+      "csharp_space_after_semicolon_in_for_statement",
+      "space_after_semicolon_in_for_statement"
+    ],
+    "skala_space_after_ternary_colon": [
+      "resharper_space_after_ternary_colon",
+      "resharper_csharp_space_after_ternary_colon",
+      "csharp_space_after_ternary_colon",
+      "space_after_ternary_colon"
+    ],
+    "skala_space_after_ternary_quest": [
+      "resharper_space_after_ternary_quest",
+      "resharper_csharp_space_after_ternary_quest",
+      "csharp_space_after_ternary_quest",
+      "space_after_ternary_quest"
+    ],
+    "skala_space_after_triple_slash": [
+      "resharper_space_after_triple_slash"
+    ],
+    "skala_space_after_type_parameter_constraint_colon": [
+      "resharper_space_after_type_parameter_constraint_colon",
+      "resharper_csharp_space_after_type_parameter_constraint_colon",
+      "csharp_space_after_type_parameter_constraint_colon",
+      "space_after_type_parameter_constraint_colon"
+    ],
+    "skala_space_after_unary_minus_op": [
+      "resharper_csharp_space_after_unary_minus_op",
+      "resharper_space_after_unary_minus_op",
+      "csharp_space_after_unary_minus_op",
+      "space_after_unary_minus_op"
+    ],
+    "skala_space_after_unary_operator": [
+      "resharper_csharp_space_after_unary_operator"
+    ],
+    "skala_space_after_unary_plus_op": [
+      "resharper_csharp_space_after_unary_plus_op",
+      "resharper_space_after_unary_plus_op",
+      "csharp_space_after_unary_plus_op",
+      "space_after_unary_plus_op"
+    ],
+    "skala_space_around_additive_op": [
+      "resharper_space_around_additive_op",
+      "resharper_csharp_space_around_additive_op",
+      "csharp_space_around_additive_op",
+      "space_around_additive_op"
+    ],
+    "skala_space_around_alias_eq": [
+      "resharper_space_around_alias_eq",
+      "resharper_csharp_space_around_alias_eq",
+      "csharp_space_around_alias_eq",
+      "space_around_alias_eq"
+    ],
+    "skala_space_around_arrow_op": [
+      "resharper_csharp_space_around_arrow_op",
+      "resharper_space_around_arrow_op",
+      "csharp_space_around_arrow_op",
+      "space_around_arrow_op"
+    ],
+    "skala_space_around_assignment_op": [
+      "resharper_space_around_assignment_op",
+      "resharper_csharp_space_around_assignment_op",
+      "csharp_space_around_assignment_op",
+      "space_around_assignment_op"
+    ],
+    "skala_space_around_dot": [
+      "resharper_csharp_space_around_dot",
+      "resharper_space_around_dot",
+      "csharp_space_around_dot",
+      "space_around_dot"
+    ],
+    "skala_space_around_lambda_arrow": [
+      "resharper_space_around_lambda_arrow",
+      "resharper_csharp_space_around_lambda_arrow",
+      "csharp_space_around_lambda_arrow",
+      "space_around_lambda_arrow"
+    ],
+    "skala_space_around_member_access_operator": [
+      "resharper_space_around_member_access_operator"
+    ],
+    "skala_space_around_relational_op": [
+      "resharper_space_around_relational_op",
+      "resharper_csharp_space_around_relational_op",
+      "csharp_space_around_relational_op",
+      "space_around_relational_op"
+    ],
+    "skala_space_around_shift_op": [
+      "resharper_space_around_shift_op",
+      "resharper_csharp_space_around_shift_op",
+      "csharp_space_around_shift_op",
+      "space_around_shift_op"
+    ],
+    "skala_space_around_ternary_operator": [
+      "resharper_space_around_ternary_operator"
+    ],
+    "skala_space_before_array_access_brackets": [
+      "resharper_csharp_space_before_array_access_brackets",
+      "resharper_space_before_array_access_brackets",
+      "csharp_space_before_array_access_brackets",
+      "space_before_array_access_brackets"
+    ],
+    "skala_space_before_array_rank_brackets": [
+      "resharper_csharp_space_before_array_rank_brackets",
+      "resharper_space_before_array_rank_brackets",
+      "csharp_space_before_array_rank_brackets",
+      "space_before_array_rank_brackets"
+    ],
+    "skala_space_before_attribute_colon": [
+      "resharper_space_before_colon",
+      "resharper_csharp_space_before_attribute_colon",
+      "resharper_csharp_space_before_colon",
+      "resharper_space_before_attribute_colon",
+      "csharp_space_before_attribute_colon",
+      "csharp_space_before_colon",
+      "space_before_attribute_colon",
+      "space_before_colon"
+    ],
+    "skala_space_before_catch_parentheses": [
+      "resharper_csharp_space_before_catch_parentheses",
+      "resharper_space_before_catch_parentheses",
+      "csharp_space_before_catch_parentheses",
+      "space_before_catch_parentheses"
+    ],
+    "skala_space_before_checked_parentheses": [
+      "resharper_space_before_checked_parentheses",
+      "resharper_csharp_space_before_checked_parentheses",
+      "csharp_space_before_checked_parentheses",
+      "space_before_checked_parentheses"
+    ],
+    "skala_space_before_colon_in_case": [
+      "resharper_space_before_colon_in_case",
+      "resharper_csharp_space_before_colon_in_case",
+      "csharp_space_before_colon_in_case",
+      "space_before_colon_in_case"
+    ],
+    "skala_space_before_colon_in_ctor_initializer": [
+      "resharper_space_before_colon_in_ctor_initializer"
+    ],
+    "skala_space_before_colon_in_inheritance_clause": [
+      "resharper_space_before_colon_in_inheritance_clause",
+      "csharp_space_before_colon_in_inheritance_clause",
+      "space_before_colon_in_inheritance_clause"
+    ],
+    "skala_space_before_comma": [
+      "resharper_space_before_comma",
+      "csharp_space_before_comma",
+      "space_before_comma"
+    ],
+    "skala_space_before_default_parentheses": [
+      "resharper_space_before_default_parentheses",
+      "resharper_csharp_space_before_default_parentheses",
+      "csharp_space_before_default_parentheses",
+      "space_before_default_parentheses"
+    ],
+    "skala_space_before_empty_method_call_parentheses": [
+      "resharper_csharp_space_before_empty_method_call_parentheses",
+      "resharper_space_before_empty_method_call_parentheses",
+      "csharp_space_before_empty_method_call_parentheses",
+      "space_before_empty_method_call_parentheses"
+    ],
+    "skala_space_before_empty_method_parentheses": [
+      "resharper_space_before_empty_method_parentheses",
+      "resharper_csharp_space_before_empty_method_parentheses",
+      "csharp_space_before_empty_method_parentheses",
+      "space_before_empty_method_parentheses"
+    ],
+    "skala_space_before_fixed_parentheses": [
+      "resharper_csharp_space_before_fixed_parentheses",
+      "resharper_space_before_fixed_parentheses",
+      "csharp_space_before_fixed_parentheses",
+      "space_before_fixed_parentheses"
+    ],
+    "skala_space_before_for_parentheses": [
+      "resharper_csharp_space_before_for_parentheses",
+      "resharper_space_before_for_parentheses",
+      "csharp_space_before_for_parentheses",
+      "space_before_for_parentheses"
+    ],
+    "skala_space_before_foreach_parentheses": [
+      "resharper_csharp_space_before_foreach_parentheses",
+      "resharper_space_before_foreach_parentheses",
+      "csharp_space_before_foreach_parentheses",
+      "space_before_foreach_parentheses"
+    ],
+    "skala_space_before_if_parentheses": [
+      "resharper_csharp_space_before_if_parentheses",
+      "resharper_space_before_if_parentheses",
+      "csharp_space_before_if_parentheses",
+      "space_before_if_parentheses"
+    ],
+    "skala_space_before_lock_parentheses": [
+      "resharper_csharp_space_before_lock_parentheses",
+      "resharper_space_before_lock_parentheses",
+      "csharp_space_before_lock_parentheses",
+      "space_before_lock_parentheses"
+    ],
+    "skala_space_before_method_call_parentheses": [
+      "resharper_csharp_space_before_method_call_parentheses",
+      "resharper_space_before_method_call_parentheses",
+      "csharp_space_before_method_call_parentheses",
+      "space_before_method_call_parentheses"
+    ],
+    "skala_space_before_method_parentheses": [
+      "resharper_space_before_method_parentheses",
+      "resharper_csharp_space_before_method_parentheses",
+      "csharp_space_before_method_parentheses",
+      "space_before_method_parentheses"
+    ],
+    "skala_space_before_nameof_parentheses": [
+      "resharper_space_before_nameof_parentheses",
+      "resharper_csharp_space_before_nameof_parentheses",
+      "csharp_space_before_nameof_parentheses",
+      "space_before_nameof_parentheses"
+    ],
+    "skala_space_before_new_parentheses": [
+      "resharper_space_before_new_parentheses",
+      "resharper_csharp_space_before_new_parentheses",
+      "csharp_space_before_new_parentheses",
+      "space_before_new_parentheses"
+    ],
+    "skala_space_before_nullable_mark": [
+      "resharper_space_before_nullable_mark",
+      "resharper_csharp_space_before_nullable_mark",
+      "csharp_space_before_nullable_mark",
+      "space_before_nullable_mark"
+    ],
+    "skala_space_before_open_square_brackets": [
+      "resharper_space_before_open_square_brackets"
+    ],
+    "skala_space_before_pointer_asterik_declaration": [
+      "resharper_space_before_pointer_asterik_declaration",
+      "resharper_csharp_space_before_pointer_asterik_declaration",
+      "csharp_space_before_pointer_asterik_declaration",
+      "space_before_pointer_asterik_declaration"
+    ],
+    "skala_space_before_semicolon": [
+      "resharper_space_before_semicolon",
+      "resharper_csharp_space_before_semicolon",
+      "csharp_space_before_semicolon",
+      "space_before_semicolon"
+    ],
+    "skala_space_before_semicolon_in_for_statement": [
+      "resharper_space_before_semicolon_in_for_statement",
+      "csharp_space_before_semicolon_in_for_statement",
+      "space_before_semicolon_in_for_statement"
+    ],
+    "skala_space_before_singleline_accessorholder": [
+      "resharper_space_before_singleline_accessorholder",
+      "resharper_csharp_space_before_singleline_accessorholder",
+      "csharp_space_before_singleline_accessorholder",
+      "space_before_singleline_accessorholder"
+    ],
+    "skala_space_before_sizeof_parentheses": [
+      "resharper_space_before_sizeof_parentheses",
+      "resharper_csharp_space_before_sizeof_parentheses",
+      "csharp_space_before_sizeof_parentheses",
+      "space_before_sizeof_parentheses"
+    ],
+    "skala_space_before_switch_parentheses": [
+      "resharper_csharp_space_before_switch_parentheses",
+      "resharper_space_before_switch_parentheses",
+      "csharp_space_before_switch_parentheses",
+      "space_before_switch_parentheses"
+    ],
+    "skala_space_before_ternary_colon": [
+      "resharper_space_before_ternary_colon",
+      "resharper_csharp_space_before_ternary_colon",
+      "csharp_space_before_ternary_colon",
+      "space_before_ternary_colon"
+    ],
+    "skala_space_before_ternary_quest": [
+      "resharper_space_before_ternary_quest",
+      "resharper_csharp_space_before_ternary_quest",
+      "csharp_space_before_ternary_quest",
+      "space_before_ternary_quest"
+    ],
+    "skala_space_before_trailing_comment": [
+      "resharper_space_before_trailing_comment",
+      "resharper_csharp_space_before_trailing_comment",
+      "csharp_space_before_trailing_comment",
+      "space_before_trailing_comment"
+    ],
+    "skala_space_before_trailing_comment_text": [
+      "resharper_space_before_trailing_comment_text"
+    ],
+    "skala_space_before_type_argument_angle": [
+      "resharper_space_before_type_argument_angle",
+      "resharper_csharp_space_before_type_argument_angle",
+      "csharp_space_before_type_argument_angle",
+      "space_before_type_argument_angle"
+    ],
+    "skala_space_before_type_parameter_angle": [
+      "resharper_space_before_type_parameter_angle",
+      "resharper_csharp_space_before_type_parameter_angle",
+      "csharp_space_before_type_parameter_angle",
+      "space_before_type_parameter_angle"
+    ],
+    "skala_space_before_type_parameter_constraint_colon": [
+      "resharper_space_before_type_parameter_constraint_colon",
+      "resharper_csharp_space_before_type_parameter_constraint_colon",
+      "csharp_space_before_type_parameter_constraint_colon",
+      "space_before_type_parameter_constraint_colon"
+    ],
+    "skala_space_before_typeof_parentheses": [
+      "resharper_space_before_typeof_parentheses",
+      "resharper_csharp_space_before_typeof_parentheses",
+      "csharp_space_before_typeof_parentheses",
+      "space_before_typeof_parentheses"
+    ],
+    "skala_space_before_using_parentheses": [
+      "resharper_csharp_space_before_using_parentheses",
+      "resharper_space_before_using_parentheses",
+      "csharp_space_before_using_parentheses",
+      "space_before_using_parentheses"
+    ],
+    "skala_space_before_while_parentheses": [
+      "resharper_csharp_space_before_while_parentheses",
+      "resharper_space_before_while_parentheses",
+      "csharp_space_before_while_parentheses",
+      "space_before_while_parentheses"
+    ],
+    "skala_space_between_accessors_in_singleline_property": [
+      "resharper_space_between_accessors_in_singleline_property",
+      "resharper_csharp_space_between_accessors_in_singleline_property",
+      "csharp_space_between_accessors_in_singleline_property",
+      "space_between_accessors_in_singleline_property"
+    ],
+    "skala_space_between_attribute_sections": [
+      "resharper_space_between_attribute_sections",
+      "resharper_csharp_space_between_attribute_sections",
+      "csharp_space_between_attribute_sections",
+      "space_between_attribute_sections"
+    ],
+    "skala_space_between_keyword_and_expression": [
+      "resharper_space_between_keyword_and_expression",
+      "resharper_csharp_space_between_keyword_and_expression",
+      "csharp_space_between_keyword_and_expression",
+      "space_between_keyword_and_expression"
+    ],
+    "skala_space_between_keyword_and_type": [
+      "resharper_space_between_keyword_and_type",
+      "resharper_csharp_space_between_keyword_and_type",
+      "csharp_space_between_keyword_and_type",
+      "space_between_keyword_and_type"
+    ],
+    "skala_space_between_method_call_empty_parameter_list_parentheses": [
+      "resharper_space_between_method_call_empty_parameter_list_parentheses",
+      "csharp_space_between_method_call_empty_parameter_list_parentheses",
+      "space_between_method_call_empty_parameter_list_parentheses"
+    ],
+    "skala_space_between_method_call_name_and_opening_parenthesis": [
+      "resharper_space_between_method_call_name_and_opening_parenthesis"
+    ],
+    "skala_space_between_method_call_parameter_list_parentheses": [
+      "resharper_space_between_method_call_parameter_list_parentheses",
+      "csharp_space_between_method_call_parameter_list_parentheses",
+      "space_between_method_call_parameter_list_parentheses"
+    ],
+    "skala_space_between_method_declaration_empty_parameter_list_parentheses": [
+      "resharper_space_between_method_declaration_empty_parameter_list_parentheses",
+      "csharp_space_between_method_declaration_empty_parameter_list_parentheses",
+      "space_between_method_declaration_empty_parameter_list_parentheses"
+    ],
+    "skala_space_between_method_declaration_name_and_open_parenthesis": [
+      "resharper_space_between_method_declaration_name_and_open_parenthesis"
+    ],
+    "skala_space_between_method_declaration_parameter_list_parentheses": [
+      "resharper_space_between_method_declaration_parameter_list_parentheses",
+      "csharp_space_between_method_declaration_parameter_list_parentheses",
+      "space_between_method_declaration_parameter_list_parentheses"
+    ],
+    "skala_space_between_parentheses_of_control_flow_statements": [
+      "resharper_space_between_parentheses_of_control_flow_statements"
+    ],
+    "skala_space_between_square_brackets": [
+      "resharper_space_between_square_brackets"
+    ],
+    "skala_space_between_typecast_parentheses": [
+      "resharper_space_between_typecast_parentheses",
+      "resharper_csharp_space_between_typecast_parentheses",
+      "csharp_space_between_typecast_parentheses",
+      "space_between_typecast_parentheses"
+    ],
+    "skala_space_in_singleline_accessorholder": [
+      "resharper_space_in_singleline_accessorholder",
+      "resharper_csharp_space_in_singleline_accessorholder",
+      "csharp_space_in_singleline_accessorholder",
+      "space_in_singleline_accessorholder"
+    ],
+    "skala_space_in_singleline_anonymous_method": [
+      "resharper_space_in_singleline_anonymous_method",
+      "resharper_csharp_space_in_singleline_anonymous_method",
+      "csharp_space_in_singleline_anonymous_method",
+      "space_in_singleline_anonymous_method"
+    ],
+    "skala_space_in_singleline_method": [
+      "resharper_space_in_singleline_method",
+      "resharper_csharp_space_in_singleline_method",
+      "csharp_space_in_singleline_method",
+      "space_in_singleline_method"
+    ],
+    "skala_space_near_postfix_and_prefix_op": [
+      "resharper_space_near_postfix_and_prefix_op",
+      "resharper_csharp_space_near_postfix_and_prefix_op",
+      "csharp_space_near_postfix_and_prefix_op",
+      "space_near_postfix_and_prefix_op"
+    ],
+    "skala_space_within_array_access_brackets": [
+      "resharper_csharp_space_within_array_access_brackets",
+      "resharper_space_within_array_access_brackets",
+      "csharp_space_within_array_access_brackets",
+      "space_within_array_access_brackets"
+    ],
+    "skala_space_within_array_rank_brackets": [
+      "resharper_csharp_space_within_array_rank_brackets",
+      "resharper_space_within_array_rank_brackets",
+      "csharp_space_within_array_rank_brackets",
+      "space_within_array_rank_brackets"
+    ],
+    "skala_space_within_array_rank_empty_brackets": [
+      "csharp_space_between_empty_square_brackets",
+      "resharper_csharp_space_within_array_rank_empty_brackets",
+      "resharper_space_within_array_rank_empty_brackets",
+      "resharper_space_between_empty_square_brackets",
+      "csharp_space_within_array_rank_empty_brackets",
+      "space_within_array_rank_empty_brackets",
+      "space_between_empty_square_brackets"
+    ],
+    "skala_space_within_attribute_brackets": [
+      "resharper_csharp_space_within_attribute_brackets",
+      "resharper_space_within_attribute_brackets",
+      "csharp_space_within_attribute_brackets",
+      "space_within_attribute_brackets"
+    ],
+    "skala_space_within_catch_parentheses": [
+      "resharper_csharp_space_within_catch_parentheses",
+      "resharper_space_within_catch_parentheses",
+      "csharp_space_within_catch_parentheses",
+      "space_within_catch_parentheses"
+    ],
+    "skala_space_within_checked_parentheses": [
+      "resharper_space_within_checked_parentheses",
+      "resharper_csharp_space_within_checked_parentheses",
+      "csharp_space_within_checked_parentheses",
+      "space_within_checked_parentheses"
+    ],
+    "skala_space_within_default_parentheses": [
+      "resharper_space_within_default_parentheses",
+      "resharper_csharp_space_within_default_parentheses",
+      "csharp_space_within_default_parentheses",
+      "space_within_default_parentheses"
+    ],
+    "skala_space_within_empty_braces": [
+      "resharper_space_within_empty_braces",
+      "resharper_csharp_space_within_empty_braces",
+      "csharp_space_within_empty_braces",
+      "space_within_empty_braces"
+    ],
+    "skala_space_within_fixed_parentheses": [
+      "resharper_csharp_space_within_fixed_parentheses",
+      "resharper_space_within_fixed_parentheses",
+      "csharp_space_within_fixed_parentheses",
+      "space_within_fixed_parentheses"
+    ],
+    "skala_space_within_for_parentheses": [
+      "resharper_csharp_space_within_for_parentheses",
+      "resharper_space_within_for_parentheses",
+      "csharp_space_within_for_parentheses",
+      "space_within_for_parentheses"
+    ],
+    "skala_space_within_foreach_parentheses": [
+      "resharper_csharp_space_within_foreach_parentheses",
+      "resharper_space_within_foreach_parentheses",
+      "csharp_space_within_foreach_parentheses",
+      "space_within_foreach_parentheses"
+    ],
+    "skala_space_within_if_parentheses": [
+      "resharper_csharp_space_within_if_parentheses",
+      "resharper_space_within_if_parentheses",
+      "csharp_space_within_if_parentheses",
+      "space_within_if_parentheses"
+    ],
+    "skala_space_within_list_pattern_brackets": [
+      "resharper_csharp_space_within_list_pattern_brackets",
+      "resharper_space_within_list_pattern_brackets",
+      "csharp_space_within_list_pattern_brackets",
+      "space_within_list_pattern_brackets"
+    ],
+    "skala_space_within_lock_parentheses": [
+      "resharper_csharp_space_within_lock_parentheses",
+      "resharper_space_within_lock_parentheses",
+      "csharp_space_within_lock_parentheses",
+      "space_within_lock_parentheses"
+    ],
+    "skala_space_within_nameof_parentheses": [
+      "resharper_space_within_nameof_parentheses",
+      "resharper_csharp_space_within_nameof_parentheses",
+      "csharp_space_within_nameof_parentheses",
+      "space_within_nameof_parentheses"
+    ],
+    "skala_space_within_new_parentheses": [
+      "resharper_space_within_new_parentheses",
+      "resharper_csharp_space_within_new_parentheses",
+      "csharp_space_within_new_parentheses",
+      "space_within_new_parentheses"
+    ],
+    "skala_space_within_parentheses": [
+      "resharper_space_within_parentheses",
+      "resharper_csharp_space_within_parentheses",
+      "csharp_space_within_parentheses",
+      "space_within_parentheses"
+    ],
+    "skala_space_within_single_line_array_initializer_braces": [
+      "resharper_space_within_single_line_array_initializer_braces",
+      "resharper_csharp_space_within_single_line_array_initializer_braces",
+      "csharp_space_within_single_line_array_initializer_braces",
+      "space_within_single_line_array_initializer_braces"
+    ],
+    "skala_space_within_sizeof_parentheses": [
+      "resharper_space_within_sizeof_parentheses",
+      "resharper_csharp_space_within_sizeof_parentheses",
+      "csharp_space_within_sizeof_parentheses",
+      "space_within_sizeof_parentheses"
+    ],
+    "skala_space_within_slice_pattern": [
+      "resharper_space_within_slice_pattern",
+      "resharper_csharp_space_within_slice_pattern",
+      "csharp_space_within_slice_pattern",
+      "space_within_slice_pattern"
+    ],
+    "skala_space_within_spread_pattern": [
+      "resharper_space_within_spread_pattern"
+    ],
+    "skala_space_within_switch_parentheses": [
+      "resharper_csharp_space_within_switch_parentheses",
+      "resharper_space_within_switch_parentheses",
+      "csharp_space_within_switch_parentheses",
+      "space_within_switch_parentheses"
+    ],
+    "skala_space_within_type_argument_angles": [
+      "resharper_space_within_type_argument_angles",
+      "resharper_csharp_space_within_type_argument_angles",
+      "csharp_space_within_type_argument_angles",
+      "space_within_type_argument_angles"
+    ],
+    "skala_space_within_type_parameter_angles": [
+      "resharper_space_within_type_parameter_angles",
+      "resharper_csharp_space_within_type_parameter_angles",
+      "csharp_space_within_type_parameter_angles",
+      "space_within_type_parameter_angles"
+    ],
+    "skala_space_within_typeof_parentheses": [
+      "resharper_space_within_typeof_parentheses",
+      "resharper_csharp_space_within_typeof_parentheses",
+      "csharp_space_within_typeof_parentheses",
+      "space_within_typeof_parentheses"
+    ],
+    "skala_space_within_using_parentheses": [
+      "resharper_csharp_space_within_using_parentheses",
+      "resharper_space_within_using_parentheses",
+      "csharp_space_within_using_parentheses",
+      "space_within_using_parentheses"
+    ],
+    "skala_space_within_while_parentheses": [
+      "resharper_csharp_space_within_while_parentheses",
+      "resharper_space_within_while_parentheses",
+      "csharp_space_within_while_parentheses",
+      "space_within_while_parentheses"
+    ],
+    "skala_special_else_if_treatment": [
+      "resharper_special_else_if_treatment",
+      "resharper_csharp_special_else_if_treatment",
+      "csharp_special_else_if_treatment",
+      "special_else_if_treatment"
+    ],
+    "skala_static_members_qualify_members": [
+      "resharper_static_members_qualify_members",
+      "resharper_csharp_static_members_qualify_members",
+      "csharp_static_members_qualify_members",
+      "static_members_qualify_members"
+    ],
+    "skala_static_members_qualify_with": [
+      "resharper_static_members_qualify_with",
+      "resharper_csharp_static_members_qualify_with",
+      "csharp_static_members_qualify_with",
+      "static_members_qualify_with"
+    ],
+    "skala_stick_comment": [
+      "resharper_stick_comment",
+      "resharper_csharp_stick_comment",
+      "csharp_stick_comment",
+      "stick_comment"
+    ],
+    "skala_tab_width": [
+      "resharper_csharp_tab_width",
+      "csharp_tab_width"
+    ],
+    "skala_trailing_comma_in_multiline_lists": [
+      "resharper_trailing_comma_in_multiline_lists",
+      "resharper_csharp_trailing_comma_in_multiline_lists",
+      "csharp_trailing_comma_in_multiline_lists",
+      "trailing_comma_in_multiline_lists"
+    ],
+    "skala_trailing_comma_in_singleline_lists": [
+      "resharper_trailing_comma_in_singleline_lists",
+      "resharper_csharp_trailing_comma_in_singleline_lists",
+      "csharp_trailing_comma_in_singleline_lists",
+      "trailing_comma_in_singleline_lists"
+    ],
+    "skala_use_continuous_indent_inside_initializer_braces": [
+      "resharper_use_continuous_indent_inside_initializer_braces",
+      "resharper_csharp_use_continuous_indent_inside_initializer_braces",
+      "csharp_use_continuous_indent_inside_initializer_braces",
+      "use_continuous_indent_inside_initializer_braces"
+    ],
+    "skala_use_continuous_indent_inside_parens": [
+      "resharper_use_continuous_indent_inside_parens",
+      "resharper_csharp_use_continuous_indent_inside_parens",
+      "csharp_use_continuous_indent_inside_parens",
+      "use_continuous_indent_inside_parens"
+    ],
+    "skala_use_heuristics_for_body_style": [
+      "resharper_use_heuristics_for_body_style",
+      "resharper_csharp_use_heuristics_for_body_style",
+      "csharp_use_heuristics_for_body_style",
+      "use_heuristics_for_body_style"
+    ],
+    "skala_use_indent_from_vs": [
+      "resharper_use_indent_from_vs"
+    ],
+    "skala_use_old_engine": [
+      "resharper_use_old_engine"
+    ],
+    "skala_wrap_after_declaration_lpar": [
+      "resharper_csharp_wrap_after_declaration_lpar",
+      "resharper_wrap_after_declaration_lpar",
+      "csharp_wrap_after_declaration_lpar",
+      "wrap_after_declaration_lpar"
+    ],
+    "skala_wrap_after_dot_in_method_calls": [
+      "resharper_wrap_after_dot_in_method_calls",
+      "resharper_csharp_wrap_after_dot_in_method_calls",
+      "csharp_wrap_after_dot_in_method_calls",
+      "wrap_after_dot_in_method_calls"
+    ],
+    "skala_wrap_after_expression_lbrace": [
+      "resharper_wrap_after_expression_lbrace"
+    ],
+    "skala_wrap_after_invocation_lpar": [
+      "resharper_csharp_wrap_after_invocation_lpar",
+      "resharper_wrap_after_invocation_lpar",
+      "csharp_wrap_after_invocation_lpar",
+      "wrap_after_invocation_lpar"
+    ],
+    "skala_wrap_after_primary_constructor_declaration_lpar": [
+      "resharper_wrap_after_primary_constructor_declaration_lpar",
+      "resharper_csharp_wrap_after_primary_constructor_declaration_lpar",
+      "csharp_wrap_after_primary_constructor_declaration_lpar",
+      "wrap_after_primary_constructor_declaration_lpar"
+    ],
+    "skala_wrap_after_property_in_chained_method_calls": [
+      "resharper_wrap_after_property_in_chained_method_calls",
+      "resharper_csharp_wrap_after_property_in_chained_method_calls",
+      "csharp_wrap_after_property_in_chained_method_calls",
+      "wrap_after_property_in_chained_method_calls"
+    ],
+    "skala_wrap_arguments_style": [
+      "resharper_csharp_wrap_arguments_style",
+      "resharper_wrap_arguments_style",
+      "csharp_wrap_arguments_style",
+      "wrap_arguments_style"
+    ],
+    "skala_wrap_array_initializer_style": [
+      "resharper_wrap_array_initializer_style",
+      "resharper_csharp_wrap_array_initializer_style",
+      "csharp_wrap_array_initializer_style",
+      "wrap_array_initializer_style"
+    ],
+    "skala_wrap_before_arrow_with_expressions": [
+      "resharper_wrap_before_arrow_with_expressions",
+      "resharper_csharp_wrap_before_arrow_with_expressions",
+      "csharp_wrap_before_arrow_with_expressions",
+      "wrap_before_arrow_with_expressions"
+    ],
+    "skala_wrap_before_binary_opsign": [
+      "resharper_csharp_wrap_before_binary_opsign",
+      "resharper_wrap_before_binary_opsign",
+      "csharp_wrap_before_binary_opsign",
+      "wrap_before_binary_opsign"
+    ],
+    "skala_wrap_before_binary_pattern_op": [
+      "resharper_wrap_before_binary_pattern_op",
+      "resharper_csharp_wrap_before_binary_pattern_op",
+      "csharp_wrap_before_binary_pattern_op",
+      "wrap_before_binary_pattern_op"
+    ],
+    "skala_wrap_before_comma": [
+      "resharper_wrap_before_comma",
+      "resharper_csharp_wrap_before_comma",
+      "csharp_wrap_before_comma",
+      "wrap_before_comma"
+    ],
+    "skala_wrap_before_comma_in_base_clause": [
+      "resharper_wrap_before_comma_in_base_clause"
+    ],
+    "skala_wrap_before_declaration_lpar": [
+      "resharper_wrap_before_declaration_lpar",
+      "resharper_csharp_wrap_before_declaration_lpar",
+      "csharp_wrap_before_declaration_lpar",
+      "wrap_before_declaration_lpar"
+    ],
+    "skala_wrap_before_declaration_rpar": [
+      "resharper_csharp_wrap_before_declaration_rpar",
+      "resharper_wrap_before_declaration_rpar",
+      "csharp_wrap_before_declaration_rpar",
+      "wrap_before_declaration_rpar"
+    ],
+    "skala_wrap_before_eq": [
+      "resharper_wrap_before_eq",
+      "resharper_csharp_wrap_before_eq",
+      "csharp_wrap_before_eq",
+      "wrap_before_eq"
+    ],
+    "skala_wrap_before_expression_rbrace": [
+      "resharper_wrap_before_expression_rbrace"
+    ],
+    "skala_wrap_before_extends_colon": [
+      "resharper_wrap_before_extends_colon",
+      "resharper_csharp_wrap_before_extends_colon",
+      "csharp_wrap_before_extends_colon",
+      "wrap_before_extends_colon"
+    ],
+    "skala_wrap_before_first_method_call": [
+      "resharper_wrap_before_first_method_call",
+      "resharper_csharp_wrap_before_first_method_call",
+      "csharp_wrap_before_first_method_call",
+      "wrap_before_first_method_call"
+    ],
+    "skala_wrap_before_first_type_parameter_constraint": [
+      "resharper_csharp_wrap_before_first_type_parameter_constraint",
+      "resharper_wrap_before_first_type_parameter_constraint",
+      "csharp_wrap_before_first_type_parameter_constraint",
+      "wrap_before_first_type_parameter_constraint"
+    ],
+    "skala_wrap_before_invocation_lpar": [
+      "resharper_wrap_before_invocation_lpar",
+      "resharper_csharp_wrap_before_invocation_lpar",
+      "csharp_wrap_before_invocation_lpar",
+      "wrap_before_invocation_lpar"
+    ],
+    "skala_wrap_before_invocation_rpar": [
+      "resharper_csharp_wrap_before_invocation_rpar",
+      "resharper_wrap_before_invocation_rpar",
+      "csharp_wrap_before_invocation_rpar",
+      "wrap_before_invocation_rpar"
+    ],
+    "skala_wrap_before_linq_expression": [
+      "resharper_wrap_before_linq_expression",
+      "resharper_csharp_wrap_before_linq_expression",
+      "csharp_wrap_before_linq_expression",
+      "wrap_before_linq_expression"
+    ],
+    "skala_wrap_before_primary_constructor_declaration_lpar": [
+      "resharper_wrap_before_primary_constructor_declaration_lpar",
+      "resharper_csharp_wrap_before_primary_constructor_declaration_lpar",
+      "csharp_wrap_before_primary_constructor_declaration_lpar",
+      "wrap_before_primary_constructor_declaration_lpar"
+    ],
+    "skala_wrap_before_primary_constructor_declaration_rpar": [
+      "resharper_wrap_before_primary_constructor_declaration_rpar",
+      "resharper_csharp_wrap_before_primary_constructor_declaration_rpar",
+      "csharp_wrap_before_primary_constructor_declaration_rpar",
+      "wrap_before_primary_constructor_declaration_rpar"
+    ],
+    "skala_wrap_before_ternary_opsigns": [
+      "resharper_wrap_before_ternary_opsigns",
+      "resharper_csharp_wrap_before_ternary_opsigns",
+      "csharp_wrap_before_ternary_opsigns",
+      "wrap_before_ternary_opsigns"
+    ],
+    "skala_wrap_before_type_parameter_langle": [
+      "resharper_wrap_before_type_parameter_langle",
+      "resharper_csharp_wrap_before_type_parameter_langle",
+      "csharp_wrap_before_type_parameter_langle",
+      "wrap_before_type_parameter_langle"
+    ],
+    "skala_wrap_chained_binary_expressions": [
+      "resharper_wrap_chained_binary_expressions",
+      "resharper_csharp_wrap_chained_binary_expressions",
+      "csharp_wrap_chained_binary_expressions",
+      "wrap_chained_binary_expressions"
+    ],
+    "skala_wrap_chained_binary_patterns": [
+      "resharper_wrap_chained_binary_patterns",
+      "resharper_csharp_wrap_chained_binary_patterns",
+      "csharp_wrap_chained_binary_patterns",
+      "wrap_chained_binary_patterns"
+    ],
+    "skala_wrap_chained_method_calls": [
+      "resharper_wrap_chained_method_calls",
+      "resharper_csharp_wrap_chained_method_calls",
+      "csharp_wrap_chained_method_calls",
+      "wrap_chained_method_calls"
+    ],
+    "skala_wrap_enum_declaration": [
+      "resharper_wrap_enum_declaration",
+      "resharper_csharp_wrap_enum_declaration",
+      "csharp_wrap_enum_declaration",
+      "wrap_enum_declaration"
+    ],
+    "skala_wrap_extends_list_style": [
+      "resharper_csharp_wrap_extends_list_style",
+      "resharper_wrap_extends_list_style",
+      "csharp_wrap_extends_list_style",
+      "wrap_extends_list_style"
+    ],
+    "skala_wrap_for_stmt_header_style": [
+      "resharper_wrap_for_stmt_header_style",
+      "resharper_csharp_wrap_for_stmt_header_style",
+      "csharp_wrap_for_stmt_header_style",
+      "wrap_for_stmt_header_style"
+    ],
+    "skala_wrap_lines": [
+      "resharper_csharp_wrap_lines"
+    ],
+    "skala_wrap_list_pattern": [
+      "resharper_wrap_list_pattern",
+      "resharper_csharp_wrap_list_pattern",
+      "csharp_wrap_list_pattern",
+      "wrap_list_pattern"
+    ],
+    "skala_wrap_multiple_declaration_style": [
+      "resharper_wrap_multiple_declaration_style",
+      "resharper_csharp_wrap_multiple_declaration_style",
+      "csharp_wrap_multiple_declaration_style",
+      "wrap_multiple_declaration_style"
+    ],
+    "skala_wrap_multiple_type_parameter_constraints_style": [
+      "resharper_wrap_multiple_type_parameter_constraints_style",
+      "resharper_csharp_wrap_multiple_type_parameter_constraints_style",
+      "csharp_wrap_multiple_type_parameter_constraints_style",
+      "wrap_multiple_type_parameter_constraints_style"
+    ],
+    "skala_wrap_parameters_style": [
+      "resharper_csharp_wrap_parameters_style",
+      "resharper_wrap_parameters_style",
+      "csharp_wrap_parameters_style",
+      "wrap_parameters_style"
+    ],
+    "skala_wrap_primary_constructor_parameters_style": [
+      "resharper_wrap_primary_constructor_parameters_style",
+      "resharper_csharp_wrap_primary_constructor_parameters_style",
+      "csharp_wrap_primary_constructor_parameters_style",
+      "wrap_primary_constructor_parameters_style"
+    ],
+    "skala_wrap_property_pattern": [
+      "resharper_wrap_property_pattern",
+      "resharper_csharp_wrap_property_pattern",
+      "csharp_wrap_property_pattern",
+      "wrap_property_pattern"
+    ],
+    "skala_wrap_switch_expression": [
+      "resharper_wrap_switch_expression",
+      "resharper_csharp_wrap_switch_expression",
+      "csharp_wrap_switch_expression",
+      "wrap_switch_expression"
+    ],
+    "skala_wrap_ternary_expr_style": [
+      "resharper_wrap_ternary_expr_style",
+      "resharper_csharp_wrap_ternary_expr_style",
+      "csharp_wrap_ternary_expr_style",
+      "wrap_ternary_expr_style"
+    ],
+    "skala_xmldoc_alignment_tab_fill_style": [
+      "resharper_xmldoc_alignment_tab_fill_style",
+      "xmldoc_alignment_tab_fill_style"
+    ],
+    "skala_xmldoc_allow_far_alignment": [
+      "resharper_xmldoc_allow_far_alignment",
+      "xmldoc_allow_far_alignment"
+    ],
+    "skala_xmldoc_attribute_indent": [
+      "resharper_xmldoc_attribute_indent",
+      "resharper_attribute_indent",
+      "xmldoc_attribute_indent",
+      "attribute_indent"
+    ],
+    "skala_xmldoc_attribute_style": [
+      "resharper_attribute_style",
+      "resharper_xmldoc_attribute_style",
+      "xmldoc_attribute_style",
+      "attribute_style"
+    ],
+    "skala_xmldoc_blank_line_after_pi": [
+      "resharper_blank_line_after_pi",
+      "resharper_xmldoc_blank_line_after_pi",
+      "xmldoc_blank_line_after_pi",
+      "blank_line_after_pi"
+    ],
+    "skala_xmldoc_indent_child_elements": [
+      "resharper_indent_child_elements",
+      "resharper_xmldoc_indent_child_elements",
+      "xmldoc_indent_child_elements",
+      "indent_child_elements"
+    ],
+    "skala_xmldoc_indent_size": [
+      "resharper_xmldoc_indent_size",
+      "xmldoc_indent_size"
+    ],
+    "skala_xmldoc_indent_style": [
+      "resharper_xmldoc_indent_style",
+      "xmldoc_indent_style"
+    ],
+    "skala_xmldoc_indent_text": [
+      "resharper_indent_text",
+      "resharper_xmldoc_indent_text",
+      "xmldoc_indent_text",
+      "indent_text"
+    ],
+    "skala_xmldoc_insert_final_newline": [
+      "resharper_xmldoc_insert_final_newline"
+    ],
+    "skala_xmldoc_keep_user_linebreaks": [
+      "resharper_xmldoc_keep_user_linebreaks",
+      "xmldoc_keep_user_linebreaks"
+    ],
+    "skala_xmldoc_linebreak_before_elements": [
+      "resharper_xmldoc_linebreak_before_elements",
+      "resharper_linebreak_before_elements",
+      "xmldoc_linebreak_before_elements",
+      "linebreak_before_elements"
+    ],
+    "skala_xmldoc_linebreak_before_multiline_elements": [
+      "resharper_linebreak_before_multiline_elements",
+      "resharper_xmldoc_linebreak_before_multiline_elements",
+      "xmldoc_linebreak_before_multiline_elements",
+      "linebreak_before_multiline_elements"
+    ],
+    "skala_xmldoc_linebreak_before_singleline_elements": [
+      "resharper_linebreak_before_singleline_elements",
+      "resharper_xmldoc_linebreak_before_singleline_elements",
+      "xmldoc_linebreak_before_singleline_elements",
+      "linebreak_before_singleline_elements"
+    ],
+    "skala_xmldoc_linebreaks_inside_tags_for_elements_longer_than": [
+      "resharper_linebreaks_inside_tags_for_elements_longer_than",
+      "resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
+      "xmldoc_linebreaks_inside_tags_for_elements_longer_than",
+      "linebreaks_inside_tags_for_elements_longer_than"
+    ],
+    "skala_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements": [
+      "resharper_linebreaks_inside_tags_for_elements_with_child_elements",
+      "resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements",
+      "xmldoc_linebreaks_inside_tags_for_elements_with_child_elements",
+      "linebreaks_inside_tags_for_elements_with_child_elements"
+    ],
+    "skala_xmldoc_linebreaks_inside_tags_for_multiline_elements": [
+      "resharper_linebreaks_inside_tags_for_multiline_elements",
+      "resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements",
+      "xmldoc_linebreaks_inside_tags_for_multiline_elements",
+      "linebreaks_inside_tags_for_multiline_elements"
+    ],
+    "skala_xmldoc_max_blank_lines_between_tags": [
+      "resharper_xmldoc_max_blank_lines_between_tags",
+      "resharper_max_blank_lines_between_tags",
+      "xmldoc_max_blank_lines_between_tags",
+      "max_blank_lines_between_tags"
+    ],
+    "skala_xmldoc_max_line_length": [
+      "resharper_xmldoc_max_line_length",
+      "xmldoc_max_line_length"
+    ],
+    "skala_xmldoc_pi_attribute_style": [
+      "resharper_xmldoc_pi_attribute_style",
+      "resharper_pi_attribute_style",
+      "xmldoc_pi_attribute_style",
+      "pi_attribute_style"
+    ],
+    "skala_xmldoc_pi_attributes_indent": [
+      "resharper_pi_attributes_indent",
+      "resharper_xmldoc_pi_attributes_indent",
+      "xmldoc_pi_attributes_indent",
+      "pi_attributes_indent"
+    ],
+    "skala_xmldoc_space_after_last_attribute": [
+      "resharper_space_after_last_attribute",
+      "resharper_xmldoc_space_after_last_attribute",
+      "xmldoc_space_after_last_attribute",
+      "space_after_last_attribute"
+    ],
+    "skala_xmldoc_space_after_last_pi_attribute": [
+      "resharper_xmldoc_space_after_last_pi_attribute",
+      "resharper_space_after_last_pi_attribute",
+      "xmldoc_space_after_last_pi_attribute",
+      "space_after_last_pi_attribute"
+    ],
+    "skala_xmldoc_space_before_self_closing": [
+      "resharper_xmldoc_space_before_self_closing",
+      "resharper_space_before_self_closing",
+      "xmldoc_space_before_self_closing",
+      "space_before_self_closing"
+    ],
+    "skala_xmldoc_spaces_around_eq_in_attribute": [
+      "resharper_spaces_around_eq_in_attribute",
+      "resharper_xmldoc_spaces_around_eq_in_attribute",
+      "xmldoc_spaces_around_eq_in_attribute",
+      "spaces_around_eq_in_attribute"
+    ],
+    "skala_xmldoc_spaces_around_eq_in_pi_attribute": [
+      "resharper_spaces_around_eq_in_pi_attribute",
+      "resharper_xmldoc_spaces_around_eq_in_pi_attribute",
+      "xmldoc_spaces_around_eq_in_pi_attribute",
+      "spaces_around_eq_in_pi_attribute"
+    ],
+    "skala_xmldoc_spaces_inside_tags": [
+      "resharper_spaces_inside_tags",
+      "resharper_xmldoc_spaces_inside_tags",
+      "xmldoc_spaces_inside_tags",
+      "spaces_inside_tags"
+    ],
+    "skala_xmldoc_tab_width": [
+      "resharper_xmldoc_tab_width",
+      "xmldoc_tab_width"
+    ],
+    "skala_xmldoc_wrap_around_elements": [
+      "resharper_wrap_around_elements",
+      "resharper_xmldoc_wrap_around_elements",
+      "xmldoc_wrap_around_elements",
+      "wrap_around_elements"
+    ],
+    "skala_xmldoc_wrap_lines": [
+      "resharper_xmldoc_wrap_lines"
+    ],
+    "skala_xmldoc_wrap_tags_and_pi": [
+      "resharper_xmldoc_wrap_tags_and_pi",
+      "resharper_wrap_tags_and_pi",
+      "xmldoc_wrap_tags_and_pi",
+      "wrap_tags_and_pi"
+    ],
+    "skala_xmldoc_wrap_text": [
+      "resharper_xmldoc_wrap_text",
+      "resharper_wrap_text",
+      "xmldoc_wrap_text",
+      "wrap_text"
+    ],
+    "tab_width": [
+      "tab_width"
+    ],
+    "trim_trailing_whitespace": [
+      "trim_trailing_whitespace"
+    ]
+  }
+}

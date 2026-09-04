@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Rikarin/Skala/Core/Rikarin.Skala.Options/export-bridge.schema.json",
+  "title": "Skala ReSharper export bridge",
+  "description": "The one place in the option registry that names another tool's keys: for each Skala option, the spelling(s) the Rider export writes for it. Provenance, never ingestion — nothing here is indexed by `OptionRegistry.TryResolve`, so a `resharper_*` key in a user's .editorconfig is an unknown key (SK9001). Split out of options.json so that file names no other tool; the data cannot be deleted, because `jb cleanupcode` understands this namespace and no other, and `CanonicalEditorConfig.Compose` translates the export through it. docs/plan/03-configuration-model.md § \"The option registry\".",
+  "type": "object",
+  "required": ["version", "spellings"],
+  "properties": {
+    "version": { "type": "integer" },
+    "generator": { "type": "string" },
+    "notes": { "type": "array", "items": { "type": "string" } },
+    "unmapped": {
+      "description": "Foreign keys that options.json's measurements refer to but that Skala carries no option for, each with what it is and where it was measured. They live here so a negative control stays reproducible without options.json holding another tool's spelling. Read by nothing at build time; the generator ignores this member.",
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "spellings": {
+      "description": "Skala option key -> the export's spelling(s) for it. Every option in options.json has an entry and every entry names an option that exists; the generator fails the build (SKG006, SKG007) if either stops being true. ⚠ The mapping is recorded rather than computed: `skala_x` is `resharper_x` for some keys and `resharper_csharp_x` for others, and most keys carry both plus unprefixed forms.",
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z0-9_.]+$" },
+      "additionalProperties": {
+        "description": "Significance order, most specific first, and load-bearing twice: `CanonicalEditorConfig.Translate` reads the index as the specificity rank where the export sets one option under two spellings in one section, and `ExportSpellings.ForOracle` hands element 0 to the oracle.",
+        "type": "array",
+        "minItems": 1,
+        "items": { "type": "string" }
+      }
+    }
+  }
+}

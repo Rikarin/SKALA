@@ -27,7 +27,7 @@
             }
           },
           "valueAliases": {
-            "description": "ReSharper's alternative spellings for a value, e.g. true -> always.",
+            "description": "The export's alternative spellings for a value, e.g. true -> always.",
             "type": "object",
             "additionalProperties": { "type": "string" }
           }
@@ -38,7 +38,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["key", "aliases", "export", "language", "type", "default", "defaultSource", "tier", "construct", "summary", "since"],
+        "required": ["key", "aliases", "language", "type", "default", "defaultSource", "tier", "construct", "summary", "since"],
         "properties": {
           "key": {
             "description": "The canonical .editorconfig spelling, verbatim. Skala's own namespace (`skala_`), or the standard EditorConfig/Microsoft spelling where the option is Microsoft's.",
@@ -46,12 +46,7 @@
             "pattern": "^[a-z0-9_.]+$"
           },
           "aliases": {
-            "description": "Every other spelling Skala accepts for this one option. An alias that reaches two options is SK9004. ⚠ ReSharper's spellings are NOT aliases — see `export`.",
-            "type": "array",
-            "items": { "type": "string" }
-          },
-          "export": {
-            "description": "The spelling(s) the Rider export (`editor_config_template`) uses for this option. ⚠ Provenance only: never indexed by `OptionRegistry.TryResolve`, so a `resharper_*` key in a user's .editorconfig is an unknown key (SK9001). `CanonicalEditorConfig.Compose` translates the export into Skala's namespace through this, and `EditorConfigIngestionTests` uses it to state that Skala's own configuration says what the export says.",
+            "description": "Every other spelling Skala accepts for this one option. An alias that reaches two options is SK9004. ⚠ The export's spellings are NOT aliases — they live in `export-bridge.json` and are never indexed for lookup.",
             "type": "array",
             "items": { "type": "string" }
           },
@@ -104,7 +99,6 @@
           "summary": { "type": "string" },
           "since": { "type": "string" },
           "oracle": { "type": ["string", "null"] },
-          "docs": { "type": ["string", "null"] },
           "templateLine": {
             "description": "The line in editor_config_template this entry was seeded from. Provenance only.",
             "type": ["integer", "null"]
@@ -114,7 +108,7 @@
             "type": "boolean"
           },
           "expands": {
-            "description": "For one of ReSharper's generalized properties, the options it sets at once.",
+            "description": "For one of the export's generalized properties, the options it sets at once.",
             "type": "array",
             "items": { "type": "string" }
           }
