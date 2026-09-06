@@ -31,7 +31,8 @@ public sealed class PropertyPatternArrangementTests {
     [Fact]
     public void RealRuleInfoMetadata_IsSupportedByTheDefaultPipeline() {
         const string source =
-            "using Rikarin.Skala.Rules.Metadata; class C { void M(RuleInfo rule) { if (!rule.Retired && rule.RequiresSemantics) { System.Console.WriteLine(rule.Id); } } }";
+            "using Rikarin.Skala.Rules.Metadata; class C { void M(RuleInfo rule) { if "
+            + "(!rule.Retired && rule.RequiresSemantics) { System.Console.WriteLine(rule.Id); } } }";
         var (text, compilation) = Compile(source);
         var options = Options();
         var result = ArrangementPipeline.Run(
@@ -47,7 +48,7 @@ public sealed class PropertyPatternArrangementTests {
         Assert.Contains("if (rule is { Retired: false, RequiresSemantics: true })", result.Text);
         Assert.DoesNotContain(
             result.Diagnostics,
-            d => d.Id is ArrangeIds.Reverted or ArrangeIds.SymbolChanged or ArrangeIds.RuleThrew
+            static d => d.Id is ArrangeIds.Reverted or ArrangeIds.SymbolChanged or ArrangeIds.RuleThrew
         );
     }
 
@@ -97,21 +98,24 @@ public sealed class PropertyPatternArrangementTests {
     public void ExpressionTrees_AreLeftAlone() =>
         AssertUnchanged(
             Declaration
-            + "class C { System.Linq.Expressions.Expression<System.Func<Rule, bool>> P => rule => !rule.Retired && rule.RequiresSemantics; }"
+            + "class C { System.Linq.Expressions.Expression<System.Func<Rule, bool>> P => "
+            + "rule => !rule.Retired && rule.RequiresSemantics; }"
         );
 
     [Fact]
     public void FormatterOff_IsRespected() =>
         AssertUnchanged(
             Declaration
-            + "class C { bool M(Rule rule) {\n// @formatter:off\nreturn !rule.Retired && rule.RequiresSemantics;\n// @formatter:on\n} }"
+            + "class C { bool M(Rule rule) {\n// @formatter:off\nreturn !rule.Retired && "
+            + "rule.RequiresSemantics;\n// @formatter:on\n} }"
         );
 
     [Fact]
     public void NullableFlowGuard_AllowsTheFollowingMemberTests() {
         var result = Arrange(
             Declaration
-            + "class C { bool M(Rule? rule) { if (rule is null) return false; return !rule.Retired && rule.RequiresSemantics; } }"
+            + "class C { bool M(Rule? rule) { if (rule is null) return false; return "
+            + "!rule.Retired && rule.RequiresSemantics; } }"
         );
         Assert.Equal(ArrangementOutcome.Arranged, result.Outcome);
         Assert.Contains("return rule is { Retired: false, RequiresSemantics: true };", result.Text);
@@ -143,7 +147,8 @@ public sealed class PropertyPatternArrangementTests {
     [Fact]
     public void CSharp7_DoesNotIntroducePropertyPatterns() {
         const string source =
-            "struct Rule { public bool Retired; public bool RequiresSemantics; } class C { bool M(Rule rule) => !rule.Retired && rule.RequiresSemantics; }";
+            "struct Rule { public bool Retired; public bool RequiresSemantics; } class C { "
+            + "bool M(Rule rule) => !rule.Retired && rule.RequiresSemantics; }";
         Assert.Equal(ArrangementOutcome.Unchanged, Arrange(source, LanguageVersion.CSharp7_3).Outcome);
     }
 
@@ -159,7 +164,8 @@ public sealed class PropertyPatternArrangementTests {
         AssertUnchanged(
             "using System.Linq; "
             + Declaration
-            + "class C { IQueryable<Rule> M(IQueryable<Rule> rules) => from rule in rules where !rule.Retired && rule.RequiresSemantics select rule; }"
+            + "class C { IQueryable<Rule> M(IQueryable<Rule> rules) => from rule in rules "
+            + "where !rule.Retired && rule.RequiresSemantics select rule; }"
         );
 
     const string Path = "/property-pattern/Probe.cs";

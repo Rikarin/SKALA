@@ -103,7 +103,7 @@ public sealed class ExceptionHandlingBatchTests {
                               """;
 
         var finding = Assert.Single(Findings(source, "SK2091"));
-        Assert.Equal(source.IndexOf("throw new", System.StringComparison.Ordinal), finding.Location.SourceSpan.Start);
+        Assert.Equal(source.IndexOf("throw new", StringComparison.Ordinal), finding.Location.SourceSpan.Start);
     }
 
     /// <summary>
@@ -218,7 +218,7 @@ public sealed class ExceptionHandlingBatchTests {
                              BODY
                          }
                      }
-                     """.Replace("BODY", body, System.StringComparison.Ordinal);
+                     """.Replace("BODY", body, StringComparison.Ordinal);
 
         Assert.Equal(expected, Findings(source, "SK2090").Length);
     }
@@ -258,7 +258,7 @@ public sealed class ExceptionHandlingBatchTests {
         );
 
         var after = source[..start] + finding.Properties[FixEdits.TextKey(0)] + source[(start + length)..];
-        Assert.Contains(expected, after, System.StringComparison.Ordinal);
+        Assert.Contains(expected, after, StringComparison.Ordinal);
     }
 
     /// <summary>A <c>catch</c> body, wrapped in everything it needs to compile.</summary>
@@ -286,7 +286,7 @@ public sealed class ExceptionHandlingBatchTests {
                 }
             }
         }
-        """.Replace("BODY", body, System.StringComparison.Ordinal);
+        """.Replace("BODY", body, StringComparison.Ordinal);
 
     static ImmutableArray<Diagnostic> All(string source, string path) =>
         RuleFixtures.Analyze(

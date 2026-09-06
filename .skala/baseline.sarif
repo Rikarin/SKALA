@@ -15597,7 +15597,7 @@
           "ruleId": "SK7030",
           "level": "note",
           "message": {
-            "text": "The file has 1442 lines, over the threshold of 1000"
+            "text": "The file has 1450 lines, over the threshold of 1000"
           },
           "locations": [
             {
@@ -15616,8 +15616,8 @@
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "548b22e7f32ffd19e7ce170ab5a1c0b8",
-            "skala/v2": "b000fb62de764c5d0e225a8bb48538e0"
+            "skala/v1": "dc3df14dbe3936c7f6708f7fa2504fa6",
+            "skala/v2": "69660b010a9471061a68622051c93f55"
           },
           "properties": {
             "skalaSeverity": "hint",
@@ -17096,7 +17096,7 @@
           "ruleId": "SK6034",
           "level": "note",
           "message": {
-            "text": "`Reverted` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
+            "text": "`PropertyPattern` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
           },
           "locations": [
             {
@@ -17105,24 +17105,24 @@
                   "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/ArrangementRule.cs"
                 },
                 "region": {
-                  "startLine": 32,
+                  "startLine": 30,
                   "startColumn": 12,
-                  "endLine": 32,
+                  "endLine": 30,
                   "endColumn": 17,
-                  "charOffset": 1539,
+                  "charOffset": 1433,
                   "charLength": 5
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "ce5fa3bfcb16a28095f1db7b814cd959",
+            "skala/v1": "71ef65ea6395ee681478983807ba1726",
             "skala/v2": "4839e5437259116472c47982653ecdcd"
           },
           "fixes": [
             {
               "description": {
-                "text": "`Reverted` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
+                "text": "`PropertyPattern` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
               },
               "artifactChanges": [
                 {
@@ -17132,7 +17132,7 @@
                   "replacements": [
                     {
                       "deletedRegion": {
-                        "charOffset": 1539,
+                        "charOffset": 1433,
                         "charLength": 5
                       },
                       "insertedContent": {
@@ -17156,7 +17156,7 @@
           "ruleId": "SK6034",
           "level": "note",
           "message": {
-            "text": "`SymbolChanged` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
+            "text": "`Reverted` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
           },
           "locations": [
             {
@@ -17165,24 +17165,24 @@
                   "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/ArrangementRule.cs"
                 },
                 "region": {
-                  "startLine": 35,
+                  "startLine": 33,
                   "startColumn": 12,
-                  "endLine": 35,
+                  "endLine": 33,
                   "endColumn": 17,
-                  "charOffset": 1697,
+                  "charOffset": 1591,
                   "charLength": 5
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "2528d2d8fb4db3dc8bc41c4138913ef0",
+            "skala/v1": "ce5fa3bfcb16a28095f1db7b814cd959",
             "skala/v2": "6063ff67542d8286100179920dbdd217"
           },
           "fixes": [
             {
               "description": {
-                "text": "`SymbolChanged` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
+                "text": "`Reverted` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
               },
               "artifactChanges": [
                 {
@@ -17192,7 +17192,7 @@
                   "replacements": [
                     {
                       "deletedRegion": {
-                        "charOffset": 1697,
+                        "charOffset": 1591,
                         "charLength": 5
                       },
                       "insertedContent": {
@@ -17216,7 +17216,7 @@
           "ruleId": "SK6034",
           "level": "note",
           "message": {
-            "text": "`RuleThrew` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
+            "text": "`SymbolChanged` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
           },
           "locations": [
             {
@@ -17225,24 +17225,24 @@
                   "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/ArrangementRule.cs"
                 },
                 "region": {
-                  "startLine": 58,
+                  "startLine": 36,
                   "startColumn": 12,
-                  "endLine": 58,
+                  "endLine": 36,
                   "endColumn": 17,
-                  "charOffset": 3013,
+                  "charOffset": 1749,
                   "charLength": 5
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "eb63926ac518f12a759a8b3338c9087f",
+            "skala/v1": "2528d2d8fb4db3dc8bc41c4138913ef0",
             "skala/v2": "11ed476adf65af920b5bef061841eb2d"
           },
           "fixes": [
             {
               "description": {
-                "text": "`RuleThrew` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
+                "text": "`SymbolChanged` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
               },
               "artifactChanges": [
                 {
@@ -17252,7 +17252,7 @@
                   "replacements": [
                     {
                       "deletedRegion": {
-                        "charOffset": 3013,
+                        "charOffset": 1749,
                         "charLength": 5
                       },
                       "insertedContent": {
@@ -17269,6 +17269,66 @@
             "tfms": ["net10.0"],
             "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangeIds",
             "ordinalWithinSymbol": 19,
+            "fixIsSafe": false
+          }
+        },
+        {
+          "ruleId": "SK6034",
+          "level": "note",
+          "message": {
+            "text": "`RuleThrew` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/ArrangementRule.cs"
+                },
+                "region": {
+                  "startLine": 59,
+                  "startColumn": 12,
+                  "endLine": 59,
+                  "endColumn": 17,
+                  "charOffset": 3065,
+                  "charLength": 5
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "skala/v1": "eb63926ac518f12a759a8b3338c9087f",
+            "skala/v2": "d53c2822c465cf806f21517d34ec148b"
+          },
+          "fixes": [
+            {
+              "description": {
+                "text": "`RuleThrew` is visible outside this assembly and `const`, so its value is copied into every caller at compile time; shipping a new value leaves every caller that is not rebuilt on the old one, with no error anywhere"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/ArrangementRule.cs"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 3065,
+                        "charLength": 5
+                      },
+                      "insertedContent": {
+                        "text": "static readonly"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "skalaSeverity": "suggestion",
+            "tfms": ["net10.0"],
+            "enclosingSymbol": "Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangeIds",
+            "ordinalWithinSymbol": 20,
             "fixIsSafe": false
           }
         },
@@ -18034,7 +18094,7 @@
           "ruleId": "SK7030",
           "level": "note",
           "message": {
-            "text": "The file has 3107 lines, over the threshold of 1000"
+            "text": "The file has 3112 lines, over the threshold of 1000"
           },
           "locations": [
             {
@@ -18053,8 +18113,8 @@
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "128ee912b19c42f4e2ec4f75a63c406f",
-            "skala/v2": "08d1270dd13ecdc56219e9ee788db387"
+            "skala/v1": "af26be2c642491ca70f76e575cb9bfbe",
+            "skala/v2": "9219f3baba72aea69ed07f98aeb45eaa"
           },
           "properties": {
             "skalaSeverity": "hint",
@@ -31141,7 +31201,7 @@
           "ruleId": "SK1084",
           "level": "note",
           "message": {
-            "text": "The loop's whole body is a filter: `in RuleFixtures.All().Where(fixture => System.Array…`"
+            "text": "The loop's whole body is a filter: `in RuleFixtures.All().Where(fixture => Array.IndexO…`"
           },
           "locations": [
             {
@@ -31153,21 +31213,21 @@
                   "startLine": 47,
                   "startColumn": 17,
                   "endLine": 47,
-                  "endColumn": 68,
+                  "endColumn": 61,
                   "charOffset": 2447,
-                  "charLength": 51
+                  "charLength": 44
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "skala/v1": "5f54ebd7da1bd4504ad1bf8c6e829a44",
-            "skala/v2": "511f5a3b774bd63f816e4af96f827dee"
+            "skala/v1": "3792e997abcedbdb478a1cea6c409da7",
+            "skala/v2": "ba626aff814e45a889c72bc5543a0694"
           },
           "fixes": [
             {
               "description": {
-                "text": "The loop's whole body is a filter: `in RuleFixtures.All().Where(fixture => System.Array…`"
+                "text": "The loop's whole body is a filter: `in RuleFixtures.All().Where(fixture => Array.IndexO…`"
               },
               "artifactChanges": [
                 {
@@ -31180,13 +31240,13 @@
                         "charOffset": 2427
                       },
                       "insertedContent": {
-                        "text": ".Where(fixture => System.Array.IndexOf(Ids, fixture.RuleId) >= 0)"
+                        "text": ".Where(fixture => Array.IndexOf(Ids, fixture.RuleId) >= 0)"
                       }
                     },
                     {
                       "deletedRegion": {
                         "charOffset": 2429,
-                        "charLength": 142
+                        "charLength": 135
                       },
                       "insertedContent": {
                         "text": "{\n                    data.Add(fixture);\n                }"

@@ -58,7 +58,7 @@ public sealed class EditorConfigDocument {
         Text = text;
         Sections = Parse(this, text, out var isRoot);
         IsRoot = isRoot;
-        Version = System.Threading.Interlocked.Increment(ref nextVersion);
+        Version = Interlocked.Increment(ref nextVersion);
     }
 
     public string Path { get; }

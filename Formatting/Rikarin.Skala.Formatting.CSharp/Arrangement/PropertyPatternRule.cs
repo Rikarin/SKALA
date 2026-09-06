@@ -21,7 +21,7 @@ public sealed class PropertyPatternRule : ArrangementRule {
             if (!node.IsKind(SyntaxKind.LogicalAndExpression)
                 || node.ContainsDirectives
                 || node.DescendantTrivia()
-                    .Any(t => t.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    .Any(static t => t.IsKind(SyntaxKind.SingleLineCommentTrivia)
                         || t.IsKind(SyntaxKind.MultiLineCommentTrivia)
                     )
                 || node.Ancestors().Any(static ancestor => ancestor is QueryExpressionSyntax)
@@ -29,6 +29,16 @@ public sealed class PropertyPatternRule : ArrangementRule {
                 return base.VisitBinaryExpression(node);
             }
 
+            var pattern = CreatePattern(node);
+            if (pattern is null) {
+                return base.VisitBinaryExpression(node);
+            }
+
+            return (NeedsParentheses(node) ? SyntaxFactory.ParenthesizedExpression(pattern) : pattern)
+                .WithTriviaFrom(node);
+        }
+
+        ExpressionSyntax? CreatePattern(BinaryExpressionSyntax node) {
             var terms = new List<ExpressionSyntax>();
             Flatten(node, terms);
             var clauses = new List<string>();
@@ -40,39 +50,39 @@ public sealed class PropertyPatternRule : ArrangementRule {
                     || model.GetSymbolInfo(member).Symbol is not { } symbol
                     || !IsPlainBooleanMember(symbol)
                     || !members.Add(symbol)) {
-                    return base.VisitBinaryExpression(node);
+                    return null;
                 }
 
                 var candidate = Unwrap(member.Expression);
                 var candidateSymbol = model.GetSymbolInfo(candidate).Symbol;
                 if (receiver is null) {
-                    if (candidate is not ThisExpressionSyntax
-                        && candidateSymbol is not (ILocalSymbol { RefKind: RefKind.None }
-                            or IParameterSymbol { RefKind: RefKind.None })) {
-                        return base.VisitBinaryExpression(node);
-                    }
-
-                    var type = model.GetTypeInfo(candidate);
-                    if (type.Type is null
-                        || type.Type.TypeKind == TypeKind.Dynamic
-                        || type.Type.IsReferenceType
-                        && type.Nullability.FlowState != NullableFlowState.NotNull) {
-                        return base.VisitBinaryExpression(node);
+                    if (!IsStableReceiver(candidate, candidateSymbol)) {
+                        return null;
                     }
 
                     receiver = candidate;
                     receiverSymbol = candidateSymbol;
                 } else if (!SyntaxFactory.AreEquivalent(receiver, candidate)
                            || !SymbolEqualityComparer.Default.Equals(receiverSymbol, candidateSymbol)) {
-                    return base.VisitBinaryExpression(node);
+                    return null;
                 }
 
                 clauses.Add(member.Name + ": " + (expected ? "true" : "false"));
             }
 
-            var pattern = SyntaxFactory.ParseExpression(receiver + " is { " + string.Join(", ", clauses) + " }");
-            return (NeedsParentheses(node) ? SyntaxFactory.ParenthesizedExpression(pattern) : pattern)
-                .WithTriviaFrom(node);
+            return SyntaxFactory.ParseExpression(receiver + " is { " + string.Join(", ", clauses) + " }");
+        }
+
+        bool IsStableReceiver(ExpressionSyntax candidate, ISymbol? symbol) {
+            if (candidate is not ThisExpressionSyntax
+                && symbol is not (ILocalSymbol { RefKind: RefKind.None }
+                    or IParameterSymbol { RefKind: RefKind.None })) {
+                return false;
+            }
+
+            var type = model.GetTypeInfo(candidate);
+            return type.Type is { TypeKind: not TypeKind.Dynamic }
+                && (!type.Type.IsReferenceType || type.Nullability.FlowState == NullableFlowState.NotNull);
         }
 
         static bool NeedsParentheses(ExpressionSyntax node) =>
@@ -145,14 +155,14 @@ public sealed class PropertyPatternRule : ArrangementRule {
                         AccessorList: { } list
                     } declaration
                     && !declaration.Modifiers.Any(SyntaxKind.PartialKeyword)
-                    && list.Accessors.All(a => a.Body is null && a.ExpressionBody is null)) {
+                    && list.Accessors.All(static a => a.Body is null && a.ExpressionBody is null)) {
                     return true;
                 }
             }
 
             return property.DeclaringSyntaxReferences.IsEmpty
                 && getter.GetAttributes()
-                    .Any(a =>
+                    .Any(static a =>
                         a.AttributeClass?.ToDisplayString()
                         == "System.Runtime.CompilerServices.CompilerGeneratedAttribute"
                     );

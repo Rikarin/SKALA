@@ -36,7 +36,7 @@ public static class XmlDocOracle {
             );
 
         /// <summary>The option key this file is named after, or null when it is not named after one.</summary>
-        public string Key => System.IO.Path.GetFileNameWithoutExtension(File.Path);
+        public string Key => Path.GetFileNameWithoutExtension(File.Path);
     }
 
     /// <summary>Every doc-commented corpus file with a committed doc-comment fixture, measured.</summary>

@@ -561,7 +561,7 @@ public static class CheckCommand {
                     HasBaseline = true,
                     BaselineSummary = SarifWriter.Relative(report.RepositoryRoot, baselinePath)
                         + " ("
-                        + baseline.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        + baseline.Count.ToString(CultureInfo.InvariantCulture)
                         + " accepted)",
                     Fixed = comparison.Fixed
                 };

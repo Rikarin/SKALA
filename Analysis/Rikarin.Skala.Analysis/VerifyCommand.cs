@@ -141,7 +141,7 @@ public static class VerifyCommand {
         // `--since`. With neither in play `New` *is* `Reportable`, so the unscoped contract is
         // unchanged; with either, "nothing to do" means nothing the agent is responsible for.
         // Reading `Reportable` here would have accepted the options and then ignored them.
-        var clean = report.New.All(static finding => finding.Severity == Core.Diagnostics.SkalaSeverity.Hidden);
+        var clean = report.New.All(static finding => finding.Severity == SkalaSeverity.Hidden);
 
         return new(clean ? ExitCodes.Ok : ExitCodes.GateFailed, result.Output);
     }

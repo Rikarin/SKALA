@@ -17,46 +17,52 @@ static class RequiredBraces {
         foreach (var owner in original.DescendantNodes().Where(HasUnbracedBody)) {
             // Keep both inserted braces in one edit, even when the body itself is unchanged.
             // Otherwise restricting edits to a selected range can insert only the opening brace.
-            var next = owner.GetLastToken().GetNextToken();
-            var end = next.RawKind == 0 ? original.FullSpan.End : next.SpanStart;
-            var first = edits.FindIndex(edit => edit.Span.End >= owner.SpanStart && edit.Span.Start <= end);
-            var last = edits.FindLastIndex(edit => edit.Span.End >= owner.SpanStart && edit.Span.Start <= end);
-            if (first < 0 || first == last) {
-                continue;
-            }
-
-            var start = edits[first].Span.Start;
-            var finish = edits[last].Span.End;
-            var replacements = edits.GetRange(first, last - first + 1)
-                .Select(edit => new TextEdit(
-                        SourceSpan.FromBounds(edit.Span.Start - start, edit.Span.End - start),
-                        edit.NewText
-                    )
-                )
-                .ToArray();
-            var merged = new TextEdit(
-                SourceSpan.FromBounds(start, finish),
-                EditEmitter.Apply(source[start..finish], replacements)
-            );
-            edits.RemoveRange(first, last - first + 1);
-            edits.Insert(first, merged);
+            MergeOwnerEdits(original, source, edits, owner);
         }
 
         return edits;
     }
 
-    static bool HasUnbracedBody(SyntaxNode node) =>
+    static void MergeOwnerEdits(SyntaxNode original, string source, List<TextEdit> edits, SyntaxNode owner) {
+        var next = owner.GetLastToken().GetNextToken();
+        var end = next.RawKind == 0 ? original.FullSpan.End : next.SpanStart;
+        var first = edits.FindIndex(edit => edit.Span.End >= owner.SpanStart && edit.Span.Start <= end);
+        var last = edits.FindLastIndex(edit => edit.Span.End >= owner.SpanStart && edit.Span.Start <= end);
+        if (first < 0 || first == last) {
+            return;
+        }
+
+        var start = edits[first].Span.Start;
+        var finish = edits[last].Span.End;
+        var replacements = edits.GetRange(first, last - first + 1)
+            .Select(edit => new TextEdit(
+                    SourceSpan.FromBounds(edit.Span.Start - start, edit.Span.End - start),
+                    edit.NewText
+                )
+            )
+            .ToArray();
+        var merged = new TextEdit(
+            SourceSpan.FromBounds(start, finish),
+            EditEmitter.Apply(source[start..finish], replacements)
+        );
+        edits.RemoveRange(first, last - first + 1);
+        edits.Insert(first, merged);
+    }
+
+    static bool HasUnbracedBody(SyntaxNode node) => Body(node) is not (null or BlockSyntax);
+
+    static StatementSyntax? Body(SyntaxNode node) =>
         node switch {
-            IfStatementSyntax n => n.Statement is not BlockSyntax,
-            ElseClauseSyntax n => n.Statement is not (BlockSyntax or IfStatementSyntax),
-            ForStatementSyntax n => n.Statement is not BlockSyntax,
-            CommonForEachStatementSyntax n => n.Statement is not BlockSyntax,
-            WhileStatementSyntax n => n.Statement is not BlockSyntax,
-            DoStatementSyntax n => n.Statement is not BlockSyntax,
-            UsingStatementSyntax n => n.Statement is not BlockSyntax,
-            LockStatementSyntax n => n.Statement is not BlockSyntax,
-            FixedStatementSyntax n => n.Statement is not BlockSyntax,
-            _ => false
+            IfStatementSyntax n => n.Statement,
+            ElseClauseSyntax { Statement: not IfStatementSyntax } n => n.Statement,
+            ForStatementSyntax n => n.Statement,
+            CommonForEachStatementSyntax n => n.Statement,
+            WhileStatementSyntax n => n.Statement,
+            DoStatementSyntax n => n.Statement,
+            UsingStatementSyntax n => n.Statement,
+            LockStatementSyntax n => n.Statement,
+            FixedStatementSyntax n => n.Statement,
+            _ => null
         };
 
     public static SyntaxNode Rewrite(SyntaxNode root, in PhaseOneOptions options, string newLine) =>
@@ -66,56 +72,56 @@ static class RequiredBraces {
 
     sealed class Rewriter(BracePreference preference, FormatterTagGuard guard, string newLine) :
         GuardedRewriter(guard) {
-        public override SyntaxNode? VisitIfStatement(IfStatementSyntax node) {
-            var visited = (IfStatementSyntax)base.VisitIfStatement(node)!;
-            return NeedsBlock(node.Statement, node) ? visited.WithStatement(Block(visited.Statement)) : visited;
-        }
+        public override SyntaxNode? VisitIfStatement(IfStatementSyntax node) =>
+            RewriteBody(node, base.VisitIfStatement(node)!);
 
-        public override SyntaxNode? VisitElseClause(ElseClauseSyntax node) {
-            var visited = (ElseClauseSyntax)base.VisitElseClause(node)!;
-            return node.Statement is not IfStatementSyntax && NeedsBlock(node.Statement, node)
-                ? visited.WithStatement(Block(visited.Statement))
-                : visited;
-        }
+        public override SyntaxNode? VisitElseClause(ElseClauseSyntax node) =>
+            RewriteBody(node, base.VisitElseClause(node)!);
 
-        public override SyntaxNode? VisitForStatement(ForStatementSyntax node) {
-            var visited = (ForStatementSyntax)base.VisitForStatement(node)!;
-            return NeedsBlock(node.Statement, node) ? visited.WithStatement(Block(visited.Statement)) : visited;
-        }
+        public override SyntaxNode? VisitForStatement(ForStatementSyntax node) =>
+            RewriteBody(node, base.VisitForStatement(node)!);
 
-        public override SyntaxNode? VisitForEachStatement(ForEachStatementSyntax node) {
-            var visited = (ForEachStatementSyntax)base.VisitForEachStatement(node)!;
-            return NeedsBlock(node.Statement, node) ? visited.WithStatement(Block(visited.Statement)) : visited;
-        }
+        public override SyntaxNode? VisitForEachStatement(ForEachStatementSyntax node) =>
+            RewriteBody(node, base.VisitForEachStatement(node)!);
 
-        public override SyntaxNode? VisitForEachVariableStatement(ForEachVariableStatementSyntax node) {
-            var visited = (ForEachVariableStatementSyntax)base.VisitForEachVariableStatement(node)!;
-            return NeedsBlock(node.Statement, node) ? visited.WithStatement(Block(visited.Statement)) : visited;
-        }
+        public override SyntaxNode? VisitForEachVariableStatement(ForEachVariableStatementSyntax node) =>
+            RewriteBody(node, base.VisitForEachVariableStatement(node)!);
 
-        public override SyntaxNode? VisitWhileStatement(WhileStatementSyntax node) {
-            var visited = (WhileStatementSyntax)base.VisitWhileStatement(node)!;
-            return NeedsBlock(node.Statement, node) ? visited.WithStatement(Block(visited.Statement)) : visited;
-        }
+        public override SyntaxNode? VisitWhileStatement(WhileStatementSyntax node) =>
+            RewriteBody(node, base.VisitWhileStatement(node)!);
 
-        public override SyntaxNode? VisitDoStatement(DoStatementSyntax node) {
-            var visited = (DoStatementSyntax)base.VisitDoStatement(node)!;
-            return NeedsBlock(node.Statement, node) ? visited.WithStatement(Block(visited.Statement)) : visited;
-        }
+        public override SyntaxNode? VisitDoStatement(DoStatementSyntax node) =>
+            RewriteBody(node, base.VisitDoStatement(node)!);
 
-        public override SyntaxNode? VisitUsingStatement(UsingStatementSyntax node) {
-            var visited = (UsingStatementSyntax)base.VisitUsingStatement(node)!;
-            return NeedsBlock(node.Statement, node) ? visited.WithStatement(Block(visited.Statement)) : visited;
-        }
+        public override SyntaxNode? VisitUsingStatement(UsingStatementSyntax node) =>
+            RewriteBody(node, base.VisitUsingStatement(node)!);
 
-        public override SyntaxNode? VisitLockStatement(LockStatementSyntax node) {
-            var visited = (LockStatementSyntax)base.VisitLockStatement(node)!;
-            return NeedsBlock(node.Statement, node) ? visited.WithStatement(Block(visited.Statement)) : visited;
-        }
+        public override SyntaxNode? VisitLockStatement(LockStatementSyntax node) =>
+            RewriteBody(node, base.VisitLockStatement(node)!);
 
-        public override SyntaxNode? VisitFixedStatement(FixedStatementSyntax node) {
-            var visited = (FixedStatementSyntax)base.VisitFixedStatement(node)!;
-            return NeedsBlock(node.Statement, node) ? visited.WithStatement(Block(visited.Statement)) : visited;
+        public override SyntaxNode? VisitFixedStatement(FixedStatementSyntax node) =>
+            RewriteBody(node, base.VisitFixedStatement(node)!);
+
+        SyntaxNode RewriteBody(SyntaxNode original, SyntaxNode visited) {
+            var statement = Body(original);
+            if (statement is null || !NeedsBlock(statement, original)) {
+                return visited;
+            }
+
+            var block = Block(Body(visited)!);
+            return visited switch {
+                IfStatementSyntax node => node.WithStatement(block),
+                ElseClauseSyntax node => node.WithStatement(block),
+                ForStatementSyntax node => node.WithStatement(block),
+                ForEachStatementSyntax node => node.WithStatement(block),
+                ForEachVariableStatementSyntax node => node.WithStatement(block),
+                WhileStatementSyntax node => node.WithStatement(block),
+                DoStatementSyntax node => node.WithStatement(block),
+                UsingStatementSyntax node => node.WithStatement(block),
+                LockStatementSyntax node => node.WithStatement(block),
+                FixedStatementSyntax node => node.WithStatement(block),
+                _ => visited
+            };
         }
 
         bool NeedsBlock(StatementSyntax statement, SyntaxNode owner) {

@@ -1244,6 +1244,23 @@ All **380 scramble and 380 collapse inputs** reproduce byte-for-byte from the ex
 measured input or existing oracle fixture was replaced. `UnformatTests` now checks this equality
 against the committed population, so a future shared-map change cannot silently soften the corpus.
 
+#### CI after the formatting rules
+
+The red Skala and Cross-platform runs after the brace, property-pattern and namespace-qualifier
+changes had two causes: the new arrangement rules had not been applied to Skala's own source, and
+the analysis gate reported findings outside the adopted baseline. The reviewed arrangement diff
+covered 17 files. The brace rewriter now shares its body replacement and edit-merging logic;
+property-pattern eligibility and construction are separate methods; capture-free lambdas are
+static; long test literals are split with constant concatenation, preserving their input bytes.
+
+The baseline update accepts **one new stable diagnostic ID**, `ArrangeIds.PropertyPattern`
+(`SK0218`), under the existing policy for the other 20 public diagnostic-ID constants. It refreshes
+the three IDs whose ordinals shifted, two already-accepted file-length findings, and the existing
+loop-filter suggestion whose text lost a redundant `System.` prefix. The baseline grows from
+**1,076 to 1,077 entries**; gate thresholds are unchanged. Ordinal shifts initially made a new
+130-column cancellation-test literal appear to be an old finding in `RuleCorpusTests`; the literal
+was fixed rather than adding that displaced finding to the baseline.
+
 #### What the first day found
 
 Seven defects, all minimised and all reproduced through `skala format` itself rather than only

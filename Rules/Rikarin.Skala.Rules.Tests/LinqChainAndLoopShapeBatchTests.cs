@@ -44,7 +44,7 @@ public sealed class LinqChainAndLoopShapeBatchTests {
         get {
             var data = new TheoryData<RuleFixture>();
             foreach (var fixture in RuleFixtures.All()) {
-                if (System.Array.IndexOf(Ids, fixture.RuleId) >= 0) {
+                if (Array.IndexOf(Ids, fixture.RuleId) >= 0) {
                     data.Add(fixture);
                 }
             }
@@ -203,7 +203,7 @@ public sealed class LinqChainAndLoopShapeBatchTests {
             .Lines[diagnostics[0].Location.GetLineSpan().StartLinePosition.Line]
             .ToString();
 
-        Assert.Contains("source.ToList().ToList()", line, System.StringComparison.Ordinal);
+        Assert.Contains("source.ToList().ToList()", line, StringComparison.Ordinal);
     }
 
     /// <summary>

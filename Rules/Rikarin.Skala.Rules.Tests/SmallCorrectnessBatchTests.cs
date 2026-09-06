@@ -159,7 +159,7 @@ public sealed class SmallCorrectnessBatchTests {
     public void SK2034_ReportsTheDeclarationAndNotItsReferences() {
         const string source = "class C { int M() { var @class = 1; return @class + @class + @class; } }";
         var finding = Assert.Single(Findings(source, "test.cs", "SK2034"));
-        Assert.Equal(source.IndexOf("@class", System.StringComparison.Ordinal), finding.Location.SourceSpan.Start);
+        Assert.Equal(source.IndexOf("@class", StringComparison.Ordinal), finding.Location.SourceSpan.Start);
     }
 
     static Diagnostic[] Findings(string source, string path, string ruleId) =>

@@ -182,7 +182,7 @@ public static class FormatCommand {
 
             if (outcome.Skipped is { } reason) {
                 skipped++;
-                if (request.Verbose && !request.Quiet) {
+                if (request is { Verbose: true, Quiet: false }) {
                     output.Append("skipped ")
                         .Append(Relative(root, files[i]))
                         .Append("  ")
@@ -350,7 +350,7 @@ public static class FormatCommand {
         // edits" says so — "`--diff` is a unified diff over the edits" — and a reporting flag that
         // also rewrites the tree is the kind of thing a person discovers by running it on someone
         // else's repository. It rewrote 9 000 files across four worktrees once.
-        if (!request.Check && !request.Diff) {
+        if (request is { Check: false, Diff: false }) {
             File.WriteAllText(file, text, result.Original.Encoding ?? new UTF8Encoding(false));
         }
 

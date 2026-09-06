@@ -11,7 +11,8 @@ public sealed class RequiredBracesTests {
     [Fact]
     public void CancellationGuard_UsesABlockByDefault() {
         const string source =
-            "class C { void M(System.Threading.CancellationTokenSource source) { if (source.IsCancellationRequested) return; } }";
+            "class C { void M(System.Threading.CancellationTokenSource source) { "
+            + "if (source.IsCancellationRequested) return; } }";
         var result = Format.Run(source);
         Assert.Contains("if (source.IsCancellationRequested) {\n            return;\n        }", result.Formatted);
         Assert.Equal(source, result.Original.ToString());
@@ -49,7 +50,7 @@ public sealed class RequiredBracesTests {
         var tree = CSharpSyntaxTree.ParseText(selected, cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain(
             tree.GetDiagnostics(TestContext.Current.CancellationToken),
-            d => d.Severity == DiagnosticSeverity.Error
+            static d => d.Severity == DiagnosticSeverity.Error
         );
         Assert.Contains("if (b) {\n            return;\n        }", selected);
         Assert.Contains("M( b );", selected);
@@ -85,7 +86,7 @@ public sealed class RequiredBracesTests {
         Assert.Null(statements[0].Else);
         Assert.IsType<IfStatementSyntax>(statements[1].Else!.Statement);
         Assert.IsType<BlockSyntax>(statements[2].Else!.Statement);
-        Assert.All(statements, statement => Assert.IsType<BlockSyntax>(statement.Statement));
+        Assert.All(statements, static statement => Assert.IsType<BlockSyntax>(statement.Statement));
         AssertStable(result);
     }
 
@@ -99,8 +100,10 @@ public sealed class RequiredBracesTests {
         var comments = CSharpSyntaxTree.ParseText(source, cancellationToken: TestContext.Current.CancellationToken)
             .GetRoot(TestContext.Current.CancellationToken)
             .DescendantTrivia()
-            .Where(t => t.IsKind(SyntaxKind.SingleLineCommentTrivia) || t.IsKind(SyntaxKind.MultiLineCommentTrivia))
-            .Select(t => t.ToString());
+            .Where(static t => t.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                || t.IsKind(SyntaxKind.MultiLineCommentTrivia)
+            )
+            .Select(static t => t.ToString());
         foreach (var comment in comments) {
             Assert.Contains(comment, result.Formatted);
         }
@@ -170,7 +173,7 @@ public sealed class RequiredBracesTests {
 
     static void AssertStable(FormatResult result) {
         Assert.Equal(FormatOutcome.Formatted, result.Outcome);
-        Assert.DoesNotContain(Root(result).GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
+        Assert.DoesNotContain(Root(result).GetDiagnostics(), static d => d.Severity == DiagnosticSeverity.Error);
         Assert.Equal(result.Formatted, Format.Text(result.Formatted));
     }
 

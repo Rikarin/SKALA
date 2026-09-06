@@ -12,7 +12,8 @@ namespace Rikarin.Skala.Conformance.Tests;
 
 public sealed class NamespaceQualifierArrangementTests {
     const string Definitions =
-        "namespace Demo.Reporting { public static class Fingerprints { public static string Normalize(string text) => text; } }";
+        "namespace Demo.Reporting { public static class Fingerprints { public static "
+        + "string Normalize(string text) => text; } }";
 
     const string Path = "/namespace-qualifier/Probe.cs";
 
@@ -35,7 +36,8 @@ public sealed class NamespaceQualifierArrangementTests {
     [Fact]
     public void ActualFingerprintsMetadata_IsShortenedByThePipeline() {
         const string source =
-            "using Rikarin.Skala.Reporting; namespace Rikarin.Skala.Analysis.Hosting { class C { string M(string text) { return Reporting.Fingerprints.Normalize(text); } } }";
+            "using Rikarin.Skala.Reporting; namespace Rikarin.Skala.Analysis.Hosting { "
+            + "class C { string M(string text) { return Reporting.Fingerprints.Normalize(text); } } }";
         var (text, compilation) = Compile(source);
         var options = Options();
         var result = ArrangementPipeline.Run(
@@ -52,7 +54,7 @@ public sealed class NamespaceQualifierArrangementTests {
         Assert.DoesNotContain("Reporting.Fingerprints.Normalize", result.Text);
         Assert.DoesNotContain(
             result.Diagnostics,
-            d => d.Id is ArrangeIds.Reverted or ArrangeIds.SymbolChanged or ArrangeIds.RuleThrew
+            static d => d.Id is ArrangeIds.Reverted or ArrangeIds.SymbolChanged or ArrangeIds.RuleThrew
         );
     }
 
@@ -77,7 +79,8 @@ public sealed class NamespaceQualifierArrangementTests {
     ) {
         var source = imports
             + Definitions
-            + "namespace Other { public static class Fingerprints { public static string Normalize(string text) => text; } }"
+            + "namespace Other { public static class Fingerprints { public static string "
+            + "Normalize(string text) => text; } }"
             + "namespace Demo.Analysis { "
             + extra
             + " class C { string M(string text"
@@ -93,7 +96,8 @@ public sealed class NamespaceQualifierArrangementTests {
         var result = Arrange(
             "using Demo.Reporting; "
             + Definitions
-            + "namespace Demo.Analysis { class C { string M(string text) {\n// Keep this explanation.\nreturn Reporting.Fingerprints.Normalize(text);\n} } }"
+            + "namespace Demo.Analysis { class C { string M(string text) {\n// Keep this "
+            + "explanation.\nreturn Reporting.Fingerprints.Normalize(text);\n} } }"
         );
         Assert.Equal(ArrangementOutcome.Arranged, result.Outcome);
         Assert.Contains("// Keep this explanation.", result.Text);
@@ -105,13 +109,16 @@ public sealed class NamespaceQualifierArrangementTests {
         AssertUnchanged(
             "using Demo.Reporting; "
             + Definitions
-            + "namespace Demo.Analysis { class C { string M(string text) {\n// @formatter:off\nreturn Reporting.Fingerprints.Normalize(text);\n// @formatter:on\n} } }"
+            + "namespace Demo.Analysis { class C { string M(string text) {\n// "
+            + "@formatter:off\nreturn Reporting.Fingerprints.Normalize(text);\n// @formatter:on\n} } }"
         );
 
     [Fact]
     public void GenericStaticReceiver_PreservesItsTypeArguments() {
         const string source =
-            "using Demo.Reporting; namespace Demo.Reporting { class Helpers<T> { public static T Echo(T value) => value; } } namespace Demo.Analysis { class C { string M(string text) => Reporting.Helpers<string>.Echo(text); } }";
+            "using Demo.Reporting; namespace Demo.Reporting { class Helpers<T> { public "
+            + "static T Echo(T value) => value; } } namespace Demo.Analysis { class C { "
+            + "string M(string text) => Reporting.Helpers<string>.Echo(text); } }";
         var result = Arrange(source);
         Assert.Equal(ArrangementOutcome.Arranged, result.Outcome);
         Assert.Contains("Helpers<string>.Echo(text)", result.Text);
@@ -123,7 +130,8 @@ public sealed class NamespaceQualifierArrangementTests {
     public void StaticQualifierPreference_StillKeepsTheType() {
         var source = "using Demo.Reporting; "
             + Definitions
-            + "namespace Demo.Analysis { class C { string M(string text) => Reporting.Fingerprints.Normalize(text); } }";
+            + "namespace Demo.Analysis { class C { string M(string text) => "
+            + "Reporting.Fingerprints.Normalize(text); } }";
         var result = Arrange(source, "all");
         Assert.Contains("=> Fingerprints.Normalize(text);", result.Text);
         Assert.Equal(ArrangementOutcome.Arranged, result.Outcome);
@@ -133,7 +141,8 @@ public sealed class NamespaceQualifierArrangementTests {
     public void LooseMode_DoesNotGuessWhichTypeTheNameMeans() {
         var source = "using Demo.Reporting; "
             + Definitions
-            + "namespace Demo.Analysis { class C { string M(string text) => Reporting.Fingerprints.Normalize(text); } }";
+            + "namespace Demo.Analysis { class C { string M(string text) => "
+            + "Reporting.Fingerprints.Normalize(text); } }";
         var result = Arranger.Arrange(
             Path,
             SourceText.From(source),
@@ -176,7 +185,7 @@ public sealed class NamespaceQualifierArrangementTests {
         );
         Assert.DoesNotContain(
             compilation.GetDiagnostics(TestContext.Current.CancellationToken),
-            d => d.Severity == DiagnosticSeverity.Error
+            static d => d.Severity == DiagnosticSeverity.Error
         );
         return (text, compilation);
     }

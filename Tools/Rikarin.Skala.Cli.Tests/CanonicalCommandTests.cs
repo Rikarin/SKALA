@@ -132,7 +132,7 @@ public sealed class CanonicalCommandTests {
 
         public string Root { get; }
 
-        public string At(string relative) => System.IO.Path.Combine(Root, relative);
+        public string At(string relative) => Path.Combine(Root, relative);
 
         public void Write(string relative, string text) => File.WriteAllText(At(relative), text);
 

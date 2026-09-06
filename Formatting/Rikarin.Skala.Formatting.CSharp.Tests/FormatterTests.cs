@@ -15,7 +15,7 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </remarks>
 public static class Format {
     public static PhaseOneOptions Options { get; } = new(
-        Rikarin.Skala.Core.Configuration.OptionResolver
+        OptionResolver
             .Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"))
             .Options
     );
@@ -1044,7 +1044,7 @@ public sealed class XmlDocTests {
 public sealed class BracePlacementTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
-            Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
+            OptionResolver.Resolve(
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
                 [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
             )
@@ -1282,7 +1282,7 @@ public sealed class BracePlacementTests {
 public sealed class SubpatternBreakTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
-            Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
+            OptionResolver.Resolve(
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
                 [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
             )
@@ -1365,7 +1365,7 @@ public sealed class SubpatternBreakTests {
 public sealed class ContinuousIndentInsideTests {
     static string FormatWith(string source, params (string Key, string Value)[] overrides) {
         var options = new PhaseOneOptions(
-            Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
+            OptionResolver.Resolve(
                 Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
                 [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
             )

@@ -34,9 +34,7 @@ public sealed record FormatResult(
             foreach (var edit in Edits) {
                 lines += 1
                     + CSharpDocumentBuilder.CountNewLines(
-                        Original.ToString(
-                            Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(edit.Span.Start, edit.Span.End)
-                        )
+                        Original.ToString(TextSpan.FromBounds(edit.Span.Start, edit.Span.End))
                     );
             }
 
@@ -156,11 +154,8 @@ public static class CSharpFormatter {
 
         var parseOptions = ParseOptionsFor(preprocessorSymbols);
         var tree = CSharpSyntaxTree.ParseText(text, parseOptions, path);
-        foreach (var diagnostic in tree.GetDiagnostics()) {
-            if (diagnostic.Severity != DiagnosticSeverity.Error) {
-                continue;
-            }
-
+        if (tree.GetDiagnostics().FirstOrDefault(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            is { } diagnostic) {
             // ⚠ ADR-003: a file that does not parse is reported and left byte-identical. This is the
             // single most important safety property in the tool.
             var position = diagnostic.Location.GetLineSpan().StartLinePosition;
@@ -292,34 +287,7 @@ public static class CSharpFormatter {
             );
         }
 
-        if (RequiredBraces.HasCandidate(root, options)) {
-            var formattedRoot = CSharpSyntaxTree.ParseText(after, parseOptions, path).GetRoot();
-            var braced = RequiredBraces.Rewrite(formattedRoot, options, newLine);
-            if (!ReferenceEquals(formattedRoot, braced)) {
-                // Reparse the controlled syntax rewrite before laying out tokens. The recursive pass
-                // retains token verification against the braced input; edits still address the caller's
-                // original text, including for range formatting and editor integrations.
-                var result = Format(
-                    path,
-                    SourceText.From(braced.ToFullString(), text.Encoding),
-                    options,
-                    crashRoot,
-                    preprocessorSymbols,
-                    xmlDoc
-                );
-                var succeeded = result.Outcome == FormatOutcome.Formatted;
-                return result with {
-                    Original = text,
-                    ReflowedComments = reflowed + result.ReflowedComments,
-                    Formatted = succeeded ? result.Formatted : text.ToString(),
-                    Edits = succeeded
-                        ? [.. RequiredBraces.Edits(root, result.Formatted)]
-                        : []
-                };
-            }
-        }
-
-        return new FormatResult(
+        var result = new FormatResult(
             path,
             text,
             [.. edits],
@@ -328,6 +296,34 @@ public static class CSharpFormatter {
             FormatOutcome.Formatted,
             reflowed
         );
+        if (!RequiredBraces.HasCandidate(root, options)) {
+            return result;
+        }
+
+        var formattedRoot = CSharpSyntaxTree.ParseText(after, parseOptions, path).GetRoot();
+        var braced = RequiredBraces.Rewrite(formattedRoot, options, newLine);
+        if (ReferenceEquals(formattedRoot, braced)) {
+            return result;
+        }
+
+        // Reparse the controlled rewrite before laying out tokens. Verification uses the braced
+        // input; returned edits still address the caller's original text, including range formats.
+        var bracedResult = Format(
+            path,
+            SourceText.From(braced.ToFullString(), text.Encoding),
+            options,
+            crashRoot,
+            preprocessorSymbols,
+            xmlDoc
+        );
+        bracedResult = bracedResult with {
+            Original = text, ReflowedComments = reflowed + bracedResult.ReflowedComments
+        };
+        if (bracedResult.Outcome != FormatOutcome.Formatted) {
+            return bracedResult with { Formatted = text.ToString(), Edits = [] };
+        }
+
+        return bracedResult with { Edits = [.. RequiredBraces.Edits(root, bracedResult.Formatted)] };
     }
 
     /// <summary>
@@ -490,7 +486,7 @@ public static class CSharpFormatter {
     static string? ForcedVerificationFailure(string path) {
         var forced = Environment.GetEnvironmentVariable("SKALA_FORCE_SK9099");
         return !string.IsNullOrEmpty(forced)
-            && string.Equals(System.IO.Path.GetFileName(path), forced, StringComparison.Ordinal)
+            && string.Equals(Path.GetFileName(path), forced, StringComparison.Ordinal)
                 ? "(forced at token 0: 'A' became 'B')"
                 : null;
     }
@@ -519,7 +515,7 @@ public static class CSharpFormatter {
 /// </summary>
 public static class GeneratedCode {
     public static bool IsGenerated(string path, SourceText text) {
-        var name = System.IO.Path.GetFileName(path);
+        var name = Path.GetFileName(path);
         if (name.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase)
             || name.EndsWith(".g.i.cs", StringComparison.OrdinalIgnoreCase)
             || name.EndsWith(".designer.cs", StringComparison.OrdinalIgnoreCase)

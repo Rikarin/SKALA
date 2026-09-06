@@ -37,7 +37,7 @@ public sealed class FuzzRegressionTests {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
             test,
-            arrangement: false,
+            false,
             cancellation: TestContext.Current.CancellationToken
         );
         Assert.Empty(violations);

@@ -194,7 +194,7 @@ public sealed class McpServerTests {
 
         int Answers() {
             lock (written) {
-                var text = System.Text.Encoding.UTF8.GetString(written.GetBuffer(), 0, (int)written.Length);
+                var text = Encoding.UTF8.GetString(written.GetBuffer(), 0, (int)written.Length);
                 return text.Split('\n').Count(static line => line.Contains("\"result\"", StringComparison.Ordinal));
             }
         }

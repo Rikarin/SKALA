@@ -116,7 +116,8 @@ public sealed class AnalysisTests {
         // ⚠ `!rule.Retired`, matching AnalyzerHost's own filter. A retired rule is not "skipped
         // because there is no compilation" — it is not run at all, and listing it here would tell a
         // consumer it would have fired with a project, which is the one thing that is not true of it.
-        foreach (var rule in RuleCatalog.All.Where(static rule => rule.RequiresSemantics && !rule.Retired)) {
+        foreach (var rule in RuleCatalog.All.Where(static rule => rule is { RequiresSemantics: true, Retired: false }
+                 )) {
             Assert.Contains(rule.Id, skipped);
         }
 

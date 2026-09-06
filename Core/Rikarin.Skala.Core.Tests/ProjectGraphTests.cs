@@ -100,7 +100,7 @@ public sealed class ProjectGraphTests {
 
         // And the source itself: a `using Microsoft.CodeAnalysis` would not compile today, but a
         // hand-rolled `SyntaxKind` copy would, and it would be worse.
-        var directory = System.IO.Path.GetDirectoryName(formatting.Path)!;
+        var directory = Path.GetDirectoryName(formatting.Path)!;
         foreach (var source in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)) {
             if (ProjectFile.IsScratch(RepositoryPaths.Root, source)) {
                 continue;

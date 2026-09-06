@@ -26,7 +26,7 @@ public sealed class DocumentBuilderTests {
         var group = builder.NextGroupId();
         builder.OpenGroup(GroupMode.Break, group);
         builder.Text("a,", new SourceSpan(0, 2));
-        builder.BreakPoint(group, true, fill: true);
+        builder.BreakPoint(group, true, true);
         if (nested) {
             builder.OpenGroup(GroupMode.Break, builder.NextGroupId());
         }

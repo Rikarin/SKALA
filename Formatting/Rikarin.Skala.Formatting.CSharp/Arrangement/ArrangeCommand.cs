@@ -144,7 +144,7 @@ public static class ArrangeCommand {
                         .AppendLine(string.Join(", ", result.Applied.Select(ArrangeIds.NameOf)));
                 }
 
-                if (!request.Check && !request.Diff) {
+                if (request is { Check: false, Diff: false }) {
                     File.WriteAllText(file, final, text.Encoding ?? new UTF8Encoding(false));
                 }
             } catch (IOException exception) {
