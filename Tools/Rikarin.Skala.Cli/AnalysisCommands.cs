@@ -290,7 +290,8 @@ public static partial class SkalaCommandLine {
         var dryRun = new Option<bool>("--dry-run") { Description = "Say what would be applied and write nothing." };
         var load = new Option<string>("--load") {
             Description =
-                "auto | binlog | workspace | loose. Default auto: discover a workspace, otherwise loose. IDE1006 requires workspace.",
+                "auto | binlog | workspace | loose. Default auto: discover a workspace, otherwise loose. "
+                + "IDE1006 requires workspace.",
             DefaultValueFactory = static _ => "auto"
         };
 

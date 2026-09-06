@@ -4,6 +4,8 @@ namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>The fix command discovers the same workspace as arrange and verify.</summary>
 public sealed class FixCommandTests {
+    const string IncludeOption = "--include";
+
     const string Project = """
                            <Project Sdk="Microsoft.NET.Sdk">
                              <PropertyGroup>
@@ -34,7 +36,7 @@ public sealed class FixCommandTests {
         if (safe) {
             arguments.Add("--safe");
         } else {
-            arguments.AddRange(["--include", "SK4020"]);
+            arguments.AddRange([IncludeOption, "SK4020"]);
         }
 
         var run = CliRunner.Run([.. arguments]);
@@ -51,7 +53,7 @@ public sealed class FixCommandTests {
         scratch.Write("Second.csproj", Project);
         var before = File.ReadAllText(source);
 
-        var run = CliRunner.Run("fix", source, "--include", "SK4020", "--project", project, "--dry-run");
+        var run = CliRunner.Run("fix", source, IncludeOption, "SK4020", "--project", project, "--dry-run");
 
         Assert.True(run.ExitCode == 0, run.StandardOutput + run.StandardError);
         Assert.Contains("applied 1 fix (dry run, nothing written)", run.StandardOutput, StringComparison.Ordinal);
@@ -66,7 +68,7 @@ public sealed class FixCommandTests {
         scratch.Write("Second.csproj", Project);
         var before = File.ReadAllText(source);
 
-        var run = CliRunner.Run("fix", source, "--include", "SK4020");
+        var run = CliRunner.Run("fix", source, IncludeOption, "SK4020");
 
         Assert.NotEqual(0, run.ExitCode);
         Assert.Contains("multiple '*.csproj' workspace targets", run.StandardOutput, StringComparison.Ordinal);
@@ -81,7 +83,7 @@ public sealed class FixCommandTests {
         scratch.Write("Scratch.csproj", "<Project>");
         var before = File.ReadAllText(source);
 
-        var run = CliRunner.Run("fix", source, "--include", "SK4020");
+        var run = CliRunner.Run("fix", source, IncludeOption, "SK4020");
 
         Assert.NotEqual(0, run.ExitCode);
         Assert.Contains("no compilation could be built", run.StandardOutput, StringComparison.Ordinal);
@@ -95,7 +97,7 @@ public sealed class FixCommandTests {
         scratch.Write("Scratch.csproj", "<Project>");
         var before = File.ReadAllText(source);
 
-        var run = CliRunner.Run("fix", source, "--include", "SK4020", "--load=loose");
+        var run = CliRunner.Run("fix", source, IncludeOption, "SK4020", "--load=loose");
 
         Assert.Equal(0, run.ExitCode);
         Assert.Contains("nothing to apply", run.StandardOutput, StringComparison.Ordinal);
@@ -116,7 +118,7 @@ public sealed class FixCommandTests {
             """
         );
 
-        var run = CliRunner.Run("fix", source, "--include", "SK2015");
+        var run = CliRunner.Run("fix", source, IncludeOption, "SK2015");
 
         Assert.True(run.ExitCode == 0, run.StandardOutput + run.StandardError);
         Assert.Contains("throw;", File.ReadAllText(source), StringComparison.Ordinal);

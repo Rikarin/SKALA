@@ -17,7 +17,9 @@ public sealed record FixRequest {
 
     public string? RepositoryRoot { get; init; }
 
-    /// <summary>Null means auto: discover a workspace, or use loose mode when no target exists. Naming requires workspace.</summary>
+    /// <summary>
+    ///     Null means auto: discover a workspace, or use loose mode when no target exists. Naming requires workspace.
+    /// </summary>
     public LoadMode? Mode { get; init; }
 
     public string? BinlogPath { get; init; }
