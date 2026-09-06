@@ -451,7 +451,7 @@ public static class AnalyzerHost {
         }
 
         var bounded = span.Length <= limit ? span : new TextSpan(span.Start, limit);
-        return Reporting.Fingerprints.Normalize(text.ToString(bounded));
+        return Fingerprints.Normalize(text.ToString(bounded));
     }
 
     /// <summary>Unpacks the text edits a Skala rule attached to its diagnostic.</summary>

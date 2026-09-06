@@ -12,7 +12,7 @@
 <main>
 <p class="crumb"><a href="index.html">Rules</a> / Formatting</p>
 <h1>SK0215 <span class="title">The static-member qualifier is not arranged</span></h1>
-<p class="lede"><code>skala arrange</code> would add, remove or change a static-member type qualifier.</p>
+<p class="lede"><code>skala arrange</code> would add, remove or change a static-member type qualifier, or shorten a redundant namespace prefix on its type receiver.</p>
 <table class="facts">
 <tbody>
 <tr><th>Category</th><td>Formatting</td></tr>
@@ -27,14 +27,14 @@
 </tbody>
 </table>
 <h2 id="why">Why</h2>
-<p>A qualifier can be removed or replaced only if the resulting reference resolves to the same static member. The rule binds both forms and the pipeline rejects any symbol change.</p>
+<p>A qualifier can be removed or replaced only if the resulting reference resolves to the same static member. The rule binds both forms and the pipeline rejects any symbol change. A namespace-qualified receiver such as <code>Reporting.Fingerprints.Normalize(text)</code> becomes <code>Fingerprints.Normalize(text)</code> when the shorter expression already resolves to the same type; the static type qualifier remains when required by scope or configuration.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
 <pre class="bad"><code>Helpers.Create()</code></pre>
 <p>Write:</p>
 <pre class="good"><code>Create()</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>Ambiguous references and any rewrite that resolves to a different symbol are reverted.</p>
+<p>Namespace prefixes are preserved when the short name is missing, ambiguous or shadowed by a local, parameter or another type. Explicit namespace aliases, global:: qualifiers, comments in the removed prefix and formatter-off regions are preserved. The pipeline rejects any remaining symbol change.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><a href="../options/static-members-qualification.html#skala_static_members_qualify_members"><code>skala_static_members_qualify_members</code></a></li>

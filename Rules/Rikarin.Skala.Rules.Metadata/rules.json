@@ -463,13 +463,13 @@
       "supersedes": [],
       "since": "2.0",
       "languageVersion": null,
-      "summary": "`skala arrange` would add, remove or change a static-member type qualifier.",
-      "rationale": "A qualifier can be removed or replaced only if the resulting reference resolves to the same static member. The rule binds both forms and the pipeline rejects any symbol change.",
+      "summary": "`skala arrange` would add, remove or change a static-member type qualifier, or shorten a redundant namespace prefix on its type receiver.",
+      "rationale": "A qualifier can be removed or replaced only if the resulting reference resolves to the same static member. The rule binds both forms and the pipeline rejects any symbol change. A namespace-qualified receiver such as `Reporting.Fingerprints.Normalize(text)` becomes `Fingerprints.Normalize(text)` when the shorter expression already resolves to the same type; the static type qualifier remains when required by scope or configuration.",
       "examples": {
         "bad": "Helpers.Create()",
         "good": "Create()"
       },
-      "falsePositives": "Ambiguous references and any rewrite that resolves to a different symbol are reverted.",
+      "falsePositives": "Namespace prefixes are preserved when the short name is missing, ambiguous or shadowed by a local, parameter or another type. Explicit namespace aliases, global:: qualifiers, comments in the removed prefix and formatter-off regions are preserved. The pipeline rejects any remaining symbol change.",
       "configuration": [
         "skala_static_members_qualify_members",
         "skala_static_members_qualify_with"

@@ -24,6 +24,11 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///         separate one.
 ///     </para>
 ///     <para>
+///         A namespace prefix on a static type receiver is also removed when the shorter expression
+///         binds to the same type: <c>Reporting.Fingerprints.Normalize(text)</c> becomes
+///         <c>Fingerprints.Normalize(text)</c>. Explicit aliases and comments in the prefix are retained.
+///     </para>
+///     <para>
 ///         ⚠ There is no instance-member counterpart here and the asymmetry is the configuration's, not an
 ///         omission. <c>resharper_instance_members_qualify_members</c> — the key that would say which
 ///         instance members take a <c>this.</c> — is not in the author's export and so is not in the option
@@ -66,6 +71,10 @@ public sealed class StaticQualifierRule : ArrangementRule {
                 return visited;
             }
 
+            if (model.GetSymbolInfo(node.Expression).Symbol is INamespaceSymbol) {
+                return CanShortenNamespace(node) ? Unqualified(visited) : visited;
+            }
+
             // Only a *type* receiver is a static-member qualifier. `instance.Member` is not one, and
             // neither is `Namespace.Type`.
             if (model.GetSymbolInfo(node.Expression).Symbol is not ITypeSymbol) {
@@ -83,6 +92,43 @@ public sealed class StaticQualifierRule : ArrangementRule {
             // ⚠ The same precondition ThisQualifierRule uses, for the same reason — which is why it is
             // `GuardedRewriter`'s and not written out here a second time.
             return BareNameResolvesTo(model, node, member) ? Unqualified(visited) : visited;
+        }
+
+        bool CanShortenNamespace(MemberAccessExpressionSyntax node) {
+            // This rule owns static access expressions. Qualified names in declarations remain
+            // SK0243's concern, and namespace declarations and using directives are never shortened.
+            if (node.Parent is not MemberAccessExpressionSyntax parent
+                || parent.Expression != node
+                || model.GetSymbolInfo(parent).Symbol is not { IsStatic: true }
+                || model.GetSymbolInfo(node).Symbol is not INamedTypeSymbol type) {
+                return false;
+            }
+
+            // Keep explicit alias disambiguation and any comments within the prefix being removed.
+            if (node.Expression.DescendantNodesAndSelf()
+                    .Any(n => n is AliasQualifiedNameSyntax
+                        || n is IdentifierNameSyntax identifier
+                        && model.GetAliasInfo(identifier) is not null
+                    )
+                || node.DescendantTrivia()
+                    .Any(t => t.Span.Start >= node.SpanStart
+                        && t.Span.Start < node.Name.SpanStart
+                        && (t.IsDirective
+                            || t.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                            || t.IsKind(SyntaxKind.MultiLineCommentTrivia))
+                    )) {
+                return false;
+            }
+
+            // Bind as an expression: binding as a type alone would miss a local or parameter
+            // named Fingerprints that captures the shortened static receiver.
+            var shortened = model.GetSpeculativeSymbolInfo(
+                node.SpanStart,
+                node.Name.WithoutTrivia(),
+                SpeculativeBindingOption.BindAsExpression
+            );
+            return shortened.CandidateSymbols.IsEmpty
+                && SymbolEqualityComparer.Default.Equals(shortened.Symbol, type);
         }
 
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) {
