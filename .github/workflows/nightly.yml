@@ -134,32 +134,14 @@ jobs:
       # ⚠ Now the job goes red, after the artefacts are safe and the report is in the summary.
       # `continue-on-error` above deferred the failure; it did not forgive it.
       #
-      # ⚠ **The expedition fails on any finding, including a rediscovery of a defect already tracked.**
-      # `Testing/corpus/pathological/open/register.md` used to screen rediscoveries out — each entry
-      # named a `probe:` that deleted its trigger, and the finding was accepted only if the property
-      # then held. The register is gone, deliberately, and so is that mechanism: the two defects it
-      # still tracked are GitHub issues #337 (SK-FUZZ-0017, the idempotency non-convergence) and #338
-      # (SK-FUZZ-0008, the `indent` mutation misclassified as absorbed). ⚠ #339 joined them the same
-      # day, from this job's own last red run — a second idempotency non-convergence whose signature
-      # matches #337's on every axis measured, so check a new finding against all three.
-      #
-      # ⚠ **What that costs: a rediscovery of #337 reds this job as a new finding**, and somebody has
-      # to recognise it by hand from the seed and the minimised artefact. That is the accepted cost.
-      # The alternative — a list keyed on the defect the fuzzer is *for* — would hide the next variant
-      # of it too, which is the argument the register itself made against suppression lists and the
-      # one reason not to replace it with one.
-      #
-      # ⚠ In practice this changed no behaviour on the day it landed, which is worth knowing before
-      # anyone reinstates the mechanism to fix a red nightly: the register's last surviving entry
-      # (SK-FUZZ-0017) carried **no** `probe:` — its own status line said "cause not established" —
-      # and an entry without one accounted for nothing. This job was already red on every rediscovery
-      # of it.
+      # Every property violation fails the job, including a rediscovery. Fixed findings are
+      # regression tests and measured pathological fixtures; there is no suppression register.
       - name: Fail if the expedition found something
         if: steps.fuzz.outcome == 'failure'
         run: |
           echo "::error::the fuzzer found a property violation — see the run summary and the"
           echo "::error::fuzz-findings artefact. Nothing is screened out, so check it against the"
-          echo "::error::open SK-FUZZ issues (#337, #338, #339) before treating it as new. Each finding"
+          echo "::error::existing GitHub issues before treating it as new. Each finding"
           echo "::error::replays from its own seed with"
           echo "::error::  dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz --replay=<seed>"
           echo "::error::and a genuinely new one is filed as a GitHub issue."

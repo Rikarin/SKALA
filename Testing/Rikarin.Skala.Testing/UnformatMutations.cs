@@ -452,7 +452,9 @@ public static class Unformat {
         // ⚠ `absorbing: true` even though these are structural edits. That flag is what folds in the
         // *other* symbol set's disabled text, and a line break moved into the `#else` branch of a
         // file compiled with the `#if` branch is still a line break moved into data.
-        var heads = map.SafeLines(true, absorbing: true).ToHashSet();
+        // Degradation may move column-zero comments. Their column is layout input, not
+        // program data; the fuzzer's absorption-only protection would redraw this seeded corpus.
+        var heads = map.SafeLines(true, absorbing: true, preserveCommentColumns: false).ToHashSet();
         var tails = map.SafeLines(false, absorbing: true).ToHashSet();
         var claimed = new HashSet<int>();
         var edits = new List<(int Position, int Delete, string Insert)>();
@@ -522,7 +524,7 @@ public static class Unformat {
             edits.Add((gap.Start, gap.End - gap.Start, new string(' ', random.Next(1, 5))));
         }
 
-        foreach (var line in map.SafeLines(true, absorbing: true)) {
+        foreach (var line in map.SafeLines(true, absorbing: true, preserveCommentColumns: false)) {
             if (!random.Chance(IndentChance)) {
                 continue;
             }

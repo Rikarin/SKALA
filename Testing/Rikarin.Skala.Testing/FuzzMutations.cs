@@ -628,7 +628,16 @@ public static class FuzzMutations {
         ///     subtle way a fuzzer writes into a raw string: a token that opens on line 5 and closes on
         ///     line 8 leaves line 5's *indentation* real whitespace and line 5's *end* inside the token.
         /// </param>
-        public IReadOnlyList<int> SafeLines(bool atStart, bool excludeCommentEnds = false, bool absorbing = false) {
+        /// <param name="preserveCommentColumns">
+        ///     Keep column-zero comments fixed for absorption. A structural degrader may disable
+        ///     this while retaining the data protections supplied by <paramref name="absorbing" />.
+        /// </param>
+        public IReadOnlyList<int> SafeLines(
+            bool atStart,
+            bool excludeCommentEnds = false,
+            bool absorbing = false,
+            bool preserveCommentColumns = true
+        ) {
             var lines = new List<int>();
             for (var i = 0; i < Text.Lines.Count; i++) {
                 if (atStart ? headProtected.Contains(i) : tailProtected.Contains(i)) {
@@ -655,7 +664,7 @@ public static class FuzzMutations {
                 // ⚠ The comment's own column is data under `skala_stick_comment`; see
                 // `commentStartedLines`. Shifting the start of a line a comment opens at column 0
                 // is the one absorbed edit that changes what the oracle is being asked.
-                if (absorbing && atStart && commentStartedLines.Contains(i)) {
+                if (absorbing && preserveCommentColumns && atStart && commentStartedLines.Contains(i)) {
                     continue;
                 }
 
@@ -689,6 +698,13 @@ public static class FuzzMutations {
                 var spansLines = Text.Lines.GetLineFromPosition(token.SpanStart).LineNumber
                     != Text.Lines.GetLineFromPosition(token.Span.End).LineNumber;
                 Protect(token.SpanStart, token.Span.End, spansLines);
+
+                // An unterminated token can consume the final newline. The empty line after it
+                // still belongs to that token: inserting at EOF extends its data (#338).
+                if (spansLines && token.Span.End == Text.Length) {
+                    headProtected.Add(Text.Lines.Count - 1);
+                    tailProtected.Add(Text.Lines.Count - 1);
+                }
             }
 
             foreach (var node in root.DescendantNodes()) {

@@ -1196,7 +1196,7 @@ enough."* Three things went:
 
 1. **`OpenDefectTests` asserted of every entry that it still failed in the way recorded.** A defect
    that got fixed broke that suite and was told where to move its file; a defect that changed shape
-   broke it too. Nothing now notices if #337 starts passing, or starts failing differently. It was
+   broke it too. At removal, nothing noticed if #337 started passing, or started failing differently. It was
    deliberately not an `[Fact(Skip = …)]` for exactly this reason, and the removal gives up the
    property that argument was protecting.
 2. **The cap** (`TheRegister_HasNotBecomeAFilingCabinet`, at 8) that made adding an open finding a
@@ -1214,6 +1214,35 @@ filters `open/`, and the reason it did — one of the entries made `skala format
 every harness path that formats the corpus rather than failing one assertion — applies again the
 moment such a file is committed to a measured set. A future unfixable reproduction belongs in an
 issue, not in `pathological/`, until the tool can process it.
+
+#### Follow-up: issues #337–#340
+
+The two idempotency reports (#337 and #339) had the same cause in
+`DocumentBuilder.MeasureSegments`: a hard line preserved inside a nested collection ended the
+**enclosing** fill segment. The second pass consequently measured a shorter item and removed the
+break before it. Nested groups now keep their hard lines inside the item's width measurement;
+a hard line between the fill's own items still ends that segment. Both minimized inputs are in
+`corpus/pathological/nested-collection-in-generated-{switch,while}.cs`, with regression checks under
+the fuzzer's repository configuration and both symbol sets. ReSharper 2025.2.6 supplied the two
+reference fixtures. They retain oracle wrapping differences: the original 67 files score
+522/546 lines (95.60%) and 58/67 exact files (86.57%); the expanded 69 score 564/600 lines (94.00%)
+and 58/69 exact files (84.06%). Both the old and fixed implementations give those same numbers.
+The pathological ratchet was rebased for the additional difficult inputs, with no regression on
+the existing population.
+
+For #338, the unterminated raw interpolation consumed the final newline, but the map protected
+only through `Span.End - 1`. Indenting the empty EOF line extended the string's text token. The
+map now protects that EOF insertion boundary, and the filename exclusion is removed. The focused
+test exercises every absorbed mutation with and without the final newline while retaining safe
+mutations before the string.
+
+The #340 redraw came from the shared source map, not from nondeterministic randomness.
+`ca6bda15` correctly prevented absorbed mutations from moving column-zero comments, but unformat
+also used that protection and consumed a different sequence of random draws. Structural degradation
+now explicitly permits moving those comments while retaining both symbol sets' data protections.
+All **380 scramble and 380 collapse inputs** reproduce byte-for-byte from the existing seed; no
+measured input or existing oracle fixture was replaced. `UnformatTests` now checks this equality
+against the committed population, so a future shared-map change cannot silently soften the corpus.
 
 #### What the first day found
 

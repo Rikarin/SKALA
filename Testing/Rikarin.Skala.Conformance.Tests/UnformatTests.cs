@@ -31,6 +31,23 @@ public sealed class UnformatTests {
         }
     }
 
+    [Theory]
+    [MemberData(nameof(Modes))]
+    public void RegeneratingTheCommittedPopulation_IsByteIdentical(UnformatMode mode) {
+        foreach (var source in UnformatCorpus.Sources(UnformatCorpus.SampleSize)) {
+            var seed = CorpusSample.KeyOf(UnformatCorpus.Seed + "/" + Unformat.Name(mode), source.RelativePath);
+            var degraded = Unformat.Degrade(mode, File.ReadAllText(source.Path), seed);
+            Assert.NotNull(degraded);
+            var committed = Path.Combine(UnformatCorpus.ModeRoot(mode), source.RelativePath);
+            Assert.True(File.Exists(committed), $"Missing degraded input: {committed}");
+            Assert.True(
+                File.ReadAllText(committed) == degraded.Text,
+                $"{mode}/{source.RelativePath}: regeneration changed the measured population. "
+                + "Check shared mutation-map changes before replacing inputs or oracle fixtures."
+            );
+        }
+    }
+
     /// <summary>
     ///     ⚠ Re-checked from the committed bytes rather than trusted because the generator said so.
     /// </summary>

@@ -383,8 +383,9 @@ public sealed class DocumentBuilder {
         var flat = 0;
         var point = 0;
         var pointStopped = false;
+        var pointDepth = 0;
 
-        Walk(childStart, count);
+        Walk(childStart, count, 0);
 
         // ⚠ The point still open when the walk ends is the group's last, and it is flagged here
         // because this is the first moment anything knows which one that was. A fill's last point is
@@ -405,12 +406,13 @@ public sealed class DocumentBuilder {
             }
         }
 
-        void Walk(int start, int n) {
+        void Walk(int start, int n, int depth) {
             for (var i = 0; i < n; i++) {
                 var child = children[start + i];
                 if (IsOwnBreakPoint(child, group)) {
                     Flush();
                     current = child;
+                    pointDepth = depth;
                     flat = 0;
                     point = 0;
                     pointStopped = false;
@@ -432,7 +434,7 @@ public sealed class DocumentBuilder {
                 // so splicing it would count both.
                 ref var node = ref nodes[child];
                 if (node.Count > 0 && node.Kind is DocKind.Concat or DocKind.Group or DocKind.Indent or DocKind.Fill) {
-                    Walk(node.Payload, node.Count);
+                    Walk(node.Payload, node.Count, depth + (node.Kind == DocKind.Group ? 1 : 0));
                     continue;
                 }
 
@@ -442,8 +444,17 @@ public sealed class DocumentBuilder {
                 // fill point in front of it break — so a byte array written eight per line came back
                 // seven and one.
                 if (node.Kind == DocKind.Line && flatWidth[child] >= Document.Unbounded) {
-                    Flush();
-                    current = -1;
+                    // A hard break inside a nested item does not end the enclosing fill's
+                    // segment. That item has no flat form. Otherwise a break created on pass
+                    // one and preserved on pass two shortens its measured width (#337, #339).
+                    if (current >= 0 && depth > pointDepth) {
+                        flat = Document.Unbounded;
+                        pointStopped = true;
+                    } else {
+                        Flush();
+                        current = -1;
+                    }
+
                     continue;
                 }
 

@@ -18,6 +18,30 @@ public sealed class DocumentBuilderTests {
         Assert.Equal("a\n    b\nc", layout.Text);
     }
 
+    [Theory]
+    [InlineData(false, "a, b\nc")]
+    [InlineData(true, "a,\nb\nc")]
+    public void Fill_DistinguishesItsOwnHardLineFromOneInsideAnItem(bool nested, string expected) {
+        var builder = new DocumentBuilder();
+        var group = builder.NextGroupId();
+        builder.OpenGroup(GroupMode.Break, group);
+        builder.Text("a,", new SourceSpan(0, 2));
+        builder.BreakPoint(group, true, fill: true);
+        if (nested) {
+            builder.OpenGroup(GroupMode.Break, builder.NextGroupId());
+        }
+
+        builder.Text("b", new SourceSpan(3, 1));
+        builder.Line(LineKind.Hard);
+        builder.Text("c", new SourceSpan(5, 1));
+        if (nested) {
+            builder.Close();
+        }
+
+        builder.Close();
+        Assert.Equal(expected, LayoutWriter.Write(builder.Build(), 80, "    ", "\n").Text);
+    }
+
     [Fact]
     public void Line_KeepsTheSourcesOwnEnding() {
         // ⚠ enforce_line_ending_style = false means mixed endings are preserved, not normalised.
