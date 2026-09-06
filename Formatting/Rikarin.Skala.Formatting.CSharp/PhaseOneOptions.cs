@@ -16,6 +16,7 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// </remarks>
 public readonly struct PhaseOneOptions {
     public PhaseOneOptions(in FormattingOptions options) {
+        PreferBraces = (BracePreference)options.GetRaw(Ids.PreferBraces);
         // ── Layout ───────────────────────────────────────────────────────────────────────────
         IndentSize = Math.Max(1, options.GetInt(Ids.IndentSize));
         TabWidth = Math.Max(1, options.GetInt(Ids.TabWidth));
@@ -419,6 +420,7 @@ public readonly struct PhaseOneOptions {
         XmlDoc = new(options);
     }
 
+    public BracePreference PreferBraces { get; }
     public int IndentSize { get; }
     public int TabWidth { get; }
     public bool UseTabs { get; }
@@ -1210,6 +1212,9 @@ public static class Ids {
 
     /// <summary>Ids <see cref="OfUnoracled" /> marked; observable, and excluded from <see cref="All" />.</summary>
     static readonly List<OptionId> Unoracled = [];
+
+    // SK-DIV-0100: Skala inserts required braces by default; the pinned oracle profiles do not.
+    public static readonly OptionId PreferBraces = OfUnoracled("csharp_prefer_braces");
 
     public static readonly OptionId IndentSize = Of("skala_indent_size");
     public static readonly OptionId TabWidth = OfInert("skala_tab_width");

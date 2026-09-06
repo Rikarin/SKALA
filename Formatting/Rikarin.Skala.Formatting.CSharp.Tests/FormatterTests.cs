@@ -147,21 +147,29 @@ public sealed class SpacingTests {
 
 public sealed class IndentationTests {
     [Fact]
-    public void NestedLoops_StayFlush() {
+    public void NestedLoops_StayFlushWhenBracesAreOptional() {
         // skala_indent_nested_for_stmt = false — a real transformation, and one of the few places the
         // formatter removes indentation the author wrote.
-        var formatted = Format.Text(
-            """
-            class C {
-                void M() {
-                    for (var i = 0; i < 2; i++)
-                        for (var j = 0; j < 2; j++) {
-                            M();
-                        }
+        var options = OptionResolver.Resolve(
+            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+            [new("csharp_prefer_braces", "false")]
+        ).Options;
+        var formatted = CSharpFormatter.Format(
+            "Test.cs",
+            SourceText.From(
+                """
+                class C {
+                    void M() {
+                        for (var i = 0; i < 2; i++)
+                            for (var j = 0; j < 2; j++) {
+                                M();
+                            }
+                    }
                 }
-            }
-            """
-        );
+                """
+            ),
+            options
+        ).Formatted;
 
         Assert.Contains(
             "        for (var i = 0; i < 2; i++)\n        for (var j = 0; j < 2; j++) {",

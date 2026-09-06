@@ -4682,3 +4682,19 @@ about; nothing here says what the oracle does with one.
 - options: none identified.
 - ⚠ status: **open**, measured, unfixed. Pinned by `constructs/syntax/alias-any-type.cs` and
   `constructs/syntax/unsafe-and-function-pointers.cs`.
+
+## SK-DIV-0100 — required braces are applied during formatting
+
+Skala now honors `csharp_prefer_braces = true:none` by default, including single-line
+`if (source.IsCancellationRequested) return;` guards. The existing measurements recorded
+in the option registry found no brace insertion under either pinned oracle profile. This
+is an intentional behavior change requested for Skala, with direct coverage in
+`RequiredBracesTests`; the option remains outside the oracle-conformance claim.
+
+`false` preserves the author's choice. `when_multiline` checks the formatted embedded
+statement, so wrapping and repeat formatting agree. `else if` chains retain their shape,
+comments survive, and formatter-off regions and owners containing directives are skipped.
+The whitespace pass still verifies its token stream before the controlled brace rewrite;
+the rewritten text is reparsed and formatted, and edits are diffed against the original input.
+`Testing/corpus/.editorconfig` opts the oracle fixtures out of brace insertion so their
+whitespace and token-preservation checks continue to test the behavior the oracle supplies.

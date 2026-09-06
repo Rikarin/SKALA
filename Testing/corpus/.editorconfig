@@ -1,0 +1,5 @@
+# The committed oracle fixtures cover whitespace formatting; the pinned oracle
+# profiles never insert braces. Default brace insertion has direct regression
+# coverage in RequiredBracesTests (SK-DIV-0100).
+[*.cs]
+csharp_prefer_braces = false:none

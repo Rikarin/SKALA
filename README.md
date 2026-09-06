@@ -97,6 +97,8 @@ max_line_length = 120
 
 skala_wrap_arguments_style = chop_if_long
 skala_keep_existing_declaration_block_arrangement = false
+# Add blocks around single-statement ifs and loops (the default).
+csharp_prefer_braces = true:none
 skala_place_simple_initializer_on_single_line = false
 
 dotnet_diagnostic.SK1084.severity = warning

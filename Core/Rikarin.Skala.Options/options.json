@@ -929,7 +929,7 @@
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "EmbeddedStatement",
-      "summary": "Whether braces are required. IDE0011 documents `true`, `false` and `when_multiline`. ⚠ Measured 2026-08-29 against the oracle at 2025.2.6, one key flipped at a time over the export in an appended `[*.cs]` section — the sweep's own method — and classified wrong subsystem — a Roslyn analyser's. Flat at `true:none`, `false:none`, `when_multiline:none`, `true:warning` and `false:warning`, under both `CSReformatCode` and the cleanup profile, on a fixture carrying braced and unbraced `if`, `while` and `foreach`. ⚠ The negative control is the point: the reference formatter's own brace key, `braces_for_ifelse` (`export-bridge.json`, `unmapped`), is equally flat at `required`, `not_required` and `required_for_multiline` under both profiles, so neither oracle profile performs brace insertion at all and no oracle fixture can pin this key. It is IDE0011, a Roslyn analyser.",
+      "summary": "Requires braces around embedded statements during formatting. The default `true:none` adds blocks even to single-line guards; severity does not disable formatting. `false` preserves existing braces and permits unbraced statements. `when_multiline` adds blocks when the formatted embedded statement spans multiple lines. Else-if chains remain chains. Formatter-off regions and statements crossing conditional directives are preserved. SK-DIV-0100: deliberately differs from the pinned oracle profiles, which do not insert braces under any value; retained at Tier D because this behavior is not oracle-conformant, with direct regression coverage in RequiredBracesTests.",
       "since": "0.1",
       "oracle": null,
       "templateLine": 20,

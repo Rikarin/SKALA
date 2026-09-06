@@ -292,6 +292,33 @@ public static class CSharpFormatter {
             );
         }
 
+        if (RequiredBraces.HasCandidate(root, options)) {
+            var formattedRoot = CSharpSyntaxTree.ParseText(after, parseOptions, path).GetRoot();
+            var braced = RequiredBraces.Rewrite(formattedRoot, options, newLine);
+            if (!ReferenceEquals(formattedRoot, braced)) {
+                // Reparse the controlled syntax rewrite before laying out tokens. The recursive pass
+                // retains token verification against the braced input; edits still address the caller's
+                // original text, including for range formatting and editor integrations.
+                var result = Format(
+                    path,
+                    SourceText.From(braced.ToFullString(), text.Encoding),
+                    options,
+                    crashRoot,
+                    preprocessorSymbols,
+                    xmlDoc
+                );
+                var succeeded = result.Outcome == FormatOutcome.Formatted;
+                return result with {
+                    Original = text,
+                    ReflowedComments = reflowed + result.ReflowedComments,
+                    Formatted = succeeded ? result.Formatted : text.ToString(),
+                    Edits = succeeded
+                        ? [.. RequiredBraces.Edits(root, result.Formatted)]
+                        : []
+                };
+            }
+        }
+
         return new FormatResult(
             path,
             text,

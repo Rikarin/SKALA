@@ -152,8 +152,9 @@ public sealed class OptionObservabilityTests {
         // comment entire, including the column its opening `/*` is written at, which Skala re-indents
         // at both values. Honoured, observable, and not conformant at one of two values, which is
         // exactly what bars Tier A. The probe above carries the block comment it is observed on.
+        // SK-DIV-0100 adds required braces as a second intentional oracle divergence.
         Assert.Equal(
-            ["skala_align_multiline_comments"],
+            ["csharp_prefer_braces", "skala_align_multiline_comments"],
             Ids.ReadButUnoracled.Select(static id => OptionRegistry.Get(id).Key)
         );
     }
@@ -236,7 +237,15 @@ public sealed class OptionObservabilityTests {
         foreach (var value in values) {
             var resolved = OptionResolver.Resolve(path, [new KeyValuePair<string, string>(key, value)]);
             Assert.True(resolved.ValueErrors.IsEmpty, $"{key} = {value}: {string.Join("; ", resolved.ValueErrors)}");
-            var result = CSharpFormatter.Format(path, SourceText.From(Probe), resolved.Options);
+            var result = CSharpFormatter.Format(
+                path,
+                SourceText.From(
+                    key == "csharp_prefer_braces"
+                        ? "class C { void M(bool b) { if (b) return; } }"
+                        : Probe
+                ),
+                resolved.Options
+            );
             Assert.Equal(FormatOutcome.Formatted, result.Outcome);
             outputs.Add(result.Formatted);
         }
