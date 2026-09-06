@@ -85,7 +85,7 @@ and this one is the parser's.** Taken from `skala <command> --help` for all sixt
 | `-j, --jobs <n>` | ✅ | | | | | ⚠ **`format` only.** Default `min(cores, 10)` |
 | `--no-cache` | ✅ | ✅ | ✅ | | | ⚠ **Two different caches.** On `format` it is the `.editorconfig` memo; on `check`/`verify` it is the incremental analysis cache |
 | `-d, --define` | ✅ | ✅ | ✅ | ✅ | | Preprocessor symbols, repeatable and comma-separated |
-| `--load` | ✅ | ✅ | ✅ | ✅ | | `none` on `format`, `binlog` on `check`, `auto` on `verify` and `fix` |
+| `--load` | ✅ | ✅ | ✅ | ✅ | | `none` on `format`, `binlog` on `check`, `auto` on `verify` and `fix`: discover a workspace, otherwise loose |
 | `--binlog` | | ✅ | | ✅ | | ⚠ Also on `arrange`, which has no column here (#336) |
 | `--project` | | ✅ | ✅ | ✅ | | Selects the workspace target when discovery is ambiguous |
 | `--require-fresh-binlog` | | ✅ | | | | CI sets it. ⚠ Also on `arrange` since #336 — without it `arrange --load=binlog` measured a stale log and passed |

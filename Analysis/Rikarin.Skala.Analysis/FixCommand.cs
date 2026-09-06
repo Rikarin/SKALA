@@ -1,3 +1,4 @@
+using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
@@ -16,7 +17,7 @@ public sealed record FixRequest {
 
     public string? RepositoryRoot { get; init; }
 
-    /// <summary>Null means auto: naming uses workspace; other fixes retain the loose fast path.</summary>
+    /// <summary>Null means auto: discover a workspace, or use loose mode when no target exists. Naming requires workspace.</summary>
     public LoadMode? Mode { get; init; }
 
     public string? BinlogPath { get; init; }
@@ -103,7 +104,17 @@ public static class FixCommand {
             );
         }
 
-        var mode = request.Mode ?? (namingRequested ? LoadMode.Workspace : LoadMode.Loose);
+        var mode = request.Mode
+            ?? (namingRequested
+                    ? LoadMode.Workspace
+                    : ProjectLoader.ResolveAutoMode(
+                        new LoadRequest {
+                            RepositoryRoot = root,
+                            Mode = LoadMode.Workspace,
+                            ProjectPath = request.ProjectPath,
+                            Paths = request.Paths
+                        }
+                    ));
         request = request with { Mode = mode };
         var (checkResult, report) = CheckCommand.Run(
             new CheckRequest {

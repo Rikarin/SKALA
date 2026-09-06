@@ -46,7 +46,7 @@ a suggestion that would introduce a binding error is reported and skipped while 
 IDE1006 findings continue. The written batch is refused if a declaration or reference change would
 touch a formatter-off region. `format` and `arrange` never rename symbols.
 
-`arrange` and `verify` default to `--load=auto`: one unambiguous `.slnx`, `.sln`, or `.csproj` is
+`arrange`, `verify` and `fix` default to `--load=auto`: one unambiguous `.slnx`, `.sln`, or `.csproj` is
 loaded as a workspace, and a repository with no target stays on the loose fast path. Multiple
 targets require `--project`. Once auto discovers a target, a workspace load failure is fatal rather
 than a silent fallback to a semantics-free result. This shared default is part of the gate contract:

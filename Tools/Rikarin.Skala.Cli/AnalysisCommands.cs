@@ -289,7 +289,8 @@ public static partial class SkalaCommandLine {
 
         var dryRun = new Option<bool>("--dry-run") { Description = "Say what would be applied and write nothing." };
         var load = new Option<string>("--load") {
-            Description = "auto | binlog | workspace | loose. Default auto; IDE1006 infers workspace.",
+            Description =
+                "auto | binlog | workspace | loose. Default auto: discover a workspace, otherwise loose. IDE1006 requires workspace.",
             DefaultValueFactory = static _ => "auto"
         };
 
@@ -298,7 +299,7 @@ public static partial class SkalaCommandLine {
         };
 
         var project = new Option<string?>("--project") {
-            Description = "The workspace target for IDE1006 or --load=workspace."
+            Description = "The .slnx/.sln/.csproj for auto or --load=workspace."
         };
 
         var define = new Option<string[]>("--define", "-d") {
