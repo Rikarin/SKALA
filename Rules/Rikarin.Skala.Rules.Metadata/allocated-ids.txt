@@ -365,3 +365,4 @@ SK0281 redundant-required-members-attribute
 SK0282 redundant-positional-property
 SK0290 redundant-nullable-creation
 SK2290 discarded-out-parameter
+SK0218 arrange-property-pattern

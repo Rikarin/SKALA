@@ -58,7 +58,7 @@ public sealed class RuleCatalogTests {
             .Where(static id => !id.StartsWith("SK9", StringComparison.Ordinal))
             .ToList();
 
-        Assert.Equal(17, ids.Count);
+        Assert.Equal(18, ids.Count);
         Assert.Equal(ids.Count, ids.Distinct(StringComparer.Ordinal).Count());
 
         foreach (var id in ids) {

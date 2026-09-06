@@ -45,6 +45,7 @@ public static class Arranger {
         new ObjectCreationRule(),
         new DefaultValueRule(),
         new NullCheckingPatternRule(),
+        new PropertyPatternRule(),
         new EmptyStringRule(),
         new ThisQualifierRule(),
         new StaticQualifierRule(),

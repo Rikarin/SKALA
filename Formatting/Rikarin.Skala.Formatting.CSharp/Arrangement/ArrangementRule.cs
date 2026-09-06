@@ -27,6 +27,7 @@ public static class ArrangeIds {
     public const string StaticQualifier = "SK0215";
     public const string ArgumentStyle = "SK0216";
     public const string DiscardDeclaration = "SK0217";
+    public const string PropertyPattern = "SK0218";
 
     /// <summary>⚠ A rewrite was reverted because re-binding produced a diagnostic it had not.</summary>
     public const string Reverted = "SK9098";
@@ -76,6 +77,7 @@ public static class ArrangeIds {
             StaticQualifier => "static member qualifier",
             ArgumentStyle => "argument style",
             DiscardDeclaration => "discard declaration",
+            PropertyPattern => "property pattern",
             _ => id
         };
 }

@@ -20,14 +20,18 @@ public sealed record ArrangementFilter(ImmutableHashSet<string> Include, Immutab
     ///     The rules that have an oracle to be measured against.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Four exclusions, and they are not the same kind of thing.
+    ///     The exclusions are not all the same kind of thing.
     ///     <para>
     ///         Three — <see cref="ArrangeIds.NullCheckingPattern" />, <see cref="ArrangeIds.EmptyString" />,
     ///         <see cref="ArrangeIds.RedundantBraces" /> — the oracle will not perform at all, under any
     ///         profile (<c>docs/oracle-cleanup-profile.md</c>).
     ///     </para>
     ///     <para>
-    ///         ⚠ The fourth, <see cref="ArrangeIds.Usings" />, is excluded for a different and more
+    ///         Boolean member property patterns have direct regression coverage; the existing oracle
+    ///         fixtures do not define this new arrangement.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Usings, <see cref="ArrangeIds.Usings" />, is excluded for a different and more
     ///         uncomfortable reason: over <c>corpus/real/</c> the oracle's answer is <em>wrong</em>, and
     ///         predictably so. "Is this using needed" is a question about the references a project has, and
     ///         the oracle's scratch project has none but the shared framework — so cleanupcode deletes
@@ -44,6 +48,7 @@ public sealed record ArrangementFilter(ImmutableHashSet<string> Include, Immutab
         [],
         [
             ArrangeIds.NullCheckingPattern,
+            ArrangeIds.PropertyPattern,
             ArrangeIds.EmptyString,
             ArrangeIds.RedundantBraces,
             ArrangeIds.Usings

@@ -84,7 +84,7 @@ public static class AnalyzerHost {
             )
         );
         foreach (var rule in RuleCatalog.All) {
-            if (!rule.Retired && rule.RequiresSemantics) {
+            if (rule is { Retired: false, RequiresSemantics: true }) {
                 builder.Add(
                     new SkippedRule(
                         rule.Id,

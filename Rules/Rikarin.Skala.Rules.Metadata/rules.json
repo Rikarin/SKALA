@@ -529,6 +529,28 @@
       ]
     },
     {
+      "id": "SK0218",
+      "concept": "arrange-property-pattern",
+      "title": "The boolean member tests can use a property pattern",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": "8.0",
+      "summary": "`skala arrange` combines boolean member checks on the same non-null receiver into a property pattern.",
+      "rationale": "A condition such as `!rule.Retired && rule.RequiresSemantics` describes one object state. A property pattern expresses that state together, while retaining each member name and its required boolean value.",
+      "examples": {
+        "bad": "if (!rule.Retired && rule.RequiresSemantics) { Run(); }",
+        "good": "if (rule is { Retired: false, RequiresSemantics: true }) { Run(); }"
+      },
+      "falsePositives": "The receiver must be a stable local, a non-ref parameter, or this, with non-null flow state for reference types. Only boolean fields and nonvirtual compiler-generated property getters qualify, because pattern matching may reorder member reads. Nullable or dynamic receivers, repeated members, volatile fields, custom getters, expression trees, comments within the condition and formatter-off regions are left alone. The rule requires a semantic model and C# 8 or later.",
+      "configuration": []
+    },
+    {
       "id": "SK1001",
       "concept": "collection-expression",
       "title": "Use a collection expression",

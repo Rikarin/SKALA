@@ -138,6 +138,7 @@ overlapping arrangement rules may contribute to one document rewrite.
 | `SK0215` | Static-member type qualifier | Semantic |
 | `SK0216` | Named versus positional argument | Semantic |
 | `SK0217` | Explicit versus implicit discard declaration | Syntax |
+| `SK0218` | Boolean member tests to a property pattern | Semantic |
 
 ⚠ **ID correction before 2.0.** These rules initially used `SK20nn` for `nn` 01 through 17, which is
 the correctness range and already contains allocated rules. The mapping is mechanical (`SK20nn` →
@@ -3445,8 +3446,8 @@ registry disagree. Regenerate with `skala rules docs`.
 
 | | | |
 |---|---:|---|
-| Rules this document names | **362** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
-| **Shipped** — present in `rules.json` | **326** | **90.8 %** |
+| Rules this document names | **363** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **327** | **90.8 %** |
 | **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, then withdrawn or never built | **3** | the id stays taken for ever (ADR-012) |
 | **Outstanding** — planned, not built, not disposed of | **21** | includes the twelve declared cut with no reason recorded |

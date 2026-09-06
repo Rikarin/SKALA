@@ -2,7 +2,7 @@
 
 A formatter, linter and quality gate for C#, driven by one `.editorconfig`.
 
-Skala formats your code, arranges it, runs 336 analysis rules over a real compilation, and fails
+Skala formats your code, arranges it, runs 337 analysis rules over a real compilation, and fails
 your build or your CI job when the result crosses a line you drew. The command line, your editor,
 CI and any AI agent working in the repository all read the same configuration file, so they agree
 about what the code should look like by construction rather than by convention.
@@ -59,7 +59,7 @@ skala explain skala_wrap_arguments_style   # what an option governs
 | | |
 |---|---|
 | `format` | Spacing, blank lines, braces, indentation, line breaks and wrapping |
-| `arrange` | Body styles, `var`, target-typed `new`, qualifiers, using directives |
+| `arrange` | Body styles, `var`, target-typed `new`, property patterns, qualifiers, using directives |
 | `check` | Run the analyzers over a real compilation, report, and gate |
 | `verify` | `format --check` + `arrange --check` + `check --gate=local` |
 | `fix` | Apply fixes, verify each edit still compiles, re-format |
