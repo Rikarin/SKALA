@@ -42,6 +42,34 @@ public sealed class DocumentBuilderTests {
         Assert.Equal(expected, LayoutWriter.Write(builder.Build(), 80, "    ", "\n").Text);
     }
 
+    [Theory]
+    [InlineData(GroupMode.Break, false, "a,\nb\nc, d")]
+    [InlineData(GroupMode.Preserve, true, "a,\nb\nc, d")]
+    [InlineData(GroupMode.Preserve, false, "a, b c, d")]
+    [InlineData(GroupMode.Auto, false, "a, b c, d")]
+    public void Fill_HonorsNestedGroupsThatCannotFlatten(GroupMode mode, bool preserveBreak, string expected) {
+        var builder = new DocumentBuilder();
+        var outer = builder.NextGroupId();
+        var inner = builder.NextGroupId();
+        builder.DescribeGroup(inner, new GroupFacts(preserveBreak, HidesFlatWidthWhenBroken: true));
+        builder.OpenGroup(GroupMode.Break, outer);
+        builder.Text("a,", new SourceSpan(0, 2));
+        builder.BreakPoint(outer, true, true);
+        builder.OpenConcat();
+        builder.OpenGroup(mode, inner);
+        builder.Text("b", new SourceSpan(3, 1));
+        builder.BreakPoint(inner, true);
+        builder.Text("c", new SourceSpan(5, 1));
+        builder.Close();
+        builder.Close();
+        builder.Text(",", new SourceSpan(6, 1));
+        builder.BreakPoint(outer, true, true);
+        builder.Text("d", new SourceSpan(8, 1));
+        builder.Close();
+
+        Assert.Equal(expected, LayoutWriter.Write(builder.Build(), 80, "    ", "\n").Text);
+    }
+
     [Fact]
     public void Line_KeepsTheSourcesOwnEnding() {
         // ⚠ enforce_line_ending_style = false means mixed endings are preserved, not normalised.

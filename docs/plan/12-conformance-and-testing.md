@@ -1244,6 +1244,33 @@ All **380 scramble and 380 collapse inputs** reproduce byte-for-byte from the ex
 measured input or existing oracle fixture was replaced. `UnformatTests` now checks this equality
 against the committed population, so a future shared-map change cannot silently soften the corpus.
 
+#### Nightly findings, 7–8 September 2026
+
+Runs `34099986455` and `34202658021` passed the corpus and rule-count gates, then found
+idempotency violations at generated seeds `13458345604094946523` and `6636340479617988337`.
+Both reproduced under both symbol sets. Their minimized inputs put switch expressions inside
+tuple conditions; the second formatting pass added a break before a tuple item.
+
+`DocumentBuilder.MeasureSegments` preserved hard lines inside nested groups after #337–#339,
+but splicing a group's children still discarded the group's own unbounded flat width. A switch
+expression can require a break while containing only soft break points. The enclosing fill must
+retain that width even before those soft points have been rendered as newlines. The fix keeps
+the nested group's width while continuing to measure its children for the ordering rule.
+The generated seeds and both minimized inputs are regression tests; document-level cases also
+cover forced breaks, preserved breaks, flat items, and resetting the next fill segment.
+
+ReSharper 2025.2.6 supplied the two new oracle fixtures. On the original 69 pathological files,
+line fidelity improves from 564/600 (94.00%) to 566/601 (94.18%); exact files remain 58/69
+(84.06%). Including the two new difficult inputs gives 578/629 lines (91.89%) and 58/71 exact
+files (81.69%). The pathological baseline is rebased for that larger population only. No existing
+oracle fixture or property gate is changed.
+
+Validation replayed both reported seeds and exercised 5,000 cases from each nightly root seed,
+with arrangement checked every 25 cases: all 10,000 passed. Both nightly fuzzer self-tests caught
+every injected defect. The 21,125-case conformance run had only the old pathological baseline
+failure; all three fidelity checks passed after the population rebase. Rule-count drift remained
+at 726 findings, matching its baseline.
+
 #### CI after the formatting rules
 
 The red Skala and Cross-platform runs after the brace, property-pattern and namespace-qualifier

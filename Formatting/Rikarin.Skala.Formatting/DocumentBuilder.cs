@@ -434,6 +434,13 @@ public sealed class DocumentBuilder {
                 // so splicing it would count both.
                 ref var node = ref nodes[child];
                 if (node.Count > 0 && node.Kind is DocKind.Concat or DocKind.Group or DocKind.Indent or DocKind.Fill) {
+                    // A nested group can require a break using only soft points (for example,
+                    // a switch expression). Splicing its children must not restore a flat form
+                    // the group itself has already ruled out.
+                    if (current >= 0 && node.Kind == DocKind.Group && flatWidth[child] >= Document.Unbounded) {
+                        flat = Document.Unbounded;
+                    }
+
                     Walk(node.Payload, node.Count, depth + (node.Kind == DocKind.Group ? 1 : 0));
                     continue;
                 }

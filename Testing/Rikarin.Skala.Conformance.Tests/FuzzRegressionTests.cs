@@ -6,13 +6,17 @@ namespace Rikarin.Skala.Conformance.Tests;
 
 public sealed class FuzzRegressionTests {
     [Theory]
-    [InlineData("switch", false)]
-    [InlineData("switch", true)]
-    [InlineData("while", false)]
-    [InlineData("while", true)]
-    public void NestedCollections_AreIdempotentUnderTheFuzzerConfiguration(string statement, bool defined) {
-        // Minimized findings #337 and #339. Bare CLI defaults do not reproduce either failure.
-        var path = Path.Combine(Corpus.Root, "pathological", $"nested-collection-in-generated-{statement}.cs");
+    [InlineData("nested-collection-in-generated-switch", false)]
+    [InlineData("nested-collection-in-generated-switch", true)]
+    [InlineData("nested-collection-in-generated-while", false)]
+    [InlineData("nested-collection-in-generated-while", true)]
+    [InlineData("nested-switch-in-generated-tuple-conditional", false)]
+    [InlineData("nested-switch-in-generated-tuple-conditional", true)]
+    [InlineData("nested-switch-in-generated-tuple-condition", false)]
+    [InlineData("nested-switch-in-generated-tuple-condition", true)]
+    public void NestedMultilineItems_AreIdempotentUnderTheFuzzerConfiguration(string fixture, bool defined) {
+        // Minimized nightly findings need the repository configuration, not bare CLI defaults.
+        var path = Path.Combine(Corpus.Root, "pathological", $"{fixture}.cs");
         var source = SourceText.From(File.ReadAllText(path));
         var options = new PhaseOneOptions(Fuzzer.OptionsFor(path));
         IReadOnlyList<string> symbols = defined ? Corpus.PropertySymbols : [];
@@ -33,6 +37,8 @@ public sealed class FuzzRegressionTests {
     [Theory]
     [InlineData(5423343295399047858UL)]
     [InlineData(11149039553341969427UL)]
+    [InlineData(13458345604094946523UL)]
+    [InlineData(6636340479617988337UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
