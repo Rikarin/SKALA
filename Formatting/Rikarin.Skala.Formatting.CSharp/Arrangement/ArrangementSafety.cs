@@ -48,6 +48,7 @@ public static class ArrangementSafety {
         string originalText,
         CancellationToken cancellation = default
     ) {
+        var crash = new Crash(crashRoot, path, originalText, options);
         try {
             return Evaluate(
                 path,
@@ -56,17 +57,18 @@ public static class ArrangementSafety {
                 originalRoot,
                 arranged,
                 beforeModel,
-                crashRoot,
-                originalText,
+                crash,
                 cancellation
             );
         } catch (Exception exception) when (exception is not OperationCanceledException) {
-            var artefact = CrashArtifacts.Write(crashRoot, path, originalText, arranged, new PhaseOneOptions());
+            var message = "not arranged, the safety re-bind threw and could not answer whether the rewrite was "
+                + $"safe: {exception.GetType().Name}: {exception.Message}";
+
+            var artefact = crash.Write(arranged, CrashRefusal.RebindThrew, ArrangeIds.Reverted, message);
             return new(
                 ArrangeIds.Reverted,
                 SkalaSeverity.Error,
-                "not arranged, the safety re-bind threw and could not answer whether the rewrite was "
-                + $"safe: {exception.GetType().Name}: {exception.Message}",
+                message,
                 path,
                 0,
                 artefact is null
@@ -76,6 +78,36 @@ public static class ArrangementSafety {
         }
     }
 
+    /// <summary>
+    ///     Everything a refused rewrite needs to leave behind, carried as one value.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The whole point is that <see cref="Options" /> is the run's, not a fresh struct. Each of the
+    ///     three layers below used to construct <c>new PhaseOneOptions()</c> at the moment it wrote the
+    ///     artefact, so every <c>config.snapshot</c> <c>arrange</c> ever dropped said
+    ///     <c>indent_size = 0</c>, <c>max_line_length = 0</c> and an empty
+    ///     <c>new_line_before_open_brace</c> — values no run can have, in the only record of a failure
+    ///     that writes nothing and lets the run continue.
+    ///     <para>
+    ///         ⚠ <see cref="ArrangementSafety.Check" /> already received the effective
+    ///         <see cref="ArrangementOptions" /> and did not use them: the parameter was dead, which is
+    ///         why nothing pointed at the zeroes. It is now the sole source of both halves of the
+    ///         snapshot, and <see cref="ArrangementOptions.PhaseOne" /> is read out of the same
+    ///         <c>FormattingOptions</c>, so the two cannot describe different runs.
+    ///     </para>
+    /// </remarks>
+    readonly record struct Crash(string? Root, string Path, string OriginalText, ArrangementOptions Options) {
+        public string? Write(string arranged, string layer, string diagnosticId, string message) =>
+            CrashArtifacts.Write(
+                Root,
+                Path,
+                OriginalText,
+                arranged,
+                Options.PhaseOne,
+                new CrashRefusal(layer, diagnosticId, message) { Arrangement = Options }
+            );
+    }
+
     static SkalaDiagnostic? Evaluate(
         string path,
         CSharpCompilation compilation,
@@ -83,8 +115,7 @@ public static class ArrangementSafety {
         SyntaxNode originalRoot,
         string arranged,
         SemanticModel beforeModel,
-        string? crashRoot,
-        string originalText,
+        in Crash crash,
         CancellationToken cancellation
     ) {
         var rewritten = CSharpSyntaxTree.ParseText(
@@ -109,12 +140,15 @@ public static class ArrangementSafety {
         // reject it. What must never appear is an id the document did not have before.
         var appeared = now.Except(before, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         if (appeared.Length > 0) {
-            var artefact = CrashArtifacts.Write(crashRoot, path, originalText, arranged, new PhaseOneOptions());
+            var message =
+                $"not arranged, re-binding the rewritten document produced {appeared.Length.ToString(CultureInfo.InvariantCulture)} diagnostic(s) it did not have before: "
+                + string.Join(", ", appeared.Take(4));
+
+            var artefact = crash.Write(arranged, CrashRefusal.DiagnosticDelta, ArrangeIds.Reverted, message);
             return new(
                 ArrangeIds.Reverted,
                 SkalaSeverity.Error,
-                $"not arranged, re-binding the rewritten document produced {appeared.Length.ToString(CultureInfo.InvariantCulture)} diagnostic(s) it did not have before: "
-                + string.Join(", ", appeared.Take(4)),
+                message,
                 path,
                 0,
                 artefact is null
@@ -129,8 +163,7 @@ public static class ArrangementSafety {
             rewritten,
             beforeModel,
             afterModel,
-            crashRoot,
-            originalText,
+            crash,
             arranged,
             cancellation
         );
@@ -161,8 +194,7 @@ public static class ArrangementSafety {
         SyntaxTree rewritten,
         SemanticModel beforeModel,
         SemanticModel afterModel,
-        string? crashRoot,
-        string originalText,
+        in Crash crash,
         string arranged,
         CancellationToken cancellation
     ) {
@@ -194,11 +226,14 @@ public static class ArrangementSafety {
                 continue;
             }
 
-            var artefact = CrashArtifacts.Write(crashRoot, path, originalText, arranged, new PhaseOneOptions());
+            var message =
+                $"not arranged, '{key.Name}' in {key.Container} bound to {symbol} before the rewrite and to {now} after it";
+
+            var artefact = crash.Write(arranged, CrashRefusal.SymbolIdentity, ArrangeIds.SymbolChanged, message);
             return new(
                 ArrangeIds.SymbolChanged,
                 SkalaSeverity.Error,
-                $"not arranged, '{key.Name}' in {key.Container} bound to {symbol} before the rewrite and to {now} after it",
+                message,
                 path,
                 0,
                 artefact is null
