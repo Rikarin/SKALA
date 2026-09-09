@@ -263,8 +263,14 @@ public static class CSharpFormatter {
 
         if (TokenEquivalence.Compare(text, after, parseOptions, reflowed > 0, options.XmlDoc.SpaceAfterTripleSlash)
             is { } failure) {
+            var index = failure.Index.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+            // ⚠ The first operand carries no hole and is deliberately not interpolated: a `$` with
+            // nothing in it is what SK0231 reports, and this is a plain string concatenation rather
+            // than an interpolated-string-handler argument, so there would be no #342 guard over it.
             var message =
-                $"not written, the formatted output has a different token stream (at token {failure.Index.ToString(System.Globalization.CultureInfo.InvariantCulture)}: '{failure.Before}' became '{failure.After}')";
+                "not written, the formatted output has a different token stream "
+                + $"(at token {index}: '{failure.Before}' became '{failure.After}')";
 
             // ⚠ Named even though this is the only layer `format` has. The crash folder is keyed on a
             // hash of the input alone, so an `arrange` refusal on the same text shares it — and an
