@@ -34,7 +34,7 @@
 <p>Write:</p>
 <pre class="good"><code>if (value is not null) Use(value);</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>Types whose equality operator could change the meaning are left alone.</p>
+<p>Types whose equality operator could change the meaning are left alone, and so is any check inside a lambda converted to <code>Expression&lt;TDelegate&gt;</code> — an expression tree may not contain a pattern at all, whatever the operator resolves to.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><a href="../options/patterns.html#skala_null_checking_pattern_style"><code>skala_null_checking_pattern_style</code></a></li>

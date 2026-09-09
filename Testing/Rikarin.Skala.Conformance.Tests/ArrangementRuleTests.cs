@@ -215,6 +215,107 @@ public sealed class ArrangementRuleTests {
         Assert.Contains("s is not null", output, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     The preamble every expression-tree fixture shares: the NSubstitute shape from #347, where the
+    ///     conversion to <c>Expression&lt;TDelegate&gt;</c> comes from a method parameter rather than from
+    ///     a variable's declared type.
+    /// </summary>
+    const string ExpressionTreePreamble = """
+                                          namespace P;
+                                          using System;
+                                          using System.Linq.Expressions;
+                                          public sealed class Row { public string? Banner; public string? Icon; }
+                                          public static class Arg {
+                                              public static T Is<T>(Expression<Predicate<T>> predicate) => default!;
+                                          }
+                                          """;
+
+    /// <summary>⚠ The positive control. An ordinary delegate lambda is not an expression tree.</summary>
+    [Fact]
+    public void IsNotNull_StillRewritesInsideAnOrdinaryDelegateLambda() {
+        var output = Arrange(
+            $$"""
+              {{ExpressionTreePreamble}}
+              public class C {
+                  public Func<Row, bool> M() { return r => r.Banner == null; }
+              }
+              """,
+            only: ArrangeIds.NullCheckingPattern
+        );
+
+        Assert.Contains("r.Banner is null", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #347. An expression tree may not contain an <c>is</c> pattern (CS8122), whatever the
+    ///     operand's <c>operator ==</c> resolves to — here it is <c>string</c>'s, which
+    ///     <see cref="IsNotNull_RewritesForString" /> pins as safe everywhere else. So the operator check
+    ///     passes and only the syntactic-context check can refuse this.
+    /// </summary>
+    [Theory]
+    [InlineData("public Expression<Func<Row, bool>> M() { return r => r.Banner == null; }")]
+    [InlineData("public Expression<Predicate<Row>> M() { return r => r.Banner == null; }")]
+    [InlineData("public Row M() { return Arg.Is<Row>(x => x.Icon == \"d\" && x.Banner == null); }")]
+    public void IsNotNull_RefusesInsideAnExpressionTree(string member) {
+        var result = Attempt(
+            $$"""
+              {{ExpressionTreePreamble}}
+              public class C {
+                  {{member}}
+              }
+              """,
+            only: ArrangeIds.NullCheckingPattern
+        );
+
+        Assert.DoesNotContain("is null", Declined(result), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ Measured against the compiler, not assumed: the inner lambda's own <c>ConvertedType</c> here
+    ///     is <c>Func&lt;Row, bool&gt;</c> — not an <c>Expression</c> at all — and <c>csc</c> still reports
+    ///     CS8122 on the rewrite. Checking only the *nearest* enclosing lambda therefore lets this through,
+    ///     which is why the precondition walks every enclosing lambda instead of stopping at the first.
+    /// </summary>
+    [Fact]
+    public void IsNotNull_RefusesInALambdaNestedInsideAnExpressionTree() {
+        var result = Attempt(
+            $$"""
+              {{ExpressionTreePreamble}}
+              public class C {
+                  static bool Apply(Row row, Func<Row, bool> predicate) => predicate(row);
+                  public Expression<Func<Row, bool>> M() { return r => Apply(r, x => x.Banner == null); }
+              }
+              """,
+            only: ArrangeIds.NullCheckingPattern
+        );
+
+        Assert.DoesNotContain("is null", Declined(result), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The cost #347 is actually about, and the reason this is not merely a missed rewrite. The
+    ///     safety net is all-or-nothing per file: one illegal rewrite sends the whole file back, so the
+    ///     legal null check in the same file is discarded too and the file is permanently unarrangeable,
+    ///     re-dropping a crash artefact on every run. Refusing at layer 1 is what keeps the other rewrite.
+    /// </summary>
+    [Fact]
+    public void IsNotNull_KeepsTheLegalRewriteInAFileThatAlsoHoldsAnExpressionTree() {
+        var result = Attempt(
+            $$"""
+              {{ExpressionTreePreamble}}
+              public class C {
+                  public Expression<Predicate<Row>> Tree() { return r => r.Banner == null; }
+                  public bool Plain(Row? r) { return r != null; }
+              }
+              """,
+            only: ArrangeIds.NullCheckingPattern
+        );
+
+        var output = Declined(result);
+        Assert.Contains("r is not null", output, StringComparison.Ordinal);
+        Assert.Contains("r.Banner == null", output, StringComparison.Ordinal);
+    }
+
     const string EmptyStringProbe = """
                                     namespace P;
                                     public class C {

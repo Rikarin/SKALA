@@ -25,7 +25,7 @@ public sealed class PropertyPatternRule : ArrangementRule {
                         || t.IsKind(SyntaxKind.MultiLineCommentTrivia)
                     )
                 || node.Ancestors().Any(static ancestor => ancestor is QueryExpressionSyntax)
-                || IsExpressionTree(node)) {
+                || ExpressionTreeContext.Contains(model, node)) {
                 return base.VisitBinaryExpression(node);
             }
 
@@ -167,14 +167,6 @@ public sealed class PropertyPatternRule : ArrangementRule {
                         == "System.Runtime.CompilerServices.CompilerGeneratedAttribute"
                     );
         }
-
-        bool IsExpressionTree(SyntaxNode node) =>
-            node.Ancestors()
-                .OfType<AnonymousFunctionExpressionSyntax>()
-                .Any(lambda => model.GetTypeInfo(lambda).ConvertedType is INamedTypeSymbol type
-                    && type.OriginalDefinition.Name == "Expression"
-                    && type.ContainingNamespace.ToDisplayString() == "System.Linq.Expressions"
-                );
 
         static ExpressionSyntax Unwrap(ExpressionSyntax expression) {
             while (expression is ParenthesizedExpressionSyntax parentheses) {

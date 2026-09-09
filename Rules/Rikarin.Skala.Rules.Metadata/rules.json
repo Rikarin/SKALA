@@ -217,7 +217,7 @@
         "bad": "if (value != null) Use(value);",
         "good": "if (value is not null) Use(value);"
       },
-      "falsePositives": "Types whose equality operator could change the meaning are left alone.",
+      "falsePositives": "Types whose equality operator could change the meaning are left alone, and so is any check inside a lambda converted to `Expression<TDelegate>` — an expression tree may not contain a pattern at all, whatever the operator resolves to.",
       "configuration": [
         "skala_null_checking_pattern_style"
       ]
