@@ -33,6 +33,16 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///         Skala checks for a user-defined <c>operator ==</c> on the operand type and skips the rewrite when
 ///         one exists, taking the safe side and reporting the divergence in <c>skala config explain</c>.
 ///     </para>
+///     <para>
+///         ⚠ <b>Third, and the operator check does not imply it (#347):</b> inside a lambda converted to
+///         <c>Expression&lt;TDelegate&gt;</c> the pattern form is not expressible at all — CS8122 —
+///         whatever <c>==</c> resolves to. The reported case is NSubstitute's
+///         <c>Arg.Is&lt;T&gt;(Expression&lt;Predicate&lt;T&gt;&gt;)</c> over a <c>string?</c> member,
+///         whose operator is precisely the one the check above deliberately allows. So this is a second,
+///         independent precondition about *where* the expression sits rather than what it binds to, and
+///         it lives in <see cref="ExpressionTreeContext" /> because every rule that introduces a pattern,
+///         a <c>switch</c> expression, a deconstruction, a <c>??=</c> or an out-var has the same hole.
+///     </para>
 /// </remarks>
 public sealed class NullCheckingPatternRule : ArrangementRule {
     public override string Id => ArrangeIds.NullCheckingPattern;
@@ -91,7 +101,13 @@ public sealed class NullCheckingPatternRule : ArrangementRule {
                     ? (node.Right, visited.Right)
                     : (null, null);
 
-            if (operand is null || visitedOperand is null || !IsSafe(operand)) {
+            // ⚠ The context check is asked on `node`, the *original* tree. `visited` is detached — a
+            // rewritten node has no parent chain to walk and no place in the model the semantics came
+            // from — so asking it would walk nothing and answer "not in an expression tree" every time.
+            if (operand is null
+                || visitedOperand is null
+                || !IsSafe(operand)
+                || ExpressionTreeContext.Contains(model, node)) {
                 return visited;
             }
 
