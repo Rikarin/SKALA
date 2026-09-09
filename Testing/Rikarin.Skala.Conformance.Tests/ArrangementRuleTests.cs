@@ -289,6 +289,147 @@ public sealed class ArrangementRuleTests {
         Assert.Equal(1, CountBareBlocks(output));
     }
 
+    /// <summary>
+    ///     ⚠ #341. The three statement kinds the rule refused were the declaration <em>statements</em>,
+    ///     and every one of these introduces a local without being any of them.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The test above is not the control it looks like. It pins <c>int scoped = a;</c>, a
+    ///     <c>LocalDeclarationStatementSyntax</c>, and stayed green through the entire life of the bug —
+    ///     deleting <c>LocalDeclarationStatementSyntax</c> from the predicate turns it red, which is
+    ///     exactly why nobody looked further. The forms below are an <c>ExpressionStatementSyntax</c>
+    ///     twice and an <c>IfStatementSyntax</c> once, so no kind test reaches them.
+    ///     <para>
+    ///         ⚠ These assert on <see cref="Declined" /> rather than on the text, and the distinction is
+    ///         the whole point of the issue. The re-bind <em>does</em> catch this and reverts, so a test
+    ///         reading only the output was green while the bug was live. What is broken is
+    ///         <c>--arrange=syntactic</c>, which has no compilation to re-bind against: measured on the
+    ///         issue's probe before the fix, <c>skala format --arrange=syntactic</c> wrote the file and
+    ///         the result drew four <c>CS0128</c> and one <c>CS0165</c>.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData(
+        "deconstruction",
+        """
+        static (int, int) Values() => (1, 2);
+
+        public void M() {
+            {
+                var (a, b) = Values();
+                System.Console.WriteLine(a + b);
+            }
+            {
+                var (a, b) = Values();
+                System.Console.WriteLine(a - b);
+            }
+        }
+        """
+    )]
+    [InlineData(
+        "out var",
+        """
+        public void M(string s) {
+            {
+                int.TryParse(s, out var n);
+                System.Console.WriteLine(n);
+            }
+            {
+                int.TryParse(s, out var n);
+                System.Console.WriteLine(-n);
+            }
+        }
+        """
+    )]
+    [InlineData(
+        "is-pattern designation",
+        """
+        public void M(object o) {
+            {
+                if (o is string s) {
+                    System.Console.WriteLine(s);
+                }
+            }
+            {
+                if (o is string s) {
+                    System.Console.WriteLine(s.Length);
+                }
+            }
+        }
+        """
+    )]
+    public void RedundantBraces_AreKeptWhenTheDeclarationIsAnExpression(string form, string body) {
+        var source = $$"""
+                       namespace P;
+
+                       public class C {
+                       {{body}}
+                       }
+                       """;
+
+        var arranged = Declined(Attempt(source, only: ArrangeIds.RedundantBraces));
+
+        // Both pairs survive: lifting either one collides with the other's names in the method body.
+        Assert.Equal(2, CountBareBlocks(arranged));
+        Assert.Equal(source, arranged);
+
+        // `form` names the case in the runner's output; asserting on it keeps xUnit1026 quiet.
+        Assert.NotEmpty(form);
+    }
+
+    /// <summary>
+    ///     The other side of #341: a designation the enclosing block provably cannot see still lifts.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This is what the issue's proposed <c>statement.DescendantNodes()</c> predicate would have
+    ///     cost, and it is why the walk stops at a <c>BlockSyntax</c> and at an
+    ///     <c>AnonymousFunctionExpressionSyntax</c> instead. Both are declaration spaces in every C#
+    ///     version, so skipping them asserts nothing that could later stop being true; every other
+    ///     scope-introducing construct is deliberately *not* skipped and over-rejects.
+    ///     <para>
+    ///         ⚠ The nested-block case is the one worth reading twice. The outer braces go and the inner
+    ///         braces stay — <c>n</c> ends one level shallower and still cannot reach the method body,
+    ///         which is precisely the difference between widening a scope and moving one.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void RedundantBraces_AreStillRemovedWhenTheDesignationIsScopedDeeper() {
+        var arranged = Declined(
+            Attempt(
+                """
+                namespace P;
+
+                public class C {
+                    public void Lambda(System.Collections.Generic.List<string> xs) {
+                        {
+                            xs.ForEach(x => {
+                                if (x is { Length: > 0 } text) {
+                                    System.Console.WriteLine(text);
+                                }
+                            });
+                        }
+                    }
+
+                    public void Nested(string s) {
+                        {
+                            {
+                                int.TryParse(s, out var n);
+                                System.Console.WriteLine(n);
+                            }
+                        }
+                    }
+                }
+                """,
+                only: ArrangeIds.RedundantBraces
+            )
+        );
+
+        // Three bare blocks in, one out: the lambda's holder and both of `Nested`'s outer braces go,
+        // and the block actually scoping `n` stays.
+        Assert.Equal(1, CountBareBlocks(arranged));
+        Assert.Contains("out var n", arranged, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Parentheses_AreRemovedByDefault_AndOnlyWherePrecedenceAllows() {
         // ⚠ This test asserted the opposite until the gate was lifted. SK-DIV-0014 gated parenthesis

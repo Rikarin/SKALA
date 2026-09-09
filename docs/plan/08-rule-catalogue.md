@@ -3140,9 +3140,19 @@ is a residue the arrangement option does not reach. It reaches it.
 `Formatting/Rikarin.Skala.Formatting.CSharp/Arrangement/RedundancyRules.cs` walks the statements of
 every block and lifts any statement that is itself a `BlockSyntax` — a free-standing `{ … }` nested in
 a method body is exactly that shape, and `skala arrange --check` over one reports `SK0208 redundant
-braces` and would remove it. What `SK0208` declines to lift is a block holding a local declaration, a
-local function, a label, or a preprocessor directive, because lifting those widens a scope or moves a
-directive. ⚠ **That residue is the wrong half to build a rule on**: a block that scopes a declaration
+braces` and would remove it. What `SK0208` declines to lift is a block that introduces a name into the
+scope the braces close — a local declaration, a local function, a label, or a declaration *expression*
+— or one holding a preprocessor directive, because lifting those widens a scope or moves a directive.
+⚠ **This sentence read "a local declaration, a local function, a label" and named the exclusion list
+rather than the property, and [#341](https://github.com/Rikarin/SKALA/issues/341) is what that cost.**
+Those three are the declaration *statements*; `var (a, b) = M();` and `M(out var n);` are
+`ExpressionStatementSyntax` and `if (o is string s)` is an `IfStatementSyntax`, so all three passed the
+kind test and were lifted. Under `--arrange=syntactic` there is no compilation to re-bind against, so
+`SK9098` is not there to catch it: measured on the issue's probe, `skala format --arrange=syntactic`
+wrote the file and the result drew four `CS0128` and one `CS0165`. The predicate is now the property,
+via a walk that stops at a `BlockSyntax` and at an `AnonymousFunctionExpressionSyntax` — the two
+constructs that are declaration spaces in every C# version — and over-rejects everywhere else.
+⚠ **That residue is the wrong half to build a rule on**: a block that scopes a declaration
 is a block that adds something besides nesting, which is the one case the proposed rule's own title
 excludes. A new `SK7xxx` rule here would either duplicate `SK0208` or report precisely the blocks that
 are not redundant, so it is not built and the number stays free. ⚠ Note for whoever revisits this:
@@ -3151,6 +3161,15 @@ are not redundant, so it is not built and the number stays free. ⚠ Note for wh
 `❌ SPURIOUS`, "Skala moved and the oracle did not", so the tier is about fidelity to `jb cleanupcode`
 rather than about whether the shape is reached. It is reached, which is all this refutation needs; the
 divergence against the oracle is a separate question and is not disturbed here.
+⚠ **[#341](https://github.com/Rikarin/SKALA/issues/341) guessed that "at least some of that
+spuriousness is this bug, not a style difference from `jb cleanupcode`", and that is refuted — the
+sweep row cannot move.** The row is measured on one fixture,
+`constructs/arrangement/redundancy/braces-redundant.cs`, and that file contains no declaration
+expression of any kind: no deconstruction, no `out var`, no pattern designation. The oracle emits the
+same hash `eb1d1c0c` at `true` and at `false` — it removes no braces under either value, and its only
+edit to the fixture is `int scoped` ⇒ `var scoped` — so the whole of the spuriousness is SK-DIV-0013,
+the oracle performing no brace removal at all. The #341 fix changes Skala's behaviour only on inputs
+this fixture does not contain, and the corpus expectations are byte-identical across it.
 **`SK7100` and `SK7101` sit either side of `SK7010`, and each is a different answer to the same
 objection.** `SK7010` asks the public surface for documentation; `SK7101` is that predicate with
 `IsPublicApi` negated, so the two partition one population and no declaration can be reported by both

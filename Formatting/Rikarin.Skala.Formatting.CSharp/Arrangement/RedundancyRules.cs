@@ -260,6 +260,10 @@ public sealed class RedundantBracesRule : ArrangementRule {
                     or LabeledStatementSyntax) {
                     return false;
                 }
+
+                if (DeclaresIntoEnclosingScope(statement)) {
+                    return false;
+                }
             }
 
             // ⚠ A directive inside the braces may be what the braces are there for; a `#if` that
@@ -271,6 +275,65 @@ public sealed class RedundantBracesRule : ArrangementRule {
             }
 
             return true;
+        }
+
+        /// <summary>
+        ///     Whether a statement introduces a name whose scope is the block holding it — the property
+        ///     the three statement kinds above are only the <em>statement</em> half of.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ #341. <c>var (a, b) = M();</c> and <c>M(out var n);</c> are
+        ///     <c>ExpressionStatementSyntax</c>, and <c>if (o is string s)</c> is an
+        ///     <c>IfStatementSyntax</c>; none of the three is a <c>LocalDeclarationStatementSyntax</c>, so
+        ///     the kind list let all of them through and the block was lifted with its declarations. Under
+        ///     <c>--arrange=syntactic</c> there is no compilation to re-bind against, so <c>SK9098</c> is
+        ///     not there to catch it and the <c>CS0128</c> reaches disk. Measured on the issue's probe:
+        ///     four <c>CS0128</c> and one <c>CS0165</c>, in a file Skala had just written.
+        ///     <para>
+        ///         ⚠ The walk stops at exactly two constructs, and stopping anywhere else would be a guess.
+        ///         A <see cref="BlockSyntax" /> and the body of an
+        ///         <see cref="AnonymousFunctionExpressionSyntax" /> are unconditionally declaration spaces:
+        ///         nothing declared inside either can be seen outside it, in any C# version. Every other
+        ///         scope-introducing construct — a switch section, a <c>catch</c> filter, the embedded
+        ///         statement of an <c>if</c> — is *not* descended past, so a designation inside one is
+        ///         reported as leaking when it does not. That over-rejects, on purpose: the cost is a
+        ///         block left in place, and the cost of the opposite error is a file that no longer
+        ///         compiles. <c>foreach (var (a, b) in xs) { … }</c> is the shape that pays it — the
+        ///         designation is a child of the <c>foreach</c> itself, not of its body, so skipping the
+        ///         body does not reach it and the enclosing block is refused.
+        ///     </para>
+        ///     <para>
+        ///         ⚠ The issue proposed <c>statement.DescendantNodes()</c>, which over-rejects further —
+        ///         it refuses a block whose only designation is inside a lambda, where the name provably
+        ///         cannot escape. Two exclusions buy that case back without asserting anything about C#
+        ///         that is not flatly true.
+        ///     </para>
+        /// </remarks>
+        static bool DeclaresIntoEnclosingScope(SyntaxNode statement) {
+            // A nested block scopes whatever it declares, so the statement itself being one settles it.
+            if (statement is BlockSyntax) {
+                return false;
+            }
+
+            var pending = new Stack<SyntaxNode>();
+            pending.Push(statement);
+
+            while (pending.Count > 0) {
+                foreach (var child in pending.Pop().ChildNodes()) {
+                    // `_` and `out _` name nothing; a parenthesized designation holds the singles.
+                    if (child is SingleVariableDesignationSyntax) {
+                        return true;
+                    }
+
+                    if (child is BlockSyntax or AnonymousFunctionExpressionSyntax) {
+                        continue;
+                    }
+
+                    pending.Push(child);
+                }
+            }
+
+            return false;
         }
     }
 }
