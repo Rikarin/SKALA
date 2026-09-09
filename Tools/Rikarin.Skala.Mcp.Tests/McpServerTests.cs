@@ -208,6 +208,39 @@ public sealed class McpServerTests {
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
+    /// <summary>
+    ///     ⚠ #345: <c>skala_verify</c> manufactured <c>OK  nothing to do.</c> whenever <c>verify</c>
+    ///     printed nothing, <b>without looking at the exit code</b> — so the one string the contract
+    ///     reserves for exit 0 was the fallback for every silent failure, and `plain` on an
+    ///     arrangement <c>SK9098</c> is exactly zero bytes with exit 5.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It matters more here than at the CLI, because a model reading a tool result has no exit
+    ///     code to check. This string is the whole verdict it gets.
+    /// </remarks>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(130)]
+    public void SkalaVerify_NeverReportsACleanTreeOnANonZeroExit(int exitCode) {
+        var verdict = McpServerInspection.VerifyVerdict(exitCode, string.Empty);
+
+        Assert.DoesNotContain("OK", verdict, StringComparison.Ordinal);
+        Assert.DoesNotContain("nothing to do", verdict, StringComparison.Ordinal);
+        Assert.Contains(
+            exitCode.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            verdict,
+            StringComparison.Ordinal
+        );
+    }
+
+    /// <summary>⚠ And exit 0 with nothing printed still says so — the contract is unchanged.</summary>
+    [Fact]
+    public void SkalaVerify_StillReportsACleanTreeOnExitZero() =>
+        Assert.Equal("OK  nothing to do.\n", McpServerInspection.VerifyVerdict(0, string.Empty));
+
     [Fact]
     public void EveryTool_CarriesADescriptionTheModelCanAct() {
         foreach (var tool in Tools()) {

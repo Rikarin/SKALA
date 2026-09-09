@@ -130,7 +130,23 @@ public static class VerifyCommand {
             cancellation
         );
 
-        if (result.ExitCode is ExitCodes.LoadFailure or ExitCodes.InternalError) {
+        return Verdict(request.Format, result, report);
+    }
+
+    /// <summary>
+    ///     <c>verify</c>'s verdict over <c>check</c>'s result — the whole of what this command adds.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Split out so it can be driven with a report built by hand. #345's failure is only
+    ///     reachable end-to-end through an arrangement rule that is itself a bug, which makes an
+    ///     end-to-end fixture for it a hostage to whoever fixes that rule; this is the same code on the
+    ///     same path, and it stays forceable after every such bug is gone.
+    /// </remarks>
+    internal static CommandResult Verdict(ReportFormat format, CommandResult result, RunReport report) {
+        // ⚠ A load failure has no verdict to be partial about: no compilation was built, so the report
+        // is empty and every finding that would have existed is absent rather than clean. `CheckCommand`
+        // has already written the reason and the load diagnostics into the output.
+        if (result.ExitCode is ExitCodes.LoadFailure) {
             return result;
         }
 
@@ -143,8 +159,52 @@ public static class VerifyCommand {
         // Reading `Reportable` here would have accepted the options and then ignored them.
         var clean = report.New.All(static finding => finding.Severity == SkalaSeverity.Hidden);
 
+        // ⚠ #345 asked whether one file's `SK9098` should take the whole run down, and the answer
+        // taken here is: <b>it takes the exit code down and nothing else</b>.
+        //
+        // The exit code stays `InternalError`. Downgrading it to `GateFailed` would make a Skala bug
+        // indistinguishable from a repository's own lint debt — the one distinction an exit code has
+        // to preserve — and downgrading it to `Ok` would break the contract the whole command exists
+        // for. What was actually wrong is that the exit code was the *only* thing that said so: the
+        // renderers dropped the diagnostics, so `agent` printed `OK  nothing to do.` and `plain`
+        // printed nothing at all on a run that exited 5. `Renderer.Blocking` fixes that for every
+        // format, and the verdict below says what the rest of the tree looked like — because the
+        // measured cost in #345 was not the exit code, it was that 752 files were arranged and
+        // checked and nobody could tell.
+        if (result.ExitCode is ExitCodes.InternalError) {
+            return new(result.ExitCode, result.Output + PartialVerdict(format, report, clean));
+        }
+
         return new(clean ? ExitCodes.Ok : ExitCodes.GateFailed, result.Output);
     }
+
+    /// <summary>
+    ///     The one line that says what the run <em>did</em> cover, appended after a partial run.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Text formats only. `json` and `junit` are parsed, and a prose line appended to either is
+    ///     a corrupt document rather than a clearer one; both already carry the same facts
+    ///     structurally — the notification and its location, and `executionSuccessful: false`.
+    /// </remarks>
+    static string PartialVerdict(ReportFormat format, RunReport report, bool clean) {
+        if (format is ReportFormat.Json or ReportFormat.JUnit) {
+            return string.Empty;
+        }
+
+        var blocked = Renderer.BlockedFiles(report).Count();
+        var checkedFiles = Math.Max(0, report.FileCount - blocked);
+        return "PARTIAL  "
+            + Count(checkedFiles)
+            + (checkedFiles == 1 ? " file was checked and " : " files were checked and ")
+            + (clean ? "had no work outstanding" : "carry the work listed above")
+            + "; "
+            + Count(blocked)
+            + " could not be checked. Exit "
+            + Count(ExitCodes.InternalError)
+            + " is that Skala bug, not a gate failure.\n";
+    }
+
+    static string Count(int value) => value.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     static LoadMode ResolveMode(VerifyRequest request) {
         if (request.Mode is { } explicitMode) {

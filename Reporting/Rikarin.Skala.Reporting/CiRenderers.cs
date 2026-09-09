@@ -139,6 +139,25 @@ public static class MarkdownRenderer {
     public static string Render(RunReport report, bool includeHints) {
         var builder = new StringBuilder();
         builder.Append("## Skala\n\n");
+
+        // ⚠ #345, above the totals, because the totals are a count of what was covered and this says
+        // the coverage is incomplete. A PR comment that leads with "0 findings" over a run that could
+        // not read part of the diff is the same false clean verdict `agent` and `plain` were giving.
+        foreach (var diagnostic in Renderer.Blocking(report)) {
+            builder.Append("> **INCOMPLETE ")
+                .Append(diagnostic.Id)
+                .Append("** `")
+                .Append(Renderer.Relative(report, diagnostic))
+                .Append("` — ")
+                .Append(Escape(diagnostic.Message));
+
+            if (Renderer.BoundedDetail(report, diagnostic) is { } detail) {
+                builder.Append(' ').Append(Escape(detail));
+            }
+
+            builder.Append("\n\n");
+        }
+
         builder.Append(ReportTotals.Render(report).Replace("  ·  ", " · ", StringComparison.Ordinal)).Append("\n\n");
 
         var metrics = report.Metrics.Render(report.GateThresholds.IsEmpty ? null : report.GateThresholds);
@@ -219,6 +238,13 @@ public static class JUnitRenderer {
     public static string Render(RunReport report, bool includeHints) {
         var findings = Renderer.Ordered(report, includeHints).ToList();
 
+        // ⚠ #345. A CI system whose only report surface is a test result reads these counts and
+        // nothing else, so a run that could not check part of the tree has to arrive as failing
+        // cases — otherwise the one surface CI looks at is green over an incomplete run, which is
+        // the `plain`-prints-zero-bytes defect wearing a schema.
+        var blocking = Renderer.Blocking(report).ToList();
+        var total = findings.Count + blocking.Count;
+
         // ⚠ `NewLineChars` is not decoration. It defaults to `Environment.NewLine`, so an indenting
         // `XmlWriter` emits CRLF on Windows and LF everywhere else — the same defect `Lines` in
         // Renderers.cs was written to kill, arriving through the one renderer that builds no
@@ -229,12 +255,41 @@ public static class JUnitRenderer {
         using (var writer = XmlWriter.Create(stream, settings)) {
             writer.WriteStartElement("testsuites");
             writer.WriteAttributeString("name", "Skala");
-            writer.WriteAttributeString("tests", findings.Count.ToString(CultureInfo.InvariantCulture));
-            writer.WriteAttributeString("failures", findings.Count.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString("tests", total.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString("failures", total.ToString(CultureInfo.InvariantCulture));
             writer.WriteAttributeString(
                 "time",
                 report.Duration.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture)
             );
+
+            if (blocking.Count > 0) {
+                writer.WriteStartElement("testsuite");
+                writer.WriteAttributeString("name", "skala.incomplete");
+                writer.WriteAttributeString("tests", blocking.Count.ToString(CultureInfo.InvariantCulture));
+                writer.WriteAttributeString("failures", blocking.Count.ToString(CultureInfo.InvariantCulture));
+
+                foreach (var diagnostic in blocking) {
+                    var where = Renderer.Relative(report, diagnostic);
+                    writer.WriteStartElement("testcase");
+                    writer.WriteAttributeString("classname", "skala.incomplete");
+                    writer.WriteAttributeString("name", diagnostic.Id + " " + where);
+                    writer.WriteStartElement("failure");
+                    writer.WriteAttributeString("type", "error");
+                    writer.WriteAttributeString("message", diagnostic.Message);
+                    writer.WriteString(
+                        where
+                        + ": "
+                        + diagnostic.Id
+                        + ": "
+                        + diagnostic.Message
+                        + (diagnostic.Detail is { Length: > 0 } detail ? " " + detail : string.Empty)
+                    );
+                    writer.WriteEndElement();
+                    writer.WriteEndElement();
+                }
+
+                writer.WriteEndElement();
+            }
 
             foreach (var group in findings.GroupBy(static finding => finding.RuleId, StringComparer.Ordinal)
                          .OrderBy(static group => group.Key, StringComparer.Ordinal)) {

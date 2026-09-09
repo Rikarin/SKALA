@@ -13,6 +13,38 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Fixed — no format prints a clean verdict on a run that could not finish (#345)
+
+`skala verify` exited 5 on an arrangement `SK9098` and printed `OK  nothing to do.` — the exact
+string its contract reserves for exit 0. Measured on the issue's reproduction: `agent` 19 bytes of
+that sentence, `plain` **zero bytes**, `json` 542 KB, all three exit 5. On a ~750-file repository
+this stood for weeks and was found by noticing `.skala/crash/` on disk.
+
+⚠ The cause was not the exit code, which was always right. `Plain` and `AgentRenderer` never read
+`RunReport.Diagnostics` at all, while `Terminal` and `Github` always had — so the half of the report
+saying the other half is incomplete was dropped by exactly the two formats a person and an agent
+read. `Renderer.Blocking` now feeds all seven, and the agent format leads with it.
+
+⚠ **The crash-reproduction path was printed by no surface, the SARIF included.** It lives in
+`SkalaDiagnostic.Detail`, which every renderer discarded and `SarifWriter` never serialised. The
+SARIF notification also carried no location, so the failing file's name appeared **zero times** in
+that 542 KB document — and the invocation said `"executionSuccessful": true`, because the field read
+`!report.Partial` and `Partial` is set only by a cancelled or failed *analyzer*.
+
+⚠ `skala_verify` over MCP returned `OK  nothing to do.` for any empty output **without looking at the
+exit code**, which is the surface the contract exists for: a model reading a tool result has no exit
+code to check.
+
+`junit` counted only findings, so an incomplete run arrived as a green suite; `markdown` led a PR
+comment with the totals; `github` annotated tool diagnostics with no `file=`. All now carry it. The
+agent format's truncation pointer said `skala check --format=json`, and `skala check` does not run
+the arrangement stage — it is now `skala verify --format=json`.
+
+**Exit codes are unchanged.** A partial run stays `5`, never `1`: a Skala bug and a repository's own
+lint debt are the one pair an exit code has to keep apart. What is new is that `verify` says what the
+rest of the tree looked like — `PARTIAL  753 files were checked and had no work outstanding; 1 could
+not be checked. Exit 5 is that Skala bug, not a gate failure.`
+
 ### Added — five more correctness analyzers
 
 `SK2002` reports discarded pure results; `SK2004` reports self-typed `IEquatable<T>` contracts with

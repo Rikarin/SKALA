@@ -117,8 +117,126 @@ public static class Renderer {
             .ThenBy(static finding => finding.RuleId, StringComparer.Ordinal)
             .ThenBy(static finding => finding.Message, StringComparer.Ordinal);
 
+    /// <summary>
+    ///     The run's own error-severity diagnostics — the ones that mean
+    ///     <b>
+    ///         this run did not cover
+    ///         what it was asked to cover
+    ///     </b>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #345. A diagnostic is not a finding: a finding is something in the code, and one of these
+    ///     is Skala failing. They are what <c>ExitCodes.InternalError</c> is made of — <c>SK9098</c> and
+    ///     <c>SK9096</c> (an arrangement the safety layer reverted), <c>SK9099</c> (the formatter's
+    ///     output was not token-equivalent) and <c>SK9015</c> (a file could not be read) — and until
+    ///     #345 only <see cref="Terminal" /> and <see cref="Github" /> printed them at all. <c>plain</c>
+    ///     rendered <b>zero bytes</b> and <c>agent</c> rendered <c>OK  nothing to do.</c>, which is the
+    ///     exact string <c>verify</c>'s contract reserves for exit 0, on a run that exited 5.
+    ///     <para>
+    ///         ⚠ This is not a second gate (docs/plan/09 forbids that). It decides nothing: the exit code
+    ///         was already decided by <c>CheckCommand</c> from these same diagnostics, and this only
+    ///         reads them. What it fixes is that a renderer was silently dropping the half of the report
+    ///         that says the other half is incomplete.
+    ///     </para>
+    /// </remarks>
+    public static IEnumerable<SkalaDiagnostic> Blocking(RunReport report) =>
+        report.Diagnostics.Where(static diagnostic => diagnostic.Severity >= SkalaSeverity.Error);
+
+    /// <summary>
+    ///     The files a <see cref="Blocking" /> diagnostic took out of the run.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The repository root is excluded: the summary diagnostic <c>ArrangementFindings</c> adds
+    ///     after a per-file failure carries the root as its location, and counting it would report one
+    ///     more unchecked file than there are.
+    /// </remarks>
+    public static IEnumerable<string> BlockedFiles(RunReport report) =>
+        Blocking(report)
+            .Select(static diagnostic => diagnostic.File)
+            .Where(file => file is { Length: > 0 }
+                && !string.Equals(
+                    file!.TrimEnd(Path.DirectorySeparatorChar),
+                    report.RepositoryRoot.TrimEnd(Path.DirectorySeparatorChar),
+                    StringComparison.Ordinal
+                )
+            )
+            .Select(static file => file!)
+            .Distinct(StringComparer.Ordinal);
+
+    /// <summary>
+    ///     A diagnostic's detail, flattened to one line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="SkalaDiagnostic.Detail" /> is where the crash-reproduction path lives — "A
+    ///     reproduction is in …/.skala/crash/&lt;hash&gt;. This is a Skala bug; the file was left
+    ///     untouched." — and before #345 <b>no surface printed it</b>, the SARIF included. Flattened
+    ///     because <c>plain</c> is one line per diagnostic by contract and <c>agent</c> is budgeted;
+    ///     the one multi-line detail in the tree is the arrange summary's captured sub-output, whose
+    ///     per-file lines are already rendered above it as their own diagnostics.
+    /// </remarks>
+    internal static string? OneLine(string? detail) {
+        if (detail is not { Length: > 0 }) {
+            return null;
+        }
+
+        var line = detail.AsSpan();
+        var end = line.IndexOfAny('\r', '\n');
+        if (end >= 0) {
+            line = line[..end];
+        }
+
+        var text = line.Trim().ToString();
+        return text.Length > 0 ? text : null;
+    }
+
+    /// <summary>Where a tool diagnostic happened, as every surface displays a path.</summary>
+    internal static string Relative(RunReport report, SkalaDiagnostic diagnostic) =>
+        diagnostic.File is { Length: > 0 } file ? SarifWriter.Relative(report.RepositoryRoot, file) : ".";
+
+    /// <summary>
+    ///     The detail <c>plain</c> and <c>agent</c> print — the two bounded surfaces.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ File-scoped diagnostics only. A diagnostic located at the repository root is a summary of
+    ///     the ones above it, and its detail is the sub-command's transcript: for an arrangement revert
+    ///     that transcript restates, verbatim, the <c>SK9098</c> already printed as its own line. One
+    ///     copy of a 300-character message is the report; two is the budget going on noise.
+    ///     <see cref="Terminal" /> is unbounded and prints both.
+    /// </remarks>
+    internal static string? BoundedDetail(RunReport report, SkalaDiagnostic diagnostic) =>
+        Relative(report, diagnostic) == "." ? null : OneLine(diagnostic.Detail);
+
+    /// <summary>
+    ///     The message a bounded surface prints for a tool diagnostic, detail folded in.
+    /// </summary>
+    internal static string Sentence(RunReport report, SkalaDiagnostic diagnostic) =>
+        BoundedDetail(report, diagnostic) is { } detail
+            ? diagnostic.Message + " — " + detail
+            : diagnostic.Message;
+
+    /// <summary>
+    ///     ⚠ #345, first and in plain's own <c>path:line:col: level id: message</c> shape, so that the
+    ///     editor error parser this format exists for lands the reader on the file that was not
+    ///     checked. Before this the whole method emitted <b>zero bytes</b> on an exit-5 run.
+    /// </summary>
+    static void PlainBlocking(StringBuilder builder, RunReport report) {
+        foreach (var diagnostic in Blocking(report)) {
+            builder.Append(Relative(report, diagnostic))
+                .Append(':')
+                .Append(Math.Max(1, diagnostic.Line).ToString(CultureInfo.InvariantCulture))
+                .Append(":1: ")
+                .Append(Word(diagnostic.Severity))
+                .Append(' ')
+                .Append(diagnostic.Id)
+                .Append(": ")
+                .Line(Sentence(report, diagnostic));
+        }
+    }
+
     static string Plain(RunReport report, bool includeHints) {
         var builder = new StringBuilder();
+        PlainBlocking(builder, report);
+
         foreach (var finding in Ordered(report, includeHints)) {
             builder.Append(SarifWriter.Relative(report.RepositoryRoot, finding.Path))
                 .Append(':')
@@ -134,6 +252,26 @@ public static class Renderer {
         }
 
         return builder.ToString();
+    }
+
+    /// <summary>
+    ///     ⚠ #345: this loop printed <see cref="SkalaDiagnostic.ToString" /> and dropped
+    ///     <see cref="SkalaDiagnostic.Detail" /> — which is where the crash-reproduction path lives.
+    ///     <c>.skala/crash/</c> on disk was the only place that path appeared, on any surface, and
+    ///     noticing the directory is how the bug was found rather than from any output.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Unbounded, unlike <see cref="BoundedDetail" />'s callers: this is the human default and
+    ///     has no context window to protect, so the arrange summary's transcript is printed too.
+    /// </remarks>
+    static void TerminalDiagnostics(StringBuilder builder, RunReport report) {
+        foreach (var diagnostic in report.Diagnostics.Where(static d => d.Severity >= SkalaSeverity.Info)) {
+            builder.Append("  ").Line(diagnostic.ToString());
+
+            if (OneLine(diagnostic.Detail) is { } detail) {
+                builder.Append("    ").Line(detail);
+            }
+        }
     }
 
     static string Terminal(RunReport report, bool includeHints) {
@@ -170,9 +308,7 @@ public static class Renderer {
             builder.Line();
         }
 
-        foreach (var diagnostic in report.Diagnostics.Where(static d => d.Severity >= SkalaSeverity.Info)) {
-            builder.Append("  ").Line(diagnostic.ToString());
-        }
+        TerminalDiagnostics(builder, report);
 
         if (!report.SkippedRules.IsEmpty) {
             builder.Append("  ")
@@ -227,6 +363,34 @@ public static class Renderer {
     ///         Nothing here decides anything.
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     The run's own diagnostics about the run: a missing baseline, a binlog that covers too
+    ///     little, a rule that could not be loaded. They are what explains the numbers above them.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #345: these carried no <c>file=</c>, so a diagnostic about a specific file annotated the
+    ///     workflow rather than the code — and an <c>SK9098</c> naming no file is a reviewer being told
+    ///     that something was not checked and not which thing. The detail is appended for the same
+    ///     reason it is everywhere else: it is where the crash-reproduction path is.
+    /// </remarks>
+    static void GithubDiagnostics(StringBuilder builder, RunReport report) {
+        foreach (var diagnostic in report.Diagnostics) {
+            builder.Append(diagnostic.Severity >= SkalaSeverity.Error ? "::error" : "::notice");
+
+            if (diagnostic.File is { Length: > 0 }) {
+                builder.Append(" file=")
+                    .Append(Relative(report, diagnostic))
+                    .Append(",line=")
+                    .Append(Math.Max(1, diagnostic.Line).ToString(CultureInfo.InvariantCulture));
+            }
+
+            builder.Append("::")
+                .Append(diagnostic.Id)
+                .Append(": ")
+                .Line(Sentence(report, diagnostic).Replace("\n", "%0A", StringComparison.Ordinal));
+        }
+    }
+
     static string Github(RunReport report, bool includeHints) {
         var builder = new StringBuilder();
         foreach (var finding in Ordered(report, includeHints)) {
@@ -250,14 +414,7 @@ public static class Renderer {
                 .Line(finding.Message.Replace("\n", "%0A", StringComparison.Ordinal));
         }
 
-        // The run's own diagnostics about the run: a missing baseline, a binlog that covers too
-        // little, a rule that could not be loaded. They are what explains the numbers above.
-        foreach (var diagnostic in report.Diagnostics) {
-            builder.Append(diagnostic.Severity >= SkalaSeverity.Error ? "::error::" : "::notice::")
-                .Append(diagnostic.Id)
-                .Append(": ")
-                .Line(diagnostic.Message.Replace("\n", "%0A", StringComparison.Ordinal));
-        }
+        GithubDiagnostics(builder, report);
 
         if (report.Gate is { } gate) {
             builder.Append(gate.Passed ? "::notice::" : "::error::")
@@ -318,6 +475,27 @@ public static class AgentRenderer {
     public const int MaxFindings = 50;
     public const int MaxCharacters = 8000;
 
+    /// <summary>
+    ///     Where a reader of a truncated agent report is sent for the rest of it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #345: this said <c>skala check --format=json</c>, and
+    ///     <b>
+    ///         `skala check` does not run the
+    ///         arrangement stage
+    ///     </b> — <c>VerifyCommand</c> is the only caller that sets
+    ///     <c>IncludeArrangement</c>. So the advice printed when the agent report elided something was
+    ///     guaranteed not to surface an arrangement message, which is precisely the message #345 is
+    ///     about. `verify` is a superset of `check` here, so this is the right pointer from either.
+    /// </remarks>
+    /// <remarks>
+    ///     ⚠ <c>internal</c>, unlike <see cref="MaxFindings" /> and <see cref="MaxCharacters" /> beside
+    ///     it: SK6034 — a <c>public const</c> is copied into every caller at compile time, so shipping
+    ///     a new value leaves every caller that is not rebuilt on the old one, with no error anywhere.
+    ///     Nothing outside this assembly needs the string.
+    /// </remarks>
+    internal const string FullReportCommand = "skala verify --format=json";
+
     public static string Render(RunReport report) {
         var builder = new StringBuilder();
 
@@ -331,6 +509,8 @@ public static class AgentRenderer {
         // ⚠ With neither `--baseline` nor `--since` in play `IsNew` is true for everything, so the
         // unscoped output is byte-for-byte what it was.
         var ordered = Renderer.Ordered(report, false).Where(report.IsNew).ToList();
+
+        Incomplete(builder, report);
 
         var formatting = ordered.Where(static f => f.RuleId == RuleIds.FileIsNotFormatted).ToList();
         var fixable = ordered
@@ -394,6 +574,10 @@ public static class AgentRenderer {
         // ⚠ Said first and unconditionally when there is nothing to do. The SKIPPED block below is
         // context, not work, and an agent that reads a report starting with SKIPPED has to infer
         // that the answer was yes — inference the contract exists to remove.
+        //
+        // ⚠ #345: `Incomplete` writes into this same builder *before* every bucket, so a run that
+        // could not finish can never reach here with an empty builder. That is the whole mechanism —
+        // the string below is reserved for exit 0, and it was being printed on exit 5.
         if (builder.Length == 0) {
             builder.Line("OK  nothing to do.");
             if (!report.SkippedRules.IsEmpty) {
@@ -415,10 +599,79 @@ public static class AgentRenderer {
             text = text[..MaxCharacters]
                 + "\n… output truncated at "
                 + MaxCharacters.ToString(CultureInfo.InvariantCulture)
-                + " characters. Run `skala check --format=json` for all of it.\n";
+                + " characters. Run `"
+                + FullReportCommand
+                + "` for all of it.\n";
         }
 
         return text;
+    }
+
+    /// <summary>
+    ///     ⚠ #345. The block that goes <b>above FORMAT</b>, because this format exists to be read by
+    ///     something that will otherwise act on <c>OK</c>.
+    /// </summary>
+    /// <remarks>
+    ///     The ordering argument in this class's own remarks is "cheap work first". It is outranked by
+    ///     one thing only: a statement that the report underneath does not cover the whole tree. An
+    ///     agent that formats three files and reports success, on a run where Skala could not check a
+    ///     fourth, has been told something false — and the cost measured in #345 was a ~750-file
+    ///     repository where <c>verify</c> exited 5 for weeks while printing <c>OK  nothing to do.</c>,
+    ///     found by noticing <c>.skala/crash/</c> on disk rather than from any output.
+    ///     <para>
+    ///         ⚠ The count is stated as a fraction. "1 file could not be checked" invites the reading
+    ///         that one file is the whole problem; "1 of 754" says the other 753 were covered, which is
+    ///         the partial verdict the issue asked for and the reason exit 5 is worth reading at all.
+    ///     </para>
+    /// </remarks>
+    static void Incomplete(StringBuilder builder, RunReport report) {
+        var blocking = Renderer.Blocking(report).ToList();
+        if (blocking.Count == 0) {
+            return;
+        }
+
+        builder.Append("INCOMPLETE  ")
+            .Append(Scale(report))
+            .Line(" — this is a Skala bug, not a finding in your code. Everything below covers the rest.");
+
+        foreach (var diagnostic in blocking) {
+            builder.Append("  ")
+                .Append(diagnostic.Id)
+                .Append("  ")
+                .Append(Renderer.Relative(report, diagnostic))
+                .Append("  ")
+                .Line(diagnostic.Message);
+
+            // ⚠ The detail carries the crash-reproduction path. Dropping it is how #345 stayed
+            // undiagnosed: the artefact existed on disk and nothing said where.
+            if (Renderer.BoundedDetail(report, diagnostic) is { } detail) {
+                builder.Append("        → ").Line(detail);
+            }
+        }
+
+        builder.Line();
+    }
+
+    /// <summary>
+    ///     How much of the tree the incomplete run missed, as a fraction of it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ "1 file could not be checked" invites the reading that one file is the whole problem;
+    ///     "1 of 754" says the other 753 were covered, which is the partial verdict #345 asked for and
+    ///     the reason exit 5 is worth reading at all. The count is omitted rather than guessed when the
+    ///     report carries no file count to divide by.
+    /// </remarks>
+    static string Scale(RunReport report) {
+        var blocked = Renderer.BlockedFiles(report).Count();
+        if (blocked == 0) {
+            return "this run did not finish";
+        }
+
+        var of = report.FileCount >= blocked
+            ? " of " + report.FileCount.ToString(CultureInfo.InvariantCulture)
+            : string.Empty;
+        var noun = blocked == 1 ? " file was not checked" : " files were not checked";
+        return blocked.ToString(CultureInfo.InvariantCulture) + of + noun;
     }
 
     static int Emit(StringBuilder builder, RunReport report, List<Finding> findings, int budget, string indent) {
@@ -428,7 +681,9 @@ public static class AgentRenderer {
                 builder.Append(indent)
                     .Append("… ")
                     .Append((findings.Count - shown).ToString(CultureInfo.InvariantCulture))
-                    .Line(" more elided. Run `skala check --format=json` for all of them.");
+                    .Append(" more elided. Run `")
+                    .Append(FullReportCommand)
+                    .Line("` for all of them.");
                 break;
             }
 
