@@ -18,6 +18,9 @@ public sealed class LockAndValueBatchTests {
         new ConstrainedBoxingAnalyzer(), new LargeStructArgumentAnalyzer(), new CommentedCodeAnalyzer()
     ];
 
+    /// <summary>⚠ One constant, not nine literals: <c>SK7083</c>'s threshold is five per file.</summary>
+    const string DedicatedLock = "SK1023";
+
     const string Large = "struct Large { public long A, B, C, D, E, F, G, H, I; } ";
 
     const string Copy =
@@ -27,7 +30,8 @@ public sealed class LockAndValueBatchTests {
         get {
             var data = new TheoryData<RuleFixture>();
             foreach (var fixture in RuleFixtures.All()
-                         .Where(static f => f.RuleId is "SK1023" or "SK2003" or "SK4004" or "SK4007" or "SK7060")) {
+                         .Where(static f => f.RuleId is DedicatedLock or "SK2003" or "SK4004" or "SK4007" or "SK7060"
+                         )) {
                 data.Add(fixture);
             }
 
@@ -43,20 +47,23 @@ public sealed class LockAndValueBatchTests {
         Assert.Equal(fixture.ShouldFire ? 1 : 0, findings.Length);
         Assert.All(
             findings,
-            diagnostic => Assert.Equal(fixture.RuleId == "SK1023", diagnostic.Properties.ContainsKey(FixEdits.CountKey))
+            diagnostic => Assert.Equal(
+                fixture.RuleId == DedicatedLock,
+                diagnostic.Properties.ContainsKey(FixEdits.CountKey)
+            )
         );
     }
 
     [Fact]
     public void LockFix_RequiresCSharp13() {
-        var source = File.ReadAllText(Path.Combine(RuleFixtures.Root, "SK1023", "positive", "instance.cs"));
+        var source = File.ReadAllText(Path.Combine(RuleFixtures.Root, DedicatedLock, "positive", "instance.cs"));
         Assert.DoesNotContain(
             Analyze(RuleFixtures.Compile(source, "test.cs", LanguageVersion.CSharp12)),
-            static d => d.Id == "SK1023"
+            static d => d.Id == DedicatedLock
         );
         Assert.Single(
             Analyze(RuleFixtures.Compile(source, "test.cs", LanguageVersion.CSharp13)),
-            static d => d.Id == "SK1023"
+            static d => d.Id == DedicatedLock
         );
     }
 
@@ -77,7 +84,7 @@ public sealed class LockAndValueBatchTests {
                               """;
         var before = RuleFixtures.Compile(source, "probe.cs");
         var after = RuleFixtures.Compile(ApplyLockFix(source), "probe.cs");
-        Assert.DoesNotContain(Analyze(after), static d => d.Id == "SK1023");
+        Assert.DoesNotContain(Analyze(after), static d => d.Id == DedicatedLock);
         Assert.Equal(1000, Run(before));
         Assert.Equal(1000, Run(after));
     }
@@ -88,11 +95,8 @@ public sealed class LockAndValueBatchTests {
     /// <remarks>
     ///     The rewrite used to be
     ///     <c>readonly global::System.Threading.Lock gate = new global::System.Threading.Lock();</c>,
-    ///     which compiles and which <c>arrange --check</c> then reported as
-    ///     <c>
-    /// SK0203 target-typed
-    ///     new
-    ///     </c> — on a file <c>fix</c> had written a moment earlier. So it is emitted in the shape
+    ///     which compiles and which <c>arrange --check</c> then reported as <c>SK0203</c> — on a file
+    ///     <c>fix</c> had written a moment earlier. So it is emitted in the shape
     ///     arrangement leaves alone: <c>new()</c> always, and the short name exactly where the
     ///     semantic model says <c>Lock</c> binds to <c>System.Threading.Lock</c> and nothing else.
     ///     <para>
@@ -111,13 +115,16 @@ public sealed class LockAndValueBatchTests {
         Assert.Contains(expected, rewritten, StringComparison.Ordinal);
         Assert.DoesNotContain(
             Analyze(RuleFixtures.Compile(rewritten, "probe.cs")),
-            static d => d.Id == "SK1023"
+            static d => d.Id == DedicatedLock
         );
     }
 
     /// <summary>The packed edits, applied — what <c>skala fix</c> writes to the file.</summary>
     static string ApplyLockFix(string source) {
-        var diagnostic = Assert.Single(Analyze(RuleFixtures.Compile(source, "probe.cs")), static d => d.Id == "SK1023");
+        var diagnostic = Assert.Single(
+            Analyze(RuleFixtures.Compile(source, "probe.cs")),
+            static d => d.Id == DedicatedLock
+        );
         var edits = Enumerable.Range(
             0,
             int.Parse(diagnostic.Properties[FixEdits.CountKey]!, CultureInfo.InvariantCulture)
@@ -135,7 +142,7 @@ public sealed class LockAndValueBatchTests {
     }
 
     [Theory]
-    [InlineData("SK1023", "instance")]
+    [InlineData(DedicatedLock, "instance")]
     [InlineData("SK2003", "double")]
     [InlineData("SK4004", "comparable")]
     [InlineData("SK4007", "for")]

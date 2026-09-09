@@ -28,6 +28,9 @@ namespace Rikarin.Skala.Analysis.Tests;
 /// </remarks>
 [Collection(SerialWorkspace.Name)]
 public sealed class MultiTargetAvailabilityTests {
+    /// <summary>⚠ One constant, not six literals: <c>SK7083</c>'s threshold is five per file.</summary>
+    const string Rule = "SK1023";
+
     const string MultiTargeted = """
                                  <Project Sdk="Microsoft.NET.Sdk">
                                    <PropertyGroup>
@@ -108,13 +111,13 @@ public sealed class MultiTargetAvailabilityTests {
             Mode = LoadMode.Workspace,
             ProjectPath = project,
             Output = string.Empty,
-            Rules = ["SK1023"],
+            Rules = [Rule],
             NoCache = true
         };
 
         var (result, report) = CheckCommand.Run(request, TestContext.Current.CancellationToken);
         Assert.NotEqual(ExitCodes.LoadFailure, result.ExitCode);
-        Assert.DoesNotContain(report.Reportable, static finding => finding.RuleId == "SK1023");
+        Assert.DoesNotContain(report.Reportable, static finding => finding.RuleId == Rule);
 
         // `fix --safe` has nothing to apply, so the file is untouched and every moniker still builds.
         var fixResult = FixCommand.Run(
@@ -124,7 +127,7 @@ public sealed class MultiTargetAvailabilityTests {
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,
                 SafeOnly = true,
-                Include = ["SK1023"]
+                Include = [Rule]
             },
             TestContext.Current.CancellationToken
         );
@@ -156,12 +159,12 @@ public sealed class MultiTargetAvailabilityTests {
             Mode = LoadMode.Workspace,
             ProjectPath = project,
             Output = string.Empty,
-            Rules = ["SK1023"],
+            Rules = [Rule],
             NoCache = true
         };
 
         var (_, report) = CheckCommand.Run(request, TestContext.Current.CancellationToken);
-        var finding = Assert.Single(report.Reportable, static entry => entry.RuleId == "SK1023");
+        var finding = Assert.Single(report.Reportable, static entry => entry.RuleId == Rule);
         Assert.True(finding.HasFix);
 
         var fixResult = FixCommand.Run(
@@ -171,7 +174,7 @@ public sealed class MultiTargetAvailabilityTests {
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,
                 SafeOnly = true,
-                Include = ["SK1023"]
+                Include = [Rule]
             },
             TestContext.Current.CancellationToken
         );

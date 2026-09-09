@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 
 namespace Rikarin.Skala.Rules.Modernization;
 
@@ -112,6 +113,43 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        if (!EveryReferenceIsALockTarget(root, model, field, cancellation)) {
+            return;
+        }
+
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                Descriptor,
+                variable.Identifier.GetLocation(),
+                FixEdits.Pack(
+                    (declaration.Declaration.Type.Span, TypeName(model, declaration.Declaration.Type.SpanStart)),
+                    (creation.Span, "new()")
+                ),
+                "Use System.Threading.Lock for this private synchronization-only field"
+            )
+        );
+    }
+
+    /// <summary>
+    ///     The whole-file proof: at least one reference, and every bound one a direct lock target.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Extracted rather than inlined, and the reason is measured: adding the #343 sibling guard
+    ///     to <see cref="Analyze" /> took its cognitive complexity from the baselined 18 to 20, which
+    ///     is a <em>new</em> <c>SK7002</c> because the number is in the message and therefore in the
+    ///     fingerprint. Splitting the loop out clears the finding rather than re-baselining it.
+    ///     <para>
+    ///         ⚠ A reference that is not a lock target fails the whole rule, it does not merely fail to
+    ///         count: the point of walking the file is that a single non-lock use means the field is
+    ///         not a dedicated monitor.
+    ///     </para>
+    /// </remarks>
+    static bool EveryReferenceIsALockTarget(
+        SyntaxNode root,
+        SemanticModel model,
+        IFieldSymbol field,
+        CancellationToken cancellation
+    ) {
         var count = 0;
         foreach (var name in root.DescendantNodes().OfType<IdentifierNameSyntax>()) {
             if (name.Identifier.ValueText != field.Name
@@ -132,27 +170,13 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
             if (expression.Parent is not LockStatementSyntax statement
                 || statement.Expression != expression
                 || statement.Statement.DescendantNodesAndSelf().OfType<YieldStatementSyntax>().Any()) {
-                return;
+                return false;
             }
 
             count++;
         }
 
-        if (count == 0) {
-            return;
-        }
-
-        context.ReportDiagnostic(
-            Diagnostic.Create(
-                Descriptor,
-                variable.Identifier.GetLocation(),
-                FixEdits.Pack(
-                    (declaration.Declaration.Type.Span, TypeName(model, declaration.Declaration.Type.SpanStart)),
-                    (creation.Span, "new()")
-                ),
-                "Use System.Threading.Lock for this private synchronization-only field"
-            )
-        );
+        return count > 0;
     }
 
     /// <summary>

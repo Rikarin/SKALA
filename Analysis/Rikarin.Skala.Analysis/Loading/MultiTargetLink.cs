@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Analysis.Loading;
@@ -62,14 +63,17 @@ public static class MultiTargetLink {
                 continue;
             }
 
-            linked.Add(
-                unit with {
-                    Siblings = [
-                        .. group.Where(other => !ReferenceEquals(other.Compilation, unit.Compilation))
-                            .Select(static other => other.Compilation)
-                    ]
+            // ⚠ A plain loop rather than a `Where` over `unit`: a lambda capturing the iteration
+            // variable allocates a closure per unit, which SK4002 reports and which this repository's
+            // own gate would then carry.
+            var siblings = ImmutableArray.CreateBuilder<CSharpCompilation>(group.Count - 1);
+            foreach (var other in group) {
+                if (!ReferenceEquals(other.Compilation, unit.Compilation)) {
+                    siblings.Add(other.Compilation);
                 }
-            );
+            }
+
+            linked.Add(unit with { Siblings = siblings.ToImmutable() });
         }
 
         return linked.ToImmutable();
