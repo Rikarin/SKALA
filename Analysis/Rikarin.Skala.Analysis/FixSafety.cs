@@ -28,8 +28,11 @@ public readonly record struct FixVerdict(FixCheck Check, ImmutableArray<string> 
 ///     The verification behind <c>skala fix</c>'s revert-on-regression.
 /// </summary>
 /// <remarks>
-///     ⚠ <b>This used to be <c>CSharpSyntaxTree.ParseText(text).GetDiagnostics()</c> and the comment
-///     above it claimed it caught "a parse or bind error" (#344).</b> <c>SyntaxTree.GetDiagnostics</c>
+///     ⚠
+///     <b>
+///         This used to be <c>CSharpSyntaxTree.ParseText(text).GetDiagnostics()</c> and the comment
+///         above it claimed it caught "a parse or bind error" (#344).
+///     </b> <c>SyntaxTree.GetDiagnostics</c>
 ///     returns syntactic diagnostics only — there was no compilation, no reference set and no semantic
 ///     model anywhere on that path — so it could not return a bind error for any fix, ever. One
 ///     <c>skala fix --safe</c> run over a ~750-file green tree applied 26 fixes, produced 12 CS1620 and
