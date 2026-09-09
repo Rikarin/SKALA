@@ -29,7 +29,12 @@ namespace Rikarin.Skala.Analysis.Tests;
 [Collection(SerialWorkspace.Name)]
 public sealed class MultiTargetAvailabilityTests {
     /// <summary>⚠ One constant, not six literals: <c>SK7083</c>'s threshold is five per file.</summary>
-    const string Rule = "SK1023";
+    // ⚠ Named for the concept, not for its role in this file. `ToolDiagnosticIdTests` allows one id
+    // to be declared twice only when both declarations name the *same* concept — a mirror across an
+    // assembly boundary rather than a collision — and it compares the constant's name to decide.
+    // Named `Rule`, this and `LockAndValueBatchTests.DedicatedLock` read as one id with two meanings
+    // and the ADR-012 guard fails — which is the guard working, on a genuine mirror.
+    const string DedicatedLock = "SK1023";
 
     const string MultiTargeted = """
                                  <Project Sdk="Microsoft.NET.Sdk">
@@ -111,13 +116,13 @@ public sealed class MultiTargetAvailabilityTests {
             Mode = LoadMode.Workspace,
             ProjectPath = project,
             Output = string.Empty,
-            Rules = [Rule],
+            Rules = [DedicatedLock],
             NoCache = true
         };
 
         var (result, report) = CheckCommand.Run(request, TestContext.Current.CancellationToken);
         Assert.NotEqual(ExitCodes.LoadFailure, result.ExitCode);
-        Assert.DoesNotContain(report.Reportable, static finding => finding.RuleId == Rule);
+        Assert.DoesNotContain(report.Reportable, static finding => finding.RuleId == DedicatedLock);
 
         // `fix --safe` has nothing to apply, so the file is untouched and every moniker still builds.
         var fixResult = FixCommand.Run(
@@ -127,7 +132,7 @@ public sealed class MultiTargetAvailabilityTests {
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,
                 SafeOnly = true,
-                Include = [Rule]
+                Include = [DedicatedLock]
             },
             TestContext.Current.CancellationToken
         );
@@ -159,12 +164,12 @@ public sealed class MultiTargetAvailabilityTests {
             Mode = LoadMode.Workspace,
             ProjectPath = project,
             Output = string.Empty,
-            Rules = [Rule],
+            Rules = [DedicatedLock],
             NoCache = true
         };
 
         var (_, report) = CheckCommand.Run(request, TestContext.Current.CancellationToken);
-        var finding = Assert.Single(report.Reportable, static entry => entry.RuleId == Rule);
+        var finding = Assert.Single(report.Reportable, static entry => entry.RuleId == DedicatedLock);
         Assert.True(finding.HasFix);
 
         var fixResult = FixCommand.Run(
@@ -174,7 +179,7 @@ public sealed class MultiTargetAvailabilityTests {
                 Mode = LoadMode.Workspace,
                 ProjectPath = project,
                 SafeOnly = true,
-                Include = [Rule]
+                Include = [DedicatedLock]
             },
             TestContext.Current.CancellationToken
         );
