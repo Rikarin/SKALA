@@ -196,7 +196,7 @@ public static class VerifyCommand {
         return "PARTIAL  "
             + Count(checkedFiles)
             + (checkedFiles == 1 ? " file was checked and " : " files were checked and ")
-            + (clean ? "had no work outstanding" : "carries the work listed above")
+            + (clean ? "had no work outstanding" : "carry the work listed above")
             + "; "
             + Count(blocked)
             + " could not be checked. Exit "
