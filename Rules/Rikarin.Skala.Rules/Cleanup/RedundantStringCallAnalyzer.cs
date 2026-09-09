@@ -308,15 +308,14 @@ public sealed class RedundantStringCallAnalyzer : DiagnosticAnalyzer {
         }
 
         foreach (var attribute in type.GetAttributes()) {
-            if (attribute.AttributeClass is {
-                    Name: "InterpolatedStringHandlerAttribute",
-                    ContainingNamespace: {
-                        Name: "CompilerServices",
-                        ContainingNamespace: {
-                            Name: "Runtime", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
-                        }
-                    }
-                }) {
+            // ⚠ The namespace is part of the question. A type of the same name from anywhere else is
+            // not what the compiler looks for, and the deletion would still not compile.
+            if (attribute.AttributeClass is { Name: "InterpolatedStringHandlerAttribute" } marker
+                && string.Equals(
+                    marker.ContainingNamespace?.ToDisplayString(),
+                    "System.Runtime.CompilerServices",
+                    StringComparison.Ordinal
+                )) {
                 return true;
             }
         }
