@@ -105,6 +105,8 @@ public readonly struct ArrangementOptions {
         FormatterOffTag = options.GetString(Ids.FormatterOffTag) ?? "@formatter:off";
         FormatterOnTag = options.GetString(Ids.FormatterOnTag) ?? "@formatter:on";
         FormatterTagsAcceptRegexp = options.GetBool(Ids.FormatterTagsAcceptRegexp);
+
+        PhaseOne = new(options);
     }
 
     public ArrangementScope Scope { get; }
@@ -325,6 +327,28 @@ public readonly struct ArrangementOptions {
 
     /// <summary>The four keys as <see cref="FormatterTagGuard" /> wants them.</summary>
     public FormatterTags Tags => new(FormatterTagsEnabled, FormatterOffTag, FormatterOnTag, FormatterTagsAcceptRegexp);
+
+    /// <summary>The formatter's view of the <em>same</em> resolved options.</summary>
+    /// <remarks>
+    ///     ⚠ Held here rather than threaded through <see cref="Arranger.Arrange" />, and the reason is
+    ///     the defect it closes. Every <see cref="ArrangementSafety" /> call site passed a fresh
+    ///     <c>new PhaseOneOptions()</c> to <see cref="CrashArtifacts" />, so every arrange artefact's
+    ///     <c>config.snapshot</c> read <c>indent_size = 0</c> and <c>max_line_length = 0</c> — values no
+    ///     run can have, in the one file that exists because the run is otherwise unreproducible.
+    ///     <para>
+    ///         Reading it out of the same <see cref="FormattingOptions" /> that produced everything above
+    ///         makes the two halves of that snapshot <em>incapable</em> of describing different runs. An
+    ///         extra parameter would only move the place a caller can forget it, and a caller that forgot
+    ///         would reintroduce exactly the zeroes this replaces — silently, because
+    ///         <c>default(PhaseOneOptions)</c> is a legal argument.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ This does not merge the two option families. <c>OptionCoverageTests</c> reads
+    ///         <see cref="PhaseOneOptions.Implemented" /> and <see cref="Implemented" /> separately, and
+    ///         they stay separate lists measured against separate engines — see the type's own remarks.
+    ///     </para>
+    /// </remarks>
+    public PhaseOneOptions PhaseOne { get; }
 
     /// <summary>Every option the arranger reads — the arrangement half of the Tier A claim.</summary>
     public static ImmutableArray<OptionId> Implemented => Ids.All;

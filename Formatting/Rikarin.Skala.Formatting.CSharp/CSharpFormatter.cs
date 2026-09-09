@@ -263,12 +263,27 @@ public static class CSharpFormatter {
 
         if (TokenEquivalence.Compare(text, after, parseOptions, reflowed > 0, options.XmlDoc.SpaceAfterTripleSlash)
             is { } failure) {
-            var artefact = CrashArtifacts.Write(crashRoot, path, text.ToString(), formatted, options);
+            var message =
+                $"not written, the formatted output has a different token stream (at token {failure.Index.ToString(System.Globalization.CultureInfo.InvariantCulture)}: '{failure.Before}' became '{failure.After}')";
+
+            // ⚠ Named even though this is the only layer `format` has. The crash folder is keyed on a
+            // hash of the input alone, so an `arrange` refusal on the same text shares it — and an
+            // unnamed artefact here would leave that run's `refusal.txt` standing beside this run's
+            // `output.cs`, reading exactly like a fresh one.
+            var artefact = CrashArtifacts.Write(
+                crashRoot,
+                path,
+                text.ToString(),
+                formatted,
+                options,
+                new CrashRefusal(CrashRefusal.TokenStream, FormatDiagnosticIds.TokenStreamChanged, message)
+            );
+
             diagnostics.Add(
                 new SkalaDiagnostic(
                     FormatDiagnosticIds.TokenStreamChanged,
                     SkalaSeverity.Error,
-                    $"not written, the formatted output has a different token stream (at token {failure.Index.ToString(System.Globalization.CultureInfo.InvariantCulture)}: '{failure.Before}' became '{failure.After}')",
+                    message,
                     path,
                     0,
                     artefact is null
