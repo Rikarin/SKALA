@@ -199,41 +199,30 @@ public static class FixCommand {
         var safety = FixSafety.For(loaded);
         var changedFiles = naming.ChangedPaths.ToHashSet(StringComparer.Ordinal);
 
-        var files = applicable
-            .SelectMany(static finding => finding.Fix.Select(edit => (finding, edit)))
-            .GroupBy(static pair => pair.edit.Path, StringComparer.Ordinal)
-            .OrderBy(static group => group.Key, StringComparer.Ordinal)
-            .Select(static group => (group.Key, Pairs: (IReadOnlyList<(Finding, FixEdit)>)[.. group]))
-            .ToList();
-
-        // ⚠ Per file, in parallel, for the reason FormatCommand and FormattingFindings both do it:
-        // the re-bind #344 put here is the dominant cost of this loop, it is a document bind rather
-        // than a compilation build, and it is independent per file. Measured on `fix Rules --include
-        // SK6034` (54 files rewritten): serial ≈ 66 s wall against ≈ 36 s before the re-bind
-        // existed; parallel puts it back beside it. ⚠ The *ordering* still has to be deterministic,
-        // so the outcomes go into a positional array and are folded up afterwards rather than being
-        // appended as they finish.
-        var outcomes = new FileOutcome[files.Count];
-        var jobs = Math.Min(Environment.ProcessorCount, 10);
-        if (jobs == 1 || files.Count <= 1) {
-            for (var index = 0; index < files.Count; index++) {
-                outcomes[index] = ApplyToFile(files[index].Key, files[index].Pairs, request, root, safety, cancellation);
-            }
-        } else {
-            Parallel.For(
-                0,
-                files.Count,
-                new ParallelOptions { MaxDegreeOfParallelism = jobs, CancellationToken = cancellation },
-                index => outcomes[index] =
-                    ApplyToFile(files[index].Key, files[index].Pairs, request, root, safety, cancellation)
-            );
-        }
-
-        for (var index = 0; index < files.Count; index++) {
-            var outcome = outcomes[index];
+        // ⚠ Serial, deliberately, and the re-bind #344 added is affordable here.
+        //
+        // Measured on `fix Rules --include SK6034` over Skala — 54 files rewritten, far past what
+        // `--safe` ever touches — before and after the re-bind: **user CPU 115 s and 118 s before,
+        // 107-114 s over four runs after.** The cost of re-binding 54 documents does not clear the
+        // noise floor of the analysis run that produced the findings. It is small because nothing is
+        // rebuilt: `check` already bound this compilation, so the `before` model is nearly free, and
+        // the `after` is one `ReplaceSyntaxTree` plus one document bind.
+        //
+        // ⚠ Parallelising this loop the way `FormatCommand` parallelises its own was tried and is
+        // **not** an improvement: two runs at ten jobs took 189 s and 255 s of wall clock against
+        // 56-144 s serial, at 46-62 % CPU and the same user CPU — waiting, not working. Every
+        // `after` is a *different* derived compilation with its own declaration table over every
+        // tree in the project, and ten of those alive at once cost more in GC than the parallelism
+        // wins. ⚠ Both wall-clock figures were taken on a machine at load average ~300 from other
+        // work, which is why the conclusion above rests on user CPU and not on them.
+        foreach (var group in applicable
+                     .SelectMany(static finding => finding.Fix.Select(edit => (finding, edit)))
+                     .GroupBy(static pair => pair.edit.Path, StringComparer.Ordinal)
+                     .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
+            var outcome = ApplyToFile(group.Key, [.. group], request, root, safety, cancellation);
             applied += outcome.Applied;
             if (outcome.Applied > 0 && !outcome.Reverted) {
-                changedFiles.Add(files[index].Key);
+                changedFiles.Add(group.Key);
             }
 
             reverted += outcome.Reverted ? 1 : 0;

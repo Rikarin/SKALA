@@ -108,11 +108,18 @@ The re-bind now lives in `FixSafety` and works the way `ArrangementSafety` does.
 unaffordable only if each file rebuilds a compilation. `Compilation.ReplaceSyntaxTree` on the
 compilation `check` already built is one document bind, and `CheckRequest.ObserveLoad` hands `fix`
 that compilation so nothing is loaded twice. On `skala fix Rules --include SK6034` over Skala itself —
-54 files rewritten, far past what `--safe` ever touches — wall clock went 36 s → 66 s serial, and back
-to ≈ 40 s once the per-file loop was parallelised the way `FormatCommand` already parallelises its
-own. On the realistic case, `skala fix . --safe` over the whole repository, four files are rewritten
-and the delta is inside the run-to-run variance of a 110 s command. That run also reverted **4 files
-whose fixes broke the build** and which the parse check had waved through.
+54 files rewritten, far past what `--safe` ever touches — **user CPU was 115 s and 118 s before the
+re-bind and 107–114 s over four runs after it**: re-binding 54 documents does not clear the noise
+floor of the analysis run that found the findings. That run also reverted **4 files whose fixes broke
+the build** and which the parse check had waved through.
+
+⚠ **Wall clock could not be used as the instrument and is why the figures above are CPU.** The
+measurements were taken on a machine at load average ~300 from concurrent work, and the same binary
+on the same command ranged 56–144 s. ⚠ **Parallelising the per-file loop the way `FormatCommand`
+parallelises its own was tried and refuted**: two runs at ten jobs took 189 s and 255 s of wall clock
+for the same user CPU, at 46–62 % CPU. Every `after` is a *different* derived compilation carrying
+its own declaration table over every tree in the project, so ten alive at once cost more in GC than
+the parallelism wins. The loop stays serial.
 
 ⚠ **`--load=loose` is the one case that still gets the parse check**, because a loose compilation
 references the running framework and nothing else — binding against it answers a question about a
