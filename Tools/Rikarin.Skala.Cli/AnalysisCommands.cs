@@ -307,7 +307,11 @@ public static partial class SkalaCommandLine {
             Description = "Preprocessor symbols.", Arity = ArgumentArity.ZeroOrMore
         };
 
-        var command = new Command("fix", "Apply the fixes the findings carry, verify each one, and re-format.");
+        var command = new Command(
+            "fix",
+            "Apply the fixes the findings carry, re-bind each rewritten file and revert the ones that "
+            + "stopped compiling, and re-format."
+        );
         command.Arguments.Add(paths);
         foreach (var option in new Option[] { safe, include, dryRun, load, binlog, project, define }) {
             command.Options.Add(option);

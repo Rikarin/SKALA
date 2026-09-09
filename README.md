@@ -46,7 +46,7 @@ skala format .                  # rewrite: spacing, blank lines, braces, indenta
 skala format --check .          # report what would change, write nothing
 skala arrange .                 # body styles, var, target-typed new, qualifiers, usings
 skala check .                   # run the analyzers, print findings, apply the gate
-skala fix .                     # apply the safe fixes, verify each one, re-format
+skala fix .                     # apply the safe fixes, re-bind each rewritten file, re-format
 skala explain SK1084            # what a rule means, why, and what it rewrites
 skala explain skala_wrap_arguments_style   # what an option governs
 ```
@@ -62,7 +62,7 @@ skala explain skala_wrap_arguments_style   # what an option governs
 | `arrange` | Body styles, `var`, target-typed `new`, property patterns, qualifiers, using directives |
 | `check` | Run the analyzers over a real compilation, report, and gate |
 | `verify` | `format --check` + `arrange --check` + `check --gate=local` |
-| `fix` | Apply fixes, verify each edit still compiles, re-format |
+| `fix` | Apply fixes, re-bind each rewritten file and revert the ones that stopped compiling, re-format |
 | `explain` | A rule's rationale and examples, or what an option does |
 | `config` | Inspect, check, diff, distil and sync the `.editorconfig` |
 | `baseline` | Accept the findings a repository has today, so the gate is about new ones |
