@@ -229,7 +229,11 @@ public sealed class McpServerTests {
 
         Assert.DoesNotContain("OK", verdict, StringComparison.Ordinal);
         Assert.DoesNotContain("nothing to do", verdict, StringComparison.Ordinal);
-        Assert.Contains(exitCode.ToString(System.Globalization.CultureInfo.InvariantCulture), verdict, StringComparison.Ordinal);
+        Assert.Contains(
+            exitCode.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            verdict,
+            StringComparison.Ordinal
+        );
     }
 
     /// <summary>⚠ And exit 0 with nothing printed still says so — the contract is unchanged.</summary>

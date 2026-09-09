@@ -118,8 +118,11 @@ public static class Renderer {
             .ThenBy(static finding => finding.Message, StringComparer.Ordinal);
 
     /// <summary>
-    ///     The run's own error-severity diagnostics — the ones that mean <b>this run did not cover
-    ///     what it was asked to cover</b>.
+    ///     The run's own error-severity diagnostics — the ones that mean
+    ///     <b>
+    ///         this run did not cover
+    ///         what it was asked to cover
+    ///     </b>.
     /// </summary>
     /// <remarks>
     ///     ⚠ #345. A diagnostic is not a finding: a finding is something in the code, and one of these
@@ -379,8 +382,8 @@ public static class Renderer {
                 .Append(": ")
                 .Line(
                     (OneLine(diagnostic.Detail) is { } detail
-                        ? diagnostic.Message + " — " + detail
-                        : diagnostic.Message).Replace("\n", "%0A", StringComparison.Ordinal)
+                            ? diagnostic.Message + " — " + detail
+                            : diagnostic.Message).Replace("\n", "%0A", StringComparison.Ordinal)
                 );
         }
 
@@ -447,8 +450,11 @@ public static class AgentRenderer {
     ///     Where a reader of a truncated agent report is sent for the rest of it.
     /// </summary>
     /// <remarks>
-    ///     ⚠ #345: this said <c>skala check --format=json</c>, and <b>`skala check` does not run the
-    ///     arrangement stage</b> — <c>VerifyCommand</c> is the only caller that sets
+    ///     ⚠ #345: this said <c>skala check --format=json</c>, and
+    ///     <b>
+    ///         `skala check` does not run the
+    ///         arrangement stage
+    ///     </b> — <c>VerifyCommand</c> is the only caller that sets
     ///     <c>IncludeArrangement</c>. So the advice printed when the agent report elided something was
     ///     guaranteed not to surface an arrangement message, which is precisely the message #345 is
     ///     about. `verify` is a superset of `check` here, so this is the right pointer from either.
@@ -596,8 +602,8 @@ public static class AgentRenderer {
                     ? "this run did not finish"
                     : blocked.ToString(CultureInfo.InvariantCulture)
                     + (report.FileCount >= blocked
-                        ? " of " + report.FileCount.ToString(CultureInfo.InvariantCulture)
-                        : string.Empty)
+                            ? " of " + report.FileCount.ToString(CultureInfo.InvariantCulture)
+                            : string.Empty)
                     + (blocked == 1 ? " file was not checked" : " files were not checked")
             )
             .Line(" — this is a Skala bug, not a finding in your code. Everything below covers the rest.");

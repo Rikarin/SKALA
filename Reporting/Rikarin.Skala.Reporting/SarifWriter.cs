@@ -499,9 +499,7 @@ public static class SarifWriter {
             notification.Locations = [
                 new Location {
                     PhysicalLocation = new() {
-                        ArtifactLocation = new() {
-                            Uri = new(Relative(report.RepositoryRoot, file), UriKind.Relative)
-                        },
+                        ArtifactLocation = new() { Uri = new(Relative(report.RepositoryRoot, file), UriKind.Relative) },
                         Region = diagnostic.Line > 0 ? new() { StartLine = diagnostic.Line } : null
                     }
                 }
