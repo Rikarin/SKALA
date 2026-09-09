@@ -73,24 +73,22 @@ public static class ExpressionTreeContext {
     /// <remarks>
     ///     ⚠ The base chain is walked because the converted type is the constructed
     ///     <c>Expression&lt;TDelegate&gt;</c>, which reaches the non-generic <c>Expression</c> only
-    ///     through <c>LambdaExpression</c>. Matching the namespace symbol by hand rather than resolving
-    ///     the metadata name keeps this working under <c>--load=loose</c>, where the compilation's
-    ///     references are whatever the shared framework supplied and a lookup can come back null — and a
-    ///     null lookup would silently answer "not an expression tree" for every file.
+    ///     through <c>LambdaExpression</c>. Matching the namespace by hand rather than resolving the
+    ///     metadata name keeps this working under <c>--load=loose</c>, where the compilation's references
+    ///     are whatever the shared framework supplied and a lookup can come back null — and a null lookup
+    ///     would silently answer "not an expression tree" for every file, which is the shape of zero that
+    ///     looks like clean code.
+    ///     <para>
+    ///         ⚠ The namespace is compared for equality, not with <c>StartsWith</c>. The two copies of
+    ///         this predicate in <c>Rules</c> test the *type's* display string with
+    ///         <c>StartsWith("System.Linq.Expressions.Expression")</c>, which also matches a user type
+    ///         named <c>ExpressionFoo</c> declared in that namespace.
+    ///     </para>
     /// </remarks>
     static bool IsExpressionTreeType(ITypeSymbol? type) {
         for (var current = type; current is not null; current = current.BaseType) {
-            if (current is {
-                    Name: "Expression",
-                    ContainingType: null,
-                    ContainingNamespace: {
-                        Name: "Expressions",
-                        ContainingNamespace: {
-                            Name: "Linq",
-                            ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
-                        }
-                    }
-                }) {
+            if (current is { Name: "Expression", ContainingType: null }
+                && current.ContainingNamespace?.ToDisplayString() == "System.Linq.Expressions") {
                 return true;
             }
         }
