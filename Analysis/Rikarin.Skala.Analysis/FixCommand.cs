@@ -253,7 +253,11 @@ public static class FixCommand {
                 .Append(unbound == 1 ? " file was" : " file(s) were")
                 .Append(" checked for parse errors only — ")
                 .Append(
-                    mode == LoadMode.Loose
+                    // ⚠ `loaded.Mode` and not `mode`: the ladder falls through, so asking for binlog
+                    // on a machine with no binlog and no MSBuild lands in loose while `mode` still
+                    // says binlog. Naming the mode that did not run is the fail-open this whole
+                    // change is about, one level down.
+                    loaded?.Mode == LoadMode.Loose
                         ? "--load=loose builds no compilation to re-bind against"
                         : "no loaded compilation holds it"
                 )

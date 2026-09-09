@@ -28,15 +28,12 @@ public readonly record struct FixVerdict(FixCheck Check, ImmutableArray<string> 
 ///     The verification behind <c>skala fix</c>'s revert-on-regression.
 /// </summary>
 /// <remarks>
-///     ⚠
-///     <b>
-///         This used to be <c>CSharpSyntaxTree.ParseText(text).GetDiagnostics()</c> and the comment
-///         above it claimed it caught "a parse or bind error" (#344).
-///     </b> <c>SyntaxTree.GetDiagnostics</c>
-///     returns syntactic diagnostics only — there was no compilation, no reference set and no semantic
-///     model anywhere on that path — so it could not return a bind error for any fix, ever. One
-///     <c>skala fix --safe</c> run over a ~750-file green tree applied 26 fixes, produced 12 CS1620 and
-///     4 CS0234, reverted nothing and exited 0.
+///     ⚠ This used to be <c>CSharpSyntaxTree.ParseText(text).GetDiagnostics()</c>, under a comment
+///     claiming it caught "a parse or bind error" (#344). <b>It could not.</b>
+///     <c>SyntaxTree.GetDiagnostics</c> returns syntactic diagnostics only, and there was no
+///     compilation, no reference set and no semantic model anywhere on that path — so it could not
+///     return a bind error for any fix, ever. One <c>skala fix --safe</c> run over a ~750-file green
+///     tree applied 26 fixes, produced 12 CS1620 and 4 CS0234, reverted nothing and exited 0.
 ///     <para>
 ///         ⚠ The rewritten document is bound with <see cref="Compilation.ReplaceSyntaxTree" /> on the
 ///         compilation the findings already came out of, exactly as
@@ -48,7 +45,19 @@ public readonly record struct FixVerdict(FixCheck Check, ImmutableArray<string> 
 ///         ⚠ <b>Every</b> compilation holding the file, not the first one. A file in a multi-targeted
 ///         project is in one compilation per framework, and #343 is precisely a fix that binds under
 ///         one target framework and not the other (<c>System.Threading.Lock</c> ⇒ CS0234). Checking one
-///         of them is checking the wrong half at random.
+///         of them is checking the wrong half at random. Verified on #343's own reproduction
+///         (<c>netstandard2.1;net10.0</c>): the <c>net10.0</c> unit binds the rewrite cleanly and the
+///         <c>netstandard2.1</c> one reports CS0234, so the file is reverted.
+///     </para>
+///     <para>
+///         ⚠ <b>An unrestored target framework can therefore cause a false revert</b>, and that is the
+///         direction to fail in. The same project with no <c>obj/</c> gives the <c>netstandard2.1</c>
+///         unit no references at all, so the rewrite reports CS0400 rather than CS0234 and the file is
+///         still reverted — for the wrong reason, but reverted. The old check applied the broken edit
+///         instead. A revert costs the finding; a write costs the build. ⚠ It is also why #343's
+///         reproduction is not a committed fixture: the diagnostic it produces depends on whether the
+///         scratch project was restored, so a test asserting the id would be measuring the test
+///         machine.
 ///     </para>
 /// </remarks>
 public sealed class FixSafety {
