@@ -183,6 +183,16 @@ public sealed class RedundantStringCallAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ …and that question has to be asked of the whole `+` chain, not of this operand. Roslyn
+        // reports each operand of `$"a" + $"b"` as converted to `string` even where the *chain* is
+        // being converted to a handler, so the guard above passes and the `$` looks free. It is not:
+        // the handler conversion applies to an addition only while every operand is an interpolated
+        // string, so dropping one `$` retypes the argument as `string` and the handler overload stops
+        // applying — `CS1620` at a `ref` parameter for `string.Create` (#342).
+        if (IsOperandOfAHandlerConversion(context, node)) {
+            return;
+        }
+
         Report(
             context,
             new TextSpan(node.StringStartToken.SpanStart + dollar, 1),
@@ -215,6 +225,103 @@ public sealed class RedundantStringCallAnalyzer : DiagnosticAnalyzer {
             string.Empty,
             "The verbatim prefix escapes nothing"
         );
+    }
+
+    /// <summary>
+    ///     ⚠ Whether the <c>$</c> is holding an interpolated-string-handler conversion open for an
+    ///     enclosing <c>+</c> chain.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <c>string.Create(CultureInfo.InvariantCulture, $"a {x:F1} " + $"b")</c> converts the whole
+    ///         addition to a <c>DefaultInterpolatedStringHandler</c>, and that conversion exists only
+    ///         while <em>every</em> operand is an interpolated string. The operand asked about here is
+    ///         reported by the semantic model as converted to <c>string</c> — which is true of the
+    ///         operand and false of the argument — so the question has to be re-asked at the top of the
+    ///         chain.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>The target is detected by attribute, never by method name.</b> The same conversion
+    ///         is on <c>StringBuilder.Append</c>, <c>Debug.Assert</c> and every user-defined
+    ///         <c>[InterpolatedStringHandler]</c> type, so a <c>string.Create</c>-shaped exclusion would
+    ///         cover one of them. The parameter is consulted as well as the converted type because a
+    ///         handler parameter is passed <c>ref</c> without the caller writing <c>ref</c>, and that is
+    ///         the shape whose failure is a hard <c>CS1620</c> rather than a silent extra allocation.
+    ///     </para>
+    ///     <para>
+    ///         A lone <c>$"…"</c> argument needs nothing from here: it <em>is</em> the top of its chain,
+    ///         so the semantic model reports the handler as its converted type and the guard above has
+    ///         already declined it. ⚠ #342 reads as though that case were also broken; measured, it was
+    ///         not, and only the <c>+</c> chain was.
+    ///     </para>
+    /// </remarks>
+    static bool IsOperandOfAHandlerConversion(
+        SyntaxNodeAnalysisContext context,
+        InterpolatedStringExpressionSyntax node
+    ) {
+        ExpressionSyntax outermost = node;
+        while (outermost.Parent is ParenthesizedExpressionSyntax
+               || outermost.Parent is BinaryExpressionSyntax { RawKind: (int)SyntaxKind.AddExpression }) {
+            outermost = (ExpressionSyntax)outermost.Parent;
+        }
+
+        if (ReferenceEquals(outermost, node)) {
+            return false;
+        }
+
+        return IsHandler(context.SemanticModel.GetTypeInfo(outermost, context.CancellationToken).ConvertedType)
+            || IsHandler(ParameterFilledBy(context, outermost)?.Type);
+    }
+
+    /// <summary>The parameter an expression is being passed to, where it is an argument at all.</summary>
+    static IParameterSymbol? ParameterFilledBy(SyntaxNodeAnalysisContext context, ExpressionSyntax expression) {
+        if (expression.Parent is not ArgumentSyntax argument
+            || argument.Parent is not BaseArgumentListSyntax list
+            || list.Parent is not { } call
+            || context.SemanticModel.GetSymbolInfo(call, context.CancellationToken).Symbol
+            is not IMethodSymbol method) {
+            return null;
+        }
+
+        if (argument.NameColon?.Name.Identifier.ValueText is { } name) {
+            foreach (var candidate in method.Parameters) {
+                if (string.Equals(candidate.Name, name, StringComparison.Ordinal)) {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        var index = list.Arguments.IndexOf(argument);
+        if (index < 0 || index >= method.Parameters.Length) {
+            return null;
+        }
+
+        return method.Parameters[index];
+    }
+
+    /// <summary>Whether a type is an interpolated-string handler — the attribute, not the name.</summary>
+    static bool IsHandler(ITypeSymbol? type) {
+        if (type is null) {
+            return false;
+        }
+
+        foreach (var attribute in type.GetAttributes()) {
+            if (attribute.AttributeClass is {
+                    Name: "InterpolatedStringHandlerAttribute",
+                    ContainingNamespace: {
+                        Name: "CompilerServices",
+                        ContainingNamespace: {
+                            Name: "Runtime", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
+                        }
+                    }
+                }) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
