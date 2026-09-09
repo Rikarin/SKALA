@@ -239,6 +239,61 @@ public static class CheckCommand {
             );
         }
 
+        // ⚠ <b>#346: the loaded scope and the reported scope are two things.</b> They were one
+        // variable, and for a positional path they coincide only by accident. `check Alpha/One.cs
+        // --load=workspace` must load the project that contains the file — without its references
+        // there is no semantic answer at all — and must then report on the file. It reported on the
+        // project, or, when no `.csproj` sits in the file's own directory, on the whole solution:
+        // measured on a two-project scratch tree, one requested file came back as four files across
+        // both projects, exit 0, with nothing in the output saying the request had been widened.
+        //
+        // ⚠ It is a wrong answer and not a slow one, and the shape of it is what makes it survive: a
+        // superset reads as though it worked. A pre-commit hook that fails on any finding fails every
+        // commit, for files the commit never touched. `#284` fixed the directory case and the fix
+        // works there only because a directory holds its own project.
+        //
+        // `null` when nothing was requested — then the loaded set *is* the reported set, and the two
+        // counters below keep counting exactly what they counted before.
+        var reported = Paths(loaded, request);
+        var scope = request.Paths.Count == 0
+            ? null
+            : new HashSet<string>(reported, StringComparer.Ordinal);
+
+        // ⚠ And when the two cannot coincide, say so rather than widening. An empty reported set with
+        // a path on the command line means no document of this load is the file that was asked about
+        // — a path outside every project, a typo, a directory holding only generated sources. Every
+        // producer downstream is filtered by `scope`, so the run would complete, report nothing and
+        // exit 0: the same false clean #278 reached through an unmatched `--rules`, arrived at
+        // through an unmatched path.
+        if (scope is { Count: 0 }) {
+            var names = string.Join(", ", request.Paths);
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.NoSourceFiles,
+                    SkalaSeverity.Error,
+                    $"no analysable file under '{names}' is part of {loaded.Summary}",
+                    root
+                )
+            );
+
+            return (
+                new CommandResult(
+                    ExitCodes.ConfigurationError,
+                    $"skala check: nothing under '{names}' is part of this load ({loaded.Summary}).\n"
+                    + "  Every finding would be filtered out, so the report would read as a clean tree.\n"
+                    + "  Name the project that contains it with --project, or use --load=loose, which\n"
+                    + "  parses the requested files without needing a project.\n"
+                ),
+                new RunReport {
+                    RepositoryRoot = root,
+                    Mode = loaded.Mode,
+                    Diagnostics = diagnostics.ToImmutable(),
+                    LoadSummary = loaded.Summary,
+                    Duration = stopwatch.Elapsed
+                }
+            );
+        }
+
         var findings = new List<Finding>();
         var costs = new List<AnalyzerCost>();
         var partial = false;
@@ -274,7 +329,18 @@ public static class CheckCommand {
                 request.Profile
             );
 
-            findings.AddRange(outcome.Findings);
+            // ⚠ #346, the fix: filtered here and nowhere upstream. `AnalyzerHost.Convert` already
+            // drops anything outside `unit.ReportablePaths` — that is the generated-source answer —
+            // and every finding it produces therefore carries an absolute path that this set can be
+            // compared against exactly. Narrowing the *load* instead was the tempting fix and the
+            // wrong one: a file analysed without its project's references produces different
+            // findings, not fewer.
+            findings.AddRange(
+                scope is null
+                    ? outcome.Findings
+                    : outcome.Findings.Where(finding => scope.Contains(finding.Path))
+            );
+
             diagnostics.AddRange(outcome.Diagnostics);
             costs.AddRange(outcome.Costs);
             // ⚠ #309: `partial |= outcome.Partial` aggregates across compilation units, and the only
@@ -296,9 +362,31 @@ public static class CheckCommand {
                 );
             }
 
-            files += unit.ReportablePaths.Count;
+            // ⚠ #346: the summary line reports the scope the findings were reported over, not the one
+            // that was loaded. "1 file, 4 lines" beside one finding is the sentence a reader compares
+            // against what they typed; "753 files" beside a one-file request is how the widening went
+            // unnoticed for as long as it did. Unfiltered the two counters stay exactly what they
+            // were — generated trees still count towards `lines`, which is doc 07's answer and not
+            // this issue's.
+            if (scope is null) {
+                files += unit.ReportablePaths.Count;
+                foreach (var tree in unit.Compilation.SyntaxTrees) {
+                    lines += tree.GetText(cancellation).Lines.Count;
+                }
+
+                continue;
+            }
+
+            foreach (var path in unit.ReportablePaths) {
+                if (scope.Contains(path)) {
+                    files++;
+                }
+            }
+
             foreach (var tree in unit.Compilation.SyntaxTrees) {
-                lines += tree.GetText(cancellation).Lines.Count;
+                if (scope.Contains(Path.GetFullPath(tree.FilePath))) {
+                    lines += tree.GetText(cancellation).Lines.Count;
+                }
             }
         }
 
@@ -320,7 +408,7 @@ public static class CheckCommand {
         // asks. `null` when the run was told not to look — see `Gate.Evaluate`.
         bool? formattingClean = null;
         if (request.IncludeFormatting) {
-            var formatting = FormattingFindings.Collect(root, Paths(loaded, request), request, diagnostics);
+            var formatting = FormattingFindings.Collect(root, reported, request, diagnostics);
             formattingClean = !formatting.Any(static finding => finding.RuleId == RuleIds.FileIsNotFormatted);
             findings.AddRange(formatting);
         }
@@ -329,7 +417,7 @@ public static class CheckCommand {
         if (request.IncludeArrangement) {
             var arrangement = ArrangementFindings.Collect(
                 root,
-                Paths(loaded, request),
+                reported,
                 request,
                 loaded,
                 diagnostics,
@@ -345,7 +433,7 @@ public static class CheckCommand {
         if (request.IncludeDuplication) {
             var (clones, result) = DuplicationPass.Run(
                 loaded,
-                Paths(loaded, request),
+                reported,
                 root,
                 Duplication.CloneDetector.DefaultMinTokens,
                 !request.NoCache,
@@ -769,14 +857,31 @@ public static class CheckCommand {
     }
 
     /// <summary>
-    ///     The files SK0001 is measured over: the compilations' reportable set, filtered by whatever the
-    ///     caller asked for.
+    ///     <b>The reported scope</b>: the compilations' reportable set, narrowed to whatever the caller
+    ///     asked for.
     /// </summary>
     /// <remarks>
     ///     ⚠ Derived from the load rather than from the command line. The requested path is usually a
     ///     directory, and formatting the directory's name is not a thing; and taking the argument
     ///     literally would format generated files, which the analysis half is careful not to report on.
-    ///     One source of "which files does this run concern", for both halves.
+    ///     One source of "which files does this run concern", for every half.
+    ///     <para>
+    ///         ⚠ #346: this is not the same set as the load, and it used to be applied to only three of
+    ///         the four producers. The analyzer findings went in unfiltered, so a single file under
+    ///         <c>--load=workspace</c> loaded the containing project — correctly, since without its
+    ///         references the file cannot be analysed at all — and then reported every file in it. See
+    ///         the call sites in <see cref="Run" />.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Both tests below fail against a trailing directory separator, which
+    ///         <c>Path.GetFullPath</c> keeps: the requested directory is then not equal to any file's
+    ///         parent and no file starts with it either, because the prefix carries the separator
+    ///         twice. Measured before the trim went in, on a directory of three unformatted files: the
+    ///         spelling with the separator reported the analyzer findings for all three and no SK0001
+    ///         at all, because the formatting half was handed an empty set — a zero from a filter that
+    ///         matched nothing, indistinguishable from a formatted tree. A shell's tab-completion
+    ///         appends that separator.
+    ///     </para>
     /// </remarks>
     static List<string> Paths(LoadedProject loaded, CheckRequest request) {
         var reportable = new List<string>();
@@ -788,7 +893,10 @@ public static class CheckCommand {
             return reportable;
         }
 
-        var requested = request.Paths.Select(Path.GetFullPath).ToArray();
+        var requested = request.Paths
+            .Select(static path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))
+            .ToArray();
+
         return [
             .. reportable.Where(path => requested.Any(root =>
                     string.Equals(path, root, StringComparison.Ordinal)

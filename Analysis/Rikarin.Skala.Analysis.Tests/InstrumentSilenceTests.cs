@@ -201,6 +201,116 @@ public sealed class InstrumentSilenceTests {
     }
 
     /// <summary>
+    ///     #346: one <c>.cs</c> file on the command line, one file in the report — under <c>loose</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>This is the mode that was already right, and it is here as the control.</b> The issue
+    ///     predicts it stays green through the sabotage, and it does: <c>LooseLoader.Collect</c> reads
+    ///     <c>request.Paths</c> and parses that one file, so the loaded set and the reported set
+    ///     coincide before any filter runs. Measured through the CLI on a two-project scratch tree:
+    ///     <c>loose</c> reported 1 file where <c>workspace</c> reported 4. A fixture that only covered
+    ///     <c>loose</c> would therefore have been green on the day the defect shipped — which is why
+    ///     the workspace twin of this test lives in <c>WorkspaceLoadingTests</c> and is the one that
+    ///     actually holds the fix down.
+    /// </remarks>
+    [Fact]
+    public void RequestedFile_IsTheOnlyFileReportedUnderLoose() {
+        using var scratch = new Scratch();
+        var file = scratch.Write("Widget.cs", Unformatted);
+        scratch.Write("Other.cs", Unformatted.Replace("Widget", "Other", StringComparison.Ordinal));
+
+        var (result, report) = CheckCommand.Run(
+            LooseRequest(scratch) with { Paths = [file] },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.Ok, result.ExitCode);
+        Assert.NotEmpty(report.Findings);
+        Assert.All(report.Findings, finding => Assert.Equal(file, finding.Path));
+        Assert.Equal(1, report.FileCount);
+    }
+
+    /// <summary>
+    ///     #346: a requested path no document of this load carries is refused, not reported as clean.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The other half of the fix, and the one that keeps it from trading a superset for a false
+    ///     clean. Once every producer is filtered by the requested paths, a path that matches no
+    ///     document filters everything away and the run exits 0 with an empty report — the same silence
+    ///     #278 reached through an unmatched <c>--rules</c>, arrived at through an unmatched path.
+    ///     Sabotage by deleting the <c>scope is { Count: 0 }</c> branch in <c>CheckCommand.Run</c>: this
+    ///     goes green-and-empty at <c>ExitCodes.Ok</c>.
+    ///     <para>
+    ///         ⚠ The fixture is a directory holding one <c>.g.cs</c> and nothing else, because that is
+    ///         the condition reduced to something a fixture can carry: the loader parses it — the load
+    ///         is not empty and does not fail — and <c>ReportablePaths</c> excludes it, so the load
+    ///         succeeds and the reported set is empty. A path with no <c>.cs</c> under it at all is a
+    ///         different code path that already fails as <c>LoadFailure</c>.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void RequestedPath_ThatNoLoadedDocumentCarriesIsRefused() {
+        using var scratch = new Scratch();
+        scratch.Write("Widget.cs", Unformatted);
+        scratch.Write(Path.Combine("Generated", "Widget.g.cs"), Unformatted);
+
+        // The control: the same tree, asked about itself, reports normally.
+        var (whole, report) = CheckCommand.Run(LooseRequest(scratch), TestContext.Current.CancellationToken);
+
+        Assert.Equal(ExitCodes.Ok, whole.ExitCode);
+        Assert.NotEmpty(report.Findings);
+
+        var (refused, _) = CheckCommand.Run(
+            LooseRequest(scratch) with { Paths = [Path.Combine(scratch.Root, "Generated")] },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.ConfigurationError, refused.ExitCode);
+        Assert.Contains("clean tree", refused.Output, StringComparison.Ordinal);
+        Assert.Contains("--load=loose", refused.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #346, found while fixing it: a trailing directory separator silenced the formatting half.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>A second, independent defect, and it had been shipping.</b>
+    ///     <c>Path.GetFullPath("Alpha/")</c> keeps the separator, so <c>CheckCommand.Paths</c> compared
+    ///     files against <c>.../Alpha/</c> and <c>.../Alpha//</c> and matched none of them. Measured
+    ///     through the CLI before the trim went in: <c>check Alpha/ --load=loose</c> reported the
+    ///     analyzer findings for all three files and <em>no SK0001 at all</em>, while
+    ///     <c>check Alpha</c> reported SK0001 for each of them. The formatting, arrangement and
+    ///     duplication halves were each handed an empty set and each returned a zero that reads exactly
+    ///     like a formatted tree. A shell's tab-completion appends that separator.
+    ///     <para>
+    ///         ⚠ It also had to be fixed <em>with</em> #346 rather than after it: the refusal above
+    ///         turns "no file matched" into an error, so leaving the trim out would have converted a
+    ///         quietly wrong run into a refused one for an ordinary command line.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void RequestedDirectory_MatchesWithOrWithoutATrailingSeparator() {
+        using var scratch = new Scratch();
+        scratch.Write(Path.Combine("Alpha", "Widget.cs"), Unformatted);
+        var directory = Path.Combine(scratch.Root, "Alpha");
+
+        var (_, bare) = CheckCommand.Run(
+            LooseRequest(scratch) with { Paths = [directory] },
+            TestContext.Current.CancellationToken
+        );
+        var (_, trailing) = CheckCommand.Run(
+            LooseRequest(scratch) with { Paths = [directory + Path.DirectorySeparatorChar] },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Contains(bare.Findings, static finding => finding.RuleId == RuleIds.FileIsNotFormatted);
+        Assert.Equal(
+            bare.Findings.Select(static finding => finding.RuleId).Order(StringComparer.Ordinal),
+            trailing.Findings.Select(static finding => finding.RuleId).Order(StringComparer.Ordinal)
+        );
+    }
+
+    /// <summary>
     ///     #305: <c>-o report.sarif</c> has no directory to create, and used to throw after the run.
     /// </summary>
     /// <remarks>
