@@ -32,11 +32,34 @@ namespace Rikarin.Skala.Analysis.Loading;
 /// </remarks>
 public static class MultiTargetLink {
     public static ImmutableArray<CompilationUnit> Apply(ImmutableArray<CompilationUnit> units) {
-        if (units.Length < 2) {
+        if (units.Length < 2 || MultiTargetedProjects(units) is not { } byProject) {
             return units;
         }
 
-        var byProject = new Dictionary<string, List<CompilationUnit>>(StringComparer.Ordinal);
+        var linked = ImmutableArray.CreateBuilder<CompilationUnit>(units.Length);
+        foreach (var unit in units) {
+            // ⚠ `Remove`, not a filtering lambda over the iteration variable: the compilations are
+            // distinct instances, so removing this unit's own is exactly "the other monikers", and it
+            // allocates no closure. `SK4002` reports the `Where` shape and `SK1084` reports the hand
+            // written loop that avoids it — this is the spelling neither objects to.
+            linked.Add(
+                unit.ProjectPath is { Length: > 0 } path && byProject.TryGetValue(Normalise(path), out var monikers)
+                    ? unit with { Siblings = monikers.Remove(unit.Compilation) }
+                    : unit
+            );
+        }
+
+        return linked.ToImmutable();
+    }
+
+    /// <summary>
+    ///     Every project opened as more than one compilation, and the compilations it was opened as.
+    /// </summary>
+    /// <remarks>Null rather than an empty map: nothing multi-targets, so nothing has to be rebuilt.</remarks>
+    static Dictionary<string, ImmutableArray<CSharpCompilation>>? MultiTargetedProjects(
+        ImmutableArray<CompilationUnit> units
+    ) {
+        var byProject = new Dictionary<string, List<CSharpCompilation>>(StringComparer.Ordinal);
         foreach (var unit in units) {
             if (unit.ProjectPath is not { Length: > 0 } path) {
                 continue;
@@ -47,36 +70,17 @@ public static class MultiTargetLink {
                 byProject[key] = group = [];
             }
 
-            group.Add(unit);
+            group.Add(unit.Compilation);
         }
 
-        if (!byProject.Values.Any(static group => group.Count > 1)) {
-            return units;
-        }
-
-        var linked = ImmutableArray.CreateBuilder<CompilationUnit>(units.Length);
-        foreach (var unit in units) {
-            if (unit.ProjectPath is not { Length: > 0 } path
-                || !byProject.TryGetValue(Normalise(path), out var group)
-                || group.Count < 2) {
-                linked.Add(unit);
-                continue;
+        var multiTargeted = new Dictionary<string, ImmutableArray<CSharpCompilation>>(StringComparer.Ordinal);
+        foreach (var (key, group) in byProject) {
+            if (group.Count > 1) {
+                multiTargeted[key] = [.. group];
             }
-
-            // ⚠ A plain loop rather than a `Where` over `unit`: a lambda capturing the iteration
-            // variable allocates a closure per unit, which SK4002 reports and which this repository's
-            // own gate would then carry.
-            var siblings = ImmutableArray.CreateBuilder<CSharpCompilation>(group.Count - 1);
-            foreach (var other in group) {
-                if (!ReferenceEquals(other.Compilation, unit.Compilation)) {
-                    siblings.Add(other.Compilation);
-                }
-            }
-
-            linked.Add(unit with { Siblings = siblings.ToImmutable() });
         }
 
-        return linked.ToImmutable();
+        return multiTargeted.Count == 0 ? null : multiTargeted;
     }
 
     /// <summary>
