@@ -48,11 +48,16 @@ public static class ArrangementFindings {
 
         var failed = command.ExitCode == ExitCodes.InternalError || incomplete;
         if (failed) {
+            // ⚠ #345: the message names the *stage*, because this diagnostic and the per-file one
+            // above it are the whole of what a reader gets to explain an exit 5. "arrange --check
+            // could not inspect every requested file" named a command line nobody typed; `verify`
+            // runs three stages and the reader's first question is which of them stopped.
             diagnostics.Add(
                 new SkalaDiagnostic(
                     FormatDiagnosticIds.FileIoFailed,
                     SkalaSeverity.Error,
-                    "arrange --check could not inspect every requested file",
+                    "the arrange stage could not inspect every requested file; the files it names above "
+                    + "were left exactly as they were and are not covered by this report",
                     repositoryRoot,
                     Detail: command.Output.Trim()
                 )

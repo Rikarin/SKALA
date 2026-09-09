@@ -431,9 +431,19 @@ public static class SarifWriter {
 
     static Invocation BuildInvocation(RunReport report) {
         var end = DateTime.UtcNow;
+
+        // ⚠ #345: this read `!report.Partial` alone, and `Partial` is set only by a *cancelled or
+        // failed analyzer* — nothing about arrangement, the formatter's token-equivalence check or an
+        // unreadable file touches it. Measured on the issue's reproduction: a run that exited 5 with
+        // an `SK9098` notification in this very invocation reported `"executionSuccessful": true`. A
+        // SARIF consumer reading the one field the format has for "did this run complete" was told
+        // yes on the run that could not.
+        var failed = report.Diagnostics.Any(static diagnostic => diagnostic.Severity >= SkalaSeverity.Error);
         var invocation = new Invocation {
-            ExecutionSuccessful = !report.Partial,
-            ExitCode = report.Gate is { Passed: false } ? ExitCodes.GateFailed : ExitCodes.Ok,
+            ExecutionSuccessful = !report.Partial && !failed,
+            ExitCode = failed
+                ? ExitCodes.InternalError
+                : report.Gate is { Passed: false } ? ExitCodes.GateFailed : ExitCodes.Ok,
             StartTimeUtc = end - report.Duration,
             EndTimeUtc = end
         };
@@ -454,17 +464,51 @@ public static class SarifWriter {
 
         if (!report.Diagnostics.IsEmpty) {
             invocation.ToolExecutionNotifications = [
-                .. report.Diagnostics.Select(static diagnostic =>
-                    new Notification {
-                        Level = SarifSeverity.Level(diagnostic.Severity),
-                        Message = new() { Text = diagnostic.Message },
-                        Descriptor = new() { Id = diagnostic.Id }
-                    }
-                )
+                .. report.Diagnostics.Select(diagnostic => Notify(report, diagnostic))
             ];
         }
 
         return invocation;
+    }
+
+    /// <summary>
+    ///     One tool diagnostic as a SARIF notification.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #345 measured what this used to emit, and the issue's own diagnosis of it was wrong.
+    ///     "Only <c>--format json</c> carries the <c>SK9098</c>, the *This is a Skala bug; the file was
+    ///     left untouched* sentence, and the path to the crash reproduction" was true of the id and the
+    ///     message and false of everything else: the notification carried neither
+    ///     <see cref="SkalaDiagnostic.File" /> nor <see cref="SkalaDiagnostic.Detail" />, so in a
+    ///     542 KB SARIF over the reproduction the failing file's name appeared <b>zero times</b> and the
+    ///     crash directory never at all. No format carried them. The one <c>.skala/crash/</c> string in
+    ///     that SARIF was <c>SK9099</c>'s boilerplate rule help, describing a different diagnostic.
+    /// </remarks>
+    static Notification Notify(RunReport report, SkalaDiagnostic diagnostic) {
+        var notification = new Notification {
+            Level = SarifSeverity.Level(diagnostic.Severity),
+            Message = new() {
+                Text = diagnostic.Detail is { Length: > 0 } detail
+                    ? diagnostic.Message + " — " + detail
+                    : diagnostic.Message
+            },
+            Descriptor = new() { Id = diagnostic.Id }
+        };
+
+        if (diagnostic.File is { Length: > 0 } file) {
+            notification.Locations = [
+                new Location {
+                    PhysicalLocation = new() {
+                        ArtifactLocation = new() {
+                            Uri = new(Relative(report.RepositoryRoot, file), UriKind.Relative)
+                        },
+                        Region = diagnostic.Line > 0 ? new() { StartLine = diagnostic.Line } : null
+                    }
+                }
+            ];
+        }
+
+        return notification;
     }
 
     /// <summary>
