@@ -358,11 +358,30 @@ public static class Renderer {
 
         // The run's own diagnostics about the run: a missing baseline, a binlog that covers too
         // little, a rule that could not be loaded. They are what explains the numbers above.
+        //
+        // ⚠ #345: these carried no `file=`, so a diagnostic about a specific file annotated the
+        // workflow rather than the code — and an `SK9098` naming no file is a reviewer being told
+        // that something was not checked and not which thing. The detail is appended for the same
+        // reason it is everywhere else: it is where the crash-reproduction path is.
         foreach (var diagnostic in report.Diagnostics) {
-            builder.Append(diagnostic.Severity >= SkalaSeverity.Error ? "::error::" : "::notice::")
+            var error = diagnostic.Severity >= SkalaSeverity.Error;
+            builder.Append(error ? "::error" : "::notice");
+
+            if (diagnostic.File is { Length: > 0 }) {
+                builder.Append(" file=")
+                    .Append(Relative(report, diagnostic))
+                    .Append(",line=")
+                    .Append(Math.Max(1, diagnostic.Line).ToString(CultureInfo.InvariantCulture));
+            }
+
+            builder.Append("::")
                 .Append(diagnostic.Id)
                 .Append(": ")
-                .Line(diagnostic.Message.Replace("\n", "%0A", StringComparison.Ordinal));
+                .Line(
+                    (OneLine(diagnostic.Detail) is { } detail
+                        ? diagnostic.Message + " — " + detail
+                        : diagnostic.Message).Replace("\n", "%0A", StringComparison.Ordinal)
+                );
         }
 
         if (report.Gate is { } gate) {

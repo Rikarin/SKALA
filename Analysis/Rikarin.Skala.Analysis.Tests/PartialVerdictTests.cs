@@ -156,8 +156,45 @@ public sealed class PartialVerdictTests {
     [InlineData(ReportFormat.Plain)]
     [InlineData(ReportFormat.Json)]
     [InlineData(ReportFormat.Terminal)]
+    [InlineData(ReportFormat.Markdown)]
+    [InlineData(ReportFormat.JUnit)]
     public void Verify_NamesTheCrashReproductionInEveryFormat(ReportFormat format) =>
         Assert.Contains(Crash, Run(format, Reverted(), ExitCodes.InternalError).Output, StringComparison.Ordinal);
+
+    /// <summary>
+    ///     ⚠ Every format says the run did not finish, and names the file it did not finish on.
+    ///     <c>github</c> and <c>terminal</c> always did; the other five did not, in five different
+    ///     ways, which is what makes this a property of the report rather than of one renderer.
+    /// </summary>
+    [Theory]
+    [InlineData(ReportFormat.Agent)]
+    [InlineData(ReportFormat.Plain)]
+    [InlineData(ReportFormat.Json)]
+    [InlineData(ReportFormat.Terminal)]
+    [InlineData(ReportFormat.Markdown)]
+    [InlineData(ReportFormat.JUnit)]
+    [InlineData(ReportFormat.Github)]
+    public void Verify_NamesTheStageAndTheFileInEveryFormat(ReportFormat format) {
+        var output = Run(format, Reverted(), ExitCodes.InternalError).Output;
+
+        Assert.Contains("SK9098", output, StringComparison.Ordinal);
+        Assert.Contains("Report.cs", output, StringComparison.Ordinal);
+        Assert.Contains("the arrange stage", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ JUnit counts, specifically. A CI system whose only report surface is a test result reads
+    ///     the attributes and nothing else, so an incomplete run has to arrive as failing cases — a
+    ///     green suite over a run that could not read part of the tree is the <c>plain</c> defect
+    ///     wearing a schema.
+    /// </summary>
+    [Fact]
+    public void Verify_CountsAnIncompleteRunAsAJUnitFailure() {
+        var output = Run(ReportFormat.JUnit, Reverted(), ExitCodes.InternalError).Output;
+
+        Assert.Contains("<testsuites name=\"Skala\" tests=\"2\" failures=\"2\"", output, StringComparison.Ordinal);
+        Assert.Contains("skala.incomplete", output, StringComparison.Ordinal);
+    }
 
     /// <summary>
     ///     ⚠ The partial verdict, and the answer to the question the issue asked. One file's

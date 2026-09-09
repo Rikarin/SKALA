@@ -5,6 +5,7 @@ using ModelContextProtocol.Server;
 using Rikarin.Skala.Analysis;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
@@ -126,7 +127,33 @@ sealed class SkalaTools(string repositoryRoot) {
             new VerifyRequest { Paths = paths ?? [], RepositoryRoot = repositoryRoot, Fix = fix }
         );
 
-        return Bound(result.Output.Length == 0 ? "OK  nothing to do.\n" : result.Output);
+        return Bound(Verdict(result.ExitCode, result.Output));
+    }
+
+    /// <summary>
+    ///     What <c>skala_verify</c> hands back, given <c>verify</c>'s exit code and output.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #345, the same defect one surface over. This manufactured <c>OK  nothing to do.</c> from
+    ///     an empty output and <b>never looked at the exit code</b>, so the one string the contract
+    ///     reserves for exit 0 was the fallback for every run that printed nothing — including the
+    ///     exit-5 arrangement failure whose <c>plain</c> output is exactly zero bytes.
+    ///     <para>
+    ///         ⚠ It matters more here than at the CLI: a model reading an MCP tool result has no exit
+    ///         code to check. This text is the whole of what it gets, so it has to carry the verdict
+    ///         itself.
+    ///     </para>
+    /// </remarks>
+    internal static string Verdict(int exitCode, string output) {
+        if (output.Length > 0) {
+            return output;
+        }
+
+        return exitCode == ExitCodes.Ok
+            ? "OK  nothing to do.\n"
+            : "INCOMPLETE  skala verify exited "
+            + exitCode.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            + " and printed nothing. Do not treat this as a clean tree.\n";
     }
 
     [Description(
@@ -273,4 +300,7 @@ public static class McpServerInspection {
 
     public static string FormatContent(string repositoryRoot, string content) =>
         new SkalaTools(Path.GetFullPath(repositoryRoot)).FormatForTest(content);
+
+    /// <summary>What <c>skala_verify</c> returns for a given exit code and output (#345).</summary>
+    public static string VerifyVerdict(int exitCode, string output) => SkalaTools.Verdict(exitCode, output);
 }
