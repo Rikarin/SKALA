@@ -135,8 +135,7 @@ public sealed class CrashArtifactTests {
         using var threw = new Scope();
 
         var layers = new[] {
-            Layer(symbol.Refuse(SymbolBefore, SymbolAfter).Refusal),
-            Layer(delta.Refuse(Compiles, DoesNot).Refusal),
+            Layer(symbol.Refuse(SymbolBefore, SymbolAfter).Refusal), Layer(delta.Refuse(Compiles, DoesNot).Refusal),
             Layer(threw.Refuse(Compiles, Compiles, detach: true).Refusal)
         };
 
@@ -186,8 +185,7 @@ public sealed class CrashArtifactTests {
 
         Assert.Contains("# arrangement", snapshot, StringComparison.Ordinal);
         Assert.Contains("arrange_scope = Full", snapshot, StringComparison.Ordinal);
-        foreach (var key in (string[])
-                 [
+        foreach (var key in (string[])[
                      "arrange_null_checking_pattern",
                      "arrange_object_creation_when_type_evident",
                      "arrange_arguments_literal",
@@ -271,8 +269,7 @@ public sealed class CrashArtifactTests {
         return null;
     }
 
-    static string Layer(string refusal) =>
-        refusal.Split('\n')[0].TrimEnd('\r')["# layer: ".Length..];
+    static string Layer(string refusal) => refusal.Split('\n')[0].TrimEnd('\r')["# layer: ".Length..];
 
     static string SnakeCase(string name) {
         var builder = new StringBuilder("arrange_");

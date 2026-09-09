@@ -10,8 +10,11 @@ namespace Rikarin.Skala.Formatting.CSharp;
 ///     Which safety layer refused, in the words the diagnostic gave the user.
 /// </summary>
 /// <remarks>
-///     ⚠ <c>input.cs</c> plus <c>output.cs</c> shows <em>what</em> was proposed and never <em>who said
-///     no</em>. Three arrangement layers produce a byte-identical artefact shape — the re-bind threw, a
+///     ⚠ <c>input.cs</c> plus <c>output.cs</c> shows <em>what</em> was proposed and never
+///     <em>
+///         who said
+///         no
+///     </em>. Three arrangement layers produce a byte-identical artefact shape — the re-bind threw, a
 ///     diagnostic appeared, an identifier changed meaning — and the first two even share a diagnostic id
 ///     (<c>SK9098</c>), so the folder alone cannot tell three different bugs apart. The message already
 ///     exists; before this it simply never reached the folder.
@@ -72,7 +75,10 @@ public static class CrashArtifacts {
             var directory = Core.SkalaDirectory.EnsureAt(root, "crash", hash);
             File.WriteAllText(Path.Combine(directory, "input.cs"), input);
             File.WriteAllText(Path.Combine(directory, "output.cs"), output);
-            File.WriteAllText(Path.Combine(directory, "config.snapshot"), Snapshot(path, options, refusal?.Arrangement));
+            File.WriteAllText(
+                Path.Combine(directory, "config.snapshot"),
+                Snapshot(path, options, refusal?.Arrangement)
+            );
             WriteRefusal(directory, refusal);
             return directory;
         } catch (IOException) {
@@ -152,8 +158,11 @@ public static class CrashArtifacts {
     ///     </para>
     ///     <para>
     ///         ⚠ Prefixed <c>arrange_</c> because two of them, <c>MaxLineLength</c> and
-    ///         <c>IndentSize</c>, share a name with a phase-one key above and are <em>not the same
-    ///         option</em>. Measured on this repository: <see cref="PhaseOneOptions" /> reads
+    ///         <c>IndentSize</c>, share a name with a phase-one key above and are
+    ///         <em>
+    ///             not the same
+    ///             option
+    ///         </em>. Measured on this repository: <see cref="PhaseOneOptions" /> reads
     ///         <c>skala_max_line_length</c>, which the root .editorconfig sets to 120, while
     ///         <see cref="ArrangementOptions" /> reads the inert generic <c>max_line_length</c>, which
     ///         nothing sets — so the two lines legitimately carry 120 and 1. Unprefixed the snapshot
@@ -172,7 +181,8 @@ public static class CrashArtifacts {
         foreach (var property in typeof(ArrangementOptions)
                      .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                      .Where(static property => property.GetIndexParameters().Length == 0
-                         && property.PropertyType != typeof(PhaseOneOptions))
+                         && property.PropertyType != typeof(PhaseOneOptions)
+                     )
                      .OrderBy(static property => property.Name, StringComparer.Ordinal)) {
             builder.Append("arrange_")
                 .Append(SnakeCase(property.Name))
@@ -181,14 +191,17 @@ public static class CrashArtifacts {
         }
     }
 
-    /// <summary>⚠ <c>true</c>/<c>false</c> rather than .NET's <c>True</c>/<c>False</c>, so the line is
-    /// the shape a reader would paste back into an .editorconfig.</summary>
-    static string Render(object? value) => value switch {
-        null => string.Empty,
-        bool flag => flag ? "true" : "false",
-        IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
-        _ => value.ToString() ?? string.Empty
-    };
+    /// <summary>
+    ///     ⚠ <c>true</c>/<c>false</c> rather than .NET's <c>True</c>/<c>False</c>, so the line is
+    ///     the shape a reader would paste back into an .editorconfig.
+    /// </summary>
+    static string Render(object? value) =>
+        value switch {
+            null => string.Empty,
+            bool flag => flag ? "true" : "false",
+            IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+            _ => value.ToString() ?? string.Empty
+        };
 
     static string SnakeCase(string name) {
         var builder = new StringBuilder(name.Length + 8);
