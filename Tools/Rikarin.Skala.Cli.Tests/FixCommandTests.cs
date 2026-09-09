@@ -31,18 +31,31 @@ public sealed class FixCommandTests {
     ///     it cannot bind to. <b>Nothing about that is syntactic</b> — the file parses perfectly either
     ///     way — which is why the shipping parse-only check let it through and exited 0.
     /// </remarks>
-    const string HandlerSource = """
-                                 using System.Globalization;
+    /// <summary>
+    ///     A <c>const</c> that is read from a constant position, so SK6034's <c>static readonly</c>
+    ///     rewrite parses and does not bind.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This fixture used to be #342's <c>string.Create</c> shape, and that was a mistake worth
+    ///     recording: it rested on SK0231 firing where it should not, so fixing SK0231 turned this
+    ///     test's premise into "nothing to apply" and the test went red on the merged tree rather
+    ///     than on either branch. <b>A regression test for the safety net must not be built on a
+    ///     rule's false positive</b> — the net outlives the bug. SK6034 is a true positive whose
+    ///     rewrite is genuinely illegal here, so nothing about this fixture depends on a defect.
+    /// </remarks>
+    const string ConstantSource = """
+                                  namespace Probe;
 
-                                 public static class Message {
-                                     public static string Describe(double bleed) =>
-                                         string.Create(
-                                             CultureInfo.InvariantCulture,
-                                             $"the bleed is {bleed:F1} kg/s "
-                                             + $"which is not what the turbine is giving up"
-                                         );
-                                 }
-                                 """;
+                                  public static class Limits {
+                                      public const int Max = 8;
+
+                                      public static bool Over(int n) =>
+                                          n switch {
+                                              Max => true,
+                                              _ => false
+                                          };
+                                  }
+                                  """;
 
     [Theory]
     [InlineData(false, false)]
@@ -129,27 +142,34 @@ public sealed class FixCommandTests {
     }
 
     /// <summary>
-    ///     ⚠ The regression test for #344: a safe fix that parses and does not bind must be reverted.
+    ///     ⚠ The regression test for #344: a fix that parses and does not bind must be reverted.
     /// </summary>
     /// <remarks>
     ///     ⚠ Sabotage check — point <c>FixSafety.Verify</c> back at the parse-only path (return the
     ///     <c>Syntactic</c> branch unconditionally) and this test must go red. It did not before the
     ///     fix: the shipping <c>Diagnostics(string)</c> was <c>CSharpSyntaxTree.ParseText</c>, whose
     ///     <c>GetDiagnostics</c> is syntactic only, so the rewritten file's error count was identical
-    ///     and the guard passed.
+    ///     and the guard passed. Measured against a stale Release binary during the merge, which
+    ///     applied the same edit and left the file broken — the two builds disagreeing on one input
+    ///     is the cleanest statement of what this test holds down.
+    ///     <para>
+    ///         ⚠ <c>--include</c> rather than <c>--safe</c>: SK6034's fix is <c>fixIsSafe: false</c>,
+    ///         and the revert path this covers is the same one either way. What matters is that the
+    ///         rewrite is a true positive whose result does not bind, not which bucket it ships in.
+    ///     </para>
     /// </remarks>
     [Fact]
-    public void Fix_RevertsASafeFixThatStopsBinding() {
+    public void Fix_RevertsAFixThatStopsBinding() {
         using var scratch = new Scratch();
-        var source = scratch.Write("Message.cs", HandlerSource);
+        var source = scratch.Write("Limits.cs", ConstantSource);
         scratch.Write("Scratch.csproj", Project);
         var before = File.ReadAllText(source);
 
-        var run = CliRunner.Run("fix", scratch.Root, "--safe");
+        var run = CliRunner.Run("fix", scratch.Root, IncludeOption, "SK6034");
 
         Assert.Equal(0, run.ExitCode);
-        Assert.Contains("Message.cs was reverted", run.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("CS1620", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("Limits.cs was reverted", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("CS9135", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("reverted 1 file(s) that regressed", run.StandardOutput, StringComparison.Ordinal);
         Assert.Equal(before, File.ReadAllText(source));
     }
