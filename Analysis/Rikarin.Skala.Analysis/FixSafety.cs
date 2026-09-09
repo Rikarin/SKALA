@@ -63,7 +63,9 @@ public readonly record struct FixVerdict(FixCheck Check, ImmutableArray<string> 
 public sealed class FixSafety {
     readonly Dictionary<string, List<Bound>> bound;
 
-    FixSafety(Dictionary<string, List<Bound>> bound) => this.bound = bound;
+    FixSafety(Dictionary<string, List<Bound>> bound) {
+        this.bound = bound;
+    }
 
     /// <summary>Nothing is re-bindable; every file falls back to the parse check.</summary>
     public static FixSafety None { get; } = new(new(StringComparer.Ordinal));

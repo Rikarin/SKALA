@@ -113,7 +113,7 @@ public sealed class CrashArtifactTests {
     [Fact]
     public void ARebindThatThrows_StillSnapshotsTheRunsOwnOptions() {
         using var scope = new Scope();
-        var artefact = scope.Refuse(Compiles, Compiles, detach: true);
+        var artefact = scope.Refuse(Compiles, Compiles, true);
 
         Assert.Equal(ArrangeIds.Reverted, artefact.Diagnostic.Id);
         AssertRunsOptions(artefact);
@@ -136,7 +136,7 @@ public sealed class CrashArtifactTests {
 
         var layers = new[] {
             Layer(symbol.Refuse(SymbolBefore, SymbolAfter).Refusal), Layer(delta.Refuse(Compiles, DoesNot).Refusal),
-            Layer(threw.Refuse(Compiles, Compiles, detach: true).Refusal)
+            Layer(threw.Refuse(Compiles, Compiles, true).Refusal)
         };
 
         Assert.Equal(3, layers.Distinct(StringComparer.Ordinal).Count());
