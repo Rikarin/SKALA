@@ -377,16 +377,12 @@ public static class CheckCommand {
                 continue;
             }
 
-            foreach (var path in unit.ReportablePaths) {
-                if (scope.Contains(path)) {
-                    files++;
-                }
-            }
+            files += unit.ReportablePaths.Count(scope.Contains);
 
-            foreach (var tree in unit.Compilation.SyntaxTrees) {
-                if (scope.Contains(Path.GetFullPath(tree.FilePath))) {
-                    lines += tree.GetText(cancellation).Lines.Count;
-                }
+            foreach (var tree in unit.Compilation.SyntaxTrees.Where(tree =>
+                         scope.Contains(Path.GetFullPath(tree.FilePath))
+                     )) {
+                lines += tree.GetText(cancellation).Lines.Count;
             }
         }
 
