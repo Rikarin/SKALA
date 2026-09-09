@@ -5,7 +5,6 @@ using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Options;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
-using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
 
@@ -52,8 +51,8 @@ public sealed record FixRequest {
 /// <remarks>
 ///     ⚠ docs/plan/10: "Every applied fix is verified: re-parse, re-bind, diagnostic delta, revert on
 ///     regression. A fixing tool that can break the build is a tool an agent will use to break the
-///     build." M5 implements re-parse and the diagnostic delta on the file's own tree; the cross-file
-///     re-bind is M6's, with the compilation-wide gate that consumes it.
+///     build." <see cref="FixSafety" /> is that re-bind. ⚠ Until #344 it was a re-parse *described* as
+///     a re-bind — see that type's remarks for what the difference cost.
 ///     <para>
 ///         ⚠ The fixes are text edits and are applied back to front within a file, so that an earlier edit
 ///         cannot move a later one's offsets. Overlapping edits from two rules on one span are dropped
@@ -118,6 +117,11 @@ public static class FixCommand {
                         }
                     ));
         request = request with { Mode = mode };
+
+        // ⚠ The compilations `check` built, kept so that every edit below can be re-bound in them.
+        // Loading a second time would cost as much again as the analysis, which is the reason the
+        // re-bind was skipped in the first place (#344).
+        LoadedProject? loaded = null;
         var (checkResult, report) = CheckCommand.Run(
             new CheckRequest {
                 Paths = request.Paths,
@@ -129,7 +133,8 @@ public static class FixCommand {
                 IncludeFormatting = false,
                 NoCache = true,
                 Define = request.Define,
-                Output = string.Empty
+                Output = string.Empty,
+                ObserveLoad = result => loaded = result
             },
             cancellation
         );
@@ -166,7 +171,8 @@ public static class FixCommand {
                         IncludeFormatting = false,
                         NoCache = true,
                         Define = request.Define,
-                        Output = string.Empty
+                        Output = string.Empty,
+                        ObserveLoad = result => loaded = result
                     },
                     cancellation
                 );
@@ -189,21 +195,40 @@ public static class FixCommand {
         AppendSkippedNaming(output, naming);
         var applied = naming.Applied;
         var reverted = 0;
+        var unbound = 0;
+        var safety = FixSafety.For(loaded);
         var changedFiles = naming.ChangedPaths.ToHashSet(StringComparer.Ordinal);
 
+        // ⚠ Serial, deliberately, and the re-bind #344 added is affordable here.
+        //
+        // Measured on `fix Rules --include SK6034` over Skala — 54 files rewritten, far past what
+        // `--safe` ever touches — before and after the re-bind: **user CPU 115 s and 118 s before,
+        // 107-114 s over four runs after.** The cost of re-binding 54 documents does not clear the
+        // noise floor of the analysis run that produced the findings. It is small because nothing is
+        // rebuilt: `check` already bound this compilation, so the `before` model is nearly free, and
+        // the `after` is one `ReplaceSyntaxTree` plus one document bind.
+        //
+        // ⚠ Parallelising this loop the way `FormatCommand` parallelises its own was tried and is
+        // **not** an improvement: two runs at ten jobs took 189 s and 255 s of wall clock against
+        // 56-144 s serial, at 46-62 % CPU and the same user CPU — waiting, not working. Every
+        // `after` is a *different* derived compilation with its own declaration table over every
+        // tree in the project, and ten of those alive at once cost more in GC than the parallelism
+        // wins. ⚠ Both wall-clock figures were taken on a machine at load average ~300 from other
+        // work, which is why the conclusion above rests on user CPU and not on them.
         foreach (var group in applicable
                      .SelectMany(static finding => finding.Fix.Select(edit => (finding, edit)))
                      .GroupBy(static pair => pair.edit.Path, StringComparer.Ordinal)
                      .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
-            var (count, wasReverted, message) = ApplyToFile(group.Key, [.. group], request, root);
-            applied += count;
-            if (count > 0 && !wasReverted) {
+            var outcome = ApplyToFile(group.Key, [.. group], request, root, safety, cancellation);
+            applied += outcome.Applied;
+            if (outcome.Applied > 0 && !outcome.Reverted) {
                 changedFiles.Add(group.Key);
             }
 
-            reverted += wasReverted ? 1 : 0;
-            if (message.Length > 0) {
-                output.Append(message);
+            reverted += outcome.Reverted ? 1 : 0;
+            unbound += outcome.Check == FixCheck.Syntactic && outcome.Applied > 0 ? 1 : 0;
+            if (outcome.Message.Length > 0) {
+                output.Append(outcome.Message);
             }
         }
 
@@ -217,6 +242,26 @@ public static class FixCommand {
                     Define = request.Define
                 }
             );
+        }
+
+        // ⚠ Said out loud rather than left to look like the other check. `--load=loose` has no
+        // compilation to re-bind in, so these files were checked for parse errors and nothing else —
+        // which is what every `skala fix` did before #344, and the sentence that used to be missing.
+        if (unbound > 0) {
+            output.Append("skala fix: ")
+                .Append(unbound.ToString(CultureInfo.InvariantCulture))
+                .Append(unbound == 1 ? " file was" : " file(s) were")
+                .Append(" checked for parse errors only — ")
+                .Append(
+                    // ⚠ `loaded.Mode` and not `mode`: the ladder falls through, so asking for binlog
+                    // on a machine with no binlog and no MSBuild lands in loose while `mode` still
+                    // says binlog. Naming the mode that did not run is the fail-open this whole
+                    // change is about, one level down.
+                    loaded?.Mode == LoadMode.Loose
+                        ? "--load=loose builds no compilation to re-bind against"
+                        : "no loaded compilation holds it"
+                )
+                .AppendLine(", so a build is still owed.");
         }
 
         output.Append("skala fix: applied ")
@@ -265,20 +310,23 @@ public static class FixCommand {
         return finding.FixIsSafe && RuleCatalog.Find(finding.RuleId) is { FixIsSafe: true };
     }
 
-    static (int Applied, bool Reverted, string Message) ApplyToFile(
+    readonly record struct FileOutcome(int Applied, bool Reverted, FixCheck Check, string Message);
+
+    static FileOutcome ApplyToFile(
         string path,
         IReadOnlyList<(Finding Finding, FixEdit Edit)> pairs,
         FixRequest request,
-        string root
+        string root,
+        FixSafety safety,
+        CancellationToken cancellation
     ) {
         string original;
         try {
             original = File.ReadAllText(path);
         } catch (IOException exception) {
-            return (0, false, $"skala fix: {Relative(root, path)}: {exception.Message}\n");
+            return new(0, false, FixCheck.Semantic, $"skala fix: {Relative(root, path)}: {exception.Message}\n");
         }
 
-        var before = Diagnostics(original);
         var guard = TagGuard(path, original);
 
         // Back to front, so that an earlier edit cannot move a later one's offsets.
@@ -308,20 +356,34 @@ public static class FixCommand {
         }
 
         if (applied == 0) {
-            return (0, false, string.Empty);
+            return new(0, false, FixCheck.Semantic, string.Empty);
         }
 
-        var after = Diagnostics(text);
-        if (after.Length > before.Length) {
-            // ⚠ Revert on regression. A fix that introduces a parse or bind error is a bug in the
-            // rule, and the file is worth more than the finding.
-            return (
+        var verdict = safety.Verify(path, original, text, cancellation);
+
+        // ⚠ Revert on regression. A fix that introduces a parse or bind error is a bug in the rule,
+        // and the file is worth more than the finding.
+        if (verdict.Threw is { } threw) {
+            // ⚠ And revert when the check could not answer, for the reason ArrangementSafety gives:
+            // an unanswered safety question is a revert, never a permission.
+            return new(
                 0,
                 true,
+                verdict.Check,
+                $"skala fix: {Relative(root, path)} was reverted — the safety re-bind threw and could "
+                + $"not say whether the fix was safe: {threw}. This is a Skala bug.\n"
+            );
+        }
+
+        if (!verdict.Introduced.IsEmpty) {
+            return new(
+                0,
+                true,
+                verdict.Check,
                 $"skala fix: {Relative(root, path)} was reverted — the fix introduced "
-                + (after.Length - before.Length).ToString(CultureInfo.InvariantCulture)
+                + verdict.Introduced.Length.ToString(CultureInfo.InvariantCulture)
                 + " new compiler diagnostic(s): "
-                + string.Join(", ", after.Except(before, StringComparer.Ordinal).Take(3))
+                + string.Join(", ", verdict.Introduced.Take(3))
                 + "\n"
             );
         }
@@ -330,7 +392,7 @@ public static class FixCommand {
             File.WriteAllText(path, text, new UTF8Encoding(false));
         }
 
-        return (applied, false, string.Empty);
+        return new(applied, false, verdict.Check, string.Empty);
     }
 
     /// <summary>
@@ -363,31 +425,6 @@ public static class FixCommand {
         );
 
         return FormatterTagGuard.For(tree.GetRoot(), tags);
-    }
-
-    /// <summary>
-    ///     The file's own syntactic diagnostics, as the before/after delta.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Syntactic only, on purpose. A semantic re-bind needs the whole compilation rebuilt per
-    ///     file, which turns a fix pass over fifty files into a minute; the syntactic delta catches
-    ///     every fix that produced text that is not C#, which is the failure class a text-edit fix can
-    ///     actually have. The compilation-wide re-bind is M6's, beside the gate that wants it anyway.
-    /// </remarks>
-    static ImmutableArray<string> Diagnostics(string text) {
-        var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(
-            Microsoft.CodeAnalysis.Text.SourceText.From(text),
-            CSharpFormatter.ParseOptions
-        );
-
-        return [
-            .. tree.GetDiagnostics()
-                .Where(static diagnostic => diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
-                .Select(static diagnostic => diagnostic.Id
-                    + "@"
-                    + diagnostic.Location.SourceSpan.Start.ToString(CultureInfo.InvariantCulture)
-                )
-        ];
     }
 
     static string Relative(string root, string path) =>

@@ -96,6 +96,37 @@ Two classes, declared per rule in `rules.json` (`fixIsSafe`):
 Every applied fix is verified: re-parse, re-bind, diagnostic delta, revert on regression. A fixing
 tool that can break the build is a tool an agent will use to break the build.
 
+⚠ **This sentence was true of the plan and false of the tool for two milestones, and it is what the
+README repeated** (#344). `FixCommand.Diagnostics` was `CSharpSyntaxTree.ParseText(text).GetDiagnostics()`
+under a comment claiming it caught "a parse or bind error" — but `SyntaxTree.GetDiagnostics` is
+syntactic only, and there was no compilation, no reference set and no semantic model anywhere on that
+path, so it could not return a bind error for any fix, ever. One `skala fix --safe` run over a
+~750-file green tree applied 26 fixes, produced 12 CS1620 and 4 CS0234, reverted nothing and exited 0.
+The re-bind now lives in `FixSafety` and works the way `ArrangementSafety` does.
+
+**The cost, measured, because "a re-bind per file is unaffordable" is what deferred it.** It is
+unaffordable only if each file rebuilds a compilation. `Compilation.ReplaceSyntaxTree` on the
+compilation `check` already built is one document bind, and `CheckRequest.ObserveLoad` hands `fix`
+that compilation so nothing is loaded twice. On `skala fix Rules --include SK6034` over Skala itself —
+54 files rewritten, far past what `--safe` ever touches — **user CPU was 115 s and 118 s before the
+re-bind and 107–114 s over four runs after it**: re-binding 54 documents does not clear the noise
+floor of the analysis run that found the findings. That run also reverted **4 files whose fixes broke
+the build** and which the parse check had waved through.
+
+⚠ **Wall clock could not be used as the instrument and is why the figures above are CPU.** The
+measurements were taken on a machine at load average ~300 from concurrent work, and the same binary
+on the same command ranged 56–144 s. ⚠ **Parallelising the per-file loop the way `FormatCommand`
+parallelises its own was tried and refuted**: two runs at ten jobs took 189 s and 255 s of wall clock
+for the same user CPU, at 46–62 % CPU. Every `after` is a *different* derived compilation carrying
+its own declaration table over every tree in the project, so ten alive at once cost more in GC than
+the parallelism wins. The loop stays serial.
+
+⚠ **`--load=loose` is the one case that still gets the parse check**, because a loose compilation
+references the running framework and nothing else — binding against it answers a question about a
+program that does not exist, which is why `ArrangementFindings` refuses it too. `fix` says so in its
+output ("checked for parse errors only … a build is still owed") rather than letting it pass for the
+check the other files got.
+
 ## The MCP server (ADR-014)
 
 `skala mcp` — stdio, one process per repository, started by the agent host.

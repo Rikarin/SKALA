@@ -20,6 +20,30 @@ public sealed class FixCommandTests {
                           }
                           """;
 
+    /// <summary>
+    ///     The reproduction from #342, which is the reproduction from #344.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>SK0231</c> reports the second operand as an interpolated string with no holes and offers
+    ///     to drop the <c>$</c>, and the fix is marked safe. It is also the edit that makes the whole
+    ///     additive expression a <c>string</c> rather than a <c>DefaultInterpolatedStringHandler</c>, so
+    ///     the <c>string.Create</c> overload stops applying and the call binds to a <c>ref</c> parameter
+    ///     it cannot bind to. <b>Nothing about that is syntactic</b> — the file parses perfectly either
+    ///     way — which is why the shipping parse-only check let it through and exited 0.
+    /// </remarks>
+    const string HandlerSource = """
+                                 using System.Globalization;
+
+                                 public static class Message {
+                                     public static string Describe(double bleed) =>
+                                         string.Create(
+                                             CultureInfo.InvariantCulture,
+                                             $"the bleed is {bleed:F1} kg/s "
+                                             + $"which is not what the turbine is giving up"
+                                         );
+                                 }
+                                 """;
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]
@@ -104,6 +128,47 @@ public sealed class FixCommandTests {
         Assert.Equal(before, File.ReadAllText(source));
     }
 
+    /// <summary>
+    ///     ⚠ The regression test for #344: a safe fix that parses and does not bind must be reverted.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Sabotage check — point <c>FixSafety.Verify</c> back at the parse-only path (return the
+    ///     <c>Syntactic</c> branch unconditionally) and this test must go red. It did not before the
+    ///     fix: the shipping <c>Diagnostics(string)</c> was <c>CSharpSyntaxTree.ParseText</c>, whose
+    ///     <c>GetDiagnostics</c> is syntactic only, so the rewritten file's error count was identical
+    ///     and the guard passed.
+    /// </remarks>
+    [Fact]
+    public void Fix_RevertsASafeFixThatStopsBinding() {
+        using var scratch = new Scratch();
+        var source = scratch.Write("Message.cs", HandlerSource);
+        scratch.Write("Scratch.csproj", Project);
+        var before = File.ReadAllText(source);
+
+        var run = CliRunner.Run("fix", scratch.Root, "--safe");
+
+        Assert.Equal(0, run.ExitCode);
+        Assert.Contains("Message.cs was reverted", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("CS1620", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("reverted 1 file(s) that regressed", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Equal(before, File.ReadAllText(source));
+    }
+
+    /// <summary>The positive control: a safe fix that still binds is still written.</summary>
+    [Fact]
+    public void Fix_AppliesASafeFixThatStillBinds() {
+        using var scratch = new Scratch();
+        var source = scratch.Write("Factory.cs", Source);
+        scratch.Write("Scratch.csproj", Project);
+
+        var run = CliRunner.Run("fix", scratch.Root, "--safe");
+
+        Assert.True(run.ExitCode == 0, run.StandardOutput + run.StandardError);
+        Assert.DoesNotContain("was reverted", run.StandardOutput, StringComparison.Ordinal);
+        Assert.DoesNotContain("parse errors only", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("static value => value + 1", File.ReadAllText(source), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Fix_WithoutAWorkspaceStillAppliesSyntacticFixes() {
         using var scratch = new Scratch();
@@ -122,6 +187,12 @@ public sealed class FixCommandTests {
 
         Assert.True(run.ExitCode == 0, run.StandardOutput + run.StandardError);
         Assert.Contains("throw;", File.ReadAllText(source), StringComparison.Ordinal);
+
+        // ⚠ #344: with no project there is no compilation to re-bind in, so this fix got the parse
+        // check and nothing else. That is defensible and it is said out loud — what is not defensible
+        // is letting it pass for the check the other files got.
+        Assert.Contains("checked for parse errors only", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("a build is still owed", run.StandardOutput, StringComparison.Ordinal);
     }
 
     sealed class Scratch : IDisposable {

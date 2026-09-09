@@ -112,6 +112,18 @@ public sealed record CheckRequest {
 
     /// <summary><c>--verbose</c>: name every rule that did not run, with its own reason.</summary>
     public bool Verbose { get; init; }
+
+    /// <summary>
+    ///     Handed the <see cref="LoadedProject" /> this run built, before anything is analysed.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ For <c>skala fix</c>, which has to re-bind every file it rewrites and must not pay for a
+    ///     second load to do it. The compilations the findings came out of are the only ones that can
+    ///     answer "did this edit change what the document means", and rebuilding them from the same
+    ///     <see cref="LoadRequest" /> costs as much again as the analysis. Same shape as
+    ///     <c>ArrangeRequest.Compilations</c>, and for the same reason.
+    /// </remarks>
+    public Action<LoadedProject>? ObserveLoad { get; init; }
 }
 
 /// <summary>
@@ -154,6 +166,8 @@ public static class CheckCommand {
             },
             cancellation
         );
+
+        request.ObserveLoad?.Invoke(loaded);
 
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
         diagnostics.AddRange(loaded.Diagnostics);
