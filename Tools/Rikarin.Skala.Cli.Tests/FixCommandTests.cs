@@ -39,8 +39,11 @@ public sealed class FixCommandTests {
     ///     ⚠ This fixture used to be #342's <c>string.Create</c> shape, and that was a mistake worth
     ///     recording: it rested on SK0231 firing where it should not, so fixing SK0231 turned this
     ///     test's premise into "nothing to apply" and the test went red on the merged tree rather
-    ///     than on either branch. <b>A regression test for the safety net must not be built on a
-    ///     rule's false positive</b> — the net outlives the bug. SK6034 is a true positive whose
+    ///     than on either branch.
+    ///     <b>
+    ///         A regression test for the safety net must not be built on a
+    ///         rule's false positive
+    ///     </b> — the net outlives the bug. SK6034 is a true positive whose
     ///     rewrite is genuinely illegal here, so nothing about this fixture depends on a defect.
     /// </remarks>
     const string ConstantSource = """
