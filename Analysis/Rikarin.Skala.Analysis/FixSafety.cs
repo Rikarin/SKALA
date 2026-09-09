@@ -222,10 +222,10 @@ public sealed class FixSafety {
 
     static ImmutableHashSet<string> Signature(IEnumerable<Diagnostic> diagnostics) {
         var set = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
-        foreach (var diagnostic in diagnostics) {
-            if (diagnostic.Severity == DiagnosticSeverity.Error) {
-                set.Add(diagnostic.Id + ": " + diagnostic.GetMessage(CultureInfo.InvariantCulture));
-            }
+        foreach (var diagnostic in diagnostics.Where(static diagnostic =>
+                     diagnostic.Severity == DiagnosticSeverity.Error
+                 )) {
+            set.Add(diagnostic.Id + ": " + diagnostic.GetMessage(CultureInfo.InvariantCulture));
         }
 
         return set.ToImmutable();

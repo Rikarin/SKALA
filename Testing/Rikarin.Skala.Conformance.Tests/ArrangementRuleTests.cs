@@ -255,7 +255,7 @@ public sealed class ArrangementRuleTests {
     [Theory]
     [InlineData("public Expression<Func<Row, bool>> M() { return r => r.Banner == null; }")]
     [InlineData("public Expression<Predicate<Row>> M() { return r => r.Banner == null; }")]
-    [InlineData("public Row M() { return Arg.Is<Row>(x => x.Icon == \"d\" && x.Banner == null); }")]
+    [InlineData("""public Row M() { return Arg.Is<Row>(x => x.Icon == "d" && x.Banner == null); }""")]
     public void IsNotNull_RefusesInsideAnExpressionTree(string member) {
         var result = Attempt(
             $$"""

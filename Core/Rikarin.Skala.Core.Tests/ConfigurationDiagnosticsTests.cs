@@ -173,11 +173,11 @@ public sealed class ConfigurationDiagnosticsTests {
             KeyNamespace.Option,
             Assert.Single(
                 resolution.Unknown,
-                key => key.Assignment.Key.EndsWith("_highlighting", StringComparison.Ordinal)
+                static key => key.Assignment.Key.EndsWith("_highlighting", StringComparison.Ordinal)
             ).Namespace
         );
 
-        Assert.Single(diagnostics, d => d.Id == ConfigDiagnosticIds.UnknownKey);
+        Assert.Single(diagnostics, static d => d.Id == ConfigDiagnosticIds.UnknownKey);
 
         // The two Roslyn owns are still classified out of SK9001, and named so this cannot pass by
         // finding nothing: a resolution that dropped them entirely would satisfy a DoesNotContain.

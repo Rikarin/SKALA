@@ -24,16 +24,16 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// <param name="Message">That diagnostic's message, verbatim.</param>
 public sealed record CrashRefusal(string Layer, string DiagnosticId, string Message) {
     /// <summary>The formatter's unconditional token-stream promise (<c>SK9099</c>).</summary>
-    public const string TokenStream = "format/token-stream";
+    public static readonly string TokenStream = "format/token-stream";
 
     /// <summary>Layer 2 could not answer, because re-binding threw (<c>SK9098</c>).</summary>
-    public const string RebindThrew = "arrange/rebind-threw";
+    public static readonly string RebindThrew = "arrange/rebind-threw";
 
     /// <summary>Layer 2: the rewritten document carries a diagnostic it did not have (<c>SK9098</c>).</summary>
-    public const string DiagnosticDelta = "arrange/diagnostic-delta";
+    public static readonly string DiagnosticDelta = "arrange/diagnostic-delta";
 
     /// <summary>Layer 3: a surviving identifier binds to something else (<c>SK9096</c>).</summary>
-    public const string SymbolIdentity = "arrange/symbol-identity";
+    public static readonly string SymbolIdentity = "arrange/symbol-identity";
 
     /// <summary>
     ///     The arrangement settings that drove the rewrite, when a rewrite drove it.
@@ -177,7 +177,7 @@ public static class CrashArtifacts {
 
         // ⚠ Boxed once. `GetValue` takes an object, and re-boxing per property would hand each read
         // a different copy — harmless for a readonly struct, wasteful, and confusing to read.
-        var values = (object)arrangement;
+        object values = arrangement;
         foreach (var property in typeof(ArrangementOptions)
                      .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                      .Where(static property => property.GetIndexParameters().Length == 0
