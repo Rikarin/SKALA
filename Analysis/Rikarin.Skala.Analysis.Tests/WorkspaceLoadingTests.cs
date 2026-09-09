@@ -587,4 +587,145 @@ public sealed class WorkspaceLoadingTests {
         Assert.Equal(LoadMode.Loose, loaded.Mode);
         Assert.NotEmpty(loaded.Units);
     }
+
+    /// <summary>
+    ///     A two-project solution: a file whose own directory holds no <c>.csproj</c>, so the workspace
+    ///     target resolves all the way up to the solution.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>WorkspaceLoader.Resolve</c> looks in the requested file's <em>own</em> directory and
+    ///     then falls back to the repository root — it never walks up to the containing project. So
+    ///     <c>Alpha/Nested/One.cs</c> loads <c>Multi.slnx</c>: two projects, four files. That is the
+    ///     #346 reproduction and it is also, deliberately, the right thing for the loader to do. The
+    ///     file cannot be analysed without its project's references, and the assertions below are about
+    ///     what is <em>reported</em>, never about what was loaded.
+    /// </remarks>
+    static string MultiProjectTree(Scratch scratch) {
+        scratch.Write(
+            "Multi.slnx",
+            """
+            <Solution>
+              <Project Path="Alpha/Alpha.csproj" />
+              <Project Path="Beta/Beta.csproj" />
+            </Solution>
+            """
+        );
+
+        scratch.Write(Path.Combine("Alpha", "Alpha.csproj"), Project);
+        scratch.Write(Path.Combine("Beta", "Beta.csproj"), Project);
+        scratch.Write(Path.Combine("Alpha", "Two.cs"), Unformatted.Replace("Widget", "Two", StringComparison.Ordinal));
+        scratch.Write(
+            Path.Combine("Beta", "Three.cs"),
+            Unformatted.Replace("Widget", "Three", StringComparison.Ordinal)
+        );
+
+        return scratch.Write(
+            Path.Combine("Alpha", "Nested", "One.cs"),
+            Unformatted.Replace("Widget", "One", StringComparison.Ordinal)
+        );
+    }
+
+    static CheckRequest FileRequest(Scratch scratch, string file, string? project = null) =>
+        new() {
+            RepositoryRoot = scratch.Root,
+            Paths = [file],
+            Mode = LoadMode.Workspace,
+            ProjectPath = project,
+            AllowLoadFallback = false,
+            Output = string.Empty,
+            IncludeMetrics = false,
+            NoCache = true
+        };
+
+    /// <summary>
+    ///     ⚠ #346: one <c>.cs</c> file on the command line, one file in the report.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The negative control is the first half of this test and it is not decoration.</b>
+    ///     Asserting only "every reported path is the requested file" passes just as well against a run
+    ///     that found nothing, against a loader that silently narrowed to one document, and against a
+    ///     tree where the other three files happen to be clean — three ways for the assertion to hold
+    ///     for reasons that have nothing to do with the fix. So the whole tree is checked first and has
+    ///     to report more than one file; only then does the same tree, asked about one file, have to
+    ///     report exactly that one.
+    ///     <para>
+    ///         Sabotage: restore <c>findings.AddRange(outcome.Findings)</c> in <c>CheckCommand.Run</c>
+    ///         and the single-file run comes back with <c>Alpha/Two.cs</c> and <c>Beta/Three.cs</c> in
+    ///         it — measured on a scratch tree of this exact shape before the fix, four files reported
+    ///         for a one-file request, exit 0.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void Workspace_ReportsOnlyTheRequestedFile() {
+        using var scratch = new Scratch();
+        var file = MultiProjectTree(scratch);
+
+        var (_, whole) = CheckCommand.Run(
+            FileRequest(scratch, scratch.Root),
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.True(
+            whole.Findings.Select(static finding => finding.Path).Distinct(StringComparer.Ordinal).Count() > 1,
+            "the control run must see more than one file, or the narrowed run below proves nothing"
+        );
+
+        var (result, report) = CheckCommand.Run(FileRequest(scratch, file), TestContext.Current.CancellationToken);
+
+        Assert.Equal(LoadMode.Workspace, report.Mode);
+        Assert.NotEqual(ExitCodes.LoadFailure, result.ExitCode);
+        Assert.NotEmpty(report.Findings);
+        Assert.All(report.Findings, finding => Assert.Equal(file, finding.Path));
+
+        // ⚠ The summary line too. "753 files" beside a one-file request is how the widening survived.
+        Assert.Equal(1, report.FileCount);
+    }
+
+    /// <summary>
+    ///     ⚠ #346: <c>--project</c> names the compilation, and the positional path still names the report.
+    /// </summary>
+    /// <remarks>
+    ///     With <c>--project</c> given, <c>Resolve</c> returns immediately and never consults the
+    ///     positional path — correctly, since the two answer different questions. The defect was that
+    ///     nothing downstream consulted it either.
+    /// </remarks>
+    [Fact]
+    public void Workspace_ProjectNamesTheLoadAndThePathStillNamesTheReport() {
+        using var scratch = new Scratch();
+        var file = MultiProjectTree(scratch);
+
+        var (result, report) = CheckCommand.Run(
+            FileRequest(scratch, file, Path.Combine(scratch.Root, "Alpha", "Alpha.csproj")),
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.NotEqual(ExitCodes.LoadFailure, result.ExitCode);
+        Assert.NotEmpty(report.Findings);
+        Assert.All(report.Findings, finding => Assert.Equal(file, finding.Path));
+    }
+
+    /// <summary>
+    ///     ⚠ #346: <c>verify</c> inherits the fix, because it inherits the request.
+    /// </summary>
+    /// <remarks>
+    ///     <c>VerifyCommand</c> passes its <c>Paths</c> straight into <c>CheckRequest.Paths</c> and adds
+    ///     the formatting and arrangement halves, which were already filtered. Nothing in
+    ///     <c>VerifyCommand.cs</c> changed for #346, and this is what says so — the auto mode
+    ///     <c>verify</c> resolves is the one the issue reported the defect under.
+    /// </remarks>
+    [Fact]
+    public void Verify_AutoReportsOnlyTheRequestedFile() {
+        using var scratch = new Scratch();
+        var file = MultiProjectTree(scratch);
+
+        var result = VerifyCommand.Run(
+            new VerifyRequest { RepositoryRoot = scratch.Root, Paths = [file], NoCache = true },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.GateFailed, result.ExitCode);
+        Assert.Contains("One.cs", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("Two.cs", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("Three.cs", result.Output, StringComparison.Ordinal);
+    }
 }
