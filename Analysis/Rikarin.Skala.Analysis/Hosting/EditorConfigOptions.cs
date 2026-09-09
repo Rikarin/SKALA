@@ -1,6 +1,8 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Analysis.Loading;
+using Rikarin.Skala.Rules;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Analysis.Hosting;
@@ -61,12 +63,21 @@ public static class EditorConfigOptions {
         }
 
         if (configs.Count == 0) {
-            return (new AnalyzerOptions([]), fingerprint.ToString(), null);
+            // ⚠ Still a provider when the project multi-targets: the sibling compilations are the
+            // only thing on it then, and a repository with no .editorconfig anywhere is exactly as
+            // able to break its `netstandard2.1` leg as one with a full export in it (#343).
+            return (
+                unit.Siblings.IsEmpty
+                    ? new AnalyzerOptions([])
+                    : new AnalyzerOptions([], new SetProvider(null, unit.Siblings)),
+                fingerprint.ToString(),
+                null
+            );
         }
 
         var set = AnalyzerConfigSet.Create(configs.ToImmutable());
         return (
-            new AnalyzerOptions([], new SetProvider(set)),
+            new AnalyzerOptions([], new SetProvider(set, unit.Siblings)),
             fingerprint.ToString(),
             new SeverityProvider(set)
         );
@@ -131,7 +142,9 @@ public static class EditorConfigOptions {
             }
         }
 
-        return configs.Count == 0 ? null : new SetProvider(AnalyzerConfigSet.Create(configs.ToImmutable()));
+        // No siblings: this provider is for the *generator* driver, which runs while a compilation is
+        // still being built and therefore before any sibling of it exists.
+        return configs.Count == 0 ? null : new SetProvider(AnalyzerConfigSet.Create(configs.ToImmutable()), []);
     }
 
     /// <summary>
@@ -168,15 +181,41 @@ public static class EditorConfigOptions {
         return [.. found];
     }
 
-    sealed class SetProvider(AnalyzerConfigSet set) : AnalyzerConfigOptionsProvider {
-        public override AnalyzerConfigOptions GlobalOptions { get; } =
-            new Options(set.GlobalConfigOptions.AnalyzerOptions);
+    /// <summary>
+    ///     ⚠ Also the channel by which the loader tells an analyzer about the project's other target
+    ///     frameworks (#343).
+    /// </summary>
+    /// <remarks>
+    ///     <see cref="AnalyzerOptions" /> is <c>(AdditionalFiles, AnalyzerConfigOptionsProvider)</c>
+    ///     and the provider is the half a host is free to substitute — Roslyn hands the instance
+    ///     through to <c>CompilationStartAnalysisContext.Options</c> untouched, so a rule can type-test
+    ///     it for <see cref="ISiblingCompilations" />. There is no other way in: an analyzer is given
+    ///     one <see cref="Compilation" /> and no route to a sibling, and encoding the answer as an
+    ///     <c>.editorconfig</c> key would need the loader to know in advance which framework types
+    ///     every rule cares about.
+    ///     <para>
+    ///         ⚠ Both the config set and the siblings are optional, because either half can be absent:
+    ///         a repository with no <c>.editorconfig</c> at all still multi-targets, and the common
+    ///         single-target project has configuration and no siblings.
+    ///     </para>
+    /// </remarks>
+    sealed class SetProvider(AnalyzerConfigSet? set, ImmutableArray<CSharpCompilation> siblings)
+        : AnalyzerConfigOptionsProvider, ISiblingCompilations {
+        public ImmutableArray<Compilation> Siblings { get; } = siblings.CastArray<Compilation>();
+
+        public override AnalyzerConfigOptions GlobalOptions { get; } = set is null
+            ? new Options(ImmutableDictionary<string, string>.Empty)
+            : new Options(set.GlobalConfigOptions.AnalyzerOptions);
 
         public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) =>
-            new Options(set.GetOptionsForSourcePath(tree.FilePath).AnalyzerOptions);
+            set is null
+                ? new Options(ImmutableDictionary<string, string>.Empty)
+                : new Options(set.GetOptionsForSourcePath(tree.FilePath).AnalyzerOptions);
 
         public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) =>
-            new Options(set.GetOptionsForSourcePath(textFile.Path).AnalyzerOptions);
+            set is null
+                ? new Options(ImmutableDictionary<string, string>.Empty)
+                : new Options(set.GetOptionsForSourcePath(textFile.Path).AnalyzerOptions);
     }
 
     sealed class Options(ImmutableDictionary<string, string> values) : AnalyzerConfigOptions {

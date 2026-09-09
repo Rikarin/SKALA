@@ -64,6 +64,20 @@ public sealed record CompilationUnit {
     public ImmutableArray<string> AnalyzerConfigPaths { get; init; } = [];
 
     public string ProjectPath { get; init; } = string.Empty;
+
+    /// <summary>
+    ///     The same project's <em>other</em> target frameworks (#343). Empty for a single-target
+    ///     project and for the loose load.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>A multi-targeted project is several compilations over one set of source files</b>, and
+    ///     nothing an analyzer can see says so. Every loader opens one <see cref="CompilationUnit" />
+    ///     per moniker and <c>CheckCommand</c> runs the analyzers over each in turn, so a rule whose
+    ///     condition is framework-dependent fires from whichever moniker satisfies it and its fix is
+    ///     written to a file all of them compile. <c>MultiTargetLink.Apply</c> fills this in for every
+    ///     mode at once, and <c>Hosting.EditorConfigOptions</c> publishes it to the driver.
+    /// </remarks>
+    public ImmutableArray<CSharpCompilation> Siblings { get; init; } = [];
 }
 
 /// <summary>The result of loading: compilations, and everything that went wrong on the way.</summary>
