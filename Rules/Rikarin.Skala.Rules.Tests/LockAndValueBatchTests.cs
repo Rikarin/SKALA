@@ -76,7 +76,48 @@ public sealed class LockAndValueBatchTests {
                               }
                               """;
         var before = RuleFixtures.Compile(source, "probe.cs");
-        var diagnostic = Assert.Single(Analyze(before), static d => d.Id == "SK1023");
+        var after = RuleFixtures.Compile(ApplyLockFix(source), "probe.cs");
+        Assert.DoesNotContain(Analyze(after), static d => d.Id == "SK1023");
+        Assert.Equal(1000, Run(before));
+        Assert.Equal(1000, Run(after));
+    }
+
+    /// <summary>
+    ///     ⚠ <b>#343: <c>fix --safe</c> followed by <c>verify</c> has to be a fixpoint.</b>
+    /// </summary>
+    /// <remarks>
+    ///     The rewrite used to be
+    ///     <c>readonly global::System.Threading.Lock gate = new global::System.Threading.Lock();</c>,
+    ///     which compiles and which <c>arrange --check</c> then reported as
+    ///     <c>
+    /// SK0203 target-typed
+    ///     new
+    ///     </c> — on a file <c>fix</c> had written a moment earlier. So it is emitted in the shape
+    ///     arrangement leaves alone: <c>new()</c> always, and the short name exactly where the
+    ///     semantic model says <c>Lock</c> binds to <c>System.Threading.Lock</c> and nothing else.
+    ///     <para>
+    ///         ⚠ The third case is the one that keeps <c>global::</c> alive. <c>Lock</c> is a plausible
+    ///         name for a type of one's own; emitting the short form where it binds elsewhere is a
+    ///         silent change of meaning, which is the one thing a fix here may never do.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData("using System.Threading;\n", "readonly Lock gate = new();")]
+    [InlineData("", "readonly global::System.Threading.Lock gate = new();")]
+    [InlineData("using System.Threading;\nclass Lock { }\n", "readonly global::System.Threading.Lock gate = new();")]
+    public void LockFix_EmitsTargetTypedNewAndTheShortestNameThatBinds(string prologue, string expected) {
+        var source = prologue + "class C { readonly object gate = new object(); void M() { lock (gate) { } } }";
+        var rewritten = ApplyLockFix(source);
+        Assert.Contains(expected, rewritten, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            Analyze(RuleFixtures.Compile(rewritten, "probe.cs")),
+            static d => d.Id == "SK1023"
+        );
+    }
+
+    /// <summary>The packed edits, applied — what <c>skala fix</c> writes to the file.</summary>
+    static string ApplyLockFix(string source) {
+        var diagnostic = Assert.Single(Analyze(RuleFixtures.Compile(source, "probe.cs")), static d => d.Id == "SK1023");
         var edits = Enumerable.Range(
             0,
             int.Parse(diagnostic.Properties[FixEdits.CountKey]!, CultureInfo.InvariantCulture)
@@ -89,10 +130,8 @@ public sealed class LockAndValueBatchTests {
                     diagnostic.Properties[FixEdits.TextKey(index)]!
                 )
             );
-        var after = RuleFixtures.Compile(SourceText.From(source).WithChanges(edits).ToString(), "probe.cs");
-        Assert.DoesNotContain(Analyze(after), static d => d.Id == "SK1023");
-        Assert.Equal(1000, Run(before));
-        Assert.Equal(1000, Run(after));
+
+        return SourceText.From(source).WithChanges(edits).ToString();
     }
 
     [Theory]

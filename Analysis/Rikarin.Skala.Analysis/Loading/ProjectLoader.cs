@@ -27,11 +27,17 @@ public static class ProjectLoader {
         var attempted = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
 
         foreach (var mode in Ladder(request)) {
-            var loaded = mode switch {
+            var raw = mode switch {
                 LoadMode.Binlog => BinlogLoader.Load(request, cancellation),
                 LoadMode.Workspace => WorkspaceLoader.Load(request, cancellation),
                 _ => LooseLoader.Load(request)
             };
+
+            // ⚠ #343: here rather than in each loader, because it is the one point every mode passes
+            // through and a mode that forgot it would reintroduce the defect silently — the finding
+            // it produces is *plausible*, it is just a claim about one target framework reported as a
+            // claim about the file.
+            var loaded = raw with { Units = MultiTargetLink.Apply(raw.Units) };
 
             attempted.AddRange(loaded.Diagnostics);
 

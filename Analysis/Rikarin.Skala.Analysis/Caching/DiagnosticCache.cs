@@ -106,11 +106,38 @@ public static class CacheKey {
                 .Append('|');
         }
 
-        // ⚠ MVIDs, not paths: a rebuilt dependency at the same path is a different program, and a
-        // cache that cannot see that is a cache that serves findings about the previous build.
+        AppendReferences(builder, unit.Compilation);
+
+        // ⚠ #343: the *other* target frameworks belong in the key, because since #343 a finding is a
+        // function of them too. `SK1023` is withheld when any moniker of the project lacks
+        // `System.Threading.Lock`, so adding `netstandard2.1` to a `net10.0` project changes what
+        // `net10.0` reports while leaving every input above untouched — and a cache that cannot see
+        // that serves the old finding, with its build-breaking fix, indefinitely. Sorted, because the
+        // order the loader hands them back in is not part of the answer; and appended only when there
+        // are siblings, so no single-target key moves.
+        var siblings = new List<string>();
+        foreach (var sibling in unit.Siblings) {
+            var identity = new StringBuilder();
+            AppendReferences(identity, sibling);
+            siblings.Add(identity.ToString());
+        }
+
+        siblings.Sort(StringComparer.Ordinal);
+        foreach (var sibling in siblings) {
+            builder.Append('+').Append(sibling);
+        }
+
+        return Convert.ToHexStringLower(XxHash128.Hash(Encoding.UTF8.GetBytes(builder.ToString())));
+    }
+
+    /// <summary>
+    ///     ⚠ MVIDs, not paths: a rebuilt dependency at the same path is a different program, and a
+    ///     cache that cannot see that is a cache that serves findings about the previous build.
+    /// </summary>
+    static void AppendReferences(StringBuilder builder, Compilation compilation) {
         var mvids = new List<string>();
-        foreach (var reference in unit.Compilation.References) {
-            if (unit.Compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assembly) {
+        foreach (var reference in compilation.References) {
+            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assembly) {
                 mvids.Add(assembly.Identity.GetDisplayName());
             } else if (reference is PortableExecutableReference { FilePath: { } path }) {
                 mvids.Add(path);
@@ -121,8 +148,6 @@ public static class CacheKey {
         foreach (var mvid in mvids) {
             builder.Append(mvid).Append(';');
         }
-
-        return Convert.ToHexStringLower(XxHash128.Hash(Encoding.UTF8.GetBytes(builder.ToString())));
     }
 
     /// <summary>Rule ids, their effective severities, and the analyzer assemblies' identities.</summary>

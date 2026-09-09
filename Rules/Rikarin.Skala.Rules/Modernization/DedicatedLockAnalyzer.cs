@@ -18,38 +18,61 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start => {
-                var type = start.Compilation.GetTypeByMetadataName("System.Threading.Lock");
-                if (!SkalaRule.MeetsLanguageVersion(start.Compilation, "13.0")
-                    || type is null
-                    || type.Locations.Any(static location => location.IsInSource)
-                    || !type.InstanceConstructors.Any(static constructor => constructor.DeclaredAccessibility
-                        == Accessibility.Public
-                        && constructor.Parameters.Length == 0
-                    )
-                    || !type.GetMembers("EnterScope")
-                        .OfType<IMethodSymbol>()
-                        .Any(method => !method.IsStatic
-                            && method.DeclaredAccessibility == Accessibility.Public
-                            && method.Parameters.Length == 0
-                            && method.ReturnType is INamedTypeSymbol { Name: "Scope", IsRefLikeType: true } scope
-                            && SymbolEqualityComparer.Default.Equals(scope.ContainingType, type)
-                            && scope.GetMembers("Dispose")
-                                .OfType<IMethodSymbol>()
-                                .Any(static dispose => !dispose.IsStatic
-                                    && dispose.DeclaredAccessibility == Accessibility.Public
-                                    && dispose.Parameters.Length == 0
-                                    && dispose.ReturnsVoid
-                                )
-                        )) {
+                if (!Supports(start.Compilation)) {
                     return;
                 }
 
-                start.RegisterSyntaxNodeAction(Analyze, SyntaxKind.FieldDeclaration);
+                // ⚠ #343: `System.Threading.Lock` is net9.0+, and a multi-targeted project is opened
+                // as one compilation per moniker over one set of source files. Asking only
+                // `start.Compilation` answers "some framework here has Lock" and the rewrite lands in
+                // a file every framework compiles — a `netstandard2.1;net10.0` library stopped
+                // building with CS0234 on the netstandard2.1 leg after `skala fix --safe`. The host
+                // publishes the other monikers' compilations; this asks them the same question and
+                // withholds the finding on any document one of them cannot compile the answer for.
+                var unavailable = FrameworkAvailability.PathsWithout(start.Options, Supports);
+                start.RegisterSyntaxNodeAction(
+                    node => Analyze(node, unavailable),
+                    SyntaxKind.FieldDeclaration
+                );
             }
         );
     }
 
-    static void Analyze(SyntaxNodeAnalysisContext context) {
+    /// <summary>
+    ///     Whether this compilation has the real <c>System.Threading.Lock</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The whole condition, not just "the name resolves", and it is asked of every sibling
+    ///     compilation unchanged (#343). A moniker that resolves a <em>source-declared</em>
+    ///     <c>System.Threading.Lock</c>, or one whose shape does not match, is just as unable to
+    ///     compile the rewrite as one where the namespace member does not exist at all.
+    /// </remarks>
+    static bool Supports(Compilation compilation) {
+        var type = compilation.GetTypeByMetadataName("System.Threading.Lock");
+        return SkalaRule.MeetsLanguageVersion(compilation, "13.0")
+            && type is not null
+            && !type.Locations.Any(static location => location.IsInSource)
+            && type.InstanceConstructors.Any(static constructor =>
+                constructor.DeclaredAccessibility == Accessibility.Public && constructor.Parameters.Length == 0
+            )
+            && type.GetMembers("EnterScope")
+                .OfType<IMethodSymbol>()
+                .Any(method => !method.IsStatic
+                    && method.DeclaredAccessibility == Accessibility.Public
+                    && method.Parameters.Length == 0
+                    && method.ReturnType is INamedTypeSymbol { Name: "Scope", IsRefLikeType: true } scope
+                    && SymbolEqualityComparer.Default.Equals(scope.ContainingType, type)
+                    && scope.GetMembers("Dispose")
+                        .OfType<IMethodSymbol>()
+                        .Any(static dispose => !dispose.IsStatic
+                            && dispose.DeclaredAccessibility == Accessibility.Public
+                            && dispose.Parameters.Length == 0
+                            && dispose.ReturnsVoid
+                        )
+                );
+    }
+
+    static void Analyze(SyntaxNodeAnalysisContext context, ImmutableHashSet<string> unavailable) {
         var declaration = (FieldDeclarationSyntax)context.Node;
         if (declaration.Parent is not ClassDeclarationSyntax
             || declaration.Declaration.Variables.Count != 1
@@ -58,6 +81,12 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
             || declaration.Ancestors()
                 .OfType<TypeDeclarationSyntax>()
                 .Any(static type => type.Modifiers.Any(SyntaxKind.PartialKeyword))) {
+            return;
+        }
+
+        // ⚠ Before any semantic work: this document is compiled by a target framework that has no
+        // `System.Threading.Lock`, so the rewrite does not compile there however good it looks here.
+        if (!unavailable.IsEmpty && unavailable.Contains(declaration.SyntaxTree.FilePath)) {
             return;
         }
 
@@ -118,11 +147,46 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
                 Descriptor,
                 variable.Identifier.GetLocation(),
                 FixEdits.Pack(
-                    (declaration.Declaration.Type.Span, "global::System.Threading.Lock"),
-                    (creation.Span, "new global::System.Threading.Lock()")
+                    (declaration.Declaration.Type.Span, TypeName(model, declaration.Declaration.Type.SpanStart)),
+                    (creation.Span, "new()")
                 ),
                 "Use System.Threading.Lock for this private synchronization-only field"
             )
         );
+    }
+
+    /// <summary>
+    ///     ⚠ <b><c>fix --safe</c> followed by <c>verify</c> has to be a fixpoint (#343).</b>
+    /// </summary>
+    /// <remarks>
+    ///     The rewrite used to emit
+    ///     <c>readonly global::System.Threading.Lock gate = new global::System.Threading.Lock();</c> —
+    ///     correct, and immediately reported by <c>arrange --check</c> as
+    ///     <c>
+    /// SK0203 target-typed
+    ///     new
+    ///     </c>, on a file <c>fix</c> had just written. So the fix is now written in the shape
+    ///     arrangement would leave it in: <c>new()</c> unconditionally, because the field's declared
+    ///     type is what the creation constructs and no arrangement rule expands an implicit creation
+    ///     back out; and the short name where the semantic model says it binds.
+    ///     <para>
+    ///         ⚠ <c>global::</c> is still the fallback rather than the default, and the lookup is what
+    ///         decides. <c>Lock</c> is a plausible name for a type of one's own and for a
+    ///         <c>using static</c> member; emitting the short form where it binds to something else is
+    ///         a silent miscompile, and this codebase's own promise is that a fix never changes what
+    ///         the file means.
+    ///     </para>
+    /// </remarks>
+    static string TypeName(SemanticModel model, int position) {
+        const string qualified = "global::System.Threading.Lock";
+        var declared = model.Compilation.GetTypeByMetadataName("System.Threading.Lock");
+        if (declared is null) {
+            return qualified;
+        }
+
+        var visible = model.LookupNamespacesAndTypes(position, name: "Lock");
+        return visible.Length == 1 && SymbolEqualityComparer.Default.Equals(visible[0], declared)
+            ? "Lock"
+            : qualified;
     }
 }
