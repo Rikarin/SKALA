@@ -254,6 +254,26 @@ public static class Renderer {
         return builder.ToString();
     }
 
+    /// <summary>
+    ///     ⚠ #345: this loop printed <see cref="SkalaDiagnostic.ToString" /> and dropped
+    ///     <see cref="SkalaDiagnostic.Detail" /> — which is where the crash-reproduction path lives.
+    ///     <c>.skala/crash/</c> on disk was the only place that path appeared, on any surface, and
+    ///     noticing the directory is how the bug was found rather than from any output.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Unbounded, unlike <see cref="BoundedDetail" />'s callers: this is the human default and
+    ///     has no context window to protect, so the arrange summary's transcript is printed too.
+    /// </remarks>
+    static void TerminalDiagnostics(StringBuilder builder, RunReport report) {
+        foreach (var diagnostic in report.Diagnostics.Where(static d => d.Severity >= SkalaSeverity.Info)) {
+            builder.Append("  ").Line(diagnostic.ToString());
+
+            if (OneLine(diagnostic.Detail) is { } detail) {
+                builder.Append("    ").Line(detail);
+            }
+        }
+    }
+
     static string Terminal(RunReport report, bool includeHints) {
         var builder = new StringBuilder();
         builder.Append(Path.GetFileName(report.RepositoryRoot.TrimEnd(Path.DirectorySeparatorChar)))
@@ -288,15 +308,7 @@ public static class Renderer {
             builder.Line();
         }
 
-        foreach (var diagnostic in report.Diagnostics.Where(static d => d.Severity >= SkalaSeverity.Info)) {
-            builder.Append("  ").Line(diagnostic.ToString());
-
-            // ⚠ #345: the detail is where the crash-reproduction path is, and this loop used to drop
-            // it. `.skala/crash/` on disk was the only place that path appeared.
-            if (OneLine(diagnostic.Detail) is { } detail) {
-                builder.Append("    ").Line(detail);
-            }
-        }
+        TerminalDiagnostics(builder, report);
 
         if (!report.SkippedRules.IsEmpty) {
             builder.Append("  ")
