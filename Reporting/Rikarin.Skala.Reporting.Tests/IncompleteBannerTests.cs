@@ -257,7 +257,12 @@ public sealed class IncompleteBannerTests {
     public void AgentBanner_OmitsTheFractionOnlyForABlockingDiagnosticThatIsNotASourceFile() {
         var baseline = Path.Combine(Root, ".skala", "baseline.sarif");
         var report = Report(
-            new SkalaDiagnostic("SK9028", SkalaSeverity.Error, $"the baseline at {baseline} could not be read", baseline)
+            new SkalaDiagnostic(
+                "SK9028",
+                SkalaSeverity.Error,
+                $"the baseline at {baseline} could not be read",
+                baseline
+            )
         ) with { FileCount = 0 };
         var text = Renderer.Render(report, ReportFormat.Agent);
 

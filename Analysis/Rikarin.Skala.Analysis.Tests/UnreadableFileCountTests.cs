@@ -21,8 +21,8 @@ namespace Rikarin.Skala.Analysis.Tests;
 ///         before the fix; the CLI twin of this class re-measures it there.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The three loaders were audited before one was changed, and they were three different
-///         defects.</b> <c>loose</c> reported the file and left it out of the count. <c>binlog</c>
+///         ⚠ <b>Three loaders, audited before one was changed, and three different defects.</b>
+///         <c>loose</c> reported the file and left it out of the count. <c>binlog</c>
 ///         caught <c>IOException</c> alone at the read, so the <c>UnauthorizedAccessException</c>
 ///         escaped the loader and the command printed <c>skala: Access to the path … is denied.</c>
 ///         at exit 5 with no report — the shape #353 had removed from <c>loose</c>. <c>workspace</c>
@@ -165,12 +165,16 @@ public sealed class UnreadableFileCountTests {
         scratch.Write("Open.cs", Unformatted);
         scratch.Write("Other.cs", Locked);
 
-        var (result, report) = CheckCommand.Run(Request(scratch, LoadMode.Loose), TestContext.Current.CancellationToken);
+        var (result, report) =
+            CheckCommand.Run(Request(scratch, LoadMode.Loose), TestContext.Current.CancellationToken);
 
         Assert.NotEqual(ExitCodes.InternalError, result.ExitCode);
         Assert.Equal(2, report.FileCount);
         Assert.DoesNotContain(report.Diagnostics, static d => d.Id == FormatDiagnosticIds.FileIoFailed);
-        Assert.All(report.Findings, static finding => Assert.NotEqual(FormatDiagnosticIds.FileIoFailed, finding.RuleId));
+        Assert.All(
+            report.Findings,
+            static finding => Assert.NotEqual(FormatDiagnosticIds.FileIoFailed, finding.RuleId)
+        );
     }
 
     /// <summary>

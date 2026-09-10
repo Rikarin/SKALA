@@ -63,9 +63,7 @@ public static class LooseLoader {
                 continue;
             }
 
-            trees.Add(
-                CSharpSyntaxTree.ParseText(SourceText.From(stream, canBeEmbedded: false), parseOptions, file)
-            );
+            trees.Add(CSharpSyntaxTree.ParseText(SourceText.From(stream, canBeEmbedded: false), parseOptions, file));
 
             // ⚠ Analysed, never reported on. Same rule as the binlog path: a diagnostic in a
             // file the user cannot edit is noise.

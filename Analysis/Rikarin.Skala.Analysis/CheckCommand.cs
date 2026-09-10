@@ -957,8 +957,9 @@ public static class CheckCommand {
     }
 
     /// <summary>The positional paths, absolute and without a trailing separator. Empty means everything.</summary>
-    static string[] Requested(CheckRequest request) =>
-        [.. request.Paths.Select(static path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))];
+    static string[] Requested(CheckRequest request) => [
+        .. request.Paths.Select(static path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))
+    ];
 
     /// <summary>
     ///     Whether <paramref name="path" /> is one of the requested paths or lies under one of them.

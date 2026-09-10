@@ -66,10 +66,10 @@ public sealed record CompilationUnit {
     ///     files the stages read, and how many files the run was about. A loader that added a path
     ///     only <em>after</em> reading it answered the first correctly and the second wrong — an
     ///     unreadable file never entered the denominator, so a two-file tree with one mode-000 file
-    ///     printed <c>1 of 1 file was not checked</c> and <c>verify</c>'s trailer said <c>0 files were
-    ///     checked</c> directly under a finding on the readable neighbour. The fraction exists to say
-    ///     the other files were covered (#345); a denominator that excludes the uncovered files says
-    ///     the opposite.
+    ///     printed <c>1 of 1 file was not checked</c>, and <c>verify</c>'s trailer said
+    ///     <c>0 files were checked</c> directly under a finding on the readable neighbour. The
+    ///     fraction exists to say the other files were covered (#345); a denominator that excludes
+    ///     the uncovered files says the opposite.
     ///     <para>
     ///         The two questions are separated rather than the set widened, because every stage —
     ///         formatting, arrangement, duplication, the scope filter of #346 — iterates

@@ -18,8 +18,8 @@ namespace Rikarin.Skala.Analysis.Loading;
 ///         ⚠ The two failures are deliberately not the same case. A file that vanished between the
 ///         enumeration and the read raises <see cref="IOException" /> and is dropped without a word —
 ///         a file that no longer exists is not part of the tree, and failing an agent's <c>verify</c>
-///         over it would report a finding about nothing. A file that <em>exists and may not be
-///         read</em> raises <see cref="UnauthorizedAccessException" /> — which does not derive from
+///         over it would report a finding about nothing. A file that <em>exists and cannot be read</em>
+///         raises <see cref="UnauthorizedAccessException" /> — which does not derive from
 ///         <see cref="IOException" /> — and is the one that has to be said out loud: <c>SK9015</c> on
 ///         SK9010's contract, reported against the file, left alone, counted, the run kept going and
 ///         the exit code non-zero. Skipping it quietly is the #345 defect, a file dropping out of the
@@ -68,8 +68,8 @@ internal static class SourceFiles {
     /// <remarks>
     ///     ⚠ For the loader that does not read the file itself. <c>MSBuildWorkspace</c> opens documents
     ///     through Roslyn's <c>FileTextLoader</c>, which turns a denied read into an <em>empty</em>
-    ///     document and a workspace diagnostic nothing downstream reads — measured: <c>check
-    ///     --load=workspace --no-formatting</c> over a two-file project with one mode-000 file printed
+    ///     document and a workspace diagnostic nothing downstream reads. Measured over a two-file
+    ///     project with one mode-000 file, <c>check --load=workspace --no-formatting</c> printed
     ///     <c>OK  nothing to do.</c> at exit 0 with <c>fileCount: 2</c>. Asking the question ourselves,
     ///     the same way the other two loaders do, is what makes the three agree.
     /// </remarks>
