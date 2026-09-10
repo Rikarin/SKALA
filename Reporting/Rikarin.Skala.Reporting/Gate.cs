@@ -130,11 +130,12 @@ public static class Gate {
     }
 
     /// <summary>
-    ///     The two conditions the run states about <em>itself</em>: it did not finish, or a rule died.
+    ///     The three conditions the run states about <em>itself</em>: it did not finish, a rule died,
+    ///     or an input it was told to compare against could not be read.
     /// </summary>
     /// <remarks>
     ///     ⚠ Unconditional, and named by no gate. Every other condition here is something a repository
-    ///     opts into in <c>skala.jsonc</c>; these two are not opinions about code quality but statements
+    ///     opts into in <c>skala.jsonc</c>; these three are not opinions about code quality but statements
     ///     that the denominator is unknown, and a verdict computed over an unknown fraction of the tree
     ///     is not a verdict. They are the same defect the tool keeps committing in different places —
     ///     answering confidently about a tree it did not finish reading.
@@ -187,6 +188,34 @@ public static class Gate {
                 + " analyzer(s) threw and were disabled for the rest of the run, so the rules they carry "
                 + "reported nothing and their zero means nothing: "
                 + string.Join("; ", crashed.Take(3).Select(static diagnostic => diagnostic.Message))
+            );
+        }
+
+        // ⚠ #358, the third condition of this shape: an input the gate's scoping depends on exists and
+        // could not be read. `CheckCommand.Scope` wrote it as an error-severity `SK9028`, the renderers
+        // printed it, and nothing decided on it — the run compared against no baseline and a gate
+        // without `newIssues` passed, so a `.skala/baseline.sarif` holding `null` printed an INCOMPLETE
+        // banner above exit 0. A verdict whose "new" has no denominator is the partial-run defect
+        // again, one input over.
+        //
+        // ⚠ Error severity only. The *absent* named baseline is the same id at warning, on purpose:
+        // `Baseline.Read` treats it as empty, every finding is then new, and a `newIssues` gate fails
+        // loudly on its own — `MissingGateInput_DoesNotFailTheReliabilityGate` pins that this
+        // condition does not reach it. "There is no baseline yet" is a state a repository passes
+        // through; "there is one and it will not open" is not.
+        var unreadable = report.Diagnostics
+            .Where(static diagnostic =>
+                diagnostic.Id == ConfigDiagnosticIds.GateInputUnavailable
+                && diagnostic.Severity >= SkalaSeverity.Error
+            )
+            .ToArray();
+
+        if (unreadable.Length > 0) {
+            failures.Add(
+                unreadable.Length.ToString(CultureInfo.InvariantCulture)
+                + " input(s) the gate compares against could not be read, so this verdict has nothing to "
+                + "call a finding new or accepted against: "
+                + string.Join("; ", unreadable.Take(3).Select(static diagnostic => diagnostic.Message))
             );
         }
     }

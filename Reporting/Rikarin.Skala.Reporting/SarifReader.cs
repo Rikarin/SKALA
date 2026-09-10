@@ -20,9 +20,38 @@ namespace Rikarin.Skala.Reporting;
 ///     </para>
 /// </remarks>
 public static class SarifReader {
+    /// <summary>
+    ///     The file, deserialised — or <see cref="InvalidDataException" /> naming the path and why.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #358. This is the one place that knows the deserialiser is Newtonsoft, and the exception it
+    ///     throws on a file that is not JSON is <c>Newtonsoft.Json.JsonException</c> — not
+    ///     <c>System.Text.Json.JsonException</c>, which is what the rest of the tool catches by that
+    ///     name and what the issue itself named. Four callers filtered on <c>InvalidDataException</c>,
+    ///     the type this class throws for "not a SARIF log", and none of them on the type a
+    ///     merge-conflict marker in <c>.skala/baseline.sarif</c> actually produces; <c>check</c>,
+    ///     <c>report</c> and every <c>baseline</c> verb printed a stack trace under "this is a Skala bug"
+    ///     over a repository condition. Translating here makes "the file is not a SARIF log" one
+    ///     exception type whichever way it fails to be one, so a caller cannot handle half of it.
+    ///     <para>
+    ///         ⚠ What it does <em>not</em> translate: <see cref="IOException" /> and
+    ///         <see cref="UnauthorizedAccessException" /> from the open. Those say the file could not be
+    ///         reached, not that it is wrong, and the callers filter on that pair by name.
+    ///     </para>
+    /// </remarks>
+    internal static SarifLog Deserialize(string path) {
+        SarifLog? log;
+        try {
+            log = JsonConvert.DeserializeObject<SarifLog>(File.ReadAllText(path));
+        } catch (JsonException exception) {
+            throw new InvalidDataException($"{path} is not valid JSON: {exception.Message}", exception);
+        }
+
+        return log ?? throw new InvalidDataException($"{path} is not a SARIF log.");
+    }
+
     public static RunReport Read(string path, string repositoryRoot) {
-        var log = JsonConvert.DeserializeObject<SarifLog>(File.ReadAllText(path))
-            ?? throw new InvalidDataException($"{path} is not a SARIF log.");
+        var log = Deserialize(path);
 
         if (log.Runs is not { Count: > 0 }) {
             throw new InvalidDataException($"{path} has no runs.");

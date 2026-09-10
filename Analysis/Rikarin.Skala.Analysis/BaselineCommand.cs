@@ -100,7 +100,34 @@ public static class BaselineCommand {
             ? Path.GetFullPath(named)
             : Baseline.DefaultPath(report.RepositoryRoot);
 
-        var existing = Baseline.Read(path);
+        // ⚠ #358. This read had no filter at all, so every verb crashed with a stack trace on a
+        // baseline holding a merge-conflict marker — `update` included, which is the verb a person
+        // reaches for to repair exactly that file. Every verb refuses rather than reads around it:
+        // `create --apply` over a corrupt file would silently settle a conflict nobody resolved, and
+        // `show` describing an unreadable baseline as "0 accepted" is the misreport `Baseline.Read`'s
+        // own remark forbids. The recovery is stated because the message is the only place it can be.
+        Baseline existing;
+        try {
+            existing = Baseline.Read(path);
+        } catch (Exception exception) when (exception is IOException
+                                                or UnauthorizedAccessException
+                                                or InvalidDataException) {
+            return (
+                new CommandResult(
+                    ExitCodes.ConfigurationError,
+                    "skala baseline: "
+                    + path
+                    + " could not be read: "
+                    + exception.Message
+                    + (exception is InvalidDataException
+                        ? "\n  Repair the file — a merge-conflict marker is the usual cause — or delete it and run "
+                        + "`skala baseline create --apply`.\n"
+                        : "\n  Nothing was written. Make the file readable by this process and run the command again.\n")
+                ),
+                report
+            );
+        }
+
         var comparison = existing.Compare(report.Findings);
         var builder = new StringBuilder();
 

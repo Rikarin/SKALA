@@ -36,7 +36,13 @@ public static class ReportCommand {
         RunReport report;
         try {
             report = SarifReader.Read(sarifPath, repositoryRoot);
-        } catch (Exception exception) when (exception is IOException or InvalidDataException) {
+        } catch (Exception exception) when (exception is IOException
+                                                or UnauthorizedAccessException
+                                                or InvalidDataException) {
+            // ⚠ #358: the same three names as `CheckCommand`'s baseline read, for the same reason. A
+            // SARIF that is not JSON reached the last-resort handler as a stack trace; one this
+            // process may not open reached the CLI's outer net as one line at exit 5, which is the
+            // wrong code for an input the caller named.
             return new(
                 ExitCodes.ConfigurationError,
                 "skala report: " + sarifPath + " could not be read: " + exception.Message + "\n"

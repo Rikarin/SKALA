@@ -296,6 +296,20 @@ to satisfied when the run never collected formatting, so the flag that suppresse
 also suppressed the check — the one shape of "passing for the wrong reason" this section's opening
 paragraph already forbids for an unrecognized condition. It now fails the same way, naming the flag.
 
+⚠ **Three conditions are unconditional and named by no gate**: the run was partial (#309), an
+analyzer threw (#295), and — since #358 — an input the gate compares against exists and could not be
+read (`SK9028` at error severity: a baseline that is not JSON, or one this process may not open).
+Each says the denominator is unknown, and every one of them fails the verdict — **exit 1**, with the
+reason in the gate's failures, so `skala report` re-renders it from the stored SARIF. #358 measured
+the alternative: the diagnostic was written, rendered as `error SK9028`, and read by nothing that
+decides; the run compared against no baseline, the `local` gate has no `newIssues` condition, and a
+`.skala/baseline.sarif` holding `null` printed an `INCOMPLETE` banner above exit 0. It is exit 1
+rather than 5 because the gate is the one place allowed to reach a verdict (ADR-009), and a baseline
+two branches both `baseline update` is a repository condition, not a defect. ⚠ An *absent* named
+baseline is the same id at warning and does **not** fail the gate: it is treated as empty, every
+finding is new, and a `newIssues` gate fails loudly on its own — "there is no baseline yet" is a state
+a repository passes through, "there is one and it will not open" is not.
+
 ### `--no-new-suppressions`
 
 ⚠ **A grep for `#pragma` is not a constraint.** There are four ways to make a finding go away without

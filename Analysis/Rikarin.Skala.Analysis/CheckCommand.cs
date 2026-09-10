@@ -713,7 +713,22 @@ public static class CheckCommand {
                         + " accepted)",
                     Fixed = comparison.Fixed
                 };
-            } catch (Exception exception) when (exception is IOException or InvalidDataException) {
+            } catch (Exception exception) when (exception is IOException
+                                                    or UnauthorizedAccessException
+                                                    or InvalidDataException) {
+                // ⚠ #358, the tenth `IOException`-only filter of the week. A mode-000 baseline threw
+                // `UnauthorizedAccessException` straight through this and the command printed one
+                // line at exit 5 with no report; a baseline holding a merge-conflict marker — a file
+                // two branches both `baseline update`, which is what this week's merges did — threw
+                // Newtonsoft's `JsonException` through it and printed a stack trace under "this is a
+                // Skala bug". `Baseline.Read` now folds the second into `InvalidDataException`, so
+                // the three names here are the reader's whole contract.
+                //
+                // ⚠ Landing here is not the end of it. Before #358 this diagnostic was written,
+                // rendered as `error SK9028`, and read by nothing: the run went on to compare against
+                // no baseline and a gate without `newIssues` passed, so a `null` in this file printed
+                // an INCOMPLETE banner above exit 0. `Gate.EvaluateReliability` now fails the verdict
+                // on an error-severity SK9028, which is where a run states things about itself.
                 diagnostics.Add(
                     new SkalaDiagnostic(
                         ConfigDiagnosticIds.GateInputUnavailable,
