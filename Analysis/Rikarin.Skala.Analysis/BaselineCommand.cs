@@ -1,5 +1,6 @@
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
 using System.Globalization;
@@ -71,7 +72,23 @@ public static class BaselineCommand {
         // not recording; the writing verbs are refused. The same applies to a run in which an
         // analyzer threw: the rules it carries produced nothing, so a baseline built now would
         // "accept" their absence and un-suppress every one of their findings on the next green run.
+        //
+        // ⚠ #359: the sentence above was wider than the condition under it. `Partial` is set by a
+        // cancelled unit and by nothing else, and an unreadable source file (`SK9015`, #353/#356) is
+        // exit 5 from `check` without touching it — so `create --apply` over a tree holding one
+        // mode-000 file wrote the baseline and exited 0, measured through the binary, and `update`
+        // rewrote it the same way. The file's findings were absent from the baseline; the day the
+        // file became readable again every one of them would report as *new* against a baseline
+        // accepted as complete. The check is on the diagnostic rather than on `Partial` because
+        // three readers of `Partial` would say something false for this cause: `Gate.EvaluateReliability`
+        // words the failure as "compilation unit(s) were cancelled", `SarifWriter` would write
+        // `partial: true` with no `SK9027` beside it — the unexplained anomaly #309 introduced the id
+        // to end — and the renderer prints "⚠ partial run" beside the INCOMPLETE banner that already
+        // names the file. The exit code is the one an unreadable file carries everywhere else (#357),
+        // not `LoadFailure`, whose remark says in as many words that `SK9015` is not it.
+        var unreadable = report.Diagnostics.Any(static d => d.Id == FormatDiagnosticIds.FileIoFailed);
         var unreliable = report.Partial
+            || unreadable
             || report.Diagnostics.Any(static d =>
                 d.Id == RuleIds.AnalyzerThrew && d.Severity >= SkalaSeverity.Warning
             );
@@ -79,18 +96,21 @@ public static class BaselineCommand {
         if (verb != Verb.Show && unreliable) {
             return (
                 new CommandResult(
-                    ExitCodes.LoadFailure,
+                    unreadable ? ExitCodes.InternalError : ExitCodes.LoadFailure,
                     "skala baseline: refusing to write a baseline from a run that did not measure the whole tree.\n"
                     + string.Join(
                         "\n",
                         report.Diagnostics
                             .Where(static d =>
-                                d.Id == ConfigDiagnosticIds.PartialAnalysis || d.Id == RuleIds.AnalyzerThrew
+                                d.Id == ConfigDiagnosticIds.PartialAnalysis
+                                || d.Id == RuleIds.AnalyzerThrew
+                                || d.Id == FormatDiagnosticIds.FileIoFailed
                             )
                             .Select(static d => "  " + d)
                     )
                     + "\n  A baseline records what fired; one recorded now would accept the silence of whatever "
                     + "did not run, and every later run would compare against it.\n"
+                    + "  Nothing was written.\n"
                 ),
                 report
             );
