@@ -115,6 +115,59 @@ public static class SkalaRule {
     ///         measured is duplication Roslyn's own analyzers require.
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     Register a node action that runs only where <paramref name="supported" /> holds — for this
+    ///     compilation, and for every other target framework compiling the same document (#351).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The guarded registration in one place, so that guarding is the cheap option.</b> #351
+    ///     found `SK1023` was still the only rule consulting <see cref="FrameworkAvailability" /> a
+    ///     release after the mechanism shipped, and the reason is ordinary: doing it right meant six
+    ///     lines and knowing to write them. Here it is one call, and the withheld-path check happens
+    ///     before the rule's own code rather than being something each analyzer must remember.
+    ///     <para>
+    ///         ⚠ Extracted because <c>SK7020</c> named the clone — <c>DedicatedLockAnalyzer</c> and
+    ///         <c>IndexFromEndAnalyzer</c> came out byte-identical over 118 tokens once both were
+    ///         guarded, which is the duplication gate reporting a shared idiom rather than an
+    ///         accident.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Like <see cref="RegisterWithEnumerable" />, deliberately <em>not</em> universal: a
+    ///         rule that also needs compilation-start state of its own (<c>SK4031</c>'s dictionary
+    ///         table) still writes the start action out, because threading that through here would
+    ///         need a parameter list longer than the code it replaces. It fits the common shape —
+    ///         one predicate, one syntax kind.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <paramref name="supported" /> must be the rule's <b>whole</b> availability condition,
+    ///         not just "the name resolves". That is what #343 measured: a sibling resolving a
+    ///         source-declared <c>System.Threading.Lock</c>, or an inaccessible <c>System.Index</c>
+    ///         shim, is as unable to compile the rewrite as one missing the type outright.
+    ///     </para>
+    /// </remarks>
+    public static void RegisterWhereFrameworkSupports(
+        AnalysisContext context,
+        Func<Compilation, bool> supported,
+        Action<SyntaxNodeAnalysisContext> analyze,
+        SyntaxKind kind
+    ) =>
+        context.RegisterCompilationStartAction(start => {
+                if (!supported(start.Compilation)) {
+                    return;
+                }
+
+                var unavailable = FrameworkAvailability.PathsWithout(start.Options, supported);
+                start.RegisterSyntaxNodeAction(
+                    node => {
+                        if (unavailable.IsEmpty || !unavailable.Contains(node.Node.SyntaxTree.FilePath)) {
+                            analyze(node);
+                        }
+                    },
+                    kind
+                );
+            }
+        );
+
     public static void RegisterWithEnumerable(
         AnalysisContext context,
         string? languageVersion,

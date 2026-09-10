@@ -180,7 +180,13 @@ public sealed class FrameworkAvailabilityReachTests {
             }
 
             var name = normalised.Substring(Prefix.Length);
-            if (code.Contains("FrameworkAvailability", StringComparison.Ordinal)) {
+            // ⚠ Two spellings of the same thing, and the second is the one to reach for.
+            // `SkalaRule.RegisterWhereFrameworkSupports` asks `PathsWithout` on the caller's behalf,
+            // so a rule using it is routed without ever naming `FrameworkAvailability` — matching
+            // only the type name reported the three rules that had just been collapsed onto the
+            // helper, which is this ledger catching its own blind spot rather than a defect.
+            if (code.Contains("FrameworkAvailability", StringComparison.Ordinal)
+                || code.Contains("RegisterWhereFrameworkSupports", StringComparison.Ordinal)) {
                 routed.Add(name);
             } else {
                 unguarded.Add(name);

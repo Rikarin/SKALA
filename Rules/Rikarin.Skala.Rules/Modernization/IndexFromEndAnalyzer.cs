@@ -35,33 +35,21 @@ public sealed class IndexFromEndAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
-                // ⚠ Two gates, not one, and the second one is about *accessibility* rather than
-                // existence. `System.Memory` ships an **internal** `System.Index` shim for
-                // netstandard2.0, so `GetTypeByMetadataName` finds a symbol on a target framework
-                // where `x[^1]` is `CS0518: predefined type 'System.Index' is not defined`. Checking
-                // for null alone reported sixteen findings on Skala's own netstandard2.0 projects
-                // whose fix did not compile; `IsSymbolAccessibleWithin` is the compiler's own test.
-                if (!Supports(start.Compilation)) {
-                    return;
-                }
-
-                // ⚠ #351: and the same two gates have to be asked of the project's *other* target
-                // frameworks. Both loaders open a multi-targeted project as one compilation per
-                // moniker over one set of source files and the findings are unioned, so this
-                // reported from whichever moniker had an accessible `System.Index` and the rewrite
-                // landed in a file the others also compile — #343's `SK1023` defect, and this fix is
-                // `fixIsSafe`, so `skala fix --safe` applies it unreviewed. Not covered by the
-                // declarative language-floor guard: the accessibility half is not in `rules.json`,
-                // and a `netstandard2.0` moniker with an explicit `<LangVersion>` meets the floor and
-                // still has only the internal `System.Memory` shim.
-                var unavailable = FrameworkAvailability.PathsWithout(start.Options, Supports);
-                start.RegisterSyntaxNodeAction(
-                    node => Analyze(node, unavailable),
-                    SyntaxKind.ElementAccessExpression
-                );
-            }
-        );
+        // ⚠ Two gates, not one, and the second is about *accessibility* rather than existence.
+        // `System.Memory` ships an **internal** `System.Index` shim for netstandard2.0, so
+        // `GetTypeByMetadataName` finds a symbol on a target framework where `x[^1]` is `CS0518:
+        // predefined type 'System.Index' is not defined`. Checking for null alone reported sixteen
+        // findings on Skala's own netstandard2.0 projects whose fix did not compile;
+        // `IsSymbolAccessibleWithin` is the compiler's own test.
+        //
+        // ⚠ #351: and both gates are asked of the project's *other* target frameworks, which is what
+        // `RegisterWhereFrameworkSupports` does. The findings across monikers are unioned, so this
+        // reported from whichever one had an accessible `System.Index` and the rewrite landed in a
+        // file the others also compile — #343's `SK1023` defect, and this fix is `fixIsSafe`, so
+        // `skala fix --safe` applies it unreviewed. ⚠ Not covered by the declarative language-floor
+        // guard: accessibility is not in `rules.json`, and a netstandard2.0 moniker with an explicit
+        // `<LangVersion>` clears the floor and still has only the shim.
+        SkalaRule.RegisterWhereFrameworkSupports(context, Supports, Analyze, SyntaxKind.ElementAccessExpression);
     }
 
     /// <summary>
@@ -79,12 +67,8 @@ public sealed class IndexFromEndAnalyzer : DiagnosticAnalyzer {
         && compilation.GetTypeByMetadataName("System.Index") is { } index
         && compilation.IsSymbolAccessibleWithin(index, compilation.Assembly);
 
-    static void Analyze(SyntaxNodeAnalysisContext context, ImmutableHashSet<string> unavailable) {
+    static void Analyze(SyntaxNodeAnalysisContext context) {
         var access = (ElementAccessExpressionSyntax)context.Node;
-        if (!unavailable.IsEmpty && unavailable.Contains(access.SyntaxTree.FilePath)) {
-            return;
-        }
-
         if (access.ArgumentList.Arguments.Count != 1
             || access.ArgumentList.Arguments[0] is not { NameColon: null, RefKindKeyword.RawKind: 0 } argument) {
             return;

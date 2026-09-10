@@ -49,23 +49,13 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
-                // ⚠ A target framework without `System.ValueTuple` would take a fix that does not
-                // compile. The language floor alone does not answer that question.
-                if (Supports(start.Compilation)) {
-                    // ⚠ #351: nor does asking `start.Compilation` alone, because "a target framework"
-                    // is several of them on a multi-targeted project — one compilation per moniker
-                    // over one set of source files, findings unioned. `System.ValueTuple` reaches
-                    // netstandard2.0 only through a package, so the moniker that has it reports and
-                    // the moniker that does not gets the rewrite anyway (#343).
-                    var unavailable = FrameworkAvailability.PathsWithout(start.Options, Supports);
-                    start.RegisterSyntaxNodeAction(
-                        node => Analyze(node, unavailable),
-                        SyntaxKind.LocalDeclarationStatement
-                    );
-                }
-            }
-        );
+        // ⚠ A target framework without `System.ValueTuple` would take a fix that does not compile,
+        // and the language floor alone does not answer that. ⚠ #351: nor does asking one compilation,
+        // because "a target framework" is several of them on a multi-targeted project — one per
+        // moniker over one set of source files, findings unioned. `System.ValueTuple` reaches
+        // netstandard2.0 only through a package, so the moniker that has it reports and the moniker
+        // that does not gets the rewrite anyway (#343).
+        SkalaRule.RegisterWhereFrameworkSupports(context, Supports, Analyze, SyntaxKind.LocalDeclarationStatement);
     }
 
     /// <summary>Whether this compilation can compile the tuple literal the fix writes.</summary>
@@ -74,12 +64,8 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
         SkalaRule.MeetsLanguageVersion(compilation, Rule.LanguageVersion)
         && compilation.GetTypeByMetadataName("System.ValueTuple`2") is not null;
 
-    static void Analyze(SyntaxNodeAnalysisContext context, ImmutableHashSet<string> unavailable) {
+    static void Analyze(SyntaxNodeAnalysisContext context) {
         var statement = (LocalDeclarationStatementSyntax)context.Node;
-        if (!unavailable.IsEmpty && unavailable.Contains(statement.SyntaxTree.FilePath)) {
-            return;
-        }
-
         if (statement.UsingKeyword.RawKind != (int)SyntaxKind.None
             || statement.AwaitKeyword.RawKind != (int)SyntaxKind.None
             || statement.Modifiers.Count > 0
