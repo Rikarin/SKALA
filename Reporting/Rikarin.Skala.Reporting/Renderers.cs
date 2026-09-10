@@ -46,8 +46,8 @@ public enum ReportFormat {
 ///         ⚠ #360. The last member is not a file cause at all. <c>SK9028</c> at error severity sits
 ///         at the baseline's path, and until #360 it fell through <see cref="Renderer.CauseOf" />'s
 ///         default and into <see cref="Renderer.BlockedFiles" />, so a one-file tree with a
-///         merge-conflict marker in <c>.skala/baseline.sarif</c> read <c>1 of 1 file was not checked
-///         — this is a Skala bug</c>. The source file <em>was</em> checked; it was the baseline that
+///         merge-conflict marker in <c>.skala/baseline.sarif</c> read "1 of 1 file was not checked
+///         — this is a Skala bug". The source file <em>was</em> checked; it was the baseline that
 ///         could not be read, and a conflict marker in a committed file is the repository's condition.
 ///         A gate input is never in the set of files being checked, so it is never in the fraction.
 ///     </para>
@@ -272,8 +272,9 @@ public static class Renderer {
     ///         <c>this run did not finish — this is a Skala bug</c> above that exit.
     ///     </para>
     /// </remarks>
-    public static IReadOnlyList<SkalaDiagnostic> GateInputs(RunReport report) =>
-        [.. Blocking(report).Where(static diagnostic => CauseOf(diagnostic) == IncompleteCause.GateInput)];
+    public static IReadOnlyList<SkalaDiagnostic> GateInputs(RunReport report) => [
+        .. Blocking(report).Where(static diagnostic => CauseOf(diagnostic) == IncompleteCause.GateInput)
+    ];
 
     /// <summary>
     ///     Why a file dropped out of the run, from the diagnostic that dropped it.
@@ -809,8 +810,8 @@ public static class AgentRenderer {
     ///     <para>
     ///         ⚠ #360: a gate input that could not be read is a <b>separate sentence</b>, outside the
     ///         fraction. The fraction is <c>N of M files</c> and a baseline is not one of the M, so
-    ///         folding it in made a one-file tree with a conflicted baseline read <c>1 of 1 file was
-    ///         not checked — this is a Skala bug</c> when the file was checked and the bug was a merge.
+    ///         folding it in made a one-file tree with a conflicted baseline read "1 of 1 file was
+    ///         not checked — this is a Skala bug" when the file was checked and the bug was a merge.
     ///         When nothing else blocked, the line opens with the baseline and says outright that
     ///         every file was checked, because on this surface — which prints no gate verdict — the
     ///         banner is the only thing that explains the exit code.

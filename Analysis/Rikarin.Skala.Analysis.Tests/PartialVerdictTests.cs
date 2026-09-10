@@ -380,9 +380,9 @@ public sealed class PartialVerdictTests {
     }
 
     /// <summary>
-    ///     ⚠ #360, measured through the binary before the fix: <c>check --gate=local --format=agent
-    ///     --baseline .skala/baseline.sarif</c> over that tree exited 1, and <c>verify</c> with the same
-    ///     arguments printed the same INCOMPLETE banner and exited <b>0</b>. <c>Verdict</c> recomputed
+    ///     ⚠ #360, measured through the binary before the fix: <c>check --gate=local --format=agent</c>
+    ///     with <c>--baseline .skala/baseline.sarif</c> over that tree exited 1, and <c>verify</c> with
+    ///     the same arguments printed the same INCOMPLETE banner and exited <b>0</b>. <c>Verdict</c> recomputed
     ///     the exit from <c>report.New</c> alone and overruled the gate it had just been handed —
     ///     the banner-above-exit-0 shape #358 had closed for <c>check</c>, open one verb over.
     /// </summary>
@@ -405,7 +405,10 @@ public sealed class PartialVerdictTests {
     public void Verify_DoesNotTurnARefusalIntoAPass() {
         var refused = ConflictedBaseline() with { Diagnostics = [], Gate = null, FileCount = 0 };
 
-        Assert.Equal(ExitCodes.ConfigurationError, Run(ReportFormat.Agent, refused, ExitCodes.ConfigurationError).ExitCode);
+        Assert.Equal(
+            ExitCodes.ConfigurationError,
+            Run(ReportFormat.Agent, refused, ExitCodes.ConfigurationError).ExitCode
+        );
     }
 
     /// <summary>
