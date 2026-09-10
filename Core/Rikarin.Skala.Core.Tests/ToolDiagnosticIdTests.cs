@@ -163,10 +163,11 @@ public sealed class ToolDiagnosticIdTests {
     [Fact]
     public void ToolDiagnosticIds_AreAllocated() {
         var declared = DeclaredIds();
+        var allocated = AllocatedIds();
 
         var missing = declared.Keys
             .Where(static id => !NotAllocated.Contains(id))
-            .Where(id => !AllocatedIds().Contains(id))
+            .Where(id => !allocated.Contains(id))
             .Order(StringComparer.Ordinal)
             .Select(id => $"{id} declared at {string.Join(" and ", declared[id])}")
             .ToList();
