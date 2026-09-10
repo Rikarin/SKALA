@@ -357,7 +357,7 @@ Fixed, documented, and depended upon by hooks, CI and agents:
 | 2 | formatting changes needed (`format --check` only) |
 | 3 | configuration error — an unrecognized option, a path that does not exist, an invocation the tool refuses, and `SK9017` from `skala config check` **with or without `--strict`** |
 | 4 | load failure — no compilation could be built |
-| 5 | internal error, including `SK9099` |
+| 5 | internal error — the run did not complete: `SK9099`, the formatter's own safety net, or `SK9015`, a file that could not be read (#357) |
 | 130 | cancelled |
 
 ⚠ 2 is distinct from 1 on purpose: a hook that wants to auto-format on exit 2 and stop on exit 1 is

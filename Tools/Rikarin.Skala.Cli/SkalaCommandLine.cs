@@ -892,6 +892,9 @@ public static partial class SkalaCommandLine {
         return lines.Length == 0 ? string.Empty : string.Join("\n", lines) + "\n";
     }
 
+    // ⚠ `FileIoFailed` is excluded on purpose and #357 decided it stays excluded: an unreadable file
+    // is `InternalError` from every verb, and a load that read every other file has a result — 4 is
+    // for the load that has none. `ExitCodes.LoadFailure` carries the reasoning.
     static bool LoadRefused(List<SkalaDiagnostic> loadDiagnostics) =>
         loadDiagnostics.Exists(static d =>
             d.Severity >= SkalaSeverity.Error && d.Id != FormatDiagnosticIds.FileIoFailed

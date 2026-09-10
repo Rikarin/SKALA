@@ -260,6 +260,20 @@ public sealed class ExitCodeContractTests : IDisposable {
     ///         ⚠ Sabotage check: narrow either catch back to <c>catch (IOException …)</c> and this
     ///         goes red — verified by doing it, on both the format and the arrange site.
     ///     </para>
+    ///     <para>
+    ///         ⚠ <b>5 and not 4 is decided (#357), not inherited.</b> #355 and #356 each deferred the
+    ///         question; the survey found no consumer to decide it for. Nothing outside the process
+    ///         splits 4 from 5 — the MSBuild target, the MCP verdict, the pre-commit hook and CI all
+    ///         read 0, the finding code and "other" — and everything inside it that does split them
+    ///         reads 4 as "there is no report": <c>VerifyCommand.Verdict</c> appends the <c>PARTIAL</c>
+    ///         trailer only on 5, and <c>fix</c> stops on 4. An unreadable file beside 753 checked ones
+    ///         has a report, so 4 would either lose that trailer for the run it was written for or
+    ///         stop meaning what its readers rely on. And the premise was wrong: 5 has read "an I/O
+    ///         failure that stopped a file being read" since before #353; "this is a Skala bug" is the
+    ///         unhandled-exception handler's sentence, not the exit code's. docs/plan/10 § "The
+    ///         INCOMPLETE banner" holds the survey; <see cref="AnUnreadableFile_ExitsTheSameCodeFromEveryVerb" />
+    ///         holds the four verbs together.
+    ///     </para>
     /// </remarks>
     [Theory]
     [InlineData("format")]
@@ -318,6 +332,59 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
+    ///     ⚠ #357. The property #353 bought and nothing asserted in one place: the four verbs answer
+    ///     the same unreadable file with the <b>same</b> exit code.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         #353's headline finding was three codes for one file — <c>arrange</c> 2, <c>format</c>
+    ///         5 or 2 depending on how many files sat beside it, <c>verify</c> none at all. The tests
+    ///         above pin each verb's number separately, which is what let the numbers drift apart in
+    ///         the first place: a change to one verb goes red in one test and reads as that test's
+    ///         problem. This one runs all four over one fixture and fails naming the verb that left
+    ///         the others, so the next reader who finds a truer number for one of them meets the
+    ///         other three before the change lands.
+    ///     </para>
+    ///     <para>
+    ///         Two assertions, deliberately. "All equal" alone would hold if every verb moved to 0
+    ///         together; "equal to 5" alone is the four tests above. The fixture carries a readable
+    ///         neighbour so that <c>check</c> and <c>verify</c> have a compilation to build and the
+    ///         run is the partial one the number describes, not an empty tree. <c>--load loose</c> on
+    ///         both, because the fixture has no project and auto-load would otherwise go looking for
+    ///         one above the temp directory.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Sabotage: route <c>ArrangeCommand</c>'s I/O outcome to <c>ExitCodes.LoadFailure</c>
+    ///         and this goes red on <c>arrange --check</c> with the other three still at 5 — verified
+    ///         by doing it.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void AnUnreadableFile_ExitsTheSameCodeFromEveryVerb() {
+        if (UnreadableFile("Unreadable.cs") is null) {
+            Assert.Skip("needs a POSIX mode bit this process is subject to; root and Windows are exempt.");
+            return;
+        }
+
+        Write("Neighbour.cs", "class C {\n    void M() {\n        M();\n    }\n}\n");
+
+        var codes = new Dictionary<string, int>(StringComparer.Ordinal) {
+            ["arrange --check"] = CliRunner.Run("arrange", "--check", directory).ExitCode,
+            ["format --check"] = CliRunner.Run("format", "--check", directory).ExitCode,
+            ["check --load loose"] = CliRunner.Run("check", "--load", "loose", directory).ExitCode,
+            ["verify --load loose"] = CliRunner.Run("verify", "--load", "loose", directory).ExitCode
+        };
+
+        var table = string.Join(", ", codes.Select(static entry => $"{entry.Key} -> {entry.Value}"));
+
+        Assert.True(
+            codes.Values.Distinct().Count() == 1,
+            "the four verbs disagree about one unreadable file: " + table
+        );
+        Assert.True(codes.Values.All(static code => code == 5), "the shared code is not 5: " + table);
+    }
+
+    /// <summary>
     ///     ⚠ #355. The two tests above hold the per-file line to "not a Skala bug"; <c>verify</c>
     ///     printed "this is a Skala bug, not a finding in your code" one line above it, in the
     ///     INCOMPLETE banner, and "Exit 5 is that Skala bug" one line below it, in the PARTIAL
@@ -325,10 +392,9 @@ public sealed class ExitCodeContractTests : IDisposable {
     ///     does, against the real binary, and holds the <b>whole</b> output to the sentence.
     /// </summary>
     /// <remarks>
-    ///     The exit code is asserted unchanged on purpose. <c>LoadFailure</c> (4) is arguably the
-    ///     truer code for "a file could not be read", and #353 has just pinned 5 across all four
-    ///     verbs; re-opening that to chase a nicety is how the inconsistency #353 removed got there.
-    ///     Only the words move here.
+    ///     The exit code is asserted unchanged on purpose. #355 left it at 5 because #353 had just
+    ///     pinned it there; #357 then decided it stays — the reasoning is on
+    ///     <see cref="Five_WhenAFileCannotBeRead" />. Only the words moved here.
     /// </remarks>
     [Theory]
     [InlineData("agent")]
