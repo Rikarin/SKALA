@@ -39,6 +39,11 @@ namespace Rikarin.Skala.Analysis.Tests;
 /// </remarks>
 [Collection(SerialWorkspace.Name)]
 public sealed class UnreadableFileCountTests {
+    /// <summary>⚠ Two constants, not fourteen literals: <c>SK7083</c>'s threshold is five per file.</summary>
+    const string OpenName = "Open.cs";
+
+    const string LockedName = "Locked.cs";
+
     const string Skip = "needs a POSIX mode bit this process is subject to; root and Windows are exempt.";
 
     /// <summary>Carries an SK0001 so "the readable neighbour was reached" is visible in the report.</summary>
@@ -94,8 +99,8 @@ public sealed class UnreadableFileCountTests {
     [Fact]
     public void Loose_PutsAnUnreadableFileInTheCountAndNotInTheStagesSet() {
         using var scratch = new Scratch();
-        var open = scratch.Write("Open.cs", Unformatted);
-        if (scratch.WriteUnreadable("Locked.cs", Locked) is not { } locked) {
+        var open = scratch.Write(OpenName, Unformatted);
+        if (scratch.WriteUnreadable(LockedName, Locked) is not { } locked) {
             Assert.Skip(Skip);
             return;
         }
@@ -114,12 +119,14 @@ public sealed class UnreadableFileCountTests {
         Assert.Equal(locked, diagnostic.File);
     }
 
-    /// <summary>The issue's own case: two files, one unreadable — <c>1 of 2</c>, and <c>1 file was checked</c>.</summary>
+    /// <summary>
+    ///     The issue's own case: two files, one unreadable — <c>1 of 2</c>, and <c>1 file was checked</c>.
+    /// </summary>
     [Fact]
     public void Verify_TwoFilesOneUnreadable_SaysOneOfTwoAndOneChecked() {
         using var scratch = new Scratch();
-        scratch.Write("Open.cs", Unformatted);
-        if (scratch.WriteUnreadable("Locked.cs", Locked) is null) {
+        scratch.Write(OpenName, Unformatted);
+        if (scratch.WriteUnreadable(LockedName, Locked) is null) {
             Assert.Skip(Skip);
             return;
         }
@@ -132,7 +139,7 @@ public sealed class UnreadableFileCountTests {
         Assert.DoesNotContain("0 files were checked", result.Output, StringComparison.Ordinal);
 
         // The readable neighbour was reached: its finding is the thing the old trailer contradicted.
-        Assert.Contains("Open.cs", result.Output, StringComparison.Ordinal);
+        Assert.Contains(OpenName, result.Output, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -143,7 +150,7 @@ public sealed class UnreadableFileCountTests {
     [Fact]
     public void Verify_ThreeFilesTwoUnreadable_KeepsTheFraction() {
         using var scratch = new Scratch();
-        scratch.Write("Open.cs", Unformatted);
+        scratch.Write(OpenName, Unformatted);
         if (scratch.WriteUnreadable("LockedA.cs", Locked) is null
             || scratch.WriteUnreadable("LockedB.cs", Locked.Replace("Locked", "LockedB", StringComparison.Ordinal))
             is null) {
@@ -162,7 +169,7 @@ public sealed class UnreadableFileCountTests {
     [Fact]
     public void ReadableFilesOnly_CountUnchanged() {
         using var scratch = new Scratch();
-        scratch.Write("Open.cs", Unformatted);
+        scratch.Write(OpenName, Unformatted);
         scratch.Write("Other.cs", Locked);
 
         var (result, report) =
@@ -186,8 +193,8 @@ public sealed class UnreadableFileCountTests {
     [Fact]
     public void RequestedFileThatCannotBeRead_IsReportedRatherThanRefused() {
         using var scratch = new Scratch();
-        scratch.Write("Open.cs", Unformatted);
-        if (scratch.WriteUnreadable("Locked.cs", Locked) is not { } locked) {
+        scratch.Write(OpenName, Unformatted);
+        if (scratch.WriteUnreadable(LockedName, Locked) is not { } locked) {
             Assert.Skip(Skip);
             return;
         }
@@ -219,8 +226,8 @@ public sealed class UnreadableFileCountTests {
         using var scratch = new Scratch();
         var project = scratch.Write("Probe.csproj", Project);
         scratch.Write("Directory.Build.props", "<Project />");
-        scratch.Write("Open.cs", Unformatted);
-        if (scratch.WriteUnreadable("Locked.cs", Locked) is not { } locked) {
+        scratch.Write(OpenName, Unformatted);
+        if (scratch.WriteUnreadable(LockedName, Locked) is not { } locked) {
             Assert.Skip(Skip);
             return;
         }
@@ -253,13 +260,13 @@ public sealed class UnreadableFileCountTests {
         using var scratch = new Scratch();
         var project = scratch.Write("Probe.csproj", Project);
         scratch.Write("Directory.Build.props", "<Project />");
-        scratch.Write("Open.cs", Unformatted);
-        var lockedPath = scratch.Write("Locked.cs", Locked);
+        scratch.Write(OpenName, Unformatted);
+        var lockedPath = scratch.Write(LockedName, Locked);
         var binlog = Path.Combine(scratch.Root, "probe.binlog");
         Build(project, binlog);
 
         File.Delete(lockedPath);
-        if (scratch.WriteUnreadable("Locked.cs", Locked) is not { } locked) {
+        if (scratch.WriteUnreadable(LockedName, Locked) is not { } locked) {
             Assert.Skip(Skip);
             return;
         }
