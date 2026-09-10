@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 342 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 363 ids are allocated.
 
 ## Async
 
@@ -393,11 +393,32 @@
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
 | [SK9001](SK9001.md) | Unknown configuration key | suggestion | — | no |
+| [SK9002](SK9002.md) | The effective configuration draws from an `.editorconfig` above the repository root | suggestion | — | no |
+| [SK9003](SK9003.md) | A style option was set in `skala.jsonc` | error | — | no |
+| [SK9004](SK9004.md) | Two spellings of one option are set at equal specificity and disagree | warning | — | no |
+| [SK9005](SK9005.md) | Two settings contradict each other | warning | — | no |
+| [SK9006](SK9006.md) | A setting is on that Skala cannot honour | warning | — | no |
+| [SK9007](SK9007.md) | `skala.jsonc` is not valid JSON | error | — | no |
+| [SK9008](SK9008.md) | The canonical block has been edited | error | — | no |
+| [SK9009](SK9009.md) | The repository is on an older canonical than the tool carries | suggestion | — | no |
 | [SK9010](SK9010.md) | The file does not parse | warning | — | yes |
 | [SK9011](SK9011.md) | A member's braces are split across a preprocessor branch | suggestion | — | yes |
+| [SK9012](SK9012.md) | `skala.jsonc` tries to pin a canonical version | error | — | no |
+| [SK9013](SK9013.md) | The local block overrides a canonical option | suggestion | — | no |
+| [SK9014](SK9014.md) | The repository carries no canonical block | suggestion | — | no |
 | [SK9015](SK9015.md) | The file could not be read or written | error | — | yes |
+| [SK9016](SK9016.md) | Applying the canonical changes a `dotnet_diagnostic` severity | warning | — | no |
+| [SK9017](SK9017.md) | An option was set to a value outside its domain | warning | — | no |
 | [SK9020](SK9020.md) | The binlog is stale for this file | suggestion | — | no |
 | [SK9021](SK9021.md) | The binlog does not name a file that exists | warning | — | no |
+| [SK9022](SK9022.md) | No binary log could be read | warning | — | no |
+| [SK9023](SK9023.md) | The requested paths hold nothing to analyse | error | — | no |
+| [SK9024](SK9024.md) | No solution or project could be loaded | error | — | no |
+| [SK9025](SK9025.md) | The requested load mode produced no compilation, so a fallback was used | suggestion | — | no |
+| [SK9026](SK9026.md) | `--rules` names an id no rule in this run can produce | warning | — | no |
+| [SK9027](SK9027.md) | A compilation unit was cancelled, so the run saw only part of the tree | warning | — | no |
+| [SK9028](SK9028.md) | An input the gate's scoping depends on could not be read | error | — | no |
+| [SK9029](SK9029.md) | The load names an analyzer or source generator assembly that is not on disk | error | — | no |
 | [SK9030](SK9030.md) | An analyzer threw | warning | — | no |
 | [SK9031](SK9031.md) | An analyzer package failed to load | warning | — | no |
 | [SK9095](SK9095.md) | An arrangement rule threw and was skipped | warning | — | yes |

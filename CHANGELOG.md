@@ -33,10 +33,23 @@ to cover returns the same green as a guard that is complete.
 `ToolDiagnosticIdTests.ToolDiagnosticIds_AreAllocated` now scans every declaration site in the tree;
 sabotage-tested by planting a sixth unallocated `const string` in the *other* declaration site.
 
-⚠ **Not fixed, and now enumerated rather than invisible (#354).** `SK9002`–`SK9009`, `SK9012`–`SK9014`,
-`SK9016`, `SK9017` and `SK9022`–`SK9029` — the configuration and load diagnostics — have the same
-defect: a dangling SARIF `descriptor.id` and no `skala explain` answer. They are a frozen exemption
-list in the new guard, so the debt is counted and a new id cannot join it by accident.
+### Fixed — the twenty-one configuration and load diagnostics are recorded too (#354)
+
+`SK9002`–`SK9009`, `SK9012`–`SK9014`, `SK9016`, `SK9017` and `SK9022`–`SK9029` had the same defect
+as the five above — a dangling SARIF `descriptor.id` and `skala explain` answering *"not a Skala
+rule"* — and were carried as a frozen exemption list in the #352 guard while they waited for prose.
+Each now has a register line and a `rules.json` entry written from its call sites: what triggers it,
+what severity it carries at each site, whether it fails a command and at which exit code, and what
+to do about it. ⚠ It was twenty-one, not the nineteen the issue counted. The exemption list is back
+to the two band edges, and the paid-off assertion is what forced it there on the same commit.
+
+⚠ **Two claims in the tree were refuted while writing them, and the entries say so.** `SK9017` was
+described in three places as *"the only configuration diagnostic that fails `config check` without
+`--strict`"*; `ConfigCommands.Check` fails on any error-severity diagnostic without `--strict`, so
+`SK9003`, `SK9007`, `SK9012` and canonical drift under the default policy all do too, at exit 1 —
+`SK9017` is the only *warning* that does, and the only route to exit 3. And `SK9004`'s runtime form
+is unreachable: no option has two spellings at one specificity rank, a test asserts it, and the
+branch is kept for the day one does.
 
 ### Fixed — no format prints a clean verdict on a run that could not finish (#345)
 
