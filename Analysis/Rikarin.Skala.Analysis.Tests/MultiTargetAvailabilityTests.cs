@@ -408,6 +408,66 @@ public sealed class MultiTargetAvailabilityTests {
     }
 
     /// <summary>
+    ///     ⚠ The binlog path, which #343 assumed and never built a multi-targeted binlog to prove.
+    /// </summary>
+    /// <remarks>
+    ///     <c>BinlogLoader</c> sets <c>ProjectPath</c>, so <c>MultiTargetLink.Apply</c> — which runs at
+    ///     the single funnel in <c>ProjectLoader.Load</c> — <em>should</em> group the monikers
+    ///     identically to the workspace. "Should" was the whole state of the evidence, and this is the
+    ///     load mode that matters most: <b>the self-gate and CI both run <c>--load=binlog</c></b>, so
+    ///     it is the path this project's own gates use on every push.
+    ///     <para>
+    ///         ⚠ The grouping is by <c>ProjectPath</c> precisely because <c>Name</c> would not do it:
+    ///         the workspace decorates the name with the moniker and the binlog does not, so a
+    ///         name-keyed grouping passes on one loader and silently fails on the other. That is what
+    ///         this pins.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Built rather than restored: a binlog is the record of a real build, so this shells out
+    ///         to <c>dotnet build -bl</c>. The assertions below are stated against the loaded units, so
+    ///         a build that produced one <c>csc</c> invocation instead of two fails loudly rather than
+    ///         passing with nothing to group.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void MultiTargetedBinlog_GroupsTheMonikersTheSameWayTheWorkspaceDoes() {
+        using var scratch = new Scratch();
+        var project = scratch.Write("Probe.csproj", MultiTargetedDefaultLanguage);
+        scratch.Write("Probe.cs", BlockNamespaceSource);
+
+        // ⚠ Cuts the Directory.Build.props chain. `Scratch` roots under the temp directory today, but
+        // an inherited `<LangVersion>` would make both monikers equal and quietly void the assertion
+        // that they differ — the same contamination this file's other fixtures avoid by construction.
+        scratch.Write("Directory.Build.props", "<Project />");
+        var binlog = Path.Combine(scratch.Root, "probe.binlog");
+        Build(project, binlog);
+
+        var loaded = ProjectLoader.Load(
+            new LoadRequest {
+                RepositoryRoot = scratch.Root,
+                Mode = LoadMode.Binlog,
+                BinlogPath = binlog,
+                Paths = [scratch.Root],
+                AllowFallback = false
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(2, loaded.Units.Length);
+
+        // The claim: the binlog's two units know about each other, exactly as the workspace's do.
+        Assert.All(loaded.Units, static unit => Assert.Single(unit.Siblings));
+        Assert.All(loaded.Units, static unit => Assert.NotEqual(string.Empty, unit.ProjectPath));
+
+        var versions = loaded.Units.Select(static unit => unit.Compilation.LanguageVersion).ToHashSet();
+        Assert.Equal(2, versions.Count);
+    }
+
+    /// <summary>⚠ A binlog is the record of a real build, so one has to be run to get a real one.</summary>
+    static void Build(string project, string binlog) =>
+        Run("build", project, "-bl:" + binlog, "--nologo");
+
+    /// <summary>
     ///     ⚠
     ///     <b>
     ///         The one fixture in this suite that has to restore, and skipping it would have made
@@ -424,19 +484,30 @@ public sealed class MultiTargetAvailabilityTests {
     ///     an analyzer that never consulted the sibling. The <c>Assert.NotNull</c> on
     ///     <c>System.Threading.Monitor</c> is what makes that failure loud rather than green.
     /// </remarks>
-    static void Restore(string project) {
-        using var process = System.Diagnostics.Process.Start(
-            new System.Diagnostics.ProcessStartInfo("dotnet") {
-                ArgumentList = { "restore", project, "--nologo" },
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            }
-        )!;
+    static void Restore(string project) => Run("restore", project, "--nologo");
 
+    /// <summary>One <c>dotnet</c> invocation, with its output kept for the failure message.</summary>
+    /// <remarks>
+    ///     ⚠ The output is only interesting when the exit code is non-zero, and then it is the only
+    ///     thing that explains the failure — a restore that could not reach NuGet and a build that
+    ///     could not find the SDK both surface here as an assertion with the tool's own words in it.
+    /// </remarks>
+    static void Run(params string[] arguments) {
+        var start = new System.Diagnostics.ProcessStartInfo("dotnet") {
+            RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false
+        };
+
+        foreach (var argument in arguments) {
+            start.ArgumentList.Add(argument);
+        }
+
+        using var process = System.Diagnostics.Process.Start(start)!;
         var output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
         process.WaitForExit();
-        Assert.True(process.ExitCode == 0, "restoring the multi-targeted fixture failed:\n" + output);
+        Assert.True(
+            process.ExitCode == 0,
+            "`dotnet " + string.Join(' ', arguments) + "` on the multi-targeted fixture failed:\n" + output
+        );
     }
 
     /// <summary>
