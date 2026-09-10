@@ -120,9 +120,34 @@ Decisions, each measured against a run that got it wrong:
 - **The `PARTIAL` trailer `verify` appends reads the same classification.** It said "Exit 5 is
   that Skala bug" unconditionally, and a fix to the banner alone would have left it standing; it
   now says "reports that" when nothing in the run was Skala's fault.
-- **The exit code is unchanged.** `SK9015` still exits 5. `LoadFailure` (4) is arguably the truer
-  code for "a file could not be read" and #353 has just pinned 5 across all four verbs; moving it
-  is a separate decision, taken once, for all four together.
+- ⚠ **`SK9015` exits 5, decided once (#357), and the premise that 5 means "Skala bug" was
+  refuted.** #355 and #356 each deferred moving it to `LoadFailure` (4) so that all four verbs
+  would move together; the survey the move was waiting on found nobody to move it for. Measured on
+  2026-09-10, all four verbs — `arrange --check`, `format --check`, `check --load loose`,
+  `verify --load loose` — exit 5 for the same mode-000 file, with and without a readable neighbour,
+  and `ExitCodeContractTests.AnUnreadableFile_ExitsTheSameCodeFromEveryVerb` holds them there.
+  - **No consumer outside the process splits 4 from 5.** The MSBuild target
+    (`Rikarin.Skala.MSBuild.targets`, the "could not complete" `Warning`) reads 0, the finding code,
+    and "anything else"; the MCP `skala_verify` verdict reads 0 and non-zero; the installed
+    pre-commit hook is `|| exit 1`; the Claude Code hooks above are `[ $? -eq 0 ]`; CI's
+    `skala.yml` forgives 0 and 1 and fails on the rest. Every one of them treats the two numbers
+    identically, so the move would have changed no behaviour anywhere Skala is consumed.
+  - **Every consumer inside the process that does split them reads 4 as "there is no report".**
+    `VerifyCommand.Verdict` returns a 4 untouched because "no compilation was built, so the report
+    is empty" — the `PARTIAL` trailer #345 and #356 built is appended only on 5. `FixCommand` stops
+    on 4 and keeps fixing on 5; `BaselineCommand` likewise. An unreadable file is the opposite case:
+    the run completed for every other file and has a report worth reading. Routing it to 4 would
+    either delete the partial verdict for exactly the run it was written for, or force each of
+    those branches to re-derive "full failure or partial" from the report — at which point the
+    exit code has stopped carrying the distinction, which was the only thing the move was for.
+  - **5 never meant "Skala bug".** `ExitCodes.InternalError` has read "including … an I/O failure
+    that stopped a file being read or written" since `3578e170` (2026-08-27), two weeks before
+    #353 — #353 honoured the table, it did not extend it. "This is a Skala bug" is the sentence
+    `Program.cs` prints for an *unhandled exception*, and the one #355 removed from the banner; it
+    was never a row in the table. `LoadFailure`, by contrast, is documented as "no compilation could
+    be built", which is false for this case. The one thing that did contradict `SK9015` landing on
+    5 was the README's row, which named only the safety net; it now names the I/O case too.
+  - `SK9010` was never in question and is where it was.
 - The sentence is asserted over the **whole** output — banner, per-file line, trailer — on every
   text format, with a positive control that the genuine-defect case still says "Skala bug", so the
   suite cannot pass by deleting the sentence: `IncompleteBannerTests`, `PartialVerdictTests`, and

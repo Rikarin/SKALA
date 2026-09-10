@@ -79,7 +79,7 @@ skala explain skala_wrap_arguments_style   # what an option governs
 | 2 | Formatting or arrangement is needed (`--check`) |
 | 3 | The configuration is wrong |
 | 4 | The project or compilation could not be loaded |
-| 5 | Internal error — including the formatter's own safety net tripping |
+| 5 | The run did not complete: the formatter's own safety net tripped (`SK9099`), or a file could not be read (`SK9015`) |
 | 130 | Cancelled |
 
 ## Configuration
