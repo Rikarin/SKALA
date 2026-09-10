@@ -536,7 +536,17 @@ public static partial class SkalaCommandLine {
 
             diagnostics.AddRange(loaded.Diagnostics);
             return [.. loaded.Units.Select(static unit => unit.Compilation)];
-        } catch (IOException) {
+
+            // ⚠ #353, and the site that made the `arrange` fixture fail after the per-file catch was
+            // already fixed. The loose loader reads every source file to build a compilation, so an
+            // unreadable file threw HERE — before `ArrangeCommand` ever reached its own loop — and
+            // `catch (IOException)` did not hold it.
+            //
+            // Returning `[]` is the existing, deliberate contract for a load that could not finish:
+            // arrange degrades to the syntactic subset and says so ("⚠ N files were in no loaded
+            // compilation"). The authoritative report on the unreadable file is the per-file SK9015
+            // downstream — this layer's job is only to not take the command down on the way there.
+        } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             return [];
         }
     }
@@ -622,7 +632,13 @@ public static partial class SkalaCommandLine {
             }
 
             return symbols;
-        } catch (IOException) {
+
+            // ⚠ #353, same shape as `LoadCompilations` above and the same reason: this loads a
+            // project to discover its preprocessor symbols, so one unreadable source file threw an
+            // `UnauthorizedAccessException` past `catch (IOException)`. Symbol discovery is a
+            // convenience — no symbols is a documented, survivable answer — so it degrades rather
+            // than aborting the verb the user actually asked for.
+        } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             return [];
         }
     }
@@ -846,12 +862,23 @@ public static partial class SkalaCommandLine {
             var result = command();
             Console.Out.Write(result.Output);
             return result.ExitCode;
-        } catch (IOException exception) {
+            // ⚠ #353. This returned a bare literal `2` for both, and 2 is
+            // `ExitCodes.FormattingNeeded` — "formatting changes are needed". So every I/O failure
+            // that reached here told the caller to run the formatter. `ExitCodes` documents
+            // `InternalError` as covering "an I/O failure that stopped a file being read or
+            // written", and `AnalysisCommands.RunCancellable` already returns `InternalError` for
+            // this exact pair, so the two handlers disagreed on the same contract — the second copy
+            // of the table that the `ExitCodes` remarks warn about, drifting exactly as predicted.
+            //
+            // ⚠ The literal is what hid it: `2` reads as arbitrary, `ExitCodes.FormattingNeeded`
+            // would have read as wrong.
+            //
+            // This is now a net for I/O outside the per-file loops — directory enumeration, config
+            // reads. `format` and `arrange` report an unreadable *source* file as SK9015 and carry
+            // on, so they no longer land here at all.
+        } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             Console.Error.WriteLine($"skala: {exception.Message}");
-            return 2;
-        } catch (UnauthorizedAccessException exception) {
-            Console.Error.WriteLine($"skala: {exception.Message}");
-            return 2;
+            return ExitCodes.InternalError;
         }
     }
 

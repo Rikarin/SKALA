@@ -318,7 +318,26 @@ public static class FormatCommand {
                 request.Define,
                 request.XmlDoc
             );
-        } catch (IOException exception) {
+            // ⚠ #353, and worse here than in `arrange` because of where this runs. `FormatOne` is
+            // the body of the `Parallel.For` in `FormatAll`, which wraps whatever escapes in an
+            // `AggregateException` — and an `AggregateException` matches neither of the top-level
+            // `catch (IOException)` / `catch (UnauthorizedAccessException)` handlers in
+            // `SkalaCommandLine.Run`. So an unreadable file fell all the way to `Program`'s last
+            // resort and printed "skala: internal error — this is a Skala bug." with a full stack
+            // trace, which is precisely the claim that must not be made about a file whose mode is
+            // 000.
+            //
+            // ⚠ Measured, and the reason this looked flaky rather than broken: the outcome depended
+            // on the FILE COUNT. `FormatAll` runs serially when `files.Count <= 1`, so one
+            // unreadable file exited **2** via the top-level handler, and two exited **5** with a
+            // stack trace via `AggregateException`. Same file, same permissions, two answers.
+            //
+            // Catching per file fixes both: nothing escapes into `Parallel.For`, and SK9015 rides
+            // the normal `Failed` path to `InternalError`.
+            //
+            // `SecurityException` is deliberately absent — a CAS-era type that .NET's file APIs no
+            // longer throw for a denied path, so a catch for it would assert a dead mechanism.
+        } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             return new FileOutcome(
                 true,
                 false,

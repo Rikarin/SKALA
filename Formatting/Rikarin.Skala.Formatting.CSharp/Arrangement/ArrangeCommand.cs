@@ -147,7 +147,22 @@ public static class ArrangeCommand {
                 if (request is { Check: false, Diff: false }) {
                     File.WriteAllText(file, final, text.Encoding ?? new UTF8Encoding(false));
                 }
-            } catch (IOException exception) {
+                // ⚠ #353. `UnauthorizedAccessException` does NOT derive from `IOException` — it
+                // derives from `SystemException` — so `catch (IOException)` alone let a file the
+                // process cannot read abort the whole run. Measured before the fix: the loop stopped
+                // at the first unreadable file, every later file went uninspected, and the escape
+                // landed in `SkalaCommandLine.Run`, which returned **2**. 2 is `FormattingNeeded`,
+                // so a pre-commit hook told to auto-format on 2 and stop on 1 was being told to run
+                // the formatter over a file nobody could read.
+                //
+                // ⚠ Not an SK9098: an unreadable file is not a Skala bug. SK9015 is the answer this
+                // codebase already has for it — report it, leave the file alone, keep going, and let
+                // the error severity carry the run to `InternalError` below.
+                //
+                // `SecurityException` is deliberately absent. It is a CAS-era type; .NET's file APIs
+                // have thrown `UnauthorizedAccessException` for a denied path since .NET Core, so a
+                // catch for it would be unreachable code asserting a mechanism that no longer exists.
+            } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
                 diagnostics.Add(
                     new SkalaDiagnostic(FormatDiagnosticIds.FileIoFailed, SkalaSeverity.Error, exception.Message, file)
                 );
