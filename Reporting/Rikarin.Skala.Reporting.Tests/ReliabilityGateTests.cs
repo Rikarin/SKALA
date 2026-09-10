@@ -4,16 +4,17 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Reporting.Tests;
 
 /// <summary>
-///     The three statements a run makes about itself, and that no gate used to read.
+///     The four statements a run makes about itself, and that no gate used to read.
 /// </summary>
 /// <remarks>
-///     ⚠ All three are unconditional and named by no gate, which is what separates them from every other
+///     ⚠ All four are unconditional and named by no gate, which is what separates them from every other
 ///     condition in <see cref="Gate" />. The rest are opinions a repository opts into in
-///     <c>skala.jsonc</c> — how severe is too severe, how many new findings are tolerable. These three say
+///     <c>skala.jsonc</c> — how severe is too severe, how many new findings are tolerable. These four say
 ///     the <em>denominator is unknown</em>: the run did not finish reading the tree (#309), a rule
-///     died on the first file and reported nothing for the rest (#295), or the baseline it was told to
-///     bucket findings against exists and would not open (#358). A verdict computed over an unknown
-///     fraction of a tree is not a verdict, so there is nothing to opt into.
+///     died on the first file and reported nothing for the rest (#295), the baseline it was told to
+///     bucket findings against exists and would not open (#358), or a project it found would not load
+///     and the semantic rules never ran (#361). A verdict computed over an unknown fraction of a tree
+///     is not a verdict, so there is nothing to opt into.
 /// </remarks>
 public sealed class ReliabilityGateTests {
     static RunReport Report() => new() { RepositoryRoot = "/repo", Mode = LoadMode.Loose };
@@ -188,6 +189,57 @@ public sealed class ReliabilityGateTests {
         var failure = Assert.Single(result.Failures);
         Assert.Contains("could not be read", failure, StringComparison.Ordinal);
         Assert.Contains("/repo/.skala/baseline.sarif", failure, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     #361: a project the load ladder found and could not load fails the gate, even though the run
+    ///     fell back to loose and reported the syntactic half.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured through the real binary on 2026-09-11: <c>One.cs</c> beside a <c>.csproj</c> naming
+    ///     an SDK that does not exist, no binlog, <c>check --load=binlog --gate=local</c>. The workspace
+    ///     rung failed with this diagnostic, the ladder kept it and fell through to loose, the report
+    ///     said <c>SKIPPED 260 rule(s) did not run (loose load)</c>, and the <c>local</c> gate
+    ///     <b>passed</b> — while <c>verify</c>, whose <c>auto</c> makes workspace the first rung, refused
+    ///     the same tree at exit 4. Sabotage by removing the <c>SK9024</c>/<c>SK9029</c> clause from
+    ///     <c>Gate.EvaluateReliability</c>.
+    /// </remarks>
+    [Theory]
+    [InlineData(ConfigDiagnosticIds.NothingToLoad, "'/repo/Broken.csproj' yielded no analysable source; every project in it failed to load")]
+    [InlineData(ConfigDiagnosticIds.AnalyzerAssemblyMissing, "refusing to analyse 'Broken.csproj': the assemblies above are missing")]
+    public void FailedLoadRung_FailsTheReliabilityGate(string id, string message) {
+        var report = Report() with {
+            Mode = LoadMode.Loose,
+            Diagnostics = [new SkalaDiagnostic(id, SkalaSeverity.Error, message, "/repo/Broken.csproj")]
+        };
+
+        var result = Gate.Evaluate(GateDefinition.Local, report, true);
+
+        Assert.False(result.Passed);
+        var failure = Assert.Single(result.Failures);
+        Assert.Contains("could not be loaded", failure, StringComparison.Ordinal);
+        Assert.Contains("fell back to loose", failure, StringComparison.Ordinal);
+        Assert.Contains("Broken.csproj", failure, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The same ids at warning are states a repository is in, not rungs that failed, and the gate
+    ///     must ignore them: MSBuild's relayed <c>workspace:</c> lines (this repository prints three on
+    ///     every workspace load), "no .slnx, .sln or .csproj was found" (the documented reason to choose
+    ///     loose), and the binlog rung's per-assembly <c>SK9029</c> (<c>GeneratorDriver.Run</c>,
+    ///     deliberately non-fatal). Failing on any of these would fail every workspace load of this
+    ///     repository.
+    /// </summary>
+    [Theory]
+    [InlineData(ConfigDiagnosticIds.NothingToLoad, "workspace: Found project reference without a matching metadata reference: Other.csproj")]
+    [InlineData(ConfigDiagnosticIds.NothingToLoad, "no .slnx, .sln or .csproj was found to load")]
+    [InlineData(ConfigDiagnosticIds.AnalyzerAssemblyMissing, "the load names 'Gen.dll' as an analyzer or source generator and there is no file at '/x/Gen.dll'")]
+    public void LoadDiagnosticAtWarning_DoesNotFailTheReliabilityGate(string id, string message) {
+        var report = Report() with {
+            Diagnostics = [new SkalaDiagnostic(id, SkalaSeverity.Warning, message, "/repo/Skala.slnx")]
+        };
+
+        Assert.True(Gate.Evaluate(GateDefinition.Local, report, true).Passed);
     }
 
     /// <summary>A run that finished and crashed nothing still passes, so the gate is not vacuous.</summary>

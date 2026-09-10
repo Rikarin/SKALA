@@ -51,6 +51,15 @@ public enum ReportFormat {
 ///         could not be read, and a conflict marker in a committed file is the repository's condition.
 ///         A gate input is never in the set of files being checked, so it is never in the fraction.
 ///     </para>
+///     <para>
+///         ⚠ #361. Neither is a project. <c>SK9024</c>/<c>SK9029</c> at error severity sit at the
+///         <c>.csproj</c> or <c>.slnx</c> the workspace rung could not load, and the binlog ladder
+///         carries them into the loose report it falls through to — so the same one-file tree with a
+///         <c>.csproj</c> naming an SDK that does not exist read "1 of 1 file was not checked — this
+///         is a Skala bug" above <b>exit 0</b>, the "1 file" being the project. <see cref="LoadRung" />
+///         is the sibling of <see cref="GateInput" />: outside the fraction, its own sentence, and —
+///         since #361 — a reliability failure at the gate.
+///     </para>
 /// </remarks>
 public enum IncompleteCause {
     /// <summary>
@@ -71,7 +80,15 @@ public enum IncompleteCause {
     ///     resolve. Not a source file, so never counted among the files that were not checked;
     ///     <see cref="Renderer.GateInputs" /> is where the banner reads it from.
     /// </summary>
-    GateInput
+    GateInput,
+
+    /// <summary>
+    ///     A project or solution the load ladder found and could not load (<c>SK9024</c> or
+    ///     <c>SK9029</c> at error severity), after which the run fell back to the syntactic rules.
+    ///     Not a source file, so never counted among the files that were not checked;
+    ///     <see cref="Renderer.OutsideTheFraction" /> is where the banner reads it from.
+    /// </summary>
+    LoadRung
 }
 
 /// <summary>
@@ -83,10 +100,10 @@ public enum IncompleteCause {
 ///     reach formatting code is a renderer that can be tempted to run some — so it cannot reference
 ///     the originals, and <c>ToolDiagnosticIdTests</c> forbids a bare literal. The constants keep the
 ///     originals' names so that the one-id-one-concept check reads them as the same concept, which
-///     they are. The third id the classifier names, <c>SK9028</c>, is read straight off
-///     <c>ConfigDiagnosticIds.GateInputUnavailable</c> — it lives in Core, which this assembly already
-///     references. Nothing else in the <c>SK9xxx</c> range is named here: every other blocking id is
-///     Skala's own fault, and the default branch says so without having to list them.
+///     they are. The other ids the classifier names — <c>SK9028</c>, <c>SK9024</c>, <c>SK9029</c> —
+///     are read straight off <c>ConfigDiagnosticIds</c>, which lives in Core and which this assembly
+///     already references. Nothing else in the <c>SK9xxx</c> range is named here: every other blocking
+///     id is Skala's own fault, and the default branch says so without having to list them.
 /// </remarks>
 static class IncompleteIds {
     /// <summary>The file could not be read or written.</summary>
@@ -238,9 +255,15 @@ public static class Renderer {
     ///     <para>
     ///         ⚠ #360: so is a gate input. <c>SK9028</c> is located at the baseline it could not read,
     ///         which is away from the root and is not a source file, and counting it made a one-file
-    ///         tree with a conflicted baseline read <c>1 of 1 file was not checked</c>. Every path this
-    ///         yields is now one the loader put into <see cref="RunReport.FileCount" />, which is what
-    ///         lets <c>Scale</c> print the fraction without a guard.
+    ///         tree with a conflicted baseline read <c>1 of 1 file was not checked</c>.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ #361: and so is a project. <c>SK9024</c>/<c>SK9029</c> at error severity sit at the
+    ///         <c>.csproj</c> the workspace rung could not load, and the binlog ladder carries them
+    ///         into the loose report. With both kinds out, <b>every path this yields is one the loader
+    ///         put into <see cref="RunReport.FileCount" /></b> — the per-file ids are located at a
+    ///         reportable or unreadable source path by construction — which is what lets
+    ///         <c>Scale</c> print the fraction without a guard.
     ///     </para>
     /// </remarks>
     public static IEnumerable<string> BlockedFiles(RunReport report) =>
@@ -250,37 +273,55 @@ public static class Renderer {
 
     /// <summary>
     ///     The blocking diagnostics that are about one source file: located away from the root, and
-    ///     not a gate input.
+    ///     carrying a cause that <see cref="IsAboutAFile" />.
     /// </summary>
     static IEnumerable<SkalaDiagnostic> BlockingFileDiagnostics(RunReport report) =>
-        Blocking(report)
-            .Where(diagnostic =>
-                IsFileScoped(report, diagnostic) && CauseOf(diagnostic) != IncompleteCause.GateInput
-            );
+        Blocking(report).Where(diagnostic => IsFileScoped(report, diagnostic) && IsAboutAFile(CauseOf(diagnostic)));
 
     /// <summary>
-    ///     The blocking diagnostics that say an input the gate compares against could not be read.
+    ///     Whether a cause takes a <em>source file</em> out of the run, as opposed to describing
+    ///     something the run needed and did not have.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Error severity only, because <see cref="Blocking" /> already is. The same id at warning
-    ///     is a baseline the gate names and that does not exist yet — a state a repository passes
-    ///     through, deliberately non-blocking (#358), and it never reaches the banner.
+    ///     ⚠ This is the one place the split is made. A cause that is not about a file is never in
+    ///     <see cref="BlockedFiles" />, never in <see cref="Causes" /> and never in the fraction; the
+    ///     banner reads it from <see cref="OutsideTheFraction" /> and gives it its own sentence. Adding
+    ///     a member to <see cref="IncompleteCause" /> means deciding which side it is on, here.
+    /// </remarks>
+    public static bool IsAboutAFile(IncompleteCause cause) =>
+        cause is not (IncompleteCause.GateInput or IncompleteCause.LoadRung);
+
+    /// <summary>
+    ///     The blocking diagnostics that are not about a source file: an input the gate compares
+    ///     against that could not be read, or a project the load found and could not load.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Error severity only, because <see cref="Blocking" /> already is. The same ids at warning
+    ///     are states a repository passes through — a baseline the gate names and that does not exist
+    ///     yet (#358), MSBuild's relayed <c>workspace:</c> lines, a tree with no project at all — all
+    ///     deliberately non-blocking, and none reaches the banner.
     ///     <para>
-    ///         Not filtered by location: the baseline variant sits at the baseline's path, and the
-    ///         <c>--since</c> and <c>--no-new-suppressions</c> variants sit at the root. All three
-    ///         fail the reliability gate at exit 1, and before #360 the root-located ones printed
-    ///         <c>this run did not finish — this is a Skala bug</c> above that exit.
+    ///         Not filtered by location: the baseline variant sits at the baseline's path and the
+    ///         <c>--since</c> and <c>--no-new-suppressions</c> variants at the root; a project that
+    ///         would not load sits at the <c>.csproj</c> and an ambiguity between several at the root.
+    ///         All of them fail the reliability gate at exit 1, and before #360 and #361 the
+    ///         root-located ones printed <c>this run did not finish — this is a Skala bug</c> above it.
     ///     </para>
     /// </remarks>
+    public static IReadOnlyList<SkalaDiagnostic> OutsideTheFraction(RunReport report) => [
+        .. Blocking(report).Where(static diagnostic => !IsAboutAFile(CauseOf(diagnostic)))
+    ];
+
+    /// <summary>The subset of <see cref="OutsideTheFraction" /> that is <see cref="IncompleteCause.GateInput" />.</summary>
     public static IReadOnlyList<SkalaDiagnostic> GateInputs(RunReport report) => [
-        .. Blocking(report).Where(static diagnostic => CauseOf(diagnostic) == IncompleteCause.GateInput)
+        .. OutsideTheFraction(report).Where(static diagnostic => CauseOf(diagnostic) == IncompleteCause.GateInput)
     ];
 
     /// <summary>
     ///     Why a file dropped out of the run, from the diagnostic that dropped it.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>The default is <see cref="IncompleteCause.Defect" />, deliberately.</b> Only the three
+    ///     ⚠ <b>The default is <see cref="IncompleteCause.Defect" />, deliberately.</b> Only the five
     ///     ids that are positively known to describe the environment or the repository are named;
     ///     anything else the tool can fail with is Skala's own until somebody says otherwise. Getting
     ///     that backwards would let a new blocking id ship quietly telling readers to go and check
@@ -291,6 +332,7 @@ public static class Renderer {
             IncompleteIds.FileIoFailed => IncompleteCause.Unreadable,
             IncompleteIds.NotParseable => IncompleteCause.Unparseable,
             ConfigDiagnosticIds.GateInputUnavailable => IncompleteCause.GateInput,
+            ConfigDiagnosticIds.NothingToLoad or ConfigDiagnosticIds.AnalyzerAssemblyMissing => IncompleteCause.LoadRung,
             _ => IncompleteCause.Defect
         };
 
@@ -314,9 +356,9 @@ public static class Renderer {
     ///         which is the pre-#355 sentence, unchanged, for the case where nothing is known.
     ///     </para>
     ///     <para>
-    ///         ⚠ #360: <see cref="IncompleteCause.GateInput" /> never appears here. It is not a cause
-    ///         a file dropped out for, so it has no count to add to the fraction; the banner reads it
-    ///         from <see cref="GateInputs" /> and states it as its own sentence.
+    ///         ⚠ #360, #361: a cause that is not <see cref="IsAboutAFile" /> never appears here. It is
+    ///         not a cause a file dropped out for, so it has no count to add to the fraction; the
+    ///         banner reads it from <see cref="OutsideTheFraction" /> and states it as its own sentence.
     ///     </para>
     /// </remarks>
     public static IReadOnlyList<(IncompleteCause Cause, int Files)> Causes(RunReport report) {
@@ -816,6 +858,15 @@ public static class AgentRenderer {
     ///         every file was checked, because on this surface — which prints no gate verdict — the
     ///         banner is the only thing that explains the exit code.
     ///     </para>
+    ///     <para>
+    ///         ⚠ #361: a project the load found and could not open is the same shape one id over.
+    ///         The binlog ladder falls through a failed workspace rung to loose and keeps the rung's
+    ///         error-severity <c>SK9024</c>/<c>SK9029</c>, located at the <c>.csproj</c>, so the same
+    ///         one-file tree read "1 of 1 file was not checked — this is a Skala bug" above
+    ///         <b>exit 0</b>. It is outside the fraction like the baseline, and its sentence says
+    ///         where the rules went, because the gate now fails on it and this line is what explains
+    ///         that exit.
+    ///     </para>
     /// </remarks>
     static void Incomplete(StringBuilder builder, RunReport report) {
         var blocking = Renderer.Blocking(report).ToList();
@@ -823,20 +874,20 @@ public static class AgentRenderer {
             return;
         }
 
-        var gateInputs = Renderer.GateInputs(report);
+        var outside = Renderer.OutsideTheFraction(report);
 
-        // ⚠ "The run was blocked" is anything blocking that is not a gate input — a per-file
-        // diagnostic, or the arrange stage's root-located summary. A gate input alone leaves the run
-        // whole and the verdict without a reference, and the sentence has to say which.
-        var runBlocked = blocking.Count > gateInputs.Count;
+        // ⚠ "The run was blocked" is anything blocking that is about a file — a per-file diagnostic,
+        // or the arrange stage's root-located summary. A gate input or a failed load rung alone
+        // leaves every file checked, and the sentence has to say which.
+        var runBlocked = blocking.Count > outside.Count;
         builder.Append("INCOMPLETE  ");
 
         if (runBlocked) {
             builder.Append(Scale(report)).Append(" — ").Append(Because(Renderer.Causes(report)));
         }
 
-        if (gateInputs.Count > 0) {
-            var clause = GateInputClause(report, gateInputs);
+        if (outside.Count > 0) {
+            var clause = OutsideTheFractionClause(report, outside);
             if (runBlocked) {
                 builder.Append(' ').Append(char.ToUpperInvariant(clause[0])).Append(clause.AsSpan(1));
             } else {
@@ -844,13 +895,7 @@ public static class AgentRenderer {
             }
         }
 
-        builder.Line(
-            (runBlocked, gateInputs.Count > 0) switch {
-                (true, false) => " Everything below covers the rest.",
-                (true, _) => " Everything below covers the rest, shown as if there were nothing to compare against.",
-                _ => " Every file was checked; everything below is shown as if there were nothing to compare against."
-            }
-        );
+        builder.Line(Trailer(runBlocked, outside));
 
         foreach (var diagnostic in blocking) {
             builder.Append("  ")
@@ -904,28 +949,96 @@ public static class AgentRenderer {
     }
 
     /// <summary>
-    ///     The sentence for an input the gate could not read: what it was, where, and what that did
-    ///     to the verdict. Lower-case at the start so the caller can open the line with it or
-    ///     capitalise it after the fraction.
+    ///     The sentence(s) for what the run needed and did not have: an input the gate could not
+    ///     read, a project the load could not open — what it was, where, and what that did to the
+    ///     verdict. Lower-case at the start so the caller can open the line with it or capitalise it
+    ///     after the fraction.
     /// </summary>
     /// <remarks>
-    ///     A baseline is named by its relative path — it is the thing to open and fix, and the file
-    ///     the reader would otherwise go looking for among the source files. The root-located
-    ///     variants (<c>--since</c>, <c>--no-new-suppressions</c>) have no path worth printing and
-    ///     the <c>SK9028</c> line under the banner carries their detail, so they are one generic
-    ///     clause however many there are.
+    ///     A baseline or a project is named by its relative path — it is the thing to open and fix,
+    ///     and the file the reader would otherwise go looking for among the source files. The
+    ///     root-located variants (<c>--since</c>, <c>--no-new-suppressions</c>, several
+    ///     <c>.csproj</c> and no <c>--project</c>) have no path worth printing and the diagnostic line
+    ///     under the banner carries their detail, so they are one generic clause however many there
+    ///     are.
+    ///     <para>
+    ///         ⚠ #361: the load-rung sentence says where the rules went. The <c>agent</c> surface
+    ///         prints no gate verdict, so this line and the <c>SKIPPED</c> line are the only things on
+    ///         it that explain why a report full of findings exits 1.
+    ///     </para>
     /// </remarks>
-    static string GateInputClause(RunReport report, IReadOnlyList<SkalaDiagnostic> gateInputs) {
-        var clauses = gateInputs
-            .Where(diagnostic => Renderer.IsFileScoped(report, diagnostic))
-            .Select(diagnostic => "the baseline at " + Renderer.Relative(report, diagnostic) + " could not be read")
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-        if (gateInputs.Any(diagnostic => !Renderer.IsFileScoped(report, diagnostic))) {
-            clauses.Add("an input the gate scopes by could not be read (SK9028 below)");
+    static string OutsideTheFractionClause(RunReport report, IReadOnlyList<SkalaDiagnostic> outside) {
+        var sentences = new List<string>();
+
+        var gateInputs = outside.Where(static d => Renderer.CauseOf(d) == IncompleteCause.GateInput).ToList();
+        if (gateInputs.Count > 0) {
+            var clauses = gateInputs
+                .Where(diagnostic => Renderer.IsFileScoped(report, diagnostic))
+                .Select(diagnostic => "the baseline at " + Renderer.Relative(report, diagnostic) + " could not be read")
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+            if (gateInputs.Any(diagnostic => !Renderer.IsFileScoped(report, diagnostic))) {
+                clauses.Add("an input the gate scopes by could not be read (SK9028 below)");
+            }
+
+            sentences.Add(string.Join(" and ", clauses) + ", so the gate compared against nothing.");
         }
 
-        return string.Join(" and ", clauses) + ", so the gate compared against nothing.";
+        var loadRungs = outside.Where(static d => Renderer.CauseOf(d) == IncompleteCause.LoadRung).ToList();
+        if (loadRungs.Count > 0) {
+            var clauses = loadRungs
+                .Where(diagnostic => Renderer.IsFileScoped(report, diagnostic))
+                .Select(diagnostic => Renderer.Relative(report, diagnostic) + " could not be loaded")
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+            if (loadRungs.Any(diagnostic => !Renderer.IsFileScoped(report, diagnostic))) {
+                clauses.Add("no project could be loaded (" + loadRungs[0].Id + " below)");
+            }
+
+            sentences.Add(
+                string.Join(" and ", clauses)
+                + ", so the run fell back to "
+                + report.Mode.ToString().ToLowerInvariant()
+                + " and the rules that need a compilation did not run."
+            );
+        }
+
+        // The caller capitalises the first sentence when it follows the fraction; any later one
+        // opens a sentence of its own and is capitalised here.
+        return string.Join(
+            " ",
+            sentences.Select(static (sentence, index) =>
+                index == 0 ? sentence : char.ToUpperInvariant(sentence[0]) + sentence[1..]
+            )
+        );
+    }
+
+    /// <summary>
+    ///     What the report under the banner covers, given what blocked it. One sentence, assembled
+    ///     from the causes in play rather than switched over their combinations.
+    /// </summary>
+    static string Trailer(bool runBlocked, IReadOnlyList<SkalaDiagnostic> outside) {
+        var gateInput = outside.Any(static d => Renderer.CauseOf(d) == IncompleteCause.GateInput);
+        var loadRung = outside.Any(static d => Renderer.CauseOf(d) == IncompleteCause.LoadRung);
+
+        var trailer = new StringBuilder(runBlocked ? " Everything below covers the rest" : " Every file was checked");
+        if (loadRung) {
+            trailer.Append(runBlocked ? " with the rules that could run" : " by the rules that could run");
+        }
+
+        if (gateInput) {
+            trailer.Append(
+                runBlocked
+                    ? ", shown as if there were nothing to compare against"
+                    : "; everything below is shown as if there were nothing to compare against"
+            );
+        }
+
+        if (loadRung) {
+            trailer.Append("; the SKIPPED line names the rules that did not run");
+        }
+
+        return trailer.Append('.').ToString();
     }
 
     /// <summary>
@@ -946,21 +1059,19 @@ public static class AgentRenderer {
     ///         not a safety net for them any more.
     ///     </para>
     ///     <para>
-    ///         ⚠ #360 closed the way in that #356 pinned — <c>SK9028</c> at the baseline is a gate
-    ///         input now and never a blocked file — and then enumerated every error-severity tool id
-    ///         that can sit at a non-root path to find whether anything else could still reach this
-    ///         branch. One thing can, measured through the binary: <c>ProjectLoader</c>'s binlog
-    ///         ladder keeps a failed <em>middle</em> rung's diagnostics when it falls through to
-    ///         loose, so <c>SK9024</c> (or <c>SK9029</c>) at error severity, located at the
-    ///         <c>.csproj</c>, arrives in a report whose <c>FileCount</c> is the loose rung's. Over a
-    ///         tree whose only sources are generated that is <c>FileCount</c> 0 and blocked 1, and
-    ///         this branch is what stops it printing <c>1 of 0</c>. That the banner sees those
-    ///         diagnostics at all is #361; when it is fixed, this branch and
-    ///         <c>AgentBanner_OmitsTheFractionOnlyForABlockingDiagnosticThatIsNotASourceFile</c> go
-    ///         together. Every other id — <c>SK9015</c>, <c>SK9010</c>, <c>SK9096</c>–<c>SK9099</c> —
-    ///         sits at a path the loaders counted; the config ids never enter a <c>RunReport</c>; and
-    ///         the <c>--require-fresh-binlog</c> errors (<c>SK9020</c>, <c>SK9021</c>) are refused at
-    ///         exit 4 before any renderer runs.
+    ///         ⚠ <b>There is no <c>FileCount &lt; blocked</c> guard, and that is deliberate.</b> #356
+    ///         kept one because <c>SK9028</c> at the baseline reached it; #360 made that a gate input
+    ///         and re-pinned it on <c>SK9024</c> at a <c>.csproj</c>; #361 made that a load rung and
+    ///         enumerated every error-severity tool id once more. Nothing is left: <c>SK9015</c>,
+    ///         <c>SK9010</c>, <c>SK9096</c>–<c>SK9099</c> are located at a source path the loader put
+    ///         into <see cref="RunReport.FileCount" /> (reportable or unreadable); <c>SK9023</c> and
+    ///         the arrange summary sit at the root; <c>SK9028</c>, <c>SK9024</c>, <c>SK9029</c> are
+    ///         not <see cref="Renderer.IsAboutAFile" />; <c>SK9020</c>/<c>SK9021</c> are refused at exit
+    ///         4 before a renderer runs; the config ids never enter a <c>RunReport</c>. So
+    ///         <c>blocked &lt;= FileCount</c> is an invariant of <see cref="Renderer.BlockedFiles" />,
+    ///         and <c>IncompleteBannerTests</c> asserts it per id rather than guarding it here — a
+    ///         guard would print a plausible sentence over a broken denominator, and <c>2 of 1</c> is
+    ///         the kind of wrong that gets reported the day it appears.
     ///     </para>
     /// </remarks>
     static string Scale(RunReport report) {
@@ -969,11 +1080,11 @@ public static class AgentRenderer {
             return "this run did not finish";
         }
 
-        var of = report.FileCount >= blocked
-            ? " of " + report.FileCount.ToString(CultureInfo.InvariantCulture)
-            : string.Empty;
         var noun = blocked == 1 ? " file was not checked" : " files were not checked";
-        return blocked.ToString(CultureInfo.InvariantCulture) + of + noun;
+        return blocked.ToString(CultureInfo.InvariantCulture)
+            + " of "
+            + report.FileCount.ToString(CultureInfo.InvariantCulture)
+            + noun;
     }
 
     static int Emit(StringBuilder builder, RunReport report, List<Finding> findings, int budget, string indent) {

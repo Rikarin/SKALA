@@ -296,9 +296,12 @@ to satisfied when the run never collected formatting, so the flag that suppresse
 also suppressed the check — the one shape of "passing for the wrong reason" this section's opening
 paragraph already forbids for an unrecognized condition. It now fails the same way, naming the flag.
 
-⚠ **Three conditions are unconditional and named by no gate**: the run was partial (#309), an
-analyzer threw (#295), and — since #358 — an input the gate compares against exists and could not be
-read (`SK9028` at error severity: a baseline that is not JSON, or one this process may not open).
+⚠ **Four conditions are unconditional and named by no gate**: the run was partial (#309), an
+analyzer threw (#295), since #358 an input the gate compares against exists and could not be
+read (`SK9028` at error severity: a baseline that is not JSON, or one this process may not open),
+and since #361 a project the load ladder found and could not load, after which the run fell back to
+loose and the semantic rules never ran (`SK9024`/`SK9029` at error severity; the decision and its
+measurements are in [07](07-analysis-host.md) § "The ladder's contract under fallback").
 Each says the denominator is unknown, and every one of them fails the verdict — **exit 1**, with the
 reason in the gate's failures, so `skala report` re-renders it from the stored SARIF. #358 measured
 the alternative: the diagnostic was written, rendered as `error SK9028`, and read by nothing that

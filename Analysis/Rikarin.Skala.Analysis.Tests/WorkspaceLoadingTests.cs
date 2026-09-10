@@ -576,7 +576,7 @@ public sealed class WorkspaceLoadingTests {
     public void Binlog_StillFallsThroughAFailedWorkspaceToLoose() {
         using var scratch = new Scratch();
         scratch.Write(WidgetFile, Unformatted);
-        scratch.Write("Scratch.csproj", UnloadableProject);
+        var project = scratch.Write("Scratch.csproj", UnloadableProject);
 
         var loaded = ProjectLoader.Load(
             new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Binlog },
@@ -586,6 +586,107 @@ public sealed class WorkspaceLoadingTests {
         Assert.False(loaded.Failed);
         Assert.Equal(LoadMode.Loose, loaded.Mode);
         Assert.NotEmpty(loaded.Units);
+
+        // ⚠ #361: the failed rung travels with the fallback, at the severity it failed with. The gate
+        // reads exactly this to fail the verdict; a ladder that downgraded or dropped it on the way to
+        // loose would turn the run below back into a pass. Sabotage: move `attempted.AddRange` below
+        // the `Failed` test in `ProjectLoader.Load`, or lower the severity there.
+        Assert.Contains(
+            loaded.Diagnostics,
+            diagnostic => diagnostic.Id == ConfigDiagnosticIds.NothingToLoad
+                && diagnostic.Severity == SkalaSeverity.Error
+                && diagnostic.File == project
+        );
+        Assert.Contains(loaded.Diagnostics, static diagnostic => diagnostic.Id == ConfigDiagnosticIds.LoadModeFellBack);
+    }
+
+    /// <summary>
+    ///     ⚠ #361: the fallback delivers the syntactic half and is not allowed to pass as the whole.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Measured on <c>master</c> through the real binary: <c>One.cs</c> beside a <c>.csproj</c>
+    ///         naming an SDK that does not exist, no binlog, <c>check --load=binlog --gate=local
+    ///         --format=agent</c> printed <c>INCOMPLETE  1 of 1 file was not checked — this is a Skala
+    ///         bug</c> above <b>exit 0</b>, then <c>SKIPPED 260 rule(s) did not run (loose load)</c>. The
+    ///         "1 file" was the <c>.csproj</c>; the source file was checked; 260 rules were not; and the
+    ///         gate passed. <c>verify</c> over the same tree — <c>auto</c> puts workspace first —
+    ///         refused at exit 4, so the two verbs disagreed about one repository.
+    ///     </para>
+    ///     <para>
+    ///         Now: exit 1 from the reliability gate, the banner names the project and says where the
+    ///         rules went, the fraction is not printed at all because no source file was blocked, and
+    ///         the source file's own findings render. Sabotage: remove the <c>SK9024</c>/<c>SK9029</c>
+    ///         clause from <c>Gate.EvaluateReliability</c> and the exit goes back to 0; remove the
+    ///         <c>LoadRung</c> arm from <c>Renderer.CauseOf</c> and the banner goes back to <c>1 of 1</c>.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void Binlog_OverAProjectThatWillNotLoad_ReportsTheSyntacticHalfAndFailsTheGate() {
+        using var scratch = new Scratch();
+        var source = scratch.Write("One.cs", "public class D {\n    public int Value;\n}\n");
+        scratch.Write("Broken.csproj", UnloadableProject);
+
+        var (result, report) = CheckCommand.Run(
+            new CheckRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Binlog,
+                Format = ReportFormat.Agent,
+                Output = string.Empty,
+                NoCache = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.GateFailed, result.ExitCode);
+        Assert.Equal(LoadMode.Loose, report.Mode);
+        Assert.NotNull(report.Gate);
+        Assert.False(report.Gate.Passed);
+        Assert.Contains(report.Gate.Failures, static failure => failure.Contains("could not be loaded", StringComparison.Ordinal));
+
+        Assert.StartsWith("INCOMPLETE  Broken.csproj could not be loaded, so the run fell back to loose", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("Skala bug", result.Output, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("1 of 1", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("was not checked", result.Output, StringComparison.Ordinal);
+        Assert.Contains("SK9024  Broken.csproj", result.Output, StringComparison.Ordinal);
+
+        // The syntactic half was delivered: the file is counted, its finding renders, and it is not
+        // a blocked file. `blocked <= FileCount` is the invariant that let `Scale` drop its guard.
+        Assert.Equal(1, report.FileCount);
+        Assert.Contains(report.Findings, finding => finding.RuleId == "SK6030" && finding.Path == source);
+        Assert.Contains("SK6030  One.cs:1", result.Output, StringComparison.Ordinal);
+        Assert.Empty(Renderer.BlockedFiles(report));
+        Assert.NotEmpty(report.SkippedRules);
+    }
+
+    /// <summary>
+    ///     ⚠ The control: with no project at all the workspace rung is <em>empty</em>, not failed, and
+    ///     the same tree passes at exit 0. "There is no project here" is a fact about the repository and
+    ///     the documented reason to choose loose; "there is one and it will not load" is not, and the
+    ///     two must stay distinguishable at the exit code.
+    /// </summary>
+    [Fact]
+    public void Binlog_OverATreeWithNoProject_StillPassesInLoose() {
+        using var scratch = new Scratch();
+        scratch.Write("Clean.cs", "namespace Scratch;\n\npublic sealed class Clean;\n");
+
+        var (result, report) = CheckCommand.Run(
+            new CheckRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Binlog,
+                Format = ReportFormat.Agent,
+                Output = string.Empty,
+                NoCache = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.Ok, result.ExitCode);
+        Assert.Equal(LoadMode.Loose, report.Mode);
+        Assert.DoesNotContain("INCOMPLETE", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain(report.Diagnostics, static diagnostic => diagnostic.Severity >= SkalaSeverity.Error);
     }
 
     /// <summary>
