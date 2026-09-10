@@ -290,11 +290,10 @@ public static partial class SkalaCommandLine {
                             return loadDiagnostics.Count == 0
                                 ? result
                                 : new CommandResult(
-                                    loadDiagnostics.Exists(static d => d.Severity >= SkalaSeverity.Error)
+                                    LoadRefused(loadDiagnostics)
                                         ? ExitCodes.LoadFailure
                                         : result.ExitCode,
-                                    string.Join("\n", loadDiagnostics.Select(static d => "  " + d))
-                                    + "\n"
+                                    Prefix(NotAlreadyReported(loadDiagnostics, result.Output))
                                     + result.Output
                                 );
                         }
@@ -460,14 +459,10 @@ public static partial class SkalaCommandLine {
 
                         // Above the arrangement output, because "this ran against two thirds of
                         // your repository" is context for everything below it, not a footnote.
-                        var text = string.Join("\n", loadDiagnostics.Select(static d => "  " + d))
-                            + "\n"
-                            + result.Output;
+                        var text = Prefix(NotAlreadyReported(loadDiagnostics, result.Output)) + result.Output;
 
                         return new CommandResult(
-                            loadDiagnostics.Exists(static d => d.Severity >= SkalaSeverity.Error)
-                                ? ExitCodes.LoadFailure
-                                : result.ExitCode,
+                            LoadRefused(loadDiagnostics) ? ExitCodes.LoadFailure : result.ExitCode,
                             text
                         );
                     }
@@ -856,6 +851,49 @@ public static partial class SkalaCommandLine {
         );
         return command;
     }
+
+    /// <summary>
+    ///     Whether the load diagnostics describe a load that could not be trusted, as opposed to one
+    ///     file inside a load that otherwise succeeded.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>FileIoFailed</c> is excluded deliberately. It is not a failure of the load — it is one
+    ///     unreadable file, and #353 settled what that costs: <c>SK9015</c>, the file named, the run
+    ///     continuing over its neighbours, and <c>InternalError</c>. Since the loose loader began
+    ///     reporting it (rather than throwing out of the loader entirely), a single unreadable file
+    ///     reached this test too and turned <c>arrange</c> into a <c>LoadFailure</c> while
+    ///     <c>format</c> — which does not route that file through the loader — still exited 5.
+    ///     <b>Same file, two answers depending on the verb, which is the defect #353 was filed to
+    ///     remove rather than relocate.</b>
+    /// </remarks>
+    /// <summary>
+    ///     The load diagnostics that the command's own output does not already carry.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>arrange</c> reads each file again after the loader has read it, so an unreadable file
+    ///     is now reported by both and was printed twice. Deduplicating at the presentation layer is
+    ///     deliberate: both reports are correct, and the alternative — teaching one layer to stay
+    ///     quiet — makes whichever stage runs alone silent about a file it genuinely could not read.
+    /// </remarks>
+    static IEnumerable<SkalaDiagnostic> NotAlreadyReported(
+        List<SkalaDiagnostic> loadDiagnostics,
+        string output
+    ) =>
+        loadDiagnostics.Where(diagnostic =>
+            !output.Contains(diagnostic.Id, StringComparison.Ordinal)
+            || diagnostic.File is not { Length: > 0 } file
+            || !output.Contains(file, StringComparison.Ordinal)
+        );
+
+    static string Prefix(IEnumerable<SkalaDiagnostic> diagnostics) {
+        var lines = diagnostics.Select(static d => "  " + d).ToArray();
+        return lines.Length == 0 ? string.Empty : string.Join("\n", lines) + "\n";
+    }
+
+    static bool LoadRefused(List<SkalaDiagnostic> loadDiagnostics) =>
+        loadDiagnostics.Exists(static d =>
+            d.Severity >= SkalaSeverity.Error && d.Id != FormatDiagnosticIds.FileIoFailed
+        );
 
     static int Run(Func<CommandResult> command) {
         try {
