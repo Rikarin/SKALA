@@ -79,6 +79,55 @@ Design notes, each of which is a decision:
 
 `--format=json` gives the SARIF for agents that would rather parse than read.
 
+### The INCOMPLETE banner
+
+A run that could not check every file it was asked to check says so **above** the three buckets,
+because the buckets are a verdict and this line says how much of the tree the verdict covers
+(#345). Exit 5 is the same fact as a number; before the banner, `agent` printed `OK  nothing to
+do.` on exit 5 for weeks and nobody could tell from the output.
+
+```
+INCOMPLETE  1 of 754 file was not checked — could not be read: check permissions and that the path is still mounted. Everything below covers the rest.
+  SK9015  Core/Locked.cs  Access to the path '…/Core/Locked.cs' is denied.
+```
+
+Decisions, each measured against a run that got it wrong:
+
+- **The count is a fraction.** "1 file could not be checked" invites the reading that one file is
+  the whole problem; "1 of 754" says the other 753 were covered.
+- ⚠ **The cause is stated per run, not assumed (#355).** The first banner said "this is a Skala
+  bug, not a finding in your code" for every blocking diagnostic, one line above a per-file
+  `SK9015` that `ExitCodeContractTests` asserts is *not* reported as one. A mode-000 file owned by
+  someone else is fixed with `chmod`; a banner that sends the reader to look for a defect in the
+  tool spends its credibility on the wrong thing, and the reader is a model that will act on it.
+  The cause is read off the per-file diagnostics: `SK9015` says the file could not be read and
+  what to check; `SK9010` follows ADR-003; **everything else is Skala's fault and keeps the
+  original sentence** — the default is the defect, so a new blocking id cannot ship quietly
+  telling readers to check their permissions.
+- ⚠ **A mixed run names every cause, each with its own file count, Skala's first, in one line.**
+  `2 files were not checked — 1 a Skala bug, not a finding in your code; 1 could not be read
+  (check permissions and that the path is still mounted).` A banner that names only the first
+  cause is #355's defect one level down: a reader sent to `chmod` over a tree that also holds a
+  token-stream failure is as misdirected as one sent to file a bug over a locked file. Skala's own
+  fault leads because it is the one the reader cannot fix. A file carrying two blocking
+  diagnostics is attributed once, to the stronger cause, so the per-cause counts sum to the
+  fraction the line opens with.
+- ⚠ **Only file-scoped diagnostics decide the cause.** `ArrangementFindings` appends a stage
+  summary under `SK9015`, located at the repository root, after *every* kind of arrangement
+  failure. Read by id alone, that summary turns every `SK9098` in the tree into a permissions
+  problem. A run whose only blocking diagnostics are stage summaries has nothing per-file to read
+  and falls back to the original sentence.
+- **The `PARTIAL` trailer `verify` appends reads the same classification.** It said "Exit 5 is
+  that Skala bug" unconditionally, and a fix to the banner alone would have left it standing; it
+  now says "reports that" when nothing in the run was Skala's fault.
+- **The exit code is unchanged.** `SK9015` still exits 5. `LoadFailure` (4) is arguably the truer
+  code for "a file could not be read" and #353 has just pinned 5 across all four verbs; moving it
+  is a separate decision, taken once, for all four together.
+- The sentence is asserted over the **whole** output — banner, per-file line, trailer — on every
+  text format, with a positive control that the genuine-defect case still says "Skala bug", so the
+  suite cannot pass by deleting the sentence: `IncompleteBannerTests`, `PartialVerdictTests`, and
+  `ExitCodeContractTests.Verify_*` against the real binary over a mode-000 file.
+
 ## Fixes
 
 Two classes, declared per rule in `rules.json` (`fixIsSafe`):
