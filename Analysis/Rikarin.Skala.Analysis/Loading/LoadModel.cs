@@ -138,6 +138,13 @@ public sealed record LoadedProject {
     ///         fell through to loose, and a consumer's `check` gate passed having never built a
     ///         compilation.
     ///     </para>
+    ///     <para>
+    ///         ⚠ #361: when the failed rung is <em>not</em> the one the caller named — workspace under
+    ///         the default binlog ladder — the ladder does continue to loose, and the failure travels
+    ///         with it: the rung's error-severity diagnostics stay in <see cref="Diagnostics" /> and
+    ///         <c>Gate.EvaluateReliability</c> fails the verdict on them at exit 1. The syntactic half
+    ///         is delivered; it is not allowed to pass as the whole.
+    ///     </para>
     /// </remarks>
     public bool Failed { get; init; }
 

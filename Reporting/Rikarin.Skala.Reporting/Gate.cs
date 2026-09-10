@@ -130,12 +130,13 @@ public static class Gate {
     }
 
     /// <summary>
-    ///     The three conditions the run states about <em>itself</em>: it did not finish, a rule died,
-    ///     or an input it was told to compare against could not be read.
+    ///     The four conditions the run states about <em>itself</em>: it did not finish, a rule died,
+    ///     an input it was told to compare against could not be read, or a project it found could not
+    ///     be loaded and the run fell back to the syntactic rules.
     /// </summary>
     /// <remarks>
     ///     ⚠ Unconditional, and named by no gate. Every other condition here is something a repository
-    ///     opts into in <c>skala.jsonc</c>; these three are not opinions about code quality but statements
+    ///     opts into in <c>skala.jsonc</c>; these four are not opinions about code quality but statements
     ///     that the denominator is unknown, and a verdict computed over an unknown fraction of the tree
     ///     is not a verdict. They are the same defect the tool keeps committing in different places —
     ///     answering confidently about a tree it did not finish reading.
@@ -216,6 +217,43 @@ public static class Gate {
                 + " input(s) the gate compares against could not be read, so this verdict has nothing to "
                 + "call a finding new or accepted against: "
                 + string.Join("; ", unreadable.Take(3).Select(static diagnostic => diagnostic.Message))
+            );
+        }
+
+        // ⚠ #361, the fourth condition of this shape: a project the load ladder found and could not
+        // load. `ProjectLoader` stops on a failed rung only when the caller named that mode — exit 4,
+        // before any renderer — and otherwise keeps the rung's diagnostics and falls through to loose,
+        // so the only way an error-severity `SK9024`/`SK9029` reaches a verdict at all is the default
+        // `--load=binlog` on a tree with no binlog whose `.csproj` will not evaluate. There the run
+        // reported `SKIPPED 260 rule(s) did not run (loose load)` and the `local` gate passed: a zero
+        // from 260 disabled rules over a project that *is there* is not a measurement, and `verify`
+        // — whose `auto` makes workspace the first rung — refused the same tree at exit 4. docs/plan/07
+        // has said since the ladder was designed that a target found and then failed never falls
+        // through to a green loose run; this is the clause that makes `check` keep that promise.
+        //
+        // ⚠ Error severity only, and the two ids are both the workspace rung's. The same `SK9024` at
+        // warning relays MSBuild's own `workspace:` lines and "no .slnx, .sln or .csproj was found" —
+        // the *absent* project, which is a fact about the repository and the documented reason to
+        // choose loose. `SK9029` at warning is the binlog rung's per-assembly line, deliberately
+        // non-fatal (`GeneratorDriver.Run`). Neither may fail a run; only the refusal does.
+        //
+        // ⚠ It fails the gate rather than refusing the load because the fallback is still worth
+        // having: the caller gets the syntactic half and every finding in it, under a verdict that
+        // says why it is not the whole answer — the same reasoning as `SK9028` above, and the reason
+        // the exit is 1 and not 4.
+        var fellThrough = report.Diagnostics
+            .Where(static diagnostic =>
+                diagnostic.Id is ConfigDiagnosticIds.NothingToLoad or ConfigDiagnosticIds.AnalyzerAssemblyMissing
+                && diagnostic.Severity >= SkalaSeverity.Error
+            )
+            .ToArray();
+
+        if (fellThrough.Length > 0) {
+            failures.Add(
+                "a project or solution was found and could not be loaded, so the run fell back to "
+                + report.Mode.ToString().ToLowerInvariant()
+                + " and every rule that needs a compilation reported nothing; their zero means nothing: "
+                + string.Join("; ", fellThrough.Take(3).Select(static diagnostic => diagnostic.Message))
             );
         }
     }

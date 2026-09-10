@@ -159,6 +159,82 @@ public sealed class ExitCodeContractTests : IDisposable {
         Assert.Equal(2, CliRunner.Run("format", "--check", path).ExitCode);
     }
 
+    /// <summary>A <c>.csproj</c> naming an SDK that does not exist: MSBuild records a failure and hands back no documents.</summary>
+    const string UnloadableProject = """
+                                     <Project Sdk="Definitely.Not.A.Real.Sdk">
+                                       <PropertyGroup>
+                                         <TargetFramework>net10.0</TargetFramework>
+                                       </PropertyGroup>
+                                     </Project>
+                                     """;
+
+    /// <summary>
+    ///     ⚠ #361: a project the default ladder found and could not load is exit 1, not 0, and the
+    ///     banner above it names the project rather than a file.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Measured on <c>master</c> with this binary and this tree:
+    ///         <c>
+    /// INCOMPLETE  1 of 1 file was
+    ///         not checked — this is a Skala bug, not a finding in your code.
+    ///         </c> above <b>exit 0</b>,
+    ///         then <c>SKIPPED 260 rule(s) did not run (loose load)</c>. The "1 file" was
+    ///         <c>Broken.csproj</c>. The source file was checked by the loose rung and its finding
+    ///         rendered under the banner; 260 rules did not run; the <c>local</c> gate passed.
+    ///     </para>
+    ///     <para>
+    ///         The scratch gets a <c>.git</c> so it is its own repository root: the banner's relative
+    ///         path is then <c>Broken.csproj</c> and the run's <c>.skala/</c> lands here, not in this
+    ///         checkout. Sabotage: remove the <c>SK9024</c>/<c>SK9029</c> clause from
+    ///         <c>Gate.EvaluateReliability</c> and the exit goes back to 0.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void One_WhenAProjectIsFoundAndWillNotLoad_UnderTheDefaultLadder() {
+        Directory.CreateDirectory(Path.Combine(directory, ".git"));
+        Write("One.cs", "public class D {\n    public int Value;\n}\n");
+        Write("Broken.csproj", UnloadableProject);
+
+        var run = CliRunner.Run("check", "--load", "binlog", "--gate", "local", "--format", "agent", directory);
+        var text = run.StandardOutput + run.StandardError;
+
+        Assert.Equal(1, run.ExitCode);
+        Assert.Contains(
+            "INCOMPLETE  Broken.csproj could not be loaded, so the run fell back to loose",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("SK9024  Broken.csproj", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("1 of 1", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("was not checked", text, StringComparison.Ordinal);
+
+        // The syntactic half was delivered and is shown.
+        Assert.Contains("SK6030  One.cs:1", text, StringComparison.Ordinal);
+        Assert.Contains("SKIPPED", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The behaviour that must not move: name the mode and the same project is refused at exit 4
+    ///     before any renderer runs — no banner, no findings, the load diagnostics and nothing else.
+    /// </summary>
+    [Fact]
+    public void Four_WhenTheNamedModeCannotLoadTheProject() {
+        Directory.CreateDirectory(Path.Combine(directory, ".git"));
+        Write("One.cs", "public class D {\n    public int Value;\n}\n");
+        Write("Broken.csproj", UnloadableProject);
+
+        var run = CliRunner.Run("check", "--load", "workspace", "--gate", "local", "--format", "agent", directory);
+        var text = run.StandardOutput + run.StandardError;
+
+        Assert.Equal(4, run.ExitCode);
+        Assert.Contains("no compilation could be built", text, StringComparison.Ordinal);
+        Assert.Contains("SK9024", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("INCOMPLETE", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("SK6030", text, StringComparison.Ordinal);
+    }
+
     /// <summary>
     ///     ⚠ 5 is "internal error", and the row had no behavioural test until SK-FUZZ-0001.
     /// </summary>

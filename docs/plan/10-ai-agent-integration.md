@@ -211,6 +211,16 @@ Decisions, each measured against a run that got it wrong:
     enters a `RunReport` (`SK9003`, `SK9007`, `SK9008`, `SK9012` are `config check`'s), or is
     refused at exit 4 before a renderer runs (`SK9020`/`SK9021` under `--require-fresh-binlog`,
     `SK9024`/`SK9029` on the rung the caller named).
+  - ⚠ **#361 closed that way in too, and the guard is deleted.** `SK9024`/`SK9029` at error severity
+    are `IncompleteCause.LoadRung`, the sibling of `GateInput`: outside the fraction, their own
+    sentence (`Broken.csproj could not be loaded, so the run fell back to loose and the rules that
+    need a compilation did not run. Every file was checked by the rules that could run; the SKIPPED
+    line names the rules that did not run.`), and — the half that is not a rendering change — a
+    reliability failure at exit 1, because the run that printed `SKIPPED 260 rule(s)` over a tree
+    with a project had been passing. The decision, its five measured rows and the per-id
+    re-enumeration are in [07](07-analysis-host.md) § "The ladder's contract under fallback"; the
+    invariant that replaced the guard is
+    `IncompleteBannerTests.EveryBlockingToolId_IsEitherACountedSourceFileOrOutsideTheFraction`.
 - The sentence is asserted over the **whole** output — banner, per-file line, trailer — on every
   text format, with a positive control that the genuine-defect case still says "Skala bug", so the
   suite cannot pass by deleting the sentence: `IncompleteBannerTests`, `PartialVerdictTests`, and

@@ -214,13 +214,13 @@ public static class VerifyCommand {
         // ⚠ #356: `FileCount - blocked` was 1 - 1 = 0 over a two-file tree with one unreadable
         // file, and this line printed "0 files were checked" directly under a finding on the
         // readable one. The loaders now count a requested file whether or not it opened, so for the
-        // per-file blocking ids the difference is the number of files the stages actually saw. The
-        // clamp stays for the same reason `Renderer.Scale` keeps its guard — ⚠ #360 moved that
-        // reason: `SK9028` at the baseline is a gate input now and no longer in `blocked`, and the
-        // remaining way in is #361's, a failed workspace rung's `SK9024`/`SK9029` at the `.csproj`
-        // carried into a loose report. It is in `blocked` and not in `FileCount`.
+        // per-file blocking ids the difference is the number of files the stages actually saw.
+        // ⚠ There is no clamp, for the reason `Renderer.Scale` has no guard: #360 took `SK9028` out
+        // of `blocked` and #361 took `SK9024`/`SK9029` out, and every path `BlockedFiles` yields now
+        // is one the loader counted. A negative here would be a real defect, and a clamp is how a
+        // real defect prints a plausible sentence.
         var blocked = Renderer.BlockedFiles(report).Count();
-        var checkedFiles = Math.Max(0, report.FileCount - blocked);
+        var checkedFiles = report.FileCount - blocked;
         var skalasFault = Renderer.Causes(report).Any(static entry => entry.Cause == IncompleteCause.Defect);
         return "PARTIAL  "
             + Count(checkedFiles)

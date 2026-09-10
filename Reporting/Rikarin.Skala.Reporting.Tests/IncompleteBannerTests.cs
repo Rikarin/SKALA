@@ -1,4 +1,5 @@
 using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Rules.Metadata;
 
 namespace Rikarin.Skala.Reporting.Tests;
 
@@ -415,36 +416,278 @@ public sealed class IncompleteBannerTests {
         Assert.DoesNotContain(" of 0 ", text, StringComparison.Ordinal);
     }
 
+    static readonly string Project = Path.Combine(Root, "Broken.csproj");
+
+    /// <summary>Exactly what <c>WorkspaceLoader.LoadCore</c> emits for a <c>.csproj</c> whose SDK does not exist.</summary>
+    static SkalaDiagnostic ProjectThatWouldNotLoad() =>
+        new(
+            "SK9024",
+            SkalaSeverity.Error,
+            $"'{Project}' yielded no analysable source; every project in it failed to load",
+            Project
+        );
+
+    /// <summary>The #336 refusal: the project's generators are not on disk, so the load was refused.</summary>
+    static SkalaDiagnostic ProjectWhoseGeneratorsAreMissing() =>
+        new(
+            "SK9029",
+            SkalaSeverity.Error,
+            "refusing to analyse 'Broken.csproj': the assemblies above are missing, so the generated half "
+            + "of the program is absent and every semantic answer over this load is unsound.",
+            Project
+        );
+
     /// <summary>
-    ///     ⚠ The one way left into <c>Scale</c>'s <c>FileCount &lt; blocked</c> branch after #360,
-    ///     pinned so it is a documented case and not a silent guard — and so that the branch goes
-    ///     when this shape does.
+    ///     The same id at warning: MSBuild's own line, relayed verbatim. This repository prints three
+    ///     of them on every workspace load and #336 was first blamed on them.
     /// </summary>
-    /// <remarks>
-    ///     Measured through the binary on 2026-09-11: a tree holding <c>One.cs</c> and a
-    ///     <c>Broken.csproj</c> whose SDK does not exist, <c>check --load=binlog</c> with no binlog.
-    ///     The workspace rung fails with an error-severity <c>SK9024</c> located at the
-    ///     <c>.csproj</c>, the ladder keeps that diagnostic and falls through to loose, and the report
-    ///     reads <c>1 of 1 file was not checked — this is a Skala bug</c> above <b>exit 0</b>, the
-    ///     "1 file" being the project. That is #361 and is not fixed here; what this pins is the
-    ///     arithmetic: over a tree whose only sources are generated, <c>FileCount</c> is 0 and blocked
-    ///     is 1, and the fraction is omitted rather than printed as <c>1 of 0</c>. When #361 stops
-    ///     these diagnostics reaching the banner, this test and the branch go together.
-    /// </remarks>
+    static SkalaDiagnostic RelayedWorkspaceLine() =>
+        new(
+            "SK9024",
+            SkalaSeverity.Warning,
+            "workspace: Found project reference without a matching metadata reference: Other.csproj",
+            Project
+        );
+
+    /// <summary>
+    ///     ⚠ #361, the issue's own shape: <c>One.cs</c> beside a <c>.csproj</c> naming an SDK that does
+    ///     not exist, <c>check --load=binlog</c> with no binlog. The workspace rung fails, the ladder
+    ///     keeps its error-severity <c>SK9024</c> at the <c>.csproj</c> and falls through to loose, and
+    ///     the banner read <c>1 of 1 file was not checked — this is a Skala bug</c> above exit 0. The
+    ///     file was checked; the project is what would not load; and the sentence has to say where
+    ///     the rules went, because the gate now fails on this and the <c>agent</c> surface prints no
+    ///     verdict.
+    /// </summary>
     [Fact]
-    public void AgentBanner_OmitsTheFractionOnlyForABlockingDiagnosticThatIsNotASourceFile() {
-        var project = Path.Combine(Root, "Broken.csproj");
+    public void AgentBanner_NamesAProjectThatWouldNotLoad_AndDoesNotCountItAsAFile() {
+        var report = Report(ProjectThatWouldNotLoad()) with { FileCount = 1 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith(
+            "INCOMPLETE  Broken.csproj could not be loaded, so the run fell back to loose and the rules that "
+            + "need a compilation did not run. Every file was checked by the rules that could run; the SKIPPED "
+            + "line names the rules that did not run.",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("1 of 1", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("was not checked", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("did not finish", text, StringComparison.Ordinal);
+        Assert.Contains("SK9024  Broken.csproj", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>The same pair on every text surface: the project is named and nothing blames the tool.</summary>
+    [Theory]
+    [MemberData(nameof(TextFormats))]
+    public void AProjectThatWouldNotLoad_IsNeverCalledASkalaBug(ReportFormat format) {
+        var text = Renderer.Render(Report(ProjectThatWouldNotLoad()) with { FileCount = 1 }, format);
+
+        Assert.Contains("Broken.csproj", text, StringComparison.Ordinal);
+        Assert.Contains("SK9024", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     <c>SK9029</c> is the other id the workspace rung refuses on (#336), located at the same
+    ///     <c>.csproj</c>, and takes the same sentence.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_TreatsARefusedLoadTheSameAsAFailedOne() {
+        var report = Report(ProjectWhoseGeneratorsAreMissing()) with { FileCount = 1 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.Equal(IncompleteCause.LoadRung, Renderer.CauseOf(ProjectWhoseGeneratorsAreMissing()));
+        Assert.StartsWith(
+            "INCOMPLETE  Broken.csproj could not be loaded, so the run fell back to loose",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.Empty(Renderer.BlockedFiles(report));
+        Assert.Contains("SK9029  Broken.csproj", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     The root-located variant — several <c>.csproj</c> and no <c>--project</c> — used to print
+    ///     <c>this run did not finish — this is a Skala bug</c> above exit 0, over a message that is an
+    ///     instruction to pass <c>--project</c>. Measured through the binary on 2026-09-11.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_NamesAnAmbiguousWorkspaceTarget_WithoutBlamingTheTool() {
         var report = Report(
             new SkalaDiagnostic(
                 "SK9024",
                 SkalaSeverity.Error,
-                $"'{project}' yielded no analysable source; every project in it failed to load",
-                project
+                "multiple '*.csproj' workspace targets were found; choose one with --project: A.csproj, B.csproj",
+                Root
             )
-        ) with { FileCount = 0 };
+        );
         var text = Renderer.Render(report, ReportFormat.Agent);
 
-        Assert.StartsWith("INCOMPLETE  1 file was not checked — ", text, StringComparison.Ordinal);
-        Assert.DoesNotContain(" of 0 ", text, StringComparison.Ordinal);
+        Assert.StartsWith(
+            "INCOMPLETE  no project could be loaded (SK9024 below), so the run fell back to loose and the rules "
+            + "that need a compilation did not run. Every file was checked by the rules that could run;",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("did not finish", text, StringComparison.Ordinal);
+        Assert.Contains("choose one with --project", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     The source file's own findings still render under the banner: the syntactic half was
+    ///     delivered, and the report is to be read as that half.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_OverAProjectThatWouldNotLoad_StillRendersTheSourceFilesFindings() {
+        var report = Report(ProjectThatWouldNotLoad()) with {
+            FileCount = 1,
+            Findings = [
+                new Finding {
+                    RuleId = "SK6030",
+                    Severity = SkalaSeverity.Warning,
+                    Message = "`D` is declared in the global namespace",
+                    Path = Path.Combine(Root, "One.cs"),
+                    Line = 1,
+                    Column = 14
+                }
+            ]
+        };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.Contains("ACTION  1 finding needs a decision", text, StringComparison.Ordinal);
+        Assert.Contains("SK6030  One.cs:1", text, StringComparison.Ordinal);
+        Assert.True(
+            text.IndexOf("INCOMPLETE", StringComparison.Ordinal) < text.IndexOf("ACTION", StringComparison.Ordinal),
+            text
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ Mixed: a genuine <c>SK9099</c> and a project that would not load over a two-file tree. The
+    ///     fraction counts the source file only; the project is its own sentence, and the trailer says
+    ///     both what the rest is covered by and where the missing rules are named.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_KeepsTheProjectOutOfTheFraction_InAMixedRun() {
+        var report = Report(TokenStreamChanged(), ProjectThatWouldNotLoad()) with { FileCount = 2 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith(
+            "INCOMPLETE  1 of 2 file was not checked — this is a Skala bug, not a finding in your code. "
+            + "Broken.csproj could not be loaded, so the run fell back to loose and the rules that need a "
+            + "compilation did not run. Everything below covers the rest with the rules that could run; the "
+            + "SKIPPED line names the rules that did not run.",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.Equal(Refused, Assert.Single(Renderer.BlockedFiles(report)));
+        Assert.Equal([(IncompleteCause.Defect, 1)], Renderer.Causes(report));
+    }
+
+    /// <summary>
+    ///     ⚠ Both non-file causes at once, so the two sentences and the trailer compose rather than
+    ///     one silencing the other.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_NamesBothABaselineAndAProject_WhenBothAreOutsideTheFraction() {
+        var report = Report(ConflictedBaseline(), ProjectThatWouldNotLoad()) with { FileCount = 1 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith(
+            "INCOMPLETE  the baseline at .skala/baseline.sarif could not be read, so the gate compared against "
+            + "nothing. Broken.csproj could not be loaded, so the run fell back to loose and the rules that need "
+            + "a compilation did not run. Every file was checked by the rules that could run; everything below is "
+            + "shown as if there were nothing to compare against; the SKIPPED line names the rules that did not "
+            + "run.",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.Equal(2, Renderer.OutsideTheFraction(report).Count);
+        Assert.Empty(Renderer.BlockedFiles(report));
+    }
+
+    /// <summary>
+    ///     ⚠ The same ids at warning never reach the banner: MSBuild's relayed <c>workspace:</c> lines,
+    ///     the no-project-found case, and the binlog rung's per-assembly <c>SK9029</c>. Each is a state
+    ///     the repository is in, not a rung that failed, and <c>ReliabilityGateTests</c> pins the same
+    ///     split at the gate.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_IsSilentForARelayedWorkspaceLine() {
+        var text = Renderer.Render(Report(RelayedWorkspaceLine()) with { FileCount = 1 }, ReportFormat.Agent);
+
+        Assert.StartsWith("OK  nothing to do.", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("INCOMPLETE", text, StringComparison.Ordinal);
+        Assert.Empty(Renderer.OutsideTheFraction(Report(RelayedWorkspaceLine())));
+    }
+
+    /// <summary>
+    ///     ⚠ <b>The invariant that replaced <c>Scale</c>'s <c>FileCount &lt; blocked</c> guard</b>: every
+    ///     path <c>BlockedFiles</c> yields is one the loader counted, so the fraction never needs a
+    ///     branch to stop it printing <c>1 of 0</c>. It is asserted per tool id, over the whole
+    ///     <c>SK9xxx</c> range as <c>rules.json</c> registers it, and every id has to be on exactly one
+    ///     of three lists — which is the decision #356, #360 and #361 each had to make after the fact.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <b>Located at a counted source file</b>: the loader that emitted it put the path into
+    ///         <c>ReportablePaths</c> or <c>UnreadablePaths</c> (#356), or the stage that emitted it was
+    ///         handed the path from <c>ReportablePaths</c>. These are the only ids allowed to be a
+    ///         blocked file. <b>Not about a file</b>: <c>IsAboutAFile</c> is false, so the banner gives
+    ///         them a sentence outside the arithmetic. <b>Never blocking in a report</b>: warning at
+    ///         most, located at the root, refused at exit 4 before a renderer runs, or
+    ///         <c>config check</c>'s — asserted by name so that promoting one to error-at-a-path is a
+    ///         change to this list and not a silent new way in.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Sabotage: move <c>SK9024</c> to the first list, or drop it from <c>CauseOf</c>, and the
+    ///         classification half goes red; the arithmetic half then prints <c>1 of 0</c> for it, which
+    ///         is the sentence the guard used to hide.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void EveryBlockingToolId_IsEitherACountedSourceFileOrOutsideTheFraction() {
+        string[] locatedAtACountedSourceFile = ["SK9010", "SK9015", "SK9095", "SK9096", "SK9097", "SK9098", "SK9099"];
+        string[] notAboutAFile = ["SK9024", "SK9028", "SK9029"];
+        string[] neverBlockingInAReport = [
+            "SK9001", "SK9002", "SK9003", "SK9004", "SK9005", "SK9006", "SK9007", "SK9008", "SK9009", "SK9011",
+            "SK9012", "SK9013", "SK9014", "SK9016", "SK9017", "SK9020", "SK9021", "SK9022", "SK9023", "SK9025",
+            "SK9026", "SK9027", "SK9030", "SK9031"
+        ];
+
+        var registered = RuleCatalog.All
+            .Select(static rule => rule.Id)
+            .Where(static id => id.StartsWith("SK9", StringComparison.Ordinal))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        var classified = locatedAtACountedSourceFile
+            .Concat(notAboutAFile)
+            .Concat(neverBlockingInAReport)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        // Anti-vacuity: a new tool id has to be placed on a list, and no id may be on two.
+        Assert.Equal(registered, classified);
+
+        foreach (var id in locatedAtACountedSourceFile) {
+            var diagnostic = new SkalaDiagnostic(id, SkalaSeverity.Error, "m", Broken);
+            Assert.True(Renderer.IsAboutAFile(Renderer.CauseOf(diagnostic)), id);
+            Assert.Equal(Broken, Assert.Single(Renderer.BlockedFiles(Report(diagnostic))));
+        }
+
+        foreach (var id in notAboutAFile) {
+            var diagnostic = new SkalaDiagnostic(id, SkalaSeverity.Error, "m", Project);
+            Assert.False(Renderer.IsAboutAFile(Renderer.CauseOf(diagnostic)), id);
+
+            // The arithmetic half: over a tree with nothing counted, the id is not a blocked file and
+            // the fraction is never asked for.
+            var report = Report(diagnostic) with { FileCount = 0 };
+            Assert.Empty(Renderer.BlockedFiles(report));
+            var text = Renderer.Render(report, ReportFormat.Agent);
+            Assert.DoesNotContain("file was not checked", text, StringComparison.Ordinal);
+            Assert.DoesNotContain(" of 0 ", text, StringComparison.Ordinal);
+        }
     }
 }

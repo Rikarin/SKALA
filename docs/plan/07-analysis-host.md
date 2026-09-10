@@ -138,6 +138,102 @@ it is sensitive to custom targets, and its `WorkspaceDiagnostics` are surfaced v
 swallowed — a partially-loaded workspace that silently analyzes half a solution is the thing to
 avoid. Reported in the SARIF run properties so a result set can never be mistaken for a binlog run.
 
+### The ladder's contract under fallback (#361)
+
+`ProjectLoader.Load` runs the rungs in order — `binlog → workspace → loose` for the default, `workspace
+→ loose` for `--load=workspace`, `loose` alone — and a rung can end three ways: it produced
+compilations (stop), it ran and found nothing (`IsEmpty`: fall through with an info `SK9025`), or it
+**failed** (`LoadedProject.Failed`: MSBuild could not be located, the named target would not open,
+every project evaluated to a placeholder, the generators are not on disk). `Failed` is fatal for the
+rung the caller named — exit 4, before any analyzer runs — and for a *middle* rung it is not: the
+default `skala check` on a machine with no MSBuild has to reach loose rather than refuse to run.
+
+⚠ **What that fallback was allowed to claim was never decided, and it was claiming a pass.** The failed
+rung's diagnostics were kept in the report at the severity they failed with, and nothing downstream
+read them. Measured on 2026-09-11 through the binary, over `One.cs` and a `Broken.csproj` whose `Sdk`
+does not exist, with no binlog:
+
+| command | mode that ran | what it printed | exit |
+|---|---|---|---|
+| `check --load=binlog --gate=local --format=agent` | loose | `INCOMPLETE  1 of 1 file was not checked — this is a Skala bug` over `SK9024 Broken.csproj`, then `SKIPPED 260 rule(s) did not run (loose load)`, then `One.cs`'s finding | **0** |
+| `check --load=workspace` (same tree) | refused | `no compilation could be built`, the two `SK9024` lines | 4 |
+| `verify --format=agent` (same tree; `auto` chose workspace) | refused | the same refusal | 4 |
+| `check --load=binlog` over `One.cs` **with no `.csproj` at all** | loose | `One.cs`'s finding, no banner | 0 |
+| `check --load=binlog` over two `.csproj` and no solution | loose | `INCOMPLETE  this run did not finish — this is a Skala bug` over `multiple '*.csproj' workspace targets were found; choose one with --project` | **0** |
+
+Two verbs disagreed about one repository, the "1 file" was a project, the "Skala bug" was an
+instruction to pass `--project`, and 260 rules had not run over a tree that has a project. The
+decision between the two designs the issue offered:
+
+1. *The fallback is fine and the report should say so* — downgrade the failed rung's errors to
+   warnings beside the `SK9025`, report the run as complete-in-loose.
+2. *A failed rung is a reliability failure even under fallback* — keep the severity, fail
+   `Gate.EvaluateReliability` on error-severity `SK9024`/`SK9029` as #358 did for `SK9028`, and give
+   the banner a sentence outside the `N of M files` arithmetic as #360 did for the baseline.
+
+**(2), on evidence already in the tree.** The deciding question is what the loose rung delivered: it
+delivered the syntactic rules and skipped every rule that `requiresSemantics`, and the report said so
+in the `SKIPPED` line — so the run was strictly less than what a loaded project gives, over a tree
+that *has* a project. That is the fourth row's zero and the first row's zero being the same zero
+(CLAUDE.md: "a zero from a disabled check and a zero from clean code are the same zero"), and the
+control row is what keeps the two apart: with **no** project the workspace rung is *empty*, not
+*failed* — "there is no project here" is a fact about the repository and the documented reason to
+choose loose (`LoadModel.cs`, the `Failed` remarks: "this .csproj could not be opened" is a fact about
+the tool, and "no amount of falling through makes the answer they were supposed to produce appear").
+This document has said since the ladder was designed that *"a target that is found and then fails to
+load never falls through to a green loose run"* (§ "Three load modes", about `auto`); `verify` kept
+that promise and `check` did not, because under the binlog ladder workspace is the middle rung.
+Design (1) would have written the disagreement into the report format instead of removing it.
+
+What (2) means in the code:
+
+- **The ladder is unchanged.** `attempted.AddRange(loaded.Diagnostics)` stays *before* the `Failed`
+  test on purpose, and the `SK9025` still says "could not run; falling back". The run still reaches
+  loose and still reports every finding the syntactic rules produce, which is the whole reason the
+  fallback exists.
+- **`Gate.EvaluateReliability` fails on error-severity `SK9024`/`SK9029`** — the fourth unconditional
+  condition beside partial (#309), crashed analyzer (#295) and unreadable gate input (#358), with the
+  reason in the verdict so `skala report` re-renders it: *"a project or solution was found and could
+  not be loaded, so the run fell back to loose and every rule that needs a compilation reported
+  nothing; their zero means nothing"*. **Exit 1**, not 4, because the gate is the one place allowed to
+  reach a verdict (ADR-009) and the syntactic half is worth delivering under an honest verdict.
+  ⚠ Error severity only: the same `SK9024` at warning is MSBuild's relayed `workspace:` line (this
+  repository prints three on every workspace load) or "no .slnx, .sln or .csproj was found", and
+  `SK9029` at warning is the binlog rung's per-assembly line — states the repository is in, and
+  failing on any of them would fail every workspace load of this repository.
+- **The banner treats the project as #360 treats the baseline.** `IncompleteCause.LoadRung` is the
+  sibling of `GateInput`; `Renderer.IsAboutAFile` is the one place the split is made, and both
+  `BlockedFiles` and `Causes` exclude what it rejects. The sentence names the project and says where
+  the rules went, because the `agent` surface prints no gate verdict: `INCOMPLETE  Broken.csproj
+  could not be loaded, so the run fell back to loose and the rules that need a compilation did not
+  run. Every file was checked by the rules that could run; the SKIPPED line names the rules that did
+  not run.` The root-located ambiguity case reads `no project could be loaded (SK9024 below), …`.
+- ⚠ **Only the fallen-through workspace rung can put these ids in front of the gate.** Error-severity
+  `SK9024` is emitted at five sites in `WorkspaceLoader` and every one sets `Failed`; error-severity
+  `SK9029` only from its `ReportMissingAnalyzerAssemblies`, which also sets `Failed`; the binlog rung
+  emits `SK9029` at warning only. A first-rung failure returns at exit 4 above the render, so the gate
+  clause is reached by exactly the shape in the first table row and nothing else.
+
+⚠ **The `Scale` guard is gone, and this is the third time it was asked.** #356 kept `FileCount <
+blocked` because `SK9028` at the baseline reached it; #360 made that a gate input and re-pinned the
+branch on `SK9024` at a `.csproj`; #361 makes that a load rung and re-enumerated every `SK9xxx` id in
+`rules.json` against the code — the per-file ids (`SK9010`, `SK9015`, `SK9095`–`SK9099`) sit at a path
+the loader put into `FileCount` (reportable or unreadable, #356); `SK9023` and the arrange summary sit
+at the root; `SK9024`/`SK9028`/`SK9029` are not about a file; `SK9020`/`SK9021` are refused at exit 4
+before a renderer runs; the config ids never enter a `RunReport`. Nothing reaches the branch, so
+`blocked <= FileCount` is an invariant of `BlockedFiles` and the branch is deleted rather than kept on
+inertia — a guard prints a plausible sentence over a broken denominator, and `2 of 1` is the kind of
+wrong that gets reported the day it appears. `VerifyCommand.PartialVerdict`'s `Math.Max(0, …)` clamp,
+kept by #356 for the same reason, goes with it. The invariant is asserted by
+`IncompleteBannerTests.EveryBlockingToolId_IsEitherACountedSourceFileOrOutsideTheFraction`: every
+registered `SK9xxx` id must be on exactly one of three named lists, and a new tool id fails the test
+until somebody says which — the decision #356, #360 and #361 each had to make after the fact.
+
+⚠ **Refuted in passing:** `rules.json`'s `SK9024` rationale said "under `--load=auto` the ladder
+continues to loose with `SK9025`". It does not: `auto` resolves to workspace whenever a target exists
+and workspace is then the *first* rung, so `verify`, `arrange` and `fix` refuse at exit 4 (the third
+table row). It is the default `--load=binlog` ladder that continues, and the registry now says so.
+
 ### `loose` — no project at all
 
 Parse the files, add `MetadataReference`s for the running framework's reference assemblies, build one

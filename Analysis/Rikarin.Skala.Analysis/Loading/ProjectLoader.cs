@@ -59,6 +59,17 @@ public static class ProjectLoader {
                 // is not an answer to anything. Asking for a mode by name and getting the syntactic
                 // rules instead is the fail-open; being handed them after asking for binlog is the
                 // documented fallback.
+                //
+                // ⚠ #361: a documented fallback is not a clean one. The failed rung's diagnostics
+                // are already in `attempted` — added above, before this test, on purpose — and they
+                // keep their error severity all the way into the report, where
+                // `Gate.EvaluateReliability` fails the verdict on them. This paragraph used to end
+                // at "documented fallback" and nothing downstream read those diagnostics: over a
+                // `.csproj` naming an SDK that does not exist, with no binlog, `check` printed
+                // `SKIPPED 260 rule(s) did not run (loose load)` and exited 0, while `verify` — whose
+                // `auto` makes workspace the *first* rung — refused the same tree at exit 4. The run
+                // still reaches loose and still reports every finding it can; what it may not do is
+                // pass. docs/plan/07 § "the ladder's contract under fallback".
                 if (mode == request.Mode || !request.AllowFallback) {
                     return loaded with { Diagnostics = attempted.ToImmutable() };
                 }
