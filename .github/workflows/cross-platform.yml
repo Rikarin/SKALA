@@ -83,8 +83,11 @@ jobs:
       # seconds later; only the abort sets the exit code, so the job goes red with nothing red in it.
       # Do not read a green run here as evidence the timeout was the problem: it is a race, and it
       # loses only sometimes.
+      # xUnit v3 also has a fixed 60-second assembly-info startup timeout, independent of VSTest.
+      # Run one project at a time so its child process does not compete with the other suites.
+      # Tests within each project retain their usual parallelism; every project still runs.
       - name: Test
-        run: dotnet test Skala.slnx -c Release --no-build
+        run: dotnet test Skala.slnx -c Release --no-build -m:1
         env:
           VSTEST_CONNECTION_TIMEOUT: 300
 

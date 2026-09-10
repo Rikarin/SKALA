@@ -52,7 +52,7 @@ public sealed class PartialVerdictTests {
     ///     A report shaped exactly as <see cref="ArrangementFindings" /> leaves one after a revert: the
     ///     per-file <c>SK9098</c> carrying the crash path in its detail, then the stage summary.
     /// </summary>
-    static RunReport Reverted() =>
+    static RunReport Reverted(string? crashPath = null) =>
         new() {
             RepositoryRoot = Root,
             Mode = LoadMode.Workspace,
@@ -68,7 +68,7 @@ public sealed class PartialVerdictTests {
                     + "have before: CS0128, CS0128",
                     Failed,
                     0,
-                    $"A reproduction is in {Crash}. This is a Skala bug; the file was left untouched."
+                    $"A reproduction is in {crashPath ?? Crash}. This is a Skala bug; the file was left untouched."
                 ),
                 new SkalaDiagnostic(
                     "SK9015",
@@ -119,9 +119,11 @@ public sealed class PartialVerdictTests {
     ///         leave it false. The one field SARIF has for "did this run complete" said yes.
     ///     </para>
     /// </remarks>
-    [Fact]
-    public void Verify_MarksTheSarifInvocationUnsuccessful() {
-        var output = Run(ReportFormat.Json, Reverted(), ExitCodes.InternalError).Output;
+    [Theory]
+    [InlineData(@"C:\Users\runneradmin\AppData\Local\Temp\skala-345\.skala\crash\9f2a1c")]
+    [InlineData("/tmp/skala-345/.skala/crash/9f2a1c")]
+    public void Verify_MarksTheSarifInvocationUnsuccessful(string crashPath) {
+        var output = Run(ReportFormat.Json, Reverted(crashPath), ExitCodes.InternalError).Output;
         using var document = System.Text.Json.JsonDocument.Parse(output);
         var invocation = document.RootElement.GetProperty("runs")[0].GetProperty("invocations")[0];
 
@@ -131,7 +133,7 @@ public sealed class PartialVerdictTests {
         var notification = invocation.GetProperty("toolExecutionNotifications")[0];
         Assert.Equal("SK9098", notification.GetProperty("descriptor").GetProperty("id").GetString());
         Assert.Contains(
-            Crash,
+            crashPath,
             notification.GetProperty("message").GetProperty("text").GetString(),
             StringComparison.Ordinal
         );
@@ -153,15 +155,15 @@ public sealed class PartialVerdictTests {
     ///     was printed by no surface at all: it lives in <see cref="SkalaDiagnostic.Detail" />, which
     ///     the terminal renderer skipped, the plain and agent renderers never looked at, and the SARIF
     ///     writer dropped. #345 was found by noticing <c>.skala/crash/</c> on disk.
+    ///     JSON is checked above after parsing: Windows backslashes are escaped in the document.
     /// </summary>
     [Theory]
     [InlineData(ReportFormat.Agent)]
     [InlineData(ReportFormat.Plain)]
-    [InlineData(ReportFormat.Json)]
     [InlineData(ReportFormat.Terminal)]
     [InlineData(ReportFormat.Markdown)]
     [InlineData(ReportFormat.JUnit)]
-    public void Verify_NamesTheCrashReproductionInEveryFormat(ReportFormat format) =>
+    public void Verify_NamesTheCrashReproductionInTextFormats(ReportFormat format) =>
         Assert.Contains(Crash, Run(format, Reverted(), ExitCodes.InternalError).Output, StringComparison.Ordinal);
 
     /// <summary>
