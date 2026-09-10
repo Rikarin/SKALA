@@ -53,16 +53,30 @@ public sealed class TypeComparedByNameAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(
-            AnalyzeComparison,
-            SyntaxKind.EqualsExpression,
-            SyntaxKind.NotEqualsExpression
-        );
+        // ⚠ #351: wrapped in a compilation start only so the sibling grouping is built once rather
+        // than per node. `Resolve` reaches referenced assemblies, so on a multi-targeted project the
+        // literal `"System.Half"` names a type the net10.0 moniker can see and the netstandard2.1 one
+        // cannot — and the fix writes `typeof(System.Half)` into the file both compile.
+        context.RegisterCompilationStartAction(static start => {
+                var siblings = FrameworkAvailability.SiblingsByPath(start.Options);
+                start.RegisterSyntaxNodeAction(
+                    node => AnalyzeComparison(node, siblings),
+                    SyntaxKind.EqualsExpression,
+                    SyntaxKind.NotEqualsExpression
+                );
 
-        context.RegisterSyntaxNodeAction(AnalyzeEqualsCall, SyntaxKind.InvocationExpression);
+                start.RegisterSyntaxNodeAction(
+                    node => AnalyzeEqualsCall(node, siblings),
+                    SyntaxKind.InvocationExpression
+                );
+            }
+        );
     }
 
-    static void AnalyzeComparison(SyntaxNodeAnalysisContext context) {
+    static void AnalyzeComparison(
+        SyntaxNodeAnalysisContext context,
+        ImmutableDictionary<string, ImmutableArray<Compilation>> siblings
+    ) {
         var comparison = (BinaryExpressionSyntax)context.Node;
         if (comparison.ContainsDiagnostics) {
             return;
@@ -70,9 +84,9 @@ public sealed class TypeComparedByNameAnalyzer : DiagnosticAnalyzer {
 
         var negated = comparison.IsKind(SyntaxKind.NotEqualsExpression);
         if (Literal(comparison.Right) is { } right) {
-            Report(context, comparison, comparison.Left, right, negated);
+            Report(context, comparison, comparison.Left, right, negated, siblings);
         } else if (Literal(comparison.Left) is { } left) {
-            Report(context, comparison, comparison.Right, left, negated);
+            Report(context, comparison, comparison.Right, left, negated, siblings);
         }
     }
 
@@ -80,7 +94,10 @@ public sealed class TypeComparedByNameAnalyzer : DiagnosticAnalyzer {
     ///     <c>x.GetType().Name.Equals("Order", StringComparison.Ordinal)</c>, the same defect spelled
     ///     as a call.
     /// </summary>
-    static void AnalyzeEqualsCall(SyntaxNodeAnalysisContext context) {
+    static void AnalyzeEqualsCall(
+        SyntaxNodeAnalysisContext context,
+        ImmutableDictionary<string, ImmutableArray<Compilation>> siblings
+    ) {
         var invocation = (InvocationExpressionSyntax)context.Node;
         if (invocation.ContainsDiagnostics
             || invocation.Expression is not MemberAccessExpressionSyntax {
@@ -100,7 +117,29 @@ public sealed class TypeComparedByNameAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        Report(context, invocation, access.Expression, literal, false);
+        Report(context, invocation, access.Expression, literal, false, siblings);
+    }
+
+    /// <summary>
+    ///     Whether every one of these compilations resolves the literal to a type it can name (#351).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A hand-written loop rather than <c>Any</c>/<c>All</c>: the codebase's own <c>SK4002</c>
+    ///     reports the closure shape and this runs per reported site.
+    /// </remarks>
+    static bool EveryOneCanName(
+        ImmutableArray<Compilation> compilations,
+        string kind,
+        string literal,
+        CancellationToken cancellation
+    ) {
+        foreach (var compilation in compilations) {
+            if (Resolve(compilation, kind, literal, cancellation) is null) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     static string? Literal(ExpressionSyntax expression) =>
@@ -114,7 +153,8 @@ public sealed class TypeComparedByNameAnalyzer : DiagnosticAnalyzer {
         ExpressionSyntax whole,
         ExpressionSyntax nameSide,
         string literal,
-        bool negated
+        bool negated,
+        ImmutableDictionary<string, ImmutableArray<Compilation>> siblings
     ) {
         if (nameSide is not MemberAccessExpressionSyntax {
                 RawKind: (int)SyntaxKind.SimpleMemberAccessExpression
@@ -157,6 +197,19 @@ public sealed class TypeComparedByNameAnalyzer : DiagnosticAnalyzer {
         }
 
         if (Resolve(model.Compilation, kind, literal, cancellation) is not { } named) {
+            return;
+        }
+
+        // ⚠ #351: "a type this compilation can already see" is a claim about one target framework,
+        // and the fix writes `typeof(<that type>)` into a file every moniker of the project compiles.
+        // A `FullName` literal naming a type that arrived after netstandard2.1 — `System.Half`,
+        // `System.Runtime.Loader.AssemblyLoadContext` — resolves on the net10.0 leg and does not
+        // exist on the other, so the rewrite is CS0246 there. The whole predicate is `Resolve`
+        // itself, asked of every sibling that compiles this document, because the answer depends on
+        // the literal at this site and not on the compilation alone.
+        if (!siblings.IsEmpty
+            && siblings.TryGetValue(whole.SyntaxTree.FilePath, out var others)
+            && !EveryOneCanName(others, kind, literal, cancellation)) {
             return;
         }
 

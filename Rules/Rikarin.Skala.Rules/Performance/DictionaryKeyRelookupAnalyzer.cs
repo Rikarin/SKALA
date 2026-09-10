@@ -68,17 +68,21 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start => {
-                if (!SkalaRule.MeetsLanguageVersion(start.Compilation, "7.0")) {
-                    return;
-                }
-
                 // ⚠ The fix writes a deconstruction, so `KeyValuePair<K, V>.Deconstruct` has to be
                 // there. It arrived in .NET Core 2.0 and the analyzer targets netstandard2.0, so
                 // "the framework this project builds against has it" is a question, not a given.
-                var pair = start.Compilation.GetTypeByMetadataName("System.Collections.Generic.KeyValuePair`2");
-                if (pair is null || !HasDeconstruct(pair)) {
+                if (!Supports(start.Compilation)) {
                     return;
                 }
+
+                // ⚠ #351: and it is a question with one answer *per target framework*, which is not
+                // what asking `start.Compilation` alone gets. A multi-targeted project is opened as
+                // one compilation per moniker over one set of source files and the findings are
+                // unioned, so this reported from whichever moniker had `Deconstruct` and the fix
+                // landed in a file the others also compile — #343's `SK1023` defect exactly, and
+                // this rule is the same `hasFix`/`fixIsSafe` pair, so `skala fix --safe` applies it
+                // unreviewed. The whole predicate is asked of every sibling, not just the lookup.
+                var unavailable = FrameworkAvailability.PathsWithout(start.Options, Supports);
 
                 var dictionaries = new List<INamedTypeSymbol>();
                 foreach (var name in Dictionaries) {
@@ -92,12 +96,27 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
                 }
 
                 start.RegisterSyntaxNodeAction(
-                    context => Analyze(context, dictionaries),
+                    context => Analyze(context, dictionaries, unavailable),
                     SyntaxKind.ForEachStatement
                 );
             }
         );
     }
+
+    /// <summary>
+    ///     Whether this compilation can compile the deconstruction the fix writes.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The rule's <em>whole</em> availability condition, and it is asked of every sibling
+    ///     compilation unchanged (#343, #351). The language floor belongs in here beside the
+    ///     <c>Deconstruct</c> lookup: both decide whether the emitted
+    ///     <c>foreach (var (key, value) in dict)</c> compiles, and a sibling failing either one is
+    ///     just as unable to build the rewrite.
+    /// </remarks>
+    static bool Supports(Compilation compilation) =>
+        SkalaRule.MeetsLanguageVersion(compilation, "7.0")
+        && compilation.GetTypeByMetadataName("System.Collections.Generic.KeyValuePair`2") is { } pair
+        && HasDeconstruct(pair);
 
     static bool HasDeconstruct(INamedTypeSymbol pair) {
         foreach (var member in pair.GetMembers("Deconstruct")) {
@@ -111,13 +130,24 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
         return false;
     }
 
-    static void Analyze(SyntaxNodeAnalysisContext context, List<INamedTypeSymbol> dictionaries) {
+    static void Analyze(
+        SyntaxNodeAnalysisContext context,
+        List<INamedTypeSymbol> dictionaries,
+        ImmutableHashSet<string> unavailable
+    ) {
         var loop = (ForEachStatementSyntax)context.Node;
         if (loop.Expression is not MemberAccessExpressionSyntax {
                 RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
                 Name.Identifier.ValueText: "Keys"
             } keys
             || !CallShape.IsPlainNamePath(keys.Expression)) {
+            return;
+        }
+
+        // ⚠ Before any semantic work: this document is compiled by a target framework whose
+        // `KeyValuePair<K, V>` has no `Deconstruct`, so the rewrite does not compile there however
+        // good it looks here.
+        if (!unavailable.IsEmpty && unavailable.Contains(loop.SyntaxTree.FilePath)) {
             return;
         }
 

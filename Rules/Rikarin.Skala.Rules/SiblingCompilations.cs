@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Rules;
@@ -64,6 +65,57 @@ public static class FrameworkAvailability {
     ///     Computed once per compilation start; the loop is over the sibling's trees, which is the
     ///     only place the membership is recorded.
     /// </remarks>
+    /// <summary>
+    ///     The sibling compilations that compile each source path, for a rule whose availability
+    ///     question is asked per finding rather than once per compilation.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The counterpart to <see cref="PathsWithout" />, not a replacement for it.</b> That one
+    ///     takes a predicate constant over the compilation — "does this framework have
+    ///     <c>System.Threading.Lock</c>" — and can therefore settle every document once, at
+    ///     compilation start. <c>SK2182</c> cannot: what it must ask is whether a <em>particular
+    ///     string literal</em> at a particular site names a type the sibling can also see, so the
+    ///     predicate is not known until the finding is. Re-walking every sibling's trees per site to
+    ///     use <see cref="PathsWithout" /> would be quadratic on a large tree; this pays for the walk
+    ///     once and hands back the grouping.
+    ///     <para>
+    ///         ⚠ Empty under every host that publishes no siblings, so the per-site loop over the
+    ///         result is skipped entirely on a single-target project, a loose load, <c>csc</c> and
+    ///         Rider — the same "the question does not arise" default the rest of this type takes.
+    ///     </para>
+    /// </remarks>
+    public static ImmutableDictionary<string, ImmutableArray<Compilation>> SiblingsByPath(AnalyzerOptions options) {
+        var siblings = For(options);
+        if (siblings.IsEmpty) {
+            return ImmutableDictionary<string, ImmutableArray<Compilation>>.Empty;
+        }
+
+        var builder = new Dictionary<string, ImmutableArray<Compilation>.Builder>(StringComparer.Ordinal);
+        foreach (var sibling in siblings) {
+            foreach (var tree in sibling.SyntaxTrees) {
+                if (tree.FilePath is not { Length: > 0 } path) {
+                    continue;
+                }
+
+                if (!builder.TryGetValue(path, out var group)) {
+                    builder[path] = group = ImmutableArray.CreateBuilder<Compilation>();
+                }
+
+                group.Add(sibling);
+            }
+        }
+
+        var result = ImmutableDictionary.CreateBuilder<string, ImmutableArray<Compilation>>(StringComparer.Ordinal);
+        // ⚠ `entry.Key`/`entry.Value` rather than a deconstruction: this assembly targets
+        // netstandard2.0, whose `KeyValuePair<K, V>` has no `Deconstruct` — which is the very
+        // availability question `SK4031` asks, met here in its own source.
+        foreach (var entry in builder) {
+            result[entry.Key] = entry.Value.ToImmutable();
+        }
+
+        return result.ToImmutable();
+    }
+
     public static ImmutableHashSet<string> PathsWithout(AnalyzerOptions options, Func<Compilation, bool> supported) {
         var siblings = For(options);
         if (siblings.IsEmpty) {
