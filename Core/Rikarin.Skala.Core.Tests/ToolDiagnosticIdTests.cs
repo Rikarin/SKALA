@@ -138,8 +138,11 @@ public sealed class ToolDiagnosticIdTests {
     ///         nor <c>rules.json</c>, while their immediate siblings <c>SK9010</c>, <c>SK9011</c> and
     ///         <c>SK9099</c> were in both.
     ///     </b> So <c>skala explain SK9098</c> answered nothing, and the
-    ///     SARIF notification for the diagnostic whose whole job is to say <i>"This is a Skala bug; the
-    ///     file was left untouched"</i> named a <c>rules[]</c> descriptor that was not there.
+    ///     SARIF notification for the diagnostic whose whole job is to say
+    ///     <i>
+    ///         "This is a Skala bug; the
+    ///         file was left untouched"
+    ///     </i> named a <c>rules[]</c> descriptor that was not there.
     ///     <para>
     ///         ⚠ <b>The guard that should have caught it could not see them.</b>
     ///         <c>RuleCatalogTests.ArrangementIds_AreUniqueRegisteredFormattingIds</c> reads exactly one
@@ -230,8 +233,7 @@ public sealed class ToolDiagnosticIdTests {
                      ("SK9095", "ArrangementRule"), // ArrangeIds.RuleThrew
                      ("SK9097", "ArrangementPipeline"), // ⚠ the site the old guard could not see
                      ("SK9015", "FormatDiagnosticIds"), // FormatDiagnosticIds.FileIoFailed
-                     ("SK9099", "FormatDiagnosticIds"),
-                     ("SK9001", "SkalaDiagnostic"), // ConfigDiagnosticIds.UnknownKey
+                     ("SK9099", "FormatDiagnosticIds"), ("SK9001", "SkalaDiagnostic"), // ConfigDiagnosticIds.UnknownKey
                      ("SK0201", "ArrangementRule")
                  }) {
             Assert.True(
@@ -248,7 +250,8 @@ public sealed class ToolDiagnosticIdTests {
                 .SelectMany(static sites => sites)
                 .Select(static site => site[..site.IndexOf('.', StringComparison.Ordinal)])
                 .Distinct(StringComparer.Ordinal)
-                .Count() >= 4,
+                .Count()
+            >= 4,
             "The scan found fewer than four declaring types, which is fewer than the tree has."
         );
     }
@@ -274,10 +277,29 @@ public sealed class ToolDiagnosticIdTests {
     ///     </para>
     /// </remarks>
     static readonly HashSet<string> NotAllocated = new(StringComparer.Ordinal) {
-        "SK3499", "SK3500",
-        "SK9002", "SK9003", "SK9004", "SK9005", "SK9006", "SK9007", "SK9008", "SK9009",
-        "SK9012", "SK9013", "SK9014", "SK9016", "SK9017",
-        "SK9022", "SK9023", "SK9024", "SK9025", "SK9026", "SK9027", "SK9028", "SK9029"
+        "SK3499",
+        "SK3500",
+        "SK9002",
+        "SK9003",
+        "SK9004",
+        "SK9005",
+        "SK9006",
+        "SK9007",
+        "SK9008",
+        "SK9009",
+        "SK9012",
+        "SK9013",
+        "SK9014",
+        "SK9016",
+        "SK9017",
+        "SK9022",
+        "SK9023",
+        "SK9024",
+        "SK9025",
+        "SK9026",
+        "SK9027",
+        "SK9028",
+        "SK9029"
     };
 
     /// <summary>Every id declared in the tree, mapped to the <c>Type.Member</c> sites declaring it.</summary>
