@@ -173,7 +173,7 @@ public sealed class BaselineReadTests {
         var (result, _) = BaselineCommand.Run(
             verb,
             Request(scratch, baseline),
-            apply: true,
+            true,
             TestContext.Current.CancellationToken
         );
 
@@ -198,7 +198,7 @@ public sealed class BaselineReadTests {
         var (result, _) = BaselineCommand.Run(
             BaselineCommand.Verb.Show,
             Request(scratch, baseline),
-            apply: false,
+            false,
             TestContext.Current.CancellationToken
         );
 
@@ -214,7 +214,7 @@ public sealed class BaselineReadTests {
         using var scratch = new Scratch();
         var sarif = scratch.Write("report.sarif", ConflictMarker);
 
-        var result = ReportCommand.Run(sarif, scratch.Root, ReportFormat.Plain, includeHints: false, summary: false);
+        var result = ReportCommand.Run(sarif, scratch.Root, ReportFormat.Plain, false, false);
 
         Assert.Equal(ExitCodes.ConfigurationError, result.ExitCode);
         Assert.Contains(sarif, result.Output, StringComparison.Ordinal);
@@ -229,7 +229,7 @@ public sealed class BaselineReadTests {
             return;
         }
 
-        var result = ReportCommand.Run(sarif, scratch.Root, ReportFormat.Plain, includeHints: false, summary: false);
+        var result = ReportCommand.Run(sarif, scratch.Root, ReportFormat.Plain, false, false);
 
         Assert.Equal(ExitCodes.ConfigurationError, result.ExitCode);
         Assert.Contains(sarif, result.Output, StringComparison.Ordinal);
