@@ -175,6 +175,19 @@ public static class VerifyCommand {
             return new(result.ExitCode, result.Output + PartialVerdict(format, report, clean));
         }
 
+        // ⚠ #360. `clean` is stricter than the gate passing — the comment above says so — and the
+        // line below used to be reached by EVERY exit code but 4 and 5, so a gate that had FAILED was
+        // overruled by it: over a one-file tree with a merge-conflict marker in the baseline,
+        // `check --gate=local` exited 1 (#358's reliability clause) and `verify` over the same tree
+        // printed the same INCOMPLETE banner and exited 0. The same held for a crashed analyzer and
+        // a cancelled unit, which the `local` gate has failed on since #295 and #309, and for the
+        // exit-3 refusals (`nothing under 'X' is part of this load`), which came out as 0 over an
+        // empty finding set. A verdict `check` reached is not this command's to soften; what
+        // `verify` adds is the stricter direction over a clean exit, and nothing else.
+        if (result.ExitCode is not ExitCodes.Ok) {
+            return result;
+        }
+
         return new(clean ? ExitCodes.Ok : ExitCodes.GateFailed, result.Output);
     }
 
@@ -202,8 +215,10 @@ public static class VerifyCommand {
         // file, and this line printed "0 files were checked" directly under a finding on the
         // readable one. The loaders now count a requested file whether or not it opened, so for the
         // per-file blocking ids the difference is the number of files the stages actually saw. The
-        // clamp stays for the same reason `Renderer.Scale` keeps its guard: a blocking diagnostic
-        // at a non-source path (a baseline, SK9028) is in `blocked` and not in `FileCount`.
+        // clamp stays for the same reason `Renderer.Scale` keeps its guard — ⚠ #360 moved that
+        // reason: `SK9028` at the baseline is a gate input now and no longer in `blocked`, and the
+        // remaining way in is #361's, a failed workspace rung's `SK9024`/`SK9029` at the `.csproj`
+        // carried into a loose report. It is in `blocked` and not in `FileCount`.
         var blocked = Renderer.BlockedFiles(report).Count();
         var checkedFiles = Math.Max(0, report.FileCount - blocked);
         var skalasFault = Renderer.Causes(report).Any(static entry => entry.Cause == IncompleteCause.Defect);
