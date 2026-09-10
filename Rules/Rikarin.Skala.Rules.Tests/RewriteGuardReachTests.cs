@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace Rikarin.Skala.Rules.Tests;
@@ -76,15 +74,11 @@ public sealed class RewriteGuardReachTests {
         RegexOptions.Compiled
     );
 
-    static string RepositoryRoot { get; } =
-        Assembly.GetExecutingAssembly()
-        .GetCustomAttributes<AssemblyMetadataAttribute>()
-        .First(static attribute => attribute.Key == "SkalaRepositoryRoot")
-        .Value!;
+    static string RepositoryRoot => TrackedRuleSources.RepositoryRoot;
 
     [Fact]
     public void OnlyTheAuditedCallSites_AskTheWiderQuestion() {
-        var files = TrackedSourceFiles();
+        var files = TrackedRuleSources.All();
 
         // Anti-vacuity: an empty listing would pass every assertion below.
         Assert.True(files.Count > 100, $"Only {files.Count} tracked C# file(s) were listed.");
@@ -132,22 +126,5 @@ public sealed class RewriteGuardReachTests {
             + "\n\nIf the guard was correctly narrowed or deleted, drop the entry — a stale allow-list "
             + "reads as audited and is not."
         );
-    }
-
-    static List<string> TrackedSourceFiles() {
-        var process = Process.Start(
-            new ProcessStartInfo("git", "ls-files -- Rules/Rikarin.Skala.Rules/*.cs") {
-                WorkingDirectory = RepositoryRoot, RedirectStandardOutput = true
-            }
-        )!;
-
-        var output = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
-        Assert.Equal(0, process.ExitCode);
-
-        return output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
-            .Select(static line => line.Trim())
-            .Where(static line => line.Length > 0)
-            .ToList();
     }
 }

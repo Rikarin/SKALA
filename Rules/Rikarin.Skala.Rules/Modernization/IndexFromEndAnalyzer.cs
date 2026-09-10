@@ -35,23 +35,37 @@ public sealed class IndexFromEndAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
-                // ⚠ Two gates, not one, and the second one is about *accessibility* rather than
-                // existence. `System.Memory` ships an **internal** `System.Index` shim for
-                // netstandard2.0, so `GetTypeByMetadataName` finds a symbol on a target framework
-                // where `x[^1]` is `CS0518: predefined type 'System.Index' is not defined`. Checking
-                // for null alone reported sixteen findings on Skala's own netstandard2.0 projects
-                // whose fix did not compile; `IsSymbolAccessibleWithin` is the compiler's own test.
-                if (!SkalaRule.MeetsLanguageVersion(start.Compilation, Rule.LanguageVersion)
-                    || start.Compilation.GetTypeByMetadataName("System.Index") is not { } index
-                    || !start.Compilation.IsSymbolAccessibleWithin(index, start.Compilation.Assembly)) {
-                    return;
-                }
-
-                start.RegisterSyntaxNodeAction(Analyze, SyntaxKind.ElementAccessExpression);
-            }
-        );
+        // ⚠ Two gates, not one, and the second is about *accessibility* rather than existence.
+        // `System.Memory` ships an **internal** `System.Index` shim for netstandard2.0, so
+        // `GetTypeByMetadataName` finds a symbol on a target framework where `x[^1]` is `CS0518:
+        // predefined type 'System.Index' is not defined`. Checking for null alone reported sixteen
+        // findings on Skala's own netstandard2.0 projects whose fix did not compile;
+        // `IsSymbolAccessibleWithin` is the compiler's own test.
+        //
+        // ⚠ #351: and both gates are asked of the project's *other* target frameworks, which is what
+        // `RegisterWhereFrameworkSupports` does. The findings across monikers are unioned, so this
+        // reported from whichever one had an accessible `System.Index` and the rewrite landed in a
+        // file the others also compile — #343's `SK1023` defect, and this fix is `fixIsSafe`, so
+        // `skala fix --safe` applies it unreviewed. ⚠ Not covered by the declarative language-floor
+        // guard: accessibility is not in `rules.json`, and a netstandard2.0 moniker with an explicit
+        // `<LangVersion>` clears the floor and still has only the shim.
+        SkalaRule.RegisterWhereFrameworkSupports(context, Supports, Analyze, SyntaxKind.ElementAccessExpression);
     }
+
+    /// <summary>
+    ///     Whether this compilation can compile an <c>x[^1]</c> the fix writes.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The rule's whole condition, asked of every sibling compilation unchanged (#343, #351) —
+    ///     the accessibility test included, because a moniker seeing only <c>System.Memory</c>'s
+    ///     <b>internal</b> shim is exactly as unable to compile the rewrite as one with no
+    ///     <c>System.Index</c> at all, and that is the case this rule already measured at sixteen
+    ///     non-compiling fixes.
+    /// </remarks>
+    static bool Supports(Compilation compilation) =>
+        SkalaRule.MeetsLanguageVersion(compilation, Rule.LanguageVersion)
+        && compilation.GetTypeByMetadataName("System.Index") is { } index
+        && compilation.IsSymbolAccessibleWithin(index, compilation.Assembly);
 
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var access = (ElementAccessExpressionSyntax)context.Node;

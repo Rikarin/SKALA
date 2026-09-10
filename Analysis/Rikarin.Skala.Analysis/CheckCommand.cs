@@ -456,7 +456,14 @@ public static class CheckCommand {
             duplication = result;
         }
 
-        var merged = AnalyzerHost.Merge(findings);
+        // ⚠ #351: before the merge, and this is the point where the multi-target union is undone.
+        // Each unit above is one target framework over one set of source files, so `findings` now
+        // says "some moniker can express this" — while a fix is written to a file every moniker
+        // compiles. A rule declaring a `languageVersion` floor is the declarative half of that
+        // question and is settled here for the whole catalogue at once; the rule-specific half
+        // (`SK1023`'s `System.Threading.Lock` shape) stays in the analyzer behind
+        // `FrameworkAvailability`. Single-target loads keep every finding and pay one null check.
+        var merged = AnalyzerHost.Merge(MultiTargetLanguageFloor.Filter(findings, loaded.Units));
         merged = Supersession.Apply(merged);
         merged = Filter(merged, request);
 

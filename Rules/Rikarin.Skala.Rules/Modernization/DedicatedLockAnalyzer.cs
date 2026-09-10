@@ -18,25 +18,14 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
-                if (!Supports(start.Compilation)) {
-                    return;
-                }
-
-                // ⚠ #343: `System.Threading.Lock` is net9.0+, and a multi-targeted project is opened
-                // as one compilation per moniker over one set of source files. Asking only
-                // `start.Compilation` answers "some framework here has Lock" and the rewrite lands in
-                // a file every framework compiles — a `netstandard2.1;net10.0` library stopped
-                // building with CS0234 on the netstandard2.1 leg after `skala fix --safe`. The host
-                // publishes the other monikers' compilations; this asks them the same question and
-                // withholds the finding on any document one of them cannot compile the answer for.
-                var unavailable = FrameworkAvailability.PathsWithout(start.Options, Supports);
-                start.RegisterSyntaxNodeAction(
-                    node => Analyze(node, unavailable),
-                    SyntaxKind.FieldDeclaration
-                );
-            }
-        );
+        // ⚠ #343: `System.Threading.Lock` is net9.0+, and a multi-targeted project is opened as one
+        // compilation per moniker over one set of source files. Asking only the loaded compilation
+        // answers "some framework here has Lock" while the rewrite lands in a file *every* framework
+        // compiles — a `netstandard2.1;net10.0` library stopped building with CS0234 on the
+        // netstandard2.1 leg after `skala fix --safe`. `RegisterWhereFrameworkSupports` asks the
+        // other monikers the same question and withholds the finding on any document one of them
+        // cannot compile the answer for.
+        SkalaRule.RegisterWhereFrameworkSupports(context, Supports, Analyze, SyntaxKind.FieldDeclaration);
     }
 
     /// <summary>
@@ -73,7 +62,7 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
                 );
     }
 
-    static void Analyze(SyntaxNodeAnalysisContext context, ImmutableHashSet<string> unavailable) {
+    static void Analyze(SyntaxNodeAnalysisContext context) {
         var declaration = (FieldDeclarationSyntax)context.Node;
         if (declaration.Parent is not ClassDeclarationSyntax
             || declaration.Declaration.Variables.Count != 1
@@ -82,12 +71,6 @@ public sealed class DedicatedLockAnalyzer : DiagnosticAnalyzer {
             || declaration.Ancestors()
                 .OfType<TypeDeclarationSyntax>()
                 .Any(static type => type.Modifiers.Any(SyntaxKind.PartialKeyword))) {
-            return;
-        }
-
-        // ⚠ Before any semantic work: this document is compiled by a target framework that has no
-        // `System.Threading.Lock`, so the rewrite does not compile there however good it looks here.
-        if (!unavailable.IsEmpty && unavailable.Contains(declaration.SyntaxTree.FilePath)) {
             return;
         }
 

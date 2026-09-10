@@ -49,16 +49,20 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
-                // ⚠ A target framework without `System.ValueTuple` would take a fix that does not
-                // compile. The language floor alone does not answer that question.
-                if (SkalaRule.MeetsLanguageVersion(start.Compilation, Rule.LanguageVersion)
-                    && start.Compilation.GetTypeByMetadataName("System.ValueTuple`2") is not null) {
-                    start.RegisterSyntaxNodeAction(Analyze, SyntaxKind.LocalDeclarationStatement);
-                }
-            }
-        );
+        // ⚠ A target framework without `System.ValueTuple` would take a fix that does not compile,
+        // and the language floor alone does not answer that. ⚠ #351: nor does asking one compilation,
+        // because "a target framework" is several of them on a multi-targeted project — one per
+        // moniker over one set of source files, findings unioned. `System.ValueTuple` reaches
+        // netstandard2.0 only through a package, so the moniker that has it reports and the moniker
+        // that does not gets the rewrite anyway (#343).
+        SkalaRule.RegisterWhereFrameworkSupports(context, Supports, Analyze, SyntaxKind.LocalDeclarationStatement);
     }
+
+    /// <summary>Whether this compilation can compile the tuple literal the fix writes.</summary>
+    /// <remarks>⚠ The whole condition, asked of every sibling unchanged (#343, #351).</remarks>
+    static bool Supports(Compilation compilation) =>
+        SkalaRule.MeetsLanguageVersion(compilation, Rule.LanguageVersion)
+        && compilation.GetTypeByMetadataName("System.ValueTuple`2") is not null;
 
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var statement = (LocalDeclarationStatementSyntax)context.Node;

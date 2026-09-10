@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
@@ -36,6 +37,9 @@ public sealed class MultiTargetAvailabilityTests {
     // and the ADR-012 guard fails — which is the guard working, on a genuine mirror.
     const string DedicatedLock = "SK1023";
 
+    /// <summary>#351's rule: a <c>languageVersion</c> floor rather than a missing type.</summary>
+    const string FileScopedNamespace = "SK1005";
+
     const string MultiTargeted = """
                                  <Project Sdk="Microsoft.NET.Sdk">
                                    <PropertyGroup>
@@ -55,6 +59,45 @@ public sealed class MultiTargetAvailabilityTests {
                                     </PropertyGroup>
                                   </Project>
                                   """;
+
+    /// <summary>
+    ///     ⚠ <b>No <c>&lt;LangVersion&gt;</c>, and that omission is the entire fixture (#351).</b>
+    /// </summary>
+    /// <remarks>
+    ///     The pair above pins <c>preview</c> for both monikers, which is what a project does when it
+    ///     wants one language across the board — and it hides this defect completely. Left unset, the
+    ///     SDK picks a default <em>per target framework</em>: measured with
+    ///     <c>dotnet msbuild -getProperty:LangVersion -p:TargetFramework=…</c> on exactly this file,
+    ///     <c>netstandard2.0</c> evaluates to <b>7.3</b> and <c>net10.0</c> to <b>14.0</b>. So one
+    ///     project over one source file has two language versions, and every <c>SK1xxx</c> rule that
+    ///     opens with <c>SkalaRule.MeetsLanguageVersion</c> is answered by whichever moniker it runs
+    ///     in.
+    /// </remarks>
+    const string MultiTargetedDefaultLanguage = """
+                                                <Project Sdk="Microsoft.NET.Sdk">
+                                                  <PropertyGroup>
+                                                    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
+                                                  </PropertyGroup>
+                                                </Project>
+                                                """;
+
+    const string SingleTargetedDefaultLanguage = """
+                                                 <Project Sdk="Microsoft.NET.Sdk">
+                                                   <PropertyGroup>
+                                                     <TargetFramework>net10.0</TargetFramework>
+                                                   </PropertyGroup>
+                                                 </Project>
+                                                 """;
+
+    /// <summary>A file <c>SK1005</c> converts to a file-scoped namespace — C# 10 syntax.</summary>
+    const string BlockNamespaceSource = """
+                                        namespace Probe {
+                                            public sealed class Widget {
+                                                public int Value { get; set; }
+                                            }
+                                        }
+
+                                        """;
 
     /// <summary>The issue's reproduction, unchanged.</summary>
     const string Source = """
@@ -222,6 +265,211 @@ public sealed class MultiTargetAvailabilityTests {
     }
 
     /// <summary>
+    ///     #351: the same union, decided by the <em>language version</em> rather than by a type.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         Roughly forty <c>SK1xxx</c> rules gate on
+    ///         <c>SkalaRule.MeetsLanguageVersion</c> and not one of them was guarded
+    ///     </b>, so this is the
+    ///     larger half of #343's bug class rather than a footnote to it. <c>SK1005</c> stands for all
+    ///     of them: <c>hasFix</c>, <c>fixIsSafe</c>, floor C# 10. The <c>net10.0</c> moniker compiles
+    ///     at C# 14 and reports it, <c>skala fix --safe</c> rewrites the block namespace to
+    ///     <c>namespace Probe;</c>, and the <c>netstandard2.0</c> moniker — compiling the same file at
+    ///     C# 7.3 — fails with <c>CS8773</c>.
+    ///     <para>
+    ///         ⚠ <b>Sabotage, and it was run:</b> reverting <c>CheckCommand</c>'s call to
+    ///         <see cref="MultiTargetLanguageFloor.Filter" /> turns this red exactly as described —
+    ///         the finding returns, <c>fix --safe</c> writes the file-scoped namespace, and
+    ///         <see cref="AssertEveryTargetFrameworkCompiles" /> reports <c>CS8773</c> against the
+    ///         <c>netstandard2.0</c> leg.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void MultiTargetedProject_WithholdsARewriteAnOlderMonikersLanguageVersionCannotParse() {
+        using var scratch = new Scratch();
+        var project = scratch.Write("Probe.csproj", MultiTargetedDefaultLanguage);
+        var source = scratch.Write("Probe.cs", BlockNamespaceSource);
+        Restore(project);
+
+        var loaded = ProjectLoader.Load(
+            new LoadRequest {
+                RepositoryRoot = scratch.Root,
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                Paths = [scratch.Root],
+                AllowFallback = false
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        // ⚠ The instrument, before the claim, and here it is the language version itself. If the
+        // fixture ever acquires a `<LangVersion>` — from a stray Directory.Build.props above the
+        // scratch directory, or from someone "tidying" the csproj to match the pair above — both
+        // monikers compile at the same version, there is nothing to withhold, and every assertion
+        // below passes over an unguarded pipeline. `Scratch` roots under the temp directory rather
+        // than under the repository precisely so this cannot inherit Skala's own `latest`.
+        Assert.Equal(2, loaded.Units.Length);
+        Assert.All(loaded.Units, static unit => Assert.Single(unit.Siblings));
+        var old = Assert.Single(
+            loaded.Units,
+            static unit => unit.TargetFramework.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase)
+        );
+
+        var current = Assert.Single(loaded.Units, unit => !ReferenceEquals(unit, old));
+        Assert.True(
+            old.Compilation.LanguageVersion < LanguageVersion.CSharp10,
+            "the netstandard2.0 moniker compiles at " + old.Compilation.LanguageVersion + ", so nothing is withheld"
+        );
+
+        Assert.True(
+            current.Compilation.LanguageVersion >= LanguageVersion.CSharp10,
+            "the net10.0 moniker compiles at " + current.Compilation.LanguageVersion + ", so the rule never fires"
+        );
+
+        // And the references really restored, so the older leg is a real compilation (#343's trap).
+        Assert.NotNull(old.Compilation.GetTypeByMetadataName("System.Threading.Monitor"));
+
+        var request = new CheckRequest {
+            RepositoryRoot = scratch.Root,
+            Paths = [scratch.Root],
+            Mode = LoadMode.Workspace,
+            ProjectPath = project,
+            Output = string.Empty,
+            Rules = [FileScopedNamespace],
+            NoCache = true
+        };
+
+        var (result, report) = CheckCommand.Run(request, TestContext.Current.CancellationToken);
+        Assert.NotEqual(ExitCodes.LoadFailure, result.ExitCode);
+        Assert.DoesNotContain(report.Reportable, static finding => finding.RuleId == FileScopedNamespace);
+
+        var fixResult = FixCommand.Run(
+            new FixRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                SafeOnly = true,
+                Include = [FileScopedNamespace]
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.Ok, fixResult.ExitCode);
+        Assert.Equal(BlockNamespaceSource, File.ReadAllText(source));
+        AssertEveryTargetFrameworkCompiles(scratch.Root, project, source);
+    }
+
+    /// <summary>
+    ///     ⚠ The other half of the pair: the language floor must not have silenced the rule outright.
+    /// </summary>
+    /// <remarks>
+    ///     A zero from a withheld finding and a zero from a rule that no longer fires are the same
+    ///     zero, and the filter added for #351 runs over every finding in the report. Same source,
+    ///     same command, same absent <c>&lt;LangVersion&gt;</c> — with one <c>TargetFramework</c> that
+    ///     defaults to C# 14 — and <c>SK1005</c> must still fire and still apply.
+    /// </remarks>
+    [Fact]
+    public void SingleTargetedProject_StillConvertsTheNamespaceAtTheDefaultLanguageVersion() {
+        using var scratch = new Scratch();
+        var project = scratch.Write("Probe.csproj", SingleTargetedDefaultLanguage);
+        var source = scratch.Write("Probe.cs", BlockNamespaceSource);
+
+        var (_, report) = CheckCommand.Run(
+            new CheckRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                Output = string.Empty,
+                Rules = [FileScopedNamespace],
+                NoCache = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        var finding = Assert.Single(report.Reportable, static entry => entry.RuleId == FileScopedNamespace);
+        Assert.True(finding.HasFix);
+
+        var fixResult = FixCommand.Run(
+            new FixRequest {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                SafeOnly = true,
+                Include = [FileScopedNamespace]
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.Ok, fixResult.ExitCode);
+        Assert.Contains("namespace Probe;", File.ReadAllText(source), StringComparison.Ordinal);
+        AssertEveryTargetFrameworkCompiles(scratch.Root, project, source);
+    }
+
+    /// <summary>
+    ///     ⚠ The binlog path, which #343 assumed and never built a multi-targeted binlog to prove.
+    /// </summary>
+    /// <remarks>
+    ///     <c>BinlogLoader</c> sets <c>ProjectPath</c>, so <c>MultiTargetLink.Apply</c> — which runs at
+    ///     the single funnel in <c>ProjectLoader.Load</c> — <em>should</em> group the monikers
+    ///     identically to the workspace. "Should" was the whole state of the evidence, and this is the
+    ///     load mode that matters most: <b>the self-gate and CI both run <c>--load=binlog</c></b>, so
+    ///     it is the path this project's own gates use on every push.
+    ///     <para>
+    ///         ⚠ The grouping is by <c>ProjectPath</c> precisely because <c>Name</c> would not do it:
+    ///         the workspace decorates the name with the moniker and the binlog does not, so a
+    ///         name-keyed grouping passes on one loader and silently fails on the other. That is what
+    ///         this pins.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Built rather than restored: a binlog is the record of a real build, so this shells out
+    ///         to <c>dotnet build -bl</c>. The assertions below are stated against the loaded units, so
+    ///         a build that produced one <c>csc</c> invocation instead of two fails loudly rather than
+    ///         passing with nothing to group.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void MultiTargetedBinlog_GroupsTheMonikersTheSameWayTheWorkspaceDoes() {
+        using var scratch = new Scratch();
+        var project = scratch.Write("Probe.csproj", MultiTargetedDefaultLanguage);
+        scratch.Write("Probe.cs", BlockNamespaceSource);
+
+        // ⚠ Cuts the Directory.Build.props chain. `Scratch` roots under the temp directory today, but
+        // an inherited `<LangVersion>` would make both monikers equal and quietly void the assertion
+        // that they differ — the same contamination this file's other fixtures avoid by construction.
+        scratch.Write("Directory.Build.props", "<Project />");
+        var binlog = Path.Combine(scratch.Root, "probe.binlog");
+        Build(project, binlog);
+
+        var loaded = ProjectLoader.Load(
+            new LoadRequest {
+                RepositoryRoot = scratch.Root,
+                Mode = LoadMode.Binlog,
+                BinlogPath = binlog,
+                Paths = [scratch.Root],
+                AllowFallback = false
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(2, loaded.Units.Length);
+
+        // The claim: the binlog's two units know about each other, exactly as the workspace's do.
+        Assert.All(loaded.Units, static unit => Assert.Single(unit.Siblings));
+        Assert.All(loaded.Units, static unit => Assert.NotEqual(string.Empty, unit.ProjectPath));
+
+        var versions = loaded.Units.Select(static unit => unit.Compilation.LanguageVersion).ToHashSet();
+        Assert.Equal(2, versions.Count);
+    }
+
+    /// <summary>⚠ A binlog is the record of a real build, so one has to be run to get a real one.</summary>
+    static void Build(string project, string binlog) => Run("build", project, "-bl:" + binlog, "--nologo");
+
+    /// <summary>
     ///     ⚠
     ///     <b>
     ///         The one fixture in this suite that has to restore, and skipping it would have made
@@ -238,19 +486,30 @@ public sealed class MultiTargetAvailabilityTests {
     ///     an analyzer that never consulted the sibling. The <c>Assert.NotNull</c> on
     ///     <c>System.Threading.Monitor</c> is what makes that failure loud rather than green.
     /// </remarks>
-    static void Restore(string project) {
-        using var process = System.Diagnostics.Process.Start(
-            new System.Diagnostics.ProcessStartInfo("dotnet") {
-                ArgumentList = { "restore", project, "--nologo" },
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            }
-        )!;
+    static void Restore(string project) => Run("restore", project, "--nologo");
 
+    /// <summary>One <c>dotnet</c> invocation, with its output kept for the failure message.</summary>
+    /// <remarks>
+    ///     ⚠ The output is only interesting when the exit code is non-zero, and then it is the only
+    ///     thing that explains the failure — a restore that could not reach NuGet and a build that
+    ///     could not find the SDK both surface here as an assertion with the tool's own words in it.
+    /// </remarks>
+    static void Run(params string[] arguments) {
+        var start = new System.Diagnostics.ProcessStartInfo("dotnet") {
+            RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false
+        };
+
+        foreach (var argument in arguments) {
+            start.ArgumentList.Add(argument);
+        }
+
+        using var process = System.Diagnostics.Process.Start(start)!;
         var output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
         process.WaitForExit();
-        Assert.True(process.ExitCode == 0, "restoring the multi-targeted fixture failed:\n" + output);
+        Assert.True(
+            process.ExitCode == 0,
+            "`dotnet " + string.Join(' ', arguments) + "` on the multi-targeted fixture failed:\n" + output
+        );
     }
 
     /// <summary>

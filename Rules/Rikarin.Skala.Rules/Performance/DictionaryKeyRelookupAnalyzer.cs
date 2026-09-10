@@ -68,17 +68,21 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start => {
-                if (!SkalaRule.MeetsLanguageVersion(start.Compilation, "7.0")) {
-                    return;
-                }
-
                 // ⚠ The fix writes a deconstruction, so `KeyValuePair<K, V>.Deconstruct` has to be
                 // there. It arrived in .NET Core 2.0 and the analyzer targets netstandard2.0, so
                 // "the framework this project builds against has it" is a question, not a given.
-                var pair = start.Compilation.GetTypeByMetadataName("System.Collections.Generic.KeyValuePair`2");
-                if (pair is null || !HasDeconstruct(pair)) {
+                if (!Supports(start.Compilation)) {
                     return;
                 }
+
+                // ⚠ #351: and it is a question with one answer *per target framework*, which is not
+                // what asking `start.Compilation` alone gets. A multi-targeted project is opened as
+                // one compilation per moniker over one set of source files and the findings are
+                // unioned, so this reported from whichever moniker had `Deconstruct` and the fix
+                // landed in a file the others also compile — #343's `SK1023` defect exactly, and
+                // this rule is the same `hasFix`/`fixIsSafe` pair, so `skala fix --safe` applies it
+                // unreviewed. The whole predicate is asked of every sibling, not just the lookup.
+                var unavailable = FrameworkAvailability.PathsWithout(start.Options, Supports);
 
                 var dictionaries = new List<INamedTypeSymbol>();
                 foreach (var name in Dictionaries) {
@@ -91,13 +95,38 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
                     return;
                 }
 
+                // ⚠ The withheld-document check sits here rather than inside `Analyze`, and the
+                // reason is measured: as an `if` in the method body it took the baselined `SK7002`
+                // cognitive complexity from 26 to 27, and the number is in the message and therefore
+                // in the fingerprint — so a guard added for #351 would have arrived as a *new*
+                // finding. `SkalaRule.RegisterWhereFrameworkSupports` places it the same way for the
+                // rules that do not need a start action of their own.
                 start.RegisterSyntaxNodeAction(
-                    context => Analyze(context, dictionaries),
+                    context => {
+                        if (unavailable.IsEmpty || !unavailable.Contains(context.Node.SyntaxTree.FilePath)) {
+                            Analyze(context, dictionaries);
+                        }
+                    },
                     SyntaxKind.ForEachStatement
                 );
             }
         );
     }
+
+    /// <summary>
+    ///     Whether this compilation can compile the deconstruction the fix writes.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The rule's <em>whole</em> availability condition, and it is asked of every sibling
+    ///     compilation unchanged (#343, #351). The language floor belongs in here beside the
+    ///     <c>Deconstruct</c> lookup: both decide whether the emitted
+    ///     <c>foreach (var (key, value) in dict)</c> compiles, and a sibling failing either one is
+    ///     just as unable to build the rewrite.
+    /// </remarks>
+    static bool Supports(Compilation compilation) =>
+        SkalaRule.MeetsLanguageVersion(compilation, "7.0")
+        && compilation.GetTypeByMetadataName("System.Collections.Generic.KeyValuePair`2") is { } pair
+        && HasDeconstruct(pair);
 
     static bool HasDeconstruct(INamedTypeSymbol pair) {
         foreach (var member in pair.GetMembers("Deconstruct")) {
