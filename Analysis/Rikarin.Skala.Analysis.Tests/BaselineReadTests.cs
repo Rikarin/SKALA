@@ -21,8 +21,11 @@ namespace Rikarin.Skala.Analysis.Tests;
 ///         no report at all, from the CLI's outer net.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The issue's "exit 0" half was a claim about the path these two were about to be routed
-///         onto, and it held there.</b> A baseline that already reached <c>CheckCommand</c>'s filter —
+///         ⚠
+///         <b>
+///             The issue's "exit 0" half was a claim about the path these two were about to be routed
+///             onto, and it held there.
+///         </b> A baseline that already reached <c>CheckCommand</c>'s filter —
 ///         a file holding the literal <c>null</c> — was written as an error-severity <c>SK9028</c>,
 ///         rendered, and decided on by nothing: the run compared against no baseline, the <c>local</c>
 ///         gate has no <c>newIssues</c> condition, and the agent renderer printed
@@ -104,7 +107,10 @@ public sealed class BaselineReadTests {
 
         Assert.Equal(expectedExit, run.Result.ExitCode);
         Assert.False(run.Report.Gate!.Passed);
-        Assert.Contains(run.Report.Gate.Failures, static failure => failure.Contains("could not be read", StringComparison.Ordinal));
+        Assert.Contains(
+            run.Report.Gate.Failures,
+            static failure => failure.Contains("could not be read", StringComparison.Ordinal)
+        );
     }
 
     [Fact]
