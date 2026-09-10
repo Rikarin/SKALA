@@ -93,6 +93,14 @@ internal static class NullComparison {
     ///     <c>x =&gt; x.Name is not null</c> is CS8122. A fix that does not compile is worse than no
     ///     fix, so the whole finding is withheld rather than the fix alone — a finding an agent cannot
     ///     act on is a finding that teaches it to ignore the tool.
+    ///     <para>
+    ///         ⚠ <b>This is not "an expression tree may not contain <c>is</c>".</b> CS8122 is about the
+    ///         <em>pattern</em> forms — a constant pattern, a declaration pattern, a recursive pattern.
+    ///         The bare type-test operator <c>x is T</c> has been legal in an expression tree since LINQ
+    ///         shipped, because it is <c>ExpressionType.TypeIs</c>. A rule that emits only a type test
+    ///         does not need this guard, and calling it anyway is a false negative rather than caution —
+    ///         see <c>ReflectiveTypeTestAnalyzer</c>, where that was measured (#349).
+    ///     </para>
     /// </remarks>
     public static bool InsideExpressionTree(
         SemanticModel model,
@@ -107,11 +115,30 @@ internal static class NullComparison {
             }
 
             var converted = model.GetTypeInfo(current, cancellation).ConvertedType;
-            for (var type = converted; type is not null; type = type.BaseType) {
-                if (type.ToDisplayString()
-                        .StartsWith("System.Linq.Expressions.Expression", System.StringComparison.Ordinal)) {
-                    return true;
-                }
+            if (IsExpressionTreeType(converted)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Whether <paramref name="type" /> is, or derives from, the expression-tree base type.</summary>
+    /// <remarks>
+    ///     ⚠ <b>The namespace is compared for equality, not matched with <c>StartsWith</c>.</b> This read
+    ///     <c>type.ToDisplayString().StartsWith("System.Linq.Expressions.Expression")</c>, which also
+    ///     answers <c>true</c> for a user-declared <c>System.Linq.Expressions.ExpressionFoo</c> — legal
+    ///     code, and every rule holding this guard would have withheld its finding inside a lambda
+    ///     converted to it. Matching the namespace by hand rather than resolving the metadata name keeps
+    ///     this working under <c>--load=loose</c>, where a lookup can come back null and a null lookup
+    ///     would answer "not an expression tree" for every file — the shape of zero that looks like clean
+    ///     code. Same predicate as <c>Formatting.CSharp</c>'s <c>ExpressionTreeContext</c>.
+    /// </remarks>
+    internal static bool IsExpressionTreeType(ITypeSymbol? type) {
+        for (var current = type; current is not null; current = current.BaseType) {
+            if (current is { Name: "Expression", ContainingType: null }
+                && current.ContainingNamespace?.ToDisplayString() == "System.Linq.Expressions") {
+                return true;
             }
         }
 

@@ -56,6 +56,22 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         Removing <em>both</em> turns <c>ref_struct_target</c> red, which is what established that
 ///         it is subsumed rather than wrong.
 ///     </para>
+///     <para>
+///         ⚠
+///         <b>
+///             This rule does <em>not</em> need the expression-tree guard the other ten pattern rules
+///             carry, and the claim that it did is refuted (#349).
+///         </b> <c>x is T</c> with no designation is the type-test <em>operator</em> —
+///         <c>ExpressionType.TypeIs</c>, which expression trees have represented since LINQ shipped —
+///         and CS8122 is about the pattern forms this rule never emits. Eleven emitted shapes were
+///         compiled inside an <c>Expression&lt;Func&lt;object, bool&gt;&gt;</c> and every one compiles,
+///         including the delegate lambda nested inside the tree that a nearest-lambda check gets wrong.
+///         ⚠ <b>The exception is a tuple target</b>: the type is re-spelled from source text, so
+///         <c>typeof((int, int))</c> emits <c>x is (int, int)</c>, which the parser reads as a pattern
+///         and which really is CS8122 in a tree. That one spelling is guarded, on the syntax rather
+///         than on the symbol — <c>typeof(ValueTuple&lt;int, int&gt;)</c> is the same type and emits
+///         text the parser accepts.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
@@ -99,6 +115,27 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
 
         var span = invocation.Span;
         if (RewriteGuards.ContainsCommentOrDirectiveWithinTheEdit(invocation.SyntaxTree, span)) {
+            return;
+        }
+
+        // ⚠ **"An expression tree may not contain an `is` pattern, so this rule needs the guard the
+        // other ten have" is refuted** (#349), and the refutation is what keeps the guard narrow.
+        // `x is T` with no designation is the *type-test operator*, not a pattern: it is
+        // `ExpressionType.TypeIs`, which expression trees have represented since LINQ shipped.
+        // Eleven emitted shapes were compiled inside an `Expression<Func<object, bool>>` against
+        // csc 10.0.400 — a reference type, an interface, a negated test, a value type, `int?`, an
+        // array, a constructed generic, an enum, an unconstrained type parameter, and the same test
+        // in a delegate lambda nested inside the tree — and every one compiles. Calling
+        // `NullComparison.InsideExpressionTree` here unconditionally would withhold all of them.
+        //
+        // ⚠ **One `typeof` operand really does emit a pattern, and it is the tuple type.** The type
+        // is re-spelled from source text, so `typeof((int, int))` emits `x is (int, int)` — text the
+        // parser sends down the *pattern* path, giving an `IsPatternExpressionSyntax` rather than an
+        // `IsExpression`. Outside a tree it compiles and asks the same question; inside one it is
+        // CS8122. The test is on the syntax and not on `INamedTypeSymbol.IsTupleType`, because
+        // `typeof(ValueTuple<int, int>)` is the same symbol and emits a type the parser accepts.
+        if (target.Type is TupleTypeSyntax
+            && NullComparison.InsideExpressionTree(model, invocation, cancellation)) {
             return;
         }
 
