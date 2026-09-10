@@ -147,6 +147,7 @@ public static class ArrangeCommand {
                 if (request is { Check: false, Diff: false }) {
                     File.WriteAllText(file, final, text.Encoding ?? new UTF8Encoding(false));
                 }
+
                 // ⚠ #353. `UnauthorizedAccessException` does NOT derive from `IOException` — it
                 // derives from `SystemException` — so `catch (IOException)` alone let a file the
                 // process cannot read abort the whole run. Measured before the fix: the loop stopped
