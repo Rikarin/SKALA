@@ -44,7 +44,10 @@ public enum ReportFormat {
 ///     </para>
 /// </remarks>
 public enum IncompleteCause {
-    /// <summary>Skala's own fault — <c>SK9098</c>, <c>SK9096</c>, <c>SK9095</c>, <c>SK9099</c>, and any id not listed below.</summary>
+    /// <summary>
+    ///     Skala's own fault — <c>SK9098</c>, <c>SK9096</c>, <c>SK9095</c>, <c>SK9099</c>, and any id
+    ///     not listed below.
+    /// </summary>
     Defect,
 
     /// <summary>The file could not be read (<c>SK9015</c>). An environment condition, not a defect.</summary>

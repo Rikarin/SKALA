@@ -59,7 +59,8 @@ public sealed class IncompleteBannerTests {
             "not written, the formatted output has a different token stream",
             path.Length == 0 ? Refused : path,
             0,
-            $"A reproduction is in {Path.Combine(Root, ".skala", "crash", "1a2b3c")}. This is a Skala bug; the file was left untouched."
+            $"A reproduction is in {Path.Combine(Root, ".skala", "crash", "1a2b3c")}. "
+            + "This is a Skala bug; the file was left untouched."
         );
 
     /// <summary>
@@ -97,7 +98,8 @@ public sealed class IncompleteBannerTests {
         var text = Renderer.Render(Report(Unreadable()), ReportFormat.Agent);
 
         Assert.StartsWith(
-            "INCOMPLETE  1 of 4 file was not checked — could not be read: check permissions and that the path is still mounted.",
+            "INCOMPLETE  1 of 4 file was not checked — could not be read: check permissions and that the path "
+            + "is still mounted.",
             text,
             StringComparison.Ordinal
         );
@@ -135,7 +137,8 @@ public sealed class IncompleteBannerTests {
 
         Assert.StartsWith(
             "INCOMPLETE  3 of 4 files were not checked — 1 a Skala bug, not a finding in your code; "
-            + "2 could not be read (check permissions and that the path is still mounted). Everything below covers the rest.",
+            + "2 could not be read (check permissions and that the path is still mounted). "
+            + "Everything below covers the rest.",
             text,
             StringComparison.Ordinal
         );
