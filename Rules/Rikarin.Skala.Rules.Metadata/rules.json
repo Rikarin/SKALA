@@ -1824,6 +1824,184 @@
       "configuration": []
     },
     {
+      "id": "SK9002",
+      "concept": "config-inherited-from-above",
+      "title": "The effective configuration draws from an `.editorconfig` above the repository root",
+      "category": "Tool",
+      "defaultSeverity": "suggestion",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.1",
+      "languageVersion": null,
+      "summary": "An `.editorconfig` outside the repository is in the chain Skala resolved, so the effective configuration depends on a file the repository does not contain. Add `root = true` to the repository's top `.editorconfig` to stop the walk there; `skala config fix` adds it.",
+      "rationale": "The Rider export ships without `root = true`, so the walk up from a source file keeps going past the repository, and a stray `~/.editorconfig` silently joins the chain — the same tree then formats differently on two machines. It is reported once per outside file, and it fires even when that file contributed nothing, because the report is about the chain's shape rather than about a value in force: the detail names the keys that came from it, or says that none did. If the inherited keys are wanted, copy them down into the repository's own file.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "Only `skala config check` reports it, because only `check` knows where the repository starts; `config explain` is silent on the same tree unless given `--root`. The test is an ordinal path-prefix comparison on the directory, so an `.editorconfig` in a sibling directory whose name extends the root's — `/repo` against `/repository` — is treated as inside and is not reported.",
+      "configuration": []
+    },
+    {
+      "id": "SK9003",
+      "concept": "style-key-in-tool-config",
+      "title": "A style option was set in `skala.jsonc`",
+      "category": "Tool",
+      "defaultSeverity": "error",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.1",
+      "languageVersion": null,
+      "summary": "A property somewhere in `skala.jsonc` resolves to an option in the registry. Style is configured in `.editorconfig` and nowhere else (ADR-001), so the property was ignored, and `skala config check` fails on it without `--strict`. Move the line into `.editorconfig` as `key = value`; the detail names the canonical key and its tier.",
+      "rationale": "One style language, because two is how the IDE and the gate come to disagree: a value in `skala.jsonc` is invisible to Rider, so the code would format one way under the IDE and another under Skala. Aliases resolve too — `max_line_length` in `skala.jsonc` fires as readily as `skala_max_line_length` — and the detail gives the spelling to use in `.editorconfig`.",
+      "examples": {
+        "bad": "{ \"skala_max_line_length\": 120 }",
+        "good": "[*.cs]\nskala_max_line_length = 120"
+      },
+      "falsePositives": "The walk over the document is recursive and unscoped, so a registry key nested under `gates`, `canonical` or inside an array is reported as well. A `skala.jsonc` that does not parse reports `SK9007` instead and nothing here. The diagnostic carries the file and no line, because the JSON reader does not keep one.",
+      "configuration": []
+    },
+    {
+      "id": "SK9004",
+      "concept": "duplicate-option-alias",
+      "title": "Two spellings of one option are set at equal specificity and disagree",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.1",
+      "languageVersion": null,
+      "summary": "Two spellings of the same option are set at the same specificity with different values, so precedence cannot pick one and whichever wins is an accident of file order. Delete one of the two lines; the report points at the loser and names the other.",
+      "rationale": "Precedence between the spellings of one option is decided by specificity — a `csharp_` key beats a generic one — and when two spellings sit at the same rank there is no rule left to apply. The same id is raised at build time by `Rikarin.Skala.Options.Generator` when `options.json` itself gives one spelling to two options: that is the same concept on the other side of the registry, mirrored because the generator cannot reference Core.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "⚠ The runtime form is currently unreachable, and a test asserts why: no option in the registry has two spellings at one specificity rank, because the ReSharper alias spellings were dropped and every option now has at most its `skala_` key and one Microsoft-namespace alias at a different rank (`SK9004_IsUnreachable_BecauseNoOptionHasTwoSpellingsAtOneRank`). The branch is kept because it becomes reachable the day an option gains a second alias at an existing rank. The same key written twice is not this diagnostic — later wins, silently — and two spellings at different ranks that disagree are `SK9005`.",
+      "configuration": []
+    },
+    {
+      "id": "SK9005",
+      "concept": "contradictory-options",
+      "title": "Two settings contradict each other",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.1",
+      "languageVersion": null,
+      "summary": "Two lines in the `.editorconfig` chain ask for different things about one behaviour. The message says which line wins and what is in force, and points at the losing line. Warning, so `skala config check` fails on it only with `--strict`; `skala config fix --resolve-contradictions` rewrites the loser.",
+      "rationale": "Two shapes share the id. One option under two spellings at different specificity: the C#-specific spelling beats the generic one, which is ReSharper's rule and Skala follows it, so the less specific line is reported and the winner is named in the detail. Or two *different* options that describe one behaviour, from a hand-kept table of three pairs — `trim_trailing_whitespace` against `skala_remove_spaces_on_blank_lines`, `end_of_line` against `skala_enforce_line_ending_style`, and `max_line_length` against `skala_max_line_length` — where both keys must be configured for the pair to fire.",
+      "examples": {
+        "bad": "[*]\nmax_line_length = 100\n[*.cs]\nskala_max_line_length = 120",
+        "good": "[*]\nmax_line_length = 120\n[*.cs]\nskala_max_line_length = 120"
+      },
+      "falsePositives": "The second shape is only as complete as its table; a fourth such pair is invisible until a row is added. One diagnostic is emitted per losing line, so a generic key set in four sections yields four. On the shipped template exactly two fire, both from the table, and `config check` still exits 0 on it. The message says \"the C# key wins\" in every case, including the column-limit pair where the winner is `skala_max_line_length`. One option contradicting itself inside a single section cannot survive the export translation, which emits one line per option per section, so that historical case is resolved rather than reported.",
+      "configuration": []
+    },
+    {
+      "id": "SK9006",
+      "concept": "unhonourable-setting",
+      "title": "A setting is on that Skala cannot honour",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.1",
+      "languageVersion": null,
+      "summary": "One of `skala_autodetect_indent_settings`, `skala_apply_auto_detected_rules`, `skala_use_indent_from_vs`, `skala_old_engine` or `skala_use_old_engine` is set to `true`. Skala has no such mode, so the IDE and the gate would format the same file differently. Set it to `false`.",
+      "rationale": "The first three tell Rider to format against an indent it detects from the file rather than the configured one. Skala has no detector to switch off, so it formats against the configuration while Rider formats against whatever it inferred, and the two disagree on exactly the files where the inference differs (docs/plan/16 § Q1). The last two select ReSharper's previous formatting engine, which Skala does not reproduce. Neither is a fault in the code, which is why it is a warning about the configuration and not a finding against a file.",
+      "examples": {
+        "bad": "skala_autodetect_indent_settings = true",
+        "good": "skala_autodetect_indent_settings = false"
+      },
+      "falsePositives": "Only a value of `true` or `always` is reported. The key set to `false` — the shipped template's state — is silent, and a test asserts that silence. Each key is checked independently, so up to five can fire from one file.",
+      "configuration": []
+    },
+    {
+      "id": "SK9007",
+      "concept": "tool-config-not-json",
+      "title": "`skala.jsonc` is not valid JSON",
+      "category": "Tool",
+      "defaultSeverity": "error",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.1",
+      "languageVersion": null,
+      "summary": "`skala.jsonc` did not parse, so no tool configuration was read: the canonical drift policy fell back to `error` and the `exclude` list to empty. The message quotes the parser's own line and position. `skala config check` fails on it without `--strict`.",
+      "rationale": "A tool configuration that half-loads is worse than one that does not load: an `exclude` that is silently empty means files the repository meant to skip are analysed, and a drift policy silently reset means a gate the repository relaxed is strict again. Reporting the parse failure and reverting everything to defaults is the honest state. Comments and trailing commas are accepted, so the file has a genuine syntax error at the quoted position.",
+      "examples": {
+        "bad": "{ \"exclude\": [\"**/Generated/**\",] \"canonical\": { \"drift\": \"warning\" } }",
+        "good": "{ \"exclude\": [\"**/Generated/**\"], \"canonical\": { \"drift\": \"warning\" } }"
+      },
+      "falsePositives": "Only `skala config check` surfaces it. The gate reader and the source-exclusion reader both fall back to defaults on the same broken file without repeating the report, so under `skala check` a broken `skala.jsonc` shows up as unexpected files in the run rather than as this id. It suppresses `SK9003` and `SK9012` for the same file, since neither runs over a document that did not parse.",
+      "configuration": []
+    },
+    {
+      "id": "SK9008",
+      "concept": "canonical-drift",
+      "title": "The canonical block has been edited",
+      "category": "Tool",
+      "defaultSeverity": "error",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "The managed block between `# skala:canonical begin` and `# skala:canonical end` no longer hashes to the SHA-256 its own marker carries: somebody edited it in place. Move the edit below `# skala:local begin`, where it survives every canonical bump, then `skala config sync --apply` restores the block. Exit 3 from `skala config diff --canonical` and exit 1 from `skala config check`, both without `--strict`; `canonical.drift` in `skala.jsonc` lowers it to `warning` or `off`.",
+      "rationale": "Drift is the gate condition of canonical distribution (docs/plan/03 § \"Canonical distribution\"). The canonical must physically be the repository's `.editorconfig`, so the only thing that stops it silently becoming a local fork is a hash the tool checks. An edit inside the block is lost on the next bump; an edit below the local marker survives every bump, because later sections win — which is why the remedy moves the line rather than deleting it. The hash is over the LF-normalised payload with one trailing newline, so line-ending churn and a trailing blank line are not drift, and a comment added inside the block is.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "The same id is also raised — at warning, and not subject to the policy — when `skala.jsonc` sets `canonical.drift` to something other than `error`, `warning` or `off`; the policy then falls back to `error`. A file with no markers at all is `SK9014`, not drift, and a retyped marker that does not match case-sensitively reads as unmanaged rather than drifted. Drift and `SK9009` are mutually exclusive: an edited block is never reported as merely behind.",
+      "configuration": [
+        "skala.jsonc: canonical.drift"
+      ]
+    },
+    {
+      "id": "SK9009",
+      "concept": "canonical-behind",
+      "title": "The repository is on an older canonical than the tool carries",
+      "category": "Tool",
+      "defaultSeverity": "suggestion",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "The managed block is intact and matches its marker, but it is not the canonical this build of Skala ships. Info by design, and it never fails anything. `skala config diff --canonical --options` prices the bump option by option; `skala config sync --apply` takes it.",
+      "rationale": "A canonical bump is a repository-wide reformatting commit, and eighteen repositories must not have to make it on the day it is published. So being behind is information rather than a gate — even `config check --strict` does not fail on it — and the two commands exist so that the bump can be priced before it is taken, and its commit recorded in `.git-blame-ignore-revs` once it is.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "The condition compares hashes and the message compares versions, so a payload regenerated without a version bump produces \"on canonical 0.1.0; 0.1.0 is available\", which is true and unhelpful. Unmanaged files (`SK9014`) and drifted ones (`SK9008`) are never reported as behind.",
+      "configuration": []
+    },
+    {
       "id": "SK9010",
       "concept": "file-does-not-parse",
       "title": "The file does not parse",
@@ -1868,6 +2046,72 @@
       "configuration": []
     },
     {
+      "id": "SK9012",
+      "concept": "canonical-version-in-tool-config",
+      "title": "`skala.jsonc` tries to pin a canonical version",
+      "category": "Tool",
+      "defaultSeverity": "error",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "`skala.jsonc` has a `canonical.version` property. The version lives in the `# skala:canonical begin` marker in `.editorconfig`, beside the bytes it names, and nowhere else. Delete the key; `skala config check` fails on it without `--strict`.",
+      "rationale": "A version recorded away from the thing it versions is a version that drifts: the marker's `version=` and `sha256=` travel together with the payload they describe, and a second copy in another file is a second thing to keep in sync with nothing checking that it is. The only key under `canonical` is `drift`.",
+      "examples": {
+        "bad": "{ \"canonical\": { \"version\": \"0.1.0\", \"drift\": \"error\" } }",
+        "good": "{ \"canonical\": { \"drift\": \"error\" } }"
+      },
+      "falsePositives": "The value is not inspected — `\"version\": null` fires the same as a real number. The check does not short-circuit, so an invalid `canonical.drift` in the same object is reported alongside it as `SK9008`. ⚠ The id once carried a second meaning, an I/O failure written as a bare literal in the formatter; that use was renumbered to `SK9015`, and `ToolDiagnosticIds_AreNeverBareLiterals` exists so it cannot recur. An old report naming `SK9012` against a `.cs` file was the I/O failure.",
+      "configuration": []
+    },
+    {
+      "id": "SK9013",
+      "concept": "canonical-local-override",
+      "title": "The local block overrides a canonical option",
+      "category": "Tool",
+      "defaultSeverity": "suggestion",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "A line below `# skala:local begin` sets a registry option that the canonical block also sets, in the same section, to a different value. Info: this is the mechanism working, and the list is the review artefact. Nothing needs fixing — delete the line to adopt the canonical's value, or keep it and the override survives every bump.",
+      "rationale": "The canonical sits on top and the local block below it because later sections win in `.editorconfig`; that is what lets a repository keep a decision through a bump. The cost is that nobody sees the decisions unless they are listed, so each is, at the file line it lives on, and `skala config diff --canonical` prints the same list as `canonical X -> local Y`. The comparison is by exact key spelling within the same section name, falling back to the canonical's `[*]`, because comparing by option identity conflated an alias with a contradiction (`SK9005`) and `[*.csv]` with `[*]`, and both misfired on Skala's own configuration.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "Only keys the option registry owns are compared, so a `dotnet_diagnostic.*` severity the local block pins is not listed here — that is `SK9016`'s territory. It is also computed for an unmanaged file, treating the whole file as the local block, so an un-synced repository sees a preview of what adoption would preserve.",
+      "configuration": []
+    },
+    {
+      "id": "SK9014",
+      "concept": "canonical-unmanaged",
+      "title": "The repository carries no canonical block",
+      "category": "Tool",
+      "defaultSeverity": "suggestion",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "There is no `.editorconfig`, or there is one with no `# skala:canonical begin` / `end` markers, so drift from the canonical cannot be detected. Info, never a failure. `skala config sync --apply` adopts it: the canonical goes on top and everything already in the file is preserved verbatim below `# skala:local begin`.",
+      "rationale": "A repository that has not opted in must not be failed by a command it did not ask for — `skala config diff --canonical` on Skala's own repository exits 0 with `UNMANAGED`, and a test pins that. Adoption is non-destructive by construction: existing sections move under the local marker, where later sections win, and a stray preamble `root = true` is folded into the canonical block and named in the applied list.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "The markers are matched case-sensitively at the start of a trimmed line, so a hand-retyped marker reads as unmanaged rather than as `SK9008` drift. Unmanaged excludes both drift and `SK9009`, and co-occurs with `SK9013` and `SK9016`, which are computed against the whole file. Without `--apply`, `sync` prints what it would do and writes nothing.",
+      "configuration": []
+    },
+    {
       "id": "SK9015",
       "concept": "file-io-failed",
       "title": "The file could not be read or written",
@@ -1887,6 +2131,50 @@
         "good": ""
       },
       "falsePositives": "None; it reports an `IOException` that happened. The usual causes are a permission denied, a file another process holds open, and a read-only working tree.",
+      "configuration": []
+    },
+    {
+      "id": "SK9016",
+      "concept": "canonical-severity-change",
+      "title": "Applying the canonical changes a `dotnet_diagnostic` severity",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "Applying the canonical would change one or more `dotnet_diagnostic.<id>.severity` values, measured as effective value against effective value with the local block laid over the incoming payload. Warning when it moves a compiler diagnostic (`CS…`, `BC…`) up to `warning` or `error`, or newly sets one there; info when it lowers or drops a compiler severity, and info for analyzer severities in either direction. `skala config diff --canonical` lists every change before you apply it; `config sync` prints the summary before it writes.",
+      "rationale": "Under `TreatWarningsAsErrors` a compiler severity raised by an `.editorconfig` commit is a build failure from a change that touches no code — it took one repository from 0 errors to 17. `SK9013` reports overrides for keys the option registry owns, and `dotnet_diagnostic` keys are deliberately not in it, so until this id existed the loudest thing the canonical could do to a repository was the one thing it did silently. A lowered severity is the widest kind of suppression there is (docs/plan/09 § \"--no-new-suppressions\"), so that direction is reported too, at info. To keep a severity the canonical would move, pin it below `# skala:local begin`: the local block wins and the change stops being reported.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "⚠ The warning form cannot fire on the shipped canonical today: the template carries zero `dotnet_diagnostic` assignments, and a test holds that count at zero so an export cannot bring them back unnoticed. It is reachable with a custom or older payload. A key the local block already pins is not counted, and a stricter local `error` is not reported as lowered by a canonical `warning`. A severity the file does not set at all is reported as introduced rather than raised, because the compiler default it moves away from is written in no `.editorconfig` and Skala does not invent a table of them.",
+      "configuration": []
+    },
+    {
+      "id": "SK9017",
+      "concept": "option-value-out-of-domain",
+      "title": "An option was set to a value outside its domain",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A key Skala owns was set, on a line the author wrote, to a value the option does not accept. The value was discarded, and the message names the reason and what is in force instead. ⚠ Warning, yet it fails `skala config check` on its own: it is the one warning that fails the command without `--strict`, and the only diagnostic that exits it with 3 (configuration error) rather than 1. Correct the value or delete the line.",
+      "rationale": "`SK9001` is info because the export carries some two thousand keys Skala will never implement and the user wrote nothing wrong. This is the opposite case: the key is in the registry, Skala owns it, the intent was recorded and then thrown away, and the code is formatted against a value nobody chose — for `skala_keep_existing_declaration_block_arrangement` that is the arranger rearranging a file on the strength of a setting it discarded. Non-negotiable #4 (docs/plan/00) says unknown configuration is a diagnostic and never a silent default; these were computed and reported to nobody until M9. It exits 3 rather than waiting for `--strict` because every other warning describes a configuration that means something and might mean the wrong thing, and this one describes a line that means nothing at all. `config explain` marks the row `(default) ⚠ SK9017 file:line`.",
+      "examples": {
+        "bad": "skala_max_line_length = -1\nskala_accessor_owner_body = sideways",
+        "good": "skala_max_line_length = 120\nskala_accessor_owner_body = expression_body"
+      },
+      "falsePositives": "`indent_size = tab` is not reported: the EditorConfig specification defines it as `tab_width`'s value and Skala substitutes it before validating, though a bad `tab_width` is its own finding. Only keys the author typed are checked — a value a generalised key propagates into a target whose domain rejects it is dropped silently, because they never wrote the target's name. An unknown `--option` on the command line is `SK9001`, not this. Error-severity configuration diagnostics (`SK9003`, `SK9007`, `SK9012`, and `SK9008` under the default drift policy) also fail `check` without `--strict`, at exit 1; this is the only *warning* that does.",
       "configuration": []
     },
     {
@@ -1934,6 +2222,182 @@
       "configuration": [
         "skala.jsonc: exclude"
       ]
+    },
+    {
+      "id": "SK9022",
+      "concept": "no-binlog",
+      "title": "No binary log could be read",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "The binlog load mode had nothing to read: no `--binlog` was given and none of the conventional paths exists, the named file does not exist, the SDK's MSBuild could not be located to read it, or the log itself would not open. Run `dotnet build -bl:artifacts/skala.binlog`, or pass `--binlog <path>`. Under `--load=auto` the load falls back to workspace and then loose, announced by `SK9025`.",
+      "rationale": "A binlog is the one load mode that reads what a build actually compiled — analyzer paths, generated sources, defines — so it is tried first, and its absence is worth a line rather than a silent fall-through into a mode that reads less. The detail lists the conventional paths that were searched (`artifacts/skala.binlog`, `artifacts/build.binlog`, `artifacts/msbuild.binlog`, `msbuild.binlog`, `build.binlog`), taken from the same array the search uses so the printed list cannot diverge from the searched one.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "Warning, and never fatal on its own: `--require-fresh-binlog` refuses only on error-severity load diagnostics, so this one does not trip it, and only when fallback is disabled does the empty load exit 4. One `Csc` invocation whose command line will not parse is reported under this id against its project and skipped, while the rest of the log still loads.",
+      "configuration": []
+    },
+    {
+      "id": "SK9023",
+      "concept": "no-source-files",
+      "title": "The requested paths hold nothing to analyse",
+      "category": "Tool",
+      "defaultSeverity": "error",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "Nothing under the requested paths can be analysed. Under `--load=loose` it means no `.cs` file was found under them, reported at info, and the run exits 4 with nothing loaded. Under a project load it means none of the paths named on the command line is part of any loaded project — a typo, a path outside every project, a directory of generated sources — and `check` refuses with exit 3 rather than report a clean tree. Name the owning project with `--project`, or use `--load=loose`.",
+      "rationale": "An unmatched path is the same false clean as an unmatched `--rules` filter (#278, #346): a filter that selects nothing produces zero findings and a zero exit, and the reader takes it as a verdict on the code. Refusing costs one re-run; a clean report over nothing costs whatever the run was supposed to catch.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "The loose form names the repository root rather than the path it was given. The CLI now rejects a path that does not exist before the loader runs, and rejects an option-like token after `check` instead of swallowing it as a path — `skala check --load loose --verbose` used to report this id over a repository full of C#. A directory excluded by `skala.jsonc` legitimately answers it.",
+      "configuration": []
+    },
+    {
+      "id": "SK9024",
+      "concept": "nothing-to-load",
+      "title": "No solution or project could be loaded",
+      "category": "Tool",
+      "defaultSeverity": "error",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "The workspace load mode produced no compilation. Either nothing was found — no `.slnx`, `.sln` or `.csproj` under the root — or something was found and could not be opened: an explicit `--project` that does not exist, several candidates with none chosen, no MSBuild to be located, an assembly missing from the Skala installation, an exception from `MSBuildWorkspace`, or every project loading as a placeholder with zero documents. The same id also relays MSBuild's own workspace diagnostics verbatim, prefixed `workspace:`, at info or warning. Name the target with `--project`, or read a build with `--load=binlog`.",
+      "rationale": "One id for the rung, because what the reader needs is which rung failed and why, and the message carries the why. The placeholder case exists because `MSBuildWorkspace` hands back a project with no documents rather than throwing, so a load that produced not one line of code was not empty, and the measured symptom was one failure diagnostic, one project, zero documents, zero findings, exit 0. Every outright failure marks the load failed, which stops the ladder when the caller named `--load=workspace` and exits 4; under `--load=auto` the ladder continues to loose with `SK9025`.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "⚠ The relayed `workspace:` lines are MSBuild's text under this id and most of them are benign: this repository prints three `Found project reference without a matching metadata reference` lines on every workspace load, and they remain after a `Debug` build takes the run to zero findings — #336 was first misdiagnosed as their fault. Neither they nor the nothing-was-found case fail a run. A requested directory outside the repository root with no project of its own is refused rather than silently redirected to the root, and under `--load=auto` that refusal steers the load to loose instead.",
+      "configuration": []
+    },
+    {
+      "id": "SK9025",
+      "concept": "load-mode-fell-back",
+      "title": "The requested load mode produced no compilation, so a fallback was used",
+      "category": "Tool",
+      "defaultSeverity": "suggestion",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "The load mode tried first produced no compilation or could not run, and the next mode on the ladder was used instead: `binlog -> workspace -> loose`, or `workspace -> loose`. Info; the report's load summary says which mode actually ran. Name the mode with `--load=` to make its failure fatal instead of falling back.",
+      "rationale": "Falling back is the right default for a tool an agent runs unattended, and it is also how a run comes to be measured under a mode nobody chose: a binlog run that quietly became a loose one has no analyzer references and no generated sources, and every semantic rule answers a different question. So the fall is announced, naming the mode that fell, so that a surprising result can be traced to the mode that produced it.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "`--load=loose` never falls anywhere — asking for loose is asking for speed — so a loose run that finds nothing reports `SK9023` and not this. A named mode that fails on its first rung does not fall back; it exits 4. When every rung fails the summary reads `nothing could be loaded` and the run exits 4.",
+      "configuration": []
+    },
+    {
+      "id": "SK9026",
+      "concept": "unknown-rule-filter",
+      "title": "`--rules` names an id no rule in this run can produce",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "`--rules` names one or more ids that no rule in this run can produce, alongside ids that can. The unknown ones contribute nothing to the report. Warning; the run continues and its exit code is unaffected. `skala rules list` names the allocated ids; repeat the option or separate ids with commas.",
+      "rationale": "It exists because its absence read as a clean tree (#278): `--rules SK3510,SK3511` bound a single string containing a comma, matched no rule, and exited 0 with no output — half an hour of an agent believing its analyzers were dead while they were fine. The comma is split now, but a mistyped id reaches the same false clean by another route, so the filter is checked against what actually loaded: the catalogue plus every loaded analyzer's supported diagnostics. A filter that is unknown in full is refused with exit 3 rather than reported here, because that run cannot produce a finding and its zero is not a measurement.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "A hosted analyzer whose `SupportedDiagnostics` getter throws is skipped, so its ids look unknown and a valid id can be reported here; that failure can widen the warning but never turn it into a refusal. Matching is case-insensitive.",
+      "configuration": []
+    },
+    {
+      "id": "SK9027",
+      "concept": "partial-analysis",
+      "title": "A compilation unit was cancelled, so the run saw only part of the tree",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "A compilation unit was cancelled before it finished and contributed no findings, so the run saw only part of the tree. The reliability gate fails on it unconditionally, under every gate definition, and `skala baseline create` / `update` refuse to write from such a run. Re-run without cancelling; there is no flag that accepts it.",
+      "rationale": "A cancelled unit returns zero findings while every other unit reports normally, so `partial: true` legitimately appears beside a large finding count — a sweep observed it next to 211 findings and could not account for it (#309). The run-level flag stays aggregate because the gate needs one answer, and this diagnostic names the unit so the reader does not have to trace it by hand. A baseline written from a partial run would accept the silence of whatever did not run, and every later run would compare against it.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "None; the analyzer host sets the flag in exactly one place, its cancellation handler. The gate fails on the run's flag rather than on this diagnostic, so it fails even when the diagnostic is absent, with a less specific message. Distinct from `SK9030`, an analyzer that threw and was disabled: that is also a reliability failure, but per rule rather than per unit.",
+      "configuration": []
+    },
+    {
+      "id": "SK9028",
+      "concept": "gate-input-unavailable",
+      "title": "An input the gate's scoping depends on could not be read",
+      "category": "Tool",
+      "defaultSeverity": "error",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "An input the gate's scoping depends on could not be read: `--since=<ref>` did not resolve, the baseline the gate names does not exist, the baseline exists but will not parse, or `--no-new-suppressions` could not compare against its reference. The gate does not fail on this id itself — but its inputs change: a missing or unreadable baseline counts every finding as new, and an unresolvable `--since` leaves findings unscoped, so a `newIssues` gate then fails with `0 accepted, N new` and this line is the only explanation.",
+      "rationale": "These four were reported as `SK9030` \"an analyzer threw\", which none of them is. Sharing the id meant `SK9030` could not be read as \"a rule died\" — the one question #295 wanted answered — and the gate could not be made to fail on a crash without also failing on a missing baseline file. Failing in the safe direction is deliberate: an absent baseline makes every finding new rather than every finding accepted. `skala baseline create --apply` writes one; a shallow CI clone is the usual reason a `--since` ref does not resolve.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "Only a baseline the gate definition or `--baseline` names is reported when absent; the default path is used only if it exists, so a repository that has never baselined sees no diagnostic and its findings are bucketed as unknown rather than new. The missing-baseline form is a warning where the other three are errors, so the GitHub log shows it as `::notice::` and the others as `::error::`; none of the four is a gate failure in itself.",
+      "configuration": []
+    },
+    {
+      "id": "SK9029",
+      "concept": "analyzer-assembly-missing",
+      "title": "The load names an analyzer or source generator assembly that is not on disk",
+      "category": "Tool",
+      "defaultSeverity": "error",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "supersedes": [],
+      "since": "2.0",
+      "languageVersion": null,
+      "summary": "The load names an analyzer or source generator assembly at a path that does not exist, so whatever it would have contributed — generated types included — is absent from the compilation. Under `--load=workspace` this refuses the load: the units are emptied, not merely flagged, and the run exits 4. Under `--load=binlog` it is a warning and the load proceeds. Build the `Debug` configuration, which is what `MSBuildWorkspace` evaluates, or use `--load=binlog`, which reads what a build actually compiled.",
+      "rationale": "#336, and it is the worst shape a silence can take: not a missing finding but a wrong one, carrying a fix that breaks the build. A fresh clone built only in `Release`, read through the workspace, reported 353 files to rewrite — every finding `SK0210` usings — and the same clone through a binlog reported 0. Neither generator had run, so `RuleCatalog` and every `Rikarin.Skala.Options` type did not exist, and `SK0210` was correct about the compilation it was handed: taking its advice deletes `using Rikarin.Skala.Rules.Metadata;` from a file that calls `RuleCatalog.All`. The absent file is the signal, not a failure to load one — `SK9031` covers an assembly that is present and throws, and is never fatal — and withdrawing only the affected rules is not decidable, since no rule declares which symbols it depends on. The binlog case differs in kind: its paths come off a command line `csc` actually ran, so the assembly did its work and the tree was cleaned afterwards, the same class of fact as `SK9020`.",
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
+      "falsePositives": "On the binlog path the diagnostic's file is the compilation's assembly name rather than a path, and may be empty. The first diagnosis of #336 blamed the `SK9024` `project reference without a matching metadata reference` lines, and 44 of the 353 files referenced no such project at all; those lines are benign and remain after the fix.",
+      "configuration": []
     },
     {
       "id": "SK9030",

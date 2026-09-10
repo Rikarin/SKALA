@@ -111,11 +111,11 @@ public sealed class RuleCatalogTests {
         // rule silently dropped from the denominator would make coverage read *better* than it is,
         // which is the one direction an error here must never go.
         //
-        // ⚠ SK9xxx is exempt and that is not a loophole. rules.json carries eight tool diagnostics
-        // — SK9001 and its neighbours — which are the tool describing itself, not rules from the
-        // plan. They have their own register and their own guard in ToolDiagnosticIdTests, and
-        // counting them here would credit the catalogue with eight rules it never planned. It is
-        // also why rules.json has 37 entries and the coverage says 29.
+        // ⚠ SK9xxx is exempt and that is not a loophole. rules.json carries the tool diagnostics
+        // — SK9001 and its neighbours, thirty-four of them since #352 and #354 — which are the tool
+        // describing itself, not rules from the plan. They have their own register and their own
+        // guard in ToolDiagnosticIdTests, and counting them here would credit the catalogue with
+        // rules it never planned. It is why rules.json has more entries than the coverage counts.
         foreach (var rule in RuleCatalog.All.Where(static r =>
                      !r.Id.StartsWith("SK9", StringComparison.Ordinal) && !r.Retired
                  )) {

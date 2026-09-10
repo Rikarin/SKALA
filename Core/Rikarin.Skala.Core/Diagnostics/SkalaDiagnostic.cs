@@ -67,10 +67,16 @@ public static class ConfigDiagnosticIds {
     ///     diagnostic and never a silent default; an out-of-domain value was a silent default until M9,
     ///     which is the letter of the rule satisfied and its substance missed.
     ///     <para>
-    ///         ⚠ It is also the one configuration diagnostic that fails <c>skala config check</c> without
-    ///         <c>--strict</c>. Every other warning there describes a configuration that means something
-    ///         and might mean the wrong thing; this one describes a line that means nothing at all, and
-    ///         there is no reading of it under which the repository is configured as its author intended.
+    ///         ⚠ It is also the one <em>warning</em> that fails <c>skala config check</c> without
+    ///         <c>--strict</c>, and the only diagnostic that exits it with 3 rather than 1. Every other
+    ///         warning there describes a configuration that means something and might mean the wrong
+    ///         thing; this one describes a line that means nothing at all, and there is no reading of it
+    ///         under which the repository is configured as its author intended. ⚠ This used to read "the
+    ///         one configuration diagnostic that fails without <c>--strict</c>", which was never true:
+    ///         <c>ConfigCommands.Check</c> fails on any <c>Error</c> regardless of <c>--strict</c>, so
+    ///         <see cref="StyleKeyInToolConfig" />, <see cref="ToolConfigNotJson" />,
+    ///         <see cref="CanonicalVersionInToolConfig" /> and drift under the default policy all do too,
+    ///         at exit 1 (#354).
     ///     </para>
     /// </remarks>
     public const string OptionValueOutOfDomain = "SK9017";

@@ -267,41 +267,19 @@ public sealed class ToolDiagnosticIdTests {
     ///         they are named rather than allocated.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>The rest is real debt and is recorded as such (#354).</b> Every one of them reaches a
-    ///         SARIF <c>toolExecutionNotification</c> whose <c>descriptor.id</c> resolves to nothing, and
-    ///         <c>skala explain</c> cannot answer for any of them — the same defect #352 fixed for the
-    ///         formatter's and the arranger's five. They are excluded here rather than fixed in the same
-    ///         change because each needs a written entry and the configuration and load diagnostics are a
-    ///         different surface (<c>config check</c> and the loader) from the file pipeline. ⚠ The list
-    ///         is frozen: it exempts these ids and nothing else, so an id added in a third declaration
-    ///         site fails <see cref="ToolDiagnosticIds_AreAllocated" /> on the commit that adds it.
+    ///         ⚠ <b>This list used to carry twenty-one more (#354)</b> — the configuration and load
+    ///         diagnostics, <c>SK9002</c>–<c>SK9009</c>, <c>SK9012</c>–<c>SK9014</c>, <c>SK9016</c>,
+    ///         <c>SK9017</c> and <c>SK9022</c>–<c>SK9029</c> — as debt enumerated rather than invisible:
+    ///         each reached a SARIF <c>toolExecutionNotification</c> whose <c>descriptor.id</c> resolved
+    ///         to nothing, and <c>skala explain</c> answered "not a Skala rule" for every one. All
+    ///         twenty-one now have register lines and rules.json entries, and
+    ///         <see cref="TheUnallocatedToolDiagnostics_AreStillExactlyTheKnownDebt" /> is what made them
+    ///         leave this list on the same commit that paid them off. ⚠ The list stays frozen: it exempts
+    ///         the two band edges and nothing else, so an id added in a third declaration site fails
+    ///         <see cref="ToolDiagnosticIds_AreAllocated" /> on the commit that adds it.
     ///     </para>
     /// </remarks>
-    static readonly HashSet<string> NotAllocated = new(StringComparer.Ordinal) {
-        "SK3499",
-        "SK3500",
-        "SK9002",
-        "SK9003",
-        "SK9004",
-        "SK9005",
-        "SK9006",
-        "SK9007",
-        "SK9008",
-        "SK9009",
-        "SK9012",
-        "SK9013",
-        "SK9014",
-        "SK9016",
-        "SK9017",
-        "SK9022",
-        "SK9023",
-        "SK9024",
-        "SK9025",
-        "SK9026",
-        "SK9027",
-        "SK9028",
-        "SK9029"
-    };
+    static readonly HashSet<string> NotAllocated = new(StringComparer.Ordinal) { "SK3499", "SK3500" };
 
     /// <summary>Every id declared in the tree, mapped to the <c>Type.Member</c> sites declaring it.</summary>
     static Dictionary<string, List<string>> DeclaredIds() {

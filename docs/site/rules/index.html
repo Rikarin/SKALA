@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 342 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 363 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -435,11 +435,32 @@
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
 <tr><td><a href="SK9001.html">SK9001</a></td><td>Unknown configuration key</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9002.html">SK9002</a></td><td>The effective configuration draws from an <code>.editorconfig</code> above the repository root</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9003.html">SK9003</a></td><td>A style option was set in <code>skala.jsonc</code></td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9004.html">SK9004</a></td><td>Two spellings of one option are set at equal specificity and disagree</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9005.html">SK9005</a></td><td>Two settings contradict each other</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9006.html">SK9006</a></td><td>A setting is on that Skala cannot honour</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9007.html">SK9007</a></td><td><code>skala.jsonc</code> is not valid JSON</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9008.html">SK9008</a></td><td>The canonical block has been edited</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9009.html">SK9009</a></td><td>The repository is on an older canonical than the tool carries</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK9010.html">SK9010</a></td><td>The file does not parse</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>
 <tr><td><a href="SK9011.html">SK9011</a></td><td>A member's braces are split across a preprocessor branch</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK9012.html">SK9012</a></td><td><code>skala.jsonc</code> tries to pin a canonical version</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9013.html">SK9013</a></td><td>The local block overrides a canonical option</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9014.html">SK9014</a></td><td>The repository carries no canonical block</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK9015.html">SK9015</a></td><td>The file could not be read or written</td><td><span class="tag sev-error">error</span></td><td>—</td><td>yes</td></tr>
+<tr><td><a href="SK9016.html">SK9016</a></td><td>Applying the canonical changes a <code>dotnet_diagnostic</code> severity</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9017.html">SK9017</a></td><td>An option was set to a value outside its domain</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK9020.html">SK9020</a></td><td>The binlog is stale for this file</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK9021.html">SK9021</a></td><td>The binlog does not name a file that exists</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9022.html">SK9022</a></td><td>No binary log could be read</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9023.html">SK9023</a></td><td>The requested paths hold nothing to analyse</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9024.html">SK9024</a></td><td>No solution or project could be loaded</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9025.html">SK9025</a></td><td>The requested load mode produced no compilation, so a fallback was used</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9026.html">SK9026</a></td><td><code>--rules</code> names an id no rule in this run can produce</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9027.html">SK9027</a></td><td>A compilation unit was cancelled, so the run saw only part of the tree</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9028.html">SK9028</a></td><td>An input the gate's scoping depends on could not be read</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK9029.html">SK9029</a></td><td>The load names an analyzer or source generator assembly that is not on disk</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK9030.html">SK9030</a></td><td>An analyzer threw</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK9031.html">SK9031</a></td><td>An analyzer package failed to load</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 <tr><td><a href="SK9095.html">SK9095</a></td><td>An arrangement rule threw and was skipped</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>yes</td></tr>

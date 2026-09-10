@@ -3408,7 +3408,8 @@ option · `SK9014` `.editorconfig` carries no canonical block ·
 a *compiler* diagnostic up, because with `TreatWarningsAsErrors` that is a build failure from an
 `.editorconfig` commit touching no code; info for a lowered one or an analyzer's ·
 `SK9017` an option Skala owns was set to a value outside its domain — ⚠ **warning**, and the only
-configuration diagnostic that fails `config check` without `--strict`. `SK9001` is info because the
+*warning* that fails `config check` without `--strict` (every error-severity one does too, at exit 1;
+this is the only route to exit 3). `SK9001` is info because the
 export carries ~2 000 keys Skala will never implement and the user wrote nothing wrong; here the key
 *is* in the registry, the configured value was discarded, and the code is formatted against a value
 nobody chose. The message names the key, the value, the domain and **what is in force instead** ·
@@ -3467,12 +3468,15 @@ ids already in `rules.json`. Nothing ran code → register.
 `ToolDiagnosticIdTests.ToolDiagnosticIds_AreAllocated` now does, over the whole tree, so an id
 declared in a third place fails on the commit that adds it.
 
-⚠ **What is still owed: the configuration and load diagnostics (#354).** `SK9002`–`SK9009`,
-`SK9012`–`SK9014`, `SK9016`, `SK9017` and `SK9022`–`SK9029` are named here and in no other register,
-so each still produces a SARIF notification whose `descriptor.id` resolves to nothing and each is
-still unanswerable by `skala explain`. They are carried as a frozen exemption list in
-`ToolDiagnosticIdTests.NotAllocated` — frozen so that the debt is enumerated rather than invisible,
-and so that a *new* id cannot join it by accident.
+✅ **The configuration and load diagnostics are recorded too (#354).** `SK9002`–`SK9009`,
+`SK9012`–`SK9014`, `SK9016`, `SK9017` and `SK9022`–`SK9029` — twenty-one, not the nineteen the issue
+counted — were named here and in no other register, so each produced a SARIF notification whose
+`descriptor.id` resolved to nothing and `skala explain` answered "not a Skala rule" for every one.
+All twenty-one now have register lines and rules.json entries written from their call sites, and the
+frozen exemption list in `ToolDiagnosticIdTests.NotAllocated` is back to the two band edges. ⚠ Two
+of the entries record that the code does not do what its own comments said: `SK9004`'s runtime form
+is unreachable (a test asserts why), and `SK9017` was never "the only configuration diagnostic that
+fails `config check` without `--strict`" — `Check` fails on any error-severity diagnostic without it.
 
 ## Rule status
 

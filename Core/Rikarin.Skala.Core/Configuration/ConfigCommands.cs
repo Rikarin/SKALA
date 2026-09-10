@@ -120,11 +120,14 @@ public static class ConfigCommands {
     /// </param>
     /// <remarks>
     ///     ⚠ <c>SK9017</c> fails the command on its own, without <c>--strict</c>, and it is the only
-    ///     configuration diagnostic that does. The rest describe a configuration that means something
-    ///     and might mean the wrong thing, which is a judgement call and therefore <c>--strict</c>'s to
-    ///     make. An out-of-domain value means nothing at all: there is no reading of the file under
-    ///     which the repository is configured the way its author wrote it, and a check that exits 0 on
-    ///     that is a check that told nobody. Exit 3 — configuration error — from docs/plan/09's table.
+    ///     <em>warning</em> that does — every <c>Error</c>-severity diagnostic (<c>SK9003</c>,
+    ///     <c>SK9007</c>, <c>SK9012</c>, drift under the default policy) fails it too, at exit 1, and
+    ///     that is the severity test below. The other warnings describe a configuration that means
+    ///     something and might mean the wrong thing, which is a judgement call and therefore
+    ///     <c>--strict</c>'s to make. An out-of-domain value means nothing at all: there is no reading
+    ///     of the file under which the repository is configured the way its author wrote it, and a check
+    ///     that exits 0 on that is a check that told nobody. Exit 3 — configuration error — from
+    ///     docs/plan/09's table, and it is the only route to 3 from this command.
     /// </remarks>
     public static CommandResult Check(string target, bool strict = false) {
         var full = Path.GetFullPath(target);

@@ -383,3 +383,31 @@ SK9095 arrangement-rule-threw
 SK9096 arrangement-reverted-symbol-changed
 SK9097 arrange-and-format-did-not-converge
 SK9098 arrangement-reverted-new-diagnostics
+
+# ⚠ Recorded late (#354), the same defect as the five above for the configuration and load
+# diagnostics: declared in `ConfigDiagnosticIds`, named in doc 08, and in neither this file nor
+# rules.json — so `skala explain SK9023` answered "not a Skala rule" and every SARIF notification
+# carrying one of these ids named a `rules[]` descriptor that did not exist. Recorded at the numbers
+# already in the field, in three groups by where they came from, and NOT tidied into a range: the
+# gaps at SK9010/SK9011 and SK9015 are the formatter's ids and SK9018–SK9019 were never allocated.
+SK9002 config-inherited-from-above
+SK9003 style-key-in-tool-config
+SK9004 duplicate-option-alias
+SK9005 contradictory-options
+SK9006 unhonourable-setting
+SK9007 tool-config-not-json
+SK9008 canonical-drift
+SK9009 canonical-behind
+SK9012 canonical-version-in-tool-config
+SK9013 canonical-local-override
+SK9014 canonical-unmanaged
+SK9016 canonical-severity-change
+SK9017 option-value-out-of-domain
+SK9022 no-binlog
+SK9023 no-source-files
+SK9024 nothing-to-load
+SK9025 load-mode-fell-back
+SK9026 unknown-rule-filter
+SK9027 partial-analysis
+SK9028 gate-input-unavailable
+SK9029 analyzer-assembly-missing
