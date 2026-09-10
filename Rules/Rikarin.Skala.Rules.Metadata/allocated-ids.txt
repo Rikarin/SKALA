@@ -366,3 +366,20 @@ SK0282 redundant-positional-property
 SK0290 redundant-nullable-creation
 SK2290 discarded-out-parameter
 SK0218 arrange-property-pattern
+
+# ⚠ Recorded late (#352). These five were emitted by shipping code and were in neither this file nor
+# rules.json — so `skala explain SK9098` answered nothing and the SARIF notification for the
+# diagnostic whose whole job is to say "This is a Skala bug; the file was left untouched" pointed at
+# a `rules[]` descriptor that did not exist. The numbers below are the ones already in the field and
+# are NOT renumbered into a tidy range: the register is append-only and their meanings are fixed by
+# shipped behaviour.
+#
+# ⚠ Why the guard missed them: `RuleCatalogTests.ArrangementIds_AreUniqueRegisteredFormattingIds`
+# reads one file (`ArrangementRule.cs`) and filters `SK9*` out of it, so `SK9097` — declared in
+# `ArrangementPipeline.cs` — was outside the guard twice over.
+# `ToolDiagnosticIdTests.ToolDiagnosticIds_AreAllocated` now scans every declaration site.
+SK9015 file-io-failed
+SK9095 arrangement-rule-threw
+SK9096 arrangement-reverted-symbol-changed
+SK9097 arrange-and-format-did-not-converge
+SK9098 arrangement-reverted-new-diagnostics

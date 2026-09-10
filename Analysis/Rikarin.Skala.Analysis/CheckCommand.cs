@@ -417,10 +417,12 @@ public static class CheckCommand {
         // the baseline like any other. They are simply not what "would the formatter edit this"
         // asks. `null` when the run was told not to look — see `Gate.Evaluate`.
         bool? formattingClean = null;
+        var formattingFailed = false;
         if (request.IncludeFormatting) {
             var formatting = FormattingFindings.Collect(root, reported, request, diagnostics);
-            formattingClean = !formatting.Any(static finding => finding.RuleId == RuleIds.FileIsNotFormatted);
-            findings.AddRange(formatting);
+            formattingClean = !formatting.Findings.Any(static finding => finding.RuleId == RuleIds.FileIsNotFormatted);
+            findings.AddRange(formatting.Findings);
+            formattingFailed = formatting.Failed;
         }
 
         var arrangementFailed = false;
@@ -510,7 +512,13 @@ public static class CheckCommand {
             output += Environment.NewLine + Profile(costs, stopwatch.Elapsed);
         }
 
-        var exit = arrangementFailed || report.Diagnostics.Any(static d => d.Id == RuleIds.TokenStreamChanged)
+        // ⚠ #353 added `formattingFailed`. `arrangementFailed` was here and its formatting twin was
+        // not, so a file the arrange stage could not read failed the run and the SAME file failing
+        // the format stage did not — the format stage dropped it and the gate went green. A clean
+        // verdict over a tree that could not be fully read is the failure #345 was filed for.
+        var exit = arrangementFailed
+            || formattingFailed
+            || report.Diagnostics.Any(static d => d.Id == RuleIds.TokenStreamChanged)
             ? ExitCodes.InternalError
             : !gate.Passed
                 ? ExitCodes.GateFailed

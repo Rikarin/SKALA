@@ -81,7 +81,11 @@ public static class HostedAnalyzers {
             return builder.ToImmutable();
         } catch (JsonException) {
             return [];
-        } catch (IOException) {
+
+            // ⚠ #353. A manifest that cannot be opened is the same answer as one that is not there
+            // or does not parse — no hosted packages — and the narrow filter made the permission
+            // case the only one of the three that crashed instead.
+        } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             return [];
         }
     }

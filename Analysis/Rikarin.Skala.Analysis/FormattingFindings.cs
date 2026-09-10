@@ -23,7 +23,15 @@ namespace Rikarin.Skala.Analysis;
 ///     </para>
 /// </remarks>
 public static class FormattingFindings {
-    public static ImmutableArray<Finding> Collect(
+    /// <summary>
+    ///     ⚠ Mirrors <see cref="ArrangementFindings.Result" /> rather than inventing a second shape.
+    ///     <c>Failed</c> is what carries "a file could not be read" out to an exit code: before #353
+    ///     this stage returned findings only, so <c>CheckCommand</c> had nothing to test and an
+    ///     unreadable file could not fail the gate however loudly it was reported.
+    /// </summary>
+    public sealed record Result(ImmutableArray<Finding> Findings, bool Failed);
+
+    public static Result Collect(
         string repositoryRoot,
         IReadOnlyList<string> paths,
         CheckRequest request,
@@ -36,10 +44,16 @@ public static class FormattingFindings {
             .ToArray();
 
         if (files.Length == 0) {
-            return [];
+            return new([], false);
         }
 
         var results = new FormatResult?[files.Length];
+
+        // ⚠ Collected under a lock and merged after the loop, not appended straight to
+        // `diagnostics`. `ImmutableArray<T>.Builder` is not thread-safe and this body runs on up to
+        // ten threads; the sequential loop below is where every other diagnostic is added, which is
+        // why that one is safe and this one would not have been.
+        var failures = new List<SkalaDiagnostic>();
         var crashRoot = Path.Combine(repositoryRoot, ".skala");
         Parallel.For(
             0,
@@ -53,11 +67,33 @@ public static class FormattingFindings {
                         crashRoot,
                         request.Define
                     );
-                } catch (IOException) {
+                    // ⚠ #353/#345. Two defects in one `catch`. The narrow filter let an
+                    // `UnauthorizedAccessException` — which does not derive from `IOException` —
+                    // escape into `Parallel.For`, become an `AggregateException`, and crash `verify`
+                    // as "this is a Skala bug". And the handler that did run recorded `null`, which
+                    // the loop below skips silently: the file vanished from the report with nothing
+                    // said, so `verify` could return a CLEAN verdict for a tree it had not finished
+                    // reading. Reporting it is the whole point; a dropped file must be a loud one.
+                } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
                     results[index] = null;
+                    lock (failures) {
+                        failures.Add(
+                            new SkalaDiagnostic(
+                                FormatDiagnosticIds.FileIoFailed,
+                                SkalaSeverity.Error,
+                                exception.Message,
+                                files[index]
+                            )
+                        );
+                    }
                 }
             }
         );
+
+        // Ordered, so the report does not depend on which thread lost the race.
+        foreach (var failure in failures.OrderBy(static d => d.File, StringComparer.Ordinal)) {
+            diagnostics.Add(failure);
+        }
 
         var findings = ImmutableArray.CreateBuilder<Finding>();
         for (var i = 0; i < files.Length; i++) {
@@ -104,7 +140,7 @@ public static class FormattingFindings {
             );
         }
 
-        return findings.ToImmutable();
+        return new(findings.ToImmutable(), failures.Count > 0);
     }
 
     static Finding FromDiagnostic(SkalaDiagnostic diagnostic, string path, FormatResult result) {

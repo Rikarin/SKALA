@@ -208,6 +208,116 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
+    ///     A file the process is not permitted to read, or null when this machine cannot produce one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The guard is a <em>read attempt</em>, not a platform check, and that is deliberate.
+    ///     Windows is skipped because its equivalent is an ACL rather than a mode bit, but the case
+    ///     that actually makes this test lie is <b>running as root</b>, which reads a mode-000 file
+    ///     happily — in a CI container, that is the default. A test that cannot fail is the defect, so
+    ///     rather than guessing at a uid this asks the only question that matters: after the chmod,
+    ///     can this process still open the file? If it can, there is nothing here to assert.
+    /// </remarks>
+    string? UnreadableFile(string name) {
+        if (OperatingSystem.IsWindows()) {
+            return null;
+        }
+
+        var path = Write(name, "class C {\n    void M() {\n        M();\n    }\n}\n");
+        File.SetUnixFileMode(path, UnixFileMode.None);
+
+        try {
+            File.ReadAllText(path);
+            // Root, or a filesystem that does not enforce the bits. Undo it so teardown can delete.
+            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            return null;
+        } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
+            return path;
+        }
+    }
+
+    /// <summary>
+    ///     ⚠ #353. An unreadable file is <b>5</b>, and it is not a crash.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <c>UnauthorizedAccessException</c> does not derive from <c>IOException</c> — it derives
+    ///         from <c>SystemException</c> — so the <c>catch (IOException)</c> in each per-file loop
+    ///         did not hold it. Measured before the fix, all three verbs got this wrong and they got
+    ///         it wrong in three different ways:
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <c>arrange --check</c> exited <b>2</b>. 2 is "formatting changes are needed", so a
+    ///         pre-commit hook told to auto-format on 2 was being told to run the formatter over a
+    ///         file nobody could read. <c>format --check</c> exited <b>5</b> with a full stack trace
+    ///         under "skala: internal error — this is a Skala bug", because <c>FormatAll</c>'s
+    ///         <c>Parallel.For</c> wraps an escape in an <c>AggregateException</c> that matches
+    ///         neither top-level handler — and it exited <b>2</b> instead when handed a single file,
+    ///         because that path runs serially. Same file, same permissions, two answers depending on
+    ///         how many files were beside it. <c>verify</c> aborted with no verdict at all.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Sabotage check: narrow either catch back to <c>catch (IOException …)</c> and this
+    ///         goes red — verified by doing it, on both the format and the arrange site.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData("format")]
+    [InlineData("arrange")]
+    public void Five_WhenAFileCannotBeRead(string verb) {
+        if (UnreadableFile("Unreadable.cs") is not { } path) {
+            Assert.Skip("needs a POSIX mode bit this process is subject to; root and Windows are exempt.");
+            return;
+        }
+
+        var run = CliRunner.Run(verb, "--check", path);
+        var text = run.StandardOutput + run.StandardError;
+
+        Assert.Equal(5, run.ExitCode);
+
+        // ⚠ It names the file, and it is not reported as a Skala bug. Both halves matter: the whole
+        // point of SK9015 over SK9098 is that a mode-600 file owned by someone else is not a defect
+        // in this tool, and a reader who is told it is will go looking in the wrong place.
+        Assert.Contains("Unreadable.cs", text, StringComparison.Ordinal);
+        Assert.Contains("SK9015", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("this is a Skala bug", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The count-dependent half, and the reason one file was not enough to catch this.
+    /// </summary>
+    /// <remarks>
+    ///     <c>FormatAll</c> runs serially at <c>files.Count &lt;= 1</c> and through
+    ///     <c>Parallel.For</c> above it, and only the parallel path produced the
+    ///     <c>AggregateException</c> that defeated every handler. A fixture with a single file would
+    ///     have exercised the branch that was merely wrong instead of the one that crashed — so this
+    ///     one insists on a readable neighbour, and then insists that the neighbour was still
+    ///     inspected. <b>Report it, leave it alone, keep going</b> is the contract; stopping at the
+    ///     first unreadable file would satisfy the exit code and still lose the rest of the tree.
+    /// </remarks>
+    [Fact]
+    public void AnUnreadableFile_DoesNotStopTheOnesBesideIt() {
+        if (UnreadableFile("Unreadable.cs") is not { } path) {
+            Assert.Skip("needs a POSIX mode bit this process is subject to; root and Windows are exempt.");
+            return;
+        }
+
+        // Needs an edit of its own, so that "it was inspected" is visible in the output.
+        Write("Neighbour.cs", "class  C{ void  M( ){} }\n");
+
+        var run = CliRunner.Run("format", "--check", directory);
+        var text = run.StandardOutput + run.StandardError;
+
+        Assert.Equal(5, run.ExitCode);
+        Assert.DoesNotContain("this is a Skala bug", text, StringComparison.Ordinal);
+        Assert.Contains("SK9015", text, StringComparison.Ordinal);
+        Assert.Contains(Path.GetFileName(path), text, StringComparison.Ordinal);
+
+        // The neighbour was reached, which is the half an exit code cannot show.
+        Assert.Contains("1 file would be reformatted", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     ⚠ The table in the document, read rather than remembered.
     /// </summary>
     /// <remarks>
