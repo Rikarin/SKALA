@@ -46,6 +46,20 @@ public sealed class Scratch : IDisposable {
         }
     }
 
+    /// <summary>
+    ///     Makes a file from <see cref="WriteUnreadable" /> readable again, for the control half of a
+    ///     fixture: the same command over the same tree with the bits restored is the run the locked
+    ///     one is compared against.
+    /// </summary>
+    public static void Unlock(string path) {
+        if (!OperatingSystem.IsWindows()) {
+            File.SetUnixFileMode(
+                path,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead
+            );
+        }
+    }
+
     public void Dispose() {
         // `locked` is empty on Windows; the guard is for CA1416, which cannot see that.
         if (!OperatingSystem.IsWindows()) {
