@@ -323,7 +323,12 @@ public static class FixCommand {
         string original;
         try {
             original = File.ReadAllText(path);
-        } catch (IOException exception) {
+
+            // ⚠ #353. `skala fix` is the fourth verb with this bug: `UnauthorizedAccessException`
+            // does not derive from `IOException`, so an unreadable file crashed the command instead
+            // of being reported as one file it could not fix. The handler already says exactly the
+            // right thing — it just could not be reached for the commonest cause of a failed read.
+        } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             return new(0, false, FixCheck.Semantic, $"skala fix: {Relative(root, path)}: {exception.Message}\n");
         }
 
@@ -408,7 +413,11 @@ public static class FixCommand {
         FormattingOptions options;
         try {
             options = ConfigurationCache.Options(EditorConfigChain.For(path), null);
-        } catch (IOException) {
+            // ⚠ #353 widened the filter to match what this comment already claimed. "A config the
+            // fixer cannot read" is most often one it is not *permitted* to read, and that is the
+            // one case the narrow catch let through — so the stated policy was implemented for
+            // every cause of an unreadable config except the likeliest.
+        } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             // A config the fixer cannot read is not a reason to refuse the fix; it is the same
             // situation as no config at all, and the default has the tags on.
             return FormatterTagGuard.Open;
