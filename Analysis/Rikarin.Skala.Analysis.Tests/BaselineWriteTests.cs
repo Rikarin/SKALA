@@ -15,10 +15,10 @@ namespace Rikarin.Skala.Analysis.Tests;
 ///     <para>
 ///         Measured through the real binary before the fix, over a readable file beside a mode-000
 ///         one: <c>baseline create --apply --load loose</c> printed <c>1 finding(s) firing now</c>,
-///         <c>written.</c>, and exited <b>0</b> with no <c>SK9015</c> anywhere in its output; <c>update
-///         --apply</c> rewrote the file the same way. <c>check</c> over the same tree printed the
-///         <c>SK9015</c> and exited 5. After the fix the unlocked tree writes <c>2 finding(s)</c> — the
-///         second is the one the accepted baseline never held.
+///         <c>written.</c>, and exited <b>0</b> with no <c>SK9015</c> anywhere in its output, and
+///         <c>update --apply</c> rewrote the file the same way. <c>check</c> over the same tree
+///         printed the <c>SK9015</c> and exited 5. After the fix the unlocked tree writes
+///         <c>2 finding(s)</c> — the second is the one the accepted baseline never held.
 ///     </para>
 ///     <para>
 ///         ⚠ The guard #309 wrote keyed on <c>RunReport.Partial</c>, which only a cancelled analyzer
