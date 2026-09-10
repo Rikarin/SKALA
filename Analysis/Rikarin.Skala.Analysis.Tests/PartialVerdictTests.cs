@@ -263,4 +263,84 @@ public sealed class PartialVerdictTests {
         Assert.Equal(ExitCodes.LoadFailure, result.ExitCode);
         Assert.DoesNotContain("PARTIAL", result.Output, StringComparison.Ordinal);
     }
+
+    static readonly string Locked = Path.Combine(Root, "Locked.cs");
+
+    /// <summary>
+    ///     The report <c>verify</c> builds over one file the process may not read: the per-file
+    ///     <c>SK9015</c> from the formatting stage and nothing Skala did wrong.
+    /// </summary>
+    static RunReport Unreadable() =>
+        new() {
+            RepositoryRoot = Root,
+            Mode = LoadMode.Loose,
+            FileCount = 754,
+            LineCount = 90_000,
+            LoadSummary = "loose (754 file(s), no project)",
+            Duration = TimeSpan.FromSeconds(2),
+            Diagnostics = [
+                new SkalaDiagnostic("SK9015", SkalaSeverity.Error, $"Access to the path '{Locked}' is denied.", Locked)
+            ]
+        };
+
+    /// <summary>
+    ///     ⚠ #355, asserted over the whole of what <c>verify</c> prints — the INCOMPLETE banner, the
+    ///     per-file line <em>and</em> the PARTIAL trailer. The banner and the trailer both said "Skala
+    ///     bug" over an unreadable file, and the per-file assertion in <c>ExitCodeContractTests</c>
+    ///     could not see either. A mode-000 file is fixed with <c>chmod</c>, and a sentence sending
+    ///     the reader to look for a defect in the tool spends the banner's credibility on nothing.
+    /// </summary>
+    [Theory]
+    [InlineData(ReportFormat.Agent)]
+    [InlineData(ReportFormat.Plain)]
+    [InlineData(ReportFormat.Terminal)]
+    [InlineData(ReportFormat.Markdown)]
+    [InlineData(ReportFormat.Github)]
+    public void Verify_NeverCallsAnUnreadableFileASkalaBug(ReportFormat format) {
+        var result = Run(format, Unreadable(), ExitCodes.InternalError);
+
+        // ⚠ The exit code is deliberately untouched (#353 pinned 5 across all four verbs); only the
+        // words change.
+        Assert.Equal(ExitCodes.InternalError, result.ExitCode);
+        Assert.Contains("Locked.cs", result.Output, StringComparison.Ordinal);
+        Assert.Contains("SK9015", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("Skala bug", result.Output, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("OK", result.Output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The control that keeps the theory above honest: the same two surfaces still say it, in
+    ///     the same words, when the cause really is Skala. Delete the sentence everywhere and this
+    ///     goes red.
+    /// </summary>
+    [Fact]
+    public void Verify_StillCallsARevertASkalaBug_InBothTheBannerAndTheTrailer() {
+        var output = Run(ReportFormat.Agent, Reverted(), ExitCodes.InternalError).Output;
+
+        Assert.Contains("this is a Skala bug, not a finding in your code.", output, StringComparison.Ordinal);
+        Assert.Contains("Exit 5 is that Skala bug, not a gate failure.", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The mixed run. A tree can hold a reverted file and an unreadable one at once, and the
+    ///     decision is that the banner names both, with a count each, Skala's fault first — a banner
+    ///     naming only the first cause is the issue's defect one level down. The trailer keeps the
+    ///     word "bug" because one of the causes is one.
+    /// </summary>
+    [Fact]
+    public void Verify_NamesBothCausesWhenARevertAndAnUnreadableFileCoincide() {
+        var reverted = Reverted();
+        var mixed = reverted with { Diagnostics = [.. reverted.Diagnostics, .. Unreadable().Diagnostics] };
+
+        var output = Run(ReportFormat.Agent, mixed, ExitCodes.InternalError).Output;
+
+        Assert.StartsWith(
+            "INCOMPLETE  2 of 754 files were not checked — 1 a Skala bug, not a finding in your code; "
+            + "1 could not be read (check permissions and that the path is still mounted).",
+            output,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("752 files were checked", output, StringComparison.Ordinal);
+        Assert.Contains("2 could not be checked. Exit 5 is that Skala bug", output, StringComparison.Ordinal);
+    }
 }

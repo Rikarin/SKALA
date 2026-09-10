@@ -318,6 +318,64 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
+    ///     ⚠ #355. The two tests above hold the per-file line to "not a Skala bug"; <c>verify</c>
+    ///     printed "this is a Skala bug, not a finding in your code" one line above it, in the
+    ///     INCOMPLETE banner, and "Exit 5 is that Skala bug" one line below it, in the PARTIAL
+    ///     trailer — and neither test could see either, because neither ran <c>verify</c>. This one
+    ///     does, against the real binary, and holds the <b>whole</b> output to the sentence.
+    /// </summary>
+    /// <remarks>
+    ///     The exit code is asserted unchanged on purpose. <c>LoadFailure</c> (4) is arguably the
+    ///     truer code for "a file could not be read", and #353 has just pinned 5 across all four
+    ///     verbs; re-opening that to chase a nicety is how the inconsistency #353 removed got there.
+    ///     Only the words move here.
+    /// </remarks>
+    [Theory]
+    [InlineData("agent")]
+    [InlineData("plain")]
+    public void Verify_NeverCallsAnUnreadableFileASkalaBug(string format) {
+        if (UnreadableFile("Unreadable.cs") is not { } path) {
+            Assert.Skip("needs a POSIX mode bit this process is subject to; root and Windows are exempt.");
+            return;
+        }
+
+        Write("Neighbour.cs", "class C {\n    void M() {\n        M();\n    }\n}\n");
+
+        var run = CliRunner.Run("verify", "--format", format, directory);
+        var text = run.StandardOutput + run.StandardError;
+
+        Assert.Equal(5, run.ExitCode);
+        Assert.Contains(Path.GetFileName(path), text, StringComparison.Ordinal);
+        Assert.Contains("SK9015", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("OK  nothing to do", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The control for the theory above, through the same binary: when the cause <em>is</em>
+    ///     Skala — the formatter's safety net, forced the same way <see cref="Five_WhenTheSafetyNetRefusesAFile" />
+    ///     forces it — <c>verify</c> still says so, in the banner and in the trailer. A fix that
+    ///     deleted the sentence everywhere would pass the theory and fail here.
+    /// </summary>
+    [Fact]
+    public void Verify_StillCallsTheSafetyNetASkalaBug() {
+        var path = Write("Refused.cs", "class C {\n    void M() {\n        M();\n    }\n}\n");
+        var run = CliRunner.RunWith(
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["SKALA_FORCE_SK9099"] = "Refused.cs" },
+            "verify",
+            "--format",
+            "agent",
+            path
+        );
+        var text = run.StandardOutput + run.StandardError;
+
+        Assert.Equal(5, run.ExitCode);
+        Assert.Contains("SK9099", text, StringComparison.Ordinal);
+        Assert.Contains("this is a Skala bug, not a finding in your code.", text, StringComparison.Ordinal);
+        Assert.Contains("Exit 5 is that Skala bug, not a gate failure.", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     ⚠ The table in the document, read rather than remembered.
     /// </summary>
     /// <remarks>

@@ -30,6 +30,51 @@ public enum ReportFormat {
 }
 
 /// <summary>
+///     What took a file out of a run — the distinction the <c>INCOMPLETE</c> banner exists to draw.
+/// </summary>
+/// <remarks>
+///     ⚠ #355. The banner #345 added said "this is a Skala bug" for every blocking diagnostic, and
+///     <c>SK9015</c> is not one: a mode-600 file owned by someone else, a half-restored package cache
+///     or a network mount mid-reconnect are conditions the tool handled correctly, and the fix is
+///     <c>chmod</c>. The sentence is the one thing that stops an agent acting on a bad verdict, and a
+///     sentence that sends the reader to the wrong place spends that credibility on nothing.
+///     <para>
+///         Declared in order of strength: a file carrying more than one blocking diagnostic is
+///         attributed to the lowest value.
+///     </para>
+/// </remarks>
+public enum IncompleteCause {
+    /// <summary>Skala's own fault — <c>SK9098</c>, <c>SK9096</c>, <c>SK9095</c>, <c>SK9099</c>, and any id not listed below.</summary>
+    Defect,
+
+    /// <summary>The file could not be read (<c>SK9015</c>). An environment condition, not a defect.</summary>
+    Unreadable,
+
+    /// <summary>The file does not parse (<c>SK9010</c>). Left byte-identical under ADR-003.</summary>
+    Unparseable
+}
+
+/// <summary>
+///     The two tool-diagnostic ids the renderers must recognise by name.
+/// </summary>
+/// <remarks>
+///     ⚠ Mirrors of <c>FormatDiagnosticIds.FileIoFailed</c> and <c>FormatDiagnosticIds.NotParseable</c>,
+///     not new allocations. This assembly sits below the formatter on purpose — a renderer that could
+///     reach formatting code is a renderer that can be tempted to run some — so it cannot reference
+///     the originals, and <c>ToolDiagnosticIdTests</c> forbids a bare literal. The constants keep the
+///     originals' names so that the one-id-one-concept check reads them as the same concept, which
+///     they are. Nothing else in the <c>SK9xxx</c> range is named here: every other blocking id is
+///     Skala's own fault, and the default branch says so without having to list them.
+/// </remarks>
+static class IncompleteIds {
+    /// <summary>The file could not be read or written.</summary>
+    public const string FileIoFailed = "SK9015";
+
+    /// <summary>The file does not parse.</summary>
+    public const string NotParseable = "SK9010";
+}
+
+/// <summary>
 ///     Every human- and machine-facing surface, rendered from the one <see cref="RunReport" />.
 /// </summary>
 /// <remarks>
@@ -143,6 +188,25 @@ public static class Renderer {
         report.Diagnostics.Where(static diagnostic => diagnostic.Severity >= SkalaSeverity.Error);
 
     /// <summary>
+    ///     Whether a diagnostic is about one file rather than about the stage that ran over them.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The repository root is excluded, and #355 turned that from a counting detail into a
+    ///     correctness one. <c>ArrangementFindings</c> emits its stage summary under <c>SK9015</c>
+    ///     <b>whatever</b> took the stage down — a token-stream failure, a reverted arrangement, an
+    ///     unreadable file — and locates it at the root. Reading ids off that summary to decide what
+    ///     the banner says would report every arrangement bug in the tree as a permissions problem.
+    ///     The per-file diagnostics above it are the ones that know why.
+    /// </remarks>
+    internal static bool IsFileScoped(RunReport report, SkalaDiagnostic diagnostic) =>
+        diagnostic.File is { Length: > 0 } file
+        && !string.Equals(
+            file.TrimEnd(Path.DirectorySeparatorChar),
+            report.RepositoryRoot.TrimEnd(Path.DirectorySeparatorChar),
+            StringComparison.Ordinal
+        );
+
+    /// <summary>
     ///     The files a <see cref="Blocking" /> diagnostic took out of the run.
     /// </summary>
     /// <remarks>
@@ -152,16 +216,66 @@ public static class Renderer {
     /// </remarks>
     public static IEnumerable<string> BlockedFiles(RunReport report) =>
         Blocking(report)
-            .Select(static diagnostic => diagnostic.File)
-            .Where(file => file is { Length: > 0 }
-                && !string.Equals(
-                    file!.TrimEnd(Path.DirectorySeparatorChar),
-                    report.RepositoryRoot.TrimEnd(Path.DirectorySeparatorChar),
-                    StringComparison.Ordinal
-                )
-            )
-            .Select(static file => file!)
+            .Where(diagnostic => IsFileScoped(report, diagnostic))
+            .Select(static diagnostic => diagnostic.File!)
             .Distinct(StringComparer.Ordinal);
+
+    /// <summary>
+    ///     Why a file dropped out of the run, from the diagnostic that dropped it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The default is <see cref="IncompleteCause.Defect" />, deliberately.</b> Only the two
+    ///     ids that are positively known to describe the environment are named; anything else the tool
+    ///     can fail with is Skala's own until somebody says otherwise. Getting that backwards would let
+    ///     a new blocking id ship quietly telling readers to go and check their file permissions.
+    /// </remarks>
+    public static IncompleteCause CauseOf(SkalaDiagnostic diagnostic) =>
+        diagnostic.Id switch {
+            IncompleteIds.FileIoFailed => IncompleteCause.Unreadable,
+            IncompleteIds.NotParseable => IncompleteCause.Unparseable,
+            _ => IncompleteCause.Defect
+        };
+
+    /// <summary>
+    ///     Every cause that took a file out of this run, strongest first, with the files it took.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #355 decided the mixed run this way: <b>name every cause, each with its own count</b>. A
+    ///     banner that reports only the first cause is the same defect the issue is about, one level
+    ///     down — a reader sent to <c>chmod</c> over a tree that also holds a token-stream failure is
+    ///     as misdirected as one sent to file a bug over a mode-600 file. Skala's own fault is stated
+    ///     first because it is the one the reader cannot fix and the one that has to be reported.
+    ///     <para>
+    ///         ⚠ A file carrying two blocking diagnostics is attributed once, to its strongest cause, so
+    ///         the per-cause counts sum to the fraction the banner opens with. Two numbers in one
+    ///         sentence that do not add up is a sentence nobody trusts twice.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ A run whose only blocking diagnostics are stage summaries at the root has no per-file
+    ///         cause to read and comes back as <see cref="IncompleteCause.Defect" /> with no files —
+    ///         which is the pre-#355 sentence, unchanged, for the case where nothing is known.
+    ///     </para>
+    /// </remarks>
+    public static IReadOnlyList<(IncompleteCause Cause, int Files)> Causes(RunReport report) {
+        var strongest = new Dictionary<string, IncompleteCause>(StringComparer.Ordinal);
+        foreach (var diagnostic in Blocking(report).Where(diagnostic => IsFileScoped(report, diagnostic))) {
+            var cause = CauseOf(diagnostic);
+            if (!strongest.TryGetValue(diagnostic.File!, out var known) || cause < known) {
+                strongest[diagnostic.File!] = cause;
+            }
+        }
+
+        if (strongest.Count == 0) {
+            return [(IncompleteCause.Defect, 0)];
+        }
+
+        return [
+            .. strongest.Values
+                .GroupBy(static cause => cause)
+                .OrderBy(static group => group.Key)
+                .Select(static group => (group.Key, group.Count()))
+        ];
+    }
 
     /// <summary>
     ///     A diagnostic's detail, flattened to one line.
@@ -623,6 +737,13 @@ public static class AgentRenderer {
     ///         that one file is the whole problem; "1 of 754" says the other 753 were covered, which is
     ///         the partial verdict the issue asked for and the reason exit 5 is worth reading at all.
     ///     </para>
+    ///     <para>
+    ///         ⚠ #355: the cause is stated per run, not assumed. This line said "this is a Skala bug"
+    ///         over an unreadable file, one line above a per-file <c>SK9015</c> that
+    ///         <c>ExitCodeContractTests</c> asserts is <em>not</em> reported as one — the two had
+    ///         drifted because no test read them together. <see cref="Renderer.Causes" /> holds the
+    ///         mixed-run decision.
+    ///     </para>
     /// </remarks>
     static void Incomplete(StringBuilder builder, RunReport report) {
         var blocking = Renderer.Blocking(report).ToList();
@@ -632,7 +753,9 @@ public static class AgentRenderer {
 
         builder.Append("INCOMPLETE  ")
             .Append(Scale(report))
-            .Line(" — this is a Skala bug, not a finding in your code. Everything below covers the rest.");
+            .Append(" — ")
+            .Append(Because(Renderer.Causes(report)))
+            .Line(" Everything below covers the rest.");
 
         foreach (var diagnostic in blocking) {
             builder.Append("  ")
@@ -650,6 +773,39 @@ public static class AgentRenderer {
         }
 
         builder.Line();
+    }
+
+    /// <summary>
+    ///     The clause after the fraction: whose fault it was, and what to do about it.
+    /// </summary>
+    /// <remarks>
+    ///     One cause is a sentence; more than one is each cause with its own count, Skala's first.
+    ///     Kept to a line either way — the banner is read by something deciding whether to trust the
+    ///     verdict under it, and a paragraph there is a paragraph it will skim.
+    /// </remarks>
+    static string Because(IReadOnlyList<(IncompleteCause Cause, int Files)> causes) {
+        // ⚠ Stated positively. "Not a Skala bug" was the first draft and contains the two words a
+        // hook greps for and a model keys on; a negation is a weaker signal than naming the cause.
+        if (causes.Count == 1) {
+            return causes[0].Cause switch {
+                IncompleteCause.Unreadable =>
+                    "could not be read: check permissions and that the path is still mounted.",
+                IncompleteCause.Unparseable =>
+                    "unparseable: fix the syntax error; the file was left byte-identical (ADR-003).",
+                _ => "this is a Skala bug, not a finding in your code."
+            };
+        }
+
+        var clauses = causes.Select(static entry =>
+            entry.Files.ToString(CultureInfo.InvariantCulture)
+            + entry.Cause switch {
+                IncompleteCause.Unreadable =>
+                    " could not be read (check permissions and that the path is still mounted)",
+                IncompleteCause.Unparseable => " unparseable (left byte-identical, ADR-003)",
+                _ => " a Skala bug, not a finding in your code"
+            }
+        );
+        return string.Join("; ", clauses) + ".";
     }
 
     /// <summary>
