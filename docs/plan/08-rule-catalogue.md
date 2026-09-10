@@ -3467,7 +3467,7 @@ ids already in `rules.json`. Nothing ran code → register.
 `ToolDiagnosticIdTests.ToolDiagnosticIds_AreAllocated` now does, over the whole tree, so an id
 declared in a third place fails on the commit that adds it.
 
-⚠ **What is still owed: the configuration and load diagnostics.** `SK9002`–`SK9009`,
+⚠ **What is still owed: the configuration and load diagnostics (#354).** `SK9002`–`SK9009`,
 `SK9012`–`SK9014`, `SK9016`, `SK9017` and `SK9022`–`SK9029` are named here and in no other register,
 so each still produces a SARIF notification whose `descriptor.id` resolves to nothing and each is
 still unanswerable by `skala explain`. They are carried as a frozen exemption list in

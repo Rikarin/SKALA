@@ -33,7 +33,7 @@ to cover returns the same green as a guard that is complete.
 `ToolDiagnosticIdTests.ToolDiagnosticIds_AreAllocated` now scans every declaration site in the tree;
 sabotage-tested by planting a sixth unallocated `const string` in the *other* declaration site.
 
-⚠ **Not fixed, and now enumerated rather than invisible.** `SK9002`–`SK9009`, `SK9012`–`SK9014`,
+⚠ **Not fixed, and now enumerated rather than invisible (#354).** `SK9002`–`SK9009`, `SK9012`–`SK9014`,
 `SK9016`, `SK9017` and `SK9022`–`SK9029` — the configuration and load diagnostics — have the same
 defect: a dangling SARIF `descriptor.id` and no `skala explain` answer. They are a frozen exemption
 list in the new guard, so the debt is counted and a new id cannot join it by accident.

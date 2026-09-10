@@ -267,7 +267,7 @@ public sealed class ToolDiagnosticIdTests {
     ///         they are named rather than allocated.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>The rest is real debt and is recorded as such (#353).</b> Every one of them reaches a
+    ///         ⚠ <b>The rest is real debt and is recorded as such (#354).</b> Every one of them reaches a
     ///         SARIF <c>toolExecutionNotification</c> whose <c>descriptor.id</c> resolves to nothing, and
     ///         <c>skala explain</c> cannot answer for any of them — the same defect #352 fixed for the
     ///         formatter's and the arranger's five. They are excluded here rather than fixed in the same
