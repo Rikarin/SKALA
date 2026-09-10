@@ -52,16 +52,34 @@ public sealed class TupleLiteralAnalyzer : DiagnosticAnalyzer {
         context.RegisterCompilationStartAction(static start => {
                 // ⚠ A target framework without `System.ValueTuple` would take a fix that does not
                 // compile. The language floor alone does not answer that question.
-                if (SkalaRule.MeetsLanguageVersion(start.Compilation, Rule.LanguageVersion)
-                    && start.Compilation.GetTypeByMetadataName("System.ValueTuple`2") is not null) {
-                    start.RegisterSyntaxNodeAction(Analyze, SyntaxKind.LocalDeclarationStatement);
+                if (Supports(start.Compilation)) {
+                    // ⚠ #351: nor does asking `start.Compilation` alone, because "a target framework"
+                    // is several of them on a multi-targeted project — one compilation per moniker
+                    // over one set of source files, findings unioned. `System.ValueTuple` reaches
+                    // netstandard2.0 only through a package, so the moniker that has it reports and
+                    // the moniker that does not gets the rewrite anyway (#343).
+                    var unavailable = FrameworkAvailability.PathsWithout(start.Options, Supports);
+                    start.RegisterSyntaxNodeAction(
+                        node => Analyze(node, unavailable),
+                        SyntaxKind.LocalDeclarationStatement
+                    );
                 }
             }
         );
     }
 
-    static void Analyze(SyntaxNodeAnalysisContext context) {
+    /// <summary>Whether this compilation can compile the tuple literal the fix writes.</summary>
+    /// <remarks>⚠ The whole condition, asked of every sibling unchanged (#343, #351).</remarks>
+    static bool Supports(Compilation compilation) =>
+        SkalaRule.MeetsLanguageVersion(compilation, Rule.LanguageVersion)
+        && compilation.GetTypeByMetadataName("System.ValueTuple`2") is not null;
+
+    static void Analyze(SyntaxNodeAnalysisContext context, ImmutableHashSet<string> unavailable) {
         var statement = (LocalDeclarationStatementSyntax)context.Node;
+        if (!unavailable.IsEmpty && unavailable.Contains(statement.SyntaxTree.FilePath)) {
+            return;
+        }
+
         if (statement.UsingKeyword.RawKind != (int)SyntaxKind.None
             || statement.AwaitKeyword.RawKind != (int)SyntaxKind.None
             || statement.Modifiers.Count > 0
