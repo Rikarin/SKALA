@@ -261,13 +261,13 @@ public sealed class IncompleteBannerTests {
         new(
             "SK9028",
             SkalaSeverity.Warning,
-            $"the gate names a baseline at .skala/baseline.sarif and there is no such file, so every finding "
+            "the gate names a baseline at .skala/baseline.sarif and there is no such file, so every finding "
             + "counts as new. `skala baseline create --apply` writes one.",
             BaselinePath
         );
 
     /// <summary>
-    ///     ⚠ #360, the issue's own shape: a one-file tree and a baseline holding <c>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</c>.
+    ///     ⚠ #360, the issue's own shape: a one-file tree and a baseline holding a merge-conflict marker.
     ///     The banner used to read <c>1 of 1 file was not checked — this is a Skala bug</c>. The file
     ///     was checked; the baseline is the repository's; and the banner is the only line on this
     ///     surface that explains the exit code, because <c>agent</c> prints no gate verdict.

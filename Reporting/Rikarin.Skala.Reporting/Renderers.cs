@@ -847,7 +847,7 @@ public static class AgentRenderer {
         builder.Line(
             (runBlocked, gateInputs.Count > 0) switch {
                 (true, false) => " Everything below covers the rest.",
-                (true, true) => " Everything below covers the rest, shown as if there were nothing to compare against.",
+                (true, _) => " Everything below covers the rest, shown as if there were nothing to compare against.",
                 _ => " Every file was checked; everything below is shown as if there were nothing to compare against."
             }
         );

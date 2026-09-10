@@ -139,8 +139,8 @@ public sealed class BaselineWriteTests {
         // baseline was missing. Both files are identical apart from the type name, so each fires
         // the same rules and the locked one accounts for half of what was accepted.
         var accepted = Baseline.Read(baseline);
-        Assert.Contains(accepted.Entries, entry => entry.Path.EndsWith("Locked.cs", StringComparison.Ordinal));
-        Assert.Contains(accepted.Entries, entry => entry.Path.EndsWith("Widget.cs", StringComparison.Ordinal));
+        Assert.Contains(accepted.Entries, static entry => entry.Path.EndsWith("Locked.cs", StringComparison.Ordinal));
+        Assert.Contains(accepted.Entries, static entry => entry.Path.EndsWith("Widget.cs", StringComparison.Ordinal));
     }
 
     /// <summary>Reading is not recording: <c>show</c> stays exempt, as the #309 remark says.</summary>

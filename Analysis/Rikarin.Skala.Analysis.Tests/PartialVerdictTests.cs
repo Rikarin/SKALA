@@ -420,7 +420,8 @@ public sealed class PartialVerdictTests {
         var output = Run(ReportFormat.Agent, ConflictedBaseline(), ExitCodes.GateFailed).Output;
 
         Assert.StartsWith(
-            "INCOMPLETE  the baseline at .skala/baseline.sarif could not be read, so the gate compared against nothing.",
+            "INCOMPLETE  the baseline at .skala/baseline.sarif could not be read, so the gate compared against "
+            + "nothing.",
             output,
             StringComparison.Ordinal
         );
