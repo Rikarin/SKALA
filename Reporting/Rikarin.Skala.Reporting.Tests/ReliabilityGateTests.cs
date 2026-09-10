@@ -175,7 +175,8 @@ public sealed class ReliabilityGateTests {
                 new SkalaDiagnostic(
                     ConfigDiagnosticIds.GateInputUnavailable,
                     SkalaSeverity.Error,
-                    "the baseline at /repo/.skala/baseline.sarif could not be read: /repo/.skala/baseline.sarif is not valid JSON",
+                    "the baseline at /repo/.skala/baseline.sarif could not be read: "
+                    + "/repo/.skala/baseline.sarif is not valid JSON",
                     "/repo/.skala/baseline.sarif"
                 )
             ]
