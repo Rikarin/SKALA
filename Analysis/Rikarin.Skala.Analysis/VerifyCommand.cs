@@ -185,6 +185,13 @@ public static class VerifyCommand {
     ///     ⚠ Text formats only. `json` and `junit` are parsed, and a prose line appended to either is
     ///     a corrupt document rather than a clearer one; both already carry the same facts
     ///     structurally — the notification and its location, and `executionSuccessful: false`.
+    ///     <para>
+    ///         ⚠ #355: "Exit 5 is that Skala bug" was unconditional here too, so a `verify` over one
+    ///         unreadable file misattributed it twice — once in the INCOMPLETE banner and once in this
+    ///         trailer — and the second copy would have survived a fix to the first. The attribution
+    ///         is read off <see cref="Renderer.Causes" />, the same place the banner reads it, and the
+    ///         word "bug" is kept for a run in which Skala's own fault is actually among the causes.
+    ///     </para>
     /// </remarks>
     static string PartialVerdict(ReportFormat format, RunReport report, bool clean) {
         if (format is ReportFormat.Json or ReportFormat.JUnit) {
@@ -193,6 +200,7 @@ public static class VerifyCommand {
 
         var blocked = Renderer.BlockedFiles(report).Count();
         var checkedFiles = Math.Max(0, report.FileCount - blocked);
+        var skalasFault = Renderer.Causes(report).Any(static entry => entry.Cause == IncompleteCause.Defect);
         return "PARTIAL  "
             + Count(checkedFiles)
             + (checkedFiles == 1 ? " file was checked and " : " files were checked and ")
@@ -201,7 +209,7 @@ public static class VerifyCommand {
             + Count(blocked)
             + " could not be checked. Exit "
             + Count(ExitCodes.InternalError)
-            + " is that Skala bug, not a gate failure.\n";
+            + (skalasFault ? " is that Skala bug, not a gate failure.\n" : " reports that, not a gate failure.\n");
     }
 
     static string Count(int value) => value.ToString(System.Globalization.CultureInfo.InvariantCulture);
