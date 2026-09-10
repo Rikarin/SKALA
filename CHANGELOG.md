@@ -13,6 +13,31 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Fixed — five live diagnostic ids were in neither register (#352)
+
+`SK9015`, `SK9095`, `SK9096`, `SK9097` and `SK9098` are emitted by shipping code and were in neither
+`allocated-ids.txt` nor `rules.json`, while their immediate siblings `SK9010`, `SK9011` and `SK9099`
+were in both. So `skala explain SK9098` answered nothing, and the SARIF notification for **the
+diagnostic whose entire job is to say "This is a Skala bug; the file was left untouched"** carried a
+`descriptor.id` that resolved to no `rules[]` entry. All five now have register lines, catalogue
+entries, `docs/rules/` pages and SARIF descriptors. ⚠ They are recorded at the numbers already in the
+field and are not renumbered into a contiguous range: the register is append-only and their meanings
+are fixed by shipped behaviour.
+
+⚠ **The ADR-012 guard read one file.** `RuleCatalogTests.ArrangementIds_AreUniqueRegisteredFormattingIds`
+reads `ArrangementRule.cs` and filters `SK9*` back out of it, so `SK9097` — declared in
+`ArrangementPipeline.cs`, one file away in the same folder — was outside its input twice over. The
+only other check ran `rules.json` → register, which can only ever find ids that are already in
+`rules.json`. Nothing ran code → register, and a guard whose input is narrower than the set it claims
+to cover returns the same green as a guard that is complete.
+`ToolDiagnosticIdTests.ToolDiagnosticIds_AreAllocated` now scans every declaration site in the tree;
+sabotage-tested by planting a sixth unallocated `const string` in the *other* declaration site.
+
+⚠ **Not fixed, and now enumerated rather than invisible.** `SK9002`–`SK9009`, `SK9012`–`SK9014`,
+`SK9016`, `SK9017` and `SK9022`–`SK9029` — the configuration and load diagnostics — have the same
+defect: a dangling SARIF `descriptor.id` and no `skala explain` answer. They are a frozen exemption
+list in the new guard, so the debt is counted and a new id cannot join it by accident.
+
 ### Fixed — no format prints a clean verdict on a run that could not finish (#345)
 
 `skala verify` exited 5 on an arrangement `SK9098` and printed `OK  nothing to do.` — the exact

@@ -3448,6 +3448,32 @@ register is enforced only against the half of the code that declares a constant.
 collision is a renumber of the formatter's use to the next free id — `SK9015` — and it is owed
 before anyone holds a baseline containing either.
 
+✅ **Both halves of that are closed.** The formatter's use is `FormatDiagnosticIds.FileIoFailed =
+"SK9015"`, so `SK9012` means one thing again; and `ToolDiagnosticIds_AreNeverBareLiterals` now reads
+uses, so an id written as a literal at a call site fails the build instead of hiding from the guard.
+
+⚠ **`allocated-ids.txt` is a second register and it did not agree with this one (#352).** Doc 08
+named `SK9015` and `SK9095`–`SK9098` all along; `allocated-ids.txt` and `rules.json` named none of
+them, while their siblings `SK9010`, `SK9011` and `SK9099` were in both. The visible cost was that
+`skala explain SK9098` answered nothing and the SARIF notification for the diagnostic whose whole
+job is to say *"This is a Skala bug; the file was left untouched"* referenced a `rules[]` descriptor
+that did not exist. All five now have entries.
+
+⚠ **The guard that should have caught it was reading one file.**
+`RuleCatalogTests.ArrangementIds_AreUniqueRegisteredFormattingIds` reads `ArrangementRule.cs` and
+filters `SK9*` out of it, so `SK9097` — declared in `ArrangementPipeline.cs`, one file away — was
+outside its input twice over; the only other check ran `rules.json` → register, which can only find
+ids already in `rules.json`. Nothing ran code → register.
+`ToolDiagnosticIdTests.ToolDiagnosticIds_AreAllocated` now does, over the whole tree, so an id
+declared in a third place fails on the commit that adds it.
+
+⚠ **What is still owed: the configuration and load diagnostics.** `SK9002`–`SK9009`,
+`SK9012`–`SK9014`, `SK9016`, `SK9017` and `SK9022`–`SK9029` are named here and in no other register,
+so each still produces a SARIF notification whose `descriptor.id` resolves to nothing and each is
+still unanswerable by `skala explain`. They are carried as a frozen exemption list in
+`ToolDiagnosticIdTests.NotAllocated` — frozen so that the debt is enumerated rather than invisible,
+and so that a *new* id cannot join it by accident.
+
 ## Rule status
 
 ⚠ **This count is generated, and the reason it is generated is that the hand-kept one went stale

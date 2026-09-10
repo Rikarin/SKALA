@@ -127,6 +127,208 @@ public sealed class ToolDiagnosticIdTests {
     }
 
     /// <summary>
+    ///     ⚠ The other register. <c>allocated-ids.txt</c> is the file ADR-012 freezes, and until #352
+    ///     nothing compared it against the ids the code can actually emit.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         Five live ids — <c>SK9015</c>, <c>SK9095</c>, <c>SK9096</c>, <c>SK9097</c> and
+    ///         <c>SK9098</c> — were emitted by shipping code and were in neither <c>allocated-ids.txt</c>
+    ///         nor <c>rules.json</c>, while their immediate siblings <c>SK9010</c>, <c>SK9011</c> and
+    ///         <c>SK9099</c> were in both.
+    ///     </b> So <c>skala explain SK9098</c> answered nothing, and the
+    ///     SARIF notification for the diagnostic whose whole job is to say <i>"This is a Skala bug; the
+    ///     file was left untouched"</i> named a <c>rules[]</c> descriptor that was not there.
+    ///     <para>
+    ///         ⚠ <b>The guard that should have caught it could not see them.</b>
+    ///         <c>RuleCatalogTests.ArrangementIds_AreUniqueRegisteredFormattingIds</c> reads exactly one
+    ///         file, <c>Arrangement/ArrangementRule.cs</c>, and filters <c>SK9*</c> back out of it — so
+    ///         <c>SK9097</c>, declared in <c>Arrangement/ArrangementPipeline.cs</c>, was outside its
+    ///         input twice over. The other direction, <c>EveryCatalogueRule_IsRecordedAsAllocated</c>,
+    ///         runs rules.json → register and can only ever find ids that are already in rules.json.
+    ///         Nothing ran code → register, and a guard whose input is narrower than the set it claims
+    ///         to cover returns the same green as a guard that is complete.
+    ///     </para>
+    ///     <para>
+    ///         This one takes its input from <see cref="SourceFiles" />, which is the whole tree, so a
+    ///         new id declared in a third place fails here rather than in a year's time. That is the
+    ///         property under test, and <see cref="TheScan_ReadsTheTreeUnderTest" /> plus the
+    ///         declaration-site assertion below are what stop it passing vacuously.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void ToolDiagnosticIds_AreAllocated() {
+        var declared = DeclaredIds();
+
+        var missing = declared.Keys
+            .Where(static id => !NotAllocated.Contains(id))
+            .Where(id => !AllocatedIds().Contains(id))
+            .Order(StringComparer.Ordinal)
+            .Select(id => $"{id} declared at {string.Join(" and ", declared[id])}")
+            .ToList();
+
+        Assert.True(
+            missing.Count == 0,
+            "An id the code can emit is not in Rules/Rikarin.Skala.Rules.Metadata/allocated-ids.txt, "
+            + "so the ledger does not describe reality and nothing stops the next allocation handing "
+            + "the same number to something else — the exact hazard ADR-012 exists to prevent. Add a "
+            + "`<id> <concept>` line there and a matching rules.json entry, so `skala explain` and the "
+            + "SARIF `rules[]` descriptor exist:\n  "
+            + string.Join("\n  ", missing)
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ The exemption list above is debt, not licence, and this keeps it from becoming licence.
+    /// </summary>
+    /// <remarks>
+    ///     Both directions are asserted. An entry whose id no longer exists in the tree is dead weight
+    ///     that would silently re-authorise the number if it came back; an entry that <em>is</em> in
+    ///     <c>allocated-ids.txt</c> is a line that has been paid off and must leave the list, or the
+    ///     list would keep excusing an id whose absence it can no longer be excusing.
+    /// </remarks>
+    [Fact]
+    public void TheUnallocatedToolDiagnostics_AreStillExactlyTheKnownDebt() {
+        var declared = DeclaredIds();
+        var allocated = AllocatedIds();
+
+        var vanished = NotAllocated.Where(id => !declared.ContainsKey(id)).Order(StringComparer.Ordinal).ToList();
+        Assert.True(
+            vanished.Count == 0,
+            "These ids are excused from allocation and are no longer declared anywhere. Drop them from "
+            + "`NotAllocated` — an excuse nothing needs is an excuse waiting to cover something else:\n  "
+            + string.Join("\n  ", vanished)
+        );
+
+        var paid = NotAllocated.Where(allocated.Contains).Order(StringComparer.Ordinal).ToList();
+        Assert.True(
+            paid.Count == 0,
+            "These ids are excused from allocation and are now in allocated-ids.txt. Drop them from "
+            + "`NotAllocated`, so the list is what is still owed and not what was once owed:\n  "
+            + string.Join("\n  ", paid)
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ Anti-vacuity for <see cref="ToolDiagnosticIds_AreAllocated" />, aimed at its actual failure
+    ///     mode.
+    /// </summary>
+    /// <remarks>
+    ///     The bug was never "the scan found nothing"; it was "the scan found one file". So it is not
+    ///     enough to know the tree was read — the assertion has to be that ids from <em>every</em> place
+    ///     that declares one reached it, named individually. <c>SK9097</c> is the load-bearing entry:
+    ///     it is the id that lives in a second file inside the same folder as the one the old guard read.
+    /// </remarks>
+    [Fact]
+    public void TheAllocationScan_ReadsEveryDeclarationSite() {
+        var declared = DeclaredIds();
+
+        foreach (var (id, site) in new[] {
+                     ("SK9098", "ArrangementRule"), // ArrangeIds.Reverted
+                     ("SK9096", "ArrangementRule"), // ArrangeIds.SymbolChanged
+                     ("SK9095", "ArrangementRule"), // ArrangeIds.RuleThrew
+                     ("SK9097", "ArrangementPipeline"), // ⚠ the site the old guard could not see
+                     ("SK9015", "FormatDiagnosticIds"), // FormatDiagnosticIds.FileIoFailed
+                     ("SK9099", "FormatDiagnosticIds"),
+                     ("SK9001", "SkalaDiagnostic"), // ConfigDiagnosticIds.UnknownKey
+                     ("SK0201", "ArrangementRule")
+                 }) {
+            Assert.True(
+                declared.TryGetValue(id, out var sites),
+                $"{id} is declared in the tree and the allocation scan did not find it."
+            );
+
+            Assert.Contains(sites!, name => name.StartsWith(site + ".", StringComparison.Ordinal));
+        }
+
+        // Four distinct classes declare ids, and the whole defect was a guard that read one of them.
+        Assert.True(
+            declared.Values
+                .SelectMany(static sites => sites)
+                .Select(static site => site[..site.IndexOf('.', StringComparison.Ordinal)])
+                .Distinct(StringComparer.Ordinal)
+                .Count() >= 4,
+            "The scan found fewer than four declaring types, which is fewer than the tree has."
+        );
+    }
+
+    /// <summary>
+    ///     Ids that are declared and deliberately absent from <c>allocated-ids.txt</c>.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <c>SK3499</c> and <c>SK3500</c> are band edges in <c>RuleCoverage</c> — the boundaries of
+    ///         the async and lifetime ranges, not rules. No rule may ever carry either, which is why
+    ///         they are named rather than allocated.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>The rest is real debt and is recorded as such (#353).</b> Every one of them reaches a
+    ///         SARIF <c>toolExecutionNotification</c> whose <c>descriptor.id</c> resolves to nothing, and
+    ///         <c>skala explain</c> cannot answer for any of them — the same defect #352 fixed for the
+    ///         formatter's and the arranger's five. They are excluded here rather than fixed in the same
+    ///         change because each needs a written entry and the configuration and load diagnostics are a
+    ///         different surface (<c>config check</c> and the loader) from the file pipeline. ⚠ The list
+    ///         is frozen: it exempts these ids and nothing else, so an id added in a third declaration
+    ///         site fails <see cref="ToolDiagnosticIds_AreAllocated" /> on the commit that adds it.
+    ///     </para>
+    /// </remarks>
+    static readonly HashSet<string> NotAllocated = new(StringComparer.Ordinal) {
+        "SK3499", "SK3500",
+        "SK9002", "SK9003", "SK9004", "SK9005", "SK9006", "SK9007", "SK9008", "SK9009",
+        "SK9012", "SK9013", "SK9014", "SK9016", "SK9017",
+        "SK9022", "SK9023", "SK9024", "SK9025", "SK9026", "SK9027", "SK9028", "SK9029"
+    };
+
+    /// <summary>Every id declared in the tree, mapped to the <c>Type.Member</c> sites declaring it.</summary>
+    static Dictionary<string, List<string>> DeclaredIds() {
+        var result = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        foreach (var file in SourceFiles()) {
+            foreach (Match match in Declaration.Matches(File.ReadAllText(file))) {
+                var id = match.Groups["id"].Value;
+                if (!result.TryGetValue(id, out var sites)) {
+                    result[id] = sites = [];
+                }
+
+                sites.Add($"{Path.GetFileNameWithoutExtension(file)}.{match.Groups["name"].Value}");
+            }
+        }
+
+        Assert.NotEmpty(result);
+
+        return result;
+    }
+
+    /// <summary>
+    ///     ⚠ Read as text, not through <c>RuleCatalog</c>. The register is the artefact ADR-012 freezes,
+    ///     and reading it through the generated catalogue would only ever prove rules.json agrees with
+    ///     itself.
+    /// </summary>
+    static HashSet<string> AllocatedIds() {
+        var path = Path.Combine(
+            RepositoryRoot,
+            "Rules",
+            "Rikarin.Skala.Rules.Metadata",
+            "allocated-ids.txt"
+        );
+
+        Assert.True(File.Exists(path), $"{path} does not exist; the register is what this test reads.");
+
+        var result = File.ReadAllLines(path)
+            .Select(static line => line.Trim())
+            .Where(static line => line.Length > 0 && !line.StartsWith('#'))
+            .Select(static line => line.Split(' ')[0])
+            .ToHashSet(StringComparer.Ordinal);
+
+        // Anti-vacuity: an unreadable or renamed register must not read as "nothing is allocated",
+        // which would pass ToolDiagnosticIds_AreAllocated for every id at once.
+        Assert.True(result.Count > 200, $"{path} was read and yielded only {result.Count} id(s).");
+        Assert.Contains("SK9099", result);
+
+        return result;
+    }
+
+    /// <summary>
     ///     Every hand-written source file under the tree being tested.
     /// </summary>
     /// <remarks>
