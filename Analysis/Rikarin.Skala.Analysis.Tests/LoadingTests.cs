@@ -18,7 +18,46 @@ public sealed class Scratch : IDisposable {
         return path;
     }
 
+    readonly List<string> locked = [];
+
+    /// <summary>
+    ///     Writes a file this process may not read, or returns null when this machine cannot make one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Decided by <em>attempting the read</em>, not by platform or uid. Windows has no mode bit,
+    ///     but the case that makes a fixture lie is <b>root</b>, which opens a mode-000 file happily
+    ///     and is the default in a CI container; a test that cannot go red there is the defect. The
+    ///     bits are restored in <see cref="Dispose" /> so teardown never depends on them.
+    /// </remarks>
+    public string? WriteUnreadable(string name, string content) {
+        if (OperatingSystem.IsWindows()) {
+            return null;
+        }
+
+        var path = Write(name, content);
+        File.SetUnixFileMode(path, UnixFileMode.None);
+        locked.Add(path);
+
+        try {
+            File.ReadAllText(path);
+            return null;
+        } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
+            return path;
+        }
+    }
+
     public void Dispose() {
+        // `locked` is empty on Windows; the guard is for CA1416, which cannot see that.
+        if (!OperatingSystem.IsWindows()) {
+            foreach (var path in locked) {
+                try {
+                    File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+                } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
+                    // The directory delete below does not need the file's own bits; this is courtesy.
+                }
+            }
+        }
+
         try {
             Directory.Delete(Root, true);
         } catch (IOException) {

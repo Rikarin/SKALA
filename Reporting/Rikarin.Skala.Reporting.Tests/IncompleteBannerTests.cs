@@ -218,4 +218,55 @@ public sealed class IncompleteBannerTests {
         );
         Assert.DoesNotContain("this is a Skala bug", text, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    ///     #356: the fraction survives more blocked files than readable ones, because every blocked
+    ///     source file is now in <c>FileCount</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Before the loaders counted a requested file whether or not it opened, a three-file tree
+    ///     with two unreadable files reached the renderer as <c>FileCount</c> 1 and <c>blocked</c> 2,
+    ///     and <c>Scale</c> printed <c>2 files were not checked</c> with no fraction — the arithmetic
+    ///     hidden rather than fixed. This is the report the loaders now build for that tree.
+    /// </remarks>
+    [Fact]
+    public void AgentBanner_KeepsTheFractionWhenMostOfTheTreeWasUnreadable() {
+        var report = Report(Unreadable(), Unreadable(Broken)) with { FileCount = 3 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith(
+            "INCOMPLETE  2 of 3 files were not checked — could not be read",
+            text,
+            StringComparison.Ordinal
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ #356: the one way left into <c>Scale</c>'s <c>FileCount &lt; blocked</c> branch, pinned so
+    ///     it is a documented case and not a silent guard.
+    /// </summary>
+    /// <remarks>
+    ///     <c>BlockedFiles</c> counts any error-severity diagnostic located away from the root, and
+    ///     <c>SK9028</c> at a baseline that is not a SARIF log is one — measured through the CLI over
+    ///     a tree of generated files only: <c>FileCount</c> 0, blocked 1, the banner calling a baseline
+    ///     "1 file" and exit 0 under it. That comparison is between unlike things and the fraction is
+    ///     omitted for it. Whether a gate-input failure belongs in this banner at all is a separate
+    ///     decision; when it is taken, this test and the branch go together.
+    /// </remarks>
+    [Fact]
+    public void AgentBanner_OmitsTheFractionOnlyForABlockingDiagnosticThatIsNotASourceFile() {
+        var baseline = Path.Combine(Root, ".skala", "baseline.sarif");
+        var report = Report(
+            new SkalaDiagnostic(
+                "SK9028",
+                SkalaSeverity.Error,
+                $"the baseline at {baseline} could not be read",
+                baseline
+            )
+        ) with { FileCount = 0 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith("INCOMPLETE  1 file was not checked — ", text, StringComparison.Ordinal);
+        Assert.DoesNotContain(" of 0 ", text, StringComparison.Ordinal);
+    }
 }

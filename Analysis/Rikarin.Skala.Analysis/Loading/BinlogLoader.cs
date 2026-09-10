@@ -219,20 +219,26 @@ public static class BinlogLoader {
 
         var trees = ImmutableArray.CreateBuilder<SyntaxTree>();
         var reportable = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
+        var unreadable = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
         var parseOptions = parsed.ParseOptions;
 
         foreach (var source in parsed.SourceFiles) {
             var full = Path.GetFullPath(source.Path);
-            SourceText text;
-            try {
-                using var stream = File.OpenRead(full);
-                text = SourceText.From(stream, canBeEmbedded: false);
-            } catch (IOException) {
-                // ⚠ SK9020's sibling: the build compiled a file that is no longer on disk. It is
-                // dropped from the compilation rather than faked, and reported below.
+
+            // ⚠ #356: this was `catch (IOException)` alone, one line under a comment about a file
+            // that is no longer on disk — and a file that is on disk and may not be read raises
+            // `UnauthorizedAccessException`, which is not an `IOException`. It escaped this loader,
+            // the command printed `skala: Access to the path … is denied.` and exited 5 with no
+            // report at all, over a binlog that named 2 files of which 1 was readable. That is the
+            // shape #353 removed from the loose loader; the audit that removed it there did not
+            // reach this line. A vanished file is still dropped from the compilation rather than
+            // faked; a denied one is `SK9015`, counted, and the rest of the compilation is built.
+            using var stream = SourceFiles.Open(full, unreadable, diagnostics);
+            if (stream is null) {
                 continue;
             }
 
+            var text = SourceText.From(stream, canBeEmbedded: false);
             trees.Add(CSharpSyntaxTree.ParseText(text, parseOptions, full, cancellation));
 
             // ⚠ Generated sources are analysed and never reported on: a diagnostic the user cannot
@@ -242,7 +248,10 @@ public static class BinlogLoader {
             }
         }
 
-        if (trees.Count == 0) {
+        // ⚠ A compilation whose every source was denied is still a compilation the run was asked
+        // about: it carries the count and the `SK9015`s. Only a Csc invocation that named nothing
+        // readable *and* nothing denied is skipped.
+        if (trees.Count == 0 && unreadable.Count == 0) {
             return null;
         }
 
@@ -305,6 +314,7 @@ public static class BinlogLoader {
             TargetFramework = TargetFrameworkOf(parsed),
             PreprocessorSymbols = [.. parseOptions.PreprocessorSymbolNames],
             ReportablePaths = reportable.ToImmutable(),
+            UnreadablePaths = unreadable.ToImmutable(),
             AnalyzerReferences = analyzerReferences.ToImmutable(),
             AnalyzerConfigPaths = analyzerConfigPaths,
             ProjectPath = projectPath
@@ -386,6 +396,11 @@ public static class BinlogLoader {
             foreach (var tree in unit.Compilation.SyntaxTrees) {
                 known.Add(Path.GetFullPath(tree.FilePath));
             }
+
+            // ⚠ #356: the binlog *did* name a compilation containing the file; the process could
+            // not read it. It already carries `SK9015`, and "in no compilation; rebuild" on top of
+            // that sends the reader to rebuild a project that a rebuild cannot make readable.
+            known.UnionWith(unit.UnreadablePaths);
         }
 
         var binlogTime = File.GetLastWriteTimeUtc(binlogPath);

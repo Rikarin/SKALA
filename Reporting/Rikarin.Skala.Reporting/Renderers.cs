@@ -817,8 +817,26 @@ public static class AgentRenderer {
     /// <remarks>
     ///     ⚠ "1 file could not be checked" invites the reading that one file is the whole problem;
     ///     "1 of 754" says the other 753 were covered, which is the partial verdict #345 asked for and
-    ///     the reason exit 5 is worth reading at all. The count is omitted rather than guessed when the
-    ///     report carries no file count to divide by.
+    ///     the reason exit 5 is worth reading at all.
+    ///     <para>
+    ///         ⚠ #356: <c>FileCount &lt; blocked</c> used to be reached by an ordinary tree. The
+    ///         loaders counted a file only after reading it, so an unreadable file was in the
+    ///         numerator and never in the denominator — <c>1 of 1</c> over a two-file tree, and with
+    ///         two unreadable files beside one readable one this branch quietly dropped the fraction
+    ///         instead of printing the <c>2 of 1</c> that would have exposed the arithmetic. Every
+    ///         requested source file is now in <see cref="RunReport.FileCount" /> whether or not it
+    ///         opened, so for the per-file blocking ids the inequality cannot hold and the branch is
+    ///         not a safety net for them any more.
+    ///     </para>
+    ///     <para>
+    ///         It survives because <see cref="Renderer.BlockedFiles" /> also counts a blocking
+    ///         diagnostic located at a file that was never a source — <c>SK9028</c> at a baseline that
+    ///         is not a SARIF log, measured over a tree of generated files only: <c>FileCount</c> 0,
+    ///         blocked 1. That comparison is between unlike things and a fraction over it would be
+    ///         wrong in a different way; <c>IncompleteBannerTests</c> pins that this is the only
+    ///         remaining way in. Whether such a diagnostic should feed this banner at all is a
+    ///         separate decision.
+    ///     </para>
     /// </remarks>
     static string Scale(RunReport report) {
         var blocked = Renderer.BlockedFiles(report).Count();

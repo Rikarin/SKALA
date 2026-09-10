@@ -198,6 +198,12 @@ public static class VerifyCommand {
             return string.Empty;
         }
 
+        // ⚠ #356: `FileCount - blocked` was 1 - 1 = 0 over a two-file tree with one unreadable
+        // file, and this line printed "0 files were checked" directly under a finding on the
+        // readable one. The loaders now count a requested file whether or not it opened, so for the
+        // per-file blocking ids the difference is the number of files the stages actually saw. The
+        // clamp stays for the same reason `Renderer.Scale` keeps its guard: a blocking diagnostic
+        // at a non-source path (a baseline, SK9028) is in `blocked` and not in `FileCount`.
         var blocked = Renderer.BlockedFiles(report).Count();
         var checkedFiles = Math.Max(0, report.FileCount - blocked);
         var skalasFault = Renderer.Causes(report).Any(static entry => entry.Cause == IncompleteCause.Defect);

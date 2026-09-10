@@ -376,6 +376,48 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
+    ///     ⚠ #356. The banner's fraction and the trailer's arithmetic count a file the load could not
+    ///     read, measured through the binary the issue was measured through.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The two-file tree the issue reports printed <c>1 of 1 file was not checked</c> and
+    ///         <c>0 files were checked</c> under a finding on the readable neighbour: the loose loader
+    ///         counted a file only once it had read it. The three-file tree with two unreadable files
+    ///         is the case the renderer used to hide — <c>FileCount</c> 1 against 2 blocked files made
+    ///         <c>Scale</c> drop the fraction rather than print <c>2 of 1</c>.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Sabotage: put <c>unreadable.Add</c> back behind the read in <c>LooseLoader</c> and
+    ///         both rows go red on the fraction — verified by doing it.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData(1, "1 of 2 file was not checked", "PARTIAL  1 file was checked")]
+    [InlineData(2, "2 of 3 files were not checked", "PARTIAL  1 file was checked")]
+    public void Verify_CountsAnUnreadableFileInTheDenominator(int unreadable, string banner, string trailer) {
+        for (var i = 0; i < unreadable; i++) {
+            if (UnreadableFile("Unreadable" + i.ToString(CultureInfo.InvariantCulture) + ".cs") is null) {
+                Assert.Skip("needs a POSIX mode bit this process is subject to; root and Windows are exempt.");
+                return;
+            }
+        }
+
+        Write("Neighbour.cs", "class  C{ void  M( ){} }\n");
+
+        var run = CliRunner.Run("verify", "--format", "agent", "--load", "loose", directory);
+        var text = run.StandardOutput + run.StandardError;
+
+        Assert.Equal(5, run.ExitCode);
+        Assert.Contains(banner, text, StringComparison.Ordinal);
+        Assert.Contains(trailer, text, StringComparison.Ordinal);
+        Assert.DoesNotContain("0 files were checked", text, StringComparison.Ordinal);
+
+        // The neighbour was reached, which is what the trailer's count now agrees with.
+        Assert.Contains("Neighbour.cs", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     ⚠ The table in the document, read rather than remembered.
     /// </summary>
     /// <remarks>

@@ -2,7 +2,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Diagnostics;
-using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Reporting;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -52,38 +51,24 @@ public static class LooseLoader {
 
         var trees = ImmutableArray.CreateBuilder<SyntaxTree>(files.Count);
         var reportable = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
-        var unreadable = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
+        var unreadable = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
+        var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
         foreach (var file in files) {
-            try {
-                using var stream = File.OpenRead(file);
-                trees.Add(
-                    CSharpSyntaxTree.ParseText(SourceText.From(stream, canBeEmbedded: false), parseOptions, file)
-                );
+            // ⚠ #353 made a denied read `SK9015` here rather than a crash; #356 made it count. The
+            // file is *requested* whether or not it opens, so it goes into one of the two sets
+            // either way — see `SourceFiles` for the policy and `CompilationUnit.UnreadablePaths`
+            // for why the count and the iteration are separate sets.
+            using var stream = SourceFiles.Open(file, unreadable, diagnostics);
+            if (stream is null) {
+                continue;
+            }
 
-                // ⚠ Analysed, never reported on. Same rule as the binlog path: a diagnostic in a
-                // file the user cannot edit is noise.
-                if (!BinlogLoader.IsGenerated(file)) {
-                    reportable.Add(file);
-                }
-            } catch (IOException) {
-                // A file that vanished between the enumeration and the read is not an error worth
-                // failing an agent's verify over.
-            } catch (UnauthorizedAccessException exception) {
-                // ⚠ #353: not the same situation as the vanished file above, and it must not share
-                // its silence. `UnauthorizedAccessException` does not derive from `IOException`, so
-                // it escaped this loader entirely and took the command down — and this was the last
-                // site still doing that after #353 widened the other eight. Skipping it quietly
-                // would swap one defect for the other one #345 is about: a file dropping out of the
-                // report with nothing said. `SK9015` on SK9010's contract — report it, leave it
-                // alone, keep going, exit non-zero.
-                unreadable.Add(
-                    new SkalaDiagnostic(
-                        FormatDiagnosticIds.FileIoFailed,
-                        SkalaSeverity.Error,
-                        exception.Message,
-                        file
-                    )
-                );
+            trees.Add(CSharpSyntaxTree.ParseText(SourceText.From(stream, canBeEmbedded: false), parseOptions, file));
+
+            // ⚠ Analysed, never reported on. Same rule as the binlog path: a diagnostic in a
+            // file the user cannot edit is noise.
+            if (!BinlogLoader.IsGenerated(file)) {
+                reportable.Add(file);
             }
         }
 
@@ -106,11 +91,12 @@ public static class LooseLoader {
                     Name = "loose",
                     Compilation = compilation,
                     PreprocessorSymbols = [.. request.Define],
-                    ReportablePaths = reportable.ToImmutable()
+                    ReportablePaths = reportable.ToImmutable(),
+                    UnreadablePaths = unreadable.ToImmutable()
                 }
             ],
             Summary = $"loose ({files.Count.ToString(CultureInfo.InvariantCulture)} file(s), no project)",
-            Diagnostics = unreadable.ToImmutable()
+            Diagnostics = diagnostics.ToImmutable()
         };
     }
 
