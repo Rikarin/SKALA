@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 337 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 342 ids are allocated.
 
 ## Async
 
@@ -395,9 +395,14 @@
 | [SK9001](SK9001.md) | Unknown configuration key | suggestion | — | no |
 | [SK9010](SK9010.md) | The file does not parse | warning | — | yes |
 | [SK9011](SK9011.md) | A member's braces are split across a preprocessor branch | suggestion | — | yes |
+| [SK9015](SK9015.md) | The file could not be read or written | error | — | yes |
 | [SK9020](SK9020.md) | The binlog is stale for this file | suggestion | — | no |
 | [SK9021](SK9021.md) | The binlog does not name a file that exists | warning | — | no |
 | [SK9030](SK9030.md) | An analyzer threw | warning | — | no |
 | [SK9031](SK9031.md) | An analyzer package failed to load | warning | — | no |
+| [SK9095](SK9095.md) | An arrangement rule threw and was skipped | warning | — | yes |
+| [SK9096](SK9096.md) | An arrangement was reverted because an identifier now binds to something else | error | — | no |
+| [SK9097](SK9097.md) | Arrange-and-format did not reach a fixed point | error | — | yes |
+| [SK9098](SK9098.md) | An arrangement was reverted because it produced new diagnostics | error | — | no |
 | [SK9099](SK9099.md) | The formatter's output was not token-equivalent | error | — | yes |
 
