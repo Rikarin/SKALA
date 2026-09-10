@@ -863,8 +863,10 @@ public static partial class SkalaCommandLine {
     ///     reporting it (rather than throwing out of the loader entirely), a single unreadable file
     ///     reached this test too and turned <c>arrange</c> into a <c>LoadFailure</c> while
     ///     <c>format</c> — which does not route that file through the loader — still exited 5.
-    ///     <b>Same file, two answers depending on the verb, which is the defect #353 was filed to
-    ///     remove rather than relocate.</b>
+    ///     <b>
+    ///         Same file, two answers depending on the verb, which is the defect #353 was filed to
+    ///         remove rather than relocate.
+    ///     </b>
     /// </remarks>
     /// <summary>
     ///     The load diagnostics that the command's own output does not already carry.
