@@ -127,5 +127,4 @@ public sealed class RewriteGuardReachTests {
             + "reads as audited and is not."
         );
     }
-
 }

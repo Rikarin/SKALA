@@ -268,8 +268,11 @@ public sealed class MultiTargetAvailabilityTests {
     ///     #351: the same union, decided by the <em>language version</em> rather than by a type.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>Roughly forty <c>SK1xxx</c> rules gate on
-    ///     <c>SkalaRule.MeetsLanguageVersion</c> and not one of them was guarded</b>, so this is the
+    ///     ⚠
+    ///     <b>
+    ///         Roughly forty <c>SK1xxx</c> rules gate on
+    ///         <c>SkalaRule.MeetsLanguageVersion</c> and not one of them was guarded
+    ///     </b>, so this is the
     ///     larger half of #343's bug class rather than a footnote to it. <c>SK1005</c> stands for all
     ///     of them: <c>hasFix</c>, <c>fixIsSafe</c>, floor C# 10. The <c>net10.0</c> moniker compiles
     ///     at C# 14 and reports it, <c>skala fix --safe</c> rewrites the block namespace to
@@ -464,8 +467,7 @@ public sealed class MultiTargetAvailabilityTests {
     }
 
     /// <summary>⚠ A binlog is the record of a real build, so one has to be run to get a real one.</summary>
-    static void Build(string project, string binlog) =>
-        Run("build", project, "-bl:" + binlog, "--nologo");
+    static void Build(string project, string binlog) => Run("build", project, "-bl:" + binlog, "--nologo");
 
     /// <summary>
     ///     ⚠

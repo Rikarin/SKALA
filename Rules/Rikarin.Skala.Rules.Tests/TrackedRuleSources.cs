@@ -7,8 +7,11 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     The analyzer sources as <c>git</c> lists them, for the tests that audit rule source text.
 /// </summary>
 /// <remarks>
-///     ⚠ <b><c>git ls-files</c> rather than the working tree, and an empty listing is a broken
-///     instrument rather than a clean tree.</b> A ledger test that scans nothing passes every
+///     ⚠
+///     <b>
+///         <c>git ls-files</c> rather than the working tree, and an empty listing is a broken
+///         instrument rather than a clean tree.
+///     </b> A ledger test that scans nothing passes every
 ///     assertion it makes, so both callers assert the listing is large before believing what it
 ///     contains — a zero from a check that did not run and a zero from a clean tree are the same
 ///     zero.

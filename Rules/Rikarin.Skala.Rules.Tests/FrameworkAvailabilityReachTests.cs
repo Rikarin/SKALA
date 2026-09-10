@@ -8,8 +8,11 @@ namespace Rikarin.Skala.Rules.Tests;
 ///     project's target frameworks, or says here why it does not have to (#351).
 /// </summary>
 /// <remarks>
-///     ⚠ <b>This is the half of #351 that stops the bug coming back, and without it the audit is a
-///     sentence.</b> #343 fixed <c>SK1023</c> and built <c>FrameworkAvailability</c>; a full sweep a
+///     ⚠
+///     <b>
+///         This is the half of #351 that stops the bug coming back, and without it the audit is a
+///         sentence.
+///     </b> #343 fixed <c>SK1023</c> and built <c>FrameworkAvailability</c>; a full sweep a
 ///     release later found <c>SK1023</c> was still the only rule consulting it, because nothing
 ///     forced or even detected the unguarded shape. The next framework-dependent rule would have
 ///     landed with the same hole and the same silence.
@@ -61,54 +64,76 @@ public sealed class FrameworkAvailabilityReachTests {
         ["Async/AsyncIteratorNotEnumeratedAnalyzer.cs"] =
             Recognition + " `IAsyncEnumerable<T>` is only compared against the invocation's own type.",
         ["Async/AsyncOnlyToAwaitAnalyzer.cs"] = Recognition + " Task-family table; the fix removes `async`/`await`.",
-        ["Async/AsyncVoidAnalyzer.cs"] = Recognition + " `EventArgs` identifies a handler shape; the fix writes `Task`, which any source spelling `async` already has.",
-        ["Async/BlockingOnAsyncAnalyzer.cs"] = Recognition + " Awaiter table matched against the blocked-on expression; the fix only prepends `await`.",
-        ["Async/CancellationTokenForwardingAnalyzer.cs"] = Recognition + " The fix forwards a parameter already in scope.",
+        ["Async/AsyncVoidAnalyzer.cs"] = Recognition
+            + " `EventArgs` identifies a handler shape; the fix writes `Task`, which any source spelling `async` already has.",
+        ["Async/BlockingOnAsyncAnalyzer.cs"] = Recognition
+            + " Awaiter table matched against the blocked-on expression; the fix only prepends `await`.",
+        ["Async/CancellationTokenForwardingAnalyzer.cs"] =
+            Recognition + " The fix forwards a parameter already in scope.",
         ["Async/NullTaskReturnAnalyzer.cs"] = Recognition + " Task/Task<T> match the declared return type.",
         ["Async/RedundantDisposeAnalyzer.cs"] = Recognition + " The fix deletes a statement and writes no type.",
-        ["Async/SpinLockInReadonlyFieldAnalyzer.cs"] = Recognition + " `SpinLock` is the field's own declared type; the fix removes `readonly`.",
-        ["Async/SynchronousAsyncDisposalAnalyzer.cs"] = Recognition + " `IAsyncDisposable` types the disposed value in source.",
+        ["Async/SpinLockInReadonlyFieldAnalyzer.cs"] =
+            Recognition + " `SpinLock` is the field's own declared type; the fix removes `readonly`.",
+        ["Async/SynchronousAsyncDisposalAnalyzer.cs"] =
+            Recognition + " `IAsyncDisposable` types the disposed value in source.",
         ["Async/TaskReturnedFromUsingAnalyzer.cs"] = Recognition + " Task-family table over the returned expression.",
-        ["Async/UncancellableAsyncMethodAnalyzer.cs"] = Recognition + " `CancellationToken` is netstandard2.0-and-up on every supported moniker regardless.",
+        ["Async/UncancellableAsyncMethodAnalyzer.cs"] = Recognition
+            + " `CancellationToken` is netstandard2.0-and-up on every supported moniker regardless.",
         ["Async/UndeclaredDisposeAnalyzer.cs"] =
             "The emitted text is only ever `IDisposable`/`System.IDisposable`, present on every "
             + "moniker; the `IAsyncDisposable` lookup is a negative guard over source types.",
-        ["Async/UndisposedLocalAnalyzer.cs"] = Recognition + " The C# 8 floor its `using` declaration needs is declarative and centrally guarded.",
+        ["Async/UndisposedLocalAnalyzer.cs"] = Recognition
+            + " The C# 8 floor its `using` declaration needs is declarative and centrally guarded.",
         ["Async/UndisposedOwnedFieldAnalyzer.cs"] = Recognition + " `IDisposable` types a field declared in source.",
         ["Async/UsingResourceInitializerAnalyzer.cs"] =
             "The source already has the `using`; the fix only hoists object-initializer assignments "
             + "and emits no new construct.",
-        ["Cleanup/RedundantControlFlowAnalyzer.cs"] = Recognition + " `FlagsAttribute` on a source enum; every edit is a deletion.",
+        ["Cleanup/RedundantControlFlowAnalyzer.cs"] =
+            Recognition + " `FlagsAttribute` on a source enum; every edit is a deletion.",
         ["Correctness/AssemblyLoadedOutsideItsContextAnalyzer.cs"] =
             "`AssemblyLoadContext` only proves the call sits inside an override of its own `Load`, so "
             + "the source subclasses it; the fix emits `LoadFromAssemblyPath`, an inherited member of "
             + "that same type.",
-        ["Correctness/CollectionModifiedAnalyzer.cs"] = Recognition + " Collection table over the enumerated expression; the fix inserts `.ToList()`.",
-        ["Correctness/DeadConditionalCallAnalyzer.cs"] = Recognition + " `ConditionalAttribute`; the fix deletes the call.",
-        ["Correctness/DiscardedCaughtExceptionAnalyzer.cs"] = Recognition + " The fix passes an identifier already in source.",
-        ["Correctness/DiscardedExceptionAnalyzer.cs"] = Recognition + " The fix inserts the keyword `throw `, which is not an API.",
-        ["Correctness/GetTypeOnATypeAnalyzer.cs"] = Recognition + " The fix deletes `.GetType()` and keeps the receiver's own text.",
+        ["Correctness/CollectionModifiedAnalyzer.cs"] = Recognition
+            + " Collection table over the enumerated expression; the fix inserts `.ToList()`.",
+        ["Correctness/DeadConditionalCallAnalyzer.cs"] =
+            Recognition + " `ConditionalAttribute`; the fix deletes the call.",
+        ["Correctness/DiscardedCaughtExceptionAnalyzer.cs"] =
+            Recognition + " The fix passes an identifier already in source.",
+        ["Correctness/DiscardedExceptionAnalyzer.cs"] =
+            Recognition + " The fix inserts the keyword `throw `, which is not an API.",
+        ["Correctness/GetTypeOnATypeAnalyzer.cs"] =
+            Recognition + " The fix deletes `.GetType()` and keeps the receiver's own text.",
         ["Correctness/ImplicitStringSearchCultureAnalyzer.cs"] =
             "The emitted `IndexOf`/`StartsWith`/`EndsWith`/`LastIndexOf(string, StringComparison)` "
             + "overloads exist back to netstandard1.0; the lookups only choose between the short and "
             + "qualified spelling.",
-        ["Correctness/InvariantCultureComparisonAnalyzer.cs"] = Recognition + " The fix swaps one member of the `StringComparison` the source already names.",
+        ["Correctness/InvariantCultureComparisonAnalyzer.cs"] = Recognition
+            + " The fix swaps one member of the `StringComparison` the source already names.",
         ["Correctness/RedundantSuppressFinalizeAnalyzer.cs"] = Recognition + " `System.GC`; the fix deletes the call.",
-        ["Correctness/WrongArgumentNameAnalyzer.cs"] = Recognition + " The fix emits `nameof(x)` over a parameter already in scope.",
+        ["Correctness/WrongArgumentNameAnalyzer.cs"] =
+            Recognition + " The fix emits `nameof(x)` over a parameter already in scope.",
         ["Design/NullSequenceReturnAnalyzer.cs"] =
             "The lookups type the declared return; the fix emits `[]`, whose C# 12 floor is "
             + "declarative and centrally guarded.",
-        ["Maintainability/LoggerForAnotherTypeAnalyzer.cs"] = Recognition + " The fix rewrites only the type argument, a source type.",
+        ["Maintainability/LoggerForAnotherTypeAnalyzer.cs"] =
+            Recognition + " The fix rewrites only the type argument, a source type.",
         ["Modernization/CachedEmptyInstanceAnalyzer.cs"] =
             "The table is matched against the expression being replaced, and each entry's replacement "
             + "is a member of the very type the lookup found.",
-        ["Modernization/CollectionExpressionAnalyzer.cs"] = Recognition + " `List<T>` types the source expression; the C# 12 floor is centrally guarded.",
-        ["Modernization/DictionaryLookupAnalyzer.cs"] = Recognition + " `Dictionary<K,V>` is the receiver in source; the fix reuses `TryGetValue`, present wherever the type is.",
+        ["Modernization/CollectionExpressionAnalyzer.cs"] = Recognition
+            + " `List<T>` types the source expression; the C# 12 floor is centrally guarded.",
+        ["Modernization/DictionaryLookupAnalyzer.cs"] = Recognition
+            + " `Dictionary<K,V>` is the receiver in source; the fix reuses `TryGetValue`, present wherever the type is.",
         ["Modernization/EnumGetValuesAnalyzer.cs"] = Recognition + " `System.Enum`; the fix names a source enum.",
-        ["Modernization/ForeachOverIndexedForAnalyzer.cs"] = Recognition + " Collection table over the indexed receiver; the fix rewrites the loop header only.",
-        ["Modernization/IndexerOverElementAtAnalyzer.cs"] = Recognition + " `Enumerable` — the source already calls LINQ; the fix writes an indexer.",
-        ["Modernization/InterpolatedStringFormAnalyzer.cs"] = Recognition + " `LoggerExtensions` is the logging package the source calls into.",
-        ["Modernization/OfTypeChainAnalyzer.cs"] = Recognition + " `Enumerable`; the fix merges two calls the source already makes.",
+        ["Modernization/ForeachOverIndexedForAnalyzer.cs"] = Recognition
+            + " Collection table over the indexed receiver; the fix rewrites the loop header only.",
+        ["Modernization/IndexerOverElementAtAnalyzer.cs"] =
+            Recognition + " `Enumerable` — the source already calls LINQ; the fix writes an indexer.",
+        ["Modernization/InterpolatedStringFormAnalyzer.cs"] =
+            Recognition + " `LoggerExtensions` is the logging package the source calls into.",
+        ["Modernization/OfTypeChainAnalyzer.cs"] =
+            Recognition + " `Enumerable`; the fix merges two calls the source already makes.",
         ["Modernization/SpanDecodingAnalyzer.cs"] =
             "`IsByteSpan` compares a type already in the source against Span/ReadOnlySpan — the "
             + "argument is a span before the rule fires, so no moniker lacking one can reach it.",
@@ -118,14 +143,18 @@ public sealed class FrameworkAvailabilityReachTests {
         ["Performance/CollectionOwnMethodAnalyzer.cs"] =
             "The LINQ-to-member map is a fixed three-entry table restricted by symbol to "
             + "`List<T>`/`ImmutableList<T>`, and every target member exists wherever those do.",
-        ["Performance/ConcurrentDictionaryMemberAnalyzer.cs"] = Recognition + " `ConcurrentDictionary<K,V>` is the receiver; the emitted members are netstandard2.0-era.",
+        ["Performance/ConcurrentDictionaryMemberAnalyzer.cs"] = Recognition
+            + " `ConcurrentDictionary<K,V>` is the receiver; the emitted members are netstandard2.0-era.",
         ["Performance/CopyingPropertyAnalyzer.cs"] = Recognition + " `Enumerable`; the source already calls LINQ.",
         ["Performance/SortBeforeFilterAnalyzer.cs"] = Recognition + " `Enumerable`; the fix swaps two existing spans.",
-        ["Performance/WhereBeforeOperatorAnalyzer.cs"] = Recognition + " `Enumerable`; the fix reorders existing calls.",
-        ["Security/AsymmetricKeySizeAnalyzer.cs"] = Recognition + " The RSA/DSA receiver is in source; the fix emits the integer literal 2048."
+        ["Performance/WhereBeforeOperatorAnalyzer.cs"] =
+            Recognition + " `Enumerable`; the fix reorders existing calls.",
+        ["Security/AsymmetricKeySizeAnalyzer.cs"] =
+            Recognition + " The RSA/DSA receiver is in source; the fix emits the integer literal 2048."
     };
 
-    static readonly Regex Lookup = new(@"GetTypesByMetadataName\s*\(|GetTypeByMetadataName\s*\(", RegexOptions.Compiled);
+    static readonly Regex Lookup =
+        new(@"GetTypesByMetadataName\s*\(|GetTypeByMetadataName\s*\(", RegexOptions.Compiled);
 
     const string Prefix = "Rules/Rikarin.Skala.Rules/";
 

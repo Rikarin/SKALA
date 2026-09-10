@@ -65,6 +65,28 @@ public static class FrameworkAvailability {
     ///     Computed once per compilation start; the loop is over the sibling's trees, which is the
     ///     only place the membership is recorded.
     /// </remarks>
+    public static ImmutableHashSet<string> PathsWithout(AnalyzerOptions options, Func<Compilation, bool> supported) {
+        var siblings = For(options);
+        if (siblings.IsEmpty) {
+            return ImmutableHashSet<string>.Empty;
+        }
+
+        var builder = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
+        foreach (var sibling in siblings) {
+            if (supported(sibling)) {
+                continue;
+            }
+
+            foreach (var tree in sibling.SyntaxTrees) {
+                if (tree.FilePath is { Length: > 0 } path) {
+                    builder.Add(path);
+                }
+            }
+        }
+
+        return builder.ToImmutable();
+    }
+
     /// <summary>
     ///     The sibling compilations that compile each source path, for a rule whose availability
     ///     question is asked per finding rather than once per compilation.
@@ -73,8 +95,11 @@ public static class FrameworkAvailability {
     ///     ⚠ <b>The counterpart to <see cref="PathsWithout" />, not a replacement for it.</b> That one
     ///     takes a predicate constant over the compilation — "does this framework have
     ///     <c>System.Threading.Lock</c>" — and can therefore settle every document once, at
-    ///     compilation start. <c>SK2182</c> cannot: what it must ask is whether a <em>particular
-    ///     string literal</em> at a particular site names a type the sibling can also see, so the
+    ///     compilation start. <c>SK2182</c> cannot: what it must ask is whether a
+    ///     <em>
+    ///         particular
+    ///         string literal
+    ///     </em> at a particular site names a type the sibling can also see, so the
     ///     predicate is not known until the finding is. Re-walking every sibling's trees per site to
     ///     use <see cref="PathsWithout" /> would be quadratic on a large tree; this pays for the walk
     ///     once and hands back the grouping.
@@ -114,27 +139,5 @@ public static class FrameworkAvailability {
         }
 
         return result.ToImmutable();
-    }
-
-    public static ImmutableHashSet<string> PathsWithout(AnalyzerOptions options, Func<Compilation, bool> supported) {
-        var siblings = For(options);
-        if (siblings.IsEmpty) {
-            return ImmutableHashSet<string>.Empty;
-        }
-
-        var builder = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
-        foreach (var sibling in siblings) {
-            if (supported(sibling)) {
-                continue;
-            }
-
-            foreach (var tree in sibling.SyntaxTrees) {
-                if (tree.FilePath is { Length: > 0 } path) {
-                    builder.Add(path);
-                }
-            }
-        }
-
-        return builder.ToImmutable();
     }
 }
