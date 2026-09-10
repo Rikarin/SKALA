@@ -67,7 +67,7 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         the tree, and the static <c>MemoryExtensions</c> spelling). The guard is deliberately
 ///         <em>not</em> added: a check no fixture can turn red is a zero from a disabled check, which is
 ///         how the dead element-type test above came to be written in the first place.
-///         <c>SpanPatternReachabilityTests</c> asserts the <c>CS8640</c> the safety rests on, and
+///         <c>ExpressionTreeGuardTests</c> asserts the <c>CS8640</c> the safety rests on, and
 ///         <c>fixtures/SK1130/negative/a-linq-sequence-equal-inside-an-expression-tree.cs</c> is the
 ///         tripwire for the widening that would remove it: generalise this rule to
 ///         <c>IEnumerable&lt;T&gt;</c> and that fixture goes red, which is when the guard becomes
