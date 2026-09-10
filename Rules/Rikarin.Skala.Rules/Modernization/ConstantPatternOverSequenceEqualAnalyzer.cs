@@ -44,6 +44,35 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         conversion, but <c>a is "abc"</c> is <c>CS0029</c> — a pattern has no conversion step. The
 ///         guard reads <see cref="TypeInfo.Type" /> and never <see cref="TypeInfo.ConvertedType" />.
 ///     </para>
+///     <para>
+///         ⚠
+///         <b>
+///             There is no expression-tree guard on this path, the rewrite would be illegal in one,
+///             and the safety is a property of a <em>different</em> language feature (#350).
+///         </b>
+///         <c>span is "abc"</c> is a <em>constant pattern</em> — unlike <c>SK1120</c>'s <c>x is T</c>,
+///         which is the type-test operator and perfectly legal in a tree — and a constant pattern in a
+///         lambda converted to <c>Expression&lt;TDelegate&gt;</c> is <c>CS8122</c>.
+///         <see cref="PatternSafety.IsPatternSafeContext" /> is not what stops it: that is a syntactic
+///         parent-kind test which answers <c>true</c> for an argument, a <c>return</c>, an expression
+///         body and <c>&amp;&amp;</c>, all legal inside an expression-tree lambda. What stops it is the
+///         receiver: it must be <c>Span&lt;char&gt;</c> or <c>ReadOnlySpan&lt;char&gt;</c>, and a
+///         <c>ref struct</c> value cannot appear in an expression tree at all.
+///     </para>
+///     <para>
+///         ⚠ <b>The error is <c>CS8640</c>, not <c>CS8122</c>, and that is the point.</b> "Expression
+///         tree cannot contain value of ref struct or restricted type" fires on the <em>unrewritten</em>
+///         source, so the shape never reaches this rule — measured on all four routes a span could take
+///         into a tree (the lambda's own parameter, a call inside the tree, a delegate lambda nested in
+///         the tree, and the static <c>MemoryExtensions</c> spelling). The guard is deliberately
+///         <em>not</em> added: a check no fixture can turn red is a zero from a disabled check, which is
+///         how the dead element-type test above came to be written in the first place.
+///         <c>ExpressionTreeGuardTests</c> asserts the <c>CS8640</c> the safety rests on, and
+///         <c>fixtures/SK1130/negative/a-linq-sequence-equal-inside-an-expression-tree.cs</c> is the
+///         tripwire for the widening that would remove it: generalise this rule to
+///         <c>IEnumerable&lt;T&gt;</c> and that fixture goes red, which is when the guard becomes
+///         required.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ConstantPatternOverSequenceEqualAnalyzer : DiagnosticAnalyzer {

@@ -1,8 +1,8 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Rikarin.Skala.Rules.Modernization;
 using Rikarin.Skala.Rules.TestQuality;
-using System;
 using System.Threading;
 
 namespace Rikarin.Skala.Rules.Async;
@@ -105,17 +105,23 @@ internal static class AsyncContext {
     }
 
     /// <summary>Whether the expression sits inside an expression tree, where <c>await</c> does not compile.</summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         The walk is here and the type test is shared, because the type test had a bug and this
+    ///         copy had it too (#349).
+    ///     </b> Both copies matched with
+    ///     <c>ToDisplayString().StartsWith("System.Linq.Expressions.Expression")</c>, which also answers
+    ///     <c>true</c> for a user-declared <c>System.Linq.Expressions.ExpressionFoo</c>. Two independent
+    ///     spellings of one predicate are two places for that to be wrong, so the answer is taken from
+    ///     <see cref="NullComparison.IsExpressionTreeType" />. <c>AnonymousFunctionExpressionSyntax</c> is
+    ///     the base of the three node kinds the other copy lists, so the walks were already the same set.
+    /// </remarks>
     public static bool InsideExpressionTree(SemanticModel model, SyntaxNode node, CancellationToken cancellation) {
         for (var current = node.Parent; current is not null; current = current.Parent) {
-            if (current is not AnonymousFunctionExpressionSyntax) {
-                continue;
-            }
-
-            var converted = model.GetTypeInfo(current, cancellation).ConvertedType;
-            for (var type = converted; type is not null; type = type.BaseType) {
-                if (type.ToDisplayString().StartsWith("System.Linq.Expressions.Expression", StringComparison.Ordinal)) {
-                    return true;
-                }
+            if (current is AnonymousFunctionExpressionSyntax
+                && NullComparison.IsExpressionTreeType(model.GetTypeInfo(current, cancellation).ConvertedType)) {
+                return true;
             }
         }
 
