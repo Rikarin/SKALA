@@ -431,3 +431,69 @@ public sealed class SarifSeverityTests {
         }
     }
 }
+
+/// <summary>
+///     #358: what <see cref="SarifReader" /> and <see cref="Baseline.Read" /> throw is one type per cause,
+///     so a caller filtering on <see cref="InvalidDataException" /> has the whole of "not a SARIF log".
+/// </summary>
+/// <remarks>
+///     ⚠ The deserialiser is Newtonsoft, and Newtonsoft's <c>JsonException</c> is not
+///     <c>System.Text.Json.JsonException</c> — the type the rest of the tool catches by that name, and
+///     the type the issue named. Four callers filtered on <c>InvalidDataException</c> and none on the
+///     type a merge-conflict marker actually produces. Sabotage by removing the translation in
+///     <c>SarifReader.Deserialize</c>: both fixtures then throw <c>JsonReaderException</c>.
+/// </remarks>
+public sealed class SarifReaderContractTests {
+    const string ConflictMarker = """
+                                  {
+                                  <<<<<<< HEAD
+                                    "version": "2.1.0"
+                                  =======
+                                    "version": "2.1.0", "runs": []
+                                  >>>>>>> other
+                                  }
+                                  """;
+
+    static string Temporary(string content) {
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
+        File.WriteAllText(path, content);
+        return path;
+    }
+
+    [Fact]
+    public void Baseline_ThatIsNotJson_IsInvalidDataNamingThePath() {
+        var path = Temporary(ConflictMarker);
+        try {
+            var exception = Assert.Throws<InvalidDataException>(() => Baseline.Read(path));
+            Assert.Contains(path, exception.Message, StringComparison.Ordinal);
+            Assert.Contains("is not valid JSON", exception.Message, StringComparison.Ordinal);
+            Assert.IsAssignableFrom<Newtonsoft.Json.JsonException>(exception.InnerException);
+        } finally {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Sarif_ThatIsNotJson_IsInvalidDataNamingThePath() {
+        var path = Temporary(ConflictMarker);
+        try {
+            var exception = Assert.Throws<InvalidDataException>(() => SarifReader.Read(path, "/repo"));
+            Assert.Contains(path, exception.Message, StringComparison.Ordinal);
+            Assert.Contains("is not valid JSON", exception.Message, StringComparison.Ordinal);
+        } finally {
+            File.Delete(path);
+        }
+    }
+
+    /// <summary>The pre-#358 half of the contract, unchanged: valid JSON that is not a log.</summary>
+    [Fact]
+    public void Baseline_ThatIsJsonButNotALog_IsStillInvalidData() {
+        var path = Temporary("null");
+        try {
+            var exception = Assert.Throws<InvalidDataException>(() => Baseline.Read(path));
+            Assert.Contains("is not a SARIF log", exception.Message, StringComparison.Ordinal);
+        } finally {
+            File.Delete(path);
+        }
+    }
+}

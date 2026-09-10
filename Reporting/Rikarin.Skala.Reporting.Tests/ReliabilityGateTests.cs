@@ -4,15 +4,16 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Reporting.Tests;
 
 /// <summary>
-///     The two statements a run makes about itself, and that no gate used to read.
+///     The three statements a run makes about itself, and that no gate used to read.
 /// </summary>
 /// <remarks>
-///     ⚠ Both are unconditional and named by no gate, which is what separates them from every other
+///     ⚠ All three are unconditional and named by no gate, which is what separates them from every other
 ///     condition in <see cref="Gate" />. The rest are opinions a repository opts into in
-///     <c>skala.jsonc</c> — how severe is too severe, how many new findings are tolerable. These two say
-///     the <em>denominator is unknown</em>: the run did not finish reading the tree (#309), or a rule
-///     died on the first file and reported nothing for the rest (#295). A verdict computed over an
-///     unknown fraction of a tree is not a verdict, so there is nothing to opt into.
+///     <c>skala.jsonc</c> — how severe is too severe, how many new findings are tolerable. These three say
+///     the <em>denominator is unknown</em>: the run did not finish reading the tree (#309), a rule
+///     died on the first file and reported nothing for the rest (#295), or the baseline it was told to
+///     bucket findings against exists and would not open (#358). A verdict computed over an unknown
+///     fraction of a tree is not a verdict, so there is nothing to opt into.
 /// </remarks>
 public sealed class ReliabilityGateTests {
     static RunReport Report() => new() { RepositoryRoot = "/repo", Mode = LoadMode.Loose };
@@ -132,7 +133,13 @@ public sealed class ReliabilityGateTests {
     ///     reported as <c>SK9030</c> — an unresolvable <c>--since</c>, a missing baseline, an unreadable
     ///     one, a failed suppression comparison — so failing the gate on <c>SK9030</c> would have failed
     ///     a run whose only problem is that a baseline file is absent, while telling its author an
-    ///     analyzer had crashed. They are <c>SK9028</c>, and the reliability gate must ignore them.
+    ///     analyzer had crashed. They are <c>SK9028</c>, and the reliability gate must ignore this one.
+    ///     <para>
+    ///         ⚠ #358 split the id by severity, and this test is the half that must stay green. An
+    ///         <em>absent</em> named baseline is a warning: <c>Baseline.Read</c> treats it as empty,
+    ///         every finding is new, and a <c>newIssues</c> gate fails loudly on its own. A baseline
+    ///         that exists and will not open is an error, and the test below is what changed.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void MissingGateInput_DoesNotFailTheReliabilityGate() {
@@ -148,6 +155,38 @@ public sealed class ReliabilityGateTests {
         };
 
         Assert.True(Gate.Evaluate(GateDefinition.Local, report, true).Passed);
+    }
+
+    /// <summary>
+    ///     #358: a gate input that exists and could not be read fails the gate, and the failure says which.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Before this the diagnostic was written at error severity, rendered as <c>error SK9028</c>,
+    ///     and read by nothing that decides. <c>check</c> went on to compare against no baseline; the
+    ///     <c>local</c> gate has no <c>newIssues</c> condition and passed; the agent renderer printed an
+    ///     <c>INCOMPLETE</c> banner above exit 0 — measured through the real binary over a
+    ///     <c>.skala/baseline.sarif</c> holding the literal <c>null</c>. Sabotage by removing the
+    ///     <c>SK9028</c> clause from <c>Gate.EvaluateReliability</c>.
+    /// </remarks>
+    [Fact]
+    public void UnreadableGateInput_FailsTheReliabilityGate() {
+        var report = Report() with {
+            Diagnostics = [
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.GateInputUnavailable,
+                    SkalaSeverity.Error,
+                    "the baseline at /repo/.skala/baseline.sarif could not be read: /repo/.skala/baseline.sarif is not valid JSON",
+                    "/repo/.skala/baseline.sarif"
+                )
+            ]
+        };
+
+        var result = Gate.Evaluate(GateDefinition.Local, report, true);
+
+        Assert.False(result.Passed);
+        var failure = Assert.Single(result.Failures);
+        Assert.Contains("could not be read", failure, StringComparison.Ordinal);
+        Assert.Contains("/repo/.skala/baseline.sarif", failure, StringComparison.Ordinal);
     }
 
     /// <summary>A run that finished and crashed nothing still passes, so the gate is not vacuous.</summary>

@@ -71,14 +71,19 @@ public sealed class Baseline {
     ///     baseline yet" is an ordinary state on a repository that has not run <c>baseline create</c>,
     ///     and "the baseline is corrupt" must not be silently treated as "nothing was accepted", which
     ///     would turn every existing finding new and fail the gate for a reason nothing names.
+    ///     <para>
+    ///         ⚠ "Throws" is two types, and callers filter on both by name: <see cref="IOException" />
+    ///         or <see cref="UnauthorizedAccessException" /> when the file could not be opened, and
+    ///         <see cref="InvalidDataException" /> when it opened and is not a SARIF log — which, since
+    ///         #358, includes not being JSON at all (<see cref="SarifReader.Deserialize" />).
+    ///     </para>
     /// </remarks>
     public static Baseline Read(string path) {
         if (!File.Exists(path)) {
             return Empty(path);
         }
 
-        var log = JsonConvert.DeserializeObject<SarifLog>(File.ReadAllText(path))
-            ?? throw new InvalidDataException($"{path} is not a SARIF log.");
+        var log = SarifReader.Deserialize(path);
 
         var results = (log.Runs ?? []).SelectMany(static run => run.Results ?? []).ToArray();
         var migrated = MigrateStoredV2(results);

@@ -315,6 +315,9 @@ public static class SuppressionAuditor {
             // An unreadable baseline is reported by the check itself; the audit does not duplicate
             // it. ⚠ #353 added the permission case: "unreadable" was implemented as "absent or
             // corrupt", so a baseline the process could not open took the audit down instead.
+            // ⚠ #358: "corrupt" was only half-covered too. A committed baseline holding a merge-
+            // conflict marker threw Newtonsoft's `JsonException` past `InvalidDataException`;
+            // `Baseline.Read` folds it in now, so this filter is complete without naming it.
         } finally {
             try {
                 File.Delete(temporary);
