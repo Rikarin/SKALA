@@ -200,6 +200,39 @@ Points of substance:
 - **Multi-targeting.** One compilation per TFM produces near-duplicate diagnostics. They are merged
   on `(ruleId, file, line, column, message)`, with the TFM list carried as a property, so a finding
   that only occurs under one target is visibly a one-target finding.
+- ⚠ **But the merge is a *union*, and for a framework-dependent rule the union is the wrong
+  quantifier** (#343, #351). One set of source files compiled by several monikers means
+  `GetTypeByMetadataName` and the language-version gate both answer **"some moniker can do this"**
+  where a rewrite needs **"every moniker can"**. `SK1023` rewrote to `System.Threading.Lock` and the
+  `netstandard2.1` leg stopped building after `skala fix --safe`. `MultiTargetLink.Apply` groups the
+  units by `ProjectPath` at `ProjectLoader.Load`'s single funnel — ⚠ by `ProjectPath` and not `Name`,
+  because the workspace decorates the name with the moniker and the binlog does not, so a name-keyed
+  grouping would pass on one loader and silently fail on the other. Both loaders are now pinned; the
+  binlog half is the one the self-gate and CI actually run.
+- ⚠ **The two guards are split by whether the predicate is declarative, and this is the decision
+  #351 took rather than the one it was briefed to take.** The brief was to route every offending rule
+  through `FrameworkAvailability`, which would have meant ~44 near-identical per-rule edits.
+  Measured instead: a `netstandard2.0;net10.0` project with **no** `<LangVersion>` evaluates
+  `LangVersion` to **7.3** and **14.0** respectively (`dotnet msbuild -getProperty:LangVersion
+  -p:TargetFramework=…`), and roughly forty `SK1xxx` rules gate on exactly that — so the
+  language-version axis was both the larger half of the bug and *already declared* as
+  `rules.json`'s `languageVersion`. `MultiTargetLanguageFloor` therefore settles it centrally, after
+  the per-unit loop and so after the incremental cache (the sibling set is not in the cache
+  fingerprint, so a guard applied inside an analyzer can be baked into a cached result). **A rule
+  added tomorrow with a `languageVersion` is guarded the day it lands**, which no convention policed
+  by a test achieves. `FrameworkAvailability` keeps the cases a rule alone can state — `SK1023`'s
+  `Lock` shape checks, `SK1060`'s *accessibility* test against `System.Memory`'s internal
+  `System.Index` shim — and `FrameworkAvailabilityReachTests` is the ledger that stops a new one
+  landing unguarded, because #343 shipped the mechanism without one and a sweep a release later found
+  `SK1023` was still its only consumer.
+- ⚠ **Most `GetTypeByMetadataName` calls are not this bug, and the sweep mattered mainly for saying
+  so.** A lookup that *recognises* a type the analysed source already references cannot differ
+  usefully across monikers: if the source names it, every moniker resolves it or the project does not
+  build. Of 337 rules, four needed the type-availability guard — `SK4031`, `SK2182`, `SK1060`,
+  `SK1092`. All 23 `Security/*` lookups are recognition, and the issue's named candidates
+  (`WorldWritableFileMode`, `RefStructOwnedDisposable`) were refuted. ⚠ The trap is the lookup that
+  looks like recognition and is not: `SK2182` resolves a **string literal** from the source, so the
+  literal compiles under every moniker while the type it names may exist under one.
 
 ### Loading third-party analyzers (ADR-008)
 
