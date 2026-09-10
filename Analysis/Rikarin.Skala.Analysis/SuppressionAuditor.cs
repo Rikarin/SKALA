@@ -309,15 +309,24 @@ public static class SuppressionAuditor {
                     )
                 );
             }
-        } catch (Exception exception) when (exception is IOException or InvalidDataException) {
-            // An unreadable baseline is reported by the check itself; the audit does not duplicate it.
+        } catch (Exception exception) when (exception is IOException
+                                                or UnauthorizedAccessException
+                                                or InvalidDataException) {
+            // An unreadable baseline is reported by the check itself; the audit does not duplicate
+            // it. ⚠ #353 added the permission case: "unreadable" was implemented as "absent or
+            // corrupt", so a baseline the process could not open took the audit down instead.
         } finally {
             try {
                 File.Delete(temporary);
-            } catch (IOException) {
+            } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
                 // Cleanup of a `Path.GetTempFileName()` scratch file, in a `finally`. Throwing here
                 // would replace the audit's real result — or the real exception on the way out —
                 // with a cleanup failure, and the file is somewhere the OS reclaims anyway.
+                //
+                // ⚠ #353: that argument does not depend on WHY the delete failed, and
+                // `File.Delete` raises `UnauthorizedAccessException` for a read-only file — the
+                // single likeliest way this line fails. A `finally` that can throw over a temp file
+                // it could not tidy is the shape that loses the real exception.
             }
         }
     }

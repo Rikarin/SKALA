@@ -56,7 +56,11 @@ public static class EditorConfigOptions {
                     Convert.ToHexStringLower(System.IO.Hashing.XxHash128.Hash(System.Text.Encoding.UTF8.GetBytes(text)))
                 )
                     .Append(';');
-            } catch (IOException) {
+                // ⚠ #353: the filter now matches the sentence below it. A config that cannot be read
+                // is usually one this process is not permitted to read, and
+                // `UnauthorizedAccessException` does not derive from `IOException` — so the policy
+                // held for a deleted config and not for an unreadable one.
+            } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
                 // A config that cannot be read is a config that does not apply; the SK9001 family
                 // reports configuration problems and this is not the place to fail a run.
             }
@@ -134,11 +138,11 @@ public static class EditorConfigOptions {
                 if (File.Exists(path)) {
                     configs.Add(AnalyzerConfig.Parse(File.ReadAllText(path), Path.GetFullPath(path)));
                 }
-            } catch (IOException) {
+            } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
                 // The same best-effort read as `For` above, and for the same reason: a config that
                 // cannot be read is a config that does not apply. Handing the generator driver the
                 // rest of the chain beats failing the run, and the SK9001 family is where a
-                // configuration problem is reported.
+                // configuration problem is reported. ⚠ #353 widened this filter with that one's.
             }
         }
 

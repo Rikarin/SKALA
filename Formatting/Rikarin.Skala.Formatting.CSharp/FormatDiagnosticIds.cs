@@ -24,18 +24,30 @@ public static class FormatDiagnosticIds {
     /// <summary>A member's braces are split across a preprocessor branch; it is emitted verbatim.</summary>
     public const string UnbalancedPreprocessor = "SK9011";
 
-    /// <summary>
-    ///     ⚠ The token stream of the output differs from the input's. A Skala bug by definition: the
-    ///     file is abandoned, nothing is written, and a reproduction is dropped under
-    ///     <c>.skala/crash/</c>. There is no flag that turns the check off.
-    /// </summary>
     /// <summary>The file could not be read or written. ⚠ Not a formatting failure — an I/O one.</summary>
     /// <remarks>
     ///     ⚠ Both call sites used a bare <c>"SK9012"</c> literal, which is `SkalaDiagnostic`'s
     ///     canonical-version id. Two meanings behind one number, and the ADR-012 guard missed it
     ///     because it read <em>declarations</em> and these were <em>uses</em>.
+    ///     <para>
+    ///         ⚠ This is also the answer for a file the process is not permitted to read (#353), and
+    ///         deliberately not <c>SK9098</c>: a mode-600 file owned by someone else is not a Skala
+    ///         bug. The contract is the one <c>SK9010</c> already sets for a file that does not
+    ///         parse — report it, leave it exactly as it was, keep going, exit non-zero.
+    ///     </para>
     /// </remarks>
     public const string FileIoFailed = "SK9015";
 
+    /// <summary>
+    ///     ⚠ The token stream of the output differs from the input's. A Skala bug by definition: the
+    ///     file is abandoned, nothing is written, and a reproduction is dropped under
+    ///     <c>.skala/crash/</c>. There is no flag that turns the check off.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The summary above sat on <see cref="FileIoFailed" /> until #353, stacked as a second
+    ///     <c>&lt;summary&gt;</c> over that member's own — so the one id that means "this IS a Skala
+    ///     bug" was documented as the one that means "this is not", and this member had no docs at
+    ///     all. Found while establishing that an unreadable file must not be reported as a bug.
+    /// </remarks>
     public const string TokenStreamChanged = "SK9099";
 }
