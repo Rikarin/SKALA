@@ -241,27 +241,205 @@ public sealed class IncompleteBannerTests {
         );
     }
 
+    static readonly string BaselinePath = Path.Combine(Root, ".skala", "baseline.sarif");
+
     /// <summary>
-    ///     ⚠ #356: the one way left into <c>Scale</c>'s <c>FileCount &lt; blocked</c> branch, pinned so
-    ///     it is a documented case and not a silent guard.
+    ///     Exactly what <c>CheckCommand.Scope</c> emits for a baseline that exists and will not open —
+    ///     a merge-conflict marker, here — after #358: error severity, located at the baseline.
     /// </summary>
-    /// <remarks>
-    ///     <c>BlockedFiles</c> counts any error-severity diagnostic located away from the root, and
-    ///     <c>SK9028</c> at a baseline that is not a SARIF log is one — measured through the CLI over
-    ///     a tree of generated files only: <c>FileCount</c> 0, blocked 1, the banner calling a baseline
-    ///     "1 file" and exit 0 under it. That comparison is between unlike things and the fraction is
-    ///     omitted for it. Whether a gate-input failure belongs in this banner at all is a separate
-    ///     decision; when it is taken, this test and the branch go together.
-    /// </remarks>
+    static SkalaDiagnostic ConflictedBaseline() =>
+        new(
+            "SK9028",
+            SkalaSeverity.Error,
+            $"the baseline at {BaselinePath} could not be read: {BaselinePath} is not valid JSON: "
+            + "Unexpected character encountered while parsing value: <. Path '', line 0, position 0.",
+            BaselinePath
+        );
+
+    /// <summary>The same id at warning: the gate names a baseline and there is no such file yet.</summary>
+    static SkalaDiagnostic AbsentBaseline() =>
+        new(
+            "SK9028",
+            SkalaSeverity.Warning,
+            $"the gate names a baseline at .skala/baseline.sarif and there is no such file, so every finding "
+            + "counts as new. `skala baseline create --apply` writes one.",
+            BaselinePath
+        );
+
+    /// <summary>
+    ///     ⚠ #360, the issue's own shape: a one-file tree and a baseline holding <c>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</c>.
+    ///     The banner used to read <c>1 of 1 file was not checked — this is a Skala bug</c>. The file
+    ///     was checked; the baseline is the repository's; and the banner is the only line on this
+    ///     surface that explains the exit code, because <c>agent</c> prints no gate verdict.
+    /// </summary>
     [Fact]
-    public void AgentBanner_OmitsTheFractionOnlyForABlockingDiagnosticThatIsNotASourceFile() {
-        var baseline = Path.Combine(Root, ".skala", "baseline.sarif");
+    public void AgentBanner_NamesAConflictedBaseline_AndDoesNotCountItAsAFile() {
+        var report = Report(ConflictedBaseline()) with { FileCount = 1 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith(
+            "INCOMPLETE  the baseline at .skala/baseline.sarif could not be read, so the gate compared against "
+            + "nothing. Every file was checked; everything below is shown as if there were nothing to compare "
+            + "against.",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("1 of 1", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("was not checked", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("did not finish", text, StringComparison.Ordinal);
+        Assert.Contains("SK9028  .skala/baseline.sarif", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>The same pair on every text surface: the baseline is named and nothing blames the tool.</summary>
+    [Theory]
+    [MemberData(nameof(TextFormats))]
+    public void AConflictedBaseline_IsNeverCalledASkalaBug(ReportFormat format) {
+        var text = Renderer.Render(Report(ConflictedBaseline()) with { FileCount = 1 }, format);
+
+        Assert.Contains("baseline.sarif", text, StringComparison.Ordinal);
+        Assert.Contains("SK9028", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     The source file's own findings still render under the banner — the run was not partial and
+    ///     the report is not to be read as one.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_OverAConflictedBaseline_StillRendersTheSourceFilesFindings() {
+        var report = Report(ConflictedBaseline()) with {
+            FileCount = 1,
+            Findings = [
+                new Finding {
+                    RuleId = "SK1001",
+                    Severity = SkalaSeverity.Warning,
+                    Message = "use `var`",
+                    Path = Path.Combine(Root, "One.cs"),
+                    Line = 5,
+                    Column = 9
+                }
+            ]
+        };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.Contains("ACTION  1 finding needs a decision", text, StringComparison.Ordinal);
+        Assert.Contains("SK1001  One.cs:5  use `var`", text, StringComparison.Ordinal);
+        Assert.True(
+            text.IndexOf("INCOMPLETE", StringComparison.Ordinal) < text.IndexOf("ACTION", StringComparison.Ordinal),
+            text
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ Mixed: a genuine <c>SK9099</c> and a conflicted baseline over a two-file tree. Both are
+    ///     named; the fraction counts the source file only, and the baseline is its own sentence
+    ///     outside the <c>N of M</c> arithmetic.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_KeepsTheBaselineOutOfTheFraction_InAMixedRun() {
+        var report = Report(TokenStreamChanged(), ConflictedBaseline()) with { FileCount = 2 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith(
+            "INCOMPLETE  1 of 2 file was not checked — this is a Skala bug, not a finding in your code. "
+            + "The baseline at .skala/baseline.sarif could not be read, so the gate compared against nothing. "
+            + "Everything below covers the rest, shown as if there were nothing to compare against.",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("SK9099  Refused.cs", text, StringComparison.Ordinal);
+        Assert.Contains("SK9028  .skala/baseline.sarif", text, StringComparison.Ordinal);
+        Assert.Equal(Refused, Assert.Single(Renderer.BlockedFiles(report)));
+        Assert.Equal([(IncompleteCause.Defect, 1)], Renderer.Causes(report));
+    }
+
+    /// <summary>
+    ///     ⚠ #358 left the absent baseline non-blocking on purpose, and
+    ///     <c>MissingGateInput_DoesNotFailTheReliabilityGate</c> pins that at the gate. This pins it at
+    ///     the banner: warning severity never reaches it.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_IsSilentForABaselineThatDoesNotExistYet() {
+        var text = Renderer.Render(Report(AbsentBaseline()) with { FileCount = 1 }, ReportFormat.Agent);
+
+        Assert.StartsWith("OK  nothing to do.", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("INCOMPLETE", text, StringComparison.Ordinal);
+        Assert.Empty(Renderer.GateInputs(Report(AbsentBaseline())));
+    }
+
+    /// <summary>
+    ///     The root-located variants of the same id — <c>--since</c> that will not resolve,
+    ///     <c>--no-new-suppressions</c> that could not compare — fail the same gate clause and used to
+    ///     print <c>this run did not finish — this is a Skala bug</c> above it.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_NamesAnUnresolvableSinceReference_WithoutBlamingTheTool() {
         var report = Report(
             new SkalaDiagnostic(
                 "SK9028",
                 SkalaSeverity.Error,
-                $"the baseline at {baseline} could not be read",
-                baseline
+                "--since=origin/nowhere could not be resolved: fatal: bad revision 'origin/nowhere'",
+                Root
+            )
+        );
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith(
+            "INCOMPLETE  an input the gate scopes by could not be read (SK9028 below), so the gate compared "
+            + "against nothing. Every file was checked;",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("did not finish", text, StringComparison.Ordinal);
+        Assert.Contains("--since=origin/nowhere", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ #356's "only way in" is closed. <c>Scale</c> kept its <c>FileCount &lt; blocked</c> branch
+    ///     because <c>SK9028</c> at the baseline reached it with <c>FileCount</c> 0 and blocked 1; a gate
+    ///     input is no longer a blocked file, so over a generated-only tree the same report has no
+    ///     fraction to omit — and no "1 file" that was never a file.
+    /// </summary>
+    [Fact]
+    public void AGateInput_IsNotABlockedFile_EvenOverAnEmptyTree() {
+        var report = Report(ConflictedBaseline()) with { FileCount = 0 };
+
+        Assert.Empty(Renderer.BlockedFiles(report));
+        Assert.Equal(IncompleteCause.GateInput, Renderer.CauseOf(ConflictedBaseline()));
+        Assert.Single(Renderer.GateInputs(report));
+
+        var text = Renderer.Render(report, ReportFormat.Agent);
+        Assert.DoesNotContain("file was not checked", text, StringComparison.Ordinal);
+        Assert.DoesNotContain(" of 0 ", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The one way left into <c>Scale</c>'s <c>FileCount &lt; blocked</c> branch after #360,
+    ///     pinned so it is a documented case and not a silent guard — and so that the branch goes
+    ///     when this shape does.
+    /// </summary>
+    /// <remarks>
+    ///     Measured through the binary on 2026-09-11: a tree holding <c>One.cs</c> and a
+    ///     <c>Broken.csproj</c> whose SDK does not exist, <c>check --load=binlog</c> with no binlog.
+    ///     The workspace rung fails with an error-severity <c>SK9024</c> located at the
+    ///     <c>.csproj</c>, the ladder keeps that diagnostic and falls through to loose, and the report
+    ///     reads <c>1 of 1 file was not checked — this is a Skala bug</c> above <b>exit 0</b>, the
+    ///     "1 file" being the project. That is #361 and is not fixed here; what this pins is the
+    ///     arithmetic: over a tree whose only sources are generated, <c>FileCount</c> is 0 and blocked
+    ///     is 1, and the fraction is omitted rather than printed as <c>1 of 0</c>. When #361 stops
+    ///     these diagnostics reaching the banner, this test and the branch go together.
+    /// </remarks>
+    [Fact]
+    public void AgentBanner_OmitsTheFractionOnlyForABlockingDiagnosticThatIsNotASourceFile() {
+        var project = Path.Combine(Root, "Broken.csproj");
+        var report = Report(
+            new SkalaDiagnostic(
+                "SK9024",
+                SkalaSeverity.Error,
+                $"'{project}' yielded no analysable source; every project in it failed to load",
+                project
             )
         ) with { FileCount = 0 };
         var text = Renderer.Render(report, ReportFormat.Agent);

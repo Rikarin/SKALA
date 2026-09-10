@@ -148,6 +148,69 @@ Decisions, each measured against a run that got it wrong:
     be built", which is false for this case. The one thing that did contradict `SK9015` landing on
     5 was the README's row, which named only the safety net; it now names the I/O case too.
   - `SK9010` was never in question and is where it was.
+- ⚠ **A gate input that could not be read is a separate sentence, outside the fraction (#360).**
+  After #358 a baseline that exists and will not open — a merge-conflict marker in
+  `.skala/baseline.sarif`, a file two branches both `baseline update` — fails the reliability gate
+  at exit 1 under an error-severity `SK9028` located at the baseline. Measured on 2026-09-11 over a
+  one-file tree with `check --gate=local --format=agent --baseline .skala/baseline.sarif`, the
+  banner above that exit read `INCOMPLETE  1 of 1 file was not checked — this is a Skala bug, not a
+  finding in your code.` Both halves were wrong at two different sites: `CauseOf` let `SK9028` fall
+  through to the defect default, and `BlockedFiles` counted any non-root error diagnostic, so the
+  baseline was the "1 file". The source file *was* checked; the fraction is `N of M source files`
+  and a baseline is not one of the M. The decision:
+  - The fraction stays about source files only. `SK9028` is a fourth cause, `GateInput`, that
+    `BlockedFiles` and `Causes` exclude, so `Scale`'s numerator and the per-cause counts never
+    include it.
+  - The baseline gets its own sentence, after the fraction when there is one and opening the line
+    when there is not, naming the path because the path is the thing to open and fix:
+
+    ```
+    INCOMPLETE  the baseline at .skala/baseline.sarif could not be read, so the gate compared against nothing. Every file was checked; everything below is shown as if there were nothing to compare against.
+      SK9028  .skala/baseline.sarif  the baseline at …/.skala/baseline.sarif could not be read: … is not valid JSON: …
+    ```
+
+    Mixed with a genuine `SK9099` over a two-file tree: `1 of 2 file was not checked — this is a
+    Skala bug, not a finding in your code. The baseline at .skala/baseline.sarif could not be read,
+    so the gate compared against nothing. Everything below covers the rest, shown as if there were
+    nothing to compare against.` The `agent` surface prints no gate verdict, so this line is the
+    only thing on it that explains the exit code; "every file was checked" is stated outright
+    rather than left to be inferred from a missing fraction. "Shown as if there were nothing to
+    compare against" is literal: `HasBaseline` stays false when the read fails, so `IsNew` is true
+    for everything and the buckets are the unscoped report.
+  - The root-located variants of the same id — `--since` that will not resolve,
+    `--no-new-suppressions` that could not compare — fail the same gate clause and used to print
+    `this run did not finish — this is a Skala bug` above it. They take the same sentence with a
+    generic subject, `an input the gate scopes by could not be read (SK9028 below)`, because the
+    `SK9028` line under the banner already carries the detail.
+  - ⚠ The same id at **warning** — the gate names a baseline and there is no such file yet — was
+    deliberately left non-blocking by #358 and never reaches the banner;
+    `AgentBanner_IsSilentForABaselineThatDoesNotExistYet` pins it beside
+    `MissingGateInput_DoesNotFailTheReliabilityGate`.
+  - ⚠ **`verify` was exiting 0 over the same tree.** `VerifyCommand.Verdict` recomputed its exit
+    from `report.New` alone for every `check` exit but 4 and 5, so the gate `check` had just failed
+    at exit 1 was overruled and the banner sat above exit 0 — #358's defect, closed for `check`,
+    open one verb over — and the same line took a crashed analyzer, a cancelled unit and the exit-3
+    refusals to 0. `verify` now keeps any non-zero exit `check` reached and adds only the stricter
+    direction over a clean one. ⚠ This is a behaviour change for a repository whose `skala.jsonc`
+    defines a `local` gate with conditions `verify` cannot evaluate (a `metrics` threshold: `verify`
+    never measures metrics, and the gate fails "not measured" rather than passing without it):
+    `verify` now exits 1 there, which is what `verify` is `check --gate=local` + `format --check` +
+    `arrange --check` has always meant.
+  - ⚠ **#356's `Scale` guard survives, on a different way in.** `SK9028` at the baseline over a
+    generated-only tree was the pinned "only way" into `FileCount < blocked`, and a gate input is no
+    longer a blocked file, so that way is closed. The enumeration of every error-severity tool id
+    that can sit at a non-root path (`rules.json`, all thirteen) found exactly one other:
+    `ProjectLoader`'s binlog ladder keeps a failed *middle* rung's diagnostics when it falls through
+    to loose, so `SK9024`/`SK9029` at the `.csproj` arrive in a report whose `FileCount` is the
+    loose rung's. Measured on 2026-09-11 with a `.csproj` naming a nonexistent SDK and no binlog:
+    `1 of 1 file was not checked — this is a Skala bug` above **exit 0**, the "1 file" being the
+    project. That is #361, and the guard is re-pinned on that shape
+    (`AgentBanner_OmitsTheFractionOnlyForABlockingDiagnosticThatIsNotASourceFile`, now `SK9024`
+    at a `.csproj` with `FileCount` 0) so that the branch and the test go together when #361 lands.
+    Everything else sits where the loaders count it (`SK9015`, `SK9010`, `SK9096`–`SK9099`), never
+    enters a `RunReport` (`SK9003`, `SK9007`, `SK9008`, `SK9012` are `config check`'s), or is
+    refused at exit 4 before a renderer runs (`SK9020`/`SK9021` under `--require-fresh-binlog`,
+    `SK9024`/`SK9029` on the rung the caller named).
 - The sentence is asserted over the **whole** output — banner, per-file line, trailer — on every
   text format, with a positive control that the genuine-defect case still says "Skala bug", so the
   suite cannot pass by deleting the sentence: `IncompleteBannerTests`, `PartialVerdictTests`, and

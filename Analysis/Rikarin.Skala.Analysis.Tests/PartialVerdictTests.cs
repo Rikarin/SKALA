@@ -345,4 +345,111 @@ public sealed class PartialVerdictTests {
         Assert.Contains("752 files were checked", output, StringComparison.Ordinal);
         Assert.Contains("2 could not be checked. Exit 5 is that Skala bug", output, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    ///     What <c>check --gate=local</c> hands <c>verify</c> for a one-file tree whose baseline holds a
+    ///     merge-conflict marker, after #358: the error-severity <c>SK9028</c> at the baseline, the gate
+    ///     failed on it, no findings, exit 1.
+    /// </summary>
+    static RunReport ConflictedBaseline() {
+        var baseline = Path.Combine(Root, ".skala", "baseline.sarif");
+        return new() {
+            RepositoryRoot = Root,
+            Mode = LoadMode.Loose,
+            FileCount = 1,
+            LineCount = 8,
+            LoadSummary = "loose (1 file(s), no project)",
+            Duration = TimeSpan.FromMilliseconds(120),
+            Diagnostics = [
+                new SkalaDiagnostic(
+                    "SK9028",
+                    SkalaSeverity.Error,
+                    $"the baseline at {baseline} could not be read: {baseline} is not valid JSON",
+                    baseline
+                )
+            ],
+            Gate = new GateResult(
+                "local",
+                false,
+                [
+                    "1 input(s) the gate compares against could not be read, so this verdict has nothing to call "
+                    + "a finding new or accepted against"
+                ]
+            )
+        };
+    }
+
+    /// <summary>
+    ///     ⚠ #360, measured through the binary before the fix: <c>check --gate=local --format=agent</c>
+    ///     with <c>--baseline .skala/baseline.sarif</c> over that tree exited 1, and <c>verify</c> with
+    ///     the same arguments printed the same INCOMPLETE banner and exited <b>0</b>. <c>Verdict</c> recomputed
+    ///     the exit from <c>report.New</c> alone and overruled the gate it had just been handed —
+    ///     the banner-above-exit-0 shape #358 had closed for <c>check</c>, open one verb over.
+    /// </summary>
+    [Theory]
+    [InlineData(ReportFormat.Agent)]
+    [InlineData(ReportFormat.Plain)]
+    [InlineData(ReportFormat.Json)]
+    public void Verify_DoesNotOverruleAGateThatFailedOnAnUnreadableBaseline(ReportFormat format) {
+        var result = Run(format, ConflictedBaseline(), ExitCodes.GateFailed);
+
+        Assert.Equal(ExitCodes.GateFailed, result.ExitCode);
+    }
+
+    /// <summary>
+    ///     The same line took exit 3 down to 0. <c>check</c> refuses a positional path that is part of
+    ///     no document in the load at <c>ConfigurationError</c>, with an empty report — and an empty
+    ///     report is "clean". <c>verify</c> keeps whatever non-zero exit <c>check</c> reached.
+    /// </summary>
+    [Fact]
+    public void Verify_DoesNotTurnARefusalIntoAPass() {
+        var refused = ConflictedBaseline() with { Diagnostics = [], Gate = null, FileCount = 0 };
+
+        Assert.Equal(
+            ExitCodes.ConfigurationError,
+            Run(ReportFormat.Agent, refused, ExitCodes.ConfigurationError).ExitCode
+        );
+    }
+
+    /// <summary>
+    ///     The agent surface prints no gate verdict, so over that tree the banner is the only line
+    ///     that explains the exit code — and it has to name the baseline, not the source file.
+    /// </summary>
+    [Fact]
+    public void Verify_NamesTheBaselineAndNotAFile_WhenTheBaselineCouldNotBeRead() {
+        var output = Run(ReportFormat.Agent, ConflictedBaseline(), ExitCodes.GateFailed).Output;
+
+        Assert.StartsWith(
+            "INCOMPLETE  the baseline at .skala/baseline.sarif could not be read, so the gate compared against nothing.",
+            output,
+            StringComparison.Ordinal
+        );
+        Assert.DoesNotContain("1 of 1", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("Skala bug", output, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("OK", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The control for the exit-code claim: <c>verify</c> still adds the stricter direction. A
+    ///     gate that passed over a tree with work outstanding is exit 1, and a gate that passed over a
+    ///     clean tree is exit 0 — the line this change did not touch.
+    /// </summary>
+    [Fact]
+    public void Verify_StillTightensAPassedGate_InTheStricterDirectionOnly() {
+        var clean = ConflictedBaseline() with { Diagnostics = [], Gate = new GateResult("local", true, []) };
+        var outstanding = clean with {
+            Findings = [
+                new Finding {
+                    RuleId = "SK1001",
+                    Severity = SkalaSeverity.Warning,
+                    Message = "use `var`",
+                    Path = Path.Combine(Root, "One.cs"),
+                    Line = 5
+                }
+            ]
+        };
+
+        Assert.Equal(ExitCodes.Ok, Run(ReportFormat.Agent, clean, ExitCodes.Ok).ExitCode);
+        Assert.Equal(ExitCodes.GateFailed, Run(ReportFormat.Agent, outstanding, ExitCodes.Ok).ExitCode);
+    }
 }
