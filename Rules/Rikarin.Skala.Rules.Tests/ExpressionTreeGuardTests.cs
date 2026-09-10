@@ -126,10 +126,10 @@ public sealed class ExpressionTreeGuardTests {
     ///     Every route a <c>Span</c> receiver could take into an expression tree, and the error each draws.
     /// </summary>
     [Theory]
-    [InlineData("s => s.SequenceEqual(\"abc\")", "Expression<Func<ReadOnlySpan<char>, bool>>")]
-    [InlineData("s => s.AsSpan().SequenceEqual(\"abc\")", "Expression<Func<string, bool>>")]
-    [InlineData("s => Apply(s, t => t.AsSpan().SequenceEqual(\"abc\"))", "Expression<Func<string, bool>>")]
-    [InlineData("s => MemoryExtensions.SequenceEqual(s.AsSpan(), \"abc\")", "Expression<Func<string, bool>>")]
+    [InlineData("""s => s.SequenceEqual("abc")""", "Expression<Func<ReadOnlySpan<char>, bool>>")]
+    [InlineData("""s => s.AsSpan().SequenceEqual("abc")""", "Expression<Func<string, bool>>")]
+    [InlineData("""s => Apply(s, t => t.AsSpan().SequenceEqual("abc"))""", "Expression<Func<string, bool>>")]
+    [InlineData("""s => MemoryExtensions.SequenceEqual(s.AsSpan(), "abc")""", "Expression<Func<string, bool>>")]
     public void ASpanReceiver_CannotReachAnExpressionTree(string lambda, string treeType) {
         var source = $$"""
                        using System;

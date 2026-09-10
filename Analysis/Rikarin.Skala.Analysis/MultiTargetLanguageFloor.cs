@@ -3,7 +3,6 @@ using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules;
 using Rikarin.Skala.Rules.Metadata;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Analysis;
@@ -61,10 +60,8 @@ public static class MultiTargetLanguageFloor {
         }
 
         var kept = ImmutableArray.CreateBuilder<Finding>(findings.Count);
-        foreach (var finding in findings) {
-            if (IsExpressibleEverywhere(finding, floors)) {
-                kept.Add(finding);
-            }
+        foreach (var finding in findings.Where(finding => IsExpressibleEverywhere(finding, floors))) {
+            kept.Add(finding);
         }
 
         return kept.ToImmutable();

@@ -205,13 +205,13 @@ public sealed class FrameworkAvailabilityReachTests {
             + "project's other target frameworks:\n  "
             + string.Join("\n  ", added)
             + "\n\nA multi-targeted project is one compilation per moniker over one set of source "
-            + "files, and the findings are unioned — so the lookup answers \"some moniker has this\" "
+            + """files, and the findings are unioned — so the lookup answers "some moniker has this" """
             + "while the fix is written to a file every moniker compiles. That is #343: SK1023 "
             + "rewrote to System.Threading.Lock and the netstandard2.1 leg stopped building after "
             + "`skala fix --safe`.\n\nIf the lookup decides whether something your FIX WRITES exists, "
             + "extract the whole condition into a `static bool Supports(Compilation)` and gate on "
             + "`FrameworkAvailability.PathsWithout(start.Options, Supports)` — the WHOLE condition, "
-            + "not just \"the name resolves\". If the lookup merely RECOGNISES a type the analysed "
+            + """not just "the name resolves". If the lookup merely RECOGNISES a type the analysed """
             + "source already references, it cannot differ across monikers that compile that source: "
             + "add the file here saying so."
         );
@@ -247,10 +247,8 @@ public sealed class FrameworkAvailabilityReachTests {
 
     static string Concept(string concept) {
         var builder = new System.Text.StringBuilder(concept.Length);
-        foreach (var part in concept.Split('-')) {
-            if (part.Length > 0) {
-                builder.Append(char.ToUpperInvariant(part[0])).Append(part, 1, part.Length - 1);
-            }
+        foreach (var part in concept.Split('-').Where(static part => part.Length > 0)) {
+            builder.Append(char.ToUpperInvariant(part[0])).Append(part, 1, part.Length - 1);
         }
 
         return builder.ToString();
