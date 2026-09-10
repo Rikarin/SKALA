@@ -368,18 +368,12 @@ public sealed class ExitCodeContractTests : IDisposable {
 
         Write("Neighbour.cs", "class C {\n    void M() {\n        M();\n    }\n}\n");
 
-        var verbs = new[] {
-            new[] { "arrange", "--check" },
-            new[] { "format", "--check" },
-            new[] { "check", "--load", "loose" },
-            new[] { "verify", "--load", "loose" }
+        var codes = new Dictionary<string, int>(StringComparer.Ordinal) {
+            ["arrange --check"] = CliRunner.Run("arrange", "--check", directory).ExitCode,
+            ["format --check"] = CliRunner.Run("format", "--check", directory).ExitCode,
+            ["check --load loose"] = CliRunner.Run("check", "--load", "loose", directory).ExitCode,
+            ["verify --load loose"] = CliRunner.Run("verify", "--load", "loose", directory).ExitCode
         };
-
-        var codes = verbs.ToDictionary(
-            static verb => string.Join(' ', verb),
-            verb => CliRunner.Run([.. verb, directory]).ExitCode,
-            StringComparer.Ordinal
-        );
 
         var table = string.Join(", ", codes.Select(static entry => $"{entry.Key} -> {entry.Value}"));
 
