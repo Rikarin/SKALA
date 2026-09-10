@@ -315,7 +315,9 @@ public static class Renderer {
         .. Blocking(report).Where(static diagnostic => !IsAboutAFile(CauseOf(diagnostic)))
     ];
 
-    /// <summary>The subset of <see cref="OutsideTheFraction" /> that is <see cref="IncompleteCause.GateInput" />.</summary>
+    /// <summary>
+    ///     The subset of <see cref="OutsideTheFraction" /> that is <see cref="IncompleteCause.GateInput" />.
+    /// </summary>
     public static IReadOnlyList<SkalaDiagnostic> GateInputs(RunReport report) => [
         .. OutsideTheFraction(report).Where(static diagnostic => CauseOf(diagnostic) == IncompleteCause.GateInput)
     ];
@@ -981,7 +983,7 @@ public static class AgentRenderer {
                 .Select(diagnostic => "the baseline at " + Renderer.Relative(report, diagnostic) + " could not be read")
                 .Distinct(StringComparer.Ordinal)
                 .ToList();
-            if (gateInputs.Any(diagnostic => !Renderer.IsFileScoped(report, diagnostic))) {
+            if (gateInputs.Exists(diagnostic => !Renderer.IsFileScoped(report, diagnostic))) {
                 clauses.Add("an input the gate scopes by could not be read (SK9028 below)");
             }
 
@@ -995,7 +997,7 @@ public static class AgentRenderer {
                 .Select(diagnostic => Renderer.Relative(report, diagnostic) + " could not be loaded")
                 .Distinct(StringComparer.Ordinal)
                 .ToList();
-            if (loadRungs.Any(diagnostic => !Renderer.IsFileScoped(report, diagnostic))) {
+            if (loadRungs.Exists(diagnostic => !Renderer.IsFileScoped(report, diagnostic))) {
                 clauses.Add("no project could be loaded (" + loadRungs[0].Id + " below)");
             }
 

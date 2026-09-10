@@ -23,6 +23,9 @@ namespace Rikarin.Skala.Reporting.Tests;
 ///     </para>
 /// </remarks>
 public sealed class IncompleteBannerTests {
+    /// <summary>⚠ One constant: <c>SK7083</c>'s threshold is five literals per file.</summary>
+    const string SkalaBug = "Skala bug";
+
     static readonly string Root = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "skala-355"));
     static readonly string Locked = Path.Combine(Root, "Locked.cs");
     static readonly string Refused = Path.Combine(Root, "Refused.cs");
@@ -90,7 +93,7 @@ public sealed class IncompleteBannerTests {
 
         Assert.Contains("Locked.cs", text, StringComparison.Ordinal);
         Assert.Contains("SK9015", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(SkalaBug, text, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>The banner says what it is instead, and says what to check.</summary>
@@ -285,7 +288,7 @@ public sealed class IncompleteBannerTests {
             text,
             StringComparison.Ordinal
         );
-        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(SkalaBug, text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("1 of 1", text, StringComparison.Ordinal);
         Assert.DoesNotContain("was not checked", text, StringComparison.Ordinal);
         Assert.DoesNotContain("did not finish", text, StringComparison.Ordinal);
@@ -300,7 +303,7 @@ public sealed class IncompleteBannerTests {
 
         Assert.Contains("baseline.sarif", text, StringComparison.Ordinal);
         Assert.Contains("SK9028", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(SkalaBug, text, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -392,7 +395,7 @@ public sealed class IncompleteBannerTests {
             text,
             StringComparison.Ordinal
         );
-        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(SkalaBug, text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("did not finish", text, StringComparison.Ordinal);
         Assert.Contains("--since=origin/nowhere", text, StringComparison.Ordinal);
     }
@@ -418,7 +421,9 @@ public sealed class IncompleteBannerTests {
 
     static readonly string Project = Path.Combine(Root, "Broken.csproj");
 
-    /// <summary>Exactly what <c>WorkspaceLoader.LoadCore</c> emits for a <c>.csproj</c> whose SDK does not exist.</summary>
+    /// <summary>
+    ///     Exactly what <c>WorkspaceLoader.LoadCore</c> emits for a <c>.csproj</c> whose SDK does not exist.
+    /// </summary>
     static SkalaDiagnostic ProjectThatWouldNotLoad() =>
         new(
             "SK9024",
@@ -470,7 +475,7 @@ public sealed class IncompleteBannerTests {
             text,
             StringComparison.Ordinal
         );
-        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(SkalaBug, text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("1 of 1", text, StringComparison.Ordinal);
         Assert.DoesNotContain("was not checked", text, StringComparison.Ordinal);
         Assert.DoesNotContain("did not finish", text, StringComparison.Ordinal);
@@ -485,7 +490,7 @@ public sealed class IncompleteBannerTests {
 
         Assert.Contains("Broken.csproj", text, StringComparison.Ordinal);
         Assert.Contains("SK9024", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(SkalaBug, text, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -530,7 +535,7 @@ public sealed class IncompleteBannerTests {
             text,
             StringComparison.Ordinal
         );
-        Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(SkalaBug, text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("did not finish", text, StringComparison.Ordinal);
         Assert.Contains("choose one with --project", text, StringComparison.Ordinal);
     }

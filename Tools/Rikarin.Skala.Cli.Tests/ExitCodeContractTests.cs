@@ -27,6 +27,9 @@ namespace Rikarin.Skala.Cli.Tests;
 ///     </para>
 /// </remarks>
 public sealed class ExitCodeContractTests : IDisposable {
+    /// <summary>⚠ One constant: <c>SK7083</c>'s threshold is five literals per file.</summary>
+    const string LoadOption = "--load";
+
     readonly string directory = Directory.CreateTempSubdirectory("skala-exit-").FullName;
 
     public void Dispose() => Directory.Delete(directory, true);
@@ -82,7 +85,7 @@ public sealed class ExitCodeContractTests : IDisposable {
     /// <summary>An unrecognized option is a configuration error, not a failed gate.</summary>
     [Fact]
     public void Three_WhenAnOptionIsNotRecognized() {
-        var run = CliRunner.Run("check", "--load", "loose", "--verbsoe");
+        var run = CliRunner.Run("check", LoadOption, "loose", "--verbsoe");
 
         Assert.Equal(3, run.ExitCode);
         Assert.Contains("--verbsoe", run.StandardOutput + run.StandardError, StringComparison.Ordinal);
@@ -159,7 +162,10 @@ public sealed class ExitCodeContractTests : IDisposable {
         Assert.Equal(2, CliRunner.Run("format", "--check", path).ExitCode);
     }
 
-    /// <summary>A <c>.csproj</c> naming an SDK that does not exist: MSBuild records a failure and hands back no documents.</summary>
+    /// <summary>
+    ///     A <c>.csproj</c> naming an SDK that does not exist: MSBuild records a failure and hands back no
+    ///     documents.
+    /// </summary>
     const string UnloadableProject = """
                                      <Project Sdk="Definitely.Not.A.Real.Sdk">
                                        <PropertyGroup>
@@ -196,7 +202,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         Write("One.cs", "public class D {\n    public int Value;\n}\n");
         Write("Broken.csproj", UnloadableProject);
 
-        var run = CliRunner.Run("check", "--load", "binlog", "--gate", "local", "--format", "agent", directory);
+        var run = CliRunner.Run("check", LoadOption, "binlog", "--gate", "local", "--format", "agent", directory);
         var text = run.StandardOutput + run.StandardError;
 
         Assert.Equal(1, run.ExitCode);
@@ -225,7 +231,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         Write("One.cs", "public class D {\n    public int Value;\n}\n");
         Write("Broken.csproj", UnloadableProject);
 
-        var run = CliRunner.Run("check", "--load", "workspace", "--gate", "local", "--format", "agent", directory);
+        var run = CliRunner.Run("check", LoadOption, "workspace", "--gate", "local", "--format", "agent", directory);
         var text = run.StandardOutput + run.StandardError;
 
         Assert.Equal(4, run.ExitCode);
@@ -447,8 +453,8 @@ public sealed class ExitCodeContractTests : IDisposable {
         var codes = new Dictionary<string, int>(StringComparer.Ordinal) {
             ["arrange --check"] = CliRunner.Run("arrange", "--check", directory).ExitCode,
             ["format --check"] = CliRunner.Run("format", "--check", directory).ExitCode,
-            ["check --load loose"] = CliRunner.Run("check", "--load", "loose", directory).ExitCode,
-            ["verify --load loose"] = CliRunner.Run("verify", "--load", "loose", directory).ExitCode
+            ["check --load loose"] = CliRunner.Run("check", LoadOption, "loose", directory).ExitCode,
+            ["verify --load loose"] = CliRunner.Run("verify", LoadOption, "loose", directory).ExitCode
         };
 
         var table = string.Join(", ", codes.Select(static entry => $"{entry.Key} -> {entry.Value}"));
@@ -547,7 +553,7 @@ public sealed class ExitCodeContractTests : IDisposable {
 
         Write("Neighbour.cs", "class  C{ void  M( ){} }\n");
 
-        var run = CliRunner.Run("verify", "--format", "agent", "--load", "loose", directory);
+        var run = CliRunner.Run("verify", "--format", "agent", LoadOption, "loose", directory);
         var text = run.StandardOutput + run.StandardError;
 
         Assert.Equal(5, run.ExitCode);
