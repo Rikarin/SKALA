@@ -95,8 +95,18 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
                     return;
                 }
 
+                // ⚠ The withheld-document check sits here rather than inside `Analyze`, and the
+                // reason is measured: as an `if` in the method body it took the baselined `SK7002`
+                // cognitive complexity from 26 to 27, and the number is in the message and therefore
+                // in the fingerprint — so a guard added for #351 would have arrived as a *new*
+                // finding. `SkalaRule.RegisterWhereFrameworkSupports` places it the same way for the
+                // rules that do not need a start action of their own.
                 start.RegisterSyntaxNodeAction(
-                    context => Analyze(context, dictionaries, unavailable),
+                    context => {
+                        if (unavailable.IsEmpty || !unavailable.Contains(context.Node.SyntaxTree.FilePath)) {
+                            Analyze(context, dictionaries);
+                        }
+                    },
                     SyntaxKind.ForEachStatement
                 );
             }
@@ -130,24 +140,13 @@ public sealed class DictionaryKeyRelookupAnalyzer : DiagnosticAnalyzer {
         return false;
     }
 
-    static void Analyze(
-        SyntaxNodeAnalysisContext context,
-        List<INamedTypeSymbol> dictionaries,
-        ImmutableHashSet<string> unavailable
-    ) {
+    static void Analyze(SyntaxNodeAnalysisContext context, List<INamedTypeSymbol> dictionaries) {
         var loop = (ForEachStatementSyntax)context.Node;
         if (loop.Expression is not MemberAccessExpressionSyntax {
                 RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
                 Name.Identifier.ValueText: "Keys"
             } keys
             || !CallShape.IsPlainNamePath(keys.Expression)) {
-            return;
-        }
-
-        // ⚠ Before any semantic work: this document is compiled by a target framework whose
-        // `KeyValuePair<K, V>` has no `Deconstruct`, so the rewrite does not compile there however
-        // good it looks here.
-        if (!unavailable.IsEmpty && unavailable.Contains(loop.SyntaxTree.FilePath)) {
             return;
         }
 
