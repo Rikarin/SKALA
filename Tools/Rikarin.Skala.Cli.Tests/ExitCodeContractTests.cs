@@ -174,8 +174,11 @@ public sealed class ExitCodeContractTests : IDisposable {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         Measured on <c>master</c> with this binary and this tree: <c>INCOMPLETE  1 of 1 file was
-    ///         not checked — this is a Skala bug, not a finding in your code.</c> above <b>exit 0</b>,
+    ///         Measured on <c>master</c> with this binary and this tree:
+    ///         <c>
+    /// INCOMPLETE  1 of 1 file was
+    ///         not checked — this is a Skala bug, not a finding in your code.
+    ///         </c> above <b>exit 0</b>,
     ///         then <c>SKIPPED 260 rule(s) did not run (loose load)</c>. The "1 file" was
     ///         <c>Broken.csproj</c>. The source file was checked by the loose rung and its finding
     ///         rendered under the banner; 260 rules did not run; the <c>local</c> gate passed.
@@ -197,7 +200,11 @@ public sealed class ExitCodeContractTests : IDisposable {
         var text = run.StandardOutput + run.StandardError;
 
         Assert.Equal(1, run.ExitCode);
-        Assert.Contains("INCOMPLETE  Broken.csproj could not be loaded, so the run fell back to loose", text, StringComparison.Ordinal);
+        Assert.Contains(
+            "INCOMPLETE  Broken.csproj could not be loaded, so the run fell back to loose",
+            text,
+            StringComparison.Ordinal
+        );
         Assert.Contains("SK9024  Broken.csproj", text, StringComparison.Ordinal);
         Assert.DoesNotContain("Skala bug", text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("1 of 1", text, StringComparison.Ordinal);

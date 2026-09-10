@@ -205,8 +205,14 @@ public sealed class ReliabilityGateTests {
     ///     <c>Gate.EvaluateReliability</c>.
     /// </remarks>
     [Theory]
-    [InlineData(ConfigDiagnosticIds.NothingToLoad, "'/repo/Broken.csproj' yielded no analysable source; every project in it failed to load")]
-    [InlineData(ConfigDiagnosticIds.AnalyzerAssemblyMissing, "refusing to analyse 'Broken.csproj': the assemblies above are missing")]
+    [InlineData(
+        ConfigDiagnosticIds.NothingToLoad,
+        "'/repo/Broken.csproj' yielded no analysable source; every project in it failed to load"
+    )]
+    [InlineData(
+        ConfigDiagnosticIds.AnalyzerAssemblyMissing,
+        "refusing to analyse 'Broken.csproj': the assemblies above are missing"
+    )]
     public void FailedLoadRung_FailsTheReliabilityGate(string id, string message) {
         var report = Report() with {
             Mode = LoadMode.Loose,
@@ -231,9 +237,15 @@ public sealed class ReliabilityGateTests {
     ///     repository.
     /// </summary>
     [Theory]
-    [InlineData(ConfigDiagnosticIds.NothingToLoad, "workspace: Found project reference without a matching metadata reference: Other.csproj")]
+    [InlineData(
+        ConfigDiagnosticIds.NothingToLoad,
+        "workspace: Found project reference without a matching metadata reference: Other.csproj"
+    )]
     [InlineData(ConfigDiagnosticIds.NothingToLoad, "no .slnx, .sln or .csproj was found to load")]
-    [InlineData(ConfigDiagnosticIds.AnalyzerAssemblyMissing, "the load names 'Gen.dll' as an analyzer or source generator and there is no file at '/x/Gen.dll'")]
+    [InlineData(
+        ConfigDiagnosticIds.AnalyzerAssemblyMissing,
+        "the load names 'Gen.dll' as an analyzer or source generator and there is no file at '/x/Gen.dll'"
+    )]
     public void LoadDiagnosticAtWarning_DoesNotFailTheReliabilityGate(string id, string message) {
         var report = Report() with {
             Diagnostics = [new SkalaDiagnostic(id, SkalaSeverity.Warning, message, "/repo/Skala.slnx")]

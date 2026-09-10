@@ -260,8 +260,11 @@ public static class Renderer {
     ///     <para>
     ///         ⚠ #361: and so is a project. <c>SK9024</c>/<c>SK9029</c> at error severity sit at the
     ///         <c>.csproj</c> the workspace rung could not load, and the binlog ladder carries them
-    ///         into the loose report. With both kinds out, <b>every path this yields is one the loader
-    ///         put into <see cref="RunReport.FileCount" /></b> — the per-file ids are located at a
+    ///         into the loose report. With both kinds out,
+    ///         <b>
+    ///             every path this yields is one the loader
+    ///             put into <see cref="RunReport.FileCount" />
+    ///         </b> — the per-file ids are located at a
     ///         reportable or unreadable source path by construction — which is what lets
     ///         <c>Scale</c> print the fraction without a guard.
     ///     </para>
@@ -332,7 +335,8 @@ public static class Renderer {
             IncompleteIds.FileIoFailed => IncompleteCause.Unreadable,
             IncompleteIds.NotParseable => IncompleteCause.Unparseable,
             ConfigDiagnosticIds.GateInputUnavailable => IncompleteCause.GateInput,
-            ConfigDiagnosticIds.NothingToLoad or ConfigDiagnosticIds.AnalyzerAssemblyMissing => IncompleteCause.LoadRung,
+            ConfigDiagnosticIds.NothingToLoad
+                or ConfigDiagnosticIds.AnalyzerAssemblyMissing => IncompleteCause.LoadRung,
             _ => IncompleteCause.Defect
         };
 

@@ -606,9 +606,15 @@ public sealed class WorkspaceLoadingTests {
     /// <remarks>
     ///     <para>
     ///         Measured on <c>master</c> through the real binary: <c>One.cs</c> beside a <c>.csproj</c>
-    ///         naming an SDK that does not exist, no binlog, <c>check --load=binlog --gate=local
-    ///         --format=agent</c> printed <c>INCOMPLETE  1 of 1 file was not checked — this is a Skala
-    ///         bug</c> above <b>exit 0</b>, then <c>SKIPPED 260 rule(s) did not run (loose load)</c>. The
+    ///         naming an SDK that does not exist, no binlog,
+    ///         <c>
+    /// check --load=binlog --gate=local
+    ///         --format=agent
+    ///         </c> printed
+    ///         <c>
+    /// INCOMPLETE  1 of 1 file was not checked — this is a Skala
+    ///         bug
+    ///         </c> above <b>exit 0</b>, then <c>SKIPPED 260 rule(s) did not run (loose load)</c>. The
     ///         "1 file" was the <c>.csproj</c>; the source file was checked; 260 rules were not; and the
     ///         gate passed. <c>verify</c> over the same tree — <c>auto</c> puts workspace first —
     ///         refused at exit 4, so the two verbs disagreed about one repository.
@@ -643,9 +649,16 @@ public sealed class WorkspaceLoadingTests {
         Assert.Equal(LoadMode.Loose, report.Mode);
         Assert.NotNull(report.Gate);
         Assert.False(report.Gate.Passed);
-        Assert.Contains(report.Gate.Failures, static failure => failure.Contains("could not be loaded", StringComparison.Ordinal));
+        Assert.Contains(
+            report.Gate.Failures,
+            static failure => failure.Contains("could not be loaded", StringComparison.Ordinal)
+        );
 
-        Assert.StartsWith("INCOMPLETE  Broken.csproj could not be loaded, so the run fell back to loose", result.Output, StringComparison.Ordinal);
+        Assert.StartsWith(
+            "INCOMPLETE  Broken.csproj could not be loaded, so the run fell back to loose",
+            result.Output,
+            StringComparison.Ordinal
+        );
         Assert.DoesNotContain("Skala bug", result.Output, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("1 of 1", result.Output, StringComparison.Ordinal);
         Assert.DoesNotContain("was not checked", result.Output, StringComparison.Ordinal);
