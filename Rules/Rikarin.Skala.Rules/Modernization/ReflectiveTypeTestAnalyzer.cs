@@ -66,11 +66,24 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         and CS8122 is about the pattern forms this rule never emits. Eleven emitted shapes were
 ///         compiled inside an <c>Expression&lt;Func&lt;object, bool&gt;&gt;</c> and every one compiles,
 ///         including the delegate lambda nested inside the tree that a nearest-lambda check gets wrong.
-///         ⚠ <b>The exception is a tuple target</b>: the type is re-spelled from source text, so
-///         <c>typeof((int, int))</c> emits <c>x is (int, int)</c>, which the parser reads as a pattern
-///         and which really is CS8122 in a tree. That one spelling is guarded, on the syntax rather
-///         than on the symbol — <c>typeof(ValueTuple&lt;int, int&gt;)</c> is the same type and emits
-///         text the parser accepts.
+///     </para>
+///     <para>
+///         ⚠
+///         <b>
+///             The real defect that measurement found is bigger than an expression tree, and the
+///             rule had it in ordinary code: a <c>typeof</c> operand is a type, and the same text
+///             after <c>is</c> is not necessarily one.
+///         </b> The grammar after <c>is</c> prefers a <em>pattern</em>. <c>typeof((int, int)?)</c>
+///         emits <c>x is (int, int)?</c> and that is <b>CS1003</b> — the parser takes
+///         <c>(int, int)</c> as a pattern and reads <c>?</c> as a conditional — a fix that does not
+///         parse anywhere, tree or no tree. <c>typeof((int, int))</c> emits text that does parse, as
+///         a pattern rather than a type test, which compiles outside a tree and is CS8122 inside one.
+///         So the emitted text is parsed and classified once: text that does not parse is never
+///         reported, and text that parses as a pattern is reported everywhere except inside an
+///         expression tree. Asking the parser covers the class; a list of type syntaxes covers
+///         whichever ones somebody thought of — <c>typeof(int?)</c> and
+///         <c>typeof(ValueTuple&lt;int, int&gt;)</c> are the same types spelled without the leading
+///         parenthesis, and both are reported.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -118,8 +131,37 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ The type is re-spelled from the `typeof` operand's own source text rather than from the
+        // symbol. That text already binds to that type at this position — it is what the `typeof`
+        // is doing — so the edit needs no `using` the file does not have and no qualification the
+        // file does not use.
+        var test = operand + " is " + target.Type;
+
+        // ⚠ **A `typeof` operand is a type; the same text after `is` is not necessarily one, and
+        // the rule assumed it was.** The grammar after `is` prefers a *pattern*, so text that is an
+        // unambiguous type inside `typeof(...)` can come out as something else — or as nothing that
+        // parses at all. Asking the parser is what covers the whole class; enumerating the syntax
+        // kinds that misbehave covers whichever ones somebody thought of.
+        //
+        // Two were found by compiling every spelling this rule can emit (#349):
+        //
+        //   • `typeof((int, int)?)` emits `x is (int, int)?`, which is **CS1003 "':' expected"** —
+        //     the parser takes `(int, int)` as a pattern and then reads `?` as a conditional. That
+        //     is a fix that does not parse, **everywhere, not only in an expression tree**, and it
+        //     was the more serious of the two. `x is int?` is fine, because `int?` has no leading
+        //     `(` to send the parser down the pattern path.
+        //
+        //   • `typeof((int, int))` emits `x is (int, int)`, which parses — as an
+        //     `IsPatternExpressionSyntax` rather than an `IsExpression`. Outside an expression tree
+        //     that compiles and asks the identical question, so the finding stands; inside one it
+        //     is CS8122 and only there.
+        var parsed = SyntaxFactory.ParseExpression(test, options: invocation.SyntaxTree.Options as CSharpParseOptions);
+        if (parsed.ContainsDiagnostics) {
+            return;
+        }
+
         // ⚠ **"An expression tree may not contain an `is` pattern, so this rule needs the guard the
-        // other ten have" is refuted** (#349), and the refutation is what keeps the guard narrow.
+        // other ten have" is refuted** (#349), and the refutation is what keeps this conditional.
         // `x is T` with no designation is the *type-test operator*, not a pattern: it is
         // `ExpressionType.TypeIs`, which expression trees have represented since LINQ shipped.
         // Eleven emitted shapes were compiled inside an `Expression<Func<object, bool>>` against
@@ -127,23 +169,12 @@ public sealed class ReflectiveTypeTestAnalyzer : DiagnosticAnalyzer {
         // array, a constructed generic, an enum, an unconstrained type parameter, and the same test
         // in a delegate lambda nested inside the tree — and every one compiles. Calling
         // `NullComparison.InsideExpressionTree` here unconditionally would withhold all of them.
-        //
-        // ⚠ **One `typeof` operand really does emit a pattern, and it is the tuple type.** The type
-        // is re-spelled from source text, so `typeof((int, int))` emits `x is (int, int)` — text the
-        // parser sends down the *pattern* path, giving an `IsPatternExpressionSyntax` rather than an
-        // `IsExpression`. Outside a tree it compiles and asks the same question; inside one it is
-        // CS8122. The test is on the syntax and not on `INamedTypeSymbol.IsTupleType`, because
-        // `typeof(ValueTuple<int, int>)` is the same symbol and emits a type the parser accepts.
-        if (target.Type is TupleTypeSyntax
+        // The parse above is what separates the two cases, so the guard costs a finding only where
+        // the emitted text really is a pattern.
+        if (!parsed.IsKind(SyntaxKind.IsExpression)
             && NullComparison.InsideExpressionTree(model, invocation, cancellation)) {
             return;
         }
-
-        // ⚠ The type is re-spelled from the `typeof` operand's own source text rather than from the
-        // symbol. That text already binds to that type at this position — it is what the `typeof`
-        // is doing — so the edit needs no `using` the file does not have and no qualification the
-        // file does not use.
-        var test = operand + " is " + target.Type;
 
         // ⚠ `is` binds looser than every unary and primary operator, so the replacement needs
         // parentheses wherever the call was an operand of one. `!typeof(T).IsInstanceOfType(x)`
