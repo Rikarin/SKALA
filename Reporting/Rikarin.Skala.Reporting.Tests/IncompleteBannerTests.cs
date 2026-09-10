@@ -191,7 +191,10 @@ public sealed class IncompleteBannerTests {
     [InlineData("SK9099")]
     [InlineData("SK9031")]
     public void CauseOf_DefaultsToDefect(string id) =>
-        Assert.Equal(IncompleteCause.Defect, Renderer.CauseOf(new SkalaDiagnostic(id, SkalaSeverity.Error, "m", Broken)));
+        Assert.Equal(
+            IncompleteCause.Defect,
+            Renderer.CauseOf(new SkalaDiagnostic(id, SkalaSeverity.Error, "m", Broken))
+        );
 
     /// <summary>
     ///     <c>SK9010</c> ships at warning severity and so never reaches the banner today; if it ever
@@ -200,10 +203,16 @@ public sealed class IncompleteBannerTests {
     /// </summary>
     [Fact]
     public void AgentBanner_FollowsTheNotParseableContract() {
-        var report = Report(new SkalaDiagnostic("SK9010", SkalaSeverity.Error, "not formatted, the file does not parse", Broken, 3));
+        var report = Report(
+            new SkalaDiagnostic("SK9010", SkalaSeverity.Error, "not formatted, the file does not parse", Broken, 3)
+        );
         var text = Renderer.Render(report, ReportFormat.Agent);
 
-        Assert.StartsWith("INCOMPLETE  1 of 4 file was not checked — unparseable: fix the syntax error;", text, StringComparison.Ordinal);
+        Assert.StartsWith(
+            "INCOMPLETE  1 of 4 file was not checked — unparseable: fix the syntax error;",
+            text,
+            StringComparison.Ordinal
+        );
         Assert.DoesNotContain("this is a Skala bug", text, StringComparison.Ordinal);
     }
 }

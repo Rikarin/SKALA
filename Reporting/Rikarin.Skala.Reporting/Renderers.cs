@@ -796,19 +796,16 @@ public static class AgentRenderer {
             };
         }
 
-        return string.Join(
-                "; ",
-                causes.Select(static entry =>
-                    entry.Files.ToString(CultureInfo.InvariantCulture)
-                    + entry.Cause switch {
-                        IncompleteCause.Unreadable =>
-                            " could not be read (check permissions and that the path is still mounted)",
-                        IncompleteCause.Unparseable => " unparseable (left byte-identical, ADR-003)",
-                        _ => " a Skala bug, not a finding in your code"
-                    }
-                )
-            )
-            + ".";
+        var clauses = causes.Select(static entry =>
+            entry.Files.ToString(CultureInfo.InvariantCulture)
+            + entry.Cause switch {
+                IncompleteCause.Unreadable =>
+                    " could not be read (check permissions and that the path is still mounted)",
+                IncompleteCause.Unparseable => " unparseable (left byte-identical, ADR-003)",
+                _ => " a Skala bug, not a finding in your code"
+            }
+        );
+        return string.Join("; ", clauses) + ".";
     }
 
     /// <summary>

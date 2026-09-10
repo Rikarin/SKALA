@@ -319,10 +319,10 @@ public sealed class ExitCodeContractTests : IDisposable {
 
     /// <summary>
     ///     ⚠ #355. The two tests above hold the per-file line to "not a Skala bug"; <c>verify</c>
-    ///     printed one line above it — <c>INCOMPLETE … this is a Skala bug, not a finding in your
-    ///     code</c> — and one line below it — <c>Exit 5 is that Skala bug</c> — and neither test
-    ///     could see either, because neither ran <c>verify</c>. This one does, against the real
-    ///     binary, and holds the <b>whole</b> output to the sentence.
+    ///     printed "this is a Skala bug, not a finding in your code" one line above it, in the
+    ///     INCOMPLETE banner, and "Exit 5 is that Skala bug" one line below it, in the PARTIAL
+    ///     trailer — and neither test could see either, because neither ran <c>verify</c>. This one
+    ///     does, against the real binary, and holds the <b>whole</b> output to the sentence.
     /// </summary>
     /// <remarks>
     ///     The exit code is asserted unchanged on purpose. <c>LoadFailure</c> (4) is arguably the
