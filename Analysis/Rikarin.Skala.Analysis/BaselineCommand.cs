@@ -123,7 +123,7 @@ public static class BaselineCommand {
                             ? "\n  Repair the file — a merge-conflict marker is the usual cause — or delete it and run "
                             + "`skala baseline create --apply`.\n"
                             : "\n  Nothing was written. Make the file readable by this process and run the command "
-                              + "again.\n")
+                            + "again.\n")
                 ),
                 report
             );
