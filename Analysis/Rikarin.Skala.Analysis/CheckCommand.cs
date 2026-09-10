@@ -268,10 +268,24 @@ public static class CheckCommand {
         //
         // `null` when nothing was requested — then the loaded set *is* the reported set, and the two
         // counters below keep counting exactly what they counted before.
-        var reported = Paths(loaded, request);
+        var requested = Requested(request);
+        var reported = Paths(loaded, requested);
         var scope = request.Paths.Count == 0
             ? null
             : new HashSet<string>(reported, StringComparer.Ordinal);
+
+        // ⚠ #356: the files the load was asked for and could not open. They are not in `reported`
+        // — no stage may be handed a file the load could not read, or every stage reports it again
+        // — and they are in the count, because "1 of 754" is a claim about the 753 (#345) and a
+        // denominator that leaves out the unreadable files makes the opposite claim. Per unit, the
+        // same way `ReportablePaths` is summed below, so a multi-targeted project counts them the
+        // way it counts everything else.
+        var unreadableFiles = 0;
+        foreach (var unit in loaded.Units) {
+            unreadableFiles += scope is null
+                ? unit.UnreadablePaths.Count
+                : unit.UnreadablePaths.Count(path => IsUnder(path, requested));
+        }
 
         // ⚠ And when the two cannot coincide, say so rather than widening. An empty reported set with
         // a path on the command line means no document of this load is the file that was asked about
@@ -279,7 +293,13 @@ public static class CheckCommand {
         // producer downstream is filtered by `scope`, so the run would complete, report nothing and
         // exit 0: the same false clean #278 reached through an unmatched `--rules`, arrived at
         // through an unmatched path.
-        if (scope is { Count: 0 }) {
+        //
+        // ⚠ Unless the requested path *was* found and could not be read (#356). `check Locked.cs`
+        // over a mode-000 file is not a typo, and answering it with "nothing under 'Locked.cs' is
+        // part of this load" at exit 3 buries the `SK9015` the loader has already written. The run
+        // proceeds with an empty reported set: every producer filters to nothing, the count is the
+        // unreadable file, and the exit code is the one an unreadable file carries.
+        if (scope is { Count: 0 } && unreadableFiles == 0) {
             var names = string.Join(", ", request.Paths);
             diagnostics.Add(
                 new SkalaDiagnostic(
@@ -311,7 +331,7 @@ public static class CheckCommand {
         var findings = new List<Finding>();
         var costs = new List<AnalyzerCost>();
         var partial = false;
-        var files = 0;
+        var files = unreadableFiles;
         var lines = 0;
 
         // ⚠ Sequential over compilations, parallel inside each. docs/plan/07 § "Parallelism": each
@@ -381,7 +401,9 @@ public static class CheckCommand {
             // against what they typed; "753 files" beside a one-file request is how the widening went
             // unnoticed for as long as it did. Unfiltered the two counters stay exactly what they
             // were — generated trees still count towards `lines`, which is doc 07's answer and not
-            // this issue's.
+            // this issue's. `files` started at the unreadable count (#356): a file the load could
+            // not open was requested, and the fraction over `FileCount` is a claim about every file
+            // that was.
             if (scope is null) {
                 files += unit.ReportablePaths.Count;
                 foreach (var tree in unit.Compilation.SyntaxTrees) {
@@ -533,11 +555,11 @@ public static class CheckCommand {
         // comment on `refused` above is explicit that nothing downstream reads a load diagnostic's
         // severity and that the gate reads findings; widening that here would change the exit code
         // for every loader diagnostic at once, which is a bigger decision than this one.
-        var unreadable = loaded.Diagnostics.Any(static d => d.Id == FormatDiagnosticIds.FileIoFailed);
+        var loadCouldNotRead = loaded.Diagnostics.Any(static d => d.Id == FormatDiagnosticIds.FileIoFailed);
 
         var exit = arrangementFailed
             || formattingFailed
-            || unreadable
+            || loadCouldNotRead
             || report.Diagnostics.Any(static d => d.Id == RuleIds.TokenStreamChanged)
             ? ExitCodes.InternalError
             : !gate.Passed
@@ -921,28 +943,37 @@ public static class CheckCommand {
     ///         appends that separator.
     ///     </para>
     /// </remarks>
-    static List<string> Paths(LoadedProject loaded, CheckRequest request) {
+    static List<string> Paths(LoadedProject loaded, string[] requested) {
         var reportable = new List<string>();
         foreach (var unit in loaded.Units) {
             reportable.AddRange(unit.ReportablePaths);
         }
 
-        if (request.Paths.Count == 0) {
+        if (requested.Length == 0) {
             return reportable;
         }
 
-        var requested = request.Paths
-            .Select(static path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))
-            .ToArray();
-
-        return [
-            .. reportable.Where(path => requested.Any(root =>
-                    string.Equals(path, root, StringComparison.Ordinal)
-                    || path.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal)
-                )
-            )
-        ];
+        return [.. reportable.Where(path => IsUnder(path, requested))];
     }
+
+    /// <summary>The positional paths, absolute and without a trailing separator. Empty means everything.</summary>
+    static string[] Requested(CheckRequest request) =>
+        [.. request.Paths.Select(static path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)))];
+
+    /// <summary>
+    ///     Whether <paramref name="path" /> is one of the requested paths or lies under one of them.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #356: one predicate for the two sets a unit carries. The reportable set and the
+    ///     unreadable set are filtered by the same question, and the count is wrong the moment they
+    ///     are filtered by two spellings of it — which is how the reported scope and the loaded scope
+    ///     came apart in #346.
+    /// </remarks>
+    static bool IsUnder(string path, string[] requested) =>
+        requested.Any(root =>
+            string.Equals(path, root, StringComparison.Ordinal)
+            || path.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+        );
 
     static void WriteSarif(RunReport report, CheckRequest request) {
         if (request.Output is not { Length: 0 }) {

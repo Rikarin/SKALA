@@ -57,6 +57,30 @@ public sealed record CompilationUnit {
     /// <summary>The files findings may be reported against: sources, minus generated ones.</summary>
     public ImmutableHashSet<string> ReportablePaths { get; init; } = ImmutableHashSet<string>.Empty;
 
+    /// <summary>
+    ///     The files the load was asked for and could not open (<c>SK9015</c>). Counted, never
+    ///     iterated.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #356. <see cref="ReportablePaths" /> answers two questions that used to be one: which
+    ///     files the stages read, and how many files the run was about. A loader that added a path
+    ///     only <em>after</em> reading it answered the first correctly and the second wrong — an
+    ///     unreadable file never entered the denominator, so a two-file tree with one mode-000 file
+    ///     printed <c>1 of 1 file was not checked</c> and <c>verify</c>'s trailer said <c>0 files were
+    ///     checked</c> directly under a finding on the readable neighbour. The fraction exists to say
+    ///     the other files were covered (#345); a denominator that excludes the uncovered files says
+    ///     the opposite.
+    ///     <para>
+    ///         The two questions are separated rather than the set widened, because every stage —
+    ///         formatting, arrangement, duplication, the scope filter of #346 — iterates
+    ///         <see cref="ReportablePaths" /> and would otherwise open the file again and report it
+    ///         again. A path is in exactly one of the two sets: <c>CheckCommand</c> sums both for
+    ///         <c>RunReport.FileCount</c> and hands only this one's complement to the stages. The loader
+    ///         that put a path here also emitted the <c>SK9015</c> against it, once.
+    ///     </para>
+    /// </remarks>
+    public ImmutableHashSet<string> UnreadablePaths { get; init; } = ImmutableHashSet<string>.Empty;
+
     /// <summary>Analyzer assemblies this compilation's build referenced (ADR-008 hosts these too).</summary>
     public ImmutableArray<string> AnalyzerReferences { get; init; } = [];
 

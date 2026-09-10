@@ -162,10 +162,25 @@ public static class WorkspaceLoader {
                 continue;
             }
 
+            // ⚠ #356: this loader never opens a document itself — Roslyn does, lazily, inside
+            // `GetCompilationAsync` above — and Roslyn's answer to a denied read is an *empty*
+            // document, not an exception. So the denominator here was already right (every document
+            // is a requested file) while the report was silently wrong: the analyzers ran over an
+            // empty text and said nothing. Measured through the CLI on a two-file project with one
+            // mode-000 file: `check --load=workspace --no-formatting` printed `OK  nothing to do.` at
+            // exit 0. The read is attempted here, once, so that this loader reaches the same three
+            // outcomes as the other two — reportable, unreadable-and-said, or vanished — and the
+            // stages downstream are never handed a file the load could not open.
             var reportable = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
+            var unreadable = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
             foreach (var document in project.Documents) {
-                if (document.FilePath is { Length: > 0 } path && !BinlogLoader.IsGenerated(path)) {
-                    reportable.Add(Path.GetFullPath(path));
+                if (document.FilePath is not { Length: > 0 } path) {
+                    continue;
+                }
+
+                var full = Path.GetFullPath(path);
+                if (SourceFiles.CanOpen(full, unreadable, diagnostics) && !BinlogLoader.IsGenerated(full)) {
+                    reportable.Add(full);
                 }
             }
 
@@ -179,6 +194,7 @@ public static class WorkspaceLoader {
                         : string.Empty,
                     PreprocessorSymbols = parseOptions is null ? [] : [.. parseOptions.PreprocessorSymbolNames],
                     ReportablePaths = reportable.ToImmutable(),
+                    UnreadablePaths = unreadable.ToImmutable(),
                     AnalyzerReferences = [
                         .. project.AnalyzerReferences
                             .Select(static reference => reference.FullPath ?? string.Empty)
