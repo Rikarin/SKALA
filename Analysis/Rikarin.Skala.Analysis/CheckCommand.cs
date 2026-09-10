@@ -523,8 +523,21 @@ public static class CheckCommand {
         // not, so a file the arrange stage could not read failed the run and the SAME file failing
         // the format stage did not — the format stage dropped it and the gate went green. A clean
         // verdict over a tree that could not be fully read is the failure #345 was filed for.
+        // ⚠ …and the loader is the third stage with the same shape. A source file the *load* could
+        // not read never reaches either of the two flags above, because neither stage was ever
+        // handed it. `verify` over an otherwise-clean tree holding one unreadable file printed the
+        // INCOMPLETE banner #345 added and then exited 0 — the banner and the exit code disagreeing
+        // about the same run, which is the half of #345 the renderer fix could not reach.
+        //
+        // ⚠ Scoped to `FileIoFailed` rather than to every error-severity load diagnostic. The
+        // comment on `refused` above is explicit that nothing downstream reads a load diagnostic's
+        // severity and that the gate reads findings; widening that here would change the exit code
+        // for every loader diagnostic at once, which is a bigger decision than this one.
+        var unreadable = loaded.Diagnostics.Any(static d => d.Id == FormatDiagnosticIds.FileIoFailed);
+
         var exit = arrangementFailed
             || formattingFailed
+            || unreadable
             || report.Diagnostics.Any(static d => d.Id == RuleIds.TokenStreamChanged)
             ? ExitCodes.InternalError
             : !gate.Passed

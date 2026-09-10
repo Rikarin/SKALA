@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Diagnostics;
+using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Reporting;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -51,6 +52,7 @@ public static class LooseLoader {
 
         var trees = ImmutableArray.CreateBuilder<SyntaxTree>(files.Count);
         var reportable = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
+        var unreadable = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
         foreach (var file in files) {
             try {
                 using var stream = File.OpenRead(file);
@@ -66,6 +68,22 @@ public static class LooseLoader {
             } catch (IOException) {
                 // A file that vanished between the enumeration and the read is not an error worth
                 // failing an agent's verify over.
+            } catch (UnauthorizedAccessException exception) {
+                // ⚠ #353: not the same situation as the vanished file above, and it must not share
+                // its silence. `UnauthorizedAccessException` does not derive from `IOException`, so
+                // it escaped this loader entirely and took the command down — and this was the last
+                // site still doing that after #353 widened the other eight. Skipping it quietly
+                // would swap one defect for the other one #345 is about: a file dropping out of the
+                // report with nothing said. `SK9015` on SK9010's contract — report it, leave it
+                // alone, keep going, exit non-zero.
+                unreadable.Add(
+                    new SkalaDiagnostic(
+                        FormatDiagnosticIds.FileIoFailed,
+                        SkalaSeverity.Error,
+                        exception.Message,
+                        file
+                    )
+                );
             }
         }
 
@@ -91,7 +109,8 @@ public static class LooseLoader {
                     ReportablePaths = reportable.ToImmutable()
                 }
             ],
-            Summary = $"loose ({files.Count.ToString(CultureInfo.InvariantCulture)} file(s), no project)"
+            Summary = $"loose ({files.Count.ToString(CultureInfo.InvariantCulture)} file(s), no project)",
+            Diagnostics = unreadable.ToImmutable()
         };
     }
 
