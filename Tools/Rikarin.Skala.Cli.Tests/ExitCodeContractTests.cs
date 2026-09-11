@@ -363,6 +363,44 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
+    ///     #363: the second run over the same cache fails the same way, instead of serving the crashed
+    ///     run's silence as a clean tree.
+    /// </summary>
+    /// <remarks>
+    ///     Measured before the fix, on this binary and this fixture: run one exit 1 with <c>SK9030</c>,
+    ///     run two exit 0 with no <c>SK9030</c> and the <c>SK2014</c> served from the cache. The
+    ///     crashed analyzer's absence had been written to <c>.skala/cache/</c> as "no findings".
+    ///     <para>
+    ///         ⚠ Loose and the same environment both times, on purpose. Loose is the one load mode
+    ///         whose warm path is reachable, and the forced analyzer is part of the rule-set
+    ///         fingerprint, so a second run <em>without</em> the variable would miss every key and
+    ///         measure nothing. The in-process half of this — that the warm path was taken, by
+    ///         <c>CacheHits</c> — is <c>CrashedRunCacheTests</c> in Analysis; this row is the process
+    ///         boundary.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void One_WhenAnAnalyzerThrows_AndAgainOnTheNextRunOverTheSameCache() {
+        Directory.CreateDirectory(Path.Combine(directory, ".git"));
+        Write(
+            "Swallow.cs",
+            "namespace Demo;\n\npublic static class Swallow {\n    public static void Run() {\n"
+            + "        try {\n            System.Console.WriteLine();\n        } catch {\n        }\n    }\n}\n"
+        );
+        var forced = new Dictionary<string, string>(StringComparer.Ordinal) { ["SKALA_FORCE_SK9030"] = "1" };
+
+        var first = CliRunner.RunWith(forced, "check", LoadOption, Loose, FormatOption, "plain", directory);
+        Assert.Equal(1, first.ExitCode);
+        Assert.Contains("SK9030", first.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("SK2014", first.StandardOutput, StringComparison.Ordinal);
+
+        var second = CliRunner.RunWith(forced, "check", LoadOption, Loose, FormatOption, "plain", directory);
+        Assert.Equal(1, second.ExitCode);
+        Assert.Contains("SK9030", second.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("SK2014", second.StandardOutput, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     ⚠ The positive control for the row above: the same tree without the switch is
     ///     <c>OK  nothing to do.</c> at exit 0, so the fix is not "never print the sentence".
     /// </summary>

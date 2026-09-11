@@ -4,6 +4,7 @@ using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 using System.Text;
 
@@ -40,6 +41,10 @@ public sealed record IncrementalOutcome(
 ///             ⚠ <b>The guard</b> — if any enabled rule is <c>Compilation</c>-scoped, the warm path is not
 ///             available at all when anything changed, because such a rule's answer for <c>A.cs</c> depends on
 ///             files the key for <c>A.cs</c> does not name. See <see cref="DiagnosticCache" />.
+///         </item>
+///         <item>
+///             ⚠ <b>The other guard</b> — nothing is written from a run that did not cover the files it
+///             ran over: an analyzer threw, or the run was cancelled. See <see cref="Covered" />.
 ///         </item>
 ///     </list>
 /// </remarks>
@@ -123,14 +128,19 @@ public static class IncrementalAnalysis {
 
         if (hasCompilationScopedRule || misses.Count == keys.Count) {
             var cold = AnalyzerHost.Run(unit, options, hosted, mode, cancellation, profile);
-            Store(cache, keys, unit, cold.Findings);
-            cache.Save();
+            if (Covered(cold)) {
+                Store(cache, keys, unit, cold.Findings);
+                cache.Save();
+            }
+
             return new(cold.Findings, cold.Diagnostics, 0, keys.Count, cold.Partial, cold.Costs);
         }
 
         var warm = AnalyzerHost.RunForTrees(unit, options, hosted, mode, misses, cancellation, profile);
-        Store(cache, keys.Where(pair => misses.Contains(pair.Key)), unit, warm.Findings);
-        cache.Save();
+        if (Covered(warm)) {
+            Store(cache, keys.Where(pair => misses.Contains(pair.Key)), unit, warm.Findings);
+            cache.Save();
+        }
 
         return new IncrementalOutcome(
             [.. hits, .. warm.Findings],
@@ -141,6 +151,43 @@ public static class IncrementalAnalysis {
             warm.Costs
         );
     }
+
+    /// <summary>
+    ///     Whether a run's findings are the whole answer for the files it ran over — the one condition
+    ///     under which they may be written to the cache.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #363. <c>Store</c> writes an entry for every file, and a file with no findings gets one
+    ///     too — that is what makes "clean" distinguishable from "not cached". So when an analyzer threw
+    ///     (<c>SK9030</c>), the findings its rules would have reported are simply absent from
+    ///     <c>Findings</c>, and storing that writes "clean" against every file it should have inspected.
+    ///     The <c>SK9030</c> itself is a run diagnostic, not a finding, so it is not stored. The next run
+    ///     hits on every key, the all-hits return above hands back the cached findings with no
+    ///     diagnostics, and the gate has nothing to fail on: the crash and the rules it took with it are
+    ///     gone from every later report until something else moves the key. Measured on the real binary
+    ///     over a two-file loose tree: run one exit 1 with <c>SK9030</c>, run two exit 0 with
+    ///     <c>SK2014</c> served from the cache. It is #359 one layer down — there a baseline, here a cache,
+    ///     written from a run that did not cover the tree and read by every run after it.
+    ///     <para>
+    ///         A cancelled run is the same shape and worse: <c>AnalyzerHost</c> returns <em>no</em>
+    ///         findings and <c>Partial</c>, so storing it writes every file as clean, not just the
+    ///         crashed analyzer's share.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Blunt on purpose: the whole run is withheld, not the crashed analyzer's share of it.
+    ///         The precise version needs to know which files the analyzer threw on and which rules it
+    ///         would have reported there, and neither is in the outcome — Roslyn's exception callback
+    ///         carries <c>Location.None</c>, and <see cref="Finding" /> attributes a finding to a rule,
+    ///         not to the analyzer that carried it. A partial entry the read path could complete would
+    ///         be a new cache format and a per-analyzer re-run the driver does not have. The cost of the
+    ///         blunt guard is one cold run after a crash, which is the right price for a crash.
+    ///     </para>
+    /// </remarks>
+    static bool Covered(AnalysisOutcome outcome) =>
+        !outcome.Partial
+        && !outcome.Diagnostics.Any(static diagnostic =>
+            string.Equals(diagnostic.Id, RuleIds.AnalyzerThrew, StringComparison.Ordinal)
+        );
 
     static void Store(
         DiagnosticCache cache,
