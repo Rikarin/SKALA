@@ -19,13 +19,21 @@ namespace Rikarin.Skala.Reporting;
 ///     <see cref="Fingerprints.Version3" />.
 /// </param>
 /// <param name="FingerprintV2">M6's identity, carried for the one-directional fallback; empty once rewritten.</param>
+/// <param name="Result">
+///     The SARIF result exactly as the file holds it, so that a verb which keeps the entry can write it
+///     back unchanged (#366). ⚠ It is the only faithful record of the entry: the fingerprint terms it
+///     was hashed from — the snippet, the enclosing symbol, the ordinal — are not all stored beside the
+///     hash, so an entry whose finding no longer fires cannot be rebuilt as a <see cref="Finding" /> and
+///     re-hashed without changing its identity.
+/// </param>
 public sealed record BaselineEntry(
     string RuleId,
     string Path,
     string Message,
     string FingerprintV3,
     string FingerprintV2,
-    string FingerprintV1) {
+    string FingerprintV1,
+    Result Result) {
     /// <summary>
     ///     The newest fingerprint the entry carries — what <see cref="Baseline.Compare" /> reports it under.
     /// </summary>
@@ -122,7 +130,8 @@ public sealed class Baseline {
                     result.Message?.Text ?? string.Empty,
                     migrated.TryGetValue(i, out var canonical) ? canonical : Print(prints, Fingerprints.Version3),
                     Print(prints, Fingerprints.Version2),
-                    Print(prints, Fingerprints.Version1)
+                    Print(prints, Fingerprints.Version1),
+                    result
                 )
             );
         }
@@ -273,12 +282,45 @@ public sealed class Baseline {
     ///         citing itself.
     ///     </para>
     /// </remarks>
-    public static void Write(string path, RunReport report, IEnumerable<Finding> findings) {
+    public static void Write(string path, RunReport report, IEnumerable<Finding> findings) =>
+        Write(path, report, findings, []);
+
+    /// <summary>
+    ///     Writes a baseline holding the findings given, followed by entries carried over from an
+    ///     earlier baseline exactly as that file held them.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #366. <c>baseline update</c> keeps the entries whose findings no longer fire, and it used to
+    ///     keep them by rebuilding each as a placeholder <see cref="Finding" /> — empty snippet, empty
+    ///     enclosing symbol, no offset, no ordinal — and letting <see cref="SarifWriter" /> hash it
+    ///     again. The entry that reached the file had a fingerprint computed from the placeholder, a
+    ///     region of line 1 offset 0, and none of the properties the original carried. A kept entry
+    ///     therefore never matched its finding again once the finding returned, and a symbol-less
+    ///     placeholder hashed to the ordinal-0 identity of its own rule-message-file group, which
+    ///     <c>prune</c> then could not see. Measured on this repository's baseline before the fix: 18
+    ///     such entries, two of them <c>SK0002</c>s that <c>prune</c> reported as still firing.
+    ///     <para>
+    ///         An unfired entry has no source span behind it any more, so nothing can be recomputed for
+    ///         it; the only faithful thing to write is the <see cref="Result" /> that was read, with the
+    ///         <c>partialFingerprints</c> it already has. ⚠ That includes an entry still carrying only
+    ///         <see cref="Fingerprints.Version2" />: it stays v2-only, because its v3 cannot be computed
+    ///         for a finding that did not fire, and <see cref="Compare" />'s legacy pass keeps matching
+    ///         it if the finding comes back.
+    ///     </para>
+    /// </remarks>
+    public static void Write(
+        string path,
+        RunReport report,
+        IEnumerable<Finding> findings,
+        IEnumerable<BaselineEntry> carried
+    ) {
         var accepted = findings.Select(static finding => finding with { Bucket = BaselineBucket.Unknown })
             .ToArray();
 
         var log = SarifWriter.Build(report with { Findings = [.. accepted], Gate = null });
-        log.Runs[0].Invocations = null;
+        var run = log.Runs[0];
+        run.Invocations = null;
+        run.Results = [.. run.Results, .. carried.Select(static entry => entry.Result)];
 
         Core.SkalaDirectory.EnsureForFile(System.IO.Path.GetFullPath(path));
         File.WriteAllText(path, SarifWriter.Serialize(log));
