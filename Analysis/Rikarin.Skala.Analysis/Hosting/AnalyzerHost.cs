@@ -111,16 +111,24 @@ public static class AnalyzerHost {
         CancellationToken cancellation,
         bool profile = false
     ) =>
-        Execute(unit, options, hosted, mode, null, profile, cancellation);
+        Execute(unit, options, Select(mode, hosted), mode, null, false, profile, cancellation);
 
     /// <summary>
-    ///     The warm path: run the analyzers over only the trees whose cache key moved.
+    ///     The warm path: run the per-file analyzers over only the trees whose cache key moved.
     /// </summary>
     /// <remarks>
     ///     ⚠ Syntax <em>and</em> semantic actions, per tree. Running only
     ///     <c>GetAnalyzerSyntaxDiagnosticsAsync</c> would silently drop every semantic rule from a warm
     ///     run, so a file would produce different findings depending on whether the cache was cold —
     ///     which is the cache lying, in the direction that looks like progress.
+    ///     <para>
+    ///         ⚠ Only the analyzers <see cref="IsPerFileCacheable" /> admits, and the restriction is
+    ///         here rather than at the call site so that no caller can run a whole-compilation rule over
+    ///         one tree. Such a rule's answer for the tree depends on the trees it was not shown —
+    ///         <c>SK2290</c> asks whether <em>every</em> caller discards the value — so a per-tree run
+    ///         of it is not a partial answer but a wrong one. Its bucket is
+    ///         <see cref="RunCompilationScoped" />.
+    ///     </para>
     /// </remarks>
     public static AnalysisOutcome RunForTrees(
         CompilationUnit unit,
@@ -131,7 +139,61 @@ public static class AnalyzerHost {
         CancellationToken cancellation,
         bool profile = false
     ) =>
-        Execute(unit, options, hosted, mode, trees, profile, cancellation);
+        Execute(
+            unit,
+            options,
+            [.. Select(mode, hosted).Where(IsPerFileCacheable)],
+            mode,
+            trees,
+            false,
+            profile,
+            cancellation
+        );
+
+    /// <summary>
+    ///     The other bucket of a warm run: the analyzers that cannot be served per file, over the whole
+    ///     compilation, on every run in which anything changed.
+    /// </summary>
+    /// <remarks>
+    ///     #364. This is the sentence docs/plan/07 § "The incremental cache" has carried since M5 —
+    ///     "<c>Compilation</c>-scoped rules are excluded from per-file caching and re-run whenever
+    ///     <em>any</em> file in the compilation changes" — made true. Until this method existed the
+    ///     incremental pass had only two paths, and an enabled compilation-scoped rule sent the
+    ///     <em>whole</em> rule set down the cold one; since the first of the five such rules shipped
+    ///     (2026-09-01) that was every project-backed run in every repository, and the per-file cache
+    ///     was written on each of them and read by none.
+    ///     <para>
+    ///         ⚠ Analyzer diagnostics only — no compiler diagnostics. The compiler's are per file and
+    ///         are already in the per-file entries; folding them in here would report every
+    ///         <c>CS</c> twice on a warm run.
+    ///     </para>
+    ///     <para>
+    ///         Measured on 2026-09-11 over Skala's own 31 compilations, in-process, steady state: the
+    ///         five whole-compilation analyzers alone cost 2.4 s against 6.8 s for all 299, of which 1.2 s
+    ///         is the compiler binding any whole-compilation pass pays. So a warm run that changed one
+    ///         file now costs roughly the five plus one tree instead of everything — and the 2.4 s is
+    ///         the floor a per-file cache cannot lower, which is the case for the second tier
+    ///         docs/plan/07 describes and does not build.
+    ///     </para>
+    /// </remarks>
+    public static AnalysisOutcome RunCompilationScoped(
+        CompilationUnit unit,
+        AnalyzerOptions options,
+        ImmutableArray<DiagnosticAnalyzer> hosted,
+        LoadMode mode,
+        CancellationToken cancellation,
+        bool profile = false
+    ) =>
+        Execute(
+            unit,
+            options,
+            [.. Select(mode, hosted).Where(static analyzer => !IsPerFileCacheable(analyzer))],
+            mode,
+            null,
+            true,
+            profile,
+            cancellation
+        );
 
     /// <summary>The rule set a load mode allows, as instantiated analyzers.</summary>
     public static ImmutableArray<DiagnosticAnalyzer> EnabledFor(
@@ -140,12 +202,56 @@ public static class AnalyzerHost {
     ) =>
         Select(mode, hosted);
 
+    /// <summary>
+    ///     Whether every rule the analyzer carries may be served from the per-file cache — the
+    ///     partition between <see cref="RunForTrees" /> and <see cref="RunCompilationScoped" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Supported</b> descriptors, not enabled ones, and no severity is read at all. The old
+    ///     guard asked <c>IsEnabledByDefault</c> so that <c>SK3001</c> — compilation-scoped, shipping
+    ///     <c>defaultSeverity: none</c> — would not switch the cache off for everyone; the price was that
+    ///     a repository which turned <c>SK3001</c> on in <c>.editorconfig</c> kept the warm path and lost
+    ///     the rule's findings for every unchanged file (docs/plan/16 § "The opt-in that does not cost
+    ///     what it says"). In a partition the question does not arise: membership of the
+    ///     whole-compilation bucket disables nothing, and Roslyn skips an analyzer whose every descriptor
+    ///     is off before invoking it, so <c>SK3001</c> costs nothing while off and is correct when on.
+    ///     Reading the effective severity here would buy exactly that skip, which the driver already
+    ///     does.
+    ///     <para>
+    ///         ⚠ An analyzer Skala cannot read the scope of is not per-file. A hosted third-party
+    ///         analyzer declares nothing about whether its answer for <c>A.cs</c> depends on
+    ///         <c>B.cs</c>, and the previous warm path (M5–M8) cached every one of them per file on no
+    ///         basis at all. The one exception is Roslyn's own naming analyzer, which Skala loads
+    ///         deliberately (<see cref="RoslynCodeStyle" />) and which decides each symbol on its own.
+    ///         <see cref="ForcedCrash" /> is the harness's, throws from a syntax-tree action, and is
+    ///         per-file so that a forced run takes whichever path an unforced one would (#363).
+    ///     </para>
+    /// </remarks>
+    public static bool IsPerFileCacheable(DiagnosticAnalyzer analyzer) {
+        if (analyzer is ForcedCrash) {
+            return true;
+        }
+
+        foreach (var descriptor in analyzer.SupportedDiagnostics) {
+            if (string.Equals(descriptor.Id, RoslynCodeStyle.NamingDiagnosticId, StringComparison.Ordinal)) {
+                continue;
+            }
+
+            if (RuleCatalog.Find(descriptor.Id) is not { IsCacheable: true }) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     static AnalysisOutcome Execute(
         CompilationUnit unit,
         AnalyzerOptions options,
-        ImmutableArray<DiagnosticAnalyzer> hosted,
+        ImmutableArray<DiagnosticAnalyzer> analyzers,
         LoadMode mode,
         IReadOnlyList<SyntaxTree>? trees,
+        bool analyzerDiagnosticsOnly,
         bool profile,
         CancellationToken cancellation
     ) {
@@ -153,7 +259,6 @@ public static class AnalyzerHost {
         var crashes = new Dictionary<string, (DiagnosticAnalyzer Analyzer, string Message, int Count)>(
             StringComparer.Ordinal
         );
-        var analyzers = Select(mode, hosted);
         if (analyzers.IsEmpty) {
             return new AnalysisOutcome([], diagnostics.ToImmutable(), false);
         }
@@ -201,8 +306,13 @@ public static class AnalyzerHost {
                 costs = Measure(result, analyzers);
 
                 // ⚠ `AnalysisResult` carries only analyzer diagnostics; `GetAllDiagnosticsAsync`
-                // also folds in the compiler's, which the loop below expects to see.
-                produced = [.. result.GetAllDiagnostics(), .. unit.Compilation.GetDiagnostics(cancellation)];
+                // also folds in the compiler's, which the loop below expects to see -- except from
+                // the compilation-scoped bucket, whose compiler diagnostics are in the per-file entries.
+                produced = analyzerDiagnosticsOnly
+                    ? result.GetAllDiagnostics()
+                    : [.. result.GetAllDiagnostics(), .. unit.Compilation.GetDiagnostics(cancellation)];
+            } else if (analyzerDiagnosticsOnly) {
+                produced = withAnalyzers.GetAnalyzerDiagnosticsAsync(cancellation).GetAwaiter().GetResult();
             } else {
                 produced = withAnalyzers.GetAllDiagnosticsAsync(cancellation).GetAwaiter().GetResult();
             }
@@ -454,13 +564,15 @@ public static class AnalyzerHost {
     ///     <para>
     ///         ⚠ #363: it declared <c>SK9030</c>'s own descriptor until this fix, and that made the
     ///         instrument blind to the defect it found. <c>SK9030</c> is <c>Compilation</c>-scoped in
-    ///         the catalogue, so it is in <see cref="Caching.DiagnosticCache.Uncacheable" />, and an
-    ///         enabled uncacheable descriptor on any selected analyzer is precisely what sends
-    ///         <see cref="IncrementalAnalysis" /> down the cold path. Every forced run was therefore a
-    ///         cold run, and "the second run still fails" was measuring the guard, not the cache. The
-    ///         descriptor is now the harness's own — enabled, because Roslyn skips an analyzer whose
-    ///         every descriptor is suppressed and an empty set is vacuously all-suppressed (the first
-    ///         draft declared nothing and never ran) — and cacheable, so a forced run takes whichever
+    ///         the catalogue, so it is in <see cref="Caching.DiagnosticCache.Uncacheable" />, and at the
+    ///         time an enabled uncacheable descriptor on any selected analyzer was precisely what sent
+    ///         <see cref="IncrementalAnalysis" /> down the cold path (since #364 it would instead have
+    ///         put the crash in the whole-compilation bucket, away from the per-file store the tests
+    ///         are about). Every forced run was therefore a cold run, and "the second run still fails"
+    ///         was measuring the guard, not the cache. The descriptor is now the harness's own —
+    ///         enabled, because Roslyn skips an analyzer whose every descriptor is suppressed and an
+    ///         empty set is vacuously all-suppressed (the first draft declared nothing and never ran) —
+    ///         and <see cref="IsPerFileCacheable" /> names the type, so a forced run takes whichever
     ///         path an unforced one would.
     ///     </para>
     /// </remarks>

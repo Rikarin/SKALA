@@ -150,7 +150,12 @@ public static class CacheKey {
         }
     }
 
-    /// <summary>Rule ids, their effective severities, and the analyzer assemblies' identities.</summary>
+    /// <summary>Rule ids, their catalogue defaults, and the analyzer assemblies' identities.</summary>
+    /// <remarks>
+    ///     ⚠ Default severity and default enablement, not effective ones: this used to say "effective"
+    ///     and never was. The effective severity is a function of <c>.editorconfig</c>, which is the
+    ///     key's own separate term, so a <c>dotnet_diagnostic</c> change still moves every key.
+    /// </remarks>
     public static string RuleSetFingerprint(
         ImmutableArray<Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer> analyzers
     ) {

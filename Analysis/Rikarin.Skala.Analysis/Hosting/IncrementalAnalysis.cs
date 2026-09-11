@@ -26,24 +26,30 @@ public sealed record IncrementalOutcome(
 ///     The per-file cache in front of the analyzer driver.
 /// </summary>
 /// <remarks>
-///     docs/plan/07 § "The incremental cache". The shape is two paths and one guard:
+///     docs/plan/07 § "The incremental cache". The shape is two paths, a partition and one guard:
 ///     <list type="number">
 ///         <item>
-///             <b>Cold</b> — nothing cached, or a compilation-scoped rule is enabled and something changed.
-///             One <c>GetAllDiagnosticsAsync</c>, then every file's findings are written to the cache.
+///             <b>Cold</b> — nothing cached. One <c>GetAllDiagnosticsAsync</c> over every analyzer, then
+///             every file's findings are written to the cache.
 ///         </item>
 ///         <item>
 ///             <b>Warm</b> — every unchanged file's findings come from the cache; the changed ones are run
-///             through <c>GetAnalysisResultAsync(tree)</c> and <c>GetAnalysisResultAsync(semanticModel)</c>,
-///             which is what makes "changed files in under 5 s on a 4 691-file tree" reachable.
+///             through <c>GetAnalysisResultAsync(tree)</c> and <c>GetAnalysisResultAsync(semanticModel)</c>
+///             with the per-file analyzers only.
 ///         </item>
 ///         <item>
-///             ⚠ <b>The guard</b> — if any enabled rule is <c>Compilation</c>-scoped, the warm path is not
-///             available at all when anything changed, because such a rule's answer for <c>A.cs</c> depends on
-///             files the key for <c>A.cs</c> does not name. See <see cref="DiagnosticCache" />.
+///             ⚠ <b>The partition</b> — a <c>Compilation</c>-scoped rule's answer for <c>A.cs</c> depends
+///             on files the key for <c>A.cs</c> does not name, so its analyzer is never run per tree and
+///             its findings are never stored: on every warm run it re-runs over the whole compilation
+///             (<see cref="AnalyzerHost.RunCompilationScoped" />) and its findings are added to what the
+///             cache and the per-tree run produced. <see cref="AnalyzerHost.IsPerFileCacheable" /> decides
+///             the side. ⚠ Until #364 this was a guard rather than a partition: one such rule enabled
+///             sent <em>everything</em> cold, five of them ship enabled, and so from 2026-09-01 every
+///             project-backed run in every repository wrote the per-file cache and none read it. See
+///             <see cref="DiagnosticCache" />.
 ///         </item>
 ///         <item>
-///             ⚠ <b>The other guard</b> — nothing is written from a run that did not cover the files it
+///             ⚠ <b>The guard</b> — nothing is written from a run that did not cover the files it
 ///             ran over: an analyzer threw, or the run was cancelled. See <see cref="Covered" />.
 ///         </item>
 ///     </list>
@@ -105,50 +111,59 @@ public static class IncrementalAnalysis {
             }
         }
 
-        // ⚠ The guard. A compilation-scoped rule cannot be served from a per-file cache, so any
-        // change at all sends the whole compilation down the cold path.
+        // ⚠ The partition. The rule ids no per-file entry may hold: everything carried by an
+        // analyzer the warm path does not run per tree. `DiagnosticCache.Put` drops the catalogue's
+        // uncacheable ids on its own; this is the wider set, because an analyzer that carries one
+        // uncacheable descriptor beside a cacheable one runs in the whole-compilation bucket as a
+        // unit, and a finding of its cacheable rule must then come from that bucket every time
+        // rather than from the cache once and the bucket again.
         //
-        // ⚠ <b>Enabled</b> compilation-scoped rules, not merely supported ones. M6 added SK3001,
-        // whose event-handler check has to see the whole compilation and which therefore ships
-        // `defaultSeverity: none`. Testing `SupportedDiagnostics` alone would let a rule nobody
-        // turned on disable the warm path for every run in every repository — the whole incremental
-        // cache traded away for a rule that is not running. Roslyn's own driver filters on the same
-        // property before it ever invokes the analyzer, so this asks the question the driver
-        // already answered.
-        var hasCompilationScopedRule = analyzers
+        // ⚠ No severity is read here, effective or default. The old guard tested
+        // `IsEnabledByDefault` so that SK3001 (`defaultSeverity: none`) would not disable the warm
+        // path for everyone; it did not read `dotnet_diagnostic.SK3001.severity`, so a repository
+        // that opted in kept the warm path and lost the rule on every unchanged file. In a partition
+        // membership costs nothing while the rule is off -- Roslyn skips an analyzer whose every
+        // descriptor is off -- so the question the guard was answering no longer exists.
+        var compilationScopedIds = analyzers
+            .Where(static analyzer => !AnalyzerHost.IsPerFileCacheable(analyzer))
             .SelectMany(static analyzer => analyzer.SupportedDiagnostics)
-            .Any(static descriptor =>
-                descriptor.IsEnabledByDefault && DiagnosticCache.Uncacheable.Contains(descriptor.Id)
-            );
+            .Select(static descriptor => descriptor.Id)
+            .ToImmutableHashSet(StringComparer.Ordinal);
 
-        if (misses.Count == 0 && !hasCompilationScopedRule) {
-            cache.Save();
-            return new IncrementalOutcome([.. hits], [], cache.Hits, cache.Misses, false);
-        }
-
-        if (hasCompilationScopedRule || misses.Count == keys.Count) {
+        if (misses.Count == keys.Count) {
             var cold = AnalyzerHost.Run(unit, options, hosted, mode, cancellation, profile);
             if (Covered(cold)) {
-                Store(cache, keys, unit, cold.Findings);
+                Store(cache, keys, unit, cold.Findings, compilationScopedIds);
                 cache.Save();
             }
 
             return new(cold.Findings, cold.Diagnostics, 0, keys.Count, cold.Partial, cold.Costs);
         }
 
-        var warm = AnalyzerHost.RunForTrees(unit, options, hosted, mode, misses, cancellation, profile);
-        if (Covered(warm)) {
-            Store(cache, keys.Where(pair => misses.Contains(pair.Key)), unit, warm.Findings);
-            cache.Save();
+        var warm = misses.Count == 0
+            ? new AnalysisOutcome([], [], false)
+            : AnalyzerHost.RunForTrees(unit, options, hosted, mode, misses, cancellation, profile);
+        if (misses.Count > 0 && Covered(warm)) {
+            Store(cache, keys.Where(pair => misses.Contains(pair.Key)), unit, warm.Findings, compilationScopedIds);
         }
 
+        cache.Save();
+
+        // ⚠ Every warm run, changed or not, whenever the bucket is non-empty: the cache holds nothing
+        // for these rules by construction, so there is no "all hits" return that could skip them. A
+        // key that did not move says the *file* did not change, not that the answer a
+        // whole-compilation rule gives about it did not.
+        var whole = compilationScopedIds.IsEmpty
+            ? new AnalysisOutcome([], [], false)
+            : AnalyzerHost.RunCompilationScoped(unit, options, hosted, mode, cancellation, profile);
+
         return new IncrementalOutcome(
-            [.. hits, .. warm.Findings],
-            warm.Diagnostics,
+            [.. hits, .. warm.Findings, .. whole.Findings],
+            [.. warm.Diagnostics, .. whole.Diagnostics],
             cache.Hits,
             cache.Misses,
-            warm.Partial,
-            warm.Costs
+            warm.Partial || whole.Partial,
+            [.. warm.Costs, .. whole.Costs]
         );
     }
 
@@ -189,13 +204,23 @@ public static class IncrementalAnalysis {
             string.Equals(diagnostic.Id, RuleIds.AnalyzerThrew, StringComparison.Ordinal)
         );
 
+    /// <param name="compilationScopedIds">
+    ///     The rule ids the whole-compilation bucket owns. ⚠ Dropped here as well as by
+    ///     <see cref="DiagnosticCache.Put" />, which knows only the catalogue's uncacheable ids: the cold
+    ///     run produces every rule's findings in one pass, and an entry holding a finding this set names
+    ///     would be served beside the bucket's own answer on the next warm run — the same finding twice
+    ///     — or, for a rule the bucket no longer runs, once from a run that can no longer be reproduced.
+    /// </param>
     static void Store(
         DiagnosticCache cache,
         IEnumerable<KeyValuePair<SyntaxTree, string>> keys,
         CompilationUnit unit,
-        ImmutableArray<Finding> findings
+        ImmutableArray<Finding> findings,
+        ImmutableHashSet<string> compilationScopedIds
     ) {
-        var byPath = findings.GroupBy(static finding => finding.Path, StringComparer.Ordinal)
+        var byPath = findings
+            .Where(finding => !compilationScopedIds.Contains(finding.RuleId))
+            .GroupBy(static finding => finding.Path, StringComparer.Ordinal)
             .ToDictionary(static group => group.Key, static group => group.ToImmutableArray(), StringComparer.Ordinal);
 
         foreach (var (tree, key) in keys) {
