@@ -74,8 +74,10 @@ public sealed class ReliabilityGateTests {
     ///     ⚠ The issue reported this as "the pipeline neither surfaces nor records AD0001", and that is
     ///     false — <c>AnalyzerHost</c>'s <c>onAnalyzerException</c> callback has always emitted
     ///     <c>SK9030</c>, the renderers print it and the SARIF carries it. The real defect is here: a
-    ///     crashed analyzer is disabled for the rest of the run and contributes zero findings, and
-    ///     nothing turned that into a verdict, so a dead rule and a quiet rule passed identically.
+    ///     crashed analyzer contributes zero findings for every file it threw on, and nothing turned
+    ///     that into a verdict, so a dead rule and a quiet rule passed identically. (⚠ "Disabled for the
+    ///     rest of the run", which this and the message said until #362, is not what Roslyn does — it
+    ///     keeps invoking the analyzer, which keeps throwing.)
     ///     Sabotage by removing the <c>crashed</c> block from <c>Gate.EvaluateReliability</c>.
     /// </remarks>
     [Fact]
@@ -85,7 +87,8 @@ public sealed class ReliabilityGateTests {
                 new SkalaDiagnostic(
                     RuleIds.AnalyzerThrew,
                     SkalaSeverity.Warning,
-                    "analyzer 'RedundantArgumentAnalyzer' threw on rule 'SK0232' and was disabled for the rest of the run",
+                    "analyzer 'RedundantArgumentAnalyzer' threw once, so the rules it carries (SK0232) reported "
+                    + "nothing wherever it threw: Object reference not set to an instance of an object.",
                     "/repo/Widget.cs"
                 )
             ]

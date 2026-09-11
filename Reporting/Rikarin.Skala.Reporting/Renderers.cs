@@ -60,6 +60,15 @@ public enum ReportFormat {
 ///         is the sibling of <see cref="GateInput" />: outside the fraction, its own sentence, and —
 ///         since #361 — a reliability failure at the gate.
 ///     </para>
+///     <para>
+///         ⚠ #362. Nor is an analyzer. <c>SK9030</c> ships at <b>warning</b> and fails the reliability
+///         gate at warning (#295), and the banner keyed on error severity alone — so a crashed analyzer
+///         was exit 1 under <c>OK  nothing to do.</c>, the sentence reserved for exit 0. It is located
+///         at the project (or the unit's name, under loose), never at a source file, because Roslyn's
+///         exception diagnostic has no location and the crash is about every file the analyzer's rules
+///         were meant to cover. <see cref="CrashedAnalyzer" /> is the third non-file cause: outside the
+///         fraction, its own sentence, and the banner's reason to exist on that run.
+///     </para>
 /// </remarks>
 public enum IncompleteCause {
     /// <summary>
@@ -88,7 +97,15 @@ public enum IncompleteCause {
     ///     Not a source file, so never counted among the files that were not checked;
     ///     <see cref="Renderer.OutsideTheFraction" /> is where the banner reads it from.
     /// </summary>
-    LoadRung
+    LoadRung,
+
+    /// <summary>
+    ///     An analyzer threw (<c>SK9030</c> at warning severity or above), so the rules it carries
+    ///     reported nothing wherever it threw. Not a source file — Roslyn's exception diagnostic has no
+    ///     location — so never counted among the files that were not checked;
+    ///     <see cref="Renderer.OutsideTheFraction" /> is where the banner reads it from.
+    /// </summary>
+    CrashedAnalyzer
 }
 
 /// <summary>
@@ -100,9 +117,9 @@ public enum IncompleteCause {
 ///     reach formatting code is a renderer that can be tempted to run some — so it cannot reference
 ///     the originals, and <c>ToolDiagnosticIdTests</c> forbids a bare literal. The constants keep the
 ///     originals' names so that the one-id-one-concept check reads them as the same concept, which
-///     they are. The other ids the classifier names — <c>SK9028</c>, <c>SK9024</c>, <c>SK9029</c> —
-///     are read straight off <c>ConfigDiagnosticIds</c>, which lives in Core and which this assembly
-///     already references. Nothing else in the <c>SK9xxx</c> range is named here: every other blocking
+///     they are. The other ids the classifier names — <c>SK9028</c>, <c>SK9024</c>, <c>SK9029</c> off
+///     <c>ConfigDiagnosticIds</c>, <c>SK9030</c> off <c>RuleIds</c> — are read straight from Core and
+///     the rule metadata, which this assembly already references. Nothing else in the <c>SK9xxx</c> range is named here: every other blocking
 ///     id is Skala's own fault, and the default branch says so without having to list them.
 /// </remarks>
 static class IncompleteIds {
@@ -202,11 +219,11 @@ public static class Renderer {
             .ThenBy(static finding => finding.Message, StringComparer.Ordinal);
 
     /// <summary>
-    ///     The run's own error-severity diagnostics — the ones that mean
+    ///     The run's own diagnostics that mean
     ///     <b>
     ///         this run did not cover
     ///         what it was asked to cover
-    ///     </b>.
+    ///     </b>: every one at error severity, and every one the reliability gate fails on.
     /// </summary>
     /// <remarks>
     ///     ⚠ #345. A diagnostic is not a finding: a finding is something in the code, and one of these
@@ -222,9 +239,23 @@ public static class Renderer {
     ///         reads them. What it fixes is that a renderer was silently dropping the half of the report
     ///         that says the other half is incomplete.
     ///     </para>
+    ///     <para>
+    ///         ⚠ #362: error severity alone was not the set. <c>Gate.EvaluateReliability</c> fails the
+    ///         verdict on <c>SK9030</c> at <em>warning</em> — an analyzer threw, its rules reported
+    ///         nothing — and a banner keyed on severity let that run exit 1 under <c>OK  nothing to
+    ///         do.</c>. The second clause asks the gate which ids it fails on, at which severity, rather
+    ///         than repeating the list here: the day the two lists disagree is the day this defect
+    ///         comes back. It is still not a decision — <see cref="Gate.FailsReliability" /> is the
+    ///         gate's own line, read from where it is drawn — and it deliberately widens by id and not
+    ///         by severity: warning-severity <c>SK9028</c> (no baseline yet) and <c>SK9024</c> (a
+    ///         relayed <c>workspace:</c> line) fail no gate and reach no banner, and
+    ///         <c>IncompleteBannerTests</c> pins both.
+    ///     </para>
     /// </remarks>
     public static IEnumerable<SkalaDiagnostic> Blocking(RunReport report) =>
-        report.Diagnostics.Where(static diagnostic => diagnostic.Severity >= SkalaSeverity.Error);
+        report.Diagnostics.Where(static diagnostic =>
+            diagnostic.Severity >= SkalaSeverity.Error || Gate.FailsReliability(diagnostic)
+        );
 
     /// <summary>
     ///     Whether a diagnostic is about one file rather than about the stage that ran over them.
@@ -292,17 +323,20 @@ public static class Renderer {
     ///     a member to <see cref="IncompleteCause" /> means deciding which side it is on, here.
     /// </remarks>
     public static bool IsAboutAFile(IncompleteCause cause) =>
-        cause is not (IncompleteCause.GateInput or IncompleteCause.LoadRung);
+        cause is not (IncompleteCause.GateInput or IncompleteCause.LoadRung or IncompleteCause.CrashedAnalyzer);
 
     /// <summary>
     ///     The blocking diagnostics that are not about a source file: an input the gate compares
-    ///     against that could not be read, or a project the load found and could not load.
+    ///     against that could not be read, a project the load found and could not load, or an
+    ///     analyzer that threw.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Error severity only, because <see cref="Blocking" /> already is. The same ids at warning
-    ///     are states a repository passes through — a baseline the gate names and that does not exist
-    ///     yet (#358), MSBuild's relayed <c>workspace:</c> lines, a tree with no project at all — all
-    ///     deliberately non-blocking, and none reaches the banner.
+    ///     ⚠ At the gate's own thresholds, because <see cref="Blocking" /> is. <c>SK9028</c>,
+    ///     <c>SK9024</c> and <c>SK9029</c> at warning are states a repository passes through — a
+    ///     baseline the gate names and that does not exist yet (#358), MSBuild's relayed
+    ///     <c>workspace:</c> lines, a tree with no project at all — all deliberately non-blocking, and
+    ///     none reaches the banner. <c>SK9030</c> at warning is the crash itself and does (#362); the
+    ///     same id at info is a generator's own reported diagnostic and does not.
     ///     <para>
     ///         Not filtered by location: the baseline variant sits at the baseline's path and the
     ///         <c>--since</c> and <c>--no-new-suppressions</c> variants at the root; a project that
@@ -326,7 +360,7 @@ public static class Renderer {
     ///     Why a file dropped out of the run, from the diagnostic that dropped it.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>The default is <see cref="IncompleteCause.Defect" />, deliberately.</b> Only the five
+    ///     ⚠ <b>The default is <see cref="IncompleteCause.Defect" />, deliberately.</b> Only the six
     ///     ids that are positively known to describe the environment or the repository are named;
     ///     anything else the tool can fail with is Skala's own until somebody says otherwise. Getting
     ///     that backwards would let a new blocking id ship quietly telling readers to go and check
@@ -339,6 +373,7 @@ public static class Renderer {
             ConfigDiagnosticIds.GateInputUnavailable => IncompleteCause.GateInput,
             ConfigDiagnosticIds.NothingToLoad
                 or ConfigDiagnosticIds.AnalyzerAssemblyMissing => IncompleteCause.LoadRung,
+            RuleIds.AnalyzerThrew => IncompleteCause.CrashedAnalyzer,
             _ => IncompleteCause.Defect
         };
 
@@ -990,6 +1025,20 @@ public static class AgentRenderer {
             sentences.Add(string.Join(" and ", clauses) + ", so the gate compared against nothing.");
         }
 
+        // ⚠ #362. The analyzer is named on the `SK9030` line directly under the banner, with the
+        // rules it carries and how many times it threw; this sentence says what that did to the
+        // verdict, because on this surface — which prints no gate verdict — it is the only line
+        // that explains exit 1 over a report with nothing else in it.
+        var crashed = outside.Count(static d => Renderer.CauseOf(d) == IncompleteCause.CrashedAnalyzer);
+        if (crashed > 0) {
+            sentences.Add(
+                crashed == 1
+                    ? "an analyzer threw (SK9030 below), so the rules it carries reported nothing wherever it threw."
+                    : crashed.ToString(CultureInfo.InvariantCulture)
+                    + " analyzers threw (SK9030 below), so the rules they carry reported nothing wherever they threw."
+            );
+        }
+
         var loadRungs = outside.Where(static d => Renderer.CauseOf(d) == IncompleteCause.LoadRung).ToList();
         if (loadRungs.Count > 0) {
             var clauses = loadRungs
@@ -1026,9 +1075,10 @@ public static class AgentRenderer {
     static string Trailer(bool runBlocked, IReadOnlyList<SkalaDiagnostic> outside) {
         var gateInput = outside.Any(static d => Renderer.CauseOf(d) == IncompleteCause.GateInput);
         var loadRung = outside.Any(static d => Renderer.CauseOf(d) == IncompleteCause.LoadRung);
+        var crashed = outside.Any(static d => Renderer.CauseOf(d) == IncompleteCause.CrashedAnalyzer);
 
         var trailer = new StringBuilder(runBlocked ? " Everything below covers the rest" : " Every file was checked");
-        if (loadRung) {
+        if (loadRung || crashed) {
             trailer.Append(runBlocked ? " with the rules that could run" : " by the rules that could run");
         }
 
@@ -1071,8 +1121,8 @@ public static class AgentRenderer {
     ///         enumerated every error-severity tool id once more. Nothing is left: <c>SK9015</c>,
     ///         <c>SK9010</c>, <c>SK9096</c>–<c>SK9099</c> are located at a source path the loader put
     ///         into <see cref="RunReport.FileCount" /> (reportable or unreadable); <c>SK9023</c> and
-    ///         the arrange summary sit at the root; <c>SK9028</c>, <c>SK9024</c>, <c>SK9029</c> are
-    ///         not <see cref="Renderer.IsAboutAFile" />; <c>SK9020</c>/<c>SK9021</c> are refused at exit
+    ///         the arrange summary sit at the root; <c>SK9028</c>, <c>SK9024</c>, <c>SK9029</c> and
+    ///         (#362) <c>SK9030</c> are not <see cref="Renderer.IsAboutAFile" />; <c>SK9020</c>/<c>SK9021</c> are refused at exit
     ///         4 before a renderer runs; the config ids never enter a <c>RunReport</c>. So
     ///         <c>blocked &lt;= FileCount</c> is an invariant of <see cref="Renderer.BlockedFiles" />,
     ///         and <c>IncompleteBannerTests</c> asserts it per id rather than guarding it here — a

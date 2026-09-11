@@ -629,6 +629,129 @@ public sealed class IncompleteBannerTests {
     }
 
     /// <summary>
+    ///     Exactly what <c>AnalyzerHost.Crashed</c> emits: warning severity, located at the unit's name
+    ///     because a loose load has no project and Roslyn's exception diagnostic has no location.
+    /// </summary>
+    static SkalaDiagnostic CrashedAnalyzer(string name = "Rikarin.Skala.Rules.Cleanup.RedundantArgumentAnalyzer") =>
+        new(
+            "SK9030",
+            SkalaSeverity.Warning,
+            $"analyzer '{name}' threw once, so the rules it carries (SK0232) reported nothing wherever it threw: "
+            + "Object reference not set to an instance of an object.",
+            "loose"
+        );
+
+    /// <summary>
+    ///     The same id at info: <c>GeneratorDriver</c> relaying a source generator's own reported
+    ///     diagnostic, which is the generator talking about the code and not falling over.
+    /// </summary>
+    static SkalaDiagnostic GeneratorReportedDiagnostic() =>
+        new(
+            "SK9030",
+            SkalaSeverity.Info,
+            "a source generator reported CS8785: generator failed to generate a member",
+            Path.Combine(Root, "Generated.g.cs")
+        );
+
+    /// <summary>
+    ///     ⚠ #362, the issue's own shape. The reliability gate fails on <c>SK9030</c> at warning; the
+    ///     banner keyed on error severity; so <c>agent</c> printed <c>OK  nothing to do.</c> above exit
+    ///     1. Now the banner opens the report, names the crash as a sentence outside the fraction, and
+    ///     the <c>SK9030</c> line under it names the analyzer and its rules. Sabotage: key
+    ///     <c>Renderer.Blocking</c> back on severity alone and this is the first test red.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_NamesACrashedAnalyzer_InsteadOfSayingNothingToDo() {
+        var report = Report(CrashedAnalyzer()) with { FileCount = 1 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith(
+            "INCOMPLETE  an analyzer threw (SK9030 below), so the rules it carries reported nothing wherever it "
+            + "threw. Every file was checked by the rules that could run.\n"
+            + "  SK9030  loose  analyzer 'Rikarin.Skala.Rules.Cleanup.RedundantArgumentAnalyzer' threw once",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.DoesNotContain("OK", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("nothing to do", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("file was not checked", text, StringComparison.Ordinal);
+        Assert.Contains("SK0232", text, StringComparison.Ordinal);
+        Assert.Equal(IncompleteCause.CrashedAnalyzer, Renderer.CauseOf(CrashedAnalyzer()));
+        Assert.Empty(Renderer.BlockedFiles(report));
+    }
+
+    /// <summary>
+    ///     <c>plain</c> printed zero bytes on the same run (#345's other half). Every text surface now
+    ///     names the analyzer, and none of them calls a third-party analyzer's exception a Skala bug —
+    ///     the banner's <c>Defect</c> sentence is for the ids that are.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TextFormats))]
+    public void ACrashedAnalyzer_IsNamedOnEveryTextSurface(ReportFormat format) {
+        var text = Renderer.Render(Report(CrashedAnalyzer()), format);
+
+        Assert.Contains("RedundantArgumentAnalyzer", text, StringComparison.Ordinal);
+        Assert.Contains("SK9030", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("nothing to do", text, StringComparison.Ordinal);
+        Assert.DoesNotContain(SkalaBug, text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     ⚠ The positive control that stops the fix being "suppress the sentence whenever a warning
+    ///     exists". <c>SK9030</c> at <em>info</em> fails no gate
+    ///     (<c>GeneratorReportedDiagnostic_DoesNotFailTheGate</c>) and reaches no banner; the two
+    ///     warning-severity siblings that fail no gate — an absent baseline, a relayed
+    ///     <c>workspace:</c> line — are pinned the same way above. Widened by id, not by severity.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_IsSilentForAGeneratorsOwnReportedDiagnostic() {
+        var report = Report(GeneratorReportedDiagnostic()) with { FileCount = 1 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith("OK  nothing to do.", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("INCOMPLETE", text, StringComparison.Ordinal);
+        Assert.Empty(Renderer.Blocking(report));
+        Assert.False(Gate.FailsReliability(GeneratorReportedDiagnostic()));
+        Assert.True(Gate.FailsReliability(CrashedAnalyzer()));
+    }
+
+    /// <summary>
+    ///     ⚠ Mixed: a genuine <c>SK9099</c> and a crashed analyzer over a two-file tree. The fraction
+    ///     counts the source file only; the crash is its own sentence after it; the trailer says the
+    ///     rest was covered by the rules that could run.
+    /// </summary>
+    [Fact]
+    public void AgentBanner_KeepsTheCrashOutOfTheFraction_InAMixedRun() {
+        var report = Report(TokenStreamChanged(), CrashedAnalyzer()) with { FileCount = 2 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith(
+            "INCOMPLETE  1 of 2 file was not checked — this is a Skala bug, not a finding in your code. An "
+            + "analyzer threw (SK9030 below), so the rules it carries reported nothing wherever it threw. "
+            + "Everything below covers the rest with the rules that could run.",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.Equal(Refused, Assert.Single(Renderer.BlockedFiles(report)));
+        Assert.Single(Renderer.OutsideTheFraction(report));
+    }
+
+    /// <summary>Two analyzers, one sentence, plural — and one line each underneath.</summary>
+    [Fact]
+    public void AgentBanner_CountsSeveralCrashedAnalyzers() {
+        var report = Report(CrashedAnalyzer(), CrashedAnalyzer("Other.Analyzer")) with { FileCount = 1 };
+        var text = Renderer.Render(report, ReportFormat.Agent);
+
+        Assert.StartsWith(
+            "INCOMPLETE  2 analyzers threw (SK9030 below), so the rules they carry reported nothing wherever they "
+            + "threw. Every file was checked by the rules that could run.",
+            text,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("Other.Analyzer", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     ⚠ <b>The invariant that replaced <c>Scale</c>'s <c>FileCount &lt; blocked</c> guard</b>: every
     ///     path <c>BlockedFiles</c> yields is one the loader counted, so the fraction never needs a
     ///     branch to stop it printing <c>1 of 0</c>. It is asserted per tool id, over the whole
@@ -655,11 +778,14 @@ public sealed class IncompleteBannerTests {
     [Fact]
     public void EveryBlockingToolId_IsEitherACountedSourceFileOrOutsideTheFraction() {
         string[] locatedAtACountedSourceFile = ["SK9010", "SK9015", "SK9095", "SK9096", "SK9097", "SK9098", "SK9099"];
-        string[] notAboutAFile = ["SK9024", "SK9028", "SK9029"];
+        // ⚠ #362: `SK9030` is here and not on the third list. It blocks at *warning* — the one id
+        // whose gate threshold is below error — and sits at the project or the unit's name, never at
+        // a source file, so it has a sentence outside the fraction and no count inside it.
+        string[] notAboutAFile = ["SK9024", "SK9028", "SK9029", "SK9030"];
         string[] neverBlockingInAReport = [
             "SK9001", "SK9002", "SK9003", "SK9004", "SK9005", "SK9006", "SK9007", "SK9008", "SK9009", "SK9011",
             "SK9012", "SK9013", "SK9014", "SK9016", "SK9017", "SK9020", "SK9021", "SK9022", "SK9023", "SK9025",
-            "SK9026", "SK9027", "SK9030", "SK9031"
+            "SK9026", "SK9027", "SK9031"
         ];
 
         var registered = RuleCatalog.All
@@ -682,9 +808,16 @@ public sealed class IncompleteBannerTests {
             Assert.Equal(Broken, Assert.Single(Renderer.BlockedFiles(Report(diagnostic))));
         }
 
+        // The gate's own line, per id: what it fails on is blocking, and the ids the emitters only
+        // ever raise at warning must not be. `SK9030` is the one whose two answers differ.
+        foreach (var id in neverBlockingInAReport) {
+            Assert.False(Gate.FailsReliability(new SkalaDiagnostic(id, SkalaSeverity.Warning, "m", Root)), id);
+        }
+
         foreach (var id in notAboutAFile) {
             var diagnostic = new SkalaDiagnostic(id, SkalaSeverity.Error, "m", Project);
             Assert.False(Renderer.IsAboutAFile(Renderer.CauseOf(diagnostic)), id);
+            Assert.True(Gate.FailsReliability(diagnostic), id);
 
             // The arithmetic half: over a tree with nothing counted, the id is not a blocked file and
             // the fraction is never asked for.

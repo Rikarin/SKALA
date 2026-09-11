@@ -290,6 +290,84 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
+    ///     ⚠ #362: a crashed analyzer is exit 1 under a banner that names it — never under
+    ///     <c>OK  nothing to do.</c>, and never under zero bytes.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Measured on <c>master</c> with this binary and this tree, before the fix:
+    ///         <c>check --format agent</c> printed <c>OK  nothing to do.</c> above <b>exit 1</b>, and
+    ///         <c>--format plain</c> — the default whenever stdout is not a terminal, which is every CI
+    ///         log — printed <b>nothing at all</b> above the same exit 1. The gate had failed on
+    ///         <c>SK9030</c> at warning; the banner keyed on error.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Forced, the way <see cref="Five_WhenTheSafetyNetRefusesAFile" /> forces <c>SK9099</c>:
+    ///         no Skala analyzer throws on any input the corpus holds, and hosting a throwing
+    ///         third-party one means writing a package under the user's <c>~/.skala/packages</c>.
+    ///         <c>SKALA_FORCE_SK9030</c> adds a real analyzer that really throws, so everything downstream
+    ///         is real — Roslyn's exception callback, the diagnostic's text, the gate clause, the banner
+    ///         and the exit. Sabotage: key <c>Renderer.Blocking</c> back on severity alone and both
+    ///         formats go red on the sentence while the exit stays 1.
+    ///     </para>
+    ///     <para>
+    ///         The scratch gets a <c>.git</c> so it is its own repository root and the run's
+    ///         <c>.skala/</c> lands here, not in this checkout.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData("check", "agent")]
+    [InlineData("check", "plain")]
+    [InlineData("verify", "agent")]
+    [InlineData("verify", "plain")]
+    public void One_WhenAnAnalyzerThrows_AndTheOutputSaysSo(string verb, string format) {
+        Directory.CreateDirectory(Path.Combine(directory, ".git"));
+        Write("Clean.cs", "namespace Demo;\n\npublic sealed class Clean {\n    public int Value { get; init; }\n}\n");
+
+        var run = CliRunner.RunWith(
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["SKALA_FORCE_SK9030"] = "1" },
+            verb,
+            LoadOption,
+            "loose",
+            "--format",
+            format,
+            directory
+        );
+        var text = run.StandardOutput + run.StandardError;
+
+        Assert.Equal(1, run.ExitCode);
+        Assert.Contains("SK9030", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("ForcedCrash", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("threw once", run.StandardOutput, StringComparison.Ordinal);
+        Assert.DoesNotContain("OK", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("nothing to do", text, StringComparison.Ordinal);
+
+        // ⚠ A crash is not a cancellation: the unit finished, and `SK9027 'loose' was cancelled` used
+        // to be printed beside the `SK9030`, which was the tool contradicting itself about one run.
+        Assert.DoesNotContain("SK9027", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("cancelled", text, StringComparison.Ordinal);
+
+        if (format == "agent") {
+            Assert.StartsWith("INCOMPLETE  an analyzer threw (SK9030 below)", run.StandardOutput, StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>
+    ///     ⚠ The positive control for the row above: the same tree without the switch is
+    ///     <c>OK  nothing to do.</c> at exit 0, so the fix is not "never print the sentence".
+    /// </summary>
+    [Fact]
+    public void Zero_WhenNoAnalyzerThrows_IsStillNothingToDo() {
+        Directory.CreateDirectory(Path.Combine(directory, ".git"));
+        Write("Clean.cs", "namespace Demo;\n\npublic sealed class Clean {\n    public int Value { get; init; }\n}\n");
+
+        var run = CliRunner.Run("check", LoadOption, "loose", "--format", "agent", directory);
+
+        Assert.Equal(0, run.ExitCode);
+        Assert.StartsWith("OK  nothing to do.", run.StandardOutput, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     A file the process is not permitted to read, or null when this machine cannot produce one.
     /// </summary>
     /// <remarks>

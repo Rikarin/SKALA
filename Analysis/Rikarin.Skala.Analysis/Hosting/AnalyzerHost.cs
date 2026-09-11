@@ -42,8 +42,14 @@ public sealed record AnalysisOutcome(
 ///         </item>
 ///         <item>
 ///             ⚠ <c>onAnalyzerException</c> records <c>SK9030</c> and never aborts. A third-party analyzer that
-///             throws on one syntax shape must not be able to turn a CI gate red for unrelated reasons — or,
-///             worse, green by aborting the run early.
+///             throws on one syntax shape must not be able to end the run early, green or red; the run
+///             finishes, every other rule's findings are kept, and the gate fails on the <c>SK9030</c>
+///             because the rules the thrower carries reported nothing wherever it threw (#295).
+///             ⚠ Roslyn does <em>not</em> disable an analyzer that threw. Measured (#362) with three
+///             files and an analyzer that throws in its syntax-tree action: three callbacks, one per
+///             file. The message used to say "disabled for the rest of the run" and named the "rule"
+///             it threw on as <c>AD0001</c> — Roslyn's id for <em>any</em> analyzer exception — so the
+///             line an agent reads was wrong about both what happened next and which rules were lost.
 ///         </item>
 ///         <item>
 ///             Compiler diagnostics are part of the report, so one command answers "does this build and is it clean".
@@ -144,7 +150,9 @@ public static class AnalyzerHost {
         CancellationToken cancellation
     ) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
-        var failed = new HashSet<string>(StringComparer.Ordinal);
+        var crashes = new Dictionary<string, (DiagnosticAnalyzer Analyzer, string Message, int Count)>(
+            StringComparer.Ordinal
+        );
         var analyzers = Select(mode, hosted);
         if (analyzers.IsEmpty) {
             return new AnalysisOutcome([], diagnostics.ToImmutable(), false);
@@ -154,24 +162,16 @@ public static class AnalyzerHost {
             analyzers,
             new CompilationWithAnalyzersOptions(
                 options,
-                (exception, analyzer, diagnostic) => {
-                    // ⚠ Recorded and continued, never rethrown. See the type's remarks.
+                (exception, analyzer, _) => {
+                    // ⚠ Recorded and continued, never rethrown. See the type's remarks. Counted per
+                    // analyzer and written out once, below, so that the one `SK9030` says how many
+                    // times it happened — "threw once" and "threw on every file" are different
+                    // facts about how much of the tree its rules covered.
                     var name = analyzer.GetType().FullName ?? analyzer.GetType().Name;
-                    lock (failed) {
-                        if (!failed.Add(name)) {
-                            return;
-                        }
-                    }
-
-                    lock (diagnostics) {
-                        diagnostics.Add(
-                            new SkalaDiagnostic(
-                                RuleIds.AnalyzerThrew,
-                                SkalaSeverity.Warning,
-                                $"analyzer '{name}' threw on rule '{diagnostic.Id}' and was disabled for the rest of the run: {exception.Message}",
-                                diagnostic.Location.SourceTree?.FilePath ?? unit.Name
-                            )
-                        );
+                    lock (crashes) {
+                        crashes[name] = crashes.TryGetValue(name, out var known)
+                            ? known with { Count = known.Count + 1 }
+                            : (analyzer, exception.Message, 1);
                     }
                 },
                 true,
@@ -181,7 +181,6 @@ public static class AnalyzerHost {
         );
 
         ImmutableArray<Diagnostic> produced;
-        var partial = false;
         var costs = ImmutableArray<AnalyzerCost>.Empty;
         try {
             if (trees is not null) {
@@ -209,7 +208,7 @@ public static class AnalyzerHost {
             }
         } catch (OperationCanceledException) {
             // ⚠ Ctrl-C prints what was found so far, marked partial (docs/plan/07 § "Cancellation").
-            return new AnalysisOutcome([], diagnostics.ToImmutable(), true);
+            return new AnalysisOutcome([], Crashed(unit, crashes, diagnostics), true);
         }
 
         var findings = ImmutableArray.CreateBuilder<Finding>();
@@ -242,14 +241,73 @@ public static class AnalyzerHost {
             }
         }
 
-        partial |= diagnostics.Count > 0;
+        // ⚠ #362: a crashed analyzer no longer marks the outcome partial. `partial |= diagnostics.Count
+        // > 0` dated from M5, when the flag was the only thing a crash had to fail a verdict with;
+        // #295 gave the crash its own gate clause and #309 made `Partial` mean, by name, "a unit was
+        // cancelled and contributed no findings". Both of those were false for a crash — the unit
+        // finished and every other rule's findings are in the report — and `check` printed
+        // `SK9027 'loose' was cancelled before it finished` beside the `SK9030` that said what really
+        // happened. `Partial` is the cancellation; the crash is the diagnostic.
         return new(
             findings.ToImmutable(),
-            diagnostics.ToImmutable(),
-            partial,
+            Crashed(unit, crashes, diagnostics),
+            false,
             costs
         );
     }
+
+    /// <summary>
+    ///     The run's diagnostics with one <c>SK9030</c> per analyzer that threw, however many times it
+    ///     threw.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Located at the project, or at the unit's name when the load mode has no project (loose):
+    ///     Roslyn's exception diagnostic carries <c>Location.None</c>, so there is no source file to
+    ///     name, and a crash is not about a file anyway — it is about every file the analyzer's rules
+    ///     were supposed to cover. <c>IncompleteCause.CrashedAnalyzer</c> keeps it out of the banner's
+    ///     <c>N of M files</c> fraction for the same reason.
+    /// </remarks>
+    static ImmutableArray<SkalaDiagnostic> Crashed(
+        CompilationUnit unit,
+        Dictionary<string, (DiagnosticAnalyzer Analyzer, string Message, int Count)> crashes,
+        ImmutableArray<SkalaDiagnostic>.Builder diagnostics
+    ) {
+        lock (crashes) {
+            foreach (var (name, crash) in crashes.OrderBy(static pair => pair.Key, StringComparer.Ordinal)) {
+                var rules = crash.Analyzer.SupportedDiagnostics
+                    .Select(static descriptor => descriptor.Id)
+                    .Distinct(StringComparer.Ordinal)
+                    .Order(StringComparer.Ordinal)
+                    .ToArray();
+
+                diagnostics.Add(
+                    new SkalaDiagnostic(
+                        RuleIds.AnalyzerThrew,
+                        SkalaSeverity.Warning,
+                        $"analyzer '{name}' threw {Times(crash.Count)}, so the rules it carries ({Rules(rules)}) "
+                        + $"reported nothing wherever it threw: {crash.Message}",
+                        unit.ProjectPath is { Length: > 0 } project ? project : unit.Name
+                    )
+                );
+            }
+        }
+
+        return diagnostics.ToImmutable();
+    }
+
+    static string Times(int count) =>
+        count == 1 ? "once" : count.ToString(CultureInfo.InvariantCulture) + " times";
+
+    /// <summary>Up to six ids, then a count — a banner line, not a catalogue.</summary>
+    static string Rules(string[] rules) =>
+        rules.Length switch {
+            0 => "none declared",
+            <= 6 => string.Join(", ", rules),
+            _ => string.Join(", ", rules.Take(6))
+                + " and "
+                + (rules.Length - 6).ToString(CultureInfo.InvariantCulture)
+                + " more"
+        };
 
     /// <summary>
     ///     What each analyzer cost, taken off the result rather than asked for afterwards.
@@ -321,6 +379,11 @@ public static class AnalyzerHost {
     }
 
     static ImmutableArray<DiagnosticAnalyzer> Select(LoadMode mode, ImmutableArray<DiagnosticAnalyzer> hosted) {
+        var selected = SelectFor(mode, hosted);
+        return ForcedCrash.Requested ? selected.Add(new ForcedCrash()) : selected;
+    }
+
+    static ImmutableArray<DiagnosticAnalyzer> SelectFor(LoadMode mode, ImmutableArray<DiagnosticAnalyzer> hosted) {
         if (mode != LoadMode.Loose) {
             return [.. Own, .. hosted];
         }
@@ -349,6 +412,61 @@ public static class AnalyzerHost {
         }
 
         return builder.ToImmutable();
+    }
+
+    /// <summary>
+    ///     The harness's way of making an analyzer throw, so that <c>SK9030</c> has a behavioural test
+    ///     against the real binary.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The sibling of <c>CSharpFormatter.ForcedVerificationFailure</c> (<c>SKALA_FORCE_SK9099</c>),
+    ///     for the same reason: no Skala analyzer throws on any input the corpus holds, and the one way
+    ///     to host a throwing third-party analyzer is a package under the user's <c>~/.skala/packages</c>,
+    ///     which a test must not write. Adding a real analyzer that really throws keeps the whole
+    ///     downstream path real — Roslyn's <c>onAnalyzerException</c>, the diagnostic's text and
+    ///     location, the reliability gate, the banner and the exit code — where a faked diagnostic
+    ///     would have measured only the half of it the fake happened to match. #362 was exactly a
+    ///     half nobody had measured: the gate failed on <c>SK9030</c> and the <c>agent</c> renderer
+    ///     printed <c>OK  nothing to do.</c> above it.
+    ///     <para>
+    ///         ⚠ Appended after <see cref="SelectFor" />, so it runs under every load mode including
+    ///         loose, where hosted analyzers are dropped. Its descriptor is deliberately not a Skala id:
+    ///         it must never be confused with a rule that ships, and <c>RuleCatalog.Find</c> answering
+    ///         null for it is what keeps it out of every per-rule table. Set by the harness and by nobody
+    ///         else.
+    ///     </para>
+    /// </remarks>
+    // ⚠ RS1001 asks for [DiagnosticAnalyzer], which is the attribute Roslyn's *file* loader
+    // discovers analyzers by, and this one is never loaded from a file — it is handed to
+    // `CompilationWithAnalyzers` as an instance. Carrying the attribute would trip RS1038/RS1041
+    // (this assembly references Workspaces and targets .NET 10), which are real objections to
+    // shipping an analyzer from here and not objections to a harness type nobody ships.
+#pragma warning disable RS1001 // an in-process harness analyzer, never discovered from a file
+    sealed class ForcedCrash : DiagnosticAnalyzer {
+#pragma warning restore RS1001
+        internal const string Variable = "SKALA_FORCE_SK9030";
+
+        internal static bool Requested => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(Variable));
+
+        /// <summary>
+        ///     ⚠ Not empty, and not a new descriptor. Roslyn treats an analyzer whose every supported
+        ///     diagnostic is suppressed as one to skip, and an empty set is vacuously all-suppressed —
+        ///     the first draft declared nothing and never ran. The one descriptor it declares is
+        ///     <c>SK9030</c>'s own, which is the diagnostic it exists to cause; a fresh id would need
+        ///     release tracking for a rule that never reports.
+        /// </summary>
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
+            [SkalaRule.Descriptor(RuleIds.AnalyzerThrew)];
+
+        public override void Initialize(AnalysisContext context) {
+            context.EnableConcurrentExecution();
+            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+            context.RegisterSyntaxTreeAction(static _ =>
+                throw new InvalidOperationException(
+                    "Forced by " + Variable + ". This is the harness, not a Skala bug."
+                )
+            );
+        }
     }
 
     static Finding? Convert(
