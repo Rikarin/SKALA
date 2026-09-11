@@ -603,6 +603,10 @@ public sealed class ExitCodeContractTests : IDisposable {
         Assert.Contains("SK9099", text, StringComparison.Ordinal);
         Assert.Contains("this is a Skala bug, not a finding in your code.", text, StringComparison.Ordinal);
         Assert.Contains("Exit 5 is that Skala bug, not a gate failure.", text, StringComparison.Ordinal);
+
+        // ⚠ Once. The format and arrange stages both refuse the file and used to print the identical
+        // line twice (#362, noted in passing); `Renderer.Blocking` is distinct by value.
+        Assert.Single(Regex.Matches(text, @"SK9099  \S*Refused\.cs"));
     }
 
     /// <summary>

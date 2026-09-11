@@ -252,11 +252,19 @@ public static class Renderer {
     ///         <c>SK9028</c> (no baseline yet) and <c>SK9024</c> (a relayed <c>workspace:</c> line)
     ///         fail no gate and reach no banner, and <c>IncompleteBannerTests</c> pins both.
     ///     </para>
+    ///     <para>
+    ///         ⚠ Distinct, by value. <c>verify</c> runs the formatter under both its format and its
+    ///         arrange stage — <c>ArrangementPipeline</c> formats after it arranges — so one refused
+    ///         file arrived here as two identical <c>SK9099</c> records, same id, path, message and
+    ///         detail, and every bounded surface printed the same two lines. The same fact stated
+    ///         twice is budget spent on nothing; a diagnostic that differs in any field is not a
+    ///         duplicate and is kept.
+    ///     </para>
     /// </remarks>
     public static IEnumerable<SkalaDiagnostic> Blocking(RunReport report) =>
-        report.Diagnostics.Where(static diagnostic =>
-            diagnostic.Severity >= SkalaSeverity.Error || Gate.FailsReliability(diagnostic)
-        );
+        report.Diagnostics
+            .Where(static diagnostic => diagnostic.Severity >= SkalaSeverity.Error || Gate.FailsReliability(diagnostic))
+            .Distinct();
 
     /// <summary>
     ///     Whether a diagnostic is about one file rather than about the stage that ran over them.
