@@ -30,6 +30,12 @@ public sealed class ExitCodeContractTests : IDisposable {
     /// <summary>⚠ One constant: <c>SK7083</c>'s threshold is five literals per file.</summary>
     const string LoadOption = "--load";
 
+    const string Loose = "loose";
+
+    const string FormatOption = "--format";
+
+    const string Agent = "agent";
+
     readonly string directory = Directory.CreateTempSubdirectory("skala-exit-").FullName;
 
     public void Dispose() => Directory.Delete(directory, true);
@@ -85,7 +91,7 @@ public sealed class ExitCodeContractTests : IDisposable {
     /// <summary>An unrecognized option is a configuration error, not a failed gate.</summary>
     [Fact]
     public void Three_WhenAnOptionIsNotRecognized() {
-        var run = CliRunner.Run("check", LoadOption, "loose", "--verbsoe");
+        var run = CliRunner.Run("check", LoadOption, Loose, "--verbsoe");
 
         Assert.Equal(3, run.ExitCode);
         Assert.Contains("--verbsoe", run.StandardOutput + run.StandardError, StringComparison.Ordinal);
@@ -202,7 +208,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         Write("One.cs", "public class D {\n    public int Value;\n}\n");
         Write("Broken.csproj", UnloadableProject);
 
-        var run = CliRunner.Run("check", LoadOption, "binlog", "--gate", "local", "--format", "agent", directory);
+        var run = CliRunner.Run("check", LoadOption, "binlog", "--gate", "local", FormatOption, Agent, directory);
         var text = run.StandardOutput + run.StandardError;
 
         Assert.Equal(1, run.ExitCode);
@@ -231,7 +237,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         Write("One.cs", "public class D {\n    public int Value;\n}\n");
         Write("Broken.csproj", UnloadableProject);
 
-        var run = CliRunner.Run("check", LoadOption, "workspace", "--gate", "local", "--format", "agent", directory);
+        var run = CliRunner.Run("check", LoadOption, "workspace", "--gate", "local", FormatOption, Agent, directory);
         var text = run.StandardOutput + run.StandardError;
 
         Assert.Equal(4, run.ExitCode);
@@ -316,9 +322,9 @@ public sealed class ExitCodeContractTests : IDisposable {
     ///     </para>
     /// </remarks>
     [Theory]
-    [InlineData("check", "agent")]
+    [InlineData("check", Agent)]
     [InlineData("check", "plain")]
-    [InlineData("verify", "agent")]
+    [InlineData("verify", Agent)]
     [InlineData("verify", "plain")]
     public void One_WhenAnAnalyzerThrows_AndTheOutputSaysSo(string verb, string format) {
         Directory.CreateDirectory(Path.Combine(directory, ".git"));
@@ -328,8 +334,8 @@ public sealed class ExitCodeContractTests : IDisposable {
             new Dictionary<string, string>(StringComparer.Ordinal) { ["SKALA_FORCE_SK9030"] = "1" },
             verb,
             LoadOption,
-            "loose",
-            "--format",
+            Loose,
+            FormatOption,
             format,
             directory
         );
@@ -347,7 +353,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         Assert.DoesNotContain("SK9027", text, StringComparison.Ordinal);
         Assert.DoesNotContain("cancelled", text, StringComparison.Ordinal);
 
-        if (format == "agent") {
+        if (format == Agent) {
             Assert.StartsWith(
                 "INCOMPLETE  an analyzer threw (SK9030 below)",
                 run.StandardOutput,
@@ -365,7 +371,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         Directory.CreateDirectory(Path.Combine(directory, ".git"));
         Write("Clean.cs", "namespace Demo;\n\npublic sealed class Clean {\n    public int Value { get; init; }\n}\n");
 
-        var run = CliRunner.Run("check", LoadOption, "loose", "--format", "agent", directory);
+        var run = CliRunner.Run("check", LoadOption, Loose, FormatOption, Agent, directory);
 
         Assert.Equal(0, run.ExitCode);
         Assert.StartsWith("OK  nothing to do.", run.StandardOutput, StringComparison.Ordinal);
@@ -535,8 +541,8 @@ public sealed class ExitCodeContractTests : IDisposable {
         var codes = new Dictionary<string, int>(StringComparer.Ordinal) {
             ["arrange --check"] = CliRunner.Run("arrange", "--check", directory).ExitCode,
             ["format --check"] = CliRunner.Run("format", "--check", directory).ExitCode,
-            ["check --load loose"] = CliRunner.Run("check", LoadOption, "loose", directory).ExitCode,
-            ["verify --load loose"] = CliRunner.Run("verify", LoadOption, "loose", directory).ExitCode
+            ["check --load loose"] = CliRunner.Run("check", LoadOption, Loose, directory).ExitCode,
+            ["verify --load loose"] = CliRunner.Run("verify", LoadOption, Loose, directory).ExitCode
         };
 
         var table = string.Join(", ", codes.Select(static entry => $"{entry.Key} -> {entry.Value}"));
@@ -561,7 +567,7 @@ public sealed class ExitCodeContractTests : IDisposable {
     ///     <see cref="Five_WhenAFileCannotBeRead" />. Only the words moved here.
     /// </remarks>
     [Theory]
-    [InlineData("agent")]
+    [InlineData(Agent)]
     [InlineData("plain")]
     public void Verify_NeverCallsAnUnreadableFileASkalaBug(string format) {
         if (UnreadableFile("Unreadable.cs") is not { } path) {
@@ -571,7 +577,7 @@ public sealed class ExitCodeContractTests : IDisposable {
 
         Write("Neighbour.cs", "class C {\n    void M() {\n        M();\n    }\n}\n");
 
-        var run = CliRunner.Run("verify", "--format", format, directory);
+        var run = CliRunner.Run("verify", FormatOption, format, directory);
         var text = run.StandardOutput + run.StandardError;
 
         Assert.Equal(5, run.ExitCode);
@@ -593,8 +599,8 @@ public sealed class ExitCodeContractTests : IDisposable {
         var run = CliRunner.RunWith(
             new Dictionary<string, string>(StringComparer.Ordinal) { ["SKALA_FORCE_SK9099"] = "Refused.cs" },
             "verify",
-            "--format",
-            "agent",
+            FormatOption,
+            Agent,
             path
         );
         var text = run.StandardOutput + run.StandardError;
@@ -639,7 +645,7 @@ public sealed class ExitCodeContractTests : IDisposable {
 
         Write("Neighbour.cs", "class  C{ void  M( ){} }\n");
 
-        var run = CliRunner.Run("verify", "--format", "agent", LoadOption, "loose", directory);
+        var run = CliRunner.Run("verify", FormatOption, Agent, LoadOption, Loose, directory);
         var text = run.StandardOutput + run.StandardError;
 
         Assert.Equal(5, run.ExitCode);
