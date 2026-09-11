@@ -119,8 +119,9 @@ public enum IncompleteCause {
 ///     originals' names so that the one-id-one-concept check reads them as the same concept, which
 ///     they are. The other ids the classifier names — <c>SK9028</c>, <c>SK9024</c>, <c>SK9029</c> off
 ///     <c>ConfigDiagnosticIds</c>, <c>SK9030</c> off <c>RuleIds</c> — are read straight from Core and
-///     the rule metadata, which this assembly already references. Nothing else in the <c>SK9xxx</c> range is named here: every other blocking
-///     id is Skala's own fault, and the default branch says so without having to list them.
+///     the rule metadata, which this assembly already references. Nothing else in the <c>SK9xxx</c>
+///     range is named here: every other blocking id is Skala's own fault, and the default branch says
+///     so without having to list them.
 /// </remarks>
 static class IncompleteIds {
     /// <summary>The file could not be read or written.</summary>
@@ -242,14 +243,14 @@ public static class Renderer {
     ///     <para>
     ///         ⚠ #362: error severity alone was not the set. <c>Gate.EvaluateReliability</c> fails the
     ///         verdict on <c>SK9030</c> at <em>warning</em> — an analyzer threw, its rules reported
-    ///         nothing — and a banner keyed on severity let that run exit 1 under <c>OK  nothing to
-    ///         do.</c>. The second clause asks the gate which ids it fails on, at which severity, rather
-    ///         than repeating the list here: the day the two lists disagree is the day this defect
-    ///         comes back. It is still not a decision — <see cref="Gate.FailsReliability" /> is the
-    ///         gate's own line, read from where it is drawn — and it deliberately widens by id and not
-    ///         by severity: warning-severity <c>SK9028</c> (no baseline yet) and <c>SK9024</c> (a
-    ///         relayed <c>workspace:</c> line) fail no gate and reach no banner, and
-    ///         <c>IncompleteBannerTests</c> pins both.
+    ///         nothing — and a banner keyed on severity let that run exit 1 under the sentence
+    ///         reserved for exit 0. The second clause asks the gate which ids it fails on, at which
+    ///         severity, rather than repeating the list here: the day the two lists disagree is the
+    ///         day this defect comes back. It is still not a decision —
+    ///         <see cref="Gate.FailsReliability" /> is the gate's own line, read from where it is
+    ///         drawn — and it deliberately widens by id and not by severity: warning-severity
+    ///         <c>SK9028</c> (no baseline yet) and <c>SK9024</c> (a relayed <c>workspace:</c> line)
+    ///         fail no gate and reach no banner, and <c>IncompleteBannerTests</c> pins both.
     ///     </para>
     /// </remarks>
     public static IEnumerable<SkalaDiagnostic> Blocking(RunReport report) =>
@@ -1122,8 +1123,9 @@ public static class AgentRenderer {
     ///         <c>SK9010</c>, <c>SK9096</c>–<c>SK9099</c> are located at a source path the loader put
     ///         into <see cref="RunReport.FileCount" /> (reportable or unreadable); <c>SK9023</c> and
     ///         the arrange summary sit at the root; <c>SK9028</c>, <c>SK9024</c>, <c>SK9029</c> and
-    ///         (#362) <c>SK9030</c> are not <see cref="Renderer.IsAboutAFile" />; <c>SK9020</c>/<c>SK9021</c> are refused at exit
-    ///         4 before a renderer runs; the config ids never enter a <c>RunReport</c>. So
+    ///         (#362) <c>SK9030</c> are not <see cref="Renderer.IsAboutAFile" />;
+    ///         <c>SK9020</c>/<c>SK9021</c> are refused at exit 4 before a renderer runs; the config ids
+    ///         never enter a <c>RunReport</c>. So
     ///         <c>blocked &lt;= FileCount</c> is an invariant of <see cref="Renderer.BlockedFiles" />,
     ///         and <c>IncompleteBannerTests</c> asserts it per id rather than guarding it here — a
     ///         guard would print a plausible sentence over a broken denominator, and <c>2 of 1</c> is

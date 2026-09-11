@@ -295,8 +295,7 @@ public static class AnalyzerHost {
         return diagnostics.ToImmutable();
     }
 
-    static string Times(int count) =>
-        count == 1 ? "once" : count.ToString(CultureInfo.InvariantCulture) + " times";
+    static string Times(int count) => count == 1 ? "once" : count.ToString(CultureInfo.InvariantCulture) + " times";
 
     /// <summary>Up to six ids, then a count — a banner line, not a catalogue.</summary>
     static string Rules(string[] rules) =>
@@ -462,9 +461,7 @@ public static class AnalyzerHost {
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.RegisterSyntaxTreeAction(static _ =>
-                throw new InvalidOperationException(
-                    "Forced by " + Variable + ". This is the harness, not a Skala bug."
-                )
+                throw new InvalidOperationException("Forced by " + Variable + ". This is the harness, not a Skala bug.")
             );
         }
     }

@@ -265,7 +265,11 @@ public static class Gate {
         // having: the caller gets the syntactic half and every finding in it, under a verdict that
         // says why it is not the whole answer — the same reasoning as `SK9028` above, and the reason
         // the exit is 1 and not 4.
-        var fellThrough = Failing(report, ConfigDiagnosticIds.NothingToLoad, ConfigDiagnosticIds.AnalyzerAssemblyMissing);
+        var fellThrough = Failing(
+            report,
+            ConfigDiagnosticIds.NothingToLoad,
+            ConfigDiagnosticIds.AnalyzerAssemblyMissing
+        );
         if (fellThrough.Length > 0) {
             failures.Add(
                 "a project or solution was found and could not be loaded, so the run fell back to "

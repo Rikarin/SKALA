@@ -348,7 +348,11 @@ public sealed class ExitCodeContractTests : IDisposable {
         Assert.DoesNotContain("cancelled", text, StringComparison.Ordinal);
 
         if (format == "agent") {
-            Assert.StartsWith("INCOMPLETE  an analyzer threw (SK9030 below)", run.StandardOutput, StringComparison.Ordinal);
+            Assert.StartsWith(
+                "INCOMPLETE  an analyzer threw (SK9030 below)",
+                run.StandardOutput,
+                StringComparison.Ordinal
+            );
         }
     }
 
