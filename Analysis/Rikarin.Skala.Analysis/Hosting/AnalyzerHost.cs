@@ -507,12 +507,13 @@ public static class AnalyzerHost {
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.RegisterSyntaxTreeAction(action => {
-                if (shouldThrow(action.Tree)) {
-                    throw new InvalidOperationException(
-                        "Forced by " + Variable + ". This is the harness, not a Skala bug."
-                    );
+                    if (shouldThrow(action.Tree)) {
+                        throw new InvalidOperationException(
+                            "Forced by " + Variable + ". This is the harness, not a Skala bug."
+                        );
+                    }
                 }
-            });
+            );
         }
     }
 

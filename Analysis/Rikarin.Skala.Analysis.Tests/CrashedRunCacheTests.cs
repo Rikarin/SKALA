@@ -40,7 +40,8 @@ namespace Rikarin.Skala.Analysis.Tests;
 ///     </para>
 /// </remarks>
 public sealed class CrashedRunCacheTests {
-    const string CleanSource = "namespace Demo;\n\npublic sealed class Clean {\n    public int Value { get; init; }\n}\n";
+    const string CleanSource =
+        "namespace Demo;\n\npublic sealed class Clean {\n    public int Value { get; init; }\n}\n";
 
     /// <summary>One <c>SK2014</c>, syntactic, so a poisoned cache shows as a lost finding and not as 0 against 0.</summary>
     const string SwallowSource =
@@ -166,7 +167,11 @@ public sealed class CrashedRunCacheTests {
     static bool Threw(Core.Diagnostics.SkalaDiagnostic diagnostic) =>
         string.Equals(diagnostic.Id, RuleIds.AnalyzerThrew, StringComparison.Ordinal);
 
-    static IncrementalOutcome Run(Scratch scratch, Func<SyntaxTree, bool> shouldThrow, CancellationToken? token = null) {
+    static IncrementalOutcome Run(
+        Scratch scratch,
+        Func<SyntaxTree, bool> shouldThrow,
+        CancellationToken? token = null
+    ) {
         var cancellation = token ?? TestContext.Current.CancellationToken;
         var loaded = ProjectLoader.Load(
             new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Loose },
