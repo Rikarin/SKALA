@@ -250,8 +250,8 @@ public sealed class LifecycleTests {
     /// </remarks>
     [Fact]
     public void FingerprintV3_OfASymbolLessFindingSurvivesAnotherAppearingInAnEarlierFile() {
-        var subject = LongLine("Tools/Rikarin.Skala.Mcp.Tests/McpServerTests.cs", start: 9000);
-        var unrelated = LongLine("Analysis/Rikarin.Skala.Analysis.Tests/CrashedRunCacheTests.cs", start: 100);
+        var subject = LongLine("Tools/Rikarin.Skala.Mcp.Tests/McpServerTests.cs", 9000);
+        var unrelated = LongLine("Analysis/Rikarin.Skala.Analysis.Tests/CrashedRunCacheTests.cs", 100);
 
         var alone = Report(subject).Findings.Single();
         var crowded = Report(unrelated, subject).Findings.Single(static finding => finding.Start == 9000);
@@ -271,8 +271,8 @@ public sealed class LifecycleTests {
     /// </remarks>
     [Fact]
     public void Ordinal_OfSymbolLessFindingsIsAPositionWithinTheFile() {
-        var first = LongLine("Core/Foo.cs", start: 100);
-        var second = LongLine("Core/Foo.cs", start: 900);
+        var first = LongLine("Core/Foo.cs", 100);
+        var second = LongLine("Core/Foo.cs", 900);
 
         var before = Report(first, second).Findings;
         var after = Report(first with { Start = 140 }, second with { Start = 940 }).Findings;
@@ -296,7 +296,7 @@ public sealed class LifecycleTests {
     /// </remarks>
     [Fact]
     public void FingerprintV3_OfSymbolLessFindingsInSameNamedFilesStayApart() {
-        var report = Report(LongLine("Tools/Program.cs", start: 100), LongLine("Web/Program.cs", start: 100));
+        var report = Report(LongLine("Tools/Program.cs", 100), LongLine("Web/Program.cs", 100));
 
         Assert.Equal([0, 1], report.Findings.Select(static f => f.OrdinalWithinSymbol).Order());
         Assert.NotEqual(Fingerprints.V3(report.Findings[0]), Fingerprints.V3(report.Findings[1]));
@@ -306,8 +306,8 @@ public sealed class LifecycleTests {
     [Fact]
     public void FingerprintV3_OfASymbolLessFindingSurvivesItsFileMovingDirectories() =>
         Assert.Equal(
-            Fingerprints.V3(Report(LongLine("Core/Foo.cs", start: 100)).Findings.Single()),
-            Fingerprints.V3(Report(LongLine("Engine/Moved/Foo.cs", start: 100)).Findings.Single())
+            Fingerprints.V3(Report(LongLine("Core/Foo.cs", 100)).Findings.Single()),
+            Fingerprints.V3(Report(LongLine("Engine/Moved/Foo.cs", 100)).Findings.Single())
         );
 
     /// <summary>
@@ -367,7 +367,7 @@ public sealed class LifecycleTests {
         const string OrdinalTen = "68cceca0e9189b307136e39c35353e8f";
 
         var findings = Enumerable.Range(0, 11)
-            .Select(static i => LongLine($"Legacy/F{i:00}.cs", start: 50, columns: 121))
+            .Select(static i => LongLine($"Legacy/F{i:00}.cs", 50, 121))
             .ToArray();
         var report = Report(findings);
         var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
