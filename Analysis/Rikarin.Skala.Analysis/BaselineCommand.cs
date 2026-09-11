@@ -187,7 +187,7 @@ public static class BaselineCommand {
                 }
 
                 if (apply) {
-                    Baseline.Write(path, report, Union(existing, report));
+                    Baseline.Write(path, report, Union(comparison, report));
                 }
 
                 break;
@@ -210,11 +210,14 @@ public static class BaselineCommand {
                 }
 
                 if (apply) {
-                    // Pruning writes exactly what still fires and was already accepted.
+                    // Pruning writes exactly what still fires and was already accepted — the
+                    // comparison's Existing bucket, so that prune, update and show cannot disagree
+                    // about which entries matched. ⚠ A per-finding lookup could not decide this: a
+                    // pre-#365 entry is matched on an ordinal counted over the whole run.
                     Baseline.Write(
                         path,
                         report,
-                        report.Findings.Where(existing.Contains)
+                        comparison.Findings.Where(static finding => finding.Bucket == BaselineBucket.Existing)
                     );
                 }
 
@@ -237,17 +240,17 @@ public static class BaselineCommand {
     ///     ⚠ Entries that no longer fire cannot be reconstructed as <see cref="Finding" />s — there is
     ///     no source span behind them any more — so they are carried through as the SARIF results they
     ///     already are. That is why <see cref="Baseline.Write" /> takes findings and this method has to
-    ///     merge at the finding level: the fired half is fresh, the unfired half is preserved verbatim
-    ///     by writing the old file's results back alongside.
+    ///     merge at the finding level: the fired half is fresh, the unfired half is carried by writing a
+    ///     placeholder per entry back alongside. ⚠ The unfired half is <see cref="BaselineComparison.Fixed" />
+    ///     by definition — the same matching, legacy fallbacks included, that decided the buckets — so it
+    ///     is not recomputed here with a second notion of identity.
     /// </remarks>
-    static IEnumerable<Finding> Union(Baseline existing, RunReport report) {
+    static IEnumerable<Finding> Union(BaselineComparison comparison, RunReport report) {
         var firing = report.Findings;
-        var seen = firing.Select(Fingerprints.V2).ToHashSet(StringComparer.Ordinal);
 
         // The unfired accepted entries are represented by a placeholder finding carrying their
         // fingerprint inputs, so the rewritten file still holds them.
-        var carried = existing.Entries
-            .Where(entry => entry.FingerprintV2.Length > 0 && !seen.Contains(entry.FingerprintV2))
+        var carried = comparison.Fixed
             .Select(entry => new Finding {
                     RuleId = entry.RuleId,
                     Severity = SkalaSeverity.Hidden,
