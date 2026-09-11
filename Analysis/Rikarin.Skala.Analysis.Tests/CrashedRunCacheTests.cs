@@ -43,12 +43,15 @@ public sealed class CrashedRunCacheTests {
     const string CleanSource =
         "namespace Demo;\n\npublic sealed class Clean {\n    public int Value { get; init; }\n}\n";
 
-    /// <summary>One <c>SK2014</c>, syntactic, so a poisoned cache shows as a lost finding and not as 0 against 0.</summary>
+    /// <summary>One <see cref="EmptyCatch" />, syntactic, so a poisoned cache shows as a lost finding.</summary>
     const string SwallowSource =
         "namespace Demo;\n\npublic static class Swallow {\n    public static void Run() {\n"
         + "        try {\n            System.Console.WriteLine();\n        } catch {\n        }\n    }\n}\n";
 
     const string CrashFile = "Crash.cs";
+
+    /// <summary>The syntactic rule the fixture plants; a cached "clean" would lose it.</summary>
+    const string EmptyCatch = "SK2014";
 
     static readonly Func<SyntaxTree, bool> Everywhere = static _ => true;
 
@@ -66,11 +69,11 @@ public sealed class CrashedRunCacheTests {
 
         var first = Run(scratch, Everywhere);
         Assert.Contains(first.Diagnostics, Threw);
-        Assert.Single(first.Findings, static finding => finding.RuleId == "SK2014");
+        Assert.Single(first.Findings, static finding => finding.RuleId == EmptyCatch);
 
         var second = Run(scratch, Everywhere);
         Assert.Contains(second.Diagnostics, Threw);
-        Assert.Single(second.Findings, static finding => finding.RuleId == "SK2014");
+        Assert.Single(second.Findings, static finding => finding.RuleId == EmptyCatch);
 
         // ⚠ Cold by construction, and that is the assertion: nothing was stored, so nothing could hit.
         Assert.Equal(0, second.CacheHits);
@@ -97,7 +100,7 @@ public sealed class CrashedRunCacheTests {
         Assert.Empty(second.Diagnostics);
         Assert.Equal(2, second.CacheHits);
         Assert.Equal(0, second.CacheMisses);
-        Assert.Single(second.Findings, static finding => finding.RuleId == "SK2014");
+        Assert.Single(second.Findings, static finding => finding.RuleId == EmptyCatch);
     }
 
     /// <summary>
@@ -122,13 +125,13 @@ public sealed class CrashedRunCacheTests {
         Assert.Contains(crashed.Diagnostics, Threw);
         Assert.Equal(2, crashed.CacheHits);
         Assert.Equal(1, crashed.CacheMisses);
-        Assert.Equal(2, crashed.Findings.Count(static finding => finding.RuleId == "SK2014"));
+        Assert.Equal(2, crashed.Findings.Count(static finding => finding.RuleId == EmptyCatch));
 
         var again = Run(scratch, OnCrashFile);
         Assert.Contains(again.Diagnostics, Threw);
         Assert.Equal(2, again.CacheHits);
         Assert.Equal(1, again.CacheMisses);
-        Assert.Equal(2, again.Findings.Count(static finding => finding.RuleId == "SK2014"));
+        Assert.Equal(2, again.Findings.Count(static finding => finding.RuleId == EmptyCatch));
         Assert.Equal(2, Persisted(scratch));
     }
 
@@ -160,7 +163,7 @@ public sealed class CrashedRunCacheTests {
         var after = Run(scratch, Nowhere);
         Assert.False(after.Partial);
         Assert.Equal(0, after.CacheHits);
-        Assert.Single(after.Findings, static finding => finding.RuleId == "SK2014");
+        Assert.Single(after.Findings, static finding => finding.RuleId == EmptyCatch);
         Assert.Equal(2, Persisted(scratch));
     }
 
