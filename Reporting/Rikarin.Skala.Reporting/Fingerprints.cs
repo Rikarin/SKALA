@@ -12,7 +12,8 @@ namespace Rikarin.Skala.Reporting;
 ///     docs/plan/09 § "The fingerprint". The property the whole baseline mechanism rests on is that a
 ///     finding survives the file being edited above it, reindented, or moved:
 ///     <code>
-/// skala/v3 = xxHash128( ruleId ⊕ normalizedSnippet ⊕ enclosingSymbolDisplayString ⊕ fileNameWhenNoSymbol ⊕ ordinalWithinScope )
+/// skala/v3 = xxHash128( ruleId ⊕ normalizedSnippet ⊕ enclosingSymbolDisplayString
+///                       ⊕ fileNameWhenNoSymbol ⊕ ordinalWithinScope )
 ///     </code>
 ///     ⚠ <b>No line numbers, and no file path.</b> A fingerprint that moves when a line moves is a
 ///     baseline that expires every commit, and one that moves when a file is renamed is a baseline that

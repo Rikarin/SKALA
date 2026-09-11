@@ -13,7 +13,11 @@ namespace Rikarin.Skala.Reporting.Tests;
 ///     exactly like a repository where everything is new.
 /// </remarks>
 public sealed class LifecycleTests {
+    const string DefaultFile = "Core/Foo.cs";
+    const string DuplicatedBlock = "SK7020";
     static readonly string Root = Path.GetFullPath("/tmp/repo");
+
+    static string TemporarySarif() => Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
 
     static Finding Finding(
         string ruleId = "SK1010",
@@ -21,7 +25,7 @@ public sealed class LifecycleTests {
         int start = 300,
         string symbol = "Vixen.Core.Foo.Bar(int, string)",
         string snippet = "source != null",
-        string file = "Core/Foo.cs",
+        string file = DefaultFile,
         SkalaSeverity severity = SkalaSeverity.Info
     ) =>
         new() {
@@ -48,7 +52,9 @@ public sealed class LifecycleTests {
             Duration = TimeSpan.FromSeconds(1)
         };
 
-    /// <summary>A finding the formatter reports: no snippet and no enclosing symbol, identified by its message.</summary>
+    /// <summary>
+    ///     A finding the formatter reports: no snippet and no enclosing symbol, identified by its message.
+    /// </summary>
     static Finding LongLine(string file, int start, int columns = 124) =>
         Finding("SK0002", file: file, start: start) with {
             EnclosingSymbol = string.Empty,
@@ -95,7 +101,7 @@ public sealed class LifecycleTests {
     [Fact]
     public void FingerprintV3_SurvivesTheFileBeingRenamed() =>
         Assert.Equal(
-            Fingerprints.V3(Finding(file: "Core/Foo.cs")),
+            Fingerprints.V3(Finding(file: DefaultFile)),
             Fingerprints.V3(Finding(file: "Engine/Renamed/Foo.cs"))
         );
 
@@ -105,7 +111,7 @@ public sealed class LifecycleTests {
     /// </summary>
     [Fact]
     public void FingerprintV3_OfADuplicatedBlockSurvivesThePairedCloneMovingDownTheFile() {
-        var before = Finding("SK7020", snippet: string.Empty) with {
+        var before = Finding(DuplicatedBlock, snippet: string.Empty) with {
             Message = "duplicated block of 128 tokens (40 lines), also at Testing/Program.cs:1003-1035"
         };
         var after = before with {
@@ -118,7 +124,7 @@ public sealed class LifecycleTests {
     /// <summary>⚠ The paired file path is display text too, not fingerprint identity.</summary>
     [Fact]
     public void FingerprintV3_OfADuplicatedBlockSurvivesThePairedFileBeingRenamed() {
-        var before = Finding("SK7020", snippet: string.Empty) with {
+        var before = Finding(DuplicatedBlock, snippet: string.Empty) with {
             Message = "duplicated block of 128 tokens (40 lines), also at Testing/Program.cs:1003-1035"
         };
         var after = before with {
@@ -184,11 +190,11 @@ public sealed class LifecycleTests {
     /// </remarks>
     [Fact]
     public void FingerprintV3_OfASnippetlessFindingSurvivesAnotherAppearingAboveIt() {
-        var subject = Finding("SK7020", file: "Zed/Last.cs", start: 900) with {
+        var subject = Finding(DuplicatedBlock, file: "Zed/Last.cs", start: 900) with {
             Snippet = string.Empty, Message = "duplicated block of 131 tokens (102 lines), also at A.cs:12-32"
         };
 
-        var unrelated = Finding("SK7020", file: "Aaa/First.cs", start: 100) with {
+        var unrelated = Finding(DuplicatedBlock, file: "Aaa/First.cs", start: 100) with {
             Snippet = string.Empty, Message = "duplicated block of 9 tokens (2 lines), also at B.cs:1-2"
         };
 
@@ -205,7 +211,7 @@ public sealed class LifecycleTests {
     /// </summary>
     [Fact]
     public void Ordinal_StillSeparatesTwoIdenticalSnippetlessFindings() {
-        var one = Finding("SK7020", file: "Core/Foo.cs", start: 100) with {
+        var one = Finding(DuplicatedBlock, file: "Core/Foo.cs", start: 100) with {
             Snippet = string.Empty, Message = "duplicated block of 9 tokens (2 lines), also at B.cs:1-2"
         };
 
@@ -271,8 +277,8 @@ public sealed class LifecycleTests {
     /// </remarks>
     [Fact]
     public void Ordinal_OfSymbolLessFindingsIsAPositionWithinTheFile() {
-        var first = LongLine("Core/Foo.cs", 100);
-        var second = LongLine("Core/Foo.cs", 900);
+        var first = LongLine(DefaultFile, 100);
+        var second = LongLine(DefaultFile, 900);
 
         var before = Report(first, second).Findings;
         var after = Report(first with { Start = 140 }, second with { Start = 940 }).Findings;
@@ -302,11 +308,13 @@ public sealed class LifecycleTests {
         Assert.NotEqual(Fingerprints.V3(report.Findings[0]), Fingerprints.V3(report.Findings[1]));
     }
 
-    /// <summary>⚠ And a symbol-less finding keeps the one stability the symbol would have given it: a directory move.</summary>
+    /// <summary>
+    ///     ⚠ And a symbol-less finding keeps the one stability the symbol would have given it: a directory move.
+    /// </summary>
     [Fact]
     public void FingerprintV3_OfASymbolLessFindingSurvivesItsFileMovingDirectories() =>
         Assert.Equal(
-            Fingerprints.V3(Report(LongLine("Core/Foo.cs", 100)).Findings.Single()),
+            Fingerprints.V3(Report(LongLine(DefaultFile, 100)).Findings.Single()),
             Fingerprints.V3(Report(LongLine("Engine/Moved/Foo.cs", 100)).Findings.Single())
         );
 
@@ -329,7 +337,7 @@ public sealed class LifecycleTests {
     [Fact]
     public void Baseline_RoundTripsThroughSarifAndMatchesNothingAsNew() {
         var report = Report(Finding(), Finding("SK1030", 40, 900, snippet: "x = x ?? y"));
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
+        var path = TemporarySarif();
 
         try {
             Baseline.Write(path, report, report.Findings);
@@ -370,7 +378,7 @@ public sealed class LifecycleTests {
             .Select(static i => LongLine($"Legacy/F{i:00}.cs", 50, 121))
             .ToArray();
         var report = Report(findings);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
+        var path = TemporarySarif();
 
         try {
             Baseline.Write(path, report, report.Findings);
@@ -419,11 +427,11 @@ public sealed class LifecycleTests {
     /// </summary>
     [Fact]
     public void Baseline_LegacyDuplicatedBlockFingerprintMatchesAfterThePairedCloneMoves() {
-        var accepted = Finding("SK7020", snippet: string.Empty) with {
+        var accepted = Finding(DuplicatedBlock, snippet: string.Empty) with {
             Message = "duplicated block of 128 tokens (40 lines), also at Testing/Program.cs:1003-1035"
         };
         var report = Report(accepted);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
+        var path = TemporarySarif();
 
         try {
             Baseline.Write(path, report, report.Findings);
@@ -457,14 +465,14 @@ public sealed class LifecycleTests {
     /// </summary>
     [Fact]
     public void Baseline_LegacyDuplicatedBlockCollisionsRecoverTheirStableOrdinals() {
-        var first = Finding("SK7020", start: 100, snippet: string.Empty) with {
+        var first = Finding(DuplicatedBlock, start: 100, snippet: string.Empty) with {
             Message = "duplicated block of 128 tokens (40 lines), also at Testing/First.cs:1003-1035"
         };
-        var second = Finding("SK7020", start: 200, snippet: string.Empty) with {
+        var second = Finding(DuplicatedBlock, start: 200, snippet: string.Empty) with {
             Message = "duplicated block of 128 tokens (40 lines), also at Testing/Second.cs:2003-2035"
         };
         var accepted = Report(first, second);
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
+        var path = TemporarySarif();
 
         try {
             Baseline.Write(path, accepted, accepted.Findings);
@@ -498,7 +506,7 @@ public sealed class LifecycleTests {
     [Fact]
     public void Baseline_PartitionsIntoNewExistingAndFixed() {
         var accepted = Report(Finding(), Finding("SK1030", 40, 900, snippet: "x = x ?? y"));
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
+        var path = TemporarySarif();
 
         try {
             Baseline.Write(path, accepted, accepted.Findings);
@@ -520,7 +528,7 @@ public sealed class LifecycleTests {
     public void Baseline_AbsentIsEmptyAndCorruptThrows() {
         Assert.Equal(0, Baseline.Read(Path.Combine(Path.GetTempPath(), "nothing-here.sarif")).Count);
 
-        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".sarif");
+        var path = TemporarySarif();
         try {
             File.WriteAllText(path, "{ this is not sarif");
             Assert.ThrowsAny<Exception>(() => Baseline.Read(path));

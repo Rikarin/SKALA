@@ -26,7 +26,9 @@ public sealed record BaselineEntry(
     string FingerprintV3,
     string FingerprintV2,
     string FingerprintV1) {
-    /// <summary>The newest fingerprint the entry carries — what <see cref="Baseline.Compare" /> reports it under.</summary>
+    /// <summary>
+    ///     The newest fingerprint the entry carries — what <see cref="Baseline.Compare" /> reports it under.
+    /// </summary>
     public string Identity =>
         FingerprintV3.Length > 0 ? FingerprintV3 : FingerprintV2.Length > 0 ? FingerprintV2 : FingerprintV1;
 }
