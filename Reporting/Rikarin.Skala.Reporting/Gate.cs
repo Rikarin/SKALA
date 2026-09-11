@@ -130,6 +130,37 @@ public static class Gate {
     }
 
     /// <summary>
+    ///     Whether one diagnostic is a statement the run makes about itself that fails a verdict —
+    ///     the per-id, per-severity line <see cref="EvaluateReliability" /> fails on, in one place.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #362. The gate failed on <c>SK9030</c> at warning; the <c>agent</c> renderer's banner keyed
+    ///     on error severity alone; so a crashed analyzer exited 1 under <c>OK  nothing to do.</c> —
+    ///     #345's contradiction, reached through the one reliability id whose threshold is warning.
+    ///     The renderer must not repeat this list: two copies of "which ids fail the run" is the
+    ///     disagreement that produced the defect. <c>Renderer.Blocking</c> asks here instead, which
+    ///     keeps ADR-009's corollary — renderers read, the gate decides — because the decision is
+    ///     still made once and made here.
+    ///     <para>
+    ///         ⚠ Per id, not per severity, and the thresholds differ on purpose. <c>SK9030</c> ships at
+    ///         warning and fails at warning; <c>GeneratorDriver</c> reports a generator's own diagnostic
+    ///         under the same id at info, which is the generator talking about the code. <c>SK9028</c>,
+    ///         <c>SK9024</c> and <c>SK9029</c> fail only at error: the same ids at warning are states a
+    ///         repository passes through — no baseline yet, MSBuild's relayed <c>workspace:</c> lines, a
+    ///         tree with no project — and <c>ReliabilityGateTests</c> and <c>IncompleteBannerTests</c>
+    ///         pin each of those as reaching neither the verdict nor the banner.
+    ///     </para>
+    /// </remarks>
+    public static bool FailsReliability(SkalaDiagnostic diagnostic) =>
+        diagnostic.Id switch {
+            RuleIds.AnalyzerThrew => diagnostic.Severity >= SkalaSeverity.Warning,
+            ConfigDiagnosticIds.GateInputUnavailable
+                or ConfigDiagnosticIds.NothingToLoad
+                or ConfigDiagnosticIds.AnalyzerAssemblyMissing => diagnostic.Severity >= SkalaSeverity.Error,
+            _ => false
+        };
+
+    /// <summary>
     ///     The four conditions the run states about <em>itself</em>: it did not finish, a rule died,
     ///     an input it was told to compare against could not be read, or a project it found could not
     ///     be loaded and the run fell back to the syntactic rules.
@@ -149,9 +180,9 @@ public static class Gate {
     ///     <para>
     ///         ⚠ #295: <c>SK9030</c> <em>was</em> emitted, printed and recorded — the issue's claim that
     ///         the pipeline "neither surfaces nor records" an analyzer crash is false. What was missing is
-    ///         this: a crashed analyzer is disabled for the rest of the run and contributes zero findings,
-    ///         so nothing distinguished "this rule found nothing" from "this rule died on the first file",
-    ///         and the gate passed either way. That is a load failure wearing a finding's clothes.
+    ///         this: a crashed analyzer contributes nothing for any file it threw on, so nothing
+    ///         distinguished "this rule found nothing" from "this rule died on every file", and the gate
+    ///         passed either way. That is a load failure wearing a finding's clothes.
     ///     </para>
     /// </remarks>
     static void EvaluateReliability(RunReport report, ImmutableArray<string>.Builder failures) {
@@ -173,21 +204,20 @@ public static class Gate {
             );
         }
 
-        // ⚠ Warning and above. `GeneratorDriver` also reports a source generator's own *reported*
-        // error under this id at Info — that is the generator saying something about the code, not
-        // the generator falling over — and failing a gate on it would fail every repository whose
-        // build emits a generator diagnostic.
-        var crashed = report.Diagnostics
-            .Where(static diagnostic =>
-                diagnostic.Id == RuleIds.AnalyzerThrew && diagnostic.Severity >= SkalaSeverity.Warning
-            )
-            .ToArray();
-
+        // ⚠ Warning and above — `FailsReliability` holds the threshold and says why. `GeneratorDriver`
+        // also reports a source generator's own *reported* error under this id at Info — that is the
+        // generator saying something about the code, not the generator falling over — and failing a
+        // gate on it would fail every repository whose build emits a generator diagnostic.
+        //
+        // ⚠ Not "disabled for the rest of the run", which this said until #362 and which Roslyn does
+        // not do: the analyzer keeps being invoked and keeps throwing, once per file it cannot handle.
+        // What is true is narrower and enough — wherever it threw, its rules reported nothing.
+        var crashed = Failing(report, RuleIds.AnalyzerThrew);
         if (crashed.Length > 0) {
             failures.Add(
                 crashed.Length.ToString(CultureInfo.InvariantCulture)
-                + " analyzer(s) threw and were disabled for the rest of the run, so the rules they carry "
-                + "reported nothing and their zero means nothing: "
+                + " analyzer(s) threw, so the rules they carry reported nothing wherever they threw and "
+                + "their zero means nothing: "
                 + string.Join("; ", crashed.Take(3).Select(static diagnostic => diagnostic.Message))
             );
         }
@@ -204,13 +234,7 @@ public static class Gate {
         // loudly on its own — `MissingGateInput_DoesNotFailTheReliabilityGate` pins that this
         // condition does not reach it. "There is no baseline yet" is a state a repository passes
         // through; "there is one and it will not open" is not.
-        var unreadable = report.Diagnostics
-            .Where(static diagnostic =>
-                diagnostic.Id == ConfigDiagnosticIds.GateInputUnavailable
-                && diagnostic.Severity >= SkalaSeverity.Error
-            )
-            .ToArray();
-
+        var unreadable = Failing(report, ConfigDiagnosticIds.GateInputUnavailable);
         if (unreadable.Length > 0) {
             failures.Add(
                 unreadable.Length.ToString(CultureInfo.InvariantCulture)
@@ -241,13 +265,11 @@ public static class Gate {
         // having: the caller gets the syntactic half and every finding in it, under a verdict that
         // says why it is not the whole answer — the same reasoning as `SK9028` above, and the reason
         // the exit is 1 and not 4.
-        var fellThrough = report.Diagnostics
-            .Where(static diagnostic =>
-                diagnostic.Id is ConfigDiagnosticIds.NothingToLoad or ConfigDiagnosticIds.AnalyzerAssemblyMissing
-                && diagnostic.Severity >= SkalaSeverity.Error
-            )
-            .ToArray();
-
+        var fellThrough = Failing(
+            report,
+            ConfigDiagnosticIds.NothingToLoad,
+            ConfigDiagnosticIds.AnalyzerAssemblyMissing
+        );
         if (fellThrough.Length > 0) {
             failures.Add(
                 "a project or solution was found and could not be loaded, so the run fell back to "
@@ -257,6 +279,11 @@ public static class Gate {
             );
         }
     }
+
+    /// <summary>The diagnostics under the given ids that <see cref="FailsReliability" />.</summary>
+    static SkalaDiagnostic[] Failing(RunReport report, params string[] ids) => [
+        .. report.Diagnostics.Where(diagnostic => ids.Contains(diagnostic.Id) && FailsReliability(diagnostic))
+    ];
 
     /// <summary>
     ///     <c>newIssues</c> — the condition that makes adoption possible.

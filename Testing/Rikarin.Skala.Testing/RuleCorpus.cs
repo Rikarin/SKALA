@@ -72,7 +72,7 @@ public sealed record CorpusSweepResult {
     public required int CompilerErrors { get; init; }
 
     /// <summary>
-    ///     ⚠ <c>SK9030</c>: an analyzer threw and was disabled for the rest of the run.
+    ///     ⚠ <c>SK9030</c>: an analyzer threw, so its rules reported nothing wherever it threw.
     /// </summary>
     /// <remarks>
     ///     A crashed analyzer produces exactly the same clean zero as a correct one, so this being

@@ -438,9 +438,14 @@ public static class SarifWriter {
         // an `SK9098` notification in this very invocation reported `"executionSuccessful": true`. A
         // SARIF consumer reading the one field the format has for "did this run complete" was told
         // yes on the run that could not.
+        //
+        // ⚠ #362: and a crashed analyzer no longer sets `Partial` — it was never cancelled — so the
+        // field reads the same set the banner does. `Renderer.Blocking` is every diagnostic at error
+        // severity plus every one the reliability gate fails on; a warning-severity `SK9030` is in it,
+        // and a run whose rules did not all run did not execute successfully.
         var failed = report.Diagnostics.Any(static diagnostic => diagnostic.Severity >= SkalaSeverity.Error);
         var invocation = new Invocation {
-            ExecutionSuccessful = !report.Partial && !failed,
+            ExecutionSuccessful = !report.Partial && !Renderer.Blocking(report).Any(),
             ExitCode = failed
                 ? ExitCodes.InternalError
                 : report.Gate is { Passed: false } ? ExitCodes.GateFailed : ExitCodes.Ok,

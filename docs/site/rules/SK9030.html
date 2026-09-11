@@ -12,7 +12,7 @@
 <main>
 <p class="crumb"><a href="index.html">Rules</a> / Tool</p>
 <h1>SK9030 <span class="title">An analyzer threw</span></h1>
-<p class="lede">An analyzer raised an exception; it is disabled for the rest of the run and everything else continues.</p>
+<p class="lede">An analyzer raised an exception. The run finishes and every other rule's findings are kept, but the rules the analyzer carries reported nothing wherever it threw, so the verdict fails.</p>
 <table class="facts">
 <tbody>
 <tr><th>Category</th><td>Tool</td></tr>
@@ -27,7 +27,7 @@
 </tbody>
 </table>
 <h2 id="why">Why</h2>
-<p>A third-party analyzer that throws on one syntax shape must not be able to turn a CI gate red for unrelated reasons — or, worse, green by aborting the run early.</p>
+<p>A third-party analyzer that throws on one syntax shape must not be able to end the run early, green or red. It must not pass it either: a crashed rule produces exactly the zero a clean tree produces, so the gate fails on this at warning severity and the agent report opens with it rather than with <code>OK</code>. Roslyn does not disable an analyzer that threw — it keeps being invoked and keeps throwing — so the message counts how many times it did and names the rules whose zero means nothing.</p>
 <h2 id="false-positives">When it does not fire</h2>
 <p>None; it reports an exception that happened.</p>
 </main>

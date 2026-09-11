@@ -221,6 +221,36 @@ Decisions, each measured against a run that got it wrong:
     re-enumeration are in [07](07-analysis-host.md) § "The ladder's contract under fallback"; the
     invariant that replaced the guard is
     `IncompleteBannerTests.EveryBlockingToolId_IsEitherACountedSourceFileOrOutsideTheFraction`.
+- ⚠ **A crashed analyzer reaches the banner, and the banner keys on what the gate fails on — not on
+  severity (#362).** `Gate.EvaluateReliability` fails the verdict on `SK9030` at **warning** (#295);
+  `Renderer.Blocking` keyed on error; so a run whose analyzer threw was exit 1 under `OK  nothing to
+  do.` from `agent`, and under **zero bytes** from `plain` — which is the default format whenever
+  stdout is not a terminal, i.e. every CI log. #345's contradiction, reached through the one
+  reliability id whose threshold is below error. Measured on 2026-09-11 against the real binary with
+  `SKALA_FORCE_SK9030` (the sibling of `SKALA_FORCE_SK9099`: a real analyzer that really throws, so
+  Roslyn's callback, the diagnostic, the gate and the exit are all the production path).
+  - `Blocking` is now *error severity, or `Gate.FailsReliability`* — the gate's own per-id, per-severity
+    line, read from where it is drawn rather than copied. Widened by **id**, not by severity: warning
+    `SK9028` (no baseline yet) and warning `SK9024` (a relayed `workspace:` line) still fail no gate and
+    reach no banner, and info `SK9030` (a generator's own reported diagnostic) is pinned the same way.
+  - `SK9030` is `IncompleteCause.CrashedAnalyzer`, the third non-file cause beside `GateInput` and
+    `LoadRung`: Roslyn's exception diagnostic has `Location.None`, so it sits at the project or the
+    unit's name and is never in the `N of M files` fraction. Its sentence: `INCOMPLETE  an analyzer
+    threw (SK9030 below), so the rules it carries reported nothing wherever it threw. Every file was
+    checked by the rules that could run.`, with the `SK9030` line under it naming the analyzer, how
+    many times it threw and the rules it carries.
+  - ⚠ **Two claims refuted while measuring.** *"Disabled for the rest of the run"* — in the message,
+    the gate text, `rules.json` and three doc comments — is not what Roslyn does: three files, one
+    throwing analyzer, three callbacks. And the message's *"threw on rule 'AD0001'"* named Roslyn's id
+    for any analyzer exception, never a rule. The message now counts the throws and lists the
+    analyzer's own descriptors. `docs/plan/08`'s "17 times … disabled each time" for #298 was the same
+    contradiction recorded without being noticed.
+  - ⚠ **A crash no longer marks the run partial.** `AnalyzerHost` set `Partial` whenever an analyzer
+    threw (M5, before #295 gave the crash its own clause), and #309 made `Partial` mean "a unit was
+    cancelled" — so `check` printed `SK9027 'loose' was cancelled before it finished and contributed
+    no findings` beside the `SK9030`, both false: the unit finished and every other rule's findings
+    were kept. `Partial` is the cancellation; the crash is the diagnostic. The SARIF's
+    `executionSuccessful` reads `Blocking` for the same reason, so it is still `false` on a crash.
 - The sentence is asserted over the **whole** output — banner, per-file line, trailer — on every
   text format, with a positive control that the genuine-defect case still says "Skala bug", so the
   suite cannot pass by deleting the sentence: `IncompleteBannerTests`, `PartialVerdictTests`, and
