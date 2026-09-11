@@ -1,3 +1,4 @@
+using Rikarin.Skala.Rules.Metadata;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.IO.Hashing;
@@ -45,7 +46,6 @@ namespace Rikarin.Skala.Reporting;
 ///     </para>
 /// </remarks>
 public static class Fingerprints {
-    const string DuplicatedBlockRuleId = "SK7020";
     const string DuplicatedBlockRelatedLocation = ", also at ";
     const char Separator = '\u0001';
 
@@ -183,7 +183,7 @@ public static class Fingerprints {
         string enclosingSymbol,
         int ordinalWithinSymbol
     ) =>
-        ruleId == DuplicatedBlockRuleId
+        ruleId == RuleIds.DuplicatedBlock
             ? LegacyV2(ruleId, Normalize(MessageIdentity(ruleId, message)), enclosingSymbol, ordinalWithinSymbol)
             : null;
 
@@ -226,7 +226,7 @@ public static class Fingerprints {
     ///     occurrence — or renaming the paired file — invalidate the baseline.
     /// </remarks>
     static string MessageIdentity(string ruleId, string message) {
-        if (ruleId == DuplicatedBlockRuleId) {
+        if (ruleId == RuleIds.DuplicatedBlock) {
             var relatedLocation = message.IndexOf(DuplicatedBlockRelatedLocation, StringComparison.Ordinal);
             if (relatedLocation >= 0) {
                 return message[..relatedLocation];
