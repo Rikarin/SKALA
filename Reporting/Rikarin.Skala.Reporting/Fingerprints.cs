@@ -30,8 +30,9 @@ namespace Rikarin.Skala.Reporting;
 ///         <em>name</em> is the same compromise <see cref="Version1" /> makes: it survives a directory
 ///         move, which the enclosing symbol also survives, and not a rename, which for a finding with no
 ///         symbol there is nothing else to anchor to. Measured on this repository's own baseline before
-///         the change: 389 of 1 093 entries had no symbol, and 196 of those held an ordinal that only
-///         meant something relative to other files.
+///         the change: 371 of 1 093 entries were symbol-less — 292 <c>SK0002</c>, 77 <c>SK7020</c>, two
+///         <c>SK0003</c> — and 189 of the 292 held an ordinal that only meant something relative to
+///         other files.
 ///     </para>
 ///     <para>
 ///         ⚠ Every version is still readable, and the fallback is one-directional. <see cref="Version2" />

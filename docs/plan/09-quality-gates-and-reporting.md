@@ -164,9 +164,11 @@ no snippet, `SK7020` reports a block — that scope was *nothing*: the counter r
 that rule with that text in the whole run, in path order. Measured while landing #363: one 124-column
 doc-comment line added under `Analysis/` took ordinal 15 from `Tools/…/McpServerTests.cs:249`, a file
 the commit never touched; the self-gate reported the untouched finding as **new** and accepted the new
-line under its entry. Measured on this repository's baseline before the fix: 389 of 1 093 entries had
-no enclosing symbol, and 196 of those held an ordinal that only meant something relative to other
-files. v3 adds the file *name* as the location term when there is no symbol — the same compromise v1
+line under its entry. Measured on this repository's baseline before the fix: 371 of 1 093 entries were
+symbol-less — 292 `SK0002`, 77 `SK7020`, two `SK0003` — and 189 of the 292 held an ordinal that only
+meant something relative to other files. (Another 18 entries with no symbol were placeholders that
+`baseline update` had carried for findings that no longer fired, with a fingerprint recomputed from
+the placeholder; that is its own defect and is not what this section is about.) v3 adds the file *name* as the location term when there is no symbol — the same compromise v1
 makes, and the only stable anchor such a finding has: it survives a directory move, as the symbol
 does, and not a rename. The counter is keyed on exactly the terms the hash uses, so two same-named
 files' identical findings are ordinals 0 and 1 rather than one shared hash. What that leaves is that a
