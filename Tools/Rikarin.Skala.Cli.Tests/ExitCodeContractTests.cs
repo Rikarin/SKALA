@@ -32,6 +32,8 @@ public sealed class ExitCodeContractTests : IDisposable {
 
     const string Loose = "loose";
 
+    const string Check = "check";
+
     const string FormatOption = "--format";
 
     const string Agent = "agent";
@@ -91,7 +93,7 @@ public sealed class ExitCodeContractTests : IDisposable {
     /// <summary>An unrecognized option is a configuration error, not a failed gate.</summary>
     [Fact]
     public void Three_WhenAnOptionIsNotRecognized() {
-        var run = CliRunner.Run("check", LoadOption, Loose, "--verbsoe");
+        var run = CliRunner.Run(Check, LoadOption, Loose, "--verbsoe");
 
         Assert.Equal(3, run.ExitCode);
         Assert.Contains("--verbsoe", run.StandardOutput + run.StandardError, StringComparison.Ordinal);
@@ -148,7 +150,7 @@ public sealed class ExitCodeContractTests : IDisposable {
     [Theory]
     [InlineData("format")]
     [InlineData("arrange")]
-    [InlineData("check")]
+    [InlineData(Check)]
     [InlineData("verify")]
     [InlineData("fix")]
     public void Verbose_IsAcceptedByEveryVerbThatTakesPaths(string verb) {
@@ -208,7 +210,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         Write("One.cs", "public class D {\n    public int Value;\n}\n");
         Write("Broken.csproj", UnloadableProject);
 
-        var run = CliRunner.Run("check", LoadOption, "binlog", "--gate", "local", FormatOption, Agent, directory);
+        var run = CliRunner.Run(Check, LoadOption, "binlog", "--gate", "local", FormatOption, Agent, directory);
         var text = run.StandardOutput + run.StandardError;
 
         Assert.Equal(1, run.ExitCode);
@@ -237,7 +239,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         Write("One.cs", "public class D {\n    public int Value;\n}\n");
         Write("Broken.csproj", UnloadableProject);
 
-        var run = CliRunner.Run("check", LoadOption, "workspace", "--gate", "local", FormatOption, Agent, directory);
+        var run = CliRunner.Run(Check, LoadOption, "workspace", "--gate", "local", FormatOption, Agent, directory);
         var text = run.StandardOutput + run.StandardError;
 
         Assert.Equal(4, run.ExitCode);
@@ -322,8 +324,8 @@ public sealed class ExitCodeContractTests : IDisposable {
     ///     </para>
     /// </remarks>
     [Theory]
-    [InlineData("check", Agent)]
-    [InlineData("check", "plain")]
+    [InlineData(Check, Agent)]
+    [InlineData(Check, "plain")]
     [InlineData("verify", Agent)]
     [InlineData("verify", "plain")]
     public void One_WhenAnAnalyzerThrows_AndTheOutputSaysSo(string verb, string format) {
@@ -363,6 +365,44 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
+    ///     #363: the second run over the same cache fails the same way, instead of serving the crashed
+    ///     run's silence as a clean tree.
+    /// </summary>
+    /// <remarks>
+    ///     Measured before the fix, on this binary and this fixture: run one exit 1 with <c>SK9030</c>,
+    ///     run two exit 0 with no <c>SK9030</c> and the <c>SK2014</c> served from the cache. The
+    ///     crashed analyzer's absence had been written to <c>.skala/cache/</c> as "no findings".
+    ///     <para>
+    ///         ⚠ Loose and the same environment both times, on purpose. Loose is the one load mode
+    ///         whose warm path is reachable, and the forced analyzer is part of the rule-set
+    ///         fingerprint, so a second run <em>without</em> the variable would miss every key and
+    ///         measure nothing. The in-process half of this — that the warm path was taken, by
+    ///         <c>CacheHits</c> — is <c>CrashedRunCacheTests</c> in Analysis; this row is the process
+    ///         boundary.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void One_WhenAnAnalyzerThrows_AndAgainOnTheNextRunOverTheSameCache() {
+        Directory.CreateDirectory(Path.Combine(directory, ".git"));
+        Write(
+            "Swallow.cs",
+            "namespace Demo;\n\npublic static class Swallow {\n    public static void Run() {\n"
+            + "        try {\n            System.Console.WriteLine();\n        } catch {\n        }\n    }\n}\n"
+        );
+        var forced = new Dictionary<string, string>(StringComparer.Ordinal) { ["SKALA_FORCE_SK9030"] = "1" };
+
+        var first = CliRunner.RunWith(forced, Check, LoadOption, Loose, FormatOption, "plain", directory);
+        Assert.Equal(1, first.ExitCode);
+        Assert.Contains("SK9030", first.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("SK2014", first.StandardOutput, StringComparison.Ordinal);
+
+        var second = CliRunner.RunWith(forced, Check, LoadOption, Loose, FormatOption, "plain", directory);
+        Assert.Equal(1, second.ExitCode);
+        Assert.Contains("SK9030", second.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("SK2014", second.StandardOutput, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     ⚠ The positive control for the row above: the same tree without the switch is
     ///     <c>OK  nothing to do.</c> at exit 0, so the fix is not "never print the sentence".
     /// </summary>
@@ -371,7 +411,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         Directory.CreateDirectory(Path.Combine(directory, ".git"));
         Write("Clean.cs", "namespace Demo;\n\npublic sealed class Clean {\n    public int Value { get; init; }\n}\n");
 
-        var run = CliRunner.Run("check", LoadOption, Loose, FormatOption, Agent, directory);
+        var run = CliRunner.Run(Check, LoadOption, Loose, FormatOption, Agent, directory);
 
         Assert.Equal(0, run.ExitCode);
         Assert.StartsWith("OK  nothing to do.", run.StandardOutput, StringComparison.Ordinal);
@@ -541,7 +581,7 @@ public sealed class ExitCodeContractTests : IDisposable {
         var codes = new Dictionary<string, int>(StringComparer.Ordinal) {
             ["arrange --check"] = CliRunner.Run("arrange", "--check", directory).ExitCode,
             ["format --check"] = CliRunner.Run("format", "--check", directory).ExitCode,
-            ["check --load loose"] = CliRunner.Run("check", LoadOption, Loose, directory).ExitCode,
+            ["check --load loose"] = CliRunner.Run(Check, LoadOption, Loose, directory).ExitCode,
             ["verify --load loose"] = CliRunner.Run("verify", LoadOption, Loose, directory).ExitCode
         };
 
