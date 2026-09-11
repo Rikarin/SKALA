@@ -139,7 +139,10 @@ public sealed class BaselineUnionTests {
     }
 
     static RunReport Check(Scratch scratch) {
-        var (_, report) = CheckCommand.Run(Request(scratch, BaselinePath(scratch)), TestContext.Current.CancellationToken);
+        var (_, report) = CheckCommand.Run(
+            Request(scratch, BaselinePath(scratch)),
+            TestContext.Current.CancellationToken
+        );
         Assert.True(report.HasBaseline, "the check must have compared against the baseline");
         return report;
     }
@@ -147,9 +150,9 @@ public sealed class BaselineUnionTests {
     /// <summary>The <c>results[]</c> elements of a baseline file, keyed by rule id, as JSON.</summary>
     static Dictionary<string, JObject> Results(string path) =>
         ((JArray)JObject.Parse(File.ReadAllText(path))["runs"]![0]!["results"]!)
-        .Cast<JObject>()
-        .GroupBy(static result => (string)result["ruleId"]!)
-        .ToDictionary(static group => group.Key, static group => group.Single(), StringComparer.Ordinal);
+            .Cast<JObject>()
+            .GroupBy(static result => (string)result["ruleId"]!)
+            .ToDictionary(static group => group.Key, static group => group.Single(), StringComparer.Ordinal);
 
     static string V3(JObject result) => (string)result["partialFingerprints"]![Fingerprints.Version3]!;
 
@@ -172,7 +175,11 @@ public sealed class BaselineUnionTests {
 
         scratch.Write("Holder.cs", Fixed);
         var update = Baseline(BaselineCommand.Verb.Update, scratch);
-        Assert.Contains("1 accepted finding(s) no longer fire and are being kept", update.Output, StringComparison.Ordinal);
+        Assert.Contains(
+            "1 accepted finding(s) no longer fire and are being kept",
+            update.Output,
+            StringComparison.Ordinal
+        );
 
         var after = Results(BaselinePath(scratch));
         Assert.Equal(before.Count, after.Count);
