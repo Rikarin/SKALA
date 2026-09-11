@@ -168,7 +168,8 @@ line under its entry. Measured on this repository's baseline before the fix: 371
 symbol-less — 292 `SK0002`, 77 `SK7020`, two `SK0003` — and 189 of the 292 held an ordinal that only
 meant something relative to other files. (Another 18 entries with no symbol were placeholders that
 `baseline update` had carried for findings that no longer fired, with a fingerprint recomputed from
-the placeholder; that is its own defect and is not what this section is about.) v3 adds the file *name* as the location term when there is no symbol — the same compromise v1
+the placeholder; that was #366, and `update` now writes an unfired entry's stored SARIF result back
+verbatim — v2-only entries included, since a v3 cannot be computed for a finding that did not fire.) v3 adds the file *name* as the location term when there is no symbol — the same compromise v1
 makes, and the only stable anchor such a finding has: it survives a directory move, as the symbol
 does, and not a rename. The counter is keyed on exactly the terms the hash uses, so two same-named
 files' identical findings are ordinals 0 and 1 rather than one shared hash. What that leaves is that a
@@ -221,7 +222,7 @@ At report time, findings are partitioned:
 |---|---|
 | **New** | fingerprint not in the baseline |
 | **Existing** | fingerprint in the baseline, still firing |
-| **Fixed** | in the baseline, no longer firing — reported as good news, and `baseline update` prunes them |
+| **Fixed** | in the baseline, no longer firing — reported as good news; `baseline update` keeps the entry as it was written and only `baseline prune` removes it |
 
 ⚠ Pruning fixed findings must be explicit. A baseline that self-prunes lets a rule that silently
 stopped working look like progress. M6 makes this four verbs — `create`, `update`, `prune`, `show` —

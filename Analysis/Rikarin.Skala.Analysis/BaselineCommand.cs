@@ -187,7 +187,17 @@ public static class BaselineCommand {
                 }
 
                 if (apply) {
-                    Baseline.Write(path, report, Union(comparison, report));
+                    // ⚠ #366. The unfired half is carried as the SARIF results the file already holds,
+                    // not rebuilt. There is no source span behind such an entry any more, so a
+                    // `Finding` made from it is a placeholder — empty symbol, empty snippet, no
+                    // ordinal — and `Baseline.Write` would hash the placeholder: the entry that landed
+                    // had a different fingerprint, a region of line 1 offset 0 and none of its
+                    // properties, so its finding was reported *new* on the day it returned, and a
+                    // symbol-less one took the ordinal-0 identity of its own group where `prune` could
+                    // not see it. ⚠ The unfired half is `comparison.Fixed` by definition — the same
+                    // matching, legacy fallbacks included, that decided the buckets — so it is not
+                    // recomputed here with a second notion of identity.
+                    Baseline.Write(path, report, report.Findings, comparison.Fixed);
                 }
 
                 break;
@@ -231,37 +241,6 @@ public static class BaselineCommand {
         );
 
         return (new CommandResult(ExitCodes.Ok, builder.ToString()), report);
-    }
-
-    /// <summary>
-    ///     Everything the baseline should hold after an <c>update</c>.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Entries that no longer fire cannot be reconstructed as <see cref="Finding" />s — there is
-    ///     no source span behind them any more — so they are carried through as the SARIF results they
-    ///     already are. That is why <see cref="Baseline.Write" /> takes findings and this method has to
-    ///     merge at the finding level: the fired half is fresh, the unfired half is carried by writing a
-    ///     placeholder per entry back alongside. ⚠ The unfired half is <see cref="BaselineComparison.Fixed" />
-    ///     by definition — the same matching, legacy fallbacks included, that decided the buckets — so it
-    ///     is not recomputed here with a second notion of identity.
-    /// </remarks>
-    static IEnumerable<Finding> Union(BaselineComparison comparison, RunReport report) {
-        var firing = report.Findings;
-
-        // The unfired accepted entries are represented by a placeholder finding carrying their
-        // fingerprint inputs, so the rewritten file still holds them.
-        var carried = comparison.Fixed
-            .Select(entry => new Finding {
-                    RuleId = entry.RuleId,
-                    Severity = SkalaSeverity.Hidden,
-                    Message = entry.Message,
-                    Path = Path.Combine(report.RepositoryRoot, entry.Path),
-                    EnclosingSymbol = string.Empty,
-                    Snippet = string.Empty
-                }
-            );
-
-        return [.. firing, .. carried];
     }
 
     static void Describe(StringBuilder builder, string verb, string path, int before, int firing) =>
