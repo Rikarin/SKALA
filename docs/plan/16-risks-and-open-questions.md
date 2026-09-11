@@ -72,6 +72,18 @@ charged is not a conservative default — it is an unmeasured one wearing a meas
 The guard needs to ask the effective severity, and the per-tree scan that answers it needs its own
 `--profile` measurement before it goes in, because the warm path exists to stay under five seconds.
 
+⚠ **Closed by #364 (2026-09-11), and not the way the paragraph above prescribes.** Two of its facts
+had already gone stale: "the only compilation-scoped rule that is on by default is `SK7020`" was true
+until 2026-09-01, when the first of five enabled ones shipped — and with any of them enabled the guard
+was true everywhere, so the opted-in repository was *not* keeping the warm path, it was cold like
+everyone else and the under-reporting was masked rather than absent. The guard is gone. The
+incremental pass now partitions analyzers by scope and runs the compilation-scoped bucket over the
+whole compilation on every warm run, so `SK3001` is in that bucket whether it is on or off: Roslyn
+skips it while off, and it reports correctly on every unchanged file when on. No severity is read,
+effective or default, which is why there was no per-tree scan to profile. The `rules.json` sentence
+that told an opted-in repository to add `--no-cache` is withdrawn with it. [07](07-analysis-host.md)
+§ "The incremental cache" carries the measurement.
+
 ## The risks that could sink this
 
 ### R1 — ⚠ Rider fidelity is asymptotic, and the last 0.1 % is most of the work

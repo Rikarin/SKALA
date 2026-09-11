@@ -380,8 +380,74 @@ startup. Invalidation is by key mismatch only — no timestamps, no watchers, no
 That is false for whole-compilation rules: a "this public member is never used" rule reads every
 file. Rule metadata therefore carries a `Scope` — `Syntax`, `Semantic`, or `Compilation` — and
 `Compilation`-scoped rules are excluded from per-file caching and re-run whenever *any* file in the
-compilation changes. There are few of them and they are cheap; getting this wrong produces stale
-findings, which is the failure mode that destroys trust in a cache.
+compilation changes. Getting this wrong produces stale findings, which is the failure mode that
+destroys trust in a cache.
+
+⚠ **That sentence described the design and not the code until #364, and the difference was the whole
+cache.** From M5 the implementation had two paths and a guard: if any *enabled* rule was
+`Compilation`-scoped, the guard sent the entire rule set down the cold path whenever anything changed.
+While the only such rule shipped `defaultSeverity: none` (`SK3001`) that was invisible. On 2026-09-01
+and 2026-09-02 five compilation-scoped rules shipped enabled — `SK3043`, `SK3044`, `SK3051`, `SK3061`,
+`SK2290` — and from then on the guard was true on every project-backed load in every repository:
+measured in-process over Skala's own 31 compilations under both `workspace` and `binlog`, 31 of 31
+units, second run `hits=0 misses=727`, 30 cache files written and none read. Only `loose`, which drops
+those five as `requiresSemantics`, still had a live warm path. The guard also read the *catalogue*
+default rather than the effective severity, so a repository that opted `SK3001` on kept the warm path
+and lost its findings on every unchanged file ([16](16-risks-and-open-questions.md) § "The opt-in
+that does not cost what it says").
+
+**The code is now a partition, not a guard.** `AnalyzerHost.IsPerFileCacheable` sorts every selected
+analyzer into one of two buckets, and a warm run runs both:
+
+- **Per-file** — every descriptor is a catalogue rule with `IsCacheable`, or Roslyn's own naming
+  analyzer, which Skala hosts deliberately and which decides each symbol alone. These run
+  per changed tree (`RunForTrees`) and their findings are stored and served.
+- **Whole-compilation** — anything else: an analyzer carrying a `Compilation`-scoped descriptor, and
+  ⚠ any analyzer whose scope Skala cannot read, which is every hosted third-party package. These run
+  over the whole compilation on every warm run (`RunCompilationScoped`), their findings are never
+  stored, and the per-file entries keep serving beside them.
+
+Three properties of the partition, each pinned by `CompilationScopedBucketTests`:
+
+1. **No severity is read, effective or default.** Membership is by scope. Roslyn skips an analyzer
+   whose every descriptor is off before invoking it, so `SK3001` costs nothing while off and is correct
+   when opted in — the question the old guard existed to answer no longer arises, and option 1 of #364
+   (read the effective severity) is subsumed rather than built.
+2. **The cross-file withdrawal.** `SK3051` reports an `async` method with no token to forward unless
+   some file uses it as a method group; adding that use to `B.cs` must withdraw the finding in an
+   unchanged `A.cs` on a warm run, and removing it must bring the finding back. That is the stale
+   finding the design exists to prevent, in both directions.
+3. **The bucket's rules never reach disk**, from the cold store or the warm one — `IncrementalAnalysis.Store`
+   drops every id a whole-compilation analyzer carries, and `DiagnosticCache.Put` independently drops
+   the catalogue's uncacheable ids.
+
+⚠ **"There are few of them and they are cheap" — the sentence that used to stand above — is half
+refuted.** Measured 2026-09-11, in-process, steady state, summed over Skala's 31 compilations: the five
+alone cost **2.4 s** against **6.8 s** for all 299 analyzers, and **1.2 s** of any whole-compilation pass
+is the compiler binding the analyzers do not control. `--profile` reports them at 2 % of analyzer time
+because it measures callbacks, not the binding the driver does to feed them. They are few; they are a
+third of the analysis wall. So a warm run's floor under this design is *the five plus the changed trees*,
+and on the real binary over this repository that is: cold **36 s** wall / 125 s summed analyzer time,
+warm **13 s** wall / **1.7 s** analyzer time, findings byte-identical.
+
+**The second tier that is not built.** The remaining 2.4 s could be served from a cache keyed on the
+whole compilation — the sorted set of every per-file key, which already folds in content, references,
+rule set, `.editorconfig` and version. It is not built here, for two reasons that are both measured.
+First, an entry for it has to carry a path per finding, which the per-file `CacheEntry` does not
+(the path is on the entry, the findings are pathless), so it is a new entry shape and a `cache/v4`
+bump rather than a second bucket over the existing one. Second, it serves only a run in which
+*nothing* in the compilation changed, and on that run the 13 s above is 1.7 s of analyzers and 11 s of
+loading the binlog, resolving references and running generators — which is the finding [13](13-performance.md)
+recorded at M5 and which a diagnostics cache of any shape cannot touch. If it is ever built, the key
+is the sorted per-file keys, the entries are `(path, CachedFinding)` pairs under one key per
+compilation, and the read path serves them only when every per-file key hit; anything less is a
+stale finding.
+
+⚠ **A unit with no reportable file takes the cold path every run.** `Core/Rikarin.Skala.Options` is
+entirely generated, so it has zero keys, `misses.Count == keys.Count` holds vacuously, and all 299
+analyzers run over a compilation whose every finding is then dropped. Measured at ~66 ms of the warm
+1.7 s above. Not fixed here; noted so that the next reader of a warm `--profile` knows why 221 per-file
+analyzers show a few milliseconds each.
 
 ⚠ **Three things M5 got wrong on the first attempt and that the tests now pin**, because each of them
 is a stale finding that looks exactly like a real one:

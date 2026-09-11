@@ -29,10 +29,12 @@ namespace Rikarin.Skala.Analysis.Tests;
 ///         parallel test process cannot set without every other test seeing the crash.
 ///     </para>
 ///     <para>
-///         ⚠ Loose mode, on purpose. Under <c>--load=workspace</c> and <c>--load=binlog</c> the warm path
-///         is unreachable in any repository: five shipped analyzers are enabled by default and
-///         <c>Compilation</c>-scoped, and the guard reads the catalogue default rather than the
-///         effective severity. Loose is the mode with a live cache, and the mode an agent uses.
+///         ⚠ Loose mode, on purpose: it is the mode an agent uses, and when these were written it was
+///         the only mode with a live cache — under <c>--load=workspace</c> and <c>--load=binlog</c> five
+///         shipped <c>Compilation</c>-scoped analyzers tripped the cold-path guard in every repository
+///         (#364). The guard is now a partition and the project-backed warm path is pinned by
+///         <see cref="CompilationScopedBucketTests" />; these stay on loose because the store guard they
+///         prove is the same code on every mode and loose needs no MSBuild host to reach it.
 ///     </para>
 ///     <para>
 ///         Sabotage: drop <c>Covered</c> from either store site and the matching second run below

@@ -249,6 +249,29 @@ third-party package. Levers:
   because the per-file cache means `SK5001`/`SK5002` see only the files that changed. The
   compilation-start gate is what makes even the cold number small: a tree that references no HTTP
   server or no sink type registers *no actions at all* rather than a cheap one.
+
+  ⚠ **The M8 warm row was real when it was taken (2026-08-27) and unreachable five days later.** Five
+  compilation-scoped rules shipped enabled on 2026-09-01/02, and the incremental pass's guard sent the
+  whole rule set cold whenever one was enabled — so from then until #364 (2026-09-11) every
+  project-backed `check` was a cold run that also wrote a cache nothing read. Nobody re-took the warm
+  number in between, which is how a figure in this document stayed true on paper for ten days after
+  it stopped being true in the binary ([07](07-analysis-host.md) § "The incremental cache").
+
+  Measured 2026-09-11 after #364, the real Release binary checking this repository through a fresh
+  `--no-incremental` binlog, 31 compilations, 300 analyzers, cache cleared before the first run:
+
+  | | analyzer time (summed over threads) | wall | what ran |
+  |---|---:|---:|---|
+  | cold, first run | 125 s | 36 s | everything, and the cache written |
+  | warm, nothing changed | **1.7 s** | **13 s** | the five whole-compilation analyzers; 30 cache files served |
+  | warm, again | 1.8 s | 13.6 s | same |
+
+  Findings identical across all three (414). ⚠ **The 11 s the warm run still spends is the load**, as
+  the M5 row above predicted: binlog, references, generators. The analyzers are 13 % of a warm wall
+  now; they were most of a cold one. The five's own share, measured in-process alone, is 2.4 s of
+  which 1.2 s is compiler binding — [07](07-analysis-host.md) records why that floor is not lowered
+  by a second cache tier and what one would have to look like. The sub-5-s warm row stays withdrawn:
+  its obstacle was never the analyzers.
 - **Metadata reference cache** keyed on `(path, mtime, size)`, process-wide. 300 references × 60
   projects re-read is minutes.
 - **Bounded compilation parallelism** — memory-bound, not CPU-bound; see the RSS budget.
