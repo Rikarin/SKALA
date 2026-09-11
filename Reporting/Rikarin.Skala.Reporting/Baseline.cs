@@ -14,7 +14,10 @@ namespace Rikarin.Skala.Reporting;
 ///     artefact — its diff in a PR is 'we suppressed these', which is exactly the conversation that
 ///     should happen", and a diff of opaque hashes is not that conversation.
 /// </remarks>
-/// <param name="FingerprintV3">The current identity; empty for an entry written before <see cref="Fingerprints.Version3" />.</param>
+/// <param name="FingerprintV3">
+///     The current identity; empty for an entry written before
+///     <see cref="Fingerprints.Version3" />.
+/// </param>
 /// <param name="FingerprintV2">M6's identity, carried for the one-directional fallback; empty once rewritten.</param>
 public sealed record BaselineEntry(
     string RuleId,

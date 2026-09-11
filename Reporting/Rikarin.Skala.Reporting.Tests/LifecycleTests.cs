@@ -380,13 +380,14 @@ public sealed class LifecycleTests {
                     File.ReadAllText(path),
                     [
                         .. report.Findings.Select((finding, i) => (
-                            Fingerprints.V3(finding),
-                            i switch {
-                                0 => OrdinalZero,
-                                10 => OrdinalTen,
-                                _ => i.ToString("d32", System.Globalization.CultureInfo.InvariantCulture)
-                            }
-                        ))
+                                Fingerprints.V3(finding),
+                                i switch {
+                                    0 => OrdinalZero,
+                                    10 => OrdinalTen,
+                                    _ => i.ToString("d32", System.Globalization.CultureInfo.InvariantCulture)
+                                }
+                            )
+                        )
                     ]
                 )
             );

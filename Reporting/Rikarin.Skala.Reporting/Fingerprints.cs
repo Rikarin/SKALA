@@ -11,7 +11,9 @@ namespace Rikarin.Skala.Reporting;
 /// <remarks>
 ///     docs/plan/09 § "The fingerprint". The property the whole baseline mechanism rests on is that a
 ///     finding survives the file being edited above it, reindented, or moved:
-///     <code>skala/v3 = xxHash128( ruleId ⊕ normalizedSnippet ⊕ enclosingSymbolDisplayString ⊕ fileNameWhenNoSymbol ⊕ ordinalWithinScope )</code>
+///     <code>
+/// skala/v3 = xxHash128( ruleId ⊕ normalizedSnippet ⊕ enclosingSymbolDisplayString ⊕ fileNameWhenNoSymbol ⊕ ordinalWithinScope )
+///     </code>
 ///     ⚠ <b>No line numbers, and no file path.</b> A fingerprint that moves when a line moves is a
 ///     baseline that expires every commit, and one that moves when a file is renamed is a baseline that
 ///     expires every refactor. The enclosing symbol carries the location information that is stable and
@@ -64,9 +66,9 @@ public static class Fingerprints {
     ///     ⚠ Deterministic by construction: the group key is everything the fingerprint uses <em>except</em>
     ///     the ordinal, and within a group the order is by path and then by offset. Two runs over the
     ///     same tree therefore number the same findings the same way, which is the only reason a
-    ///     baseline written by one run is readable by the next. The ordinal is a <em>position in that
-    ///     order</em>, not an offset: inserting a line above two identical findings moves both offsets
-    ///     and neither ordinal.
+    ///     baseline written by one run is readable by the next. The ordinal is a position in that order,
+    ///     not an offset: inserting a line above two identical findings moves both offsets and neither
+    ///     ordinal.
     ///     <para>
     ///         ⚠ "Everything the fingerprint uses" includes the file-name term, so a symbol-less
     ///         finding's group never reaches outside its file. Key the counter on fewer terms than the
