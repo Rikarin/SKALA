@@ -379,8 +379,25 @@ public static class AnalyzerHost {
 
     static ImmutableArray<DiagnosticAnalyzer> Select(LoadMode mode, ImmutableArray<DiagnosticAnalyzer> hosted) {
         var selected = SelectFor(mode, hosted);
-        return ForcedCrash.Requested ? selected.Add(new ForcedCrash()) : selected;
+        return ForcedCrash.Requested is { } shouldThrow ? selected.Add(new ForcedCrash(shouldThrow)) : selected;
     }
+
+    /// <summary>
+    ///     The in-process way to request <see cref="ForcedCrash" />: which trees its action throws on,
+    ///     or null for none. Flows with the caller's async context and nowhere else.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The environment variable cannot be set from inside a test process. xUnit runs test classes
+    ///     in parallel, <c>Select</c> reads the variable on every run, and every other test sharing the
+    ///     process would see the crash for as long as it was set — an intermittent red in whichever
+    ///     class happened to be analysing at the time, attributed to nothing. #363 needs the crash
+    ///     <em>in-process</em> because the property it proves is <c>IncrementalOutcome.CacheHits</c>,
+    ///     which no output of the CLI carries. An <see cref="AsyncLocal{T}" /> is scoped to the test
+    ///     that set it and to the work it starts, which is exactly the process-local variable the
+    ///     harness needs. The predicate is captured into the analyzer instance when it is selected, so
+    ///     Roslyn's worker threads never read this.
+    /// </remarks>
+    internal static AsyncLocal<Func<SyntaxTree, bool>?> ForcedCrashInProcess { get; } = new();
 
     static ImmutableArray<DiagnosticAnalyzer> SelectFor(LoadMode mode, ImmutableArray<DiagnosticAnalyzer> hosted) {
         if (mode != LoadMode.Loose) {
@@ -434,6 +451,18 @@ public static class AnalyzerHost {
     ///         null for it is what keeps it out of every per-rule table. Set by the harness and by nobody
     ///         else.
     ///     </para>
+    ///     <para>
+    ///         ⚠ #363: it declared <c>SK9030</c>'s own descriptor until this fix, and that made the
+    ///         instrument blind to the defect it found. <c>SK9030</c> is <c>Compilation</c>-scoped in
+    ///         the catalogue, so it is in <see cref="Caching.DiagnosticCache.Uncacheable" />, and an
+    ///         enabled uncacheable descriptor on any selected analyzer is precisely what sends
+    ///         <see cref="IncrementalAnalysis" /> down the cold path. Every forced run was therefore a
+    ///         cold run, and "the second run still fails" was measuring the guard, not the cache. The
+    ///         descriptor is now the harness's own — enabled, because Roslyn skips an analyzer whose
+    ///         every descriptor is suppressed and an empty set is vacuously all-suppressed (the first
+    ///         draft declared nothing and never ran) — and cacheable, so a forced run takes whichever
+    ///         path an unforced one would.
+    ///     </para>
     /// </remarks>
     // ⚠ RS1001 asks for [DiagnosticAnalyzer], which is the attribute Roslyn's *file* loader
     // discovers analyzers by, and this one is never loaded from a file — it is handed to
@@ -441,28 +470,49 @@ public static class AnalyzerHost {
     // (this assembly references Workspaces and targets .NET 10), which are real objections to
     // shipping an analyzer from here and not objections to a harness type nobody ships.
 #pragma warning disable RS1001 // an in-process harness analyzer, never discovered from a file
-    sealed class ForcedCrash : DiagnosticAnalyzer {
+    sealed class ForcedCrash(Func<SyntaxTree, bool> shouldThrow) : DiagnosticAnalyzer {
 #pragma warning restore RS1001
         internal const string Variable = "SKALA_FORCE_SK9030";
 
-        internal static bool Requested => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(Variable));
+        /// <summary>
+        ///     ⚠ The harness's id, not a rule's. <c>RuleCatalog.Find</c> answers null for it, so it is
+        ///     in no per-rule table, and the <c>SK9030</c> message names it as what the analyzer
+        ///     "carries" — which is right, because what it carries is the switch.
+        /// </summary>
+        // ⚠ RS2008 wants the id in an analyzer release file. This descriptor never reports and is
+        // never shipped; tracking it would list a rule that does not exist.
+#pragma warning disable RS2008 // a harness descriptor, never reported and never shipped
+        static readonly DiagnosticDescriptor Descriptor = new(
+            Variable,
+            "Forced analyzer crash",
+            "{0}",
+            "Skala.Harness",
+            DiagnosticSeverity.Warning,
+            true
+        );
+#pragma warning restore RS2008
 
         /// <summary>
-        ///     ⚠ Not empty, and not a new descriptor. Roslyn treats an analyzer whose every supported
-        ///     diagnostic is suppressed as one to skip, and an empty set is vacuously all-suppressed —
-        ///     the first draft declared nothing and never ran. The one descriptor it declares is
-        ///     <c>SK9030</c>'s own, which is the diagnostic it exists to cause; a fresh id would need
-        ///     release tracking for a rule that never reports.
+        ///     The trees to throw on, or null when no crash is requested: every tree when the
+        ///     environment variable is set, the in-process predicate otherwise.
         /// </summary>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            [SkalaRule.Descriptor(RuleIds.AnalyzerThrew)];
+        internal static Func<SyntaxTree, bool>? Requested =>
+            !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(Variable))
+                ? static _ => true
+                : ForcedCrashInProcess.Value;
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Descriptor];
 
         public override void Initialize(AnalysisContext context) {
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-            context.RegisterSyntaxTreeAction(static _ =>
-                throw new InvalidOperationException("Forced by " + Variable + ". This is the harness, not a Skala bug.")
-            );
+            context.RegisterSyntaxTreeAction(action => {
+                if (shouldThrow(action.Tree)) {
+                    throw new InvalidOperationException(
+                        "Forced by " + Variable + ". This is the harness, not a Skala bug."
+                    );
+                }
+            });
         }
     }
 
