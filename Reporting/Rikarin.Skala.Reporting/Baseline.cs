@@ -14,12 +14,19 @@ namespace Rikarin.Skala.Reporting;
 ///     artefact — its diff in a PR is 'we suppressed these', which is exactly the conversation that
 ///     should happen", and a diff of opaque hashes is not that conversation.
 /// </remarks>
+/// <param name="FingerprintV3">The current identity; empty for an entry written before <see cref="Fingerprints.Version3" />.</param>
+/// <param name="FingerprintV2">M6's identity, carried for the one-directional fallback; empty once rewritten.</param>
 public sealed record BaselineEntry(
     string RuleId,
     string Path,
     string Message,
+    string FingerprintV3,
     string FingerprintV2,
-    string FingerprintV1);
+    string FingerprintV1) {
+    /// <summary>The newest fingerprint the entry carries — what <see cref="Baseline.Compare" /> reports it under.</summary>
+    public string Identity =>
+        FingerprintV3.Length > 0 ? FingerprintV3 : FingerprintV2.Length > 0 ? FingerprintV2 : FingerprintV1;
+}
 
 /// <summary>
 ///     <c>.skala/baseline.sarif</c> — the findings the repository has accepted for now.
@@ -28,26 +35,38 @@ public sealed record BaselineEntry(
 ///     docs/plan/09 § "The baseline". A normal SARIF file, so every tool that reads SARIF can read it
 ///     and nothing new has to be invented or documented.
 ///     <para>
-///         ⚠ Matching is on <see cref="Fingerprints.Version2" />, falling back to
-///         <see cref="Fingerprints.Version1" /> for an entry written before the fingerprint gained its last
-///         two terms. The fallback is one-directional: a v2 baseline is never matched by a v1 hash alone,
-///         because v1 is the weaker identity and letting it match would silently widen what the baseline
-///         suppresses.
+///         ⚠ Matching is on <see cref="Fingerprints.Version3" />, falling back to
+///         <see cref="Fingerprints.Version2" /> for an entry written before the ordinal was scoped to the
+///         file (#365) and to <see cref="Fingerprints.Version1" /> for one written before the fingerprint
+///         gained its last two terms. Each fallback is one-directional: an entry is matched by the newest
+///         version it carries and nothing older, because each older version is the weaker identity and
+///         letting it match would silently widen what the baseline suppresses.
+///     </para>
+///     <para>
+///         ⚠ The v2 fallback costs a pass over the run, and only when a v2-only entry exists. M6's ordinal
+///         was counted across the whole run, so a finding's v2 cannot be computed from the finding alone;
+///         <see cref="Fingerprints.LegacyV2" /> renumbers the run the way M6 did. A baseline with no
+///         v2-only entry never pays for it.
 ///     </para>
 /// </remarks>
 public sealed class Baseline {
     Baseline(ImmutableArray<BaselineEntry> entries, string path) {
         Entries = entries;
         Path = path;
-        v2 = entries.Select(static entry => entry.FingerprintV2)
+        v3 = entries.Select(static entry => entry.FingerprintV3)
             .Where(static value => value.Length > 0)
             .ToImmutableHashSet(StringComparer.Ordinal);
-        v1 = entries.Where(static entry => entry.FingerprintV2.Length == 0)
+        v2 = entries.Where(static entry => entry.FingerprintV3.Length == 0)
+            .Select(static entry => entry.FingerprintV2)
+            .Where(static value => value.Length > 0)
+            .ToImmutableHashSet(StringComparer.Ordinal);
+        v1 = entries.Where(static entry => entry.FingerprintV3.Length == 0 && entry.FingerprintV2.Length == 0)
             .Select(static entry => entry.FingerprintV1)
             .Where(static value => value.Length > 0)
             .ToImmutableHashSet(StringComparer.Ordinal);
     }
 
+    readonly ImmutableHashSet<string> v3;
     readonly ImmutableHashSet<string> v2;
     readonly ImmutableHashSet<string> v1;
 
@@ -86,7 +105,7 @@ public sealed class Baseline {
         var log = SarifReader.Deserialize(path);
 
         var results = (log.Runs ?? []).SelectMany(static run => run.Results ?? []).ToArray();
-        var migrated = MigrateStoredV2(results);
+        var migrated = MigrateLegacyDuplicatedBlocks(results);
         var entries = ImmutableArray.CreateBuilder<BaselineEntry>(results.Length);
         for (var i = 0; i < results.Length; i++) {
             var result = results[i];
@@ -96,9 +115,8 @@ public sealed class Baseline {
                     result.RuleId ?? string.Empty,
                     Location(result),
                     result.Message?.Text ?? string.Empty,
-                    migrated.TryGetValue(i, out var canonical)
-                        ? canonical
-                        : Print(prints, Fingerprints.Version2),
+                    migrated.TryGetValue(i, out var canonical) ? canonical : Print(prints, Fingerprints.Version3),
+                    Print(prints, Fingerprints.Version2),
                     Print(prints, Fingerprints.Version1)
                 )
             );
@@ -107,13 +125,21 @@ public sealed class Baseline {
         return new(entries.ToImmutable(), path);
     }
 
-    /// <summary>Recovers stable SK7020 v2 hashes from baselines written with its volatile message.</summary>
-    static Dictionary<int, string> MigrateStoredV2(Result[] results) {
+    /// <summary>
+    ///     Recovers a stable identity for SK7020 entries written with its volatile message.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Such an entry's v2 matches nothing M6 would ever compute again, so it cannot take the v2
+    ///     fallback; it is rebuilt from the stored terms and given a <see cref="Fingerprints.Version3" />
+    ///     directly. An entry that already carries a v3 was written after both corrections and is left
+    ///     alone.
+    /// </remarks>
+    static Dictionary<int, string> MigrateLegacyDuplicatedBlocks(Result[] results) {
         var duplicatedBlocks = new List<(int Index, Finding Finding, bool Legacy)>();
         for (var i = 0; i < results.Length; i++) {
             var result = results[i];
             var stored = Print(result.PartialFingerprints, Fingerprints.Version2);
-            if (stored.Length == 0) {
+            if (stored.Length == 0 || Print(result.PartialFingerprints, Fingerprints.Version3).Length > 0) {
                 continue;
             }
 
@@ -154,7 +180,7 @@ public sealed class Baseline {
         var migrated = new Dictionary<int, string>();
         for (var i = 0; i < duplicatedBlocks.Count; i++) {
             if (duplicatedBlocks[i].Legacy) {
-                migrated.Add(duplicatedBlocks[i].Index, Fingerprints.V2(assigned[i]));
+                migrated.Add(duplicatedBlocks[i].Index, Fingerprints.V3(assigned[i]));
             }
         }
 
@@ -181,10 +207,6 @@ public sealed class Baseline {
             ? uri.ToString()
             : string.Empty;
 
-    /// <summary>Whether the baseline already accepted this finding.</summary>
-    public bool Contains(Finding finding) =>
-        v2.Contains(Fingerprints.V2(finding)) || v1.Contains(Fingerprints.V1(finding));
-
     /// <summary>
     ///     Splits a run against this baseline.
     /// </summary>
@@ -195,17 +217,25 @@ public sealed class Baseline {
     ///     pruning a decision rather than a side effect.
     /// </remarks>
     public BaselineComparison Compare(IEnumerable<Finding> findings) {
-        var partitioned = ImmutableArray.CreateBuilder<Finding>();
+        var run = findings.ToImmutableArray();
+        var legacy = v2.IsEmpty ? [] : Fingerprints.LegacyV2(run);
+        var partitioned = ImmutableArray.CreateBuilder<Finding>(run.Length);
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var newCount = 0;
 
-        foreach (var finding in findings) {
-            var v2 = Fingerprints.V2(finding);
-            var known = this.v2.Contains(v2) || v1.Contains(Fingerprints.V1(finding));
-            if (known) {
-                seen.Add(v2);
-                seen.Add(Fingerprints.V1(finding));
-            } else {
+        for (var i = 0; i < run.Length; i++) {
+            var finding = run[i];
+            var v3 = Fingerprints.V3(finding);
+            var v1 = Fingerprints.V1(finding);
+            var known = this.v3.Contains(v3) || this.v1.Contains(v1);
+            seen.Add(v3);
+            seen.Add(v1);
+            if (!legacy.IsEmpty) {
+                known |= v2.Contains(legacy[i]);
+                seen.Add(legacy[i]);
+            }
+
+            if (!known) {
                 newCount++;
             }
 
@@ -214,7 +244,7 @@ public sealed class Baseline {
 
         var fixedEntries = ImmutableArray.CreateBuilder<BaselineEntry>();
         foreach (var entry in Entries) {
-            var identity = entry.FingerprintV2.Length > 0 ? entry.FingerprintV2 : entry.FingerprintV1;
+            var identity = entry.Identity;
             if (identity.Length > 0 && !seen.Contains(identity)) {
                 fixedEntries.Add(entry);
             }

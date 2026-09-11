@@ -145,16 +145,42 @@ A finding must survive a file being edited above it, reindented, or moved. `part
 carries:
 
 ```
-skala/v2 = xxHash128( ruleId ⊕ normalizedSnippet ⊕ enclosingSymbolDisplayString ⊕ ordinalWithinSymbol )
+skala/v3 = xxHash128( ruleId ⊕ normalizedSnippet ⊕ enclosingSymbolDisplayString ⊕ fileNameWhenNoSymbol ⊕ ordinalWithinScope )
+skala/v2 = xxHash128( ruleId ⊕ normalizedSnippet ⊕ enclosingSymbolDisplayString ⊕ ordinalAcrossTheRun )  // M6's, read, no longer written
 skala/v1 = xxHash128( ruleId ⊕ normalizedMessage ⊕ fileName )            // M5's, still emitted
 ```
 
-⚠ **M6 emits `skala/v2` with all four terms, and `skala/v1` beside it.** M5's v1 was the rule id,
+⚠ **M6 emitted `skala/v2` with four terms, and `skala/v1` beside it.** M5's v1 was the rule id,
 the normalised *message* and the file name; adding the enclosing symbol and the ordinal changes what
 the hash means, so it is a new version rather than a redefinition — which is exactly what the version
-tag was put there for. Reading a baseline matches on v2 and falls back to v1, one-directionally: a v2
-hash never matches a v1-only entry the other way round, because v1 is the weaker identity and letting
-it match would silently widen what the baseline suppresses.
+tag was put there for. Reading a baseline matches on the newest version an entry carries and falls
+back one-directionally: a v3 hash never matches a v2-only entry's v1, and a v2 hash never matches a
+v1-only entry the other way round, because each older version is the weaker identity and letting it
+match would silently widen what the baseline suppresses.
+
+⚠ **`skala/v3` scopes a symbol-less finding's ordinal to its file (#365).** v2's ordinal was "within
+the symbol", and for a finding with no enclosing symbol — `SK0002` reports at column 1 of a line with
+no snippet, `SK7020` reports a block — that scope was *nothing*: the counter ran over every finding of
+that rule with that text in the whole run, in path order. Measured while landing #363: one 124-column
+doc-comment line added under `Analysis/` took ordinal 15 from `Tools/…/McpServerTests.cs:249`, a file
+the commit never touched; the self-gate reported the untouched finding as **new** and accepted the new
+line under its entry. Measured on this repository's baseline before the fix: 389 of 1 093 entries had
+no enclosing symbol, and 196 of those held an ordinal that only meant something relative to other
+files. v3 adds the file *name* as the location term when there is no symbol — the same compromise v1
+makes, and the only stable anchor such a finding has: it survives a directory move, as the symbol
+does, and not a rename. The counter is keyed on exactly the terms the hash uses, so two same-named
+files' identical findings are ordinals 0 and 1 rather than one shared hash. What that leaves is that a
+*same-named* file gaining the same finding still renumbers; the enclosing symbol is what removes the
+failure entirely where one exists.
+
+⚠ **v2 is read and never written, and reading it costs a pass over the run.** A v2 hash computed
+from a file-scoped ordinal would be a second meaning under M6's key, so the current writer emits v1 and
+v3 only. A v2-only entry is matched by recomputing M6's numbering over the run being compared — defect
+included, so that an old baseline matches exactly what M6 would have matched — until the first
+`baseline update` rewrites it. The pass is skipped when the baseline holds no v2-only entry. The
+transition on a repository is therefore one `baseline update` after upgrading, and nothing is reported
+new or fixed before it. ⚠ The SARIF-shape release detector will show `partialFingerprints.skala/v2`
+removed and `skala/v3` added; that is the intended surface change, not drift.
 
 ⚠ **The snippet, not the message, and this is load-bearing.** A message can carry a line number, a
 count or a path; the source text of the span cannot. `LifecycleTests` pins both halves of the
@@ -173,7 +199,10 @@ before the fix are discarded rather than deserialised with both fields empty.
 
 - `normalizedSnippet` — the finding's span, with whitespace collapsed and identifiers preserved.
 - `enclosingSymbolDisplayString` — `Vixen.Core.Foo.Bar(int, string)`, stable across file moves.
-- `ordinalWithinSymbol` — disambiguates two identical findings in one method.
+- `fileNameWhenNoSymbol` — empty when the symbol carries the location; the file name otherwise.
+- `ordinalWithinSymbol` — disambiguates two identical findings in one method, or in one file when
+  there is no method. A position in offset order, not an offset: a line inserted above both moves
+  neither ordinal.
 
 No line numbers. A fingerprint that moves when a line moves is a baseline that expires every commit.
 

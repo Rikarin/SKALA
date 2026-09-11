@@ -120,11 +120,14 @@ public sealed record Finding {
     public string Snippet { get; init; } = string.Empty;
 
     /// <summary>
-    ///     Which of several otherwise identical findings inside one symbol this is.
+    ///     Which of several otherwise identical findings inside one symbol — or, when there is no
+    ///     enclosing symbol, inside one file — this is.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Assigned once, by <c>Fingerprints.Assign</c>, over the whole run in a deterministic order.
-    ///     Without it two identical findings in one method share a fingerprint, and a baseline that
+    ///     ⚠ Assigned once, by <c>Fingerprints.Assign</c>, in a deterministic order, and never counted
+    ///     past the finding's own scope: a symbol-less finding's ordinal was once its index among every
+    ///     like finding in the run, so a new one in any earlier file renumbered it (#365). Without the
+    ///     ordinal two identical findings in one method share a fingerprint, and a baseline that
     ///     accepts one accepts both.
     /// </remarks>
     public int OrdinalWithinSymbol { get; init; }

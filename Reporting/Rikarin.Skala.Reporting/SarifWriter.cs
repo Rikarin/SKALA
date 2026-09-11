@@ -24,8 +24,9 @@ public static class SarifWriter {
     ///     ⚠ M5's fingerprint key, kept as a constant because callers name it.
     /// </summary>
     /// <remarks>
-    ///     M6 emits <see cref="Fingerprints.Version2" /> beside it; see <see cref="Fingerprints" /> for
-    ///     why adding terms is a new version rather than a redefinition.
+    ///     <see cref="Fingerprints.Version3" /> is emitted beside it; see <see cref="Fingerprints" /> for
+    ///     why changing what a term means is a new version rather than a redefinition, and why
+    ///     <see cref="Fingerprints.Version2" /> is read but no longer written.
     /// </remarks>
     public const string FingerprintVersion = Fingerprints.Version1;
 
@@ -520,10 +521,10 @@ public static class SarifWriter {
     /// <remarks>
     ///     ⚠ Kept as a member of this type because <c>ReportingTests</c> and every caller outside the
     ///     assembly already name it, and because the SARIF writer is where a reader looks for the
-    ///     meaning of <c>partialFingerprints</c>. The computation itself moved: M6 emits
-    ///     <see cref="Fingerprints.Version1" /> <em>and</em> <see cref="Fingerprints.Version2" />, and a
-    ///     version pair is the whole reason a baseline written before the fingerprint gained the
-    ///     enclosing symbol and the ordinal still reads.
+    ///     meaning of <c>partialFingerprints</c>. The computation itself moved: the report carries
+    ///     <see cref="Fingerprints.Version1" /> <em>and</em> <see cref="Fingerprints.Version3" />, and a
+    ///     versioned key is the whole reason a baseline written before the fingerprint gained the
+    ///     enclosing symbol and the ordinal — or before the ordinal was scoped to the file — still reads.
     /// </remarks>
     public static string Fingerprint(Finding finding) => Fingerprints.V1(finding);
 
