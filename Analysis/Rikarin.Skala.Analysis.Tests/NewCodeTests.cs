@@ -271,6 +271,56 @@ public sealed class NewCodeTests : IDisposable {
         Assert.Contains(audit.Added, static e => e is { Source: SuppressionSource.Baseline, RuleId: "SK1010" });
     }
 
+    /// <summary>
+    ///     ⚠ A baseline rewritten under a newer fingerprint version is the same set of suppressions.
+    /// </summary>
+    /// <remarks>
+    ///     The bug this pins is <see cref="Suppressions_AnUnchangedTreeAddsNothing" />'s class through
+    ///     a different door. The audit keyed a baseline entry on <c>v2 ?? v1</c>, and the day #365
+    ///     rewrote this repository's baseline under v3 — leaving <c>v2</c> empty — every entry keyed
+    ///     on v2 at the reference and on v1 in the working tree. Measured against
+    ///     <c>origin/master</c>: <b>1 076 baseline entries reported as newly added suppressions</b>, and
+    ///     the PR gate would have failed on the transition commit. v1 is the one version every writer
+    ///     since M6 has emitted beside whatever was newest, which is what makes it the identity two
+    ///     refs are guaranteed to share.
+    ///     <para>
+    ///         ⚠ Sabotage check — key the entry on <c>v2 ?? v1</c> again and this goes red with the
+    ///         entry in both <c>Added</c> and <c>Removed</c>. The working-tree file is the committed
+    ///         one with <c>skala/v2</c> removed and a <c>skala/v3</c> added, which is exactly what a
+    ///         <c>baseline update</c> does to an entry across the version boundary.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void Suppressions_ABaselineRewrittenUnderANewerFingerprintVersionAddsNothing() {
+        Write("Core/Foo.cs", "public class Foo { }\n");
+
+        var baselinePath = Path.Combine(root, "baseline.sarif");
+        var report = new RunReport {
+            RepositoryRoot = root, Mode = LoadMode.Loose, Findings = Fingerprints.Assign([At(3)])
+        };
+
+        Baseline.Write(baselinePath, report, report.Findings);
+
+        // The committed side carries v1 and v2 and no v3: an M6-era entry.
+        var written = File.ReadAllText(baselinePath);
+        Assert.Contains("\"skala/v1\"", written, StringComparison.Ordinal);
+        var committed = written
+            .Replace("\"skala/v3\"", "\"skala/v2\"", StringComparison.Ordinal);
+        File.WriteAllText(baselinePath, committed);
+        Commit("base");
+
+        // The working tree carries the same entry after a v3 rewrite: v1 and v3, v2 gone.
+        File.WriteAllText(baselinePath, written);
+
+        var audit = SuppressionAuditor.Compare(root, "HEAD", baselinePath, TestContext.Current.CancellationToken);
+
+        Assert.Empty(audit.Added);
+        Assert.Empty(audit.Removed);
+
+        // ⚠ And the entry was actually seen on the current side, so "empty" is not "found nothing".
+        Assert.Contains(audit.Current, static e => e is { Source: SuppressionSource.Baseline, RuleId: "SK1010" });
+    }
+
     /// <summary>⚠ Nothing changed means nothing added — not "the ref looked empty".</summary>
     /// <remarks>
     ///     The bug this pins: <c>git ls-tree -r -- "*.cs"</c> returns nothing where

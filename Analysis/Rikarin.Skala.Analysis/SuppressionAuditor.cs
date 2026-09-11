@@ -305,7 +305,18 @@ public static class SuppressionAuditor {
                         // ⚠ The fingerprint, not the message. A baseline entry whose message was
                         // reworded is the same suppression; one whose fingerprint changed is a new
                         // one, which is exactly what the audit is looking for.
-                        entry.FingerprintV2.Length > 0 ? entry.FingerprintV2 : entry.FingerprintV1
+                        //
+                        // ⚠ And v1 specifically, because this key is compared ACROSS two refs. It
+                        // used to read v2 with a v1 fallback, and the day #365 rewrote the baseline
+                        // under v3 — leaving v2 empty — every entry keyed on v2 at the reference and
+                        // on v1 in the working tree: 1 076 entries reported as newly added
+                        // suppressions, and the PR gate would have failed on the transition commit.
+                        // v1 is the one version every writer since M6 has emitted beside whatever
+                        // was newest, which is what makes it the identity two refs are guaranteed
+                        // to share. The cost is v1's weaker identity — two same-message findings in
+                        // one symbol collapse — and that is the audit's known limit until a
+                        // second key is carried for it.
+                        entry.FingerprintV1
                     )
                 );
             }
