@@ -667,7 +667,7 @@ class Build : NukeBuild {
     /// </remarks>
     AbsolutePath ReleaseScratch =>
         (AbsolutePath)System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(),
+            Physical(System.IO.Path.GetTempPath()),
             "skala-release",
             System.Convert.ToHexStringLower(
                 System.Security.Cryptography.SHA256.HashData(
@@ -675,6 +675,44 @@ class Build : NukeBuild {
                 )
             )[..12]
         );
+
+    /// <summary>The path with every symbolic link in it resolved — what <c>pwd -P</c> prints.</summary>
+    /// <remarks>
+    ///     ⚠ <b>The baseline build produced a tool that could not start, and only on macOS.</b>
+    ///     <c>Path.GetTempPath()</c> returns <c>$TMPDIR</c>, which on macOS is <c>/var/folders/…</c>, and
+    ///     <c>/var</c> is a symbolic link to <c>/private/var</c>. A solution build of the extracted
+    ///     baseline under that spelling evaluated the same seventeen projects <em>twice</em> — once as
+    ///     <c>/var/…</c> and once as <c>/private/var/…</c>, visible as two <c>Restored</c> lines per
+    ///     project — and <c>GenerateDepsFile</c>, which matches project references by path string, matched
+    ///     neither against the other. <c>skala.deps.json</c> listed <c>System.CommandLine</c> and no
+    ///     <c>Rikarin.Skala.*</c> at all, every assembly sat beside <c>skala.dll</c> unreferenced, and the
+    ///     tool died at startup with <c>Could not load Rikarin.Skala.Analysis</c> — reported by the planner
+    ///     as the baseline writing no SARIF, which reads as a defect in the previous release rather than in
+    ///     the path it was built at. Measured: the verbatim script on a clean tree, 0 project references;
+    ///     the same build through the physical path, 10, with all 31 restores under one spelling.
+    ///     <para>
+    ///         ⚠ CI never sees this — Linux's <c>/tmp</c> is a directory — which is why the pipeline has
+    ///         published from a runner and the first local <c>ReleaseDryRun</c> was what found it. .NET has
+    ///         no <c>realpath</c>; this walks the segments and resolves each link it meets.
+    ///     </para>
+    /// </remarks>
+    static string Physical(string path) {
+        var full = System.IO.Path.GetFullPath(path);
+        var root = System.IO.Path.GetPathRoot(full) ?? string.Empty;
+        var resolved = root;
+        foreach (var segment in full[root.Length..].Split(
+                     System.IO.Path.DirectorySeparatorChar,
+                     System.StringSplitOptions.RemoveEmptyEntries
+                 )) {
+            var next = System.IO.Path.Combine(resolved, segment);
+            var info = new System.IO.DirectoryInfo(next);
+            resolved = info.LinkTarget is null
+                ? next
+                : info.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? next;
+        }
+
+        return resolved;
+    }
 
     /// <summary>
     ///     ⚠ <b>The version, measured.</b> docs/plan/18-versioning-and-release.md.
