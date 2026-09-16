@@ -952,6 +952,7 @@ public sealed class LayoutWriter {
                     ? pendingCloserLevel ?? Effective()
                     : this.column + width;
                 var segment = document.SegmentOf(node);
+                var head = document.SegmentHeadOf(node);
 
                 // ⚠ At the group's last point the segment ends where the group does, and the line
                 // does not — so what follows the group counts, exactly as it does when a group is
@@ -960,12 +961,31 @@ public sealed class LayoutWriter {
                 // three columns are the `) {`. See LineFlags.LastPoint.
                 if ((flags & LineFlags.LastPoint) != 0) {
                     var trailing = TrailingAfterGroup(stack, slot.Arg2);
+                    var whole = head == segment;
                     segment = segment >= Document.Unbounded || trailing >= Document.Unbounded
                         ? Document.Unbounded
                         : segment + trailing;
+
+                    if (whole) {
+                        head = segment;
+                    }
                 }
 
                 flat = segment < Document.Unbounded && column + segment <= this.width;
+
+                // ⚠ A fill breaks before an item only when that makes the item fit whole. An item
+                // that would not fit on a fresh continuation line either — one with a break of its
+                // own that is certain, or simply too wide — keeps its head on this line and breaks
+                // inside, which is what the oracle writes for `(1\n, (2\n, 3))` and for a
+                // 110-column collection after a chopped call (SK-DIV-0110, #339). An item that fits
+                // once moved still moves, whole, as the 104-column initializer SegmentOf records.
+                // ⚠ Not for a last-resort point: an embedded statement that has no room is pushed
+                // off and then chopped, never left as `if (c) Frobnicate(` (SK-DIV-0106).
+                if (!flat && head < segment && (flags & LineFlags.LastResort) == 0) {
+                    var continuation = ContinuationColumn(slot.Arg2);
+                    var fitsMoved = segment < Document.Unbounded && continuation + segment <= this.width;
+                    flat = !fitsMoved && head < Document.Unbounded && column + head <= this.width;
+                }
             }
 
             if (flat) {

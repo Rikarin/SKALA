@@ -654,6 +654,42 @@ public sealed class SwitchOverMultilineGoverningExpressionTests {
 }
 
 /// <summary>
+///     SK-DIV-0110: a fill breaks before an item only when that makes the item fit whole, so a nested
+///     tuple carrying a kept break of its own keeps its head after the comma.
+///     <c>constructs/breaks/nested-multiline-tuple-item.cs</c>.
+/// </summary>
+public sealed class NestedMultilineTupleItemTests {
+    [Fact]
+    public void ANestedItemWithAKeptBreak_KeepsItsHeadAfterTheComma() =>
+        Oracle.Agrees(
+            """
+            class T {
+                void M() {
+                    var t = (1
+                        , (2
+                            , 3));
+                    var f = (1
+                        , (2
+                            , 3), 4);
+                }
+            }
+            """,
+            """
+            class T {
+                void M() {
+                    var t = (1
+                        , (2
+                            , 3));
+                    var f = (1
+                        , (2
+                            , 3), 4);
+                }
+            }
+            """
+        );
+}
+
+/// <summary>
 ///     SK-DIV-0111: a <c>for</c> header is multi-line when a break inside its parentheses
 ///     <em>survives</em> the constructs inside it, not when the source merely holds one — so a break the
 ///     declarators, a binary operator or an invocation re-join leaves the header whole.

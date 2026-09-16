@@ -52,6 +52,26 @@ public sealed class DocumentBuilder {
     /// <summary>Flat width from one fill point to the next. <see cref="Document.SegmentOf" />.</summary>
     int[] segment = new int[512];
 
+    /// <summary>
+    ///     The width from a fill point to the first place inside the next item where a break could be
+    ///     taken — a hard line, or a point of a nested group that can break — or the whole segment when
+    ///     there is none. What the fill keeps on the line when the item cannot fit whole anywhere.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ SK-DIV-0110. <see cref="segment" /> asks "does the whole next item fit", and the oracle
+    ///     asks it too — a 104-column object initializer is broken before, whole — but not when the
+    ///     answer would be no on a fresh line as well: <c>(1\n, (2\n, 3))</c> keeps <c>, (2</c>
+    ///     together although the item has no flat form, and <c>Resolve(\n…\n), [</c> keeps a
+    ///     110-column collection's <c>[</c> on the <c>)</c> line and chops it inside. So a fill breaks
+    ///     before an item exactly when that makes the item fit; otherwise the item's head stays. That
+    ///     is what makes the rule idempotent: on pass one an item too wide for any line keeps its head
+    ///     and breaks inside, and on pass two the same item, now certain, is measured the same way.
+    /// </remarks>
+    int[] segmentHead = new int[512];
+
+    /// <summary>Each group's mode, by id, for <see cref="segmentHead" /> to know which nested points can break.</summary>
+    readonly Dictionary<int, GroupMode> modes = [];
+
     /// <summary>Whether the subtree holds a break point of any kind. Stops the two measures above.</summary>
     bool[] breaks = new bool[512];
 
@@ -268,7 +288,10 @@ public sealed class DocumentBuilder {
     /// <summary>A sync point between output and input, emitted immediately before what it introduces.</summary>
     public void Anchor(SourceSpan source, int tokenId) => Leaf(DocKind.Anchor, tokenId, 0, source, 0, 0, 0);
 
-    public void OpenGroup(GroupMode mode, int groupId) => Open(DocKind.Group, (int)mode, groupId);
+    public void OpenGroup(GroupMode mode, int groupId) {
+        modes[groupId] = mode;
+        Open(DocKind.Group, (int)mode, groupId);
+    }
 
     public void OpenFill() => Open(DocKind.Fill, 0, 0);
 
@@ -426,6 +449,7 @@ public sealed class DocumentBuilder {
             pointWidth,
             afterPoint,
             segment,
+            segmentHead,
             breaks,
             [.. facts]
         );
@@ -464,6 +488,8 @@ public sealed class DocumentBuilder {
         var point = 0;
         var pointStopped = false;
         var pointDepth = 0;
+        var head = 0;
+        var headStopped = false;
 
         Walk(childStart, count, 0);
 
@@ -483,8 +509,18 @@ public sealed class DocumentBuilder {
             if (current >= 0) {
                 segment[current] = flat;
                 afterPoint[current] = point;
+                segmentHead[current] = Math.Min(head, flat);
             }
         }
+
+        // Whether a nested group's own points are places a break could land: it breaks always, on
+        // width, or because its source was broken there and it may not re-join.
+        bool CanBreak(int nestedGroup) =>
+            modes.TryGetValue(nestedGroup, out var mode)
+            && (mode is GroupMode.Break or GroupMode.Auto
+                || mode == GroupMode.Preserve
+                && (facts[nestedGroup].BreaksIfTooLong
+                    || facts[nestedGroup] is { SourceBroken: true, JoinsIfFits: false }));
 
         void Walk(int start, int n, int depth) {
             for (var i = 0; i < n; i++) {
@@ -496,6 +532,8 @@ public sealed class DocumentBuilder {
                     flat = 0;
                     point = 0;
                     pointStopped = false;
+                    head = 0;
+                    headStopped = false;
                     if (first < 0) {
                         first = child;
                     }
@@ -534,9 +572,12 @@ public sealed class DocumentBuilder {
                     // A hard break inside a nested item does not end the enclosing fill's
                     // segment. That item has no flat form. Otherwise a break created on pass
                     // one and preserved on pass two shortens its measured width (#337, #339).
+                    // ⚠ It does end the item's *head*, which is the other measure a fill reads —
+                    // see segmentHead — and that is what keeps the two passes agreeing now.
                     if (current >= 0 && depth > pointDepth) {
                         flat = Document.Unbounded;
                         pointStopped = true;
+                        headStopped = true;
                     } else {
                         Flush();
                         current = -1;
@@ -549,9 +590,21 @@ public sealed class DocumentBuilder {
                     continue;
                 }
 
+                // A nested group's point that can break ends the head; one that cannot renders flat
+                // and counts as its flat rendering.
+                if (node.Kind == DocKind.Line && (LineKind)node.Arg0 == LineKind.Soft && !headStopped && CanBreak(node.Arg2)) {
+                    headStopped = true;
+                }
+
                 flat = flat >= Document.Unbounded || flatWidth[child] >= Document.Unbounded
                     ? Document.Unbounded
                     : flat + flatWidth[child];
+
+                if (!headStopped) {
+                    head = head >= Document.Unbounded || flatWidth[child] >= Document.Unbounded
+                        ? Document.Unbounded
+                        : head + flatWidth[child];
+                }
 
                 if (!pointStopped) {
                     point += pointWidth[child];
@@ -581,6 +634,7 @@ public sealed class DocumentBuilder {
             Array.Resize(ref pointWidth, pointWidth.Length * 2);
             Array.Resize(ref afterPoint, afterPoint.Length * 2);
             Array.Resize(ref segment, segment.Length * 2);
+            Array.Resize(ref segmentHead, segmentHead.Length * 2);
             Array.Resize(ref breaks, breaks.Length * 2);
             Array.Resize(ref certain, certain.Length * 2);
         }
@@ -602,6 +656,7 @@ public sealed class DocumentBuilder {
         pointWidth[nodeCount] = head;
         afterPoint[nodeCount] = 0;
         segment[nodeCount] = 0;
+        segmentHead[nodeCount] = 0;
         breaks[nodeCount] = kind == DocKind.Line && (LineKind)arg0 != LineKind.Soft;
         certain[nodeCount] = width >= Document.Unbounded;
         return nodeCount++;

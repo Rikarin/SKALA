@@ -323,6 +323,7 @@ public sealed class Document {
     readonly int[] pointWidth;
     readonly int[] afterPoint;
     readonly int[] segment;
+    readonly int[] segmentHead;
     readonly bool[] hasBreak;
     readonly GroupFacts[] facts;
 
@@ -338,6 +339,7 @@ public sealed class Document {
         int[] pointWidth,
         int[] afterPoint,
         int[] segment,
+        int[] segmentHead,
         bool[] hasBreak,
         GroupFacts[] facts
     ) {
@@ -352,6 +354,7 @@ public sealed class Document {
         this.pointWidth = pointWidth;
         this.afterPoint = afterPoint;
         this.segment = segment;
+        this.segmentHead = segmentHead;
         this.hasBreak = hasBreak;
         this.facts = facts;
     }
@@ -439,6 +442,13 @@ public sealed class Document {
     ///     trailing off the end of a line that already has one on it.
     /// </remarks>
     public int SegmentOf(int node) => segment[node];
+
+    /// <summary>
+    ///     The width from a fill point to the first place inside the next item where a break could
+    ///     land, or the whole segment when there is none. A fill that cannot make the item fit whole
+    ///     by breaking here keeps this much on the line instead (SK-DIV-0110).
+    /// </summary>
+    public int SegmentHeadOf(int node) => segmentHead[node];
 
     /// <summary>Whether the subtree holds a break of any kind — a hard line or a break point.</summary>
     public bool HasBreak(int node) => hasBreak[node];

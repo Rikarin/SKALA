@@ -5205,3 +5205,45 @@ in the fixture.
   `skala_align_multiline_switch_expression` measured as above.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/switch-over-multiline-governing-expression.cs`
   and `SwitchOverMultilineGoverningExpressionTests`.
+
+## SK-DIV-0110 — a fill broke before a nested item that carried a kept break of its own
+
+⚠ **Found beside SK-DIV-0104 and reserved by #370.** Measured 2026-09-16 with `Testing ask`:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `(1` / `, (2` / `, 3))` | as written — `, (2` together | `(1` / `,` / `(2` / `, 3))` — **a comma alone on a line** |
+| `(1` / `, (2` / `, 3)` / `, (4` / `, 5))` | as written | a lone comma before each nested tuple |
+| `(1` / `, (2` / `, 3), 4)` | as written — `4` stays after the item | lone comma |
+| `(1` / `, G<int` / `, int>())` | as written | lone comma |
+| `(1,` / `(2,` / `3))`, `(1` / `, (2, 3))`, `((1` / `, 2), 3)`, `(1,` / `(2, 3` / `, 4))` | as written | identical |
+| `Resolve(` … `), [` … `]` (the #339 fixture) | `), [` — the 110-column collection's `[` stays on the `)` line and the collection chops inside | `),` / `[` |
+| a collection initializer whose next element is a 104-column object initializer (`SegmentOf`'s remark) | broken before the element, whole | identical |
+
+The fill's segment measure read a nested item holding a hard line as infinitely wide, so the point
+in front of it always broke. That rule was #337/#339's fix for an idempotence failure — a break the
+fitter created on pass one and preserved on pass two shortened the item's measured width — and it
+over-corrected: the oracle never breaks before an item that would not fit on a fresh line either.
+Put together with the 104-column case, the rule is that **a fill breaks before an item exactly when
+that makes the item fit whole; otherwise the item's head stays on the line and the item breaks
+inside.** That is idempotent by construction: an item too wide for any line keeps its head on pass
+one and breaks inside, and on pass two the same item — now certain — is measured the same way.
+
+**Decision: fix**, in the layout engine. `DocumentBuilder` measures a second number per fill point,
+`segmentHead`: the width to the first place inside the next item where a break could land — a hard
+line, or a point of a nested group that can break (always, on width, or because its source was
+broken there and it may not re-join). `LayoutWriter`'s fill decision stays "does the whole item fit
+here"; when it does not, and the item would not fit on a continuation line either, the head decides.
+⚠ Not for a last-resort point (SK-DIV-0106): an embedded statement with no room is pushed off and
+then chopped, never left as `if (c) Frobnicate(`.
+
+⚠ **Adjacent and still open**: the #339 fixture now agrees on `), [` and disagrees one line later —
+the oracle breaks after the multi-line `]`, and keeps `], (null ? "ss" : 1.5d), []` apart, where
+Skala fills on; a tuple's next item after a multi-line one stays (`, 3), 4)` above). The same
+wrap-style-versus-plain-fill line SK-DIV-0109 records for `[1` / `+ 2, 3]`. One line better and one
+line worse on that fixture; not in this entry's construct.
+
+- options: `skala_keep_user_linebreaks`; the tuple has no wrap style of its own.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/nested-multiline-tuple-item.cs`,
+  `NestedMultilineTupleItemTests` and
+  `DocumentBuilderTests.Fill_KeepsTheHeadOfAnItemThatFitsNowhere_AndMovesOneThatFitsMoved`.
