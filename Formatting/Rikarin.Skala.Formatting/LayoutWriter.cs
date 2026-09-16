@@ -979,9 +979,11 @@ public sealed class LayoutWriter {
                 // inside, which is what the oracle writes for `(1\n, (2\n, 3))` and for a
                 // 110-column collection after a chopped call (SK-DIV-0110, #339). An item that fits
                 // once moved still moves, whole, as the 104-column initializer SegmentOf records.
-                // ⚠ Not for a last-resort point: an embedded statement that has no room is pushed
-                // off and then chopped, never left as `if (c) Frobnicate(` (SK-DIV-0106).
-                if (!flat && head < segment && (flags & LineFlags.LastResort) == 0) {
+                // ⚠ Only before an item that opens with a delimiter — measured: the oracle breaks
+                // before a 133-column binary chain that fits nowhere — and not for a last-resort
+                // point: an embedded statement that has no room is pushed off and then chopped, never
+                // left as `if (c) Frobnicate(` (SK-DIV-0106).
+                if (!flat && head < segment && (flags & LineFlags.DelimitedItem) != 0 && (flags & LineFlags.LastResort) == 0) {
                     var continuation = ContinuationColumn(slot.Arg2);
                     var fitsMoved = segment < Document.Unbounded && continuation + segment <= this.width;
                     flat = !fitsMoved && head < Document.Unbounded && column + head <= this.width;

@@ -5219,6 +5219,7 @@ in the fixture.
 | `(1,` / `(2,` / `3))`, `(1` / `, (2, 3))`, `((1` / `, 2), 3)`, `(1,` / `(2, 3` / `, 4))` | as written | identical |
 | `Resolve(` … `), [` … `]` (the #339 fixture) | `), [` — the 110-column collection's `[` stays on the `)` line and the collection chops inside | `),` / `[` |
 | a collection initializer whose next element is a 104-column object initializer (`SegmentOf`'s remark) | broken before the element, whole | identical |
+| `new[] { First && … && Fifth, Sixth && … && Tenth }` — a 133-column chain that fits nowhere (`indentation/binary-chain-as-an-initializer-element.cs`) | **broken before `Sixth`**, then chopped | identical |
 
 The fill's segment measure read a nested item holding a hard line as infinitely wide, so the point
 in front of it always broke. That rule was #337/#339's fix for an idempotence failure — a break the
@@ -5226,16 +5227,22 @@ fitter created on pass one and preserved on pass two shortened the item's measur
 over-corrected: the oracle never breaks before an item that would not fit on a fresh line either.
 Put together with the 104-column case, the rule is that **a fill breaks before an item exactly when
 that makes the item fit whole; otherwise the item's head stays on the line and the item breaks
-inside.** That is idempotent by construction: an item too wide for any line keeps its head on pass
-one and breaks inside, and on pass two the same item — now certain — is measured the same way.
+inside** — ⚠ for an item that opens with a delimiter. The `Sixth && …` row refutes the rule for an
+identifier-headed item: the oracle breaks before a chain that fits nowhere and Skala, applying the
+head rule there, was no longer idempotent (pass one measured the chain's operator points as unable
+to break on their own, pass two saw them kept). An opening `(`, `[` or `{` may hang at the end of a
+line; an identifier's item starts a fresh one. Five shapes, both sides. That is idempotent by
+construction: an item too wide for any line keeps its head on pass one and breaks inside, and on
+pass two the same item — now certain — is measured the same way.
 
 **Decision: fix**, in the layout engine. `DocumentBuilder` measures a second number per fill point,
 `segmentHead`: the width to the first place inside the next item where a break could land — a hard
 line, or a point of a nested group that can break (always, on width, or because its source was
 broken there and it may not re-join). `LayoutWriter`'s fill decision stays "does the whole item fit
-here"; when it does not, and the item would not fit on a continuation line either, the head decides.
-⚠ Not for a last-resort point (SK-DIV-0106): an embedded statement with no room is pushed off and
-then chopped, never left as `if (c) Frobnicate(`.
+here"; when it does not, and the item would not fit on a continuation line either, and the item
+opens with a delimiter (`LineFlags.DelimitedItem`, set by the C# builder from the next token), the
+head decides. ⚠ Not for a last-resort point (SK-DIV-0106): an embedded statement with no room is
+pushed off and then chopped, never left as `if (c) Frobnicate(`.
 
 ⚠ **Adjacent and still open**: the #339 fixture now agrees on `), [` and disagrees one line later —
 the oracle breaks after the multi-line `]`, and keeps `], (null ? "ss" : 1.5d), []` apart, where

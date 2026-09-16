@@ -110,9 +110,10 @@ public sealed class DocumentBuilderTests {
 
     /// <summary>
     ///     A fill breaks before an item only when that makes the item fit whole (SK-DIV-0110). Item
-    ///     <c>b…</c> holds a hard line of its own, so it fits nowhere: its head stays after <c>a,</c>
-    ///     and it breaks inside. Item <c>c…</c> is whole and too wide for what is left of the line but
-    ///     fits on a fresh one, so the fill breaks before it — the 104-column initializer's case.
+    ///     <c>b…</c> holds a hard line of its own, so it fits nowhere: as a delimited item its head
+    ///     stays after <c>a,</c> and it breaks inside. Item <c>c…</c> is whole and too wide for what is
+    ///     left of the line but fits on a fresh one, so the fill breaks before it — the 104-column
+    ///     initializer's case.
     /// </summary>
     [Fact]
     public void Fill_KeepsTheHeadOfAnItemThatFitsNowhere_AndMovesOneThatFitsMoved() {
@@ -120,7 +121,7 @@ public sealed class DocumentBuilderTests {
         var group = builder.NextGroupId();
         builder.OpenGroup(GroupMode.Break, group);
         builder.Text("a,", new SourceSpan(0, 2));
-        builder.BreakPoint(group, true, true);
+        builder.BreakPoint(group, true, true, delimitedItem: true);
 
         // ⚠ A nested *group*: a hard line at the fill's own depth merely ends the segment, and it
         // is a line inside an item that made the item measure as unbounded (#337, #339).

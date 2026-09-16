@@ -138,7 +138,20 @@ public enum LineFlags {
     ///     stayed whole, and the statement was pushed off instead. A point with this flag contributes
     ///     its flat rendering to that measure and does not end it; its own decision is still the fill's.
     /// </remarks>
-    LastResort = 8
+    LastResort = 8,
+
+    /// <summary>
+    ///     The item after this fill point opens with a delimiter — <c>(</c>, <c>[</c> or <c>{</c> — so
+    ///     when it fits nowhere whole its head may stay on the line and the item break inside.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ SK-DIV-0110, and the boundary is measured rather than derived: the oracle keeps
+    ///     <c>, (2</c> and <c>), [</c> on the line before an item that has no flat form anywhere, and
+    ///     breaks before <c>SixthConditionValueLong &amp;&amp; …</c>, a 133-column chain that fits
+    ///     nowhere either. An opening delimiter may hang at the end of a line; an identifier's item
+    ///     starts a fresh one. The front end sets it, because only it knows the token.
+    /// </remarks>
+    DelimitedItem = 16
 }
 
 /// <summary>

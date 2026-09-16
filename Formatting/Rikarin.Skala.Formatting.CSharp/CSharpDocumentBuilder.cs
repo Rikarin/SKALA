@@ -2371,7 +2371,8 @@ public sealed partial class CSharpDocumentBuilder {
                         newLines == 0
                         ? DefaultNewLine()
                         : options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine(),
-                        spec.Rule == GapRule.LastResortPoint
+                        spec.Rule == GapRule.LastResortPoint,
+                        nextToken.Kind() is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.OpenBraceToken
                     );
                     return;
 

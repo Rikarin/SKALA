@@ -63,9 +63,11 @@ public sealed class DocumentBuilder {
     ///     answer would be no on a fresh line as well: <c>(1\n, (2\n, 3))</c> keeps <c>, (2</c>
     ///     together although the item has no flat form, and <c>Resolve(\n…\n), [</c> keeps a
     ///     110-column collection's <c>[</c> on the <c>)</c> line and chops it inside. So a fill breaks
-    ///     before an item exactly when that makes the item fit; otherwise the item's head stays. That
-    ///     is what makes the rule idempotent: on pass one an item too wide for any line keeps its head
-    ///     and breaks inside, and on pass two the same item, now certain, is measured the same way.
+    ///     before an item exactly when that makes the item fit; otherwise the item's head stays — for
+    ///     an item that opens with a delimiter (<see cref="LineFlags.DelimitedItem" />): the oracle
+    ///     still breaks before a 133-column binary chain that fits nowhere. That is what makes the rule
+    ///     idempotent: on pass one an item too wide for any line keeps its head and breaks inside, and
+    ///     on pass two the same item, now certain, is measured the same way.
     /// </remarks>
     int[] segmentHead = new int[512];
 
@@ -239,13 +241,17 @@ public sealed class DocumentBuilder {
     ///     The point does not end the rest-of-line measure of anything before it.
     ///     <see cref="LineFlags.LastResort" />.
     /// </param>
+    /// <param name="delimitedItem">
+    ///     The item after the point opens with a delimiter. <see cref="LineFlags.DelimitedItem" />.
+    /// </param>
     public void BreakPoint(
         int group,
         bool flatSpace,
         bool fill = false,
         int blankLines = 0,
         string? newLine = null,
-        bool lastResort = false
+        bool lastResort = false,
+        bool delimitedItem = false
     ) {
         var index = pending.Count;
         Leaf(
@@ -261,7 +267,8 @@ public sealed class DocumentBuilder {
         node.Arg2 = group;
         node.Flags = (flatSpace ? (int)LineFlags.FlatSpace : 0)
             | (fill ? (int)LineFlags.FillPoint : 0)
-            | (lastResort ? (int)LineFlags.LastResort : 0);
+            | (lastResort ? (int)LineFlags.LastResort : 0)
+            | (delimitedItem ? (int)LineFlags.DelimitedItem : 0);
 
         ownPoints.Add(group);
 
