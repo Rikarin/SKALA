@@ -438,6 +438,29 @@ public sealed class BreakPlan {
                 );
                 return;
 
+            // ⚠ An indexer's parameter list had no plan at all (SK-DIV-0108): `int this[int a =\n 5]`
+            // kept the break and chopped nothing, and `int this[int a\n, int b]` kept a comma the
+            // oracle re-lays. The oracle gives the brackets exactly the declaration keys — measured
+            // beside a method twin of every shape: the list chops when an item is multi-line or a
+            // delimiter break is kept, `]` takes a line of its own, the arrow after it breaks, and a
+            // break before a comma is joined. There is no indexer-specific key in the registry to
+            // read instead.
+            case BracketedParameterListSyntax indexerParameters:
+                PlanList(
+                    node,
+                    indexerParameters.OpenBracketToken,
+                    indexerParameters.CloseBracketToken,
+                    indexerParameters.Parameters,
+                    indexerParameters.Parameters.GetSeparators(),
+                    options.KeepExistingDeclarationParensArrangement,
+                    options.WrapParametersStyle,
+                    options.WrapAfterDeclarationLpar,
+                    options.WrapBeforeDeclarationRpar,
+                    options.MaxFormalParametersOnLine,
+                    wrapBeforeOpen: options.WrapBeforeDeclarationLpar
+                );
+                return;
+
             case TupleExpressionSyntax tuple:
                 PlanTuple(tuple);
                 return;

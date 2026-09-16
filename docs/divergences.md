@@ -4884,3 +4884,46 @@ source for "any break inside the parentheses". None of these is a comma's side.
   left as they were), `skala_keep_user_linebreaks`.
 - ⚠ status: **fixed**, pinned by `constructs/breaks/break-before-comma.cs` and
   `BreakBeforeCommaTests`.
+
+## SK-DIV-0108 — an indexer's bracketed parameter list had no plan at all
+
+⚠ **Found beside SK-DIV-0103 and reserved by #370.** Not a fidelity divergence but a coverage gap:
+`BreakPlan.Plan` visited `ParameterListSyntax` and never `BracketedParameterListSyntax`, so every gap
+inside `this[…]` fell through to `keep_user_linebreaks` and nothing chopped, joined or wrapped.
+Measured 2026-09-16 with `Testing ask`, each shape beside a method twin:
+
+| written | oracle | Skala before |
+|---|---|---|
+| `int this[int a =` / `5] => a;` | `int this[` / `int a =` / `5` / `] =>` / `a;` — chopped, `]` alone, the arrow broken | as written |
+| `int this[int a` / `, string b] => a;` | **joined** — a break before a comma is re-laid, as in a method | as written |
+| `int this[int a,` / `string b, object c] => a;` | chopped, one per line | as written |
+| `int this[` / `long a] => 0;` and `int this[long a` / `] => 0;` | chopped — the kept delimiter break | as written |
+| a 128-column `this[…]` on one line | chopped | as written |
+| `int this[object a =` / `null, string b = null] {` | chopped, `null` a level past its parameter, `] {` | as written |
+
+Every row is byte-identical to its method twin, and the registry has no indexer-specific key, so
+the list takes the declaration family: `skala_wrap_parameters_style`,
+`skala_wrap_after_declaration_lpar`, `skala_wrap_before_declaration_rpar`,
+`skala_max_formal_parameters_on_line`, `skala_keep_existing_declaration_parens_arrangement`,
+`skala_wrap_before_declaration_lpar`. `OwnerListOf` already handed the arrow the indexer's list, so
+the arrow broke as soon as the list had a group to read.
+
+⚠ **The enumeration the issue asked for** — separated, delimited kinds the planner visits and does
+not, from `Testing/corpus/syntax-kinds.txt` against `BreakPlan.Plan`. Visited: `ArgumentList`,
+`AttributeArgumentList`, `ParameterList`, `BracketedParameterList` (now), `TupleExpression`,
+`CollectionExpression`, `ListPattern`, `PropertyPatternClause`, the four `*InitializerExpression`s
+and `WithInitializerExpression`, `AnonymousObjectCreationExpression`, `BaseList`,
+`VariableDeclaration`, `TypeParameterList`, `EnumDeclaration`, `SwitchExpression`, `ForStatement`.
+**Not visited**: `BracketedArgumentList` (`a[i, j]`) and `ImplicitElementAccess`,
+`TypeArgumentList`, `TupleType`, `PositionalPatternClause`, `ParenthesizedVariableDesignation`,
+`AttributeList` (several attributes in one bracket), `ArrayRankSpecifier`,
+`FunctionPointerParameterList` and `FunctionPointerUnmanagedCallingConventionList`, the two
+`Cref*ParameterList`s (inside doc comments), and the constraints inside one
+`TypeParameterConstraintClause` (SK-DIV-0105). For all of those every gap is
+`keep_user_linebreaks`' alone. SK-DIV-0104 measured three of them — a tuple type, a type argument
+list, a positional pattern — keeping a break before a comma, which is also what the oracle does
+there; the rest are unmeasured and left as found.
+
+- options: the declaration family above.
+- ⚠ status: **fixed**, pinned by `constructs/breaks/indexer-parameter-list.cs` and
+  `IndexerParameterListTests`.
