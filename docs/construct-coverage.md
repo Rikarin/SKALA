@@ -111,6 +111,13 @@ only fixtures Skala already passes would have been a pass that selected for comf
 thirteen are pins rather than findings — after retirement they are the only thing that would notice a
 regression in those constructs — and they are worth having on that ground alone.
 
+⚠ `syntax/member-access-on-numeric-literals.cs` is a twentieth file in the directory and **not** part
+of this audit: it pins a *shape*, `120.DegreesCelsius()`, that no `SyntaxKind` census can see, because
+`SimpleMemberAccessExpression` is one of the commonest kinds in the corpus while a member access whose
+receiver is an integer literal occurred nowhere. That absence is how a `MustSeparate` rule forcing
+`120 .DegreesCelsius()` stood for two commits with only its own unit test measuring it (#367). The
+oracle closes up every spaced form and keeps every closed one, and Skala matches it byte for byte.
+
 ### The cref forms are pinned under one profile of two
 
 ⚠ **A gap this audit could not close, named rather than left implicit.** `cref-member-forms.cs` sits
